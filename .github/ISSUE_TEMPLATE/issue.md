@@ -21,7 +21,7 @@ assignees: ""
 
 ## Origin Document
 
-[ Why? Just the issue in 1-2 sentences. Consider adding a link or a screenshot.]
+[ Why? Justify the issue in 1-2 sentences. Consider adding a link or a screenshot.]
 
 ## Goals
 

@@ -8,11 +8,11 @@
     6. Set _Milestone_
 -->
 
-## Description
+## Summary
 
 <!-- DELETE THIS COMMENT BLOCK
-      Let reviewpad summarize your PR but shorten it if it ends up being too long
-      You can leave a `/reviewpad summarize` comment at any time to trigger it manually.
+      - Let reviewpad summarize your PR but shorten it if it ends up being too long
+      - You can leave a `/reviewpad summarize` comment at any time to trigger it manually.
 -->
 
 reviewpad:summary
@@ -20,10 +20,12 @@ reviewpad:summary
 ## Issue
 
 <!-- DELETE THIS COMMENT BLOCK
-     Remove this section if there is no relevant issue.
+     Specify the ticket number below if there is a relevant issue.
 -->
 
 Fixes #{ISSUE_NUMBER}
+
+[Explain the reasoning for thePR in 1-2 sentences. Consider adding a link or a screenshot.]
 
 ## Type of change
 
@@ -34,17 +36,6 @@ Select one or more:
 - [ ] Code health or cleanup
 - [ ] Documentation
 - [ ] Other (specify)
-
-## List of changes
-
-<!-- DELETE THIS COMMENT BLOCK
- List out all the changes made.
- A PR should, preferably, be about a single change and the corresponding tests
--->
-
-- Change #1
-- Change #2
-- ...
 
 ## Testing
 
