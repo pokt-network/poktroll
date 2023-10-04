@@ -3,9 +3,6 @@ load('ext://restart_process', 'docker_build_with_restart')
 # A list of directories where changes trigger a hot-reload of the sequencer
 hot_reload_dirs = ['app', 'cmd', 'tools', 'x']
 
-# Run celestia node
-k8s_yaml('localnet/kubernetes/celestia-rollkit.yaml')
-
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
     files = listdir(directory)
@@ -25,12 +22,16 @@ def generate_config_map_yaml(name, data):
     }
     return encode_yaml(config_map_object)
 
+# Import keyring/keybase files into Kubernetes ConfigMap
 k8s_yaml(generate_config_map_yaml("pocketd-keys", read_files_from_directory("localnet/pocketd/keyring-test/"))) # pocketd/keys
+# Import configuration files into Kubernetes ConfigMap
 k8s_yaml(generate_config_map_yaml("pocketd-configs", read_files_from_directory("localnet/pocketd/config/"))) # pocketd/configs
 
-# Build pocketd
+# Hot reload protobuf changes
 local_resource('hot-reload: generate protobufs', 'ignite generate proto-go -y', deps=['proto'], labels=["hot-reloading"])
+# Hot reload the pocketd binary used by the k8s cluster
 local_resource('hot-reload: pocketd', 'GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v', deps=hot_reload_dirs, labels=["hot-reloading"], resource_deps=['hot-reload: generate protobufs'])
+# Hot reload the local pocketd binary used by the CLI
 local_resource('hot-reload: pocketd - local cli', 'ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin', deps=hot_reload_dirs, labels=["hot-reloading"], resource_deps=['hot-reload: generate protobufs'])
 
 # Build an image with a pocketd binary
@@ -50,11 +51,10 @@ WORKDIR /
     live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
 )
 
-# Run pocketd
-k8s_yaml(['localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml'])
+# Run pocketd, relayer, celestia and anvil nodes
+k8s_yaml(['localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml', 'localnet/kubernetes/celestia-rollkit.yaml'])
 
-# Configure tilt resources for nodes
-# TODO(@okdas): add port forwarding to be able to query the endpoints on localhost
+# Configure tilt resources (tilt labels and port forawards) for all of the nodes above
 k8s_resource('celestia-rollkit', labels=["blockchains"], port_forwards=['26657', '26658', '26659'])
 k8s_resource('pocketd', labels=["blockchains"], resource_deps=['celestia-rollkit'], port_forwards=['36657', '40004'])
 k8s_resource('pocketd-relayer', labels=["blockchains"], resource_deps=['pocketd'], port_forwards=['8545', '8546', '40005'])
