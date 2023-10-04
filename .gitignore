@@ -24,11 +24,11 @@ go.work
 bin
 !bin/.keep
 
-# Why: poktrolld CLI should use the same keys as the node that runs inside the cluster to
-# allow commands such as `poktrolld tx stake` for work.
-localnet/poktrolld/*
-!localnet/poktrolld/keyring-test/
-!localnet/poktrolld/keyring-test/*
+# Why: pocketd CLI should use the same keys as the node that runs inside the cluster to
+# allow commands such as `pocketd tx stake` for work.
+localnet/pocketd/*
+!localnet/pocketd/keyring-test/
+!localnet/pocketd/keyring-test/*
 !localnet/*/config/
 !localnet/*/config/*
 
