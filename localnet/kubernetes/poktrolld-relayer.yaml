@@ -1,0 +1,73 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: poktrolld-relayer-scripts
+data:
+  poktroll.sh: |-
+    #!/bin/sh
+
+    ls -la /root/.poktroll/config-src/
+    mkdir -p /root/.poktroll/config/
+    cp -r -L /root/.poktroll/config-src/* /root/.poktroll/config/
+    ls -la /root/.poktroll/config/
+
+    # sleep 99999
+
+    # You can attach to this process with delve (dlv) for debugging purpose with `dlv attach $(pgrep poktrolld) --listen :40005 --headless --api-version=2 --accept-multiclient` - run inside the container!
+    poktrolld relayer --pocket-node poktrolld:36657 --sequencer-node poktrolld:36657 --signing-key servicer1 --keyring-backend test
+
+    # OR debug the node (uncomment this line but comment previous line)
+    # dlv exec --listen :40005 /usr/local/bin/poktrolld relayer --pocket-node poktrolld:36657 --sequencer-node poktrolld:36657 --signing-key servicer1 --keyring-backend test
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poktrolld-relayer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poktrolld-relayer
+  template:
+    metadata:
+      labels:
+        app: poktrolld-relayer
+    spec:
+      containers:
+        - name: poktrolld
+          image: poktrolld
+          # To allow Delve to do the thing
+          securityContext:
+            allowPrivilegeEscalation: true
+            capabilities:
+              add: ["SYS_PTRACE"]
+          env:
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: celestia-secret
+                  key: auth_token
+          ports:
+            - containerPort: 8545
+            - containerPort: 8546
+            - containerPort: 40005
+          command: ["/bin/sh"]
+          args: ["/scripts/poktroll.sh"]
+          volumeMounts:
+            - name: scripts-volume
+              mountPath: /scripts
+            - name: keys-volume
+              mountPath: /root/.poktroll/keyring-test/
+            - name: configs-volume
+              mountPath: /root/.poktroll/config-src/
+      volumes:
+        - name: scripts-volume
+          configMap:
+            name: poktrolld-relayer-scripts
+        - name: keys-volume
+          configMap:
+            name: poktrolld-keys
+        - name: configs-volume
+          configMap:
+            name: poktrolld-configs
