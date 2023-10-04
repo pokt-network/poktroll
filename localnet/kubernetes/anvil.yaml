@@ -13,6 +13,7 @@ spec:
       labels:
         app: anvil
     spec:
+      # TODO: Add resource limits
       containers:
         - name: anvil
           image: ghcr.io/foundry-rs/foundry:latest
