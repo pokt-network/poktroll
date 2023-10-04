@@ -6,6 +6,7 @@ metadata:
 data:
   pocket.sh: |-
     #!/bin/sh
+    
     echo "AUTH_TOKEN is: $AUTH_TOKEN"
     VALIDATOR_NAME=validator1
     CHAIN_ID=pocket

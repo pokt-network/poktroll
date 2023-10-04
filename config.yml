@@ -83,9 +83,9 @@ genesis:
       - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
         services:
         - id: svc1
-          name: TODO_HYDRATE_ME
+          name: TODO
         - id: svc2
-          name: TODO_HYDRATE_ME
+          name: TODO
         stake:
           amount: '1000'
           denom: upokt
