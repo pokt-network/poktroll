@@ -19,3 +19,28 @@
 
 # Go workspace file
 go.work
+
+# Don't commit binaries
+bin
+!bin/.keep
+
+# Why: poktrolld CLI should use the same keys as the node that runs inside the cluster to
+# allow commands such as `poktrolld tx stake` for work.
+localnet/poktrolld/*
+!localnet/poktrolld/keyring-test/
+!localnet/poktrolld/keyring-test/*
+!localnet/*/config/
+!localnet/*/config/*
+
+# Macos
+.DS_Store
+
+# Development
+.vscode
+.env
+.idea/
+
+**/*.pb.go
+**/*.pb.gw.go
+
+ts-client/

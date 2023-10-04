@@ -2,49 +2,49 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: poktroll-scripts
+  name: pocket-scripts
 data:
-  poktroll.sh: |-
+  pocket.sh: |-
     #!/bin/sh
     
     echo "AUTH_TOKEN is: $AUTH_TOKEN"
     VALIDATOR_NAME=validator1
-    CHAIN_ID=poktroll
-    KEY_NAME=poktroll-key
-    KEY_2_NAME=poktroll-key-2
+    CHAIN_ID=pocket
+    KEY_NAME=pocket-key
+    KEY_2_NAME=pocket-key-2
     TOKEN_AMOUNT="10000000000000000000000000stake"
     STAKING_AMOUNT="1000000000stake"
 
     # reset any existing genesis/chain data
-    poktrolld tendermint unsafe-reset-all
+    pocketd tendermint unsafe-reset-all
 
     # create a random Namespace ID for your rollup to post blocks to
-    openssl rand -hex 10 > /root/.poktroll/data/namespace-id
-    NAMESPACE_ID=$(cat /root/.poktroll/data/namespace-id)
+    openssl rand -hex 10 > /root/.pocket/data/namespace-id
+    NAMESPACE_ID=$(cat /root/.pocket/data/namespace-id)
 
     # query the DA Layer start height, in this case we are querying
     # our local devnet at port 26657, the RPC. The RPC endpoint is
     # to allow users to interact with Celestia's nodes by querying
     # the node's state and broadcasting transactions on the Celestia
     # network. The default port is 26657.
-    curl http://celestia-rollkit:26657/block | jq -r '.result.block.header.height' > /root/.poktroll/data/da-block-height
-    DA_BLOCK_HEIGHT=$(cat /root/.poktroll/data/da-block-height)
+    curl http://celestia-rollkit:26657/block | jq -r '.result.block.header.height' > /root/.pocket/data/da-block-height
+    DA_BLOCK_HEIGHT=$(cat /root/.pocket/data/da-block-height)
 
     echo -e "Your NAMESPACE_ID is $NAMESPACE_ID \n\n Your DA_BLOCK_HEIGHT is $DA_BLOCK_HEIGHT"
 
-    ls -la /root/.poktroll/config-src/
-    mkdir -p /root/.poktroll/config/
-    cp -r -L /root/.poktroll/config-src/* /root/.poktroll/config/
-    ls -la /root/.poktroll/config/
+    ls -la /root/.pocket/config-src/
+    mkdir -p /root/.pocket/config/
+    cp -r -L /root/.pocket/config-src/* /root/.pocket/config/
+    ls -la /root/.pocket/config/
 
     # sleep 9999
 
     # start the node
-    # You can attach to this process with delve (dlv) for debugging purpose with `dlv attach $(pgrep poktrolld) --listen :40004 --headless --api-version=2 --accept-multiclient` - run inside the container!
-    poktrolld start --rollkit.aggregator true --rollkit.da_layer celestia --rollkit.da_config='{"base_url":"http://celestia-rollkit:26658","timeout":60000000000,"fee":600000,"gas_limit":6000000,"auth_token":"'$AUTH_TOKEN'"}' --rollkit.namespace_id $NAMESPACE_ID --rollkit.da_start_height $DA_BLOCK_HEIGHT --rpc.laddr tcp://0.0.0.0:36657 --p2p.laddr "0.0.0.0:36656"
+    # You can attach to this process with delve (dlv) for debugging purpose with `dlv attach $(pgrep pocketd) --listen :40004 --headless --api-version=2 --accept-multiclient` - run inside the container!
+    pocketd start --rollkit.aggregator true --rollkit.da_layer celestia --rollkit.da_config='{"base_url":"http://celestia-rollkit:26658","timeout":60000000000,"fee":600000,"gas_limit":6000000,"auth_token":"'$AUTH_TOKEN'"}' --rollkit.namespace_id $NAMESPACE_ID --rollkit.da_start_height $DA_BLOCK_HEIGHT --rpc.laddr tcp://0.0.0.0:36657 --p2p.laddr "0.0.0.0:36656"
 
     # OR debug the node (uncomment this line but comment previous line)
-    # dlv exec /usr/local/bin/poktrolld --listen :40004 --headless --api-version=2 --accept-multiclient -- start --rollkit.aggregator true --rollkit.da_layer celestia --rollkit.da_config='{"base_url":"http://celestia-rollkit:26658","timeout":60000000000,"fee":600000,"gas_limit":6000000,"auth_token":"'$AUTH_TOKEN'"}' --rollkit.namespace_id $NAMESPACE_ID --rollkit.da_start_height $DA_BLOCK_HEIGHT --rpc.laddr tcp://0.0.0.0:36657 --p2p.laddr "0.0.0.0:36656"
+    # dlv exec /usr/local/bin/pocketd --listen :40004 --headless --api-version=2 --accept-multiclient -- start --rollkit.aggregator true --rollkit.da_layer celestia --rollkit.da_config='{"base_url":"http://celestia-rollkit:26658","timeout":60000000000,"fee":600000,"gas_limit":6000000,"auth_token":"'$AUTH_TOKEN'"}' --rollkit.namespace_id $NAMESPACE_ID --rollkit.da_start_height $DA_BLOCK_HEIGHT --rpc.laddr tcp://0.0.0.0:36657 --p2p.laddr "0.0.0.0:36656"
 ---
 # apiVersion: rbac.authorization.k8s.io/v1
 # kind: RoleBinding
@@ -53,7 +53,7 @@ data:
 #   namespace: default # Replace with the namespace where the secret resides
 # subjects:
 #   - kind: ServiceAccount
-#     name: poktrolld
+#     name: pocketd
 #     namespace: default # Replace with the namespace where the service account resides
 # roleRef:
 #   kind: Role
@@ -73,25 +73,25 @@ data:
 # apiVersion: v1
 # kind: ServiceAccount
 # metadata:
-#   name: poktrolld
+#   name: pocketd
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: poktrolld
+  name: pocketd
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: poktrolld
+      app: pocketd
   template:
     metadata:
       labels:
-        app: poktrolld
+        app: pocketd
     spec:
       containers:
-        - name: poktrolld
-          image: poktrolld
+        - name: pocketd
+          image: pocketd
           securityContext:
             allowPrivilegeEscalation: true
             capabilities:
@@ -110,38 +110,38 @@ spec:
           #     path: /health
           #     port: 36657
           command: ["/bin/sh"]
-          args: ["/scripts/poktroll.sh"]
+          args: ["/scripts/pocket.sh"]
           volumeMounts:
             - name: scripts-volume
               mountPath: /scripts
             - name: keys-volume
-              mountPath: /root/.poktroll/keyring-test/
+              mountPath: /root/.pocket/keyring-test/
             - name: configs-volume
-              mountPath: /root/.poktroll/config-src/
+              mountPath: /root/.pocket/config-src/
             - name: data-volume             
-              mountPath: /root/.poktroll/data/
+              mountPath: /root/.pocket/data/
       volumes:
         - name: scripts-volume
           configMap:
-            name: poktroll-scripts
+            name: pocket-scripts
         - name: keys-volume
           configMap:
-            name: poktrolld-keys
+            name: pocketd-keys
         - name: configs-volume
           configMap:
-            name: poktrolld-configs
+            name: pocketd-configs
         - name: data-volume               
           persistentVolumeClaim:
-            claimName: poktrolld-data
+            claimName: pocketd-data
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: poktrolld
+  name: pocketd
 spec:
   selector:
-    app: poktrolld
+    app: pocketd
   ports:
     - protocol: TCP
       name: rpc
@@ -151,7 +151,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: poktrolld-data
+  name: pocketd-data
 spec:
   accessModes:
     - ReadWriteOnce
