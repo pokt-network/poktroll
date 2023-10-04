@@ -15,7 +15,7 @@ data:
     # sleep 99999
 
     # You can attach to this process with delve (dlv) for debugging purpose with `dlv attach $(pgrep pocketd) --listen :40005 --headless --api-version=2 --accept-multiclient` - run inside the container!
-    pocketd relayer --pocket-node pocketd:36657 --sequencer-node pocketd:36657 --signing-key servicer1 --keyring-backend test
+    pocketd relayer --node pocketd:36657 --signing-key servicer1 --keyring-backend test
 
     # OR debug the node (uncomment this line but comment previous line)
     # dlv exec --listen :40005 /usr/local/bin/pocketd relayer --pocket-node pocketd:36657 --sequencer-node pocketd:36657 --signing-key servicer1 --keyring-backend test
@@ -34,6 +34,7 @@ spec:
       labels:
         app: pocketd-relayer
     spec:
+      # TODO: Add resource limits
       containers:
         - name: pocketd
           image: pocketd
