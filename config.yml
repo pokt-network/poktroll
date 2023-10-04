@@ -1,21 +1,111 @@
 version: 1
 accounts:
-- name: alice
+  - name: faucet
+    mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
+    coins:
+      - 999999999999999999stake
+  - name: validator1
+    mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
+    coins:
+      - 900000000stake
+  - name: app1
+    mnemonic: "mention spy involve verb exercise fiction catalog order agent envelope mystery text defy sing royal fringe return face alpha knife wonder vocal virus drum"
+    coins:
+      - 100000000stake
+  - name: app2
+    mnemonic: "material little labor strong search device trick amateur action crouch invite glide provide elite mango now paper sense found hamster neglect work install bulk"
+    coins:
+      - 200000000stake
+  - name: app3
+    mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
+    coins:
+      - 300000000stake
+  - name: servicer1
+    mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
+    coins:
+      - 110000000stake
+  - name: servicer2
+    mnemonic: "peanut hen enroll meat legal have error input bulk later correct denial onion fossil wing excuse elephant object apology switch claim rare decide surface"
+    coins:
+      - 220000000stake
+  - name: servicer3
+    mnemonic: "client city senior tenant source soda spread buffalo shaft amused bar carbon keen off feel coral easily announce metal orphan sustain maple expand loop"
+    coins:
+      - 330000000stake
+  - name: portal1
+    mnemonic: "salt iron goat also absorb depend involve agent apology between lift shy door left bulb arrange industry father jelly olive rifle return predict into"
+    coins:
+      - 100000000stake
+  - name: portal2
+    mnemonic: "suffer wet jelly furnace cousin flip layer render finish frequent pledge feature economy wink like water disease final erase goat include apple state furnace"
+    coins:
+      - 200000000stake
+  - name: portal3
+    mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
+    coins:
+      - 300000000stake
+faucet:
+  name: faucet
   coins:
-  - 20000token
-  - 200000000stake
-- name: bob
-  coins:
-  - 10000token
-  - 100000000stake
+    - 10000stake
 client:
+  typescript:
+    path: ts-client
+  hooks:
+    path: react/src/hooks
   openapi:
     path: docs/static/openapi.yml
-faucet:
-  name: bob
-  coins:
-  - 5token
-  - 100000stake
 validators:
-- name: alice
-  bonded: 100000000stake
+  - name: validator1
+    bonded: 900000000stake
+    config:
+      moniker: "validator1"
+# We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
+genesis:
+  app_state:
+    application:
+      applicationList:
+        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+          services:
+            - id: svc1
+              name: TODO
+            - id: svc2
+              name: TODO
+          stake:
+            amount: "1000"
+            denom: stake
+      params: {}
+    servicer:
+      params: {}
+      servicersList:
+        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          services:
+            - endpoints:
+                - configs:
+                    - key: TIMEOUT
+                      value: 30s
+                  metadata:
+                    entries: {}
+                  rpc_type: WEBSOCKET
+                  url: ws://localhost:8546/
+              id:
+                id: svc1
+                name: Pocket Network Service 1
+              metadata:
+                entries: {}
+            - endpoints:
+                - configs:
+                    - key: TIMEOUT
+                      value: 60s
+                  metadata:
+                    entries: {}
+                  rpc_type: JSON_RPC
+                  url: http://localhost:8545
+              id:
+                id: svc2
+                name: Pocket Network Service 2
+              metadata:
+                entries: {}
+          stake:
+            amount: "1000000"
+            denom: stake
