@@ -11,15 +11,16 @@ assignees: ""
 - [Goals](#goals)
 - [Deliverables](#deliverables)
 - [Non-goals / Non-deliverables](#non-goals--non-deliverables)
+- [Testing](#testing)
 - [General deliverables](#general-deliverables)
-- [Testing Methodology](#testing-methodology)
 
 <!-- DELETE THIS COMMENT BLOCK
   After completing the following:
     1. Update _Assignee(s)_
     2. Add _Label(s)_
-    3. Add _Project(s)_
-    4. Set _Epic_
+    3. Set _Project(s)_
+    4. Specify _Epic_ and _Iteration_ under _Project_
+    5. Set _Milestone_
 -->
 
 ## Objective
@@ -66,34 +67,24 @@ assignees: ""
 - Non-deliverable #2
 - ...
 
+## Testing
+
+<!-- DELETE THIS COMMENT BLOCK
+  Remove this section if not applicable.
+  Otherwise, update (add/remove) items from the list below as deemed necessary.
+-->
+
+- [ ] **Run all unit tests**: `make test_all_unit`
+- [ ] **Verify localnet manually**: See the instructions [here](TODO: add link to instructions)
+
 ## General deliverables
 
 <!-- DELETE THIS COMMENT BLOCK
-  Select all the items Make a list of action items that are out of scope for this issue.
-  These should explicitly not be delivered as part of this issue and
-  should be considered as scope creep.
+  Remove this section if not applicable.
+  Otherwise, update (add/remove) items from the list below as deemed necessary.
 -->
 
-<!-- REMOVE this comment block after following the instructions
-  Remove any items that are not applicable and add additional ones, if applicable, that are not listed below.
--->
-
-- [ ] Add TODOs 
-- [ ] Update related local & global README(s)
-- [ ] Added new doUpdate relevant source code tree explanations
-- [ ] Add or update any relevant or supporting [mermaid](https://mermaid-js.github.io/mermaid/) diagrams
-
-## Testing Methodology
-
-<!-- REMOVE this comment block after following the instructions
-  Remove this section if not applicable. Otherwise, update (add/remove) the list below as deemed necessary.
--->
-
-- [ ] **Task specific tests or benchmarks**: `make ...`
-- [ ] **New tests or benchmarks**: `make ...`
-- [ ] **All tests**: `make test_all`
-- [ ] **LocalNet**: verify a `LocalNet` is still functioning correctly by following the instructions at [docs/development/README.md](https://github.com/pokt-network/pocket/tree/main/docs/development)
-- [ ] **k8s LocalNet**: verify a `k8s LocalNet` is still functioning correctly by following the instructions [here](https://github.com/pokt-network/pocket/blob/main/build/localnet/README.md)
+- [ ] **Documentation**: Add/Update TODOs, comments, READMEs and [mermaid](https://mermaid-js.github.io/mermaid/) diagrams where appropriate
 
 ---
 

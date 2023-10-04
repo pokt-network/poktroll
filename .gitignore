@@ -15,7 +15,35 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
+
+# Don't commit binaries
+bin
+!bin/.keep
+
+# Why: pocketd CLI should use the same keys as the node that runs inside the cluster to
+# allow commands such as `pocketd tx stake` for work.
+localnet/pocketd/*
+!localnet/pocketd/keyring-test/
+!localnet/pocketd/keyring-test/*
+!localnet/*/config/
+!localnet/*/config/*
+
+# Macos
+.DS_Store
+**/.DS_Store
+
+# Development
+.vscode
+.env
+.idea/
+
+# Compiled protos
+**/*.pb.go
+**/*.pb.gw.go
+
+# Frontend utils
+ts-client/

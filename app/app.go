@@ -113,6 +113,7 @@ import (
 	pocketmodule "pocket/x/pocket"
 	pocketmodulekeeper "pocket/x/pocket/keeper"
 	pocketmoduletypes "pocket/x/pocket/types"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	appparams "pocket/app/params"
@@ -152,6 +153,7 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		authzmodule.AppModuleBasic{},
+		// TODO_DISCUSS: Should we rename all instances of `Validator` to `Sequencer`?
 		genutil.NewAppModuleBasic(genutiltypes.DefaultMessageValidator),
 		bank.AppModuleBasic{},
 		capability.AppModuleBasic{},
