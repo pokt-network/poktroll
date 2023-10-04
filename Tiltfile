@@ -52,7 +52,7 @@ WORKDIR /
 )
 
 # Run pocketd, relayer, celestia and anvil nodes
-k8s_yaml(['localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml', 'localnet/kubernetes/celestia-rollkit.yaml'])
+k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml'])
 
 # Configure tilt resources (tilt labels and port forawards) for all of the nodes above
 k8s_resource('celestia-rollkit', labels=["blockchains"], port_forwards=['26657', '26658', '26659'])
