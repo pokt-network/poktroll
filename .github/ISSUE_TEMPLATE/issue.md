@@ -6,14 +6,6 @@ labels: ""
 assignees: ""
 ---
 
-- [Objective](#objective)
-- [Origin Document](#origin-document)
-- [Goals](#goals)
-- [Deliverables](#deliverables)
-- [Non-goals / Non-deliverables](#non-goals--non-deliverables)
-- [Testing](#testing)
-- [General deliverables](#general-deliverables)
-
 <!-- DELETE THIS COMMENT BLOCK
   After completing the following:
     1. Update _Assignee(s)_
@@ -29,7 +21,7 @@ assignees: ""
 
 ## Origin Document
 
-[ Why? Just the issue in 1-2 sentences. Consider adding a link or a screenshot.]
+[ Why? Justify the issue in 1-2 sentences. Consider adding a link or a screenshot.]
 
 ## Goals
 
