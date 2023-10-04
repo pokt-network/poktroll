@@ -6,7 +6,6 @@ metadata:
 data:
   pocket.sh: |-
     #!/bin/sh
-    
     echo "AUTH_TOKEN is: $AUTH_TOKEN"
     VALIDATOR_NAME=validator1
     CHAIN_ID=pocket
@@ -46,35 +45,6 @@ data:
     # OR debug the node (uncomment this line but comment previous line)
     # dlv exec /usr/local/bin/pocketd --listen :40004 --headless --api-version=2 --accept-multiclient -- start --rollkit.aggregator true --rollkit.da_layer celestia --rollkit.da_config='{"base_url":"http://celestia-rollkit:26658","timeout":60000000000,"fee":600000,"gas_limit":6000000,"auth_token":"'$AUTH_TOKEN'"}' --rollkit.namespace_id $NAMESPACE_ID --rollkit.da_start_height $DA_BLOCK_HEIGHT --rpc.laddr tcp://0.0.0.0:36657 --p2p.laddr "0.0.0.0:36656"
 ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: RoleBinding
-# metadata:
-#   name: read-secrets
-#   namespace: default # Replace with the namespace where the secret resides
-# subjects:
-#   - kind: ServiceAccount
-#     name: pocketd
-#     namespace: default # Replace with the namespace where the service account resides
-# roleRef:
-#   kind: Role
-#   name: secret-reader
-#   apiGroup: rbac.authorization.k8s.io
-# ---
-# apiVersion: rbac.authorization.k8s.io/v1
-# kind: Role
-# metadata:
-#   name: secret-reader
-#   namespace: default # Replace with the namespace where the secret resides
-# rules:
-#   - apiGroups: [""]
-#     resources: ["secrets"]
-#     verbs: ["get", "list"]
-# ---
-# apiVersion: v1
-# kind: ServiceAccount
-# metadata:
-#   name: pocketd
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -89,6 +59,7 @@ spec:
       labels:
         app: pocketd
     spec:
+      # TODO: Add resource limits
       containers:
         - name: pocketd
           image: pocketd
@@ -105,10 +76,6 @@ spec:
           ports:
             - containerPort: 36657
             - containerPort: 40004
-          # livenessProbe:
-          #   httpGet:
-          #     path: /health
-          #     port: 36657
           command: ["/bin/sh"]
           args: ["/scripts/pocket.sh"]
           volumeMounts:
@@ -118,7 +85,7 @@ spec:
               mountPath: /root/.pocket/keyring-test/
             - name: configs-volume
               mountPath: /root/.pocket/config-src/
-            - name: data-volume             
+            - name: data-volume
               mountPath: /root/.pocket/data/
       volumes:
         - name: scripts-volume
@@ -130,7 +97,7 @@ spec:
         - name: configs-volume
           configMap:
             name: pocketd-configs
-        - name: data-volume               
+        - name: data-volume
           persistentVolumeClaim:
             claimName: pocketd-data
 

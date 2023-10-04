@@ -34,6 +34,7 @@ localnet/pocketd/*
 
 # Macos
 .DS_Store
+**/.DS_Store
 
 # Development
 .vscode

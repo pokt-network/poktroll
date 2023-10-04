@@ -18,16 +18,6 @@ spec:
       name: gateway
       port: 26659
       targetPort: 26659
-# ---
-# apiVersion: v1
-# stringData:
-#   admin: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJwdWJsaWMiLCJyZWFkIiwid3JpdGUiLCJhZG1pbiJdfQ.224kPiBhlAS0RkkMUI_w-gJsApflbpsKtWE5wslJ04w
-#   NJ3XILLTMVRXEZLUFZVHO5A: '{"body":"3+GdmIQpm+L5e6mJa2FzXoIjeRH0Qo3orcoIx4pGOz8="}'
-#   OAZHALLLMV4Q: '{"body":"CAESQHac1Nzy/OOCxNgrYMtbBpQTouRR/9fHP1jAtOF7ojcrV1410S8SLJ1lHgWS6jU1d3BBlANnJ42rTAMTE7rKkVw="}'
-# kind: Secret
-# metadata:
-#   name: localnet-celestia-tokens
-# type: Opaque
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,42 +34,34 @@ spec:
         app: celestia-rollkit
     spec:
       serviceAccountName: celestia-rollkit
+      # TODO: Add resource limits
       containers:
-      - name: celestia
-        image: ghcr.io/rollkit/local-celestia-devnet:v0.11.0-rc8
-        ports:
-        - containerPort: 26657
-        - containerPort: 26658
-        - containerPort: 26659
-        volumeMounts:
-        - name: bridge-volume
-          mountPath: /bridge
-        # - name: localnet-celestia-tokens
-        #   mountPath: "/bridge/keys/NJ3XILLTMVRXEZLUFZVHO5A"
-        #   subPath: NJ3XILLTMVRXEZLUFZVHO5A
-        # - name: localnet-celestia-tokens
-        #   mountPath: "/bridge/keys/OAZHALLLMV4Q"
-        #   subPath: OAZHALLLMV4Q
-      - name: secret-update-sidecar
-        image: ghcr.io/rollkit/local-celestia-devnet:v0.11.0-rc8
-        command: [ "/bin/bash", "-c", "--" ]
-        # Very scary line. Basically, waits until the node key (NJ3XILLTMVRXEZLUFZVHO5A) exists, signs the JWT and pushes it to k8s secret.
-        args: [ "while true; do if [ -f /bridge/keys/NJ3XILLTMVRXEZLUFZVHO5A ]; then OUTPUT=$(celestia bridge --node.store /bridge auth admin); BASE64_OUTPUT=$(echo -n $OUTPUT | base64 -w 0); TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token); PAYLOAD=$(echo -n '{\"apiVersion\":\"v1\",\"kind\":\"Secret\",\"metadata\":{\"name\":\"celestia-secret\"},\"data\":{\"auth_token\":\"'${BASE64_OUTPUT}'\"}}'); RESPONSE=$(curl -k -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' -X PUT -d \"$PAYLOAD\" https://kubernetes.default.svc/api/v1/namespaces/default/secrets/celestia-secret); echo $RESPONSE | grep '\"code\": 404' >/dev/null && curl -k -H \"Authorization: Bearer $TOKEN\" -H 'Content-Type: application/json' -X POST -d \"$PAYLOAD\" https://kubernetes.default.svc/api/v1/namespaces/default/secrets; while true; do sleep 86400; done; fi; sleep 2; done;" ]
-        volumeMounts:
-        - name: bridge-volume
-          mountPath: /bridge
-        # - name: localnet-celestia-tokens
-        #   mountPath: "/bridge/keys/NJ3XILLTMVRXEZLUFZVHO5A"
-        #   subPath: NJ3XILLTMVRXEZLUFZVHO5A
-        # - name: localnet-celestia-tokens
-        #   mountPath: "/bridge/keys/OAZHALLLMV4Q"
-        #   subPath: OAZHALLLMV4Q
+        - name: celestia
+          image: ghcr.io/rollkit/local-celestia-devnet:v0.11.0-rc8
+          ports:
+            - containerPort: 26657
+            - containerPort: 26658
+            - containerPort: 26659
+          volumeMounts:
+            - name: bridge-volume
+              mountPath: /bridge
+        - name: secret-update-sidecar
+          image: ghcr.io/rollkit/local-celestia-devnet:v0.11.0-rc8
+          command: ["/bin/bash", "-c", "--"]
+          # TODO(@okdas): Very scary line. Basically, waits until the node key (NJ3XILLTMVRXEZLUFZVHO5A) exists, signs the JWT and pushes it to k8s secret.
+          args:
+            [
+              'while true; do if [ -f /bridge/keys/NJ3XILLTMVRXEZLUFZVHO5A ]; then OUTPUT=$(celestia bridge --node.store /bridge auth admin); BASE64_OUTPUT=$(echo -n $OUTPUT | base64 -w 0); TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token); PAYLOAD=$(echo -n ''{"apiVersion":"v1","kind":"Secret","metadata":{"name":"celestia-secret"},"data":{"auth_token":"''${BASE64_OUTPUT}''"}}''); RESPONSE=$(curl -k -H "Authorization: Bearer $TOKEN" -H ''Content-Type: application/json'' -X PUT -d "$PAYLOAD" https://kubernetes.default.svc/api/v1/namespaces/default/secrets/celestia-secret); echo $RESPONSE | grep ''"code": 404'' >/dev/null && curl -k -H "Authorization: Bearer $TOKEN" -H ''Content-Type: application/json'' -X POST -d "$PAYLOAD" https://kubernetes.default.svc/api/v1/namespaces/default/secrets; while true; do sleep 86400; done; fi; sleep 2; done;',
+            ]
+          volumeMounts:
+            - name: bridge-volume
+              mountPath: /bridge
       volumes:
-      - name: bridge-volume
-        emptyDir: {}
-      - name: localnet-celestia-tokens
-        secret:
-          secretName: localnet-celestia-tokens
+        - name: bridge-volume
+          emptyDir: {}
+        - name: localnet-celestia-tokens
+          secret:
+            secretName: localnet-celestia-tokens
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -91,17 +73,17 @@ kind: Role
 metadata:
   name: secret-manager
 rules:
-- apiGroups: [""]
-  resources: ["secrets"]
-  verbs: ["get", "list", "create", "update"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: secret-manager-binding
 subjects:
-- kind: ServiceAccount
-  name: celestia-rollkit
+  - kind: ServiceAccount
+    name: celestia-rollkit
 roleRef:
   kind: Role
   name: secret-manager
