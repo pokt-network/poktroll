@@ -39,8 +39,8 @@ Select one or more:
 
 ## Testing
 
-- [ ] **Unit tests**: `make test_all_unit`
-- [ ] **Manual Llocalnet**: See the instructions [here](TODO: add link to instructions)
+- [ ] **Run all unit tests**: `make test_all_unit`
+- [ ] **Verify Localnet manually**: See the instructions [here](TODO: add link to instructions)
 
 ## Sanity Checklist
 

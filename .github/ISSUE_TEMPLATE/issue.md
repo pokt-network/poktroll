@@ -11,8 +11,8 @@ assignees: ""
     1. Update _Assignee(s)_
     2. Add _Label(s)_
     3. Set _Project(s)_
-    4. Specify _Epic_ and _Iteration_ under _Project_
-    5. Set _Milestone_
+    4. Set _Milestone_
+    5. After the issue is created: specify _Epic_ and _Iteration_ under the _Project_ section
 -->
 
 ## Objective
@@ -59,26 +59,22 @@ assignees: ""
 - Non-deliverable #2
 - ...
 
-## Testing
-
-<!-- DELETE THIS COMMENT BLOCK
-  Remove this section if not applicable.
-  Otherwise, update (add/remove) items from the list below as deemed necessary.
--->
-
-- [ ] **Run all unit tests**: `make test_all_unit`
-- [ ] **Verify localnet manually**: See the instructions [here](TODO: add link to instructions)
-
 ## General deliverables
 
 <!-- DELETE THIS COMMENT BLOCK
-  Remove this section if not applicable.
-  Otherwise, update (add/remove) items from the list below as deemed necessary.
+  Remove sections that are not applicable to this PR.
 -->
 
-- [ ] **Documentation**: Add/Update TODOs, comments, READMEs and [mermaid](https://mermaid-js.github.io/mermaid/) diagrams where appropriate
+- [ ] **Comments**: Add/update TODOs and comments alongside the source code so it is easier to follow.
+- [ ] **Testing**: Add new tests (unit and/or E2E) to the test suite.
+- [ ] **Makefile**: Add new targets to the Makefile to make the new functionality easier to use.
+- [ ] **Documentation**: Update architectural or development READMEs; use [mermaid](https://mermaid-js.github.io/mermaid/) diagrams where appropriate.
 
 ---
+
+<!-- DELETE THIS COMMENT BLOCK
+  Remove `Co-Owners` if not applicable.
+-->
 
 **Creator**: [GitHub handle of issue owner]
 **Co-Owners**: [OPTIONAL - GitHub handle of co-owner(s)]
