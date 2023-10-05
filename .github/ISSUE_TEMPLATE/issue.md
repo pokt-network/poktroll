@@ -27,7 +27,7 @@ assignees: ""
 
 <!-- DELETE THIS COMMENT BLOCK
   Provide a list of goals (not tasks) driving this issue.
-  These should not be actionable but provide guidance on the overarching goals we're aiming to achieve.
+  These should not be actionable but guide the overarching goals we're aiming to achieve.
 -->
 
 - Goal #1
@@ -49,8 +49,7 @@ assignees: ""
 
 <!-- DELETE THIS COMMENT BLOCK
   Make a list of action items that are out of scope for this issue.
-  These should explicitly not be delivered as part of this issue and
-  should be considered as scope creep.
+  These should explicitly not be delivered as part of this issue and should be considered scope creep.
 -->
 
 - Non-goal #1
