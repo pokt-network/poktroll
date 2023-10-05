@@ -27,8 +27,7 @@ assignees: ""
 
 <!-- DELETE THIS COMMENT BLOCK
   Provide a list of goals (not tasks) driving this issue.
-  These should not be actionable but provide guidance on the
-  overarching goals we're aiming to achieve.
+  These should not be actionable but provide guidance on the overarching goals we're aiming to achieve.
 -->
 
 - Goal #1
@@ -38,9 +37,8 @@ assignees: ""
 ## Deliverables
 
 <!-- DELETE THIS COMMENT BLOCK
-  Make a list of deliverables that must be done to consider this
-  task/issue resolved. These should be very actionable, concrete
-  and tangible.
+  Make a list of deliverables that must be done to consider this task/issue resolved.
+  These should be very actionable, concrete and tangible.
 -->
 
 - [ ] Deliverable #1
