@@ -292,7 +292,7 @@
               {
                 "@type": "/cosmos.staking.v1beta1.MsgCreateValidator",
                 "description": {
-                  "moniker": "validator1",
+                  "moniker": "sequencer1",
                   "identity": "",
                   "website": "",
                   "security_contact": "",
