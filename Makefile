@@ -83,7 +83,7 @@ localnet_regenesis: # Regenerate the localnet genesis file
 	ignite chain init --skip-proto
 	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
-	cp ${HOME}/.pocket/config/genesis.json ./localnet/
+	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
 
 #############
 ### Tests ###
