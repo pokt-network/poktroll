@@ -27,10 +27,10 @@ bin
 # Why: pocketd CLI should use the same keys as the node that runs inside the cluster to
 # allow commands such as `pocketd tx stake` for work.
 localnet/pocketd/*
-!localnet/pocketd/keyring-test/
-!localnet/pocketd/keyring-test/*
+# !localnet/pocketd/keyring-test/
+# !localnet/pocketd/keyring-test/*
 !localnet/*/config/
-!localnet/*/config/*
+!localnet/*/config/{app.toml,client.toml,config.toml}
 
 # Macos
 .DS_Store

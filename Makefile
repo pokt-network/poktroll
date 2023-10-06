@@ -69,6 +69,7 @@ docker_wipe: docker_check warn_destructive prompt_user ## [WARNING] Remove all t
 
 .PHONY: localnet_up
 localnet_up: ## Starts localnet
+	make localnet_regenesis
 	tilt up
 
 .PHONY: localnet_down
@@ -80,7 +81,6 @@ localnet_down: ## Delete resources created by localnet
 localnet_regenesis: # Regenerate the localnet genesis file
 	# NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init --skip-proto
-	rm -rf $(POCKETD_HOME)/keyring-test
 	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json ./localnet/
