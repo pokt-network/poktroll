@@ -1,0 +1,18 @@
+syntax = "proto3";
+package pocket.supplier;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "pocket/x/supplier/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (gogoproto.goproto_stringer) = false;
+  
+  int32 earlietClaimSubmissionOffset = 1 [(gogoproto.moretags) = "yaml:\"earliet_claim_submission_offset\""];
+  int32 earliestProofSubmissionOffset = 2 [(gogoproto.moretags) = "yaml:\"earliest_proof_submission_offset\""];
+  int32 latestClaimSubmissionBlocksInterval = 3 [(gogoproto.moretags) = "yaml:\"latest_claim_submission_blocks_interval\""];
+  int32 latestProofSubmissionBlocksInterval = 4 [(gogoproto.moretags) = "yaml:\"latest_proof_submission_blocks_interval\""];
+  int32 claimSubmissionBlocksWindow = 5 [(gogoproto.moretags) = "yaml:\"claim_submission_blocks_window\""];
+  int32 proofSubmissionBlocksWindow = 6 [(gogoproto.moretags) = "yaml:\"proof_submission_blocks_window\""];
+}

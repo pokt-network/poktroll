@@ -46473,6 +46473,61 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
+  /pocket/supplier/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketSupplierParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+                properties:
+                  earlietClaimSubmissionOffset:
+                    type: integer
+                    format: int32
+                  earliestProofSubmissionOffset:
+                    type: integer
+                    format: int32
+                  latestClaimSubmissionBlocksInterval:
+                    type: integer
+                    format: int32
+                  latestProofSubmissionBlocksInterval:
+                    type: integer
+                    format: int32
+                  claimSubmissionBlocksWindow:
+                    type: integer
+                    format: int32
+                  proofSubmissionBlocksWindow:
+                    type: integer
+                    format: int32
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
 definitions:
   cosmos.auth.v1beta1.AddressBytesToStringResponse:
     type: object
@@ -75221,4 +75276,52 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.supplier.Params:
+    type: object
+    properties:
+      earlietClaimSubmissionOffset:
+        type: integer
+        format: int32
+      earliestProofSubmissionOffset:
+        type: integer
+        format: int32
+      latestClaimSubmissionBlocksInterval:
+        type: integer
+        format: int32
+      latestProofSubmissionBlocksInterval:
+        type: integer
+        format: int32
+      claimSubmissionBlocksWindow:
+        type: integer
+        format: int32
+      proofSubmissionBlocksWindow:
+        type: integer
+        format: int32
+    description: Params defines the parameters for the module.
+  pocket.supplier.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+        properties:
+          earlietClaimSubmissionOffset:
+            type: integer
+            format: int32
+          earliestProofSubmissionOffset:
+            type: integer
+            format: int32
+          latestClaimSubmissionBlocksInterval:
+            type: integer
+            format: int32
+          latestProofSubmissionBlocksInterval:
+            type: integer
+            format: int32
+          claimSubmissionBlocksWindow:
+            type: integer
+            format: int32
+          proofSubmissionBlocksWindow:
+            type: integer
+            format: int32
     description: QueryParamsResponse is response type for the Query/Params RPC method.
