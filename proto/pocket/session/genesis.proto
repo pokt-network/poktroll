@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pocket.session;
+
+import "gogoproto/gogo.proto";
+import "pocket/session/params.proto";
+
+option go_package = "pocket/x/session/types";
+
+// GenesisState defines the session module's genesis state.
+message GenesisState {
+  Params params = 1 [(gogoproto.nullable) = false];
+}
