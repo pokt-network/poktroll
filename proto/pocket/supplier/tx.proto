@@ -1,7 +1,16 @@
 syntax = "proto3";
+
 package pocket.supplier;
 
 option go_package = "pocket/x/supplier/types";
 
 // Msg defines the Msg service.
-service Msg {}
+service Msg {
+  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+}
+message MsgUnstakeSupplier {
+  string address = 1;
+}
+
+message MsgUnstakeSupplierResponse {}
+
