@@ -95,8 +95,10 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgStakeSupplier,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				suppliersimulation.SimulateMsgStakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
 			},
-
+		),
+		simulation.NewWeightedProposalMsg(
 			opWeightMsgUnstakeSupplier,
 			defaultWeightMsgUnstakeSupplier,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
