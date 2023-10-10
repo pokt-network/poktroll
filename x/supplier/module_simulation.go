@@ -3,14 +3,15 @@ package supplier
 import (
 	"math/rand"
 
+	"pocket/testutil/sample"
+	suppliersimulation "pocket/x/supplier/simulation"
+	"pocket/x/supplier/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	"pocket/testutil/sample"
-	suppliersimulation "pocket/x/supplier/simulation"
-	"pocket/x/supplier/types"
 )
 
 // avoid unused import issue
@@ -23,6 +24,10 @@ var (
 )
 
 const (
+	opWeightMsgStakeSupplier = "op_weight_msg_stake_supplier"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgStakeSupplier int = 100
+
 	opWeightMsgUnstakeSupplier = "op_weight_msg_unstake_supplier"
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUnstakeSupplier int = 100
@@ -55,6 +60,17 @@ func (AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedP
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	operations := make([]simtypes.WeightedOperation, 0)
 
+	var weightMsgStakeSupplier int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgStakeSupplier, &weightMsgStakeSupplier, nil,
+		func(_ *rand.Rand) {
+			weightMsgStakeSupplier = defaultWeightMsgStakeSupplier
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgStakeSupplier,
+		suppliersimulation.SimulateMsgStakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	var weightMsgUnstakeSupplier int
 	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgUnstakeSupplier, &weightMsgUnstakeSupplier, nil,
 		func(_ *rand.Rand) {
@@ -75,6 +91,12 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
 	return []simtypes.WeightedProposalMsg{
 		simulation.NewWeightedProposalMsg(
+			opWeightMsgStakeSupplier,
+			defaultWeightMsgStakeSupplier,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				suppliersimulation.SimulateMsgStakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper)
+			},
+
 			opWeightMsgUnstakeSupplier,
 			defaultWeightMsgUnstakeSupplier,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {

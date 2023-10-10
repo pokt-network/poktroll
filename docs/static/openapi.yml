@@ -75350,7 +75350,11 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+<<<<<<< HEAD
   pocket.supplier.MsgUnstakeSupplierResponse:
+=======
+  pocket.supplier.MsgStakeSupplierResponse:
+>>>>>>> main
     type: object
   pocket.supplier.Params:
     type: object
