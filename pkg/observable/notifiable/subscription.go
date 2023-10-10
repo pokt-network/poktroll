@@ -1,11 +1,16 @@
 package notifiable
 
-import "pocket/pkg/observable"
+import (
+	"sync"
+
+	"pocket/pkg/observable"
+)
 
 var _ observable.Subscription[any] = &Subscription[any]{}
 
 // Subscription implements the observable.Subscription interface.
 type Subscription[V any] struct {
+	mu                   *sync.RWMutex
 	ch                   chan V
 	closed               bool
 	removeFromObservable func()
@@ -14,6 +19,9 @@ type Subscription[V any] struct {
 // Unsubscribe closes the subscription channel and removes the subscription from
 // the observable.
 func (sub *Subscription[V]) Unsubscribe() {
+	sub.mu.Lock()
+	defer sub.mu.Unlock()
+
 	if sub.closed {
 		return
 	}

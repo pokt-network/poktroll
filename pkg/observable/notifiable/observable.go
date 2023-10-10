@@ -42,9 +42,6 @@ func (obs *Observable[V]) Subscribe(ctx context.Context) observable.Subscription
 
 	// Removal function used when unsubscribing from the observable
 	removeFromObservable := func() {
-		obs.mu.Lock()
-		defer obs.mu.Unlock()
-
 		for i, s := range obs.subscribers {
 			if ch == s {
 				obs.subscribers = append(obs.subscribers[:i], obs.subscribers[i+1:]...)
@@ -54,7 +51,12 @@ func (obs *Observable[V]) Subscribe(ctx context.Context) observable.Subscription
 	}
 
 	// Subscription gets its closed state from the observable
-	subscription := &Subscription[V]{ch, obs.closed, removeFromObservable}
+	subscription := &Subscription[V]{
+		mu:                   &obs.mu,
+		ch:                   ch,
+		closed:               obs.closed,
+		removeFromObservable: removeFromObservable,
+	}
 
 	go unsubscribeOnDone[V](ctx, subscription)
 
