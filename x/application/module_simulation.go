@@ -3,14 +3,15 @@ package application
 import (
 	"math/rand"
 
+	"pocket/testutil/sample"
+	applicationsimulation "pocket/x/application/simulation"
+	"pocket/x/application/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	"pocket/testutil/sample"
-	applicationsimulation "pocket/x/application/simulation"
-	"pocket/x/application/types"
 )
 
 // avoid unused import issue
@@ -23,6 +24,10 @@ var (
 )
 
 const (
+	opWeightMsgStakeApplication = "op_weight_msg_stake_application"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgStakeApplication int = 100
+
 	opWeightMsgUnstakeApplication = "op_weight_msg_unstake_application"
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUnstakeApplication int = 100
@@ -55,6 +60,17 @@ func (AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedP
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	operations := make([]simtypes.WeightedOperation, 0)
 
+	var weightMsgStakeApplication int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgStakeApplication, &weightMsgStakeApplication, nil,
+		func(_ *rand.Rand) {
+			weightMsgStakeApplication = defaultWeightMsgStakeApplication
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgStakeApplication,
+		applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	var weightMsgUnstakeApplication int
 	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgUnstakeApplication, &weightMsgUnstakeApplication, nil,
 		func(_ *rand.Rand) {
@@ -75,10 +91,17 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
 	return []simtypes.WeightedProposalMsg{
 		simulation.NewWeightedProposalMsg(
+
 			opWeightMsgUnstakeApplication,
 			defaultWeightMsgUnstakeApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
+			},
+
+			opWeightMsgStakeApplication,
+			defaultWeightMsgStakeApplication,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

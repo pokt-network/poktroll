@@ -6,11 +6,18 @@ option go_package = "pocket/x/application/types";
 
 // Msg defines the Msg service.
 service Msg {
+  rpc StakeApplication (MsgStakeApplication) returns (MsgStakeApplicationResponse);
   rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
 }
+
+message MsgStakeApplication {
+  string address = 1;
+}
+
+message MsgStakeApplicationResponse {}
+
 message MsgUnstakeApplication {
   string address = 1;
 }
 
 message MsgUnstakeApplicationResponse {}
-
