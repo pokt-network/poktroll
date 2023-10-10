@@ -3,14 +3,15 @@ package application
 import (
 	"math/rand"
 
+	"pocket/testutil/sample"
+	applicationsimulation "pocket/x/application/simulation"
+	"pocket/x/application/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	"pocket/testutil/sample"
-	applicationsimulation "pocket/x/application/simulation"
-	"pocket/x/application/types"
 )
 
 // avoid unused import issue
@@ -26,6 +27,10 @@ const (
 	opWeightMsgStakeApplication = "op_weight_msg_stake_application"
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgStakeApplication int = 100
+
+	opWeightMsgUnstakeApplication = "op_weight_msg_unstake_application"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgUnstakeApplication int = 100
 
 	// this line is used by starport scaffolding # simapp/module/const
 )
@@ -66,6 +71,17 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
+	var weightMsgUnstakeApplication int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgUnstakeApplication, &weightMsgUnstakeApplication, nil,
+		func(_ *rand.Rand) {
+			weightMsgUnstakeApplication = defaultWeightMsgUnstakeApplication
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUnstakeApplication,
+		applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -79,6 +95,14 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgStakeApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUnstakeApplication,
+			defaultWeightMsgUnstakeApplication,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

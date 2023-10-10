@@ -75489,6 +75489,7 @@ definitions:
       Version defines the versioning scheme used to negotiate the IBC verison in
       the connection handshake.
   pocket.application.MsgStakeApplicationResponse:
+  pocket.application.MsgUnstakeApplicationResponse:
     type: object
   pocket.application.Params:
     type: object
@@ -75510,17 +75511,10 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
-<<<<<<< HEAD
-  pocket.service.Params:
-    type: object
-    description: Params defines the parameters for the module.
-  pocket.service.QueryParamsResponse:
-=======
   pocket.session.Params:
     type: object
     description: Params defines the parameters for the module.
   pocket.session.QueryParamsResponse:
->>>>>>> main
     type: object
     properties:
       params:
