@@ -1,12 +1,16 @@
 syntax = "proto3";
+
 package pocket.application;
 
 import "gogoproto/gogo.proto";
 import "pocket/application/params.proto";
+import "pocket/application/application.proto";
 
 option go_package = "pocket/x/application/types";
 
 // GenesisState defines the application module's genesis state.
 message GenesisState {
-  Params params = 1 [(gogoproto.nullable) = false];
+           Params      params          = 1 [(gogoproto.nullable) = false];
+  repeated Application applicationList = 2 [(gogoproto.nullable) = false];
 }
+
