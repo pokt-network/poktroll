@@ -7,10 +7,17 @@ option go_package = "pocket/x/supplier/types";
 // Msg defines the Msg service.
 service Msg {
   rpc StakeSupplier (MsgStakeSupplier) returns (MsgStakeSupplierResponse);
+  rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
 }
+
+message MsgUnstakeSupplier {
+  string address = 1;
+}
+
 message MsgStakeSupplier {
   string address = 1;
 }
 
-message MsgStakeSupplierResponse {}
+message MsgUnstakeSupplierResponse {}
 
+message MsgStakeSupplierResponse {}
