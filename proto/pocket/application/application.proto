@@ -1,0 +1,10 @@
+syntax = "proto3";
+package pocket.application;
+
+option go_package = "pocket/x/application/types";
+
+message Application {
+  string address = 1; 
+  
+}
+
