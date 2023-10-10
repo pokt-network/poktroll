@@ -1,4 +1,4 @@
-package supplier
+package service
 
 import (
 	"math/rand"
@@ -9,25 +9,21 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
 	"pocket/testutil/sample"
-	suppliersimulation "pocket/x/supplier/simulation"
-	"pocket/x/supplier/types"
+	servicesimulation "pocket/x/service/simulation"
+	"pocket/x/service/types"
 )
 
 // avoid unused import issue
 var (
 	_ = sample.AccAddress
-	_ = suppliersimulation.FindAccount
+	_ = servicesimulation.FindAccount
 	_ = simulation.MsgEntryKind
 	_ = baseapp.Paramspace
 	_ = rand.Rand{}
 )
 
 const (
-	opWeightMsgStakeSupplier = "op_weight_msg_stake_supplier"
-	// TODO: Determine the simulation weight value
-	defaultWeightMsgStakeSupplier int = 100
-
-	// this line is used by starport scaffolding # simapp/module/const
+// this line is used by starport scaffolding # simapp/module/const
 )
 
 // GenerateGenesisState creates a randomized GenState of the module.
@@ -36,11 +32,11 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	for i, acc := range simState.Accounts {
 		accs[i] = acc.Address.String()
 	}
-	supplierGenesis := types.GenesisState{
+	serviceGenesis := types.GenesisState{
 		Params: types.DefaultParams(),
 		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
-	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&supplierGenesis)
+	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&serviceGenesis)
 }
 
 // RegisterStoreDecoder registers a decoder.
@@ -55,17 +51,6 @@ func (AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedP
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	operations := make([]simtypes.WeightedOperation, 0)
 
-	var weightMsgStakeSupplier int
-	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgStakeSupplier, &weightMsgStakeSupplier, nil,
-		func(_ *rand.Rand) {
-			weightMsgStakeSupplier = defaultWeightMsgStakeSupplier
-		},
-	)
-	operations = append(operations, simulation.NewWeightedOperation(
-		weightMsgStakeSupplier,
-		suppliersimulation.SimulateMsgStakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper),
-	))
-
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -74,14 +59,6 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 // ProposalMsgs returns msgs used for governance proposals for simulations.
 func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
 	return []simtypes.WeightedProposalMsg{
-		simulation.NewWeightedProposalMsg(
-			opWeightMsgStakeSupplier,
-			defaultWeightMsgStakeSupplier,
-			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				suppliersimulation.SimulateMsgStakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper)
-				return nil
-			},
-		),
 		// this line is used by starport scaffolding # simapp/module/OpMsg
 	}
 }

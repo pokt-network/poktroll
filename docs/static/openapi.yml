@@ -46437,16 +46437,167 @@ paths:
                         }
       tags:
         - Query
-  /pocket/application/application:
+  /pocket/application/params:
     get:
-      operationId: PocketApplicationApplicationAll
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketApplicationParams
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
             properties:
-              application:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pocket/pocket/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketPocketParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+<<<<<<< HEAD
+  /pocket/service/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketServiceParams
+=======
+  /pocket/session/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketSessionParams
+>>>>>>> main
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pocket/supplier/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketSupplierParams
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              params:
+                description: params holds all the parameters of this module.
+                type: object
+            description: >-
+              QueryParamsResponse is response type for the Query/Params RPC
+              method.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      tags:
+        - Query
+  /pocket/supplier/supplier:
+    get:
+      operationId: PocketSupplierSupplierAll
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              supplier:
                 type: array
                 items:
                   type: object
@@ -46558,17 +46709,17 @@ paths:
           type: boolean
       tags:
         - Query
-  /pocket/application/application/{address}:
+  /pocket/supplier/supplier/{address}:
     get:
-      summary: Queries a list of Application items.
-      operationId: PocketApplicationApplication
+      summary: Queries a list of Supplier items.
+      operationId: PocketSupplierSupplier
       responses:
         '200':
           description: A successful response.
           schema:
             type: object
             properties:
-              application:
+              supplier:
                 type: object
                 properties:
                   address:
@@ -46596,150 +46747,6 @@ paths:
           in: path
           required: true
           type: string
-      tags:
-        - Query
-  /pocket/application/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PocketApplicationParams
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
-  /pocket/pocket/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PocketPocketParams
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
-  /pocket/session/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PocketSessionParams
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      tags:
-        - Query
-  /pocket/supplier/params:
-    get:
-      summary: Parameters queries the parameters of the module.
-      operationId: PocketSupplierParams
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              params:
-                description: params holds all the parameters of this module.
-                type: object
-            description: >-
-              QueryParamsResponse is response type for the Query/Params RPC
-              method.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
       tags:
         - Query
 definitions:
@@ -75481,18 +75488,54 @@ definitions:
     description: |-
       Version defines the versioning scheme used to negotiate the IBC verison in
       the connection handshake.
-  pocket.application.Application:
+  pocket.application.MsgStakeApplicationResponse:
     type: object
-    properties:
-      address:
-        type: string
   pocket.application.Params:
     type: object
     description: Params defines the parameters for the module.
-  pocket.application.QueryAllApplicationResponse:
+  pocket.application.QueryParamsResponse:
     type: object
     properties:
-      application:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.pocket.Params:
+    type: object
+    description: Params defines the parameters for the module.
+  pocket.pocket.QueryParamsResponse:
+    type: object
+    properties:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+<<<<<<< HEAD
+  pocket.service.Params:
+    type: object
+    description: Params defines the parameters for the module.
+  pocket.service.QueryParamsResponse:
+=======
+  pocket.session.Params:
+    type: object
+    description: Params defines the parameters for the module.
+  pocket.session.QueryParamsResponse:
+>>>>>>> main
+    type: object
+    properties:
+      params:
+        description: params holds all the parameters of this module.
+        type: object
+    description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.supplier.MsgStakeSupplierResponse:
+    type: object
+  pocket.supplier.Params:
+    type: object
+    description: Params defines the parameters for the module.
+  pocket.supplier.QueryAllSupplierResponse:
+    type: object
+    properties:
+      supplier:
         type: array
         items:
           type: object
@@ -75525,44 +75568,14 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
-  pocket.application.QueryGetApplicationResponse:
+  pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
-      application:
+      supplier:
         type: object
         properties:
           address:
             type: string
-  pocket.application.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  pocket.pocket.Params:
-    type: object
-    description: Params defines the parameters for the module.
-  pocket.pocket.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  pocket.session.Params:
-    type: object
-    description: Params defines the parameters for the module.
-  pocket.session.QueryParamsResponse:
-    type: object
-    properties:
-      params:
-        description: params holds all the parameters of this module.
-        type: object
-    description: QueryParamsResponse is response type for the Query/Params RPC method.
-  pocket.supplier.Params:
-    type: object
-    description: Params defines the parameters for the module.
   pocket.supplier.QueryParamsResponse:
     type: object
     properties:
@@ -75570,3 +75583,8 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.supplier.Supplier:
+    type: object
+    properties:
+      address:
+        type: string
