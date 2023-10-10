@@ -3,8 +3,13 @@ package pocket.session;
 
 option go_package = "pocket/x/session/types";
 
+// SessionHeader is the needed information to generate/identify a session it identifies
+// a service that an application requested at a specific time window (session)
 message SessionHeader {
   string service_id = 1;
   string application_address = 2;
+  // session_number is used instead of a specific block number since multiple blocks could
+  // lead to the same session while session_number, in addition to service_id and
+  // application_address uniquely identifies it
   int64 session_number = 3;
 }
