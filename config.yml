@@ -71,56 +71,57 @@ genesis:
         bond_denom: upokt
     crisis:
       constant_fee:
-          amount: '10000'
-          denom: upokt
+        amount: "10000"
+        denom: upokt
     gov:
       params:
         min_deposit:
-        - amount: '10000'
-          denom: upokt
+          - amount: "10000"
+            denom: upokt
     application:
-      applicationList:
-      - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-        services:
-        - id: svc1
-          name: TODO
-        - id: svc2
-          name: TODO
-        stake:
-          amount: '1000'
-          denom: upokt
-      params: {}
+    # TODO(olshansky): Add this back after the Application type is added to the SDK
+    # applicationList:
+    # - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+    #   services:
+    #   - id: svc1
+    #     name: TODO
+    #   - id: svc2
+    #     name: TODO
+    #   stake:
+    #     amount: '1000'
+    #     denom: upokt
+    # params: {}
     servicer:
       params: {}
       servicersList:
-      - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-        services:
-        - endpoints:
-          - configs:
-            - key: TIMEOUT
-              value: 30s
-            metadata:
-              entries: {}
-            rpc_type: WEBSOCKET
-            url: ws://localhost:8546/
-          id:
-            id: svc1
-            name: Pocket Network Service 1
-          metadata:
-            entries: {}
-        - endpoints:
-          - configs:
-            - key: TIMEOUT
-              value: 60s
-            metadata:
-              entries: {}
-            rpc_type: JSON_RPC
-            url: http://localhost:8545
-          id:
-            id: svc2
-            name: Pocket Network Service 2
-          metadata:
-            entries: {}
-        stake:
-          amount: '1000000'
-          denom: upokt
+        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          services:
+            - endpoints:
+                - configs:
+                    - key: TIMEOUT
+                      value: 30s
+                  metadata:
+                    entries: {}
+                  rpc_type: WEBSOCKET
+                  url: ws://localhost:8546/
+              id:
+                id: svc1
+                name: Pocket Network Service 1
+              metadata:
+                entries: {}
+            - endpoints:
+                - configs:
+                    - key: TIMEOUT
+                      value: 60s
+                  metadata:
+                    entries: {}
+                  rpc_type: JSON_RPC
+                  url: http://localhost:8545
+              id:
+                id: svc2
+                name: Pocket Network Service 2
+              metadata:
+                entries: {}
+          stake:
+            amount: "1000000"
+            denom: upokt

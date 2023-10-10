@@ -118,6 +118,10 @@ import (
 	servicemodulekeeper "pocket/x/service/keeper"
 	servicemoduletypes "pocket/x/service/types"
 
+	sessionmodule "pocket/x/session"
+	sessionmodulekeeper "pocket/x/session/keeper"
+	sessionmoduletypes "pocket/x/session/types"
+
 	applicationmodule "pocket/x/application"
 	applicationmodulekeeper "pocket/x/application/keeper"
 	applicationmoduletypes "pocket/x/application/types"
@@ -188,9 +192,10 @@ var (
 		vesting.AppModuleBasic{},
 		consensus.AppModuleBasic{},
 		pocketmodule.AppModuleBasic{},
-		suppliermodule.AppModuleBasic{},
 		servicemodule.AppModuleBasic{},
+		sessionmodule.AppModuleBasic{},
 		applicationmodule.AppModuleBasic{},
+		suppliermodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
@@ -270,9 +275,10 @@ type App struct {
 	ScopedICAHostKeeper  capabilitykeeper.ScopedKeeper
 
 	PocketKeeper      pocketmodulekeeper.Keeper
-	SupplierKeeper    suppliermodulekeeper.Keeper
 	ServiceKeeper     servicemodulekeeper.Keeper
+	SessionKeeper     sessionmodulekeeper.Keeper
 	ApplicationKeeper applicationmodulekeeper.Keeper
+	SupplierKeeper    suppliermodulekeeper.Keeper
 
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
@@ -321,9 +327,10 @@ func New(
 		feegrant.StoreKey, evidencetypes.StoreKey, ibctransfertypes.StoreKey, icahosttypes.StoreKey,
 		capabilitytypes.StoreKey, group.StoreKey, icacontrollertypes.StoreKey, consensusparamtypes.StoreKey,
 		pocketmoduletypes.StoreKey,
-		suppliermoduletypes.StoreKey,
 		servicemoduletypes.StoreKey,
+		sessionmoduletypes.StoreKey,
 		applicationmoduletypes.StoreKey,
+		suppliermoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -554,16 +561,6 @@ func New(
 	)
 	pocketModule := pocketmodule.NewAppModule(appCodec, app.PocketKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
-		appCodec,
-		keys[suppliermoduletypes.StoreKey],
-		keys[suppliermoduletypes.MemStoreKey],
-		app.GetSubspace(suppliermoduletypes.ModuleName),
-
-		app.BankKeeper,
-	)
-	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
-
 	app.ServiceKeeper = *servicemodulekeeper.NewKeeper(
 		appCodec,
 		keys[servicemoduletypes.StoreKey],
@@ -574,6 +571,14 @@ func New(
 	)
 	serviceModule := servicemodule.NewAppModule(appCodec, app.ServiceKeeper, app.AccountKeeper, app.BankKeeper)
 
+	app.SessionKeeper = *sessionmodulekeeper.NewKeeper(
+		appCodec,
+		keys[sessionmoduletypes.StoreKey],
+		keys[sessionmoduletypes.MemStoreKey],
+		app.GetSubspace(sessionmoduletypes.ModuleName),
+	)
+	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
+
 	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
 		appCodec,
 		keys[applicationmoduletypes.StoreKey],
@@ -583,6 +588,16 @@ func New(
 		app.BankKeeper,
 	)
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
+		appCodec,
+		keys[suppliermoduletypes.StoreKey],
+		keys[suppliermoduletypes.MemStoreKey],
+		app.GetSubspace(suppliermoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
@@ -646,9 +661,10 @@ func New(
 		transferModule,
 		icaModule,
 		pocketModule,
-		supplierModule,
 		serviceModule,
+		sessionModule,
 		applicationModule,
+		supplierModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
@@ -682,9 +698,10 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
-		suppliermoduletypes.ModuleName,
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -711,9 +728,10 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
-		suppliermoduletypes.ModuleName,
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -745,9 +763,10 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
-		suppliermoduletypes.ModuleName,
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
@@ -973,9 +992,10 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(pocketmoduletypes.ModuleName)
-	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
 	paramsKeeper.Subspace(servicemoduletypes.ModuleName)
+	paramsKeeper.Subspace(sessionmoduletypes.ModuleName)
 	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
+	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper

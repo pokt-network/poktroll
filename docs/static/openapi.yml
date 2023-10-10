@@ -46509,10 +46509,17 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
+<<<<<<< HEAD
   /pocket/service/params:
     get:
       summary: Parameters queries the parameters of the module.
       operationId: PocketServiceParams
+=======
+  /pocket/session/params:
+    get:
+      summary: Parameters queries the parameters of the module.
+      operationId: PocketSessionParams
+>>>>>>> main
       responses:
         '200':
           description: A successful response.
@@ -75340,10 +75347,17 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+<<<<<<< HEAD
   pocket.service.Params:
     type: object
     description: Params defines the parameters for the module.
   pocket.service.QueryParamsResponse:
+=======
+  pocket.session.Params:
+    type: object
+    description: Params defines the parameters for the module.
+  pocket.session.QueryParamsResponse:
+>>>>>>> main
     type: object
     properties:
       params:
