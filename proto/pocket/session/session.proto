@@ -1,0 +1,8 @@
+syntax = "proto3";
+package pocket.session;
+
+option go_package = "pocket/x/session/types";
+
+message Session {
+  
+}
