@@ -1,7 +1,16 @@
 syntax = "proto3";
+
 package pocket.application;
 
 option go_package = "pocket/x/application/types";
 
 // Msg defines the Msg service.
-service Msg {}
+service Msg {
+  rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
+}
+message MsgUnstakeApplication {
+  string address = 1;
+}
+
+message MsgUnstakeApplicationResponse {}
+
