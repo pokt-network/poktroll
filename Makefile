@@ -12,13 +12,13 @@ POCKET_NODE = 127.0.0.1:36657 # The pocket rollup node (full node and sequencer 
 prompt_user:
 	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 
-.PHONY: list ## List all make targets
-list:
+.PHONY: list
+list: ## List all make targets
 	@${MAKE} -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
 
-.PHONY: help ## Prints all the targets in all the Makefiles
+.PHONY: help
 .DEFAULT_GOAL := help
-help:
+help: ## Prints all the targets in all the Makefiles
 	@grep -h -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 ##############
@@ -53,6 +53,15 @@ warn_destructive: ## Print WARNING to the user
 	@echo "This is a destructive action that will affect docker resources outside the scope of this repo!"
 
 #######################
+### Proto  Helpers ####
+#######################
+
+.PHONY: proto_regen
+proto_regen: ## Delete existing protobuf artifacts and regenerate them
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs rm
+	ignite generate proto-go --yes
+
+#######################
 ### Docker  Helpers ###
 #######################
 
@@ -78,8 +87,8 @@ localnet_down: ## Delete resources created by localnet
 	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
-localnet_regenesis: # Regenerate the localnet genesis file
-	# NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
+localnet_regenesis: ## Regenerate the localnet genesis file
+# NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init --skip-proto
 	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
