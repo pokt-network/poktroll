@@ -114,12 +114,18 @@ import (
 	pocketmodulekeeper "pocket/x/pocket/keeper"
 	pocketmoduletypes "pocket/x/pocket/types"
 
+	sessionmodule "pocket/x/session"
+	sessionmodulekeeper "pocket/x/session/keeper"
+	sessionmoduletypes "pocket/x/session/types"
+
 	applicationmodule "pocket/x/application"
 	applicationmodulekeeper "pocket/x/application/keeper"
 	applicationmoduletypes "pocket/x/application/types"
+
 	suppliermodule "pocket/x/supplier"
 	suppliermodulekeeper "pocket/x/supplier/keeper"
 	suppliermoduletypes "pocket/x/supplier/types"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	appparams "pocket/app/params"
@@ -183,6 +189,7 @@ var (
 		consensus.AppModuleBasic{},
 		pocketmodule.AppModuleBasic{},
 		suppliermodule.AppModuleBasic{},
+		sessionmodule.AppModuleBasic{},
 		applicationmodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
@@ -261,11 +268,11 @@ type App struct {
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper  capabilitykeeper.ScopedKeeper
 
-	PocketKeeper pocketmodulekeeper.Keeper
-
-	SupplierKeeper suppliermodulekeeper.Keeper
-
+	PocketKeeper      pocketmodulekeeper.Keeper
+	SupplierKeeper    suppliermodulekeeper.Keeper
+	SessionKeeper     sessionmodulekeeper.Keeper
 	ApplicationKeeper applicationmodulekeeper.Keeper
+
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -314,6 +321,7 @@ func New(
 		capabilitytypes.StoreKey, group.StoreKey, icacontrollertypes.StoreKey, consensusparamtypes.StoreKey,
 		pocketmoduletypes.StoreKey,
 		suppliermoduletypes.StoreKey,
+		sessionmoduletypes.StoreKey,
 		applicationmoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
@@ -555,6 +563,14 @@ func New(
 	)
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 
+	app.SessionKeeper = *sessionmodulekeeper.NewKeeper(
+		appCodec,
+		keys[sessionmoduletypes.StoreKey],
+		keys[sessionmoduletypes.MemStoreKey],
+		app.GetSubspace(sessionmoduletypes.ModuleName),
+	)
+	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
+
 	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
 		appCodec,
 		keys[applicationmoduletypes.StoreKey],
@@ -628,6 +644,7 @@ func New(
 		icaModule,
 		pocketModule,
 		supplierModule,
+		sessionModule,
 		applicationModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
@@ -663,6 +680,7 @@ func New(
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
@@ -691,6 +709,7 @@ func New(
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
@@ -724,6 +743,7 @@ func New(
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
@@ -951,6 +971,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(pocketmoduletypes.ModuleName)
 	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
+	paramsKeeper.Subspace(sessionmoduletypes.ModuleName)
 	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
