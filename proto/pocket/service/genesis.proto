@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pocket.service;
+
+import "gogoproto/gogo.proto";
+import "pocket/service/params.proto";
+
+option go_package = "pocket/x/service/types";
+
+// GenesisState defines the service module's genesis state.
+message GenesisState {
+  Params params = 1 [(gogoproto.nullable) = false];
+}

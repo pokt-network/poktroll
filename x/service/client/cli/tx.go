@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	// "github.com/cosmos/cosmos-sdk/client/flags"
-	"pocket/x/application/types"
+	"pocket/x/service/types"
 )
 
 var (
@@ -30,7 +30,6 @@ func GetTxCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(CmdStakeApplication())
 	// this line is used by starport scaffolding # 1
 
 	return cmd
