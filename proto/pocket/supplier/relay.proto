@@ -1,0 +1,37 @@
+syntax = "proto3";
+package pocket.supplier;
+
+option go_package = "pocket/x/supplier/types";
+
+import "pocket/session/session.proto";
+
+// Relay is the message type that is sent from the application or gateway to the supplier
+// it doesn't need to have knowldege about the response which should be signed by the supplier
+// then sent back to the application or gateway which will then verify its signature before
+// sending it to the relayer.
+// Response verification is involved in another flow and is not part of this message type.
+message Relay {
+  RelayMeta meta = 1;
+  oneof relay_payload {
+    JSONRPCPayload json_rpc_payload = 2;
+    WebsocketsPayload websockets_payload = 3;
+  }
+}
+
+message JSONRPCPayload {
+  bytes id = 1;
+  string jsonrpc = 2;
+  string method = 3;
+  bytes params = 4;
+}
+
+message WebsocketsPayload {
+  bytes contents = 1;
+  // 1 = text, 2 = binary
+  uint32 message_type = 2;
+}
+
+message RelayMeta {
+  bytes signature = 1;
+  session.SessionHeader session_header = 3;
+}

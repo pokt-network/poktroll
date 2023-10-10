@@ -1,0 +1,10 @@
+syntax = "proto3";
+package pocket.session;
+
+option go_package = "pocket/x/session/types";
+
+message SessionHeader {
+  string service_id = 1;
+  string application_address = 2;
+  int64 session_number = 3;
+}
