@@ -46453,6 +46453,7 @@ paths:
                   properties:
                     address:
                       type: string
+<<<<<<< HEAD
                       title: The Bech32 address of the application
                     stake:
                       title: The total amount of uPOKT the application has staked
@@ -46473,6 +46474,8 @@ paths:
                   title: >-
                     Application defines the type used to store an on-chain
                     definition and state for an application
+=======
+>>>>>>> e407a17 (Ran ignite scaffold type session --module session --yes)
               pagination:
                 type: object
                 properties:
@@ -46593,6 +46596,7 @@ paths:
                 properties:
                   address:
                     type: string
+<<<<<<< HEAD
                     title: The Bech32 address of the application
                   stake:
                     title: The total amount of uPOKT the application has staked
@@ -46613,6 +46617,8 @@ paths:
                 title: >-
                   Application defines the type used to store an on-chain
                   definition and state for an application
+=======
+>>>>>>> e407a17 (Ran ignite scaffold type session --module session --yes)
         default:
           description: An unexpected error response.
           schema:
@@ -75759,6 +75765,7 @@ definitions:
     properties:
       address:
         type: string
+<<<<<<< HEAD
         title: The Bech32 address of the application
       stake:
         title: The total amount of uPOKT the application has staked
@@ -75776,6 +75783,8 @@ definitions:
     title: >-
       Application defines the type used to store an on-chain definition and
       state for an application
+=======
+>>>>>>> e407a17 (Ran ignite scaffold type session --module session --yes)
   pocket.application.MsgStakeApplicationResponse:
     type: object
   pocket.application.MsgUnstakeApplicationResponse:
@@ -75793,6 +75802,7 @@ definitions:
           properties:
             address:
               type: string
+<<<<<<< HEAD
               title: The Bech32 address of the application
             stake:
               title: The total amount of uPOKT the application has staked
@@ -75813,6 +75823,8 @@ definitions:
           title: >-
             Application defines the type used to store an on-chain definition
             and state for an application
+=======
+>>>>>>> e407a17 (Ran ignite scaffold type session --module session --yes)
       pagination:
         type: object
         properties:
@@ -75847,6 +75859,7 @@ definitions:
         properties:
           address:
             type: string
+<<<<<<< HEAD
             title: The Bech32 address of the application
           stake:
             title: The total amount of uPOKT the application has staked
@@ -75867,6 +75880,8 @@ definitions:
         title: >-
           Application defines the type used to store an on-chain definition and
           state for an application
+=======
+>>>>>>> e407a17 (Ran ignite scaffold type session --module session --yes)
   pocket.application.QueryParamsResponse:
     type: object
     properties:
