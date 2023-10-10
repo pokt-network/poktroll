@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pocket.application;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "pocket/x/application/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (gogoproto.goproto_stringer) = false;
+  
+}

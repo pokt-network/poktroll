@@ -48,3 +48,7 @@ ts-client/
 
 # asdf
 .tool-versions
+
+# Proto artifacts
+*/*.pb.go
+*/*.pb.gw.go
