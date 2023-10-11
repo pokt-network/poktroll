@@ -27,7 +27,7 @@ message MsgStakeSupplierResponse {}
 message MsgCreateClaim {
   string                       supplier_address = 1;
   pocket.session.SessionHeader session_header   = 2;
-  string                       root_hash        = 3;
+  bytes                        root_hash        = 3;
 }
 
 message MsgCreateClaimResponse {}

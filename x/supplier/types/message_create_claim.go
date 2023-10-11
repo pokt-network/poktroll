@@ -11,7 +11,7 @@ const TypeMsgCreateClaim = "create_claim"
 
 var _ sdk.Msg = &MsgCreateClaim{}
 
-func NewMsgCreateClaim(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, rootHash string) *MsgCreateClaim {
+func NewMsgCreateClaim(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, rootHash []byte) *MsgCreateClaim {
 	return &MsgCreateClaim{
 		SupplierAddress: supplierAddress,
 		SessionHeader:   sessionHeader,

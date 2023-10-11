@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/base64"
 	"strconv"
 
 	"encoding/json"
@@ -17,7 +18,7 @@ var _ = strconv.Itoa(0)
 
 func CmdCreateClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-claim [session-header] [root-hash]",
+		Use:   "create-claim [session-header] [root-hash-base64]",
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -26,7 +27,10 @@ func CmdCreateClaim() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			argRootHash := args[1]
+			argRootHash, err := base64.StdEncoding.DecodeString(args[1])
+			if err != nil {
+				return err
+			}
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
