@@ -1,0 +1,7 @@
+syntax = "proto3";
+package pocket.gateway;
+
+option go_package = "pocket/x/gateway/types";
+
+// Msg defines the Msg service.
+service Msg {}
