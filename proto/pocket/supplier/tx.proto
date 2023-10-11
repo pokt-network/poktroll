@@ -2,14 +2,16 @@ syntax = "proto3";
 
 package pocket.supplier;
 
+import "pocket/session/session.proto";
+
 option go_package = "pocket/x/supplier/types";
 
 // Msg defines the Msg service.
 service Msg {
-  rpc StakeSupplier (MsgStakeSupplier) returns (MsgStakeSupplierResponse);
+  rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
   rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+  rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
-
 message MsgUnstakeSupplier {
   string address = 1;
 }
@@ -21,3 +23,12 @@ message MsgStakeSupplier {
 message MsgUnstakeSupplierResponse {}
 
 message MsgStakeSupplierResponse {}
+
+message MsgSubmitProof {
+  string                       supplier_address = 1;
+  pocket.session.SessionHeader session_header   = 2;
+  string                       proof            = 3;
+}
+
+message MsgSubmitProofResponse {}
+
