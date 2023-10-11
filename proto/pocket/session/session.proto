@@ -8,6 +8,8 @@ import "pocket/service/service.proto";
 import "pocket/application/application.proto";
 import "pocket/supplier/supplier.proto";
 
+// SessionHeader is a lightweight header for a session that can be passed around
+// and from which the full Session object can be hydrated.
 message SessionHeader {
     string session_id = 1; // A unique pseudoranom ID for this session
     uint64 session_number = 2; // The session number since genesis
@@ -17,6 +19,8 @@ message SessionHeader {
     service.ServiceId service_id = 6; // The ID of the service this session is for
 }
 
+// Session is a fully hydrated session object that contains all the information for the Session
+// and its parcipants.
 message Session {
     SessionHeader header = 1; // The header of the session containing lightweight data
     service.Service service = 2; // A fully hydrated service object this session is for
