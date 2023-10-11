@@ -3,6 +3,24 @@ load('ext://restart_process', 'docker_build_with_restart')
 # A list of directories where changes trigger a hot-reload of the sequencer
 hot_reload_dirs = ['app', 'cmd', 'tools', 'x']
 
+# Create localnet config file from defaults, and if default configuration doesn't exist in it - populate with default values
+localnet_config_path = "localnet_config.yaml"
+localnet_config_defaults = {
+    "sequencers": {"count": 1},
+    "relayers": {"count": 1},
+    "gateways": {"count": 0},
+    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+}
+localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
+localnet_config = {}
+localnet_config.update(localnet_config_defaults)
+localnet_config.update(localnet_config_file)
+if (localnet_config_file != localnet_config) or (
+    not os.path.exists(localnet_config_path)
+):
+    print("Updating " + localnet_config_path + " with defaults")
+    local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
+
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
     files = listdir(directory)
@@ -52,7 +70,13 @@ WORKDIR /
 )
 
 # Run pocketd, relayer, celestia and anvil nodes
-k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml'])
+k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml',
+    'localnet/kubernetes/pocketd.yaml',
+    'localnet/kubernetes/pocketd-relayer.yaml',
+    'localnet/kubernetes/anvil.yaml'])
+
+# Submit poktrolld sequencer manifests to k8s cluster
+
 
 # Configure tilt resources (tilt labels and port forawards) for all of the nodes above
 k8s_resource('celestia-rollkit', labels=["blockchains"], port_forwards=['26657', '26658', '26659'])
