@@ -17,11 +17,11 @@ message Relay {
     RelayResponse res = 2;
 }
 
-// RelayMeta is used to hold the metadata for a RelayRequest.
+
+// RelayRequestMetadata is used to hold the metadata for a RelayRequest.
 message RelayRequestMetadata {
     session.SessionHeader session_header = 1; // The session header for the relay
-    map<string, string> headers = 2; // The headers of the request
-    bytes application_signature = 3; // The signature of the application of the request
+    bytes application_signature = 2; // The signature of the application of the request
 }
 
 // RelayResponse is used to hold the response from a RelayRequest.
@@ -29,42 +29,20 @@ message RelayRequest {
     RelayRequestMetadata meta = 1;
     // TODO: Add other relay types in the future such as the ones below:
     oneof payload {
-        JSONRPCPayload json_rpc_payload = 2;
-        RESTPayload rest_payload = 3;
-        // WebSocketsPayload websockets_payload = 4;
-        // GRPCPayload grpc_payload = 5;
-        // GraphQLPayload graphql_payload = 6;
+        JSONRPCRequestPayload json_rpc_payload = 2;
+        RESTRequestPayload rest_payload = 3;
+        // WebSocketsRequestPayload websockets_payload = 4;
+        // GRPCRequestPayload grpc_payload = 5;
+        // GraphQLRequestPayload graphql_payload = 6;
     }
 }
 
-// RelayResponseMetadata is used to hold the metadata for a RelayResponse
-message RelayResponseMetadata {
-    session.SessionHeader session_header = 1; // The session header for the relay
-    map<string, string> headers = 2; // The headers of the response
-    uint32 status_code = 3; // The status code of the response
-    string err = 4; // The error message of the response
-    bytes supplier_signature = 5; // The signature of the supplier on the response
-}
-
-// RelayResponse is used to hold the response to a RelayRequest.
-message RelayResponse {
-    RelayResponseMetadata meta = 1;
-    // TODO: Add other relay types in the future such as the ones below:
-    oneof payload {
-        JSONRPCPayload json_rpc_payload = 2;
-        RESTPayload rest_payload = 3;
-        // WebSocketsPayload websockets_payload = 4;
-        // GRPCPayload grpc_payload = 5;
-        // GraphQLPayload graphql_payload = 6;
-    }
-}
-
-// JSONRPCPayload is used to hold the payload and request metadata for a JSON-RPC request.
+// JSONRPCRequestPayload is used to hold the payload for a JSON-RPC request.
 // See the JSONRPC spec in the following link for more details: https://www.jsonrpc.org/specification#request_object
-message JSONRPCPayload {
-    bytes id = 1; // JSONRPC version 2 expected a field named "id".
-    string jsonrpc = 2; // JSONRPC version 2 expects a field named "jsonrpc" with a value of "2.0".
-    string method = 3; // The method being invoked on the server.
+message JSONRPCRequestPayload {
+    bytes id = 1; // JSONRPC version 2 expected a field named "id"
+    string jsonrpc = 2; // JSONRPC version 2 expects a field named "jsonrpc" with a value of "2.0"
+    string method = 3; // The method being invoked on the server
     map<string, string> parameters = 4; // The parameters field can be empty, an array or a structure
     bytes data = 5;
 }
@@ -79,9 +57,39 @@ enum RESTRequestType {
 }
 
 // RESTPayload is used to hold the payload and request metadata for a REST request.
-message RESTPayload {
+message RESTRequestPayload {
     RESTRequestType request_type = 1;
     string http_path = 2;
     string contents = 3;
+    map<string, string> headers = 4; // The headers of the request
     // TODO_INCOMPLETE: Add REST relay payload fields
+}
+
+// RelayResponse is used to hold the response to a RelayRequest.
+message RelayResponse {
+    RelayResponseMetadata meta = 1;
+    // TODO: Add other relay types in the future such as the ones below:
+    oneof payload {
+        JSONRPCResponsePayload json_rpc_payload = 2;
+        RESTResponsePayload rest_payload = 3;
+        // WebSocketsResponsePayload websockets_payload = 4;
+        // GRPCResponsePayload grpc_payload = 5;
+        // GraphQLResponsePayload graphql_payload = 6;
+    }
+}
+
+// RelayResponseMetadata is used to hold the metadata for a RelayResponse
+message RelayResponseMetadata {
+    session.SessionHeader session_header = 1; // The session header for the relay
+    bytes supplier_signature = 2; // The signature of the supplier on the response
+}
+
+message JSONRPCResponsePayload {
+    uint32 status_code = 1; // The status code of the response
+    string err = 2; // The error message of the response
+}
+
+message RESTResponsePayload {
+    uint32 status_code = 1; // The status code of the response
+    string err = 2; // The error message of the response
 }
