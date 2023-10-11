@@ -3,112 +3,98 @@ package pocket.service;
 
 option go_package = "pocket/x/service/types";
 
-message Relay {
 
-}
+import "cosmos_proto/cosmos.proto";
+import "pocket/service/service.proto";
+import "pocket/application/application.proto";
+import "pocket/supplier/supplier.proto";
 
-
-
-syntax = "proto3";
-
-package core;
-
-option go_package = "github.com/pokt-network/pocket/shared/core/types";
-
-message Relay {
-    RelayMeta meta = 1;
-    // Every different chain/service may have its own custom payload (e.g. HTTP, JSON, GRPC, non-chain services)
-    oneof relay_payload {
-        JSONRPCPayload json_rpc_payload = 2;
-        RESTPayload rest_payload = 3;
-        // DISCUSS: design and content of other relay types
-        // GRPCPayload grpc_payload = 3;
-        // GraphQLPayload graphql_payload = 4;
-        // WebSocketsPayload websockets_payload = 5;
-    }
-}
-
-// INCOMPLETE: add REST relay payload fields
-message RESTPayload {
-    string contents = 1;
-    string http_path = 2;
-    RESTRequestType request_type = 3;
-}
-
-enum RESTRequestType {
-	RESTRequestTypeGET = 0;
-	RESTRequestTypePUT = 1;
-	RESTRequestTypePOST = 2;
-	RESTRequestTypeDELETE = 3;
-}
-
-message JSONRPCPayload {
-    // JSONRPC version 2 expected a field named "id".
-    // See the JSONRPC spec in the following link for more details:
-    //   https://www.jsonrpc.org/specification#request_object
-    bytes id = 1;
-    // JSONRPC version 2 expects a field named "jsonrpc" with a value of "2.0".
-    // See the JSONRPC spec in the following link for more details:
-    //   https://www.jsonrpc.org/specification#request_object
-    string json_rpc = 2;
-    string method = 3;
-    // The parameters field can be empty, an array or a structure. It is on the server to decide which one
-    // has been sent to it and whether the supplied value is valid.
-    // See the JSONRPC spec in the following link for more details:
-    //   https://www.jsonrpc.org/specification#parameter_structures
-    bytes parameters = 4;
-    map<string, string> headers = 5;
-}
-
-message RelayMeta {
-    int64 block_height = 1;
-    string servicer_public_key = 2;
-    // TODO(M5): Consider renaming `relay_chain` to `rpc_service` or something similar
-    // TODO: Make Chain/Service identifier type consistent in Session and Meta: use Identifiable for Chain/Service in Session (or a string here to match the session)
-    Identifiable relay_chain = 3;
-    Identifiable geo_zone = 4;
-    string signature = 5;  // TECHDEBT: Consolidate with `Signature` proto used elsewhere in the future
-    string application_address = 6;
-}
-
-message RelayResponse {
-    string payload = 1;
-    string servicer_signature = 2;
-}
-
-message AAT {
-    string version = 1;
-    string application_public_key = 2;
-    string client_public_key = 3;
-    string application_signature = 4;
-}
-
-message Identifiable {
-    string id = 1;
-    string name = 2;
-}
-
-
-// RelayReqRes contains a relay request and its response, used for persistence of relay service evidence
-message RelayReqRes {
-    Relay relay = 1;
-    RelayResponse response = 2;
-}
-
-
-
-
-syntax = "proto3";
-
-package poktroll.servicer;
-
-option go_package = "poktroll/x/servicer/types";
-
-// TODO_REFACTOR: See the commened out structure at the bottom of this file for what we should use in prod.
+// Relay is a protobuf containing both the RelayRequest, signed by the Application
+// and the RelayResponse, signed by the Supplier. Together, the serialized tuple is
+// what is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
 message Relay {
     RelayRequest req = 1;
     RelayResponse res = 2;
 }
+
+// RelayMeta is used to hold the metadata for a RelayRequest.
+message RelayRequestMetadata {
+    session.SessionHeader session_header = 1; // The session header for the relay
+    map<string, string> headers = 2; // The headers of the request
+    bytes application_signature = 3; // The signature of the application of the request
+}
+
+// RelayResponse is used to hold the response from a RelayRequest.
+message RelayRequest {
+    RelayRequestMetadata meta = 1;
+    // Every different chain/service may have its own custom payload (e.g. HTTP, JSON, GRPC, non-chain services)
+    oneof relay_payload {
+        JSONRPCPayload json_rpc_payload = 2;
+        RESTPayload rest_payload = 3;
+        // TODO: Add other relay types in the future such as the ones below:
+        // WebSocketsPayload websockets_payload = 4;
+        // GRPCPayload grpc_payload = 5;
+        // GraphQLPayload graphql_payload = 6;
+    }
+}
+
+
+message RelayResponseMetadata {
+    session.SessionHeader session_header = 1; // The session header for the relay
+    map<string, string> headers = 2; // The headers of the response
+    uint32 status_code = 3;
+    string err = 4;
+    bytes supplier_signature = 5; // The signature of the supplier on the response
+}
+
+message RelayResponse {
+    RelayResponseMetadata meta = 1;
+    // Every different chain/service may have its own custom payload (e.g. HTTP, JSON, GRPC, non-chain services)
+    oneof relay_payload {
+        JSONRPCPayload json_rpc_payload = 2;
+        RESTPayload rest_payload = 3;
+    }
+}
+
+
+//     map<string, string> headers = 1;
+//     uint32 status_code = 2;
+//     string err = 3;
+//     bytes payload = 4;
+//     string session_id = 5;
+//     string servicer_address = 6;
+//     bytes servicer_signature = 7;
+// }
+
+// JSONRPCPayload is used to hold the payload and request metadata for a JSON-RPC request.
+// See the JSONRPC spec in the following link for more details: https://www.jsonrpc.org/specification#request_object
+message JSONRPCPayload {
+    bytes id = 1; // JSONRPC version 2 expected a field named "id".
+    string jsonrpc = 2; // JSONRPC version 2 expects a field named "jsonrpc" with a value of "2.0".
+    string method = 3; // The method being invoked on the server.
+    bytes parameters = 4; // The parameters field can be empty, an array or a structure
+
+}
+
+// RESTRequestType is used to hold the type of REST request being made.
+enum RESTRequestType {
+    REST_REQUEST_TYPE_UNKNOWN = 0; // Default value, used for uninitialized fields
+    REST_REQUEST_TYPE_GET = 1;
+    REST_REQUEST_TYPE_PUT = 2;
+    REST_REQUEST_TYPE_POST = 3;
+    REST_REQUEST_TYPE_DELETE = 4;
+}
+
+// RESTPayload is used to hold the payload and request metadata for a REST request.
+message RESTPayload {
+    RESTRequestType request_type = 1;
+    string http_path = 2;
+    string contents = 3;
+    // TODO_INCOMPLETE: Add REST relay payload fields
+}
+
+
+// TODO_REFACTOR: See the commened out structure at the bottom of this file for what we should use in prod.
 
 // Representation of Go's http.Request (simplified naïve implementation)
 message RelayRequest {
@@ -120,17 +106,6 @@ message RelayRequest {
     string application_address = 6;
     bytes application_signature = 7;
 }
-
-message RelayResponse {
-    map<string, string> headers = 1;
-    int32 status_code = 2;
-    string err = 3;
-    bytes payload = 4;
-    string session_id = 5;
-    string servicer_address = 6;
-    bytes servicer_signature = 7;
-}
-
 
 
 message RelayProof {
@@ -156,64 +131,7 @@ message ChallengeProofInvalidData {
 message RelayResponse {
 	option (gogoproto.goproto_getters) = false;
 
-	string signature = 1 [(gogoproto.jsontag) = "signature"];
-	string response = 2 [(gogoproto.jsontag) = "payload"];
-	RelayProof proof = 3 [(gogoproto.jsontag) = "proof", (gogoproto.nullable) = false];
+
+	string response = 1 [(gogoproto.jsontag) = "payload"];
+	RelayProof proof = 2 [(gogoproto.jsontag) = "proof", (gogoproto.nullable) = false];
 }
-
-
-// message Relay {
-//     RelayMeta meta = 1;
-//     // Every different chain/service may have its own custom payload (e.g. HTTP, JSON, GRPC, non-chain services)
-//     oneof relay_payload {
-//         JSONRPCPayload json_rpc_payload = 2;
-//         RESTPayload rest_payload = 3;
-//         // DISCUSS: design and content of other relay types
-//         // GRPCPayload grpc_payload = 3;
-//         // GraphQLPayload graphql_payload = 4;
-//         // WebSocketsPayload websockets_payload = 5;
-//     }
-// }
-
-// // INCOMPLETE: add REST relay payload fields
-// message RESTPayload {
-//     string contents = 1;
-//     string http_path = 2;
-//     RESTRequestType request_type = 3;
-// }
-
-// enum RESTRequestType {
-// 	RESTRequestTypeGET = 0;
-// 	RESTRequestTypePUT = 1;
-// 	RESTRequestTypePOST = 2;
-// 	RESTRequestTypeDELETE = 3;
-// }
-
-// message JSONRPCPayload {
-//     // JSONRPC version 2 expected a field named "id".
-//     // See the JSONRPC spec in the following link for more details:
-//     //   https://www.jsonrpc.org/specification#request_object
-//     bytes id = 1;
-//     // JSONRPC version 2 expects a field named "jsonrpc" with a value of "2.0".
-//     // See the JSONRPC spec in the following link for more details:
-//     //   https://www.jsonrpc.org/specification#request_object
-//     string json_rpc = 2;
-//     string method = 3;
-//     // The parameters field can be empty, an array or a structure. It is on the server to decide which one
-//     // has been sent to it and whether the supplied value is valid.
-//     // See the JSONRPC spec in the following link for more details:
-//     //   https://www.jsonrpc.org/specification#parameter_structures
-//     bytes parameters = 4;
-//     map<string, string> headers = 5;
-// }
-
-// message RelayMeta {
-//     int64 block_height = 1;
-//     string servicer_public_key = 2;
-//     // TODO(M5): Consider renaming `relay_chain` to `rpc_service` or something similar
-//     // TODO: Make Chain/Service identifier type consistent in Session and Meta: use Identifiable for Chain/Service in Session (or a string here to match the session)
-//     Identifiable relay_chain = 3;
-//     Identifiable geo_zone = 4;
-//     string signature = 5;  // TECHDEBT: Consolidate with `Signature` proto used elsewhere in the future
-//     string application_address = 6;
-// }
