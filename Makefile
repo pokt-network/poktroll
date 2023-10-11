@@ -163,7 +163,6 @@ todo_count: ## Print a count of all the TODOs in the project
 todo_this_commit: ## List all the TODOs needed to be done in this commit
 	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "DISCUSS_IN_THIS_COMMIT"
 
-
 ####################
 ### Applications ###
 ####################
