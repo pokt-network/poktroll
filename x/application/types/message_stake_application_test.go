@@ -1,32 +1,43 @@
 package types
 
 import (
+	"pocket/testutil/sample"
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"pocket/testutil/sample"
 )
 
 func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
+	coins := sdk.NewCoin("upokt", sdk.NewInt(100))
 	tests := []struct {
 		name string
 		msg  MsgStakeApplication
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid address - no stake",
 			msg: MsgStakeApplication{
 				Address: "invalid_address",
+				// Stake explicitly nil
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrAppInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "valid address - nil stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
+				// Stake explicitly nil
+			},
+			err: ErrAppInvalidStake,
+		}, {
+			name: "valid address - valid stake",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &coins,
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()

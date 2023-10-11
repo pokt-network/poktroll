@@ -46453,6 +46453,26 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: The Bech32 address of the application
+                    stake:
+                      title: The total amount of uPOKT the application has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                  title: >-
+                    Application defines the type used to store an on-chain
+                    definition and state for an application
               pagination:
                 type: object
                 properties:
@@ -46573,6 +46593,26 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: The Bech32 address of the application
+                  stake:
+                    title: The total amount of uPOKT the application has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+                title: >-
+                  Application defines the type used to store an on-chain
+                  definition and state for an application
         default:
           description: An unexpected error response.
           schema:
@@ -75683,6 +75723,23 @@ definitions:
     properties:
       address:
         type: string
+        title: The Bech32 address of the application
+      stake:
+        title: The total amount of uPOKT the application has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+    title: >-
+      Application defines the type used to store an on-chain definition and
+      state for an application
   pocket.application.MsgStakeApplicationResponse:
     type: object
   pocket.application.MsgUnstakeApplicationResponse:
@@ -75700,6 +75757,26 @@ definitions:
           properties:
             address:
               type: string
+              title: The Bech32 address of the application
+            stake:
+              title: The total amount of uPOKT the application has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+          title: >-
+            Application defines the type used to store an on-chain definition
+            and state for an application
       pagination:
         type: object
         properties:
@@ -75734,6 +75811,26 @@ definitions:
         properties:
           address:
             type: string
+            title: The Bech32 address of the application
+          stake:
+            title: The total amount of uPOKT the application has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
+        title: >-
+          Application defines the type used to store an on-chain definition and
+          state for an application
   pocket.application.QueryParamsResponse:
     type: object
     properties:

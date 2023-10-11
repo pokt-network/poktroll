@@ -3,11 +3,20 @@ package types_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"pocket/testutil/sample"
 	"pocket/x/application/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	addr1 := sample.AccAddress()
+	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
+
+	addr2 := sample.AccAddress()
+	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
+
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
@@ -24,10 +33,12 @@ func TestGenesisState_Validate(t *testing.T) {
 
 				ApplicationList: []types.Application{
 					{
-						Address: "0",
+						Address: addr1,
+						Stake:   &stake1,
 					},
 					{
-						Address: "1",
+						Address: addr2,
+						Stake:   &stake2,
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -39,10 +50,10 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address: "0",
+						Address: addr1,
 					},
 					{
-						Address: "0",
+						Address: addr1,
 					},
 				},
 			},
