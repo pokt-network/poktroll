@@ -75771,6 +75771,11 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.shared.Supplier:
+    type: object
+    properties:
+      address:
+        type: string
   pocket.supplier.MsgStakeSupplierResponse:
     type: object
   pocket.supplier.MsgUnstakeSupplierResponse:
@@ -75829,8 +75834,3 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
-  pocket.supplier.Supplier:
-    type: object
-    properties:
-      address:
-        type: string

@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier"
 	"pocket/x/supplier/types"
 )
@@ -14,7 +16,7 @@ func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
-		SupplierList: []types.Supplier{
+		SupplierList: []sharedtypes.Supplier{
 			{
 				Address: "0",
 			},
