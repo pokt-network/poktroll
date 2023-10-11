@@ -22,9 +22,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 <<<<<<< HEAD
+<<<<<<< HEAD
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
 	google.golang.org/grpc v1.56.2
 =======
+=======
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
+>>>>>>> 67c92c6 (Updated comments)
 	google.golang.org/grpc v1.56.1
 >>>>>>> 899a61b (Updated session.proto)
 	gopkg.in/yaml.v2 v2.4.0
@@ -263,7 +267,6 @@ require (
 	gonum.org/v1/gonum v0.11.0 // indirect
 	google.golang.org/api v0.122.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
