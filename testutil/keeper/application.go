@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	mocks "pocket/testutil/application/mocks"
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 	"testing"
 
 	tmdb "github.com/cometbft/cometbft-db"
@@ -12,9 +15,8 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 )
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
@@ -30,6 +32,10 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
+	ctrl := gomock.NewController(t)
+	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -41,7 +47,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		storeKey,
 		memStoreKey,
 		paramsSubspace,
-		nil,
+		mockBankKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

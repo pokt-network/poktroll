@@ -8,6 +8,8 @@ import (
 
 // x/application module sentinel errors
 var (
-	ErrInvalidAppStake   = errorsmod.Register(ModuleName, 1, "invalid application stake")
-	ErrInvalidAppAddress = errorsmod.Register(ModuleName, 2, "invalid application address")
+	ErrAppInvalidStake   = errorsmod.Register(ModuleName, 1, "invalid application stake")
+	ErrAppInvalidAddress = errorsmod.Register(ModuleName, 2, "invalid application address")
+	ErrAppUnauthorized   = errorsmod.Register(ModuleName, 3, "unauthorized application")
+	ErrAppStakeAmount    = errorsmod.Register(ModuleName, 4, "invalid application stake amount")
 )

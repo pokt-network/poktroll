@@ -1,7 +1,7 @@
 .SILENT:
 
 POCKETD_HOME := ./localnet/pocketd
-POCKET_NODE = 127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 
 ########################
 ### Makefile Helpers ###
@@ -102,6 +102,10 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 go_test: go_version_check ## Run all go tests
 	go test -v ./...
 
+.PHONY: mockgen
+mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	go generate ./x/application/types/
+
 #############
 ### TODOS ###
 #############
@@ -158,3 +162,28 @@ todo_count: ## Print a count of all the TODOs in the project
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
 	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "DISCUSS_IN_THIS_COMMIT"
+
+
+####################
+### Applications ###
+####################
+
+.PHONY: app_list
+app_list: ## List all the staked applications
+	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
+
+.PHONY: app_stake
+app_stake: ## Stake tokens for the application specified (must specify the APP env var)
+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_stake
+app1_stake: ## Stake for app1
+	APP=app1 make app_stake
+
+.PHONY: app2_stake
+app2_stake: ## Stake for app2
+	APP=app2 make app_stake
+
+.PHONY: app3_stake
+app3_stake: ## Stake for app3
+	APP=app3 make app_stake
