@@ -4,7 +4,8 @@ package pocket.service;
 option go_package = "pocket/x/service/types";
 
 import "cosmos_proto/cosmos.proto";
-import "pocket/service/service.proto";
+// TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
+// import "pocket/service/service.proto";
 import "pocket/application/application.proto";
 import "pocket/supplier/supplier.proto";
 
@@ -17,7 +18,8 @@ message Relay {
 
 // RelayRequestMetadata contains the metadata for a RelayRequest.
 message RelayRequestMetadata {
-    session.SessionHeader session_header = 1; // Session header associated with the relay.
+    // TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
+    // session.SessionHeader session_header = 1; // Session header associated with the relay.
     // TODO_COMMENT(@h5law): Add link or more details to how this is related to ring signatures once implemented.
     bytes signature = 2; // The request signature. This may be the application signature, or any gateway it delegated to.
 }
@@ -36,12 +38,12 @@ message RelayRequest {
 }
 
 // JSONRPCRequestPayload contains the payload for a JSON-RPC request.
+// See https://www.jsonrpc.org/specification#request_object for more details.
 message JSONRPCRequestPayload {
-    bytes id = 1; // Expected "id" field for JSON-RPC version 2.
-    string jsonrpc = 2; // Expected "jsonrpc" field with a value of "2.0" for JSON-RPC version 2.
+    bytes id = 1; // Identifier established by the Client to create context for the request.
+    string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
     string method = 3; // Method being invoked on the server.
-    map<string, string> parameters = 4; // Parameters for the method. Can be empty, an array, or a structure.
-    bytes data = 5; // Additional data if needed.
+    map<string, string> parameters = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
 }
 
 // RESTRequestType represents the type of REST request.
@@ -76,15 +78,24 @@ message RelayResponse {
 
 // RelayResponseMetadata contains the metadata for a RelayResponse.
 message RelayResponseMetadata {
-    session.SessionHeader session_header = 1; // Session header associated with the relay.
+    // TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
+    // session.SessionHeader session_header = 1; // Session header associated with the relay.
     bytes supplier_signature = 2; // Signature of the supplier on the response.
 }
 
 // JSONRPCResponsePayload contains the response details for a JSON-RPC relay.
+// See www.jsonrpc.org/specification for more details.
 message JSONRPCResponsePayload {
-    uint32 status_code = 1; // Response status code.
-    string err = 2; // Error message, if any.
-    bytes payload = 3; // Response payload.
+    bytes id = 1; // Identifier established by the Client to link the response back to the request.
+    string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
+    bytes result = 3; // Response result payload.
+    JSONRPCResponseError error = 4; // Error message, if any. Can be nil.
+}
+
+message JSONRPCResponseError {
+    int32 code = 1; // Error code.
+    string message  = 2; // Error message.
+    bytes data = 3; // Error data.
 }
 
 // RESTResponsePayload contains the response details for a REST relay.
