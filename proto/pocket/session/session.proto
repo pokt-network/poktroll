@@ -7,7 +7,7 @@ import "cosmos_proto/cosmos.proto";
 // TODO(@Olshansk): Uncomment the line below once the service.proto file is added
 // import "pocket/service/service.proto";
 import "pocket/application/application.proto";
-import "pocket/shared/supplier.proto";
+import "pocket/supplier/supplier.proto";
 
 // NOTE: Using signed integers for consistency with the cosmos SDK
 
@@ -17,7 +17,7 @@ message SessionHeader {
     string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The address of the application this session is for
     // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
     // service.ServiceId service_id = 2; // The ID of the service this session is servicing
-    int64 session_block_start_height = 3; // The height at which this session started
+    int64 session_start_block_height = 3; // The height at which this session started
     // NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
     string session_id = 4; // A unique pseudoranom ID for this session
 }
@@ -32,5 +32,5 @@ message Session {
     // TODO(@Olshansk): Uncomment the line below once the `Service` proto is defined
     // service.Service service = 5; // A fully hydrated service object this session is for
     application.Application application = 6; // A fully hydrated application object this session is for
-    repeated pocket.shared.Supplier suppliers = 7; // A fully hydrated set of servicers that are serving the application
+    repeated supplier.Supplier suppliers = 7; // A fully hydrated set of servicers that are serving the application
 }
