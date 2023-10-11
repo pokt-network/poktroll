@@ -3,76 +3,23 @@ package pocket.session;
 
 option go_package = "pocket/x/session/types";
 
-message Session {
-
-}
+import "cosmos_proto/cosmos.proto";
+import "pocket/service/service.proto";
+import "pocket/application/application.proto";
+import "pocket/supplier/supplier.proto";
 
 message SessionHeader {
-	option (gogoproto.goproto_getters) = false;
-
-	string applicationPubKey = 1 [(gogoproto.jsontag) = "app_public_key"];
-	string chain = 2 [(gogoproto.jsontag) = "chain"];
-	int64 sessionBlockHeight = 3 [(gogoproto.jsontag) = "session_height"];
+    string session_id = 1; // A unique pseudoranom ID for this session
+    uint64 session_number = 2; // The session number since genesis
+    uint64 session_block_start_height = 3; // The height at which this session started
+    uint64 num_blocks_per_session = 4;  // The number of blocks per session when this session started
+    string application_address = 5 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The address of the application this session is for
+    service.ServiceId service_id = 6; // The ID of the service this session is for
 }
 
 message Session {
-	option (gogoproto.goproto_getters) = false;
-
-	SessionHeader sessionHeader = 1 [(gogoproto.jsontag) = "header", (gogoproto.nullable) = false];
-	bytes sessionKey = 2 [(gogoproto.jsontag) = "key", (gogoproto.casttype) = "SessionKey"];
-	repeated bytes sessionNodes = 3 [(gogoproto.jsontag) = "nodes", (gogoproto.castrepeated) = "SessionNodes"];
+    SessionHeader header = 1; // The header of the session containing lightweight data
+    service.Service service = 2; // A fully hydrated service object this session is for
+    application.Application application = 3; // A fully hydrated application object this session is for
+    repeated supplier.Supplier suppliers = 4; // A fully hydrated set of servicers that are serving the application
 }
-
-message Session {
-    // TODO_CONSIDERATION: Reconsider the following set of fields in term of their type, need, naming, etc...
-    string session_id = 1;
-    uint64 session_number = 2; // The session number
-    uint64 session_block_start_height = 3; // The height at which the session started
-    uint64 num_blocks_per_session = 4; // The number of blocks the session will last (starting at block_height)
-
-
-    service.ServiceId service = 5;
-    application.Application application = 6;
-    repeated servicer.Servicers servicers = 7;
-
-    // TODO_ADD:
-    // - GeoZone
-}
-
-
-message RelaySession {
-    string spec_id = 1;
-    bytes content_hash = 2;
-    uint64 session_id = 3;
-    uint64 cu_sum = 4; // total compute unit used including this relay
-    string provider = 5;
-    uint64 relay_num = 6;
-    QualityOfServiceReport qos_report = 7;
-    int64 epoch = 8;
-    bytes unresponsive_providers = 9;
-    string lava_chain_id = 10;
-    bytes sig = 11;
-    Badge badge = 12;
-    QualityOfServiceReport qos_excellence_report = 13;
-}
-
-
-// A deterministic pseudo-random structure that pairs applications to a set of servicers and fishermen
-// using on-chain data as a source of entropy
-message Session {
-    string id = 1; // a universally unique ID for the session
-    int64 session_number = 2; // a monotonically increasing number representing the # on the chain
-    int64 session_height = 3; // the height at which the session starts
-    int64 num_session_blocks = 4; // the number of blocks the session is valid from
-     // CONSIDERATION: Should we add a `RelayChain` enum and use it across the board?
-     // CONSIDERATION: Should a single session support multiple relay chains?
-     // TECHDEBT: Do we need backwards with v0? https://docs.pokt.network/supported-blockchains/
-    string relay_chain = 5; // the relay chain the session is valid for
-    // CONSIDERATION: Should a single session support multiple geo zones?
-    string geo_zone = 6; // the target geographic region where the actors are present
-    core.Actor application = 7; // the application that is being served
-    // IMPROVE: `map<string, core.Actor>` with the address as the key can simplify and optimize the logic on the clients
-    repeated core.Actor servicers = 8; // the set of servicers that are serving the application
-    repeated core.Actor fishermen = 9; // the set of fishermen that are fishing for servicers
-}
-
