@@ -11,7 +11,7 @@ const TypeMsgSubmitProof = "submit_proof"
 
 var _ sdk.Msg = &MsgSubmitProof{}
 
-func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof string) *MsgSubmitProof {
+func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
 		SupplierAddress: supplierAddress,
 		SessionHeader:   sessionHeader,

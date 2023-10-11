@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/base64"
 	"strconv"
 
 	"encoding/json"
@@ -17,7 +18,7 @@ var _ = strconv.Itoa(0)
 
 func CmdSubmitProof() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "submit-proof [session-header] [proof]",
+		Use:   "submit-proof [session-header] [proof-base64]",
 		Short: "Broadcast message submit-proof",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -26,7 +27,10 @@ func CmdSubmitProof() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			argSmstProof := args[1]
+			argSmstProof, err := base64.StdEncoding.DecodeString(args[1])
+			if err != nil {
+				return err
+			}
 
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {

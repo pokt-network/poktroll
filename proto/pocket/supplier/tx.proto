@@ -27,7 +27,7 @@ message MsgStakeSupplierResponse {}
 message MsgSubmitProof {
   string                       supplier_address = 1;
   pocket.session.SessionHeader session_header   = 2;
-  string                       proof            = 3;
+  bytes                        proof            = 3;
 }
 
 message MsgSubmitProofResponse {}
