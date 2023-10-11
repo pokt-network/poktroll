@@ -4,13 +4,13 @@ package pocket.supplier;
 
 import "gogoproto/gogo.proto";
 import "pocket/supplier/params.proto";
-import "pocket/supplier/supplier.proto";
+import "pocket/shared/supplier.proto";
 
 option go_package = "pocket/x/supplier/types";
 
 // GenesisState defines the supplier module's genesis state.
 message GenesisState {
            Params   params       = 1 [(gogoproto.nullable) = false];
-  repeated Supplier supplierList = 2 [(gogoproto.nullable) = false];
+  repeated pocket.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false];
 }
 
