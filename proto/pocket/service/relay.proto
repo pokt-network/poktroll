@@ -83,10 +83,12 @@ message RelayResponseMetadata {
 message JSONRPCResponsePayload {
     uint32 status_code = 1; // Response status code.
     string err = 2; // Error message, if any.
+    bytes payload = 3; // Response payload.
 }
 
 // RESTResponsePayload contains the response details for a REST relay.
 message RESTResponsePayload {
     uint32 status_code = 1; // Response status code.
     string err = 2; // Error message, if any.
+    bytes payload = 3; // Response payload.
 }
