@@ -187,3 +187,11 @@ app2_stake: ## Stake for app2
 .PHONY: app3_stake
 app3_stake: ## Stake for app3
 	APP=app3 make app_stake
+
+######################
+### Ignite Helpers ###
+######################
+
+.PHONY: ignite_acc_list
+ignite_acc_list: ## List all the accounts in the localnet
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test

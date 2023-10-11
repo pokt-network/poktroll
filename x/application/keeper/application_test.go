@@ -1,15 +1,16 @@
 package keeper_test
 
 import (
-	"strconv"
-	"testing"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	"strconv"
+	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
@@ -60,4 +61,11 @@ func TestApplicationGetAll(t *testing.T) {
 		nullify.Fill(items),
 		nullify.Fill(keeper.GetAllApplication(ctx)),
 	)
+}
+
+// This is just a helper test so we can easily find what the address is of the application module
+// since it's derived based off of the module name.
+func TestApplicationModuleAddress(t *testing.T) {
+	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
+	require.Equal(t, "cosmos1rl3gjgzexmplmds3tq3r3yk84zlwdl6d0yhysr", moduleAddress.String())
 }

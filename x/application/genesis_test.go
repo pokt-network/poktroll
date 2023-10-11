@@ -1,25 +1,35 @@
 package application_test
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
 	"pocket/x/application"
 	"pocket/x/application/types"
+	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {
+	addr1 := sample.AccAddress()
+	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
+
+	addr2 := sample.AccAddress()
+	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
+
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
 		ApplicationList: []types.Application{
 			{
-				Address: "0",
+				Address: addr1,
+				Stake:   &stake1,
 			},
 			{
-				Address: "1",
+				Address: addr2,
+				Stake:   &stake2,
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state
