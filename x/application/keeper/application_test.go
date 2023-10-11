@@ -65,6 +65,7 @@ func TestApplicationGetAll(t *testing.T) {
 
 // This is just a helper test so we can easily find what the address is of the application module
 // since it's derived based off of the module name.
+// TODO_IN_THIS_COMMIT(@Olshansk): Verify why this is cosmos and make sure staking/delegation works as expected.
 func TestApplicationModuleAddress(t *testing.T) {
 	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
 	require.Equal(t, "cosmos1rl3gjgzexmplmds3tq3r3yk84zlwdl6d0yhysr", moduleAddress.String())

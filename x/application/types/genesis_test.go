@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO_IN_THIS_COMMIT(@Olshansk): Finish off these tests.
+
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
