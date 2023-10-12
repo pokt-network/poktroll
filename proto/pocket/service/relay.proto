@@ -7,7 +7,6 @@ import "cosmos_proto/cosmos.proto";
 // TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
 // import "pocket/service/service.proto";
 import "pocket/application/application.proto";
-import "pocket/supplier/supplier.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
 // The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.

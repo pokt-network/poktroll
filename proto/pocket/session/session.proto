@@ -7,7 +7,7 @@ import "cosmos_proto/cosmos.proto";
 // TODO(@Olshansk): Uncomment the line below once the service.proto file is added
 // import "pocket/service/service.proto";
 import "pocket/application/application.proto";
-import "pocket/supplier/supplier.proto";
+import "pocket/shared/supplier.proto";
 
 // NOTE: Using signed integers for consistency with the cosmos SDK
 
@@ -32,5 +32,5 @@ message Session {
     // TODO(@Olshansk): Uncomment the line below once the `Service` proto is defined
     // service.Service service = 5; // A fully hydrated service object this session is for
     application.Application application = 6; // A fully hydrated application object this session is for
-    repeated supplier.Supplier suppliers = 7; // A fully hydrated set of servicers that are serving the application
+    repeated shared.Supplier suppliers = 7; // A fully hydrated set of servicers that are serving the application
 }
