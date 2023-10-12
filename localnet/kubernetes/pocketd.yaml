@@ -101,7 +101,6 @@ spec:
         - name: data-volume
           persistentVolumeClaim:
             claimName: pocketd-data
-
 ---
 apiVersion: v1
 kind: Service
