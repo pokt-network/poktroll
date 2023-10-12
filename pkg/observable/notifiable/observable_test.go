@@ -18,145 +18,246 @@ const (
 	unsubscribeSleepDuration = notifyTimeout * 2
 )
 
-func TestNewNotifiableObservable(t *testing.T) {
+func TestNewObservable_NotifyObservers(t *testing.T) {
 	type test struct {
-		name     string
-		notifier chan int
+		name            string
+		notifier        chan *int
+		inputs          []int
+		expectedOutputs []int
+		setupFn         func(t test)
 	}
 
-	input := 123
-	nonEmptyBufferedNotifier := make(chan int, 1)
-	nonEmptyBufferedNotifier <- input
+	inputs := []int{123, 456, 789}
+	queuedNotifier := make(chan *int, 1)
+	nonEmptyBufferedNotifier := make(chan *int, 1)
 
 	tests := []test{
-		{name: "nil notifier", notifier: nil},
-		{name: "empty non-buffered notifier", notifier: make(chan int)},
-		{name: "empty buffered len 1 notifier", notifier: make(chan int, 1)},
-		{name: "non-empty buffered notifier", notifier: nonEmptyBufferedNotifier},
+		{
+			name:            "nil notifier",
+			notifier:        nil,
+			inputs:          inputs,
+			expectedOutputs: inputs,
+		},
+		{
+			name:            "empty non-buffered notifier",
+			notifier:        make(chan *int),
+			inputs:          inputs,
+			expectedOutputs: inputs,
+		},
+		{
+			name:            "queued non-buffered notifier",
+			notifier:        queuedNotifier,
+			inputs:          inputs[1:],
+			expectedOutputs: inputs,
+			setupFn: func(t test) {
+				go func() {
+					// blocking send
+					t.notifier <- &inputs[0]
+				}()
+			},
+		},
+		{
+			name:            "empty buffered len 1 notifier",
+			notifier:        make(chan *int, 1),
+			inputs:          inputs,
+			expectedOutputs: inputs,
+		},
+		{
+			name:            "non-empty buffered notifier",
+			notifier:        nonEmptyBufferedNotifier,
+			inputs:          inputs[1:],
+			expectedOutputs: inputs,
+			setupFn: func(t test) {
+				// non-blocking send
+				t.notifier <- &inputs[0]
+			},
+		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := range tests[:] {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			notifee, notifier := notifiable.NewObservable[int](tt.notifier)
+			if tt.setupFn != nil {
+				tt.setupFn(tt)
+			}
+
+			// TECHDEBT/INCOMPLETE: test w/ & w/o context cancellation
+			//ctx := context.Background()
+			ctx, cancel := context.WithCancel(context.Background())
+			t.Cleanup(cancel)
+
+			t.Logf("notifier: %p", tt.notifier)
+			notifee, notifier := notifiable.NewObservable[*int](tt.notifier)
 			require.NotNil(t, notifee)
 			require.NotNil(t, notifier)
 
-			// construct 3 distinct subscriptions, each with its own channel
-			subscriptions := make([]observable.Subscription[int], 3)
-			for i := range subscriptions {
-				subscriptions[i] = notifee.Subscribe(ctx)
+			// construct 3 distinct observers, each with its own channel
+			observers := make([]observable.Observer[*int], 3)
+			for i := range observers {
+				observers[i] = notifee.Subscribe(ctx)
 			}
 
-			group := errgroup.Group{}
-			notifiedOrTimedOut := func(subscriptionCh <-chan int) func() error {
+			group, ctx := errgroup.WithContext(ctx)
+			notifiedOrTimedOut := func(sub observable.Observer[*int]) func() error {
+				var outputIndex int
 				return func() error {
-					// subscriptionCh should receive notified input
-					select {
-					case output := <-subscriptionCh:
-						require.Equal(t, input, output)
-					case <-time.After(notifyTimeout):
-						return fmt.Errorf("timed out waiting for subscription to be notified")
+					for {
+						select {
+						case output, ok := <-sub.Ch():
+							if !ok {
+								return nil
+							}
+
+							// observer channel should receive notified input
+							t.Logf("output: %d | %p", *output, output)
+							require.Equal(t, tt.expectedOutputs[outputIndex], *output)
+							outputIndex++
+						case <-time.After(1 * time.Second):
+							//case <-time.After(notifyTimeout):
+							return fmt.Errorf("timed out waiting for observer to be notified")
+						}
 					}
-					return nil
 				}
 			}
 
-			// ensure all subscription channels are notified
-			for _, subscription := range subscriptions {
+			// ensure all observer channels are notified
+			for _, observer := range observers {
 				// concurrently await notification or timeout to avoid blocking on
 				// empty and/or non-buffered notifiers.
-				group.Go(notifiedOrTimedOut(subscription.Ch()))
+				group.Go(notifiedOrTimedOut(observer))
 			}
 
 			// notify with test input
-			notifier <- input
+			t.Logf("sending to notifier %p", notifier)
+			for i, input := range tt.inputs[:] {
+				inputPtr := new(int)
+				*inputPtr = input
+				t.Logf("sending input ptr: %d %p", input, inputPtr)
+				notifier <- inputPtr
+				t.Logf("send input %d", i)
+			}
+			cancel()
 
 			// wait for notifee to be notified or timeout
 			err := group.Wait()
 			require.NoError(t, err)
+			t.Log("errgroup done")
 
-			// unsubscribing should close subscription channel(s)
-			for _, subscription := range subscriptions {
-				subscription.Unsubscribe()
+			// unsubscribing should close observer channel(s)
+			for i, observer := range observers {
+				observer.Unsubscribe()
+				t.Logf("unsusbscribed %d", i)
 
-				select {
-				case <-subscription.Ch():
-				default:
-					t.Fatal("subscription channel left open")
-				}
+				// must drain the channel first to ensure it is closed
+				drainCh(
+					observer.Ch(),
+					notifyTimeout,
+					func(closed bool, err error) {
+						require.NoError(t, err)
+						require.True(t, closed)
+					})
 			}
 		})
 	}
 }
 
-func TestSubscription_Unsubscribe(t *testing.T) {
+// TECHDEBT/INCOMPLETE: add coverage for multiple observers, unsubscribe from one
+// and ensure the rest are still notified.
+
+// TECHDEBT\INCOMPLETE: add coverage for active observers closing when notifier closes.
+
+func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	notifee, notifier := notifiable.NewObservable[int](nil)
 	require.NotNil(t, notifee)
 	require.NotNil(t, notifier)
 
-	tests := []struct {
+	type test struct {
 		name        string
-		lifecycleFn func() observable.Subscription[int]
-	}{
+		lifecycleFn func() observable.Observer[int]
+	}
+
+	tests := []test{
 		{
 			name: "nil context",
-			lifecycleFn: func() observable.Subscription[int] {
-				subscription := notifee.Subscribe(nil)
-				subscription.Unsubscribe()
-				return subscription
+			lifecycleFn: func() observable.Observer[int] {
+				observer := notifee.Subscribe(nil)
+				observer.Unsubscribe()
+				return observer
 			},
 		},
 		{
 			name: "only unsubscribe",
-			lifecycleFn: func() observable.Subscription[int] {
-				subscription := notifee.Subscribe(ctx)
-				subscription.Unsubscribe()
-				return subscription
+			lifecycleFn: func() observable.Observer[int] {
+				observer := notifee.Subscribe(ctx)
+				observer.Unsubscribe()
+				return observer
 			},
 		},
 		{
 			name: "only cancel",
-			lifecycleFn: func() observable.Subscription[int] {
-				subscription := notifee.Subscribe(ctx)
+			lifecycleFn: func() observable.Observer[int] {
+				observer := notifee.Subscribe(ctx)
 				cancel()
-				return subscription
+				return observer
 			},
 		},
 		{
 			name: "cancel then unsubscribe",
-			lifecycleFn: func() observable.Subscription[int] {
-				subscription := notifee.Subscribe(ctx)
+			lifecycleFn: func() observable.Observer[int] {
+				observer := notifee.Subscribe(ctx)
 				cancel()
 				time.Sleep(unsubscribeSleepDuration)
-				subscription.Unsubscribe()
-				return subscription
+				observer.Unsubscribe()
+				return observer
 			},
 		},
 		{
 			name: "unsubscribe then cancel",
-			lifecycleFn: func() observable.Subscription[int] {
-				subscription := notifee.Subscribe(ctx)
-				subscription.Unsubscribe()
+			lifecycleFn: func() observable.Observer[int] {
+				observer := notifee.Subscribe(ctx)
+				observer.Unsubscribe()
 				time.Sleep(unsubscribeSleepDuration)
 				cancel()
-				return subscription
+				return observer
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			subscription := tt.lifecycleFn()
+			observer := tt.lifecycleFn()
 
 			select {
-			case value, ok := <-subscription.Ch():
+			case value, ok := <-observer.Ch():
 				require.Empty(t, value)
 				require.False(t, ok)
 			case <-time.After(notifyTimeout):
-				t.Fatal("subscription channel left open")
+				t.Fatal("observer channel left open")
 			}
 		})
+	}
+}
+
+func drainCh[V any](
+	ch <-chan V,
+	timeout time.Duration,
+	done func(closed bool, err error),
+) {
+	var err error
+drain:
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				done(true, nil)
+				break drain
+			}
+			continue
+		case <-time.After(timeout):
+			err = fmt.Errorf("timed out waiting for observer channel to close")
+		default:
+			err = fmt.Errorf("observer channel left open")
+		}
+		done(false, err)
 	}
 }
