@@ -1,0 +1,31 @@
+name: reviewdog
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  check_todo_in_this_commit:
+    name: Check TODO_IN_THIS_COMMIT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: okdas/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          pattern: TODO_DISCUSS_IN_THIS_COMMIT|TODO_IN_THIS_COMMIT
+          # ignore: .git
+
+  misspell:
+    name: runner / misspell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: reviewdog/action-misspell@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-check
+          level: warning
+          locale: "US"
