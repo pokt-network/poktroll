@@ -130,6 +130,9 @@ import (
 	suppliermodulekeeper "pocket/x/supplier/keeper"
 	suppliermoduletypes "pocket/x/supplier/types"
 
+	gatewaymodule "pocket/x/gateway"
+	gatewaymodulekeeper "pocket/x/gateway/keeper"
+	gatewaymoduletypes "pocket/x/gateway/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	appparams "pocket/app/params"
@@ -196,6 +199,7 @@ var (
 		sessionmodule.AppModuleBasic{},
 		applicationmodule.AppModuleBasic{},
 		suppliermodule.AppModuleBasic{},
+		gatewaymodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
@@ -212,6 +216,7 @@ var (
 		suppliermoduletypes.ModuleName:    {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		servicemoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		applicationmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		gatewaymoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 )
@@ -280,6 +285,7 @@ type App struct {
 	ApplicationKeeper applicationmodulekeeper.Keeper
 	SupplierKeeper    suppliermodulekeeper.Keeper
 
+	GatewayKeeper gatewaymodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -331,6 +337,7 @@ func New(
 		sessionmoduletypes.StoreKey,
 		applicationmoduletypes.StoreKey,
 		suppliermoduletypes.StoreKey,
+		gatewaymoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -599,6 +606,17 @@ func New(
 	)
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 
+	app.GatewayKeeper = *gatewaymodulekeeper.NewKeeper(
+		appCodec,
+		keys[gatewaymoduletypes.StoreKey],
+		keys[gatewaymoduletypes.MemStoreKey],
+		app.GetSubspace(gatewaymoduletypes.ModuleName),
+
+		app.BankKeeper,
+		app.AccountKeeper,
+	)
+	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
+
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
 	/**** IBC Routing ****/
@@ -665,6 +683,7 @@ func New(
 		sessionModule,
 		applicationModule,
 		supplierModule,
+		gatewayModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
@@ -702,6 +721,7 @@ func New(
 		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -732,6 +752,7 @@ func New(
 		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -767,6 +788,7 @@ func New(
 		sessionmoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
@@ -996,6 +1018,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(sessionmoduletypes.ModuleName)
 	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
 	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
+	paramsKeeper.Subspace(gatewaymoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
