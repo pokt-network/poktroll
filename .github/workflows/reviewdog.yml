@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: la -la
+      - run: ls -la
       - run: cat Makefile | grep TODO_IN_THIS_COMMIT
       - uses: okdas/action-fail-on-found@v1
         with:
