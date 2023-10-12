@@ -10,6 +10,7 @@ import (
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 )
 
+// TODO(@Olshansk): Implement simulation for application staking
 func SimulateMsgStakeApplication(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,

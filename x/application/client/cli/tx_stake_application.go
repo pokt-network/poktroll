@@ -15,6 +15,7 @@ import (
 var _ = strconv.Itoa(0)
 
 func CmdStakeApplication() *cobra.Command {
+	// fromAddress & signature is retrieved via flags.FlagFrom in the clientCtx
 	cmd := &cobra.Command{
 		Use:   "stake-application",
 		Short: "Broadcast message stake-application",

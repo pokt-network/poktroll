@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"pocket/cmd/pocketd/cmd"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
 	"pocket/x/application/keeper"
@@ -15,6 +16,10 @@ import (
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
 	items := make([]types.Application, n)
@@ -65,8 +70,7 @@ func TestApplicationGetAll(t *testing.T) {
 
 // This is just a helper test so we can easily find what the address is of the application module
 // since it's derived based off of the module name.
-// TODO_IN_THIS_COMMIT(@Olshansk): Verify why this is cosmos and make sure staking/delegation works as expected.
 func TestApplicationModuleAddress(t *testing.T) {
 	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
-	require.Equal(t, "cosmos1rl3gjgzexmplmds3tq3r3yk84zlwdl6d0yhysr", moduleAddress.String())
+	require.Equal(t, "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", moduleAddress.String())
 }

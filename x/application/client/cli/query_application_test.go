@@ -2,6 +2,9 @@ package cli_test
 
 import (
 	"fmt"
+	"pocket/testutil/nullify"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 	"strconv"
 	"testing"
 
@@ -11,32 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"pocket/testutil/network"
-	"pocket/testutil/nullify"
-	"pocket/x/application/client/cli"
-	"pocket/x/application/types"
 )
-
-// Prevent strconv unused error
-var _ = strconv.IntSize
-
-func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []types.Application) {
-	t.Helper()
-	cfg := network.DefaultConfig()
-	state := types.GenesisState{}
-	for i := 0; i < n; i++ {
-		application := types.Application{
-			Address: strconv.Itoa(i),
-		}
-		nullify.Fill(&application)
-		state.ApplicationList = append(state.ApplicationList, application)
-	}
-	buf, err := cfg.Codec.MarshalJSON(&state)
-	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.ApplicationList
-}
 
 func TestShowApplication(t *testing.T) {
 	net, objs := networkWithApplicationObjects(t, 2)

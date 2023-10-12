@@ -133,6 +133,7 @@ import (
 	gatewaymodule "pocket/x/gateway"
 	gatewaymodulekeeper "pocket/x/gateway/keeper"
 	gatewaymoduletypes "pocket/x/gateway/types"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	appparams "pocket/app/params"
@@ -142,6 +143,7 @@ import (
 const (
 	AccountAddressPrefix = "pokt"
 	Name                 = "pocket"
+	POKTDenom            = "upokt"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals

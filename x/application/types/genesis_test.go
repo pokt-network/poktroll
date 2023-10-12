@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO_IN_THIS_COMMIT(@Olshansk): Finish off these tests.
-
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
@@ -48,14 +46,48 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid: true,
 		},
 		{
-			desc: "duplicated application",
+			desc: "invalid - due to duplicated app address",
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
 						Address: addr1,
+						Stake:   &stake1,
 					},
 					{
 						Address: addr1,
+						Stake:   &stake2,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - due to nil app stake",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   nil,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - due to missing app stake",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						// Explicitly missing stake
 					},
 				},
 			},

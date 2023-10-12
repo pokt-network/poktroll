@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // DefaultIndex is the default global index
@@ -21,7 +23,6 @@ func DefaultGenesis() *GenesisState {
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in application
 	applicationIndexMap := make(map[string]struct{})
-
 	for _, elem := range gs.ApplicationList {
 		index := string(ApplicationKey(elem.Address))
 		if _, ok := applicationIndexMap[index]; ok {
@@ -29,6 +30,27 @@ func (gs GenesisState) Validate() error {
 		}
 		applicationIndexMap[index] = struct{}{}
 	}
+
+	// Check that the stake value for the apps is valid
+	for _, elem := range gs.ApplicationList {
+		if elem.Stake == nil {
+			return fmt.Errorf("nil stake amount for application")
+		}
+		stakeAmount, err := sdk.ParseCoinNormalized(elem.Stake.String())
+		if !stakeAmount.IsValid() {
+			return fmt.Errorf("invalid stake amount for application %v; (%v)", elem.Stake, stakeAmount.Validate())
+		}
+		if err != nil {
+			return fmt.Errorf("cannot parse stake amount for application %v; (%v)", elem.Stake, err)
+		}
+		if stakeAmount.IsZero() || stakeAmount.IsNegative() {
+			return fmt.Errorf("zero stake amount for application %v", elem.Stake)
+		}
+		if stakeAmount.Denom != "upokt" {
+			return fmt.Errorf("invalid stake amount denom for application %v", elem.Stake)
+		}
+	}
+
 	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
