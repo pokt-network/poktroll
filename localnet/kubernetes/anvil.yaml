@@ -1,5 +1,4 @@
 ---
-# TODO_IN_THIS_COMMIT - test if this fails the CI
 apiVersion: apps/v1
 kind: Deployment
 metadata:
