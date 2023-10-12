@@ -11,7 +11,7 @@ import (
 func CmdListGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-gateway",
-		Short: "list all gateway",
+		Short: "list all gateways",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
