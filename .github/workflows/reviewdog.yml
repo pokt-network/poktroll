@@ -16,7 +16,7 @@ jobs:
           reporter: github-pr-review
           level: error
           pattern: TODO_DISCUSS_IN_THIS_COMMIT|TODO_IN_THIS_COMMIT
-          # ignore: .git
+          ignore: Makefile
 
   misspell:
     name: runner / misspell
