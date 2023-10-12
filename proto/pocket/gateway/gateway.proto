@@ -1,0 +1,10 @@
+syntax = "proto3";
+package pocket.gateway;
+
+option go_package = "pocket/x/gateway/types";
+
+message Gateway {
+  string address = 1; 
+  
+}
+
