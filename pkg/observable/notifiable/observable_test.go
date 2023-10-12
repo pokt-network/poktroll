@@ -86,7 +86,9 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 			t.Cleanup(cancel)
 
 			t.Logf("notifier: %p", tt.notifier)
-			notifee, notifier := notifiable.NewObservable[*int](tt.notifier)
+			notifee, notifier := notifiable.NewObservable[*int](
+				notifiable.WithNotifier(tt.notifier),
+			)
 			require.NotNil(t, notifee)
 			require.NotNil(t, notifier)
 
@@ -167,7 +169,7 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 
 func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	notifee, notifier := notifiable.NewObservable[int](nil)
+	notifee, notifier := notifiable.NewObservable[int]()
 	require.NotNil(t, notifee)
 	require.NotNil(t, notifier)
 

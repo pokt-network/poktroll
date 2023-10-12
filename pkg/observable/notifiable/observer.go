@@ -27,7 +27,7 @@ type observer[V any] struct {
 type UnsubscribeFactory[V any] func() UnsubscribeFunc[V]
 type UnsubscribeFunc[V any] func(toRemove *observer[V])
 
-func NewSubscription[V any](
+func NewObserver[V any](
 	ctx context.Context,
 	onUnsubscribeFactory UnsubscribeFactory[V],
 ) *observer[V] {
@@ -77,18 +77,17 @@ func (obv *observer[V]) Ch() <-chan V {
 func (obv *observer[V]) notify(value V) {
 	obv.observerMu.Lock()
 	ch, closed := obv.observerCh, obv.closed
-	//defer func() {
-	//	obv.observersMu.Unlock()
-	//}()
+	defer obv.observerMu.Unlock()
 
 	if closed {
-		obv.observerMu.Unlock()
 		return
 	}
-	obv.observerMu.Unlock()
 
 	select {
 	case ch <- value:
 	case <-obv.ctx.Done():
+		// TECHDEBT: add a  default path which buffers values so that the sender
+		// doesn't block and other consumers can still receive.
+		// TECHDEBT: add some logic to drain the buffer at some appropriate time
 	}
 }

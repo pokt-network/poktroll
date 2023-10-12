@@ -10,10 +10,12 @@ import (
 
 var _ observable.Observable[any] = &notifiableObservable[any]{}
 
+type option[V any] func(obs *notifiableObservable[V])
+
 // notifiableObservable implements the observable.Observable interface and can be notified
 // via its corresponding notifier channel.
 type notifiableObservable[V any] struct {
-	notifier    <-chan V // private channel that is used to emit values to observers
+	notifier    chan V // private channel that is used to emit values to observers
 	observersMu sync.RWMutex
 	// TODO_THIS_COMMIT: update comment(s)
 	// TODO_THIS_COMMIT: consider using interface type
@@ -22,21 +24,32 @@ type notifiableObservable[V any] struct {
 
 // NewObservable creates a new observable is notified when the notifier channel
 // receives a value.
-func NewObservable[V any](notifier chan V) (observable.Observable[V], chan V) {
-	// If the caller does not provide a notifier, create a new one and return it
-	if notifier == nil {
-		notifier = make(chan V)
-	}
+// func NewObservable[V any](notifier chan V) (observable.Observable[V], chan<- V) {
+func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
 	observable := &notifiableObservable[V]{
-		notifier,
-		sync.RWMutex{},
-		new([]*observer[V]),
+		observersMu: sync.RWMutex{},
+		observers:   new([]*observer[V]),
+	}
+
+	for _, opt := range opts {
+		opt(observable)
+	}
+
+	// If the caller does not provide a notifier, create a new one and return it
+	if observable.notifier == nil {
+		observable.notifier = make(chan V)
 	}
 
 	// Start listening to the notifier and emit values to observers
-	go observable.listen(notifier)
+	go observable.goListen(observable.notifier)
 
-	return observable, notifier
+	return observable, observable.notifier
+}
+
+func WithNotifier[V any](notifier chan V) option[V] {
+	return func(obs *notifiableObservable[V]) {
+		obs.notifier = notifier
+	}
 }
 
 // Subscribe returns an observer which is notified when notifier receives.
@@ -46,9 +59,14 @@ func (obs *notifiableObservable[V]) Subscribe(ctx context.Context) observable.Ob
 		obs.observersMu.Unlock()
 	}()
 
-	observer := NewSubscription[V](ctx, obs.onUnsubscribeFactory)
+	observer := NewObserver[V](ctx, obs.onUnsubscribeFactory)
 
-	go unsubscribeOnDone[V](ctx, observer)
+	// caller can rely on context cancellation or call Close() to unsubscribe
+	// active observers
+	if ctx != nil {
+		// asynchronously wait for the context to close and unsubscribe
+		go goUnsubscribeOnDone[V](ctx, observer)
+	}
 	return observer
 }
 
@@ -64,7 +82,7 @@ func (obs *notifiableObservable[V]) close() {
 	obs.observersMu.RUnlock()
 
 	for _, sub := range observers {
-		fmt.Printf("notifiableObservable#listen: unsubscribing %p\n", sub)
+		fmt.Printf("notifiableObservable#goListen: unsubscribing %p\n", sub)
 		sub.Unsubscribe()
 	}
 
@@ -73,15 +91,18 @@ func (obs *notifiableObservable[V]) close() {
 	obs.observers = new([]*observer[V])
 }
 
-// listen to the notifier and notify observers when values are received. This
+// goListen to the notifier and notify observers when values are received. This
 // function is blocking and should be run in a goroutine.
-func (obs *notifiableObservable[V]) listen(notifier <-chan V) {
+func (obs *notifiableObservable[V]) goListen(notifier <-chan V) {
 	for notification := range notifier {
 		obs.observersMu.RLock()
 		observers := *obs.observers
 		obs.observersMu.RUnlock()
 
 		for _, sub := range observers {
+			// CONSIDERATION: perhaps try to avoid making this notification async
+			// as it effectively uses goroutines in memory as a buffer (with
+			// little control surface).
 			sub.notify(notification)
 		}
 	}
@@ -90,13 +111,11 @@ func (obs *notifiableObservable[V]) listen(notifier <-chan V) {
 	obs.close()
 }
 
-// unsubscribeOnDone unsubscribes from the subscription when the context is.
+// goUnsubscribeOnDone unsubscribes from the subscription when the context is.
 // It is blocking and intended to be called in a goroutine.
-func unsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
-	if ctx != nil {
-		<-ctx.Done()
-		subscription.Unsubscribe()
-	}
+func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
+	<-ctx.Done()
+	subscription.Unsubscribe()
 }
 
 // onUnsubscribeFactory returns a function that removes a given observer from the
