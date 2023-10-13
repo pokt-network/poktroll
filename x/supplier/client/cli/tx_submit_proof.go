@@ -16,6 +16,8 @@ import (
 
 var _ = strconv.Itoa(0)
 
+// TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
+
 func CmdSubmitProof() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "submit-proof [session-header] [proof-base64]",

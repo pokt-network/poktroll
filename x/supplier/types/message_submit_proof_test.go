@@ -8,6 +8,8 @@ import (
 	"pocket/testutil/sample"
 )
 
+// TODO(@bryanchriswhite): Add unit tests for message validation when adding the business logic.
+
 func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		name string
