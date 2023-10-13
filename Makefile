@@ -179,15 +179,15 @@ app_stake: ## Stake tokens for the application specified (must specify the APP e
 	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
-app1_stake: ## Stake for app1
+app1_stake: ## Stake app1
 	APP=app1 make app_stake
 
 .PHONY: app2_stake
-app2_stake: ## Stake for app2
+app2_stake: ## Stake app2
 	APP=app2 make app_stake
 
 .PHONY: app3_stake
-app3_stake: ## Stake for app3
+app3_stake: ## Stake app3
 	APP=app3 make app_stake
 
 ######################
@@ -195,5 +195,5 @@ app3_stake: ## Stake for app3
 ######################
 
 .PHONY: ignite_acc_list
-ignite_acc_list: ## List all the accounts in the localnet
-	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test
+ignite_acc_list: ## List all the accounts in LocalNet
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --node $(POCKET_NODE)
