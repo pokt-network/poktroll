@@ -7,15 +7,9 @@ import (
 	"os/exec"
 )
 
-// cliPath is the path of the binary installed and is set by the Tiltfile
-const cliPath = "/usr/local/bin/pocketd"
-
 var (
 	// defaultRPCURL used by targetPod to build commands
 	defaultRPCURL string
-	// targetDevClientPod is the kube pod that executes calls to the pocket binary under test
-	// DISCUSS_IN_THIS_PR: how can we make this a nice name withing k8s?
-	targetDevClientPod = "pocketd-88658b5f8-r9gmv"
 	// defaultRPCPort is the default RPC port that poktrolld listens on
 	defaultRPCPort = 36657
 	// defaultRPCHost is the default RPC host that poktrolld listens on
@@ -39,30 +33,26 @@ type PocketClient interface {
 	RunCommandOnHost(string, ...string) (*commandResult, error)
 }
 
-// Ensure that Validator fulfills PocketClient
-var _ PocketClient = &pocketdPod{}
+// Ensure that pocketdBin struct fulfills PocketClient
+var _ PocketClient = &pocketdBin{}
 
-// pocketdPod holds the connection information to a specific pod in between different instructions during testing
-type pocketdPod struct {
-	targetPodName string
-	result        *commandResult // stores the result of the last command that was run
+// pocketdBin holds the reults of the last command that was run
+type pocketdBin struct {
+	result *commandResult // stores the result of the last command that was run
 }
 
 // RunCommand runs a command on a pre-configured kube pod with the given args
-func (n *pocketdPod) RunCommand(args ...string) (*commandResult, error) {
+func (n *pocketdBin) RunCommand(args ...string) (*commandResult, error) {
 	return n.RunCommandOnHost(defaultRPCURL, args...)
 }
 
-// RunCommandOnHost runs a command on specified kube pod with the given args
-func (n *pocketdPod) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
+// RunCommandOnHost runs a command on specified host with the given args
+func (n *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
 	base := []string{
-		"exec", "-i", targetDevClientPod,
-		//"--container", "default", // DISCUSS_IN_THIS_PR: not sure if the current setup needs us to specify the container as its default
-		"--", cliPath,
-		//"--node=", defaultRPCURL, // DISCUSS_IN_THIS_PR: this flag no longer exists but will be needed in the future
+		//"--node", defaultRPCURL,
 	}
 	args = append(base, args...)
-	cmd := exec.Command("kubectl", args...)
+	cmd := exec.Command("pocketd", args...)
 	r := &commandResult{}
 	out, err := cmd.Output()
 	if err != nil {
@@ -70,7 +60,5 @@ func (n *pocketdPod) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 	}
 	r.Stdout = string(out)
 	n.result = r
-	// IMPROVE: make targetPodName configurable
-	n.targetPodName = targetDevClientPod
 	return r, nil
 }

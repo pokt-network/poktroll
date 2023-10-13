@@ -3,68 +3,46 @@
 package e2e
 
 import (
-	"fmt"
+	"github.com/regen-network/gocuke"
+	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
-
-	"github.com/cucumber/godog"
 )
 
-var (
-	// pocketd holds command results between runs and reports errors to the test suite
-	pocketd = &pocketdPod{}
-)
+type suite struct {
+	gocuke.TestingT
+	pocketd *pocketdBin
+}
+
+func (s *suite) Before() {
+	s.pocketd = new(pocketdBin)
+}
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
-// * This test suite assumes that a LocalNet is running that can be accessed by `kubectl`
+// * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	suite := godog.TestSuite{
-		ScenarioInitializer: InitializeScenario,
-		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"./"},
-			TestingT: t,
-		},
-	}
-	if suite.Run() != 0 {
-		t.Fatal("non-zero status returned, failed to run feature tests")
-	}
+	gocuke.NewRunner(t, &suite{}).Path("*.feature").Run()
 }
 
-// InitializeScenario registers step regexes to function handlers
-func InitializeScenario(ctx *godog.ScenarioContext) {
-	ctx.Step(`^the user runs the command "([^"]*)"$`, theUserRunsTheCommand)
-	ctx.Step(`^the user should be able to see standard output containing "([^"]*)"$`, theUserShouldBeAbleToSeeStandardOutputContaining)
-	ctx.Step(`^the user has the pocketd binary installed$`, theUserHasPocketd)
-	ctx.Step(`^the pocketd binary should exit without error$`, thePocketdShouldHaveExitedWithoutError)
+func (s *suite) TheUserHasThePocketdBinaryInstalled() {
+	s.TheUserRunsTheCommand("help")
 }
 
-func theUserHasPocketd() error {
-	res, err := pocketd.RunCommand("help")
-	pocketd.result = res
-	if err != nil {
-		return err
-	}
-	return nil
+func (s *suite) ThePocketdBinaryShouldExitWithoutError() {
+	require.NoError(s, s.pocketd.result.Err)
 }
 
-func thePocketdShouldHaveExitedWithoutError() error {
-	return pocketd.result.Err
-}
-
-func theUserRunsTheCommand(cmd string) error {
+func (s *suite) TheUserRunsTheCommand(cmd string) {
 	cmds := strings.Split(cmd, " ")
-	res, err := pocketd.RunCommand(cmds...)
-	pocketd.result = res
+	res, err := s.pocketd.RunCommand(cmds...)
+	s.pocketd.result = res
 	if err != nil {
-		return err
+		s.Fatalf("error running command %s: %s", cmd, err)
 	}
-	return nil
 }
 
-func theUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) error {
-	if !strings.Contains(pocketd.result.Stdout, arg1) {
-		return fmt.Errorf("stdout must contain %s", arg1)
+func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
+	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
+		s.Fatalf("stdout must contain %s", arg1)
 	}
-	return nil
 }
