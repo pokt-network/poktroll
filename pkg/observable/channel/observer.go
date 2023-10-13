@@ -8,8 +8,10 @@ import (
 	"pocket/pkg/observable"
 )
 
-// TODO_THIS_COMMIT: explain why buffer size is 1
-// observerBufferSize ...
+// DISCUSS: what should this be? should it be configurable? It seems to be most
+// relevant in the context of the behavior of the observable when it has multiple
+// observers which consume at different rates.
+// observerBufferSize is the buffer size of a channelObserver's channel.
 const observerBufferSize = 1
 
 var _ observable.Observer[any] = &channelObserver[any]{}

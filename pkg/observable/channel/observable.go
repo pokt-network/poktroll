@@ -82,8 +82,8 @@ func (obs *channelObservable[V]) Close() {
 	obs.close()
 }
 
-// TODO_THIS_COMMIT: decide whether this closes the producer channel; perhaps not
-// at oll or only if it was provided...
+// CONSIDERATION: decide whether this should close the producer channel; perhaps
+// only if it was provided.
 func (obs *channelObservable[V]) close() {
 	obs.observersMu.RLock()
 	observers := *obs.observers
