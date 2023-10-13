@@ -12,7 +12,7 @@ func TestObserver_Unsubscribe(t *testing.T) {
 		onUnsubscribeCalled = false
 		inputCh             = make(chan int, 1)
 	)
-	sub := &channelObserver[int]{
+	obsvr := &channelObserver[int]{
 		observerMu: &sync.RWMutex{},
 		// using a buffered  channel to keep the test synchronous
 		observerCh: inputCh,
@@ -22,13 +22,13 @@ func TestObserver_Unsubscribe(t *testing.T) {
 	}
 
 	// should initially be open
-	require.Equal(t, false, sub.closed)
+	require.Equal(t, false, obsvr.closed)
 
 	inputCh <- 1
-	require.Equal(t, false, sub.closed)
+	require.Equal(t, false, obsvr.closed)
 
-	sub.Unsubscribe()
+	obsvr.Unsubscribe()
 	// should be closed after `#Unsubscribe()`
-	require.Equal(t, true, sub.closed)
+	require.Equal(t, true, obsvr.closed)
 	require.True(t, onUnsubscribeCalled)
 }
