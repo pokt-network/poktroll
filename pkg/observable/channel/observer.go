@@ -1,4 +1,4 @@
-package notifiable
+package channel
 
 import (
 	"context"
@@ -12,30 +12,30 @@ import (
 // observerBufferSize ...
 const observerBufferSize = 1
 
-var _ observable.Observer[any] = &observer[any]{}
+var _ observable.Observer[any] = &channelObserver[any]{}
 
-// observer implements the observable.Observer interface.
-type observer[V any] struct {
+// channelObserver implements the observable.Observer interface.
+type channelObserver[V any] struct {
 	ctx        context.Context
 	observerMu *sync.RWMutex
 	observerCh chan V
 	// TODO_THIS_COMMIT: add comment
-	onUnsubscribe func(toRemove *observer[V])
+	onUnsubscribe func(toRemove *channelObserver[V])
 	closed        bool
 }
 
 type UnsubscribeFactory[V any] func() UnsubscribeFunc[V]
-type UnsubscribeFunc[V any] func(toRemove *observer[V])
+type UnsubscribeFunc[V any] func(toRemove *channelObserver[V])
 
 func NewObserver[V any](
 	ctx context.Context,
 	onUnsubscribeFactory UnsubscribeFactory[V],
-) *observer[V] {
+) *channelObserver[V] {
 	// Create a channel for the subscriber and append it to the observers list
 	ch := make(chan V, 1)
-	fmt.Printf("notifiableObservable#Subscribe: opening %p\n", ch)
+	fmt.Printf("channelObservable#Subscribe: opening %p\n", ch)
 
-	return &observer[V]{
+	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),
 		observerCh:    make(chan V, observerBufferSize),
@@ -45,7 +45,7 @@ func NewObserver[V any](
 
 // Unsubscribe closes the subscription channel and removes the subscription from
 // the observable.
-func (obv *observer[V]) Unsubscribe() {
+func (obv *channelObserver[V]) Unsubscribe() {
 	obv.observerMu.Lock()
 	defer func() {
 		obv.observerMu.Unlock()
@@ -55,7 +55,7 @@ func (obv *observer[V]) Unsubscribe() {
 		return
 	}
 
-	fmt.Printf("observer#Unsubscribe: closing %p\n", obv.observerCh)
+	fmt.Printf("channelObserver#Unsubscribe: closing %p\n", obv.observerCh)
 	close(obv.observerCh)
 	obv.closed = true
 
@@ -63,7 +63,7 @@ func (obv *observer[V]) Unsubscribe() {
 }
 
 // Ch returns a receive-only subscription channel.
-func (obv *observer[V]) Ch() <-chan V {
+func (obv *channelObserver[V]) Ch() <-chan V {
 	obv.observerMu.Lock()
 	defer func() {
 		obv.observerMu.Unlock()
@@ -73,8 +73,8 @@ func (obv *observer[V]) Ch() <-chan V {
 }
 
 // TODO_CLEANUP_COMMENT: used by observable to send to subscriber  channel
-// because observer#Ch returns a receive-only channel
-func (obv *observer[V]) notify(value V) {
+// because channelObserver#Ch returns a receive-only channel
+func (obv *channelObserver[V]) notify(value V) {
 	obv.observerMu.Lock()
 	ch, closed := obv.observerCh, obv.closed
 	defer obv.observerMu.Unlock()

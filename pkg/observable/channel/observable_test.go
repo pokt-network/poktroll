@@ -1,4 +1,4 @@
-package notifiable_test
+package channel_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"pocket/pkg/observable"
-	"pocket/pkg/observable/notifiable"
+	"pocket/pkg/observable/channel"
 )
 
 const (
@@ -21,55 +21,55 @@ const (
 func TestNewObservable_NotifyObservers(t *testing.T) {
 	type test struct {
 		name            string
-		notifier        chan *int
+		producer        chan *int
 		inputs          []int
 		expectedOutputs []int
 		setupFn         func(t test)
 	}
 
 	inputs := []int{123, 456, 789}
-	queuedNotifier := make(chan *int, 1)
-	nonEmptyBufferedNotifier := make(chan *int, 1)
+	queuedProducer := make(chan *int, 1)
+	nonEmptyBufferedProducer := make(chan *int, 1)
 
 	tests := []test{
 		{
-			name:            "nil notifier",
-			notifier:        nil,
+			name:            "nil producer",
+			producer:        nil,
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
-			name:            "empty non-buffered notifier",
-			notifier:        make(chan *int),
+			name:            "empty non-buffered producer",
+			producer:        make(chan *int),
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
-			name:            "queued non-buffered notifier",
-			notifier:        queuedNotifier,
+			name:            "queued non-buffered producer",
+			producer:        queuedProducer,
 			inputs:          inputs[1:],
 			expectedOutputs: inputs,
 			setupFn: func(t test) {
 				go func() {
 					// blocking send
-					t.notifier <- &inputs[0]
+					t.producer <- &inputs[0]
 				}()
 			},
 		},
 		{
-			name:            "empty buffered len 1 notifier",
-			notifier:        make(chan *int, 1),
+			name:            "empty buffered len 1 producer",
+			producer:        make(chan *int, 1),
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
-			name:            "non-empty buffered notifier",
-			notifier:        nonEmptyBufferedNotifier,
+			name:            "non-empty buffered producer",
+			producer:        nonEmptyBufferedProducer,
 			inputs:          inputs[1:],
 			expectedOutputs: inputs,
 			setupFn: func(t test) {
 				// non-blocking send
-				t.notifier <- &inputs[0]
+				t.producer <- &inputs[0]
 			},
 		},
 	}
@@ -85,17 +85,17 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
-			t.Logf("notifier: %p", tt.notifier)
-			notifee, notifier := notifiable.NewObservable[*int](
-				notifiable.WithNotifier(tt.notifier),
+			t.Logf("producer: %p", tt.producer)
+			testObs, producer := channel.NewObservable[*int](
+				channel.WithProducer(tt.producer),
 			)
-			require.NotNil(t, notifee)
-			require.NotNil(t, notifier)
+			require.NotNil(t, testObs)
+			require.NotNil(t, producer)
 
 			// construct 3 distinct observers, each with its own channel
 			observers := make([]observable.Observer[*int], 3)
 			for i := range observers {
-				observers[i] = notifee.Subscribe(ctx)
+				observers[i] = testObs.Subscribe(ctx)
 			}
 
 			group, ctx := errgroup.WithContext(ctx)
@@ -124,22 +124,22 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 			// ensure all observer channels are notified
 			for _, observer := range observers {
 				// concurrently await notification or timeout to avoid blocking on
-				// empty and/or non-buffered notifiers.
+				// empty and/or non-buffered producers.
 				group.Go(notifiedOrTimedOut(observer))
 			}
 
 			// notify with test input
-			t.Logf("sending to notifier %p", notifier)
+			t.Logf("sending to producer %p", producer)
 			for i, input := range tt.inputs[:] {
 				inputPtr := new(int)
 				*inputPtr = input
 				t.Logf("sending input ptr: %d %p", input, inputPtr)
-				notifier <- inputPtr
+				producer <- inputPtr
 				t.Logf("send input %d", i)
 			}
 			cancel()
 
-			// wait for notifee to be notified or timeout
+			// wait for testObs to be notified or timeout
 			err := group.Wait()
 			require.NoError(t, err)
 			t.Log("errgroup done")
@@ -165,13 +165,13 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 // TECHDEBT/INCOMPLETE: add coverage for multiple observers, unsubscribe from one
 // and ensure the rest are still notified.
 
-// TECHDEBT\INCOMPLETE: add coverage for active observers closing when notifier closes.
+// TECHDEBT\INCOMPLETE: add coverage for active observers closing when producer closes.
 
 func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	notifee, notifier := notifiable.NewObservable[int]()
-	require.NotNil(t, notifee)
-	require.NotNil(t, notifier)
+	testObs, producer := channel.NewObservable[int]()
+	require.NotNil(t, testObs)
+	require.NotNil(t, producer)
 
 	type test struct {
 		name        string
@@ -182,7 +182,7 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "nil context",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := notifee.Subscribe(nil)
+				observer := testObs.Subscribe(nil)
 				observer.Unsubscribe()
 				return observer
 			},
@@ -190,7 +190,7 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "only unsubscribe",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := notifee.Subscribe(ctx)
+				observer := testObs.Subscribe(ctx)
 				observer.Unsubscribe()
 				return observer
 			},
@@ -198,7 +198,7 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "only cancel",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := notifee.Subscribe(ctx)
+				observer := testObs.Subscribe(ctx)
 				cancel()
 				return observer
 			},
@@ -206,7 +206,7 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "cancel then unsubscribe",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := notifee.Subscribe(ctx)
+				observer := testObs.Subscribe(ctx)
 				cancel()
 				time.Sleep(unsubscribeSleepDuration)
 				observer.Unsubscribe()
@@ -216,7 +216,7 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 		{
 			name: "unsubscribe then cancel",
 			lifecycleFn: func() observable.Observer[int] {
-				observer := notifee.Subscribe(ctx)
+				observer := testObs.Subscribe(ctx)
 				observer.Unsubscribe()
 				time.Sleep(unsubscribeSleepDuration)
 				cancel()

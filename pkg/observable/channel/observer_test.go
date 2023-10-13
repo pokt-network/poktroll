@@ -1,4 +1,4 @@
-package notifiable
+package channel
 
 import (
 	"sync"
@@ -12,11 +12,11 @@ func TestObserver_Unsubscribe(t *testing.T) {
 		onUnsubscribeCalled = false
 		inputCh             = make(chan int, 1)
 	)
-	sub := &observer[int]{
+	sub := &channelObserver[int]{
 		observerMu: &sync.RWMutex{},
 		// using a buffered  channel to keep the test synchronous
 		observerCh: inputCh,
-		onUnsubscribe: func(toRemove *observer[int]) {
+		onUnsubscribe: func(toRemove *channelObserver[int]) {
 			onUnsubscribeCalled = true
 		},
 	}
