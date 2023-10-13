@@ -114,6 +114,25 @@ import (
 	pocketmodulekeeper "pocket/x/pocket/keeper"
 	pocketmoduletypes "pocket/x/pocket/types"
 
+	servicemodule "pocket/x/service"
+	servicemodulekeeper "pocket/x/service/keeper"
+	servicemoduletypes "pocket/x/service/types"
+
+	sessionmodule "pocket/x/session"
+	sessionmodulekeeper "pocket/x/session/keeper"
+	sessionmoduletypes "pocket/x/session/types"
+
+	applicationmodule "pocket/x/application"
+	applicationmodulekeeper "pocket/x/application/keeper"
+	applicationmoduletypes "pocket/x/application/types"
+
+	suppliermodule "pocket/x/supplier"
+	suppliermodulekeeper "pocket/x/supplier/keeper"
+	suppliermoduletypes "pocket/x/supplier/types"
+
+	gatewaymodule "pocket/x/gateway"
+	gatewaymodulekeeper "pocket/x/gateway/keeper"
+	gatewaymoduletypes "pocket/x/gateway/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	appparams "pocket/app/params"
@@ -176,19 +195,28 @@ var (
 		vesting.AppModuleBasic{},
 		consensus.AppModuleBasic{},
 		pocketmodule.AppModuleBasic{},
+		servicemodule.AppModuleBasic{},
+		sessionmodule.AppModuleBasic{},
+		applicationmodule.AppModuleBasic{},
+		suppliermodule.AppModuleBasic{},
+		gatewaymodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		icatypes.ModuleName:            nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
-		ibctransfertypes.ModuleName:    {authtypes.Minter, authtypes.Burner},
+		authtypes.FeeCollectorName:        nil,
+		distrtypes.ModuleName:             nil,
+		icatypes.ModuleName:               nil,
+		minttypes.ModuleName:              {authtypes.Minter},
+		stakingtypes.BondedPoolName:       {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:    {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:               {authtypes.Burner},
+		ibctransfertypes.ModuleName:       {authtypes.Minter, authtypes.Burner},
+		suppliermoduletypes.ModuleName:    {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		servicemoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		applicationmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		gatewaymoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 )
@@ -251,7 +279,13 @@ type App struct {
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper  capabilitykeeper.ScopedKeeper
 
-	PocketKeeper pocketmodulekeeper.Keeper
+	PocketKeeper      pocketmodulekeeper.Keeper
+	ServiceKeeper     servicemodulekeeper.Keeper
+	SessionKeeper     sessionmodulekeeper.Keeper
+	ApplicationKeeper applicationmodulekeeper.Keeper
+	SupplierKeeper    suppliermodulekeeper.Keeper
+
+	GatewayKeeper gatewaymodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -299,6 +333,11 @@ func New(
 		feegrant.StoreKey, evidencetypes.StoreKey, ibctransfertypes.StoreKey, icahosttypes.StoreKey,
 		capabilitytypes.StoreKey, group.StoreKey, icacontrollertypes.StoreKey, consensusparamtypes.StoreKey,
 		pocketmoduletypes.StoreKey,
+		servicemoduletypes.StoreKey,
+		sessionmoduletypes.StoreKey,
+		applicationmoduletypes.StoreKey,
+		suppliermoduletypes.StoreKey,
+		gatewaymoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -529,6 +568,55 @@ func New(
 	)
 	pocketModule := pocketmodule.NewAppModule(appCodec, app.PocketKeeper, app.AccountKeeper, app.BankKeeper)
 
+	app.ServiceKeeper = *servicemodulekeeper.NewKeeper(
+		appCodec,
+		keys[servicemoduletypes.StoreKey],
+		keys[servicemoduletypes.MemStoreKey],
+		app.GetSubspace(servicemoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+	serviceModule := servicemodule.NewAppModule(appCodec, app.ServiceKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.SessionKeeper = *sessionmodulekeeper.NewKeeper(
+		appCodec,
+		keys[sessionmoduletypes.StoreKey],
+		keys[sessionmoduletypes.MemStoreKey],
+		app.GetSubspace(sessionmoduletypes.ModuleName),
+	)
+	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
+		appCodec,
+		keys[applicationmoduletypes.StoreKey],
+		keys[applicationmoduletypes.MemStoreKey],
+		app.GetSubspace(applicationmoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
+		appCodec,
+		keys[suppliermoduletypes.StoreKey],
+		keys[suppliermoduletypes.MemStoreKey],
+		app.GetSubspace(suppliermoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.GatewayKeeper = *gatewaymodulekeeper.NewKeeper(
+		appCodec,
+		keys[gatewaymoduletypes.StoreKey],
+		keys[gatewaymoduletypes.MemStoreKey],
+		app.GetSubspace(gatewaymoduletypes.ModuleName),
+
+		app.BankKeeper,
+		app.AccountKeeper,
+	)
+	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
+
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
 	/**** IBC Routing ****/
@@ -591,6 +679,11 @@ func New(
 		transferModule,
 		icaModule,
 		pocketModule,
+		serviceModule,
+		sessionModule,
+		applicationModule,
+		supplierModule,
+		gatewayModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
@@ -624,6 +717,11 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
+		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -650,6 +748,11 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
+		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -681,6 +784,11 @@ func New(
 		vestingtypes.ModuleName,
 		consensusparamtypes.ModuleName,
 		pocketmoduletypes.ModuleName,
+		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
@@ -906,6 +1014,11 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(icacontrollertypes.SubModuleName)
 	paramsKeeper.Subspace(icahosttypes.SubModuleName)
 	paramsKeeper.Subspace(pocketmoduletypes.ModuleName)
+	paramsKeeper.Subspace(servicemoduletypes.ModuleName)
+	paramsKeeper.Subspace(sessionmoduletypes.ModuleName)
+	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
+	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
+	paramsKeeper.Subspace(gatewaymoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package pocket.shared;
+
+option go_package = "pocket/x/shared/types";
+
+message Supplier {
+  string address = 1; 
+  
+}
+

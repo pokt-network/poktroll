@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package pocket.supplier;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "pocket/supplier/params.proto";
+import "pocket/shared/supplier.proto";
+
+option go_package = "pocket/x/supplier/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pocket/supplier/params";
+  
+  }
+  
+  // Queries a list of Supplier items.
+  rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
+    option (google.api.http).get = "/pocket/supplier/supplier/{address}";
+  
+  }
+  rpc SupplierAll (QueryAllSupplierRequest) returns (QueryAllSupplierResponse) {
+    option (google.api.http).get = "/pocket/supplier/supplier";
+  
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryGetSupplierRequest {
+  string address = 1;
+}
+
+message QueryGetSupplierResponse {
+  pocket.shared.Supplier supplier = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllSupplierRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllSupplierResponse {
+  repeated pocket.shared.Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
