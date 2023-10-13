@@ -113,8 +113,7 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 							t.Logf("output: %d | %p", *output, output)
 							require.Equal(t, tt.expectedOutputs[outputIndex], *output)
 							outputIndex++
-						case <-time.After(1 * time.Second):
-							//case <-time.After(notifyTimeout):
+						case <-time.After(notifyTimeout):
 							return fmt.Errorf("timed out waiting for observer to be notified")
 						}
 					}
