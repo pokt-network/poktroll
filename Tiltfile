@@ -23,10 +23,16 @@ if (localnet_config_file != localnet_config) or (
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
 # Configure helm chart reference. If using local repo, set the path to the local repo, otherwise use our own helm repo
-helm_chart_repo = "pokt-network/poktroll"
+helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+sequencer_chart = "pokt-network/poktroll-sequencer"
+poktroll_chart = "pokt-network/poktroll"
 if localnet_config["helm_chart_local_repo"]["enabled"]:
     helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
-    helm_chart_repo = helm_chart_local_repo + "/charts/poktroll"
+    hot_reload_dirs.append(helm_chart_local_repo)
+    print("Using local helm chart repo " + helm_chart_local_repo)
+
+    sequencer_chart = helm_chart_local_repo + "/charts/poktroll-sequencer"
+    poktroll_chart = helm_chart_local_repo + "/charts/poktroll"
 
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
@@ -76,40 +82,14 @@ WORKDIR /
     live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
 )
 
-# Run pocketd, relayer, celestia and anvil nodes
-k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml',
-    'localnet/kubernetes/pocketd.yaml',
-    'localnet/kubernetes/pocketd-relayer.yaml',
-    'localnet/kubernetes/anvil.yaml'])
+# Run celestia and anvil nodes
+k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/anvil.yaml'])
 
-# Submit poktrolld sequencer manifests to k8s cluster
-# k8s_yaml(
-#     helm(
-#         chart_dir,
-#         name="validator-%s-pocket" % formatted_number,
-#         set=[
-#             "global.postgresql.auth.postgresPassword=LocalNetPassword",
-#             "image.repository=pocket-image",
-#             "privateKeySecretKeyRef.name=validators-private-keys",
-#             "privateKeySecretKeyRef.key=%s" % formatted_number,
-#             "genesis.preProvisionedGenesis.enabled=false",
-#             "genesis.externalConfigMap.name=v1-localnet-genesis",
-#             "genesis.externalConfigMap.key=genesis.json",
-#             "postgresql.primary.persistence.enabled=false",
-#             "podAnnotations.prometheus\\.io/scrape=true",
-#             "podAnnotations.prometheus\\.io/port=9000",
-#             "nodeType=validator",
-#         ],
-#         values=[chart_dir + "/pocket-validator-overrides.yaml"]
-#         if os.path.exists(chart_dir + "/pocket-validator-overrides.yaml")
-#         else [],
-#     )
-# )
-
-helm_resource("pocketd-sequencer", helm_chart_repo)
+helm_resource("sequencer", sequencer_chart, flags=['--values=./localnet/kubernetes/values-common.yaml'], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
+helm_resource("relayers", poktroll_chart, flags=['--values=./localnet/kubernetes/values-common.yaml', '--set=replicaCount=' + str(localnet_config["relayers"]["count"])], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
 
 # Configure tilt resources (tilt labels and port forawards) for all of the nodes above
 k8s_resource('celestia-rollkit', labels=["blockchains"], port_forwards=['26657', '26658', '26659'])
-k8s_resource('pocketd', labels=["blockchains"], resource_deps=['celestia-rollkit'], port_forwards=['36657', '40004'])
-k8s_resource('pocketd-relayer', labels=["blockchains"], resource_deps=['pocketd'], port_forwards=['8545', '8546', '40005'])
+k8s_resource('sequencer', labels=["blockchains"], resource_deps=['celestia-rollkit'], port_forwards=['36657', '40004'])
+k8s_resource('relayers', labels=["blockchains"], resource_deps=['sequencer'], port_forwards=['8545', '8546', '40005'])
 k8s_resource('anvil', labels=["blockchains"], port_forwards=['8547'])

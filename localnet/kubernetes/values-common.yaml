@@ -1,0 +1,4 @@
+securityContext:
+  allowPrivilegeEscalation: true
+  capabilities:
+    add: ["SYS_PTRACE"]
