@@ -14,33 +14,32 @@ import (
 
 	"pocket/testutil/network"
 	"pocket/testutil/nullify"
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/client/cli"
-	"pocket/x/supplier/types"
+	"pocket/x/gateway/client/cli"
+	"pocket/x/gateway/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier) {
+func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
-		supplier := sharedtypes.Supplier{
+		gateway := types.Gateway{
 			Address: strconv.Itoa(i),
 		}
-		nullify.Fill(&supplier)
-		state.SupplierList = append(state.SupplierList, supplier)
+		nullify.Fill(&gateway)
+		state.GatewayList = append(state.GatewayList, gateway)
 	}
 	buf, err := cfg.Codec.MarshalJSON(&state)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.SupplierList
+	return network.New(t, cfg), state.GatewayList
 }
 
-func TestShowSupplier(t *testing.T) {
-	net, objs := networkWithSupplierObjects(t, 2)
+func TestShowGateway(t *testing.T) {
+	net, objs := networkWithGatewayObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -52,7 +51,7 @@ func TestShowSupplier(t *testing.T) {
 
 		args []string
 		err  error
-		obj  sharedtypes.Supplier
+		obj  types.Gateway
 	}{
 		{
 			desc:      "found",
@@ -75,27 +74,27 @@ func TestShowSupplier(t *testing.T) {
 				tc.idAddress,
 			}
 			args = append(args, tc.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowGateway(), args)
 			if tc.err != nil {
 				stat, ok := status.FromError(tc.err)
 				require.True(t, ok)
 				require.ErrorIs(t, stat.Err(), tc.err)
 			} else {
 				require.NoError(t, err)
-				var resp types.QueryGetSupplierResponse
+				var resp types.QueryGetGatewayResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-				require.NotNil(t, resp.Supplier)
+				require.NotNil(t, resp.Gateway)
 				require.Equal(t,
 					nullify.Fill(&tc.obj),
-					nullify.Fill(&resp.Supplier),
+					nullify.Fill(&resp.Gateway),
 				)
 			}
 		})
 	}
 }
 
-func TestListSupplier(t *testing.T) {
-	net, objs := networkWithSupplierObjects(t, 5)
+func TestListGateway(t *testing.T) {
+	net, objs := networkWithGatewayObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
@@ -117,14 +116,14 @@ func TestListSupplier(t *testing.T) {
 		step := 2
 		for i := 0; i < len(objs); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllSupplierResponse
+			var resp types.QueryAllGatewayResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Supplier), step)
+			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
 				nullify.Fill(objs),
-				nullify.Fill(resp.Supplier),
+				nullify.Fill(resp.Gateway),
 			)
 		}
 	})
@@ -133,29 +132,29 @@ func TestListSupplier(t *testing.T) {
 		var next []byte
 		for i := 0; i < len(objs); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllSupplierResponse
+			var resp types.QueryAllGatewayResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Supplier), step)
+			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
 				nullify.Fill(objs),
-				nullify.Fill(resp.Supplier),
+				nullify.Fill(resp.Gateway),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(objs)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllSupplierResponse
+		var resp types.QueryAllGatewayResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
 		require.Equal(t, len(objs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(objs),
-			nullify.Fill(resp.Supplier),
+			nullify.Fill(resp.Gateway),
 		)
 	})
 }

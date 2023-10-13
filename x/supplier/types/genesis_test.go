@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/types"
 )
 
@@ -22,7 +24,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
 
-				SupplierList: []types.Supplier{
+				SupplierList: []sharedtypes.Supplier{
 					{
 						Address: "0",
 					},
@@ -37,7 +39,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "duplicated supplier",
 			genState: &types.GenesisState{
-				SupplierList: []types.Supplier{
+				SupplierList: []sharedtypes.Supplier{
 					{
 						Address: "0",
 					},

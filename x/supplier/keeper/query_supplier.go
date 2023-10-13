@@ -8,6 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/types"
 )
 
@@ -16,14 +18,14 @@ func (k Keeper) SupplierAll(goCtx context.Context, req *types.QueryAllSupplierRe
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var suppliers []types.Supplier
+	var suppliers []sharedtypes.Supplier
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	store := ctx.KVStore(k.storeKey)
 	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyPrefix))
 
 	pageRes, err := query.Paginate(supplierStore, req.Pagination, func(key []byte, value []byte) error {
-		var supplier types.Supplier
+		var supplier sharedtypes.Supplier
 		if err := k.cdc.Unmarshal(value, &supplier); err != nil {
 			return err
 		}
