@@ -10,20 +10,27 @@ import (
 
 var _ observable.Observable[any] = &channelObservable[any]{}
 
+// option is a function which receives and can modify the channelObservable state.
 type option[V any] func(obs *channelObservable[V])
 
 // channelObservable implements the observable.Observable interface and can be notified
 // via its corresponding producer channel.
 type channelObservable[V any] struct {
-	producer    chan V // private channel that is used to emit values to observers
+	// producer is an observable-wide channel that is used to receive values
+	// which are subsequently re-sent to observers.
+	producer chan V
+	// observersMu protects observers from concurrent access/updates
 	observersMu sync.RWMutex
-	observers   *[]*channelObserver[V] // observers is a list of channels that are subscribed to the observable
+	// observers is a list of channelObservers that will be notified with producer
+	// receives a value.
+	observers *[]*channelObserver[V]
 }
 
 // NewObservable creates a new observable is notified when the producer channel
 // receives a value.
 // func NewObservable[V any](producer chan V) (observable.Observable[V], chan<- V) {
 func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
+	// initialize an observer that publishes messages from 1 producer to N observers
 	obs := &channelObservable[V]{
 		observersMu: sync.RWMutex{},
 		observers:   new([]*channelObserver[V]),
@@ -33,24 +40,27 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 		opt(obs)
 	}
 
-	// If the caller does not provide a producer, create a new one and return it
+	// if the caller does not provide a producer, create a new one and return it
 	if obs.producer == nil {
 		obs.producer = make(chan V)
 	}
 
-	// Start listening to the producer and emit values to observers
+	// start listening to the producer and emit values to observers
 	go obs.goListen(obs.producer)
 
 	return obs, obs.producer
 }
 
+// WithProducer returns an option function sets the given producer in an observable
+// when passed to NewObservable().
 func WithProducer[V any](producer chan V) option[V] {
 	return func(obs *channelObservable[V]) {
 		obs.producer = producer
 	}
 }
 
-// Subscribe returns an observer which is notified when producer receives.
+// Subscribe returns an observer which is notified when the producer channel
+// receives a value.
 func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
 	obs.observersMu.Lock()
 	defer func() {
@@ -98,9 +108,9 @@ func (obs *channelObservable[V]) goListen(producer <-chan V) {
 		obs.observersMu.RUnlock()
 
 		for _, sub := range observers {
-			// CONSIDERATION: perhaps try to avoid making this notification async
-			// as it effectively uses goroutines in memory as a buffer (with
-			// little control surface).
+			// CONSIDERATION: perhaps continue trying to avoid making this
+			// notification async as it would effectively use goroutines
+			// in memory as a buffer (with little control surface).
 			sub.notify(notification)
 		}
 	}

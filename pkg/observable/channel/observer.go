@@ -16,12 +16,19 @@ var _ observable.Observer[any] = &channelObserver[any]{}
 
 // channelObserver implements the observable.Observer interface.
 type channelObserver[V any] struct {
-	ctx        context.Context
-	observerMu *sync.RWMutex
-	observerCh chan V
-	// TODO_THIS_COMMIT: add comment
+	ctx context.Context
+	// onUnsubscribe is called in Observer#Unsubscribe, removing the respective
+	// observer from observers in a concurrency-safe manner.
 	onUnsubscribe func(toRemove *channelObserver[V])
-	closed        bool
+	// observerMu protects the observerCh and closed fields.
+	observerMu *sync.RWMutex
+	// observerCh is the channel that is used to emit values to the observer.
+	// I.e. on the "N" side of the 1:N relationship between observable and
+	// observer.
+	observerCh chan V
+	// closed indicates whether the observer has been closed. It's set in
+	// unsubscribe; closed observers can't be reused.
+	closed bool
 }
 
 type UnsubscribeFactory[V any] func() UnsubscribeFunc[V]

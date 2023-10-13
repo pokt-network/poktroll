@@ -2,6 +2,11 @@ package observable
 
 import "context"
 
+// NOTE: We explicitly decided to write a small and custom notifications package
+// to keep logic simple and minimal. If the needs & requirements of this library ever
+// grow, other packages (e.g. https://github.com/ReactiveX/RxGo) can be considered.
+// (see: https://github.com/ReactiveX/RxGo/pull/377)
+
 // Observable is a generic interface that allows multiple subscribers to be
 // notified of new values asynchronously.
 type Observable[V any] interface {
