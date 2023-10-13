@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/supplier/params.proto";
-import "pocket/supplier/supplier.proto";
+import "pocket/shared/supplier.proto";
 
 option go_package = "pocket/x/supplier/types";
 
@@ -44,7 +44,7 @@ message QueryGetSupplierRequest {
 }
 
 message QueryGetSupplierResponse {
-  Supplier supplier = 1 [(gogoproto.nullable) = false];
+  pocket.shared.Supplier supplier = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryAllSupplierRequest {
@@ -52,7 +52,7 @@ message QueryAllSupplierRequest {
 }
 
 message QueryAllSupplierResponse {
-  repeated Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
+  repeated pocket.shared.Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
