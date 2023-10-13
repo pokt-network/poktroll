@@ -14,6 +14,8 @@ import (
 	"pocket/x/supplier/types"
 )
 
+// TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
+
 var _ = strconv.Itoa(0)
 
 func CmdCreateClaim() *cobra.Command {
