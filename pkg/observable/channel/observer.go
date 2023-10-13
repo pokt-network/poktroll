@@ -54,47 +54,46 @@ func NewObserver[V any](
 
 // Unsubscribe closes the subscription channel and removes the subscription from
 // the observable.
-func (obv *channelObserver[V]) Unsubscribe() {
-	obv.observerMu.Lock()
+func (obsvr *channelObserver[V]) Unsubscribe() {
+	obsvr.observerMu.Lock()
 	defer func() {
-		obv.observerMu.Unlock()
+		obsvr.observerMu.Unlock()
 	}()
 
-	if obv.closed {
+	if obsvr.closed {
 		return
 	}
 
-	fmt.Printf("channelObserver#Unsubscribe: closing %p\n", obv.observerCh)
-	close(obv.observerCh)
-	obv.closed = true
+	fmt.Printf("channelObserver#Unsubscribe: closing %p\n", obsvr.observerCh)
+	close(obsvr.observerCh)
+	obsvr.closed = true
 
-	obv.onUnsubscribe(obv)
+	obsvr.onUnsubscribe(obsvr)
 }
 
 // Ch returns a receive-only subscription channel.
-func (obv *channelObserver[V]) Ch() <-chan V {
-	obv.observerMu.Lock()
+func (obsvr *channelObserver[V]) Ch() <-chan V {
+	obsvr.observerMu.Lock()
 	defer func() {
-		obv.observerMu.Unlock()
+		obsvr.observerMu.Unlock()
 	}()
 
-	return obv.observerCh
+	return obsvr.observerCh
 }
 
 // TODO_CLEANUP_COMMENT: used by observable to send to subscriber  channel
 // because channelObserver#Ch returns a receive-only channel
-func (obv *channelObserver[V]) notify(value V) {
-	obv.observerMu.Lock()
-	ch, closed := obv.observerCh, obv.closed
-	defer obv.observerMu.Unlock()
+func (obsvr *channelObserver[V]) notify(value V) {
+	obsvr.observerMu.Lock()
+	defer obsvr.observerMu.Unlock()
 
-	if closed {
+	if obsvr.closed {
 		return
 	}
 
 	select {
-	case ch <- value:
-	case <-obv.ctx.Done():
+	case obsvr.observerCh <- value:
+	case <-obsvr.ctx.Done():
 		// TECHDEBT: add a  default path which buffers values so that the sender
 		// doesn't block and other consumers can still receive.
 		// TECHDEBT: add some logic to drain the buffer at some appropriate time
