@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package pocket.gateway;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "pocket/gateway/params.proto";
+import "pocket/gateway/gateway.proto";
+
+option go_package = "pocket/x/gateway/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/pocket/gateway/params";
+  
+  }
+  
+  // Queries a list of Gateway items.
+  rpc Gateway    (QueryGetGatewayRequest) returns (QueryGetGatewayResponse) {
+    option (google.api.http).get = "/pocket/gateway/gateway/{address}";
+  
+  }
+  rpc GatewayAll (QueryAllGatewayRequest) returns (QueryAllGatewayResponse) {
+    option (google.api.http).get = "/pocket/gateway/gateway";
+  
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryGetGatewayRequest {
+  string address = 1;
+}
+
+message QueryGetGatewayResponse {
+  Gateway gateway = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllGatewayRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllGatewayResponse {
+  repeated Gateway                                gateway    = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
