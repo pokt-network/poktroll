@@ -14,6 +14,7 @@ var (
 	// defaultRPCURL used by targetPod to build commands
 	defaultRPCURL string
 	// targetDevClientPod is the kube pod that executes calls to the pocket binary under test
+	// DISCUSS_IN_THIS_PR: how can we make this a nice name withing k8s?
 	targetDevClientPod = "pocketd-88658b5f8-r9gmv"
 	// defaultRPCPort is the default RPC port that poktrolld listens on
 	defaultRPCPort = 36657
@@ -56,9 +57,9 @@ func (n *pocketdPod) RunCommand(args ...string) (*commandResult, error) {
 func (n *pocketdPod) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
 	base := []string{
 		"exec", "-i", targetDevClientPod,
-		//"--container", "default",
+		//"--container", "default", // DISCUSS_IN_THIS_PR: not sure if the current setup needs us to specify the container as its default
 		"--", cliPath,
-		//"--node=", defaultRPCURL,
+		//"--node=", defaultRPCURL, // DISCUSS_IN_THIS_PR: this flag no longer exists but will be needed in the future
 	}
 	args = append(base, args...)
 	cmd := exec.Command("kubectl", args...)
