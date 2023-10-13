@@ -3,7 +3,6 @@ package channel_test
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -94,6 +93,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			)
 			require.NotNil(t, obsvbl)
 			require.NotNil(t, producer)
+			produceWithDelay := syncSendWithDelayFactory(producer, productionDelay)
 
 			// construct 3 distinct observers, each with its own channel
 			observers := make([]observable.Observer[*int], 1)
@@ -140,9 +140,10 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				inputPtr := new(int)
 				*inputPtr = input
 				t.Logf("sending input ptr: %d %p", input, inputPtr)
-				time.Sleep(productionDelay)
-				producer <- inputPtr
-				time.Sleep(productionDelay)
+
+				// simulating IO delay in sequential message production
+				produceWithDelay(inputPtr)
+
 				t.Logf("send input %d", i)
 			}
 			cancel()
@@ -257,12 +258,7 @@ func TestChannelObservable_ConcurrentSubUnSub(t *testing.T) {
 	t.Skip("add coverage: subscribing and unsubscribing concurrently should not race")
 }
 
-// TECHDEBT/INCOMPLETE: add coverage for multiple observers, unsubscribe from one
-// and ensure the rest are still notified.
-// TODO_THIS_COMMIT: consider renaming, also has to do with sequential notificaions
-func TestChannelObservable_ObserversUnsubscribeIndependently(t *testing.T) {
-	//t.Skip("add coverage: unsubscribing one observer should not impact the rest")
-
+func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 	observations := new([]*observation[int])
 	expectedNotifications := [][]int{
 		{123, 456, 789},
@@ -271,14 +267,10 @@ func TestChannelObservable_ObserversUnsubscribeIndependently(t *testing.T) {
 		{987, 654, 321},
 	}
 
-	//type observation struct {
-	//	observerIndex int
-	//	notifications []int
-	//}
-
 	obsvbl, producer := channel.NewObservable[int]()
 	require.NotNil(t, obsvbl)
 	require.NotNil(t, producer)
+	// simulate IO delay in sequential message production
 	produceWithDelay := syncSendWithDelayFactory(producer, productionDelay)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -326,6 +318,7 @@ func TestChannelObservable_ObserversUnsubscribeIndependently(t *testing.T) {
 
 			obsrvn.Lock()
 			defer obsrvn.Unlock()
+
 			require.Equalf(
 				t, len(expectedNotifications[obsnIdx]),
 				len(*obsrvn.Notifications),
@@ -347,40 +340,6 @@ func TestChannelObservable_ObserversUnsubscribeIndependently(t *testing.T) {
 // TECHDEBT/INCOMPLETE: add coverage for active observers closing when producer closes.
 func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
 	t.Skip("add coverage: all observers should close when producer closes")
-}
-
-// TECHDEBT/INCOMPLETE: add coverage for observers (un)subscribing in-between notifications.
-func TestChannelObservable_ObserversSubscribeSerially(t *testing.T) {
-	t.Skip("add coverage: observers which subscribe in-between notifications should receive specific value ranges")
-}
-
-type observation[V any] struct {
-	sync.Mutex
-	observable.Observer[V]
-	Notifications *[]V
-}
-
-func newObservation[V any](
-	ctx context.Context,
-	observable observable.Observable[V],
-) *observation[V] {
-	return &observation[V]{
-		Observer:      observable.Subscribe(ctx),
-		Notifications: new([]V),
-	}
-}
-
-func (o *observation[V]) notify(value V) {
-	o.Lock()
-	defer o.Unlock()
-
-	*o.Notifications = append(*o.Notifications, value)
-}
-
-func goReceiveNotifications[V any](obsvn *observation[V]) {
-	for notification := range obsvn.Ch() {
-		obsvn.notify(notification)
-	}
 }
 
 func syncSendWithDelayFactory[V any](producer chan<- V, delay time.Duration) func(value V) {

@@ -81,8 +81,8 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 	return obsvr.observerCh
 }
 
-// TODO_CLEANUP_COMMENT: used by observable to send to subscriber  channel
-// because channelObserver#Ch returns a receive-only channel
+// notify is used called by observable to send on the observer channel. Can't
+// use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
 	obsvr.observerMu.Lock()
 	defer obsvr.observerMu.Unlock()
