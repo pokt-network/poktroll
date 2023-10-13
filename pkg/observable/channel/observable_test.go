@@ -18,7 +18,7 @@ const (
 	unsubscribeSleepDuration = notifyTimeout * 2
 )
 
-func TestNewObservable_NotifyObservers(t *testing.T) {
+func TestChannelObservable_NotifyObservers(t *testing.T) {
 	type test struct {
 		name            string
 		producer        chan *int
@@ -162,7 +162,7 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 
 // TECHDEBT\INCOMPLETE: add coverage for active observers closing when producer closes.
 
-func TestNewObservable_UnsubscribeObservers(t *testing.T) {
+func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	testObs, producer := channel.NewObservable[int]()
 	require.NotNil(t, testObs)
