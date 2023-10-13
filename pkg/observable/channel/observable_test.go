@@ -159,8 +159,14 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 // TECHDEBT/INCOMPLETE: add coverage for multiple observers, unsubscribe from one
 // and ensure the rest are still notified.
+func TestChannelObservable_IndependentObservers(t *testing.T) {
+	t.Skip("add coverage: unsubscribing one observer should not impact the rest")
+}
 
 // TECHDEBT\INCOMPLETE: add coverage for active observers closing when producer closes.
+func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
+	t.Skip("add coverage: all observers should close when producer closes")
+}
 
 func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
