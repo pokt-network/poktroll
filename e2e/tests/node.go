@@ -5,9 +5,6 @@ package e2e
 import (
 	"fmt"
 	"os/exec"
-
-	"github.com/pokt-network/pocket/runtime"
-	"github.com/pokt-network/pocket/runtime/defaults"
 )
 
 // cliPath is the path of the binary installed and is set by the Tiltfile
@@ -17,12 +14,15 @@ var (
 	// defaultRPCURL used by targetPod to build commands
 	defaultRPCURL string
 	// targetDevClientPod is the kube pod that executes calls to the pocket binary under test
-	targetDevClientPod = "deploy/dev-cli-client"
+	targetDevClientPod = "pocketd-88658b5f8-r9gmv"
+	// defaultRPCPort is the default RPC port that poktrolld listens on
+	defaultRPCPort = 36657
+	// defaultRPCHost is the default RPC host that poktrolld listens on
+	defaultRPCHost = "127.0.0.1"
 )
 
 func init() {
-	defaultRPCHost := runtime.GetEnv("RPC_HOST", defaults.RandomValidatorEndpointK8SHostname)
-	defaultRPCURL = fmt.Sprintf("http://%s:%s", defaultRPCHost, defaults.DefaultRPCPort)
+	defaultRPCURL = fmt.Sprintf("tcp://%s:%d", defaultRPCHost, defaultRPCPort)
 }
 
 // commandResult combines the stdout, stderr, and err of an operation
@@ -56,10 +56,9 @@ func (n *pocketdPod) RunCommand(args ...string) (*commandResult, error) {
 func (n *pocketdPod) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
 	base := []string{
 		"exec", "-i", targetDevClientPod,
-		"--container", "pocketd",
+		//"--container", "default",
 		"--", cliPath,
-		"--non_interactive=true",
-		"--remote_cli_url=" + rpcUrl,
+		//"--node=", defaultRPCURL,
 	}
 	args = append(base, args...)
 	cmd := exec.Command("kubectl", args...)

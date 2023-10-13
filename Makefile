@@ -7,6 +7,15 @@ POCKET_NODE = 127.0.0.1:36657 # The pocket rollup node (full node and sequencer 
 ### Makefile Helpers ###
 ########################
 
+# Internal helper target - check if kubectl is installed.
+kubectl_check:
+	{ \
+	if ( ! ( command -v kubectl >/dev/null )); then \
+		echo "Seems like you don't have Kubectl installed."; \
+		exit 1; \
+	fi; \
+	}
+
 .PHONY: prompt_user
 # Internal helper target - prompt the user before continuing
 prompt_user:
@@ -97,6 +106,10 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 #############
 ### Tests ###
 #############
+
+.PHONY: test_e2e
+test_e2e: kubectl_check ## Run all E2E tests
+	go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
