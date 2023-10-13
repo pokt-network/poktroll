@@ -150,13 +150,9 @@ func TestNewObservable_NotifyObservers(t *testing.T) {
 				t.Logf("unsusbscribed %d", i)
 
 				// must drain the channel first to ensure it is closed
-				drainCh(
-					observer.Ch(),
-					notifyTimeout,
-					func(closed bool, err error) {
-						require.NoError(t, err)
-						require.True(t, closed)
-					})
+				closed, err := drainCh(observer.Ch())
+				require.NoError(t, err)
+				require.True(t, closed)
 			}
 		})
 	}
@@ -240,26 +236,17 @@ func TestNewObservable_UnsubscribeObservers(t *testing.T) {
 	}
 }
 
-func drainCh[V any](
-	ch <-chan V,
-	timeout time.Duration,
-	done func(closed bool, err error),
-) {
-	var err error
-drain:
+func drainCh[V any](ch <-chan V) (closed bool, err error) {
 	for {
 		select {
 		case _, ok := <-ch:
 			if !ok {
-				done(true, nil)
-				break drain
+				return true, nil
+				return
 			}
 			continue
-		case <-time.After(timeout):
-			err = fmt.Errorf("timed out waiting for observer channel to close")
 		default:
-			err = fmt.Errorf("observer channel left open")
+			return false, fmt.Errorf("observer channel left open")
 		}
-		done(false, err)
 	}
 }
