@@ -62,7 +62,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		},
 	}
 
-	// Initialize the App Account
+	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
 	sendArgs := []string{
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 	}
@@ -71,16 +71,20 @@ func TestCLI_StakeApplication(t *testing.T) {
 	_, err := clitestutil.MsgSendExec(ctx, net.Validators[0].Address, appAccount.Address, amount, sendArgs...)
 	require.NoError(t, err)
 
+	// Stake the tests
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// Prepare the arguments for the CLI command
 			args := []string{
 				tt.stakeAmount,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
 
+			// Execute the command
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeApplication(), args)
 			if tt.err != nil {
 				stat, ok := status.FromError(tt.err)
