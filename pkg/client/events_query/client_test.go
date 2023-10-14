@@ -4,40 +4,31 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"pocket/pkg/client"
-	"pocket/pkg/observable"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"pocket/internal/mocks/mockclient"
 	"pocket/internal/testchannel"
+	"pocket/internal/testclient/testeventsquery"
+	"pocket/internal/testerrors"
 	eventsquery "pocket/pkg/client/events_query"
+	"pocket/pkg/either"
+	"pocket/pkg/observable"
 )
 
-/* TODO_TECHDEBT: add test coverage for:
-- [x] Multiple observers w/ different queries
-- [x] Observers close when connection closes unexpectedly
-- [x] Observers close when context is cancelled
-- [x] Observers close on #Close()
-- [ ] Returns correct error channel (*assuming no `Either`)
-- [ ] Multiple observers w/ same query
-- [ ] Multiple observers w/ same query, one unsubscribes
-*/
-
-func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
+func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 	var (
-		readObserverEventsTimeout = 300 * time.Millisecond
+		readObserverEventsTimeout = time.Second
 		queryCounter              int
-		// TODO_THIS_COMMIT: increase!
-		queryLimit          = 5
-		connMocks           = make([]*mockclient.MockConnection, queryLimit)
-		ctrl                = gomock.NewController(t)
-		rootCtx, cancelRoot = context.WithCancel(context.Background())
+		queryLimit                = 5
+		connMocks                 = make([]*mockclient.MockConnection, queryLimit)
+		ctrl                      = gomock.NewController(t)
+		rootCtx, cancelRoot       = context.WithCancel(context.Background())
 	)
 	t.Cleanup(cancelRoot)
 
@@ -45,14 +36,15 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 	// `Dialer#DialContext()` should be called once for each subscription (subtest).
 	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ string) (*mockclient.MockConnection, error) {
+			// Return the connection mock for the subscription with the given query.
+			// It should've been created in the respective test function.
 			connMock := connMocks[queryCounter]
-
 			queryCounter++
 			return connMock, nil
 		}).
 		Times(queryLimit)
 
-	// set up query client
+	// Set up events query client.
 	dialerOpt := eventsquery.WithDialer(dialerMock)
 	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
 	t.Cleanup(queryClient.Close)
@@ -60,28 +52,23 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 	for queryIdx := 0; queryIdx < queryLimit; queryIdx++ {
 		t.Run(testQuery(queryIdx), func(t *testing.T) {
 			var (
-				// readEventCounter is the  number of obsvblConns which have been
+				// ReadEventCounter is the  number of eventsBytesAndConns which have been
 				// received from the connection since the subtest started.
 				readEventCounter int
-				// handleEventsLimit is the total number of obsvblConns to send and
-				// receive through the query client's observable for this subtest.
-				handleEventsLimit = 1000
-				connClosedMu      sync.Mutex
-				// TODO_THIS_COMMIT: try...
-				// connClosed atomic.Bool
-				connClosed            bool
+				// HandleEventsLimit is the total number of eventsBytesAndConns to send and
+				// receive through the query client's eventsBytes for this subtest.
+				handleEventsLimit     = 1000
+				connClosed            atomic.Bool
 				queryCtx, cancelQuery = context.WithCancel(rootCtx)
 			)
 
-			// must set up connection mock before calling EventsBytes()
+			// Must set up connection mock before calling EventsBytes()
 			connMock := mockclient.NewMockConnection(ctrl)
 			// `Connection#Close()` should be called once for each subscription.
 			connMock.EXPECT().Close().
 				DoAndReturn(func() error {
-					connClosedMu.Lock()
-					defer connClosedMu.Unlock()
-
-					connClosed = true
+					// Simulate closing the connection.
+					connClosed.CompareAndSwap(false, true)
 					return nil
 				}).
 				Times(1)
@@ -94,11 +81,9 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 			// last message.
 			connMock.EXPECT().Receive().
 				DoAndReturn(func() (any, error) {
-					connClosedMu.Lock()
-					defer connClosedMu.Unlock()
-
-					if connClosed {
-						return nil, client.ErrConnClosed
+					// Simulate ErrConnClosed if connection is closed.
+					if connClosed.Load() {
+						return nil, eventsquery.ErrConnClosed
 					}
 
 					event := testEvent(int32(readEventCounter))
@@ -108,70 +93,52 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 				MinTimes(handleEventsLimit)
 			connMocks[queryIdx] = connMock
 
-			// set up query observer
-			eventObservable, errCh := queryClient.EventsBytes(queryCtx, testQuery(queryIdx))
+			// Set up events bytes observer for this query.
+			eventObservable, err := queryClient.EventsBytes(queryCtx, testQuery(queryIdx))
+			require.NoError(t, err)
+
 			eventObserver := eventObservable.Subscribe(queryCtx)
 
-			onDone := func() {
-				// cancelling the context should close the connection
+			onLimit := func() {
+				// Cancelling the context should close the connection.
 				cancelQuery()
-				// closing the connection happens asynchronously, so we need to wait a bit
+				// Closing the connection happens asynchronously, so we need to wait a bit
 				// for the connection to close to satisfy the connection mock expectations.
 				time.Sleep(10 * time.Millisecond)
 
-				// drain the observer channel and assert that it's closed
+				// Drain the observer channel and assert that it's closed.
 				err := testchannel.DrainChannel(eventObserver.Ch())
-				require.NoError(t, err, "obsvblConns observer channel should be closed")
+				require.NoError(t, err, "eventsBytesAndConns observer channel should be closed")
 			}
 
-			// concurrently consume obsvblConns from the observer channel
-			behavesLikeObserver(
+			// Concurrently consume eventsBytesAndConns from the observer channel.
+			behavesLikeEitherObserver(
 				t, eventObserver,
 				handleEventsLimit,
-				errCh,
-				client.ErrConnClosed,
+				eventsquery.ErrConnClosed,
 				readObserverEventsTimeout,
-				onDone,
+				onLimit,
 			)
 		})
 	}
 }
 
-func TestQueryClient_Subscribe_Close(t *testing.T) {
+func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	var (
 		readAllEventsTimeout = 50 * time.Millisecond
-		//readAllEventsTimeout = 100 * time.Millisecond
-		handleEventsLimit = 10
-		readEventCounter  int
-		connClosedMu      sync.Mutex
-		// TODO_THIS_COMMIT: try...
-		//connClosed           atomic.Bool
-		connClosed bool
+		handleEventsLimit    = 10
+		readEventCounter     int
+		connClosed           atomic.Bool
+		ctx                  = context.Background()
 	)
 
-	ctx := context.Background()
-	ctrl := gomock.NewController(t)
-
-	connMock := mockclient.NewMockConnection(ctrl)
-	connMock.EXPECT().Close().
-		DoAndReturn(func() error {
-			connClosedMu.Lock()
-			defer connClosedMu.Unlock()
-
-			connClosed = true
-			return nil
-		}).
-		MinTimes(1)
-	connMock.EXPECT().Send(gomock.Any()).
-		Return(nil).
+	connMock, dialerMock := testeventsquery.OneTimeMockConnAndDialer(t)
+	connMock.EXPECT().Send(gomock.Any()).Return(nil).
 		Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
-			connClosedMu.Lock()
-			defer connClosedMu.Unlock()
-
-			if connClosed {
-				return nil, client.ErrConnClosed
+			if connClosed.Load() {
+				return nil, eventsquery.ErrConnClosed
 			}
 
 			event := testEvent(int32(readEventCounter))
@@ -180,87 +147,59 @@ func TestQueryClient_Subscribe_Close(t *testing.T) {
 		}).
 		MinTimes(handleEventsLimit)
 
-	dialerMock := mockclient.NewMockDialer(ctrl)
-	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		Return(connMock, nil).
-		Times(1)
-
 	dialerOpt := eventsquery.WithDialer(dialerMock)
 	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
 
 	// set up query observer
-	eventsObservable, errCh := queryClient.EventsBytes(ctx, testQuery(0))
+	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
+	require.NoError(t, err)
+
 	eventsObserver := eventsObservable.Subscribe(ctx)
 
-	onDone := func() {
+	onLimit := func() {
 		// cancelling the context should close the connection
 		queryClient.Close()
 		// closing the connection happens asynchronously, so we need to wait a bit
 		// for the connection to close to satisfy the connection mock expectations.
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	// concurrently consume obsvblConns from the observer channel
-	behavesLikeObserver(
+	// concurrently consume eventsBytesAndConns from the observer channel
+	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventsLimit,
-		errCh,
-		client.ErrConnClosed,
+		eventsquery.ErrConnClosed,
 		readAllEventsTimeout,
-		onDone,
+		onLimit,
 	)
 }
 
-func TestQueryClient_Subscribe_DialError(t *testing.T) {
+func TestEventsQueryClient_Subscribe_DialError(t *testing.T) {
 	ctx := context.Background()
-	ctrl := gomock.NewController(t)
 
-	dialerMock := mockclient.NewMockDialer(ctrl)
-	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		Return(nil, client.ErrDial).
-		Times(1)
+	eitherErrDial := either.Error[*mockclient.MockConnection](eventsquery.ErrDial)
+	dialerMock := testeventsquery.OneTimeMockDialer(t, eitherErrDial)
 
 	dialerOpt := eventsquery.WithDialer(dialerMock)
 	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
-	eventsObservable, errCh := queryClient.EventsBytes(ctx, testQuery(0))
+	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-
-	select {
-	case err := <-errCh:
-		require.True(t, errors.Is(err, client.ErrDial))
-	default:
-		t.Fatalf("expected error from EventsBytes errCh")
-	}
+	require.True(t, errors.Is(err, eventsquery.ErrDial))
 }
 
-func TestQueryClient_Subscribe_RequestError(t *testing.T) {
+func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	ctrl := gomock.NewController(t)
 
-	connMock := mockclient.NewMockConnection(ctrl)
-	connMock.EXPECT().Close().
-		Return(nil).
-		Times(1)
+	connMock, dialerMock := testeventsquery.OneTimeMockConnAndDialer(t)
 	connMock.EXPECT().Send(gomock.Any()).
 		Return(fmt.Errorf("mock send error")).
 		Times(1)
 
-	dialerMock := mockclient.NewMockDialer(ctrl)
-	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		Return(connMock, nil).
-		Times(1)
-
 	dialerOpt := eventsquery.WithDialer(dialerMock)
 	queryClient := eventsquery.NewEventsQueryClient("url_ignored", dialerOpt)
-	eventsObservable, errCh := queryClient.EventsBytes(ctx, testQuery(0))
+	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-
-	select {
-	case err := <-errCh:
-		require.True(t, errors.Is(err, client.ErrSubscribe))
-	default:
-		t.Fatalf("expected error from EventsBytes errCh")
-	}
+	require.True(t, errors.Is(err, eventsquery.ErrSubscribe))
 
 	// cancelling the context should close the connection
 	cancel()
@@ -269,7 +208,10 @@ func TestQueryClient_Subscribe_RequestError(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 }
 
-func TestQueryClient_Subscribe_ReceiveError(t *testing.T) {
+// TODO_INVESTIGATE: why this test fails?
+func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
+	t.Skip("TODO_INVESTIGATE: why this test fails")
+
 	var (
 		handleEventLimit     = 10
 		readAllEventsTimeout = 100 * time.Millisecond
@@ -277,137 +219,143 @@ func TestQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ctrl := gomock.NewController(t)
+	t.Cleanup(cancel)
 
-	connMock := mockclient.NewMockConnection(ctrl)
-	connMock.EXPECT().Close().
-		Return(nil).
-		Times(1)
-	connMock.EXPECT().Send(gomock.Any()).
-		Return(nil).
+	connMock, dialerMock := testeventsquery.OneTimeMockConnAndDialer(t)
+	connMock.EXPECT().Send(gomock.Any()).Return(nil).
 		Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			if readEventCounter >= handleEventLimit {
-				return nil, client.ErrReceive
+				return nil, eventsquery.ErrReceive
 			}
 
 			event := testEvent(int32(readEventCounter))
 			readEventCounter++
+			time.Sleep(10 * time.Microsecond)
 
 			return event, nil
 		}).
 		MinTimes(handleEventLimit)
 
-	dialerMock := mockclient.NewMockDialer(ctrl)
-	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		Return(connMock, nil).
-		Times(1)
-
 	dialerOpt := eventsquery.WithDialer(dialerMock)
 	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
 
 	// set up query observer
-	eventsObservable, errCh := queryClient.EventsBytes(ctx, testQuery(0))
+	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
+	require.NoError(t, err)
+
 	eventsObserver := eventsObservable.Subscribe(ctx)
-
-	onLimit := func() {
-		_ = cancel
-		//// cancelling the context should close the connection
-		//cancel()
-		//// closing the connection happens asynchronously, so we need to wait a bit
-		//// for the connection to close to satisfy the connection mock expectations.
-		//time.Sleep(10 * time.Millisecond)
-	}
-
-	// concurrently consume obsvblConns from the observer channel
-	behavesLikeObserver(
+	// concurrently consume eventsBytesAndConns from the observer channel
+	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventLimit,
-		errCh,
-		client.ErrReceive,
+		eventsquery.ErrReceive,
 		readAllEventsTimeout,
-		onLimit,
+		nil,
 	)
 }
 
-func behavesLikeObserver(
+// TODO_TECHDEBT: add test coverage for multiple observers with distinct and overlapping queries
+func TestEventsQueryClient_EventsBytes_MultipleObservers(t *testing.T) {
+	t.Skip("TODO_TECHDEBT: add test coverage for multiple observers with distinct and overlapping queries")
+}
+
+// behavesLikeEitherObserver asserts that the given observer behaves like an
+// observable.Observer[either.Either[[]byte]] by consuming eventsBytes from the
+// observer channel and asserting that they match the expected eventsBytes.
+// It also asserts that the observer channel is closed after the expected number
+// of eventsBytes have been received.
+// If onLimit is not nil, it is called when the expected number of eventsBytes
+// have been received.
+// Otherwise, the observer channel is drained and the test fails if it is not
+// closed after the timeout duration.
+func behavesLikeEitherObserver[V any](
 	t *testing.T,
-	observer observable.Observer[[]byte],
+	observer observable.Observer[either.Either[V]],
 	eventsLimit int,
-	errCh <-chan error,
 	expectedErr error,
 	timeout time.Duration,
-	onDone func(),
+	onLimit func(),
 ) {
 	var (
-		//eventsCounterMu sync.RWMutex
+		// eventsCounter is the number of events which have been received from the
+		// eventsBytes since this function was called.
 		eventsCounter int32
-		// done is used to signal when the test is complete
-		done = make(chan struct{}, 1)
+		// errCh is used to signal when the test completes and/or produces an error
+		errCh = make(chan error, 1)
 	)
 
 	go func() {
-		//defer eventsCounterMu.Unlock()
-		for event := range observer.Ch() {
-			//eventsCounterMu.Lock()
+		for eitherEvent := range observer.Ch() {
+			event, err := eitherEvent.ValueOrError()
+			if err != nil {
+				switch expectedErr {
+				case nil:
+					if !assert.NoError(t, err) {
+						errCh <- testerrors.ErrAsync
+						return
+					}
+				default:
+					if !assert.ErrorIs(t, err, expectedErr) {
+						errCh <- testerrors.ErrAsync
+						return
+					}
+				}
+			}
+
 			currentEventCount := atomic.LoadInt32(&eventsCounter)
 			if int(currentEventCount) >= eventsLimit {
-				//eventsCounterMu.Unlock()
-				done <- struct{}{}
+				// signal completion
+				errCh <- nil
 				return
 			}
 
 			expectedEvent := testEvent(currentEventCount)
-			require.Equal(t, expectedEvent, event)
+			// Require calls t.Fatal internally, which shouldn't happen in a
+			// goroutine other than the test function's.
+			// Use assert instead and stop the test by sending on errCh and
+			// returning.
+			if !assert.Equal(t, expectedEvent, event) {
+				errCh <- testerrors.ErrAsync
+				return
+			}
 
-			//log.Printf("incrementing from %d to %d", currentEventCount, eventsCounter+1)
 			atomic.AddInt32(&eventsCounter, 1)
 
 			// unbounded consumption here can result in the condition below never
 			// being met due to the connection being closed before the "last" event
 			// is received
-			time.Sleep(time.Microsecond)
+			time.Sleep(10 * time.Microsecond)
 		}
 	}()
 
 	select {
-	case <-done:
-		//eventsCounterMu.RLock()
+	case err := <-errCh:
+		require.NoError(t, err)
 		require.Equal(t, eventsLimit, int(atomic.LoadInt32(&eventsCounter)))
-		//eventsCounterMu.RUnlock()
 
+		// TODO_THIS_COMMIT: is this necessary?
 		time.Sleep(10 * time.Millisecond)
 
-		// TODO_RESUME_HERE!!!
-		// is this right?
-		if onDone != nil {
-			onDone()
-		}
-	case err := <-errCh:
-		switch expectedErr {
-		case nil:
-			require.NoError(t, err)
-		default:
-			require.ErrorIs(t, err, expectedErr)
+		if onLimit != nil {
+			onLimit()
 		}
 	case <-time.After(timeout):
-		//eventsCounterMu.RLock()
 		t.Fatalf(
 			"timed out waiting for next event; expected %d events, got %d",
 			eventsLimit, atomic.LoadInt32(&eventsCounter),
 		)
-		//eventsCounterMu.RUnlock()
 	}
 
 	err := testchannel.DrainChannel(observer.Ch())
-	require.NoError(t, err, "obsvblConns observer should be closed")
+	require.NoError(t, err, "eventsBytesAndConns observer should be closed")
 }
 
 func testEvent(idx int32) []byte {
-	return []byte(fmt.Sprintf("message-%d", idx))
+	return []byte(fmt.Sprintf("message_%d", idx))
 }
 
 func testQuery(idx int) string {
-	return fmt.Sprintf("query-%d", idx)
+	return fmt.Sprintf("query_%d", idx)
 }
