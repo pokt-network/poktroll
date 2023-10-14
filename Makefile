@@ -114,7 +114,11 @@ test_e2e: ## Run all E2E tests
 
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
-	go test -v ./...
+	go test -v -race -tags test ./...
+
+.PHONY: go_test_integration
+go_test_integration: go_version_check ## Run all go tests, including integration
+	go test -v -race -tags test,integration ./...
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
