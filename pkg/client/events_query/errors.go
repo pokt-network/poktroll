@@ -1,4 +1,4 @@
-package client
+package eventsquery
 
 import errorsmod "cosmossdk.io/errors"
 
@@ -7,5 +7,5 @@ var (
 	ErrConnClosed = errorsmod.Register(codespace, 2, "connection closed")
 	ErrSubscribe  = errorsmod.Register(codespace, 3, "failed to subscribe to events")
 	ErrReceive    = errorsmod.Register(codespace, 4, "failed to receive event")
-	codespace     = "query_client"
+	codespace     = "events_query_client"
 )
