@@ -11,6 +11,7 @@ service Msg {
   rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
   rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
   rpc CreateClaim     (MsgCreateClaim    ) returns (MsgCreateClaimResponse    );
+  rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
 message MsgUnstakeSupplier {
   string address = 1;
@@ -31,4 +32,14 @@ message MsgCreateClaim {
 }
 
 message MsgCreateClaimResponse {}
+
+
+
+message MsgSubmitProof {
+  string                       supplier_address = 1;
+  pocket.session.SessionHeader session_header   = 2;
+  bytes                        proof            = 3;
+}
+
+message MsgSubmitProofResponse {}
 

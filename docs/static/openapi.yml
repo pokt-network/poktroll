@@ -76064,6 +76064,8 @@ definitions:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
     type: object
+  pocket.supplier.MsgSubmitProofResponse:
+    type: object
   pocket.supplier.MsgUnstakeSupplierResponse:
     type: object
   pocket.supplier.Params:
