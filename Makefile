@@ -100,7 +100,11 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
-	go test -v ./...
+	go test -v -race -tags test ./...
+
+.PHONY: go_test_integration
+go_test_integration: go_version_check ## Run all go tests
+	go test -v -race -tags test,integration ./...
 
 #############
 ### TODOS ###
