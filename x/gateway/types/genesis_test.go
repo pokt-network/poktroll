@@ -93,6 +93,22 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid: false,
 		},
 		{
+			desc: "invalid - zero gateway stake",
+			genState: &types.GenesisState{
+				GatewayList: []types.Gateway{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
 			desc: "invalid - negative gateway stake",
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
@@ -103,6 +119,38 @@ func TestGenesisState_Validate(t *testing.T) {
 					{
 						Address: addr2,
 						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - wrong stake denom",
+			genState: &types.GenesisState{
+				GatewayList: []types.Gateway{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - missing denom",
+			genState: &types.GenesisState{
+				GatewayList: []types.Gateway{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
 					},
 				},
 			},

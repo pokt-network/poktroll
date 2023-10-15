@@ -7,7 +7,7 @@ import (
 	"pocket/x/gateway/client/cli"
 	"pocket/x/gateway/types"
 
-	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -41,7 +41,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 		desc        string
 		address     string
 		stakeAmount string
-		err         *errorsmod.Error
+		err         *errors.Error
 	}{
 		{
 			desc:        "stake gateway: invalid address",
@@ -66,6 +66,18 @@ func TestCLI_StakeGateway(t *testing.T) {
 			address:     gatewayAccount.Address.String(),
 			stakeAmount: "1000invalid",
 			err:         types.ErrGatewayInvalidStake,
+		},
+		{
+			desc:        "stake gateway: invalid stake missing denom",
+			address:     gatewayAccount.Address.String(),
+			stakeAmount: "1000",
+			err:         types.ErrGatewayInvalidStake,
+		},
+		{
+			desc:    "stake gateway: invalid stake missing stake",
+			address: gatewayAccount.Address.String(),
+			// stakeAmount: "1000upokt",
+			err: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:        "stake gateway: valid",

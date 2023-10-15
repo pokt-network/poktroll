@@ -52,6 +52,13 @@ func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
 			},
 			err: ErrGatewayInvalidStake,
 		}, {
+			name: "valid address - invalid stake missing denom",
+			msg: MsgStakeGateway{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+			},
+			err: ErrGatewayInvalidStake,
+		}, {
 			name: "valid address - valid stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
