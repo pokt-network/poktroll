@@ -30,5 +30,8 @@ jobs:
       - name: Build
         run: ignite chain build --debug
 
+      - name: Mockgen
+        run: make go_mockgen
+
       - name: Test
         run: go test -v ./...
