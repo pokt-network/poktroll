@@ -102,6 +102,13 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 go_test: go_version_check ## Run all go tests
 	go test -v ./...
 
+.PHONY: go_mockgen
+go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	go generate ./x/gateway/types/
+
+.PHONY: go_develop
+go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
+
 #############
 ### TODOS ###
 #############
