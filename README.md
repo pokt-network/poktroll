@@ -25,10 +25,4 @@ make go_test
 
 ### LocalNet
 
-```bash
-# Create a k8s cluster
-kind create cluster
-
-# Start a LocalNet
-make localnet_up
-```
+Please check out the [LocalNet documentation](./localnet/README.md).
