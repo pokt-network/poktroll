@@ -37,12 +37,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
 	require.Equal(t, addr, foundApp.Address)
-	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
+	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 
 	// Prepare an updated application with a higher stake
 	updatedApp := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)}},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
 	}
 
 	// Update the staked application
@@ -50,7 +50,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 	foundApp, isAppFound = k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, updatedStake.Amount, foundApp.Stake.Amount)
+	require.Equal(t, int64(200), foundApp.Stake.Amount.Int64())
 }
 
 func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
@@ -84,5 +84,5 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	// Verify that the application stake is unchanged
 	appFound, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, initialStake.Amount, appFound.Stake.Amount)
+	require.Equal(t, int64(100), appFound.Stake.Amount.Int64())
 }

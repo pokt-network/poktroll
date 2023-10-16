@@ -55,7 +55,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
 			},
 			err: ErrAppInvalidStake,
-		}, {}, {
+		}, {
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
