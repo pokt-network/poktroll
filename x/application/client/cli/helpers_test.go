@@ -22,7 +22,7 @@ func init() {
 func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []types.Application) {
 	t.Helper()
 	cfg := network.DefaultConfig()
-	state := applicationModuleGenesis(n)
+	state := applicationModuleGenesis(t, n)
 	buf, err := cfg.Codec.MarshalJSON(state)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf

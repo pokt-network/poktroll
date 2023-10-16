@@ -50,7 +50,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 			err:         types.ErrAppInvalidAddress,
 		},
 		{
-			desc:        "stake application: invalid stake amount",
+			desc:        "stake application: invalid stake denom",
 			address:     appAccount.Address.String(),
 			stakeAmount: "1000invalid",
 			err:         types.ErrAppInvalidStake,
