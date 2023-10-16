@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gorilla/websocket"
+	"go.uber.org/multierr"
 
 	"pocket/pkg/client"
 )
@@ -26,38 +26,23 @@ type queryClient struct {
 	// and used to uniquely identify distinct RPC requests.
 	// TODO_CONSIDERATION: Consider changing `nextRequestId` to a random entropy field
 	nextRequestId uint64
+
+	dialer client.Dialer
 }
 
-func NewQueryClient(cometWebsocketURL string) client.QueryClient {
-	return &queryClient{cometWebsocketURL: cometWebsocketURL}
+func NewQueryClient(cometWebsocketURL string, opts ...client.Option) client.QueryClient {
+	qClient := &queryClient{cometWebsocketURL: cometWebsocketURL}
+
+	for _, opt := range opts {
+		opt(qClient)
+	}
+
+	return qClient
 }
 
-// listen blocks on reading messages from a websocket connection.
-// IMPORTANT: it is intended to be called from within a go routine.
-func (qClient *queryClient) listen(
-	ctx context.Context,
-	conn *websocket.Conn,
-	msgHandler client.MessageHandler,
-) error {
-	// read and handle messages from the websocket. This loop will exit when the
-	// websocket connection is closed and/or returns an error.
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			// Stop this goroutine if there's an error.
-			//
-			// See gorilla websocket `Conn#NextReader()` docs:
-			// | Applications must break out of the application's read loop when this method
-			// | returns a non-nil error value. Errors returned from this method are
-			// | permanent. Once this method returns a non-nil error, all subsequent calls to
-			// | this method return the same error.
-			return err
-		}
-
-		if err := msgHandler(ctx, msg); err != nil {
-			log.Printf("failed to handle websocket msg: %s\n", err)
-			continue
-		}
+func WithDialer(dialer client.Dialer) client.Option {
+	return func(qClient client.QueryClient) {
+		qClient.(*queryClient).dialer = dialer
 	}
 }
 
@@ -65,13 +50,13 @@ func (qClient *queryClient) listen(
 // via a websocket connection.
 // (see: https://pkg.go.dev/github.com/cometbft/cometbft/types#pkg-constants)
 // (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
-func (qClient *queryClient) SubscribeWithQuery(ctx context.Context, query string, msgHandler client.MessageHandler) chan error {
+func (qClient *queryClient) Subscribe(ctx context.Context, query string, msgHandler client.MessageHandler) chan error {
 	errCh := make(chan error, 1)
 
-	conn, _, err := websocket.DefaultDialer.Dial(qClient.cometWebsocketURL, nil)
+	conn, err := qClient.dialer.DialContext(ctx, qClient.cometWebsocketURL)
 	if err != nil {
-		// TODO_THIS_COMMIT: recondider error handling
-		panic(fmt.Errorf("failed to connect to websocket: %w", err))
+		errCh <- fmt.Errorf("failed to connect to websocket: %w", err)
+		return errCh
 	}
 
 	// TODO_DISCUSS: Should we replace `requestId` with just
@@ -85,15 +70,18 @@ func (qClient *queryClient) SubscribeWithQuery(ctx context.Context, query string
 		},
 	}); err != nil {
 		// TODO_THIS_COMMIT: refactor to cosmos-sdk error
-		errCh <- fmt.Errorf("failed to write subscribe request to websocket: %w", err)
+		subscribeErr := fmt.Errorf("failed to write subscribe request to websocket: %w", err)
+		closeErr := conn.Close()
+		errCh <- multierr.Combine(subscribeErr, closeErr)
+		return errCh
 	}
 
 	go func() {
-		if err := qClient.listen(ctx, conn, msgHandler); err != nil {
+		if err := qClient.goListen(ctx, conn, msgHandler); err != nil {
 			// only propagate error if it's not a context cancellation error
 			if !errors.Is(ctx.Err(), context.Canceled) {
 				// TODO_THIS_COMMIT: refactor to cosmos-sdk error
-				errCh <- fmt.Errorf("error listening to websocket: %w", err)
+				errCh <- fmt.Errorf("error listening on connection: %w", err)
 			}
 		}
 	}()
@@ -105,6 +93,35 @@ func (qClient *queryClient) SubscribeWithQuery(ctx context.Context, query string
 	}()
 
 	return errCh
+}
+
+// goListen blocks on reading messages from a websocket connection.
+// IMPORTANT: it is intended to be called from within a go routine.
+func (qClient *queryClient) goListen(
+	ctx context.Context,
+	conn client.Connection,
+	msgHandler client.MessageHandler,
+) error {
+	// read and handle messages from the websocket. This loop will exit when the
+	// websocket connection is closed and/or returns an error.
+	for {
+		msg, err := conn.ReadMessage()
+		if err != nil {
+			// Stop this goroutine if there's an error.
+			//
+			// See gorilla websocket `Conn#NextReader()` docs:
+			// | Applications must break out of the application's read loop when this method
+			// | returns a non-nil error value. Errors returned from this method are
+			// | permanent. Once this method returns a non-nil error, all subsequent calls to
+			// | this method return the same error.
+			return err
+		}
+
+		if err := msgHandler(ctx, msg); err != nil {
+			log.Printf("failed to handle msg: %s\n", err)
+			continue
+		}
+	}
 }
 
 // getNextRequestId increments and returns the JSON-RPC request ID which should

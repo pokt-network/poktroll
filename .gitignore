@@ -52,3 +52,6 @@ ts-client/
 # Proto artifacts
 */*.pb.go
 */*.pb.gw.go
+
+# Generated mocks
+*/*_mock.go
