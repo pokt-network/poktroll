@@ -8,9 +8,9 @@ import "cosmos/base/v1beta1/coin.proto";
 
 // Application defines the type used to store an on-chain definition and state for an application
 message Application {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
-    // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
-    // service.ServiceId service_id = 3; // The ID of the service this session is servicing
+  // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
+  // repeated service.ServiceId service_ids = 3; // The ID of the service this session is servicing
 }
 

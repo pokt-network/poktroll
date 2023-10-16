@@ -144,7 +144,7 @@ const (
 	AccountAddressPrefix = "pokt"
 	Name                 = "pocket"
 	// TODO_CLEANUP: Find a way to centralize the use of `upokt` throughout the codebase
-	POKTDenom = "upokt"
+	DenomuPOKT = "upokt"
 )
 
 // this line is used by starport scaffolding # stargate/wasm/app/enabledProposals
