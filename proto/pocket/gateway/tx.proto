@@ -20,4 +20,3 @@ message MsgUnstakeGateway {
 }
 
 message MsgUnstakeGatewayResponse {}
-

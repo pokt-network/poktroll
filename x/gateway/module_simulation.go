@@ -3,14 +3,15 @@ package gateway
 import (
 	"math/rand"
 
+	"pocket/testutil/sample"
+	gatewaysimulation "pocket/x/gateway/simulation"
+	"pocket/x/gateway/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	"pocket/testutil/sample"
-	gatewaysimulation "pocket/x/gateway/simulation"
-	"pocket/x/gateway/types"
 )
 
 // avoid unused import issue
