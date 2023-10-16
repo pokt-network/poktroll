@@ -240,6 +240,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	}
 }
 
+// TODO_THIS_COMMIT: move & de-dup
 func drainCh[V any](ch <-chan V) (closed bool, err error) {
 	for {
 		select {

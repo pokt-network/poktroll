@@ -25,7 +25,7 @@ func TestQueryClient_SubscribeWithQuery_Integration(t *testing.T) {
 		msgCh <- msg
 		return nil
 	}
-	queryClient.Subscribe(ctx, "tm.event='NewBlock'", msgHandler)
+	queryClient.EventsObservable(ctx, "tm.event='NewBlock'", msgHandler)
 
 	var msgCounter int
 	go func() {

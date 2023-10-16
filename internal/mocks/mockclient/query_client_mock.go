@@ -87,19 +87,19 @@ func (mr *MockConnectionMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockConnection)(nil).Close))
 }
 
-// ReadMessage mocks base method.
-func (m *MockConnection) ReadMessage() ([]byte, error) {
+// ReadEvent mocks base method.
+func (m *MockConnection) ReadEvent() ([]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadMessage")
+	ret := m.ctrl.Call(m, "ReadEvent")
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ReadMessage indicates an expected call of ReadMessage.
-func (mr *MockConnectionMockRecorder) ReadMessage() *gomock.Call {
+// ReadEvent indicates an expected call of ReadEvent.
+func (mr *MockConnectionMockRecorder) ReadEvent() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadMessage", reflect.TypeOf((*MockConnection)(nil).ReadMessage))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadEvent", reflect.TypeOf((*MockConnection)(nil).ReadEvent))
 }
 
 // WriteJSON mocks base method.

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"pocket/pkg/observable"
+	"pocket/pkg/observable/channel"
 
 	"go.uber.org/multierr"
 
@@ -12,7 +14,7 @@ import (
 )
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
+// which includes a `#EventsObservable()` method for a similar purpose. Perhaps we could
 // replace this custom websocket client with that.
 // (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
@@ -28,13 +30,22 @@ type queryClient struct {
 	nextRequestId uint64
 
 	dialer client.Dialer
+	events map[string]eventStat
 }
 
 func NewQueryClient(cometWebsocketURL string, opts ...client.Option) client.QueryClient {
-	qClient := &queryClient{cometWebsocketURL: cometWebsocketURL}
+	qClient := &queryClient{
+		cometWebsocketURL: cometWebsocketURL,
+		events:            make(map[string]eventStat),
+	}
 
 	for _, opt := range opts {
 		opt(qClient)
+	}
+
+	if qClient.dialer == nil {
+		// default to using the websocket dialer
+		qClient.dialer = NewWebsocketDialer()
 	}
 
 	return qClient
@@ -46,17 +57,30 @@ func WithDialer(dialer client.Dialer) client.Option {
 	}
 }
 
+// TODO_THIS_COMMIT: move
+type eventStat struct {
+	observable observable.Observable[[]byte]
+	errCh      chan error
+}
+
 // SubscribeWithQuery subscribes to chain event messages matching the given query,
 // via a websocket connection.
 // (see: https://pkg.go.dev/github.com/cometbft/cometbft/types#pkg-constants)
 // (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
-func (qClient *queryClient) Subscribe(ctx context.Context, query string, msgHandler client.MessageHandler) chan error {
-	errCh := make(chan error, 1)
+func (qClient *queryClient) EventsObservable(
+	ctx context.Context,
+	query string,
+) (observable.Observable[[]byte], chan error) {
+	events, ok := qClient.events[query]
+	if ok {
+		return events.observable, events.errCh
+	}
 
+	errCh := make(chan error, 1)
 	conn, err := qClient.dialer.DialContext(ctx, qClient.cometWebsocketURL)
 	if err != nil {
 		errCh <- fmt.Errorf("failed to connect to websocket: %w", err)
-		return errCh
+		return nil, errCh
 	}
 
 	// TODO_DISCUSS: Should we replace `requestId` with just
@@ -71,17 +95,25 @@ func (qClient *queryClient) Subscribe(ctx context.Context, query string, msgHand
 	}); err != nil {
 		// TODO_THIS_COMMIT: refactor to cosmos-sdk error
 		subscribeErr := fmt.Errorf("failed to write subscribe request to websocket: %w", err)
+		// assume the connection is bad
 		closeErr := conn.Close()
 		errCh <- multierr.Combine(subscribeErr, closeErr)
-		return errCh
+		return nil, errCh
+	}
+
+	eventsObservable, eventsProducer := channel.NewObservable[[]byte]()
+	qClient.events[query] = eventStat{
+		observable: eventsObservable,
+		errCh:      errCh,
 	}
 
 	go func() {
-		if err := qClient.goListen(ctx, conn, msgHandler); err != nil {
+		if err := qClient.goListen(conn, eventsProducer); err != nil {
 			// only propagate error if it's not a context cancellation error
 			if !errors.Is(ctx.Err(), context.Canceled) {
 				// TODO_THIS_COMMIT: refactor to cosmos-sdk error
 				errCh <- fmt.Errorf("error listening on connection: %w", err)
+				return
 			}
 		}
 	}()
@@ -92,21 +124,24 @@ func (qClient *queryClient) Subscribe(ctx context.Context, query string, msgHand
 		_ = conn.Close()
 	}()
 
-	return errCh
+	return eventsObservable, errCh
 }
 
 // goListen blocks on reading messages from a websocket connection.
 // IMPORTANT: it is intended to be called from within a go routine.
 func (qClient *queryClient) goListen(
-	ctx context.Context,
 	conn client.Connection,
-	msgHandler client.MessageHandler,
+	eventsProducer chan<- []byte,
 ) error {
 	// read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is closed and/or returns an error.
+	//var eventCounter int
 	for {
-		msg, err := conn.ReadMessage()
+		//fmt.Printf("event-%d\n", eventCounter)
+		event, err := conn.ReadEvent()
 		if err != nil {
+			// TODO_THIS_COMMIT: close producer?
+
 			// Stop this goroutine if there's an error.
 			//
 			// See gorilla websocket `Conn#NextReader()` docs:
@@ -116,11 +151,9 @@ func (qClient *queryClient) goListen(
 			// | this method return the same error.
 			return err
 		}
+		//eventCounter++
 
-		if err := msgHandler(ctx, msg); err != nil {
-			log.Printf("failed to handle msg: %s\n", err)
-			continue
-		}
+		eventsProducer <- event
 	}
 }
 

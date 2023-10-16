@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+
 	"github.com/gorilla/websocket"
 
 	"pocket/pkg/client"

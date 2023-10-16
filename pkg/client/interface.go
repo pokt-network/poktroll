@@ -4,17 +4,21 @@ package client
 
 import (
 	"context"
+	"pocket/pkg/observable"
 )
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
+// which includes a `#EventsObservable()` method for a similar purpose. Perhaps we could
 // replace this custom websocket client with that.
 // (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
 
 // QueryClient is used to subscribe to chain event messages matching the given query,
 type QueryClient interface {
-	Subscribe(ctx context.Context, query string, msgHandler MessageHandler) chan error
+	EventsObservable(
+		ctx context.Context,
+		query string,
+	) (observable.Observable[[]byte], chan error)
 	//Close() error
 }
 
@@ -24,7 +28,7 @@ type QueryClient interface {
 // underlying transport libraries to these interface.
 
 type Connection interface {
-	ReadMessage() (msg []byte, err error)
+	ReadEvent() (event []byte, err error)
 	WriteJSON(any) error
 	Close() error
 }

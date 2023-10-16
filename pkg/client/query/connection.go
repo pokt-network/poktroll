@@ -12,7 +12,7 @@ type websocketConn struct {
 	conn *websocket.Conn
 }
 
-func (wsConn *websocketConn) ReadMessage() ([]byte, error) {
+func (wsConn *websocketConn) ReadEvent() ([]byte, error) {
 	_, msg, err := wsConn.conn.ReadMessage()
 	return msg, err
 }

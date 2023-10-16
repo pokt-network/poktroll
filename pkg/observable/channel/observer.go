@@ -4,15 +4,22 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"pocket/pkg/observable"
 )
 
-// DISCUSS: what should this be? should it be configurable? It seems to be most
-// relevant in the context of the behavior of the observable when it has multiple
-// observers which consume at different rates.
-// observerBufferSize is the buffer size of a channelObserver's channel.
-const observerBufferSize = 1
+const (
+	// DISCUSS: what should this be? should it be configurable? It seems to be most
+	// relevant in the context of the behavior of the observable when it has multiple
+	// observers which consume at different rates.
+	// observerBufferSize is the buffer size of a channelObserver's channel.
+	observerBufferSize = 1
+	// sendRetryInterval is the duration between attempts to send on the observer's
+	// channel. It facilitates a branch in a for loop which unlocks the observer's
+	// mutex and tries again.
+	sendRetryInterval = 30 * time.Millisecond
+)
 
 var _ observable.Observer[any] = &channelObserver[any]{}
 
@@ -42,7 +49,7 @@ func NewObserver[V any](
 ) *channelObserver[V] {
 	// Create a channel for the subscriber and append it to the observers list
 	ch := make(chan V, 1)
-	fmt.Printf("channelObservable#Subscribe: opening %p\n", ch)
+	fmt.Printf("channelObservable#EventsObservable: opening %p\n", ch)
 
 	return &channelObserver[V]{
 		ctx:           ctx,
@@ -73,9 +80,9 @@ func (obsvr *channelObserver[V]) Unsubscribe() {
 
 // Ch returns a receive-only subscription channel.
 func (obsvr *channelObserver[V]) Ch() <-chan V {
-	obsvr.observerMu.Lock()
+	obsvr.observerMu.RLock()
 	defer func() {
-		obsvr.observerMu.Unlock()
+		obsvr.observerMu.RUnlock()
 	}()
 
 	return obsvr.observerCh
@@ -84,18 +91,30 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 // notify is used called by observable to send on the observer channel. Can't
 // use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
-	obsvr.observerMu.Lock()
-	defer obsvr.observerMu.Unlock()
+	// TODO_THIS_COMMIT: prove the need for the send retry loop via tests.
+	sendRetryTicker := time.NewTicker(sendRetryInterval)
+	// wait sendRetryInterval before releasing the lock and trying again.
+	for {
+		obsvr.observerMu.RLock()
+		if obsvr.closed {
+			obsvr.observerMu.RUnlock()
+			return
+		}
+		select {
+		case <-sendRetryTicker.C:
+			// if channel is blocked,
+			fmt.Println("send loop looping")
+		case obsvr.observerCh <- value:
+			obsvr.observerMu.RUnlock()
+			return
+		case <-obsvr.ctx.Done():
+			obsvr.observerMu.RUnlock()
+			// TECHDEBT: add a  default path which buffers values so that the sender
+			// doesn't block and other consumers can still receive.
+			// TECHDEBT: add some logic to drain the buffer at some appropriate time
+			return
+		}
 
-	if obsvr.closed {
-		return
-	}
-
-	select {
-	case obsvr.observerCh <- value:
-	case <-obsvr.ctx.Done():
-		// TECHDEBT: add a  default path which buffers values so that the sender
-		// doesn't block and other consumers can still receive.
-		// TECHDEBT: add some logic to drain the buffer at some appropriate time
+		obsvr.observerMu.RUnlock()
 	}
 }
