@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -23,8 +24,8 @@ func DefaultGenesis() *GenesisState {
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in application
 	applicationIndexMap := make(map[string]struct{})
-	for _, elem := range gs.ApplicationList {
-		index := string(ApplicationKey(elem.Address))
+	for _, app := range gs.ApplicationList {
+		index := string(ApplicationKey(app.Address))
 		if _, ok := applicationIndexMap[index]; ok {
 			return fmt.Errorf("duplicated index for application")
 		}
@@ -32,22 +33,22 @@ func (gs GenesisState) Validate() error {
 	}
 
 	// Check that the stake value for the apps is valid
-	for _, elem := range gs.ApplicationList {
-		if elem.Stake == nil {
-			return fmt.Errorf("nil stake amount for application")
+	for _, app := range gs.ApplicationList {
+		if app.Stake == nil {
+			return errorsmod.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
 		}
-		stakeAmount, err := sdk.ParseCoinNormalized(elem.Stake.String())
-		if !stakeAmount.IsValid() {
-			return fmt.Errorf("invalid stake amount for application %v; (%v)", elem.Stake, stakeAmount.Validate())
+		stake, err := sdk.ParseCoinNormalized(app.Stake.String())
+		if !stake.IsValid() {
+			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application %v; (%v)", app.Stake, stake.Validate())
 		}
 		if err != nil {
-			return fmt.Errorf("cannot parse stake amount for application %v; (%v)", elem.Stake, err)
+			return errorsmod.Wrapf(ErrAppInvalidStake, "cannot parse stake amount for application %v; (%v)", app.Stake, err)
 		}
-		if stakeAmount.IsZero() || stakeAmount.IsNegative() {
-			return fmt.Errorf("invalid stake amount for application: %v <= 0", elem.Stake)
+		if stake.IsZero() || stake.IsNegative() {
+			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", app.Stake)
 		}
-		if stakeAmount.Denom != "upokt" {
-			return fmt.Errorf("invalid stake amount denom for application %v", elem.Stake)
+		if stake.Denom != "upokt" {
+			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
 		}
 	}
 

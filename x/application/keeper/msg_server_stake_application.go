@@ -86,7 +86,7 @@ func (k msgServer) updateApplication(
 
 	if msg.Stake.IsLTE(*app.Stake) {
 
-		return errorsmod.Wrapf(types.ErrAppStakeAmount, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+		return errorsmod.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 
 	app.Stake = msg.Stake

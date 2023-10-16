@@ -12,12 +12,12 @@ var _ sdk.Msg = &MsgStakeApplication{}
 
 func NewMsgStakeApplication(
 	address string,
-	stakeAmount types.Coin,
+	stake types.Coin,
 
 ) *MsgStakeApplication {
 	return &MsgStakeApplication{
 		Address: address,
-		Stake:   &stakeAmount,
+		Stake:   &stake,
 	}
 }
 
@@ -53,17 +53,17 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 	if msg.Stake == nil {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "nil application stake; (%v)", err)
 	}
-	stakeAmount, err := sdk.ParseCoinNormalized(msg.Stake.String())
-	if !stakeAmount.IsValid() {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid application stake %v; (%v)", msg.Stake, stakeAmount.Validate())
+	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
+	if !stake.IsValid() {
+		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid application stake %v; (%v)", msg.Stake, stake.Validate())
 	}
 	if err != nil {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "cannot parse application stake %v; (%v)", msg.Stake, err)
 	}
-	if stakeAmount.IsZero() || stakeAmount.IsNegative() {
+	if stake.IsZero() || stake.IsNegative() {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
 	}
-	if stakeAmount.Denom != "upokt" {
+	if stake.Denom != "upokt" {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
 	}
 

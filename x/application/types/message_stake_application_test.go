@@ -9,14 +9,13 @@ import (
 )
 
 func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
-	coins := sdk.NewCoin("upokt", sdk.NewInt(100))
 	tests := []struct {
 		name string
 		msg  MsgStakeApplication
 		err  error
 	}{
 		{
-			name: "invalid address - no stake",
+			name: "invalid address - nil stake",
 			msg: MsgStakeApplication{
 				Address: "invalid_address",
 				// Stake explicitly nil
@@ -33,8 +32,36 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - valid stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &coins,
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 			},
+		}, {
+			name: "valid address - zero stake",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+			},
+			err: ErrAppInvalidStake,
+		}, {
+			name: "valid address - negative stake",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+			},
+			err: ErrAppInvalidStake,
+		}, {
+			name: "valid address - invalid stake denom",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+			},
+			err: ErrAppInvalidStake,
+		}, {}, {
+			name: "valid address - invalid stake missing denom",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+			},
+			err: ErrAppInvalidStake,
 		},
 	}
 

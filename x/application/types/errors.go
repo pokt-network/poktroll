@@ -10,6 +10,5 @@ import (
 var (
 	ErrAppInvalidStake   = errorsmod.Register(ModuleName, 1, "invalid application stake")
 	ErrAppInvalidAddress = errorsmod.Register(ModuleName, 2, "invalid application address")
-	ErrAppUnauthorized   = errorsmod.Register(ModuleName, 3, "unauthorized signer")
-	ErrAppStakeAmount    = errorsmod.Register(ModuleName, 4, "invalid application stake amount")
+	ErrAppUnauthorized   = errorsmod.Register(ModuleName, 3, "unauthorized application signer")
 )

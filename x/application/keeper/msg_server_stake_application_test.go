@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	keepertest "pocket/testutil/keeper"
-
 	"pocket/testutil/sample"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
@@ -25,10 +24,9 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
 	app := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &initialStake,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the application
@@ -42,10 +40,9 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
 
 	// Prepare an updated application with a higher stake
-	updatedStake := sdk.NewCoin("upokt", sdk.NewInt(200))
 	updatedApp := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &updatedStake,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)}},
 	}
 
 	// Update the staked application
@@ -63,10 +60,9 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 
 	// Prepare the application
 	addr := sample.AccAddress()
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
 	app := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &stake,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the application & verify that the application exists
@@ -76,10 +72,9 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	require.True(t, isAppFound)
 
 	// Prepare an updated application with a lower stake
-	updatedStake := sdk.NewCoin("upokt", sdk.NewInt(50))
 	updatedApp := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &updatedStake,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
 	}
 
 	// Verify that it fails

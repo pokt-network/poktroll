@@ -46,6 +46,70 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid: true,
 		},
 		{
+			desc: "invalid - zero app stake",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - negative application stake",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - wrong stake denom",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - missing denom",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+					},
+					{
+						Address: addr2,
+						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
 			desc: "invalid - due to duplicated app address",
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{

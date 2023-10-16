@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -40,25 +39,43 @@ func TestCLI_StakeApplication(t *testing.T) {
 	tests := []struct {
 		desc        string
 		address     string
-		stakeAmount string
+		stakeString string
 		err         *errorsmod.Error
 	}{
 		{
 			desc:        "stake application: invalid address",
 			address:     "invalid",
-			stakeAmount: "1000upokt",
+			stakeString: "1000upokt",
 			err:         types.ErrAppInvalidAddress,
 		},
 		{
 			desc:        "stake application: invalid stake denom",
 			address:     appAccount.Address.String(),
-			stakeAmount: "1000invalid",
+			stakeString: "1000invalid",
 			err:         types.ErrAppInvalidStake,
 		},
 		{
 			desc:        "stake application: valid",
 			address:     appAccount.Address.String(),
-			stakeAmount: "1000upokt",
+			stakeString: "1000upokt",
+		},
+		{
+			desc:        "stake application: invalid stake amount (zero)",
+			address:     appAccount.Address.String(),
+			stakeString: "0upokt",
+			err:         types.ErrAppInvalidStake,
+		},
+		{
+			desc:        "stake application: invalid stake amount (negative)",
+			address:     appAccount.Address.String(),
+			stakeString: "-1000upokt",
+			err:         types.ErrAppInvalidStake,
+		},
+		{
+			desc:    "stake application: missing stake",
+			address: appAccount.Address.String(),
+			// stakeString: "1000upokt",
+			err: types.ErrAppInvalidStake,
 		},
 	}
 
@@ -79,7 +96,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stakeAmount,
+				tt.stakeString,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)

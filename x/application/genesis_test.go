@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO_IN_THIS_COMMIT(@olshansk): Update genesis config.yml and add a few more tests here
 func TestGenesis(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))

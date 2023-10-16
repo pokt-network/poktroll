@@ -19,6 +19,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"pocket/app"
+	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
+	"pocket/x/application/types"
 )
 
 type (
@@ -89,4 +92,28 @@ func DefaultConfig() network.Config {
 		SigningAlgo:     string(hd.Secp256k1Type),
 		KeyringOptions:  []keyring.Option{},
 	}
+}
+
+// applicationModuleGenesis generates a GenesisState object with a given number of applications.
+// It returns the populated GenesisState object.
+func DefaultApplicationModuleGenesis(t *testing.T, n int) *types.GenesisState {
+	t.Helper()
+	state := types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
+		application := types.Application{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+		}
+		nullify.Fill(&application)
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+func HydateGenesisState(t *testing.T, cfg *network.Config, moduleGenesisState *types.GenesisState, moduleName string) {
+	t.Helper()
+	buf, err := cfg.Codec.MarshalJSON(moduleGenesisState)
+	require.NoError(t, err)
+	cfg.GenesisState[moduleName] = buf
 }
