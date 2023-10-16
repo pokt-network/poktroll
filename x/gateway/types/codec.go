@@ -9,12 +9,16 @@ import (
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgStakeGateway{}, "gateway/StakeGateway", nil)
+	cdc.RegisterConcrete(&MsgUnstakeGateway{}, "gateway/UnstakeGateway", nil)
 	// this line is used by starport scaffolding # 2
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgStakeGateway{},
+	)
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgUnstakeGateway{},
 	)
 	// this line is used by starport scaffolding # 3
 
