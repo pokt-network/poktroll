@@ -85,9 +85,12 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 			observerIdx := 0
 			eventObservable, errCh := queryClient.EventsObservable(ctx, testQuery(observerIdx))
 			eventObserver := eventObservable.Subscribe(ctx)
+			// IMPROVE: in-lining this call to #Ch() in the go routine below
+			// concurrently with usage of drainCh causes a deadlock.
+			eventObserverCh := eventObserver.Ch()
 
 			go func() {
-				for event := range eventObserver.Ch() {
+				for event := range eventObserverCh {
 					require.Equal(t, testEvent(handleEventCounter), string(event))
 					handleEventCounter++
 
@@ -117,7 +120,7 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 			// for the connection to close to satisfy the connection mock expectations.
 			time.Sleep(10 * time.Millisecond)
 
-			closed, err := drainCh(eventObserver.Ch())
+			closed, err := drainCh(eventObserverCh)
 			require.True(t, closed)
 			require.NoError(t, err)
 		})
@@ -127,12 +130,12 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 	//err := queryClient.Close()
 	//require.NoError(t, err)
 
-	_ = cancel
-	//// cancelling the context should close the connection
-	//cancel()
-	//// closing the connection happens asynchronously, so we need to wait a bit
-	//// for the connection to close to satisfy the connection mock expectations.
-	//time.Sleep(10 * time.Millisecond)
+	//_ = cancel
+	// cancelling the context should close the connection
+	cancel()
+	// closing the connection happens asynchronously, so we need to wait a bit
+	// for the connection to close to satisfy the connection mock expectations.
+	time.Sleep(10 * time.Millisecond)
 }
 
 //func TestQueryClient_Subscribe_Close(t *testing.T) {
@@ -324,9 +327,12 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	done := make(chan struct{}, 1)
 	eventsObservable, errCh := queryClient.EventsObservable(ctx, testQuery(0))
 	eventsObserver := eventsObservable.Subscribe(ctx)
+	// IMPROVE: in-lining this call to #Ch() in the go routine below
+	// concurrently with usage of drainCh causes a deadlock.
+	eventsObserverCh := eventsObserver.Ch()
 
 	go func() {
-		for event := range eventsObserver.Ch() {
+		for event := range eventsObserverCh {
 			require.Equal(t, testEvent(handleEventCounter), string(event))
 			handleEventCounter++
 
@@ -339,14 +345,18 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 
 	select {
 	case <-done:
+		fmt.Println("done")
 		require.Equal(t, handleEventLimit, handleEventCounter)
 
 		time.Sleep(10 * time.Millisecond)
 
+		fmt.Println("selecting...")
 		select {
 		case err := <-errCh:
+			fmt.Println("...errCh")
 			require.True(t, errors.Is(err, errMockConnClosed))
 		case <-time.After(readAllEventsTimeout):
+			fmt.Println("...time.After")
 			t.Fatalf("expected error: %s", errMockConnClosed.Error())
 		}
 
@@ -365,7 +375,9 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	//// for the connection to close to satisfy the connection mock expectations.
 	//time.Sleep(10 * time.Millisecond)
 
-	closed, err := drainCh(eventsObserver.Ch())
+	fmt.Println("pre-drain")
+	closed, err := drainCh(eventsObserverCh)
+	fmt.Println("post-drain")
 	require.Truef(t, closed, "events observer channel is not closed")
 	require.NoError(t, err)
 }
@@ -390,6 +402,7 @@ func testQuery(idx int) string {
 
 // TODO_THIS_COMMIT: move & de-dup
 func drainCh[V any](ch <-chan V) (closed bool, err error) {
+	fmt.Println("draining")
 	for {
 		select {
 		case _, ok := <-ch:

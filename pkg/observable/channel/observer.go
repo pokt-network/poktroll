@@ -59,6 +59,7 @@ func NewObserver[V any](
 // Unsubscribe closes the subscription channel and removes the subscription from
 // the observable.
 func (obsvr *channelObserver[V]) Unsubscribe() {
+	fmt.Println("")
 	obsvr.observerMu.Lock()
 	defer func() {
 		obsvr.observerMu.Unlock()
@@ -77,8 +78,17 @@ func (obsvr *channelObserver[V]) Unsubscribe() {
 
 // Ch returns a receive-only subscription channel.
 func (obsvr *channelObserver[V]) Ch() <-chan V {
+	fmt.Println("obssvr#Ch:80 locking")
+	//for {
+	//	if obsvr.observerMu.TryRLock() {
+	//		break
+	//	}
+	//	fmt.Println("retrying")
+	//	time.Sleep(30 * time.Millisecond)
+	//}
 	obsvr.observerMu.RLock()
 	defer func() {
+		fmt.Println("obssvr#Ch:83 unlocking")
 		obsvr.observerMu.RUnlock()
 	}()
 
@@ -89,6 +99,7 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 // use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
 	// TODO_THIS_COMMIT: prove the need for the send retry loop via tests.
+	sendRetryTicker := time.NewTicker(sendRetryInterval)
 	// wait sendRetryInterval before releasing the lock and trying again.
 	for {
 		valueStr := fmt.Sprintf("%s", value)
@@ -104,20 +115,22 @@ func (obsvr *channelObserver[V]) notify(value V) {
 
 		select {
 		case <-obsvr.ctx.Done():
+			fmt.Println("ctx done!")
 			obsvr.observerMu.RUnlock()
 			// TECHDEBT: add a  default path which buffers values so that the sender
 			// doesn't block and other consumers can still receive.
 			// TECHDEBT: add some logic to drain the buffer at some appropriate time
 			return
 		case obsvr.observerCh <- value:
+			fmt.Println("sending value")
 			obsvr.observerMu.RUnlock()
 			return
 		//default:
-		case <-time.After(sendRetryInterval):
+		case <-sendRetryTicker.C:
 			// if channel is blocked,
 			fmt.Println("send loop looping")
+			obsvr.observerMu.RUnlock()
 		}
-		obsvr.observerMu.RUnlock()
 
 		time.Sleep(sendRetryInterval)
 	}
