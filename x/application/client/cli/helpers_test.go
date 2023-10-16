@@ -22,7 +22,7 @@ func init() {
 func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []types.Application) {
 	t.Helper()
 	cfg := network.DefaultConfig()
-	appGenesisState := network.DefaultApplicationModuleGenesis(t, n)
-	network.HydateGenesisState(t, &cfg, appGenesisState, types.ModuleName)
+	appGenesisState := network.DefaultApplicationModuleGenesisState(t, n)
+	network.HydrateGenesisState(t, &cfg, appGenesisState, types.ModuleName)
 	return network.New(t, cfg), appGenesisState.ApplicationList
 }

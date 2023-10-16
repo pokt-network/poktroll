@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"fmt"
+	"pocket/testutil/network"
 	"pocket/x/application/client/cli"
 	"pocket/x/application/types"
 	"testing"
@@ -43,21 +44,33 @@ func TestCLI_StakeApplication(t *testing.T) {
 		err         *errorsmod.Error
 	}{
 		{
+			desc:        "stake application: valid",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+		},
+		{
+			desc: "stake application: missing address",
+			// address:     "explicitly missing",
+			stakeString: "1000upokt",
+			err:         types.ErrAppInvalidAddress,
+		},
+		{
 			desc:        "stake application: invalid address",
 			address:     "invalid",
 			stakeString: "1000upokt",
 			err:         types.ErrAppInvalidAddress,
 		},
 		{
+			desc:    "stake application: missing stake",
+			address: appAccount.Address.String(),
+			// stakeString: "explicitly missing",
+			err: types.ErrAppInvalidStake,
+		},
+		{
 			desc:        "stake application: invalid stake denom",
 			address:     appAccount.Address.String(),
 			stakeString: "1000invalid",
 			err:         types.ErrAppInvalidStake,
-		},
-		{
-			desc:        "stake application: valid",
-			address:     appAccount.Address.String(),
-			stakeString: "1000upokt",
 		},
 		{
 			desc:        "stake application: invalid stake amount (zero)",
@@ -71,22 +84,10 @@ func TestCLI_StakeApplication(t *testing.T) {
 			stakeString: "-1000upokt",
 			err:         types.ErrAppInvalidStake,
 		},
-		{
-			desc:    "stake application: missing stake",
-			address: appAccount.Address.String(),
-			// stakeString: "1000upokt",
-			err: types.ErrAppInvalidStake,
-		},
 	}
 
 	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
-	sendArgs := []string{
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
-	}
-	sendArgs = append(sendArgs, commonArgs...)
-	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
-	_, err := clitestutil.MsgSendExec(ctx, net.Validators[0].Address, appAccount.Address, amount, sendArgs...)
-	require.NoError(t, err)
+	network.InitAccount(t, net, appAccount.Address)
 
 	// Stake the tests
 	for _, tt := range tests {
@@ -103,18 +104,22 @@ func TestCLI_StakeApplication(t *testing.T) {
 
 			// Execute the command
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeApplication(), args)
+
+			// Validate the error if one is expected
 			if tt.err != nil {
 				stat, ok := status.FromError(tt.err)
 				require.True(t, ok)
 				require.Contains(t, stat.Message(), tt.err.Error())
 				return
 			}
-
 			require.NoError(t, err)
+
+			// Check the response
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)
-			fmt.Println(resp)
+			require.NotNil(t, resp.TxHash)
+			require.Equal(t, uint32(0), resp.Code)
 		})
 	}
 }
