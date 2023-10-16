@@ -3,8 +3,11 @@ package pocket.shared;
 
 option go_package = "pocket/x/shared/types";
 
+// Supplier is the type defining the actor in Pocket Network that provides RPC services.
+// NOTE that this type was originally scaffolded in the `supplier` module and move here manually
+// to resolve circular dependencies.
 message Supplier {
-  string address = 1; 
-  
+  string address = 1;
+
 }
 
