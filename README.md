@@ -1,52 +1,34 @@
-# pocket
-**pocket** is a blockchain built using Cosmos SDK and Tendermint and created with [Ignite CLI](https://ignite.com/cli).
+# poktroll <!-- omit in toc -->
 
-## Get started
+**poktroll** is a rollup built using [Rollkit](https://rollkit.dev/), [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
 
-```
-ignite chain serve
-```
+- [Getting Started](#getting-started)
+  - [Makefile](#makefile)
+  - [Development](#development)
+  - [LocalNet](#localnet)
 
-`serve` command installs dependencies, builds, initializes, and starts your blockchain in development.
+## Getting Started
 
-### Configure
+### Makefile
 
-Your blockchain in development can be configured with `config.yml`. To learn more, see the [Ignite CLI docs](https://docs.ignite.com).
+Run `make` to see all the available commands
 
-### Web Frontend
+### Development
 
-Ignite CLI has scaffolded a Vue.js-based web app in the `vue` directory. Run the following commands to install dependencies and start the app:
+```bash
+# Build local files & binaries
+make go_develop
 
-```
-cd vue
-npm install
-npm run serve
-```
-
-The frontend app is built using the `@starport/vue` and `@starport/vuex` packages. For details, see the [monorepo for Ignite front-end development](https://github.com/ignite/web).
-
-## Release
-To release a new version of your blockchain, create and push a new tag with `v` prefix. A new draft release with the configured targets will be created.
-
-```
-git tag v0.1
-git push origin v0.1
+# Run all the unit tests
+make go_test
 ```
 
-After a draft release is created, make your final changes from the release page and publish it.
+### LocalNet
 
-### Install
-To install the latest version of your blockchain node's binary, execute the following command on your machine:
+```bash
+# Create a k8s cluster
+kind create cluster
 
+# Start a LocalNet
+make localnet_up
 ```
-curl https://get.ignite.com/username/pocket@latest! | sudo bash
-```
-`username/pocket` should match the `username` and `repo_name` of the Github repository to which the source code was pushed. Learn more about [the install process](https://github.com/allinbits/starport-installer).
-
-## Learn more
-
-- [Ignite CLI](https://ignite.com/cli)
-- [Tutorials](https://docs.ignite.com/guide)
-- [Ignite CLI docs](https://docs.ignite.com)
-- [Cosmos SDK docs](https://docs.cosmos.network)
-- [Developer Chat](https://discord.gg/ignite)

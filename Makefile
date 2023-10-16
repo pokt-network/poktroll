@@ -2,6 +2,7 @@
 
 POCKETD_HOME := ./localnet/pocketd
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_ADDR_PREFIX = pokt
 
 ########################
 ### Makefile Helpers ###
@@ -190,10 +191,34 @@ app2_stake: ## Stake app2
 app3_stake: ## Stake app3
 	APP=app3 make app_stake
 
+################
+### Accounts ###
+################
+
+.PHONY: acc_balance_query
+acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
+	@echo "~~~ Balances ~~~"
+	pocketd --home=$(POCKETD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	@echo "~~~ Spendable Balances ~~~"
+	@echo "Querying spendable balance for $(ACC)"
+	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+
+.PHONY: acc_balance_query_app_module
+acc_balance_query_app_module: ## Query the balance of the network level "application" module
+	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+
+.PHONY: acc_balance_query_app1
+acc_balance_query_app1: ## Query the balance of app1
+	make acc_balance_query ACC=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+
+.PHONY: acc_balance_total_supply
+acc_balance_total_supply: ## Query the total supply of the network
+	pocketd --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
+
 ######################
 ### Ignite Helpers ###
 ######################
 
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --node $(POCKET_NODE)
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
