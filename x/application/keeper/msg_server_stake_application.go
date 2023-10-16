@@ -84,7 +84,8 @@ func (k msgServer) updateApplication(
 		return errorsmod.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
 	}
 
-	if app.Stake.IsGTE(*msg.Stake) {
+	if msg.Stake.IsLTE(*app.Stake) {
+
 		return errorsmod.Wrapf(types.ErrAppStakeAmount, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 
