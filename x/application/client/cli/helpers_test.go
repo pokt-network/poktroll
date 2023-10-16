@@ -29,7 +29,8 @@ func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []typ
 	return network.New(t, cfg), state.ApplicationList
 }
 
-func applicationModuleGenesis(n int) *types.GenesisState {
+func applicationModuleGenesis(t *testing.T, n int) *types.GenesisState {
+	t.Helper()
 	state := types.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
