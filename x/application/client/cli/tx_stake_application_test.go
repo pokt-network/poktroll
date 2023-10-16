@@ -67,7 +67,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 	}
 	sendArgs = append(sendArgs, commonArgs...)
-	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	_, err := clitestutil.MsgSendExec(ctx, net.Validators[0].Address, appAccount.Address, amount, sendArgs...)
 	require.NoError(t, err)
 
