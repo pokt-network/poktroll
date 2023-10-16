@@ -61,7 +61,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "cannot parse application stake %v; (%v)", msg.Stake, err)
 	}
 	if stakeAmount.IsZero() || stakeAmount.IsNegative() {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "zero stake amount for application %v", msg.Stake)
+		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
 	}
 	if stakeAmount.Denom != "upokt" {
 		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
