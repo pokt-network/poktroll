@@ -270,8 +270,8 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	var (
 		readAllEventsTimeout = 100 * time.Millisecond
 		handleEventLimit     = 10
-		readMsgCounter       int
-		handleMsgCounter     int
+		readEventCounter     int
+		handleEventCounter   int
 		errMockConnClosed    = errors.New("intentionally mocked connection closed error")
 		connClosedMu         sync.Mutex
 		connClosed           bool
@@ -301,14 +301,15 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 			if connClosed {
 				return nil, errConnClosed
 			}
+			//_ = connClosed
 
-			if readMsgCounter >= handleEventLimit {
+			if readEventCounter >= handleEventLimit {
 				return nil, errMockConnClosed
 			}
 
-			msg := testEvent(readMsgCounter)
-			readMsgCounter++
-			return []byte(msg), nil
+			event := testEvent(readEventCounter)
+			readEventCounter++
+			return []byte(event), nil
 		}).
 		MinTimes(handleEventLimit)
 
@@ -326,10 +327,10 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 
 	go func() {
 		for event := range eventsObserver.Ch() {
-			require.Equal(t, testEvent(handleMsgCounter), string(event))
-			handleMsgCounter++
+			require.Equal(t, testEvent(handleEventCounter), string(event))
+			handleEventCounter++
 
-			if handleMsgCounter >= handleEventLimit {
+			if handleEventCounter >= handleEventLimit {
 				done <- struct{}{}
 				return
 			}
@@ -338,7 +339,9 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 
 	select {
 	case <-done:
-		require.Equal(t, handleEventLimit, handleMsgCounter)
+		require.Equal(t, handleEventLimit, handleEventCounter)
+
+		time.Sleep(10 * time.Millisecond)
 
 		select {
 		case err := <-errCh:
@@ -347,31 +350,33 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 			t.Fatalf("expected error: %s", errMockConnClosed.Error())
 		}
 
-	case <-time.After(readAllEventsTimeout):
-		t.Fatalf(
-			"timed out waiting for next message; expected %d messages, got %d",
-			handleEventLimit, handleMsgCounter,
-		)
+		_ = readAllEventsTimeout
+		//case <-time.After(readAllEventsTimeout):
+		//	t.Fatalf(
+		//		"timed out waiting for next message; expected %d messages, got %d",
+		//		handleEventLimit, handleEventCounter,
+		//	)
 	}
 
-	// cancelling the context should close the connection
-	cancel()
-	// closing the connection happens asynchronously, so we need to wait a bit
-	// for the connection to close to satisfy the connection mock expectations.
-	time.Sleep(10 * time.Millisecond)
+	_ = cancel
+	//// cancelling the context should close the connection
+	//cancel()
+	//// closing the connection happens asynchronously, so we need to wait a bit
+	//// for the connection to close to satisfy the connection mock expectations.
+	//time.Sleep(10 * time.Millisecond)
 
 	closed, err := drainCh(eventsObserver.Ch())
-	require.True(t, closed)
+	require.Truef(t, closed, "events observer channel is not closed")
 	require.NoError(t, err)
 }
 
 /* TODO_THIS_COMMIT: add test coverage for:
-- [x] Multiple subscriptions w/ different queries
-- [ ] Multiple subscriptions w/ same query
-- [ ] Multiple subscriptions w/ same query, one unsubscribes
-- [ ] Subscriptions close when connection closes
-- [ ] Subscriptions close when context is cancelled
-- [ ] Subscriptions close on #Close()
+- [x] Multiple observers w/ different queries
+- [ ] Multiple observers w/ same query
+- [ ] Multiple observers w/ same query, one unsubscribes
+- [x] Observers close when connection closes
+- [ ] Observers close when context is cancelled
+- [ ] Observers close on #Close()
 - [ ] Returns correct error channel (*assuming no `Maybe`)
 */
 

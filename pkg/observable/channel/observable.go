@@ -63,7 +63,9 @@ func WithProducer[V any](producer chan V) option[V] {
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
 	obsvbl.observersMu.Lock()
-	defer obsvbl.observersMu.Unlock()
+	defer func() {
+		obsvbl.observersMu.Unlock()
+	}()
 
 	observer := NewObserver[V](ctx, obsvbl.onUnsubscribeFactory)
 	obsvbl.observers = append(obsvbl.observers, observer)

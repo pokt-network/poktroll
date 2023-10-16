@@ -19,7 +19,8 @@ type QueryClient interface {
 		ctx context.Context,
 		query string,
 	) (observable.Observable[[]byte], chan error)
-	//Close() error
+	// DISCUSS_THIS_COMMIT: do we care about returning an error?
+	Close()
 }
 
 // CONSIDERATION: if the need arises in the future to support alternate and/or

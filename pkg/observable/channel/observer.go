@@ -48,9 +48,6 @@ func NewObserver[V any](
 	onUnsubscribeFactory UnsubscribeFactory[V],
 ) *channelObserver[V] {
 	// Create a channel for the subscriber and append it to the observers list
-	ch := make(chan V, 1)
-	fmt.Printf("channelObservable#EventsObservable: opening %p\n", ch)
-
 	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),
@@ -92,29 +89,36 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 // use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
 	// TODO_THIS_COMMIT: prove the need for the send retry loop via tests.
-	sendRetryTicker := time.NewTicker(sendRetryInterval)
 	// wait sendRetryInterval before releasing the lock and trying again.
 	for {
+		valueStr := fmt.Sprintf("%s", value)
+		fmt.Println(valueStr)
+		if valueStr == "message-9" {
+			fmt.Println("on message-9")
+		}
 		obsvr.observerMu.RLock()
 		if obsvr.closed {
 			obsvr.observerMu.RUnlock()
 			return
 		}
+
 		select {
-		case <-sendRetryTicker.C:
-			// if channel is blocked,
-			fmt.Println("send loop looping")
-		case obsvr.observerCh <- value:
-			obsvr.observerMu.RUnlock()
-			return
 		case <-obsvr.ctx.Done():
 			obsvr.observerMu.RUnlock()
 			// TECHDEBT: add a  default path which buffers values so that the sender
 			// doesn't block and other consumers can still receive.
 			// TECHDEBT: add some logic to drain the buffer at some appropriate time
 			return
+		case obsvr.observerCh <- value:
+			obsvr.observerMu.RUnlock()
+			return
+		//default:
+		case <-time.After(sendRetryInterval):
+			// if channel is blocked,
+			fmt.Println("send loop looping")
 		}
-
 		obsvr.observerMu.RUnlock()
+
+		time.Sleep(sendRetryInterval)
 	}
 }

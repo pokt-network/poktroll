@@ -11,6 +11,7 @@ import "context"
 // notified of new values asynchronously.
 type Observable[V any] interface {
 	Subscribe(context.Context) Observer[V]
+	Close()
 }
 
 // Observer is a generic interface that provides access to the notified

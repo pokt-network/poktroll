@@ -7,6 +7,7 @@ import (
 	"log"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
+	"sync"
 
 	"go.uber.org/multierr"
 
@@ -29,14 +30,15 @@ type queryClient struct {
 	// TODO_CONSIDERATION: Consider changing `nextRequestId` to a random entropy field
 	nextRequestId uint64
 
-	dialer client.Dialer
-	events map[string]eventStat
+	dialer   client.Dialer
+	eventsMu sync.Mutex
+	events   map[string]*eventStat
 }
 
 func NewQueryClient(cometWebsocketURL string, opts ...client.Option) client.QueryClient {
 	qClient := &queryClient{
 		cometWebsocketURL: cometWebsocketURL,
-		events:            make(map[string]eventStat),
+		events:            make(map[string]*eventStat),
 	}
 
 	for _, opt := range opts {
@@ -59,7 +61,9 @@ func WithDialer(dialer client.Dialer) client.Option {
 
 // TODO_THIS_COMMIT: move
 type eventStat struct {
+	sync.Mutex
 	observable observable.Observable[[]byte]
+	conn       client.Connection
 	errCh      chan error
 }
 
@@ -102,8 +106,9 @@ func (qClient *queryClient) EventsObservable(
 	}
 
 	eventsObservable, eventsProducer := channel.NewObservable[[]byte]()
-	qClient.events[query] = eventStat{
+	qClient.events[query] = &eventStat{
 		observable: eventsObservable,
+		conn:       conn,
 		errCh:      errCh,
 	}
 
@@ -113,6 +118,7 @@ func (qClient *queryClient) EventsObservable(
 			if !errors.Is(ctx.Err(), context.Canceled) {
 				// TODO_THIS_COMMIT: refactor to cosmos-sdk error
 				errCh <- fmt.Errorf("error listening on connection: %w", err)
+				qClient.close()
 				return
 			}
 		}
@@ -121,10 +127,25 @@ func (qClient *queryClient) EventsObservable(
 	go func() {
 		<-ctx.Done()
 		log.Println("closing websocket")
-		_ = conn.Close()
+		qClient.close()
 	}()
 
 	return eventsObservable, errCh
+}
+
+func (qClient *queryClient) Close() {
+	qClient.close()
+}
+
+func (qClient *queryClient) close() {
+	qClient.eventsMu.Lock()
+	defer qClient.eventsMu.Unlock()
+
+	for _, event := range qClient.events {
+		_ = event.conn.Close()
+		event.observable.Close()
+		fmt.Println("test")
+	}
 }
 
 // goListen blocks on reading messages from a websocket connection.
