@@ -44,7 +44,7 @@ func (gs GenesisState) Validate() error {
 			return fmt.Errorf("cannot parse stake amount for application %v; (%v)", elem.Stake, err)
 		}
 		if stakeAmount.IsZero() || stakeAmount.IsNegative() {
-			return fmt.Errorf("zero stake amount for application %v", elem.Stake)
+			return fmt.Errorf("invalid stake amount for application: %v <= 0", elem.Stake)
 		}
 		if stakeAmount.Denom != "upokt" {
 			return fmt.Errorf("invalid stake amount denom for application %v", elem.Stake)
