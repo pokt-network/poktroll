@@ -46,7 +46,7 @@ func (k msgServer) StakeApplication(
 	// Send the coins from the application to the staked application pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
-		logger.Error("could not send coins %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err)
+		logger.Error("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err)
 		return nil, err
 	}
 
