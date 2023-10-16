@@ -68,8 +68,8 @@ func TestApplicationGetAll(t *testing.T) {
 	)
 }
 
-// This is just a helper test so we can easily find what the address is of the application module
-// since it's derived based off of the module name.
+// The application module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
 func TestApplicationModuleAddress(t *testing.T) {
 	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
 	require.Equal(t, "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", moduleAddress.String())

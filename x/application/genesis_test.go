@@ -12,25 +12,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO_IN_THIS_COMMIT(@olshansk): Update genesis config.yml and add a few more tests here
+// Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.
 func TestGenesis(t *testing.T) {
-	addr1 := sample.AccAddress()
-	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
-
-	addr2 := sample.AccAddress()
-	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
-
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
-
 		ApplicationList: []types.Application{
 			{
-				Address: addr1,
-				Stake:   &stake1,
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 			},
 			{
-				Address: addr2,
-				Stake:   &stake2,
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state
