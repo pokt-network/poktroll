@@ -28,7 +28,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
 	app := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &stake,
+		Stake:   &initialStake,
 	}
 
 	// Stake the application
