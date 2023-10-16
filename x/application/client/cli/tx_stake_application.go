@@ -1,9 +1,8 @@
 package cli
 
 import (
-	"strconv"
-
 	"pocket/x/application/types"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -15,10 +14,12 @@ import (
 var _ = strconv.Itoa(0)
 
 func CmdStakeApplication() *cobra.Command {
-	// fromAddress & signature is retrieved via flags.FlagFrom in the clientCtx
+	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
 		Use:   "stake-application",
 		Short: "Broadcast message stake-application",
+		Long: "",
+		Use: "stake-application [amount]",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeAmountString := args[0]

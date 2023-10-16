@@ -20,15 +20,15 @@ accounts:
     mnemonic: "involve clean slab term real human green immune valid swing protect talk silent unique cart few ice era right thunder again drop among bounce"
     coins:
       - 300000000upokt
-  - name: servicer1
+  - name: supplier1
     mnemonic: "cool industry busy tumble funny relax error state height like board wing goat emerge visual idle never unveil announce hill primary okay spatial frog"
     coins:
       - 110000000upokt
-  - name: servicer2
+  - name: supplier2
     mnemonic: "peanut hen enroll meat legal have error input bulk later correct denial onion fossil wing excuse elephant object apology switch claim rare decide surface"
     coins:
       - 220000000upokt
-  - name: servicer3
+  - name: supplier3
     mnemonic: "client city senior tenant source soda spread buffalo shaft amused bar carbon keen off feel coral easily announce metal orphan sustain maple expand loop"
     coins:
       - 330000000upokt
@@ -84,15 +84,17 @@ genesis:
         stake:
           amount: "1000"
           denom: upokt
+    # TODO(@Olshansk): Update genesis to include services
     #   services:
     #   - id: svc1
     #     name: TODO
     #   - id: svc2
     #     name: TODO
     # params: {}
-    # servicer:
+    # TODO(@Olshansk): Update genesis to include suppliers
+    # supplier:
     #   params: {}
-    #   servicersList:
+    #   suppliersList:
     #     - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
     #       services:
     #         - endpoints:

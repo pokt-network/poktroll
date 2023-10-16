@@ -14,7 +14,7 @@ import "pocket/shared/supplier.proto";
 // SessionHeader is a lightweight header for a session that can be passed around.
 // It is the minimal amount of data required to hydrate & retrieve all data relevant to the session.
 message SessionHeader {
-    string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The address of the application this session is for
+    string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
     // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
     // service.ServiceId service_id = 2; // The ID of the service this session is servicing
     int64 session_start_block_height = 3; // The height at which this session started

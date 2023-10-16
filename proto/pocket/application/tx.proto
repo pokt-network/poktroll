@@ -13,8 +13,8 @@ service Msg {
   rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
 }
 message MsgStakeApplication {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application
-  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application is staking. Must be ≥ to the current amount that the application has staked (if any)
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
 }
 
 message MsgStakeApplicationResponse {}

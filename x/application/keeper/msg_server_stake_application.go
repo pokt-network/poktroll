@@ -28,7 +28,7 @@ func (k msgServer) StakeApplication(
 		}
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info("Application found. Creating a new application for address %s", msg.Address)
+		logger.Info("Application found. Updating application for address %s", msg.Address)
 		currAppStake := *app.Stake
 		if err = k.updateApplication(ctx, &app, msg); err != nil {
 			return nil, err

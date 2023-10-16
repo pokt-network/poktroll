@@ -1,9 +1,10 @@
 package keeper
 
 import (
+	"pocket/x/application/types"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"pocket/x/application/types"
 )
 
 // SetApplication set a specific application in the store from its index
