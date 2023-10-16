@@ -7,7 +7,6 @@ hot_reload_dirs = ['app', 'cmd', 'tools', 'x']
 # Create localnet config file from defaults, and if default configuration doesn't exist in it - populate with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
-    "sequencers": {"count": 1},
     "relayers": {"count": 1},
     "gateways": {"count": 0},
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
