@@ -25,7 +25,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	stake := sdk.NewCoin("upokt", sdk.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
 	app := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &stake,
