@@ -11,21 +11,26 @@
 ## Summary
 
 <!-- DELETE THIS COMMENT BLOCK
-      - Let reviewpad summarize your PR but shorten it if it ends up being too long
+      - Provide a quick summary of the changes yourself
+      - Let reviewpad summarize your PR under AI summary
       - You can leave a `/reviewpad summarize` comment at any time to trigger it manually.
 -->
+
+### Human Summary
+
+### AI Summary
 
 reviewpad:summary
 
 ## Issue
 
 <!-- DELETE THIS COMMENT BLOCK
-     Specify the ticket number below if there is a relevant issue.
+     Specify the ticket number below if there is a relevant issue. Keep the `-` so the full issue is referenced.
 -->
 
-Fixes #{ISSUE_NUMBER}
+- #{ISSUE_NUMBER}
 
-[Explain the reasoning for thePR in 1-2 sentences. Consider adding a link or a screenshot.]
+[Explain the reasoning for the PR in 1-2 sentences. Consider adding a link or a screenshot.]
 
 ## Type of change
 
