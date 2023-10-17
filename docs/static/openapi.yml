@@ -75943,6 +75943,10 @@ definitions:
     properties:
       address:
         type: string
+  pocket.gateway.MsgStakeGatewayResponse:
+    type: object
+  pocket.gateway.MsgUnstakeGatewayResponse:
+    type: object
   pocket.gateway.Params:
     type: object
     description: Params defines the parameters for the module.
