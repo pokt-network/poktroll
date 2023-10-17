@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"pocket/pkg/observable"
 )
@@ -22,7 +23,7 @@ type channelObservable[V any] struct {
 	// observersMu protects observers from concurrent access/updates
 	observersMu *sync.RWMutex
 	// observers is a list of channelObservers that will be notified when producer
-	// receives a value. It is a pointer because ...
+	// receives a value.
 	observers []*channelObserver[V]
 }
 
@@ -46,7 +47,7 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 	}
 
 	// start listening to the producer and emit values to observers
-	go obs.goListen(obs.producer)
+	go obs.goProduce(obs.producer)
 
 	return obs, obs.producer
 }
@@ -84,31 +85,49 @@ func (obsvbl *channelObservable[V]) Close() {
 // CONSIDERATION: decide whether this should close the producer channel; perhaps
 // only if it was provided.
 func (obsvbl *channelObservable[V]) close() {
+	// must lock in order to copy the observers list
 	obsvbl.observersMu.Lock()
-	defer obsvbl.observersMu.Unlock()
+	// copy observers to avoid holding the lock while unsubscribing them
+	var activeObservers = make([]*channelObserver[V], len(obsvbl.observers))
+	for idx, toClose := range obsvbl.observers {
+		activeObservers[idx] = toClose
+	}
+	// unlock before unsubscribing to avoid deadlock
+	obsvbl.observersMu.Unlock()
 
-	observers := obsvbl.observers
-
-	for _, obsvr := range observers {
-		fmt.Printf("channelObservable#goListen: unsubscribing %p\n", obsvr)
-		obsvr.Unsubscribe()
+	for _, observer := range activeObservers {
+		observer.Unsubscribe()
 	}
 
 	// clear observers
+	obsvbl.observersMu.Lock()
 	obsvbl.observers = []*channelObserver[V]{}
+	obsvbl.observersMu.Unlock()
 }
 
-// goListen to the producer and notify observers when values are received. This
+// goProduce to the producer and notify observers when values are received. This
 // function is blocking and should be run in a goroutine.
-func (obsvbl *channelObservable[V]) goListen(producer <-chan V) {
+func (obsvbl *channelObservable[V]) goProduce(producer <-chan V) {
+	var observers []*channelObserver[V]
 	for notification := range producer {
+		//fmt.Printf("producer received notification: %s\n", notification)
+		// TODO_THIS_COMMIT: (dis)prove the need for this in a test
 		// copy observers to avoid holding the lock while notifying
-		obsvbl.observersMu.RLock()
-		observers := make([]*channelObserver[V], len(obsvbl.observers))
-		for i, obsvr := range obsvbl.observers {
-			observers[i] = obsvr
+		for {
+			//fmt.Println("[obsersversMu] goProduce Rlocking...")
+			if !obsvbl.observersMu.TryRLock() {
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			observers = make([]*channelObserver[V], len(obsvbl.observers))
+			//obsvbl.observersMu.RLock()
+			//observers := make([]*channelObserver[V], len(obsvbl.observers))
+			for i, obsvr := range obsvbl.observers {
+				observers[i] = obsvr
+			}
+			obsvbl.observersMu.RUnlock()
+			break
 		}
-		obsvbl.observersMu.RUnlock()
 
 		// notify observers
 		for _, obsvr := range observers {
@@ -127,6 +146,7 @@ func (obsvbl *channelObservable[V]) goListen(producer <-chan V) {
 // It is blocking and intended to be called in a goroutine.
 func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
 	<-ctx.Done()
+	fmt.Println("goUnsubscribeOnDone: context done")
 	subscription.Unsubscribe()
 }
 
@@ -134,12 +154,17 @@ func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Obs
 // observable's list of observers.
 func (obsvbl *channelObservable[V]) onUnsubscribeFactory() UnsubscribeFunc[V] {
 	return func(toRemove *channelObserver[V]) {
+		fmt.Println("[observersMu] onUnsubscribeFactory() locking... ")
 		obsvbl.observersMu.Lock()
-		defer obsvbl.observersMu.Unlock()
-		observers := obsvbl.observers
+		fmt.Println("[observersMu] ...onUnsubscribeFactory() locked ")
+		defer func() {
+			fmt.Println("[observersMu] onUnsubscribeFactory() unlocking... ")
+			obsvbl.observersMu.Unlock()
+			fmt.Println("[observersMu] ...onUnsubscribeFactory() unlocked ")
+		}()
 
-		for i, subscription := range observers {
-			if subscription == toRemove {
+		for i, observer := range obsvbl.observers {
+			if observer == toRemove {
 				obsvbl.observers = append((obsvbl.observers)[:i], (obsvbl.observers)[i+1:]...)
 				break
 			}
