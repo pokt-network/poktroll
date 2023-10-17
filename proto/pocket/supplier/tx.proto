@@ -38,7 +38,7 @@ message MsgCreateClaimResponse {}
 message MsgSubmitProof {
   string                       supplier_address = 1;
   pocket.session.SessionHeader session_header   = 2;
-  bytes                        proof            = 3;
+  bytes                        proof            = 3; // serialized version of *smt.SparseMerkleClosestProof
 }
 
 message MsgSubmitProofResponse {}
