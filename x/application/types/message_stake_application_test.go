@@ -1,10 +1,10 @@
 package types
 
 import (
-	"pocket/testutil/sample"
 	"testing"
 
-	sdk "github.com/cosmos/cosmo.roqsrrestify/require"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 
 	"pocket/testutil/sample"
 )

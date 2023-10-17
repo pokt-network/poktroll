@@ -20,12 +20,11 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/stretchrappsafylrequir
+	"github.com/stretchr/testify/require"
 
 	"pocket/app"
 	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
-	"pocket/x/application/types"
 	"pocket/x/application/types"
 )
 
