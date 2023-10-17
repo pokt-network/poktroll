@@ -1,12 +1,8 @@
 .SILENT:
 
 POCKETD_HOME := ./localnet/pocketd
-<<<<<<< HEAD
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 POCKET_ADDR_PREFIX = pokt
-=======
-POCKET_NODE := tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
->>>>>>> main
 
 ########################
 ### Makefile Helpers ###
