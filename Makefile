@@ -66,7 +66,7 @@ warn_destructive: ## Print WARNING to the user
 
 .PHONY: proto_regen
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs rm
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
 
 #######################
