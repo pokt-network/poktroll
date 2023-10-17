@@ -82,8 +82,6 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				tt.setupFn(tt)
 			}
 
-			// TECHDEBT/INCOMPLETE: test w/ & w/o context cancellation
-			//ctx := context.Background()
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
@@ -107,7 +105,6 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			for obsvrIdx, obsvr := range observers {
 				next := func(outputIndex int, output *int) error {
 					// obsvr channel should receive notified input
-					t.Logf("output: %d | %p", *output, output)
 					if !assert.Equalf(
 						t, tt.expectedOutputs[outputIndex],
 						*output,

@@ -66,7 +66,7 @@ func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Ob
 	obsvbl.observersMu.Lock()
 	defer obsvbl.observersMu.Unlock()
 
-	observer := NewObserver[V](ctx, obsvbl.onUnsubscribeFactory)
+	observer := NewObserver[V](ctx, obsvbl.onUnsubscribe)
 	obsvbl.observers = append(obsvbl.observers, observer)
 
 	// caller can rely on context cancellation or call Close() to unsubscribe
@@ -150,24 +150,17 @@ func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Obs
 	subscription.Unsubscribe()
 }
 
-// onUnsubscribeFactory returns a function that removes a given channelObserver from the
+// onUnsubscribe returns a function that removes a given channelObserver from the
 // observable's list of observers.
-func (obsvbl *channelObservable[V]) onUnsubscribeFactory() UnsubscribeFunc[V] {
-	return func(toRemove *channelObserver[V]) {
-		fmt.Println("[observersMu] onUnsubscribeFactory() locking... ")
-		obsvbl.observersMu.Lock()
-		fmt.Println("[observersMu] ...onUnsubscribeFactory() locked ")
-		defer func() {
-			fmt.Println("[observersMu] onUnsubscribeFactory() unlocking... ")
-			obsvbl.observersMu.Unlock()
-			fmt.Println("[observersMu] ...onUnsubscribeFactory() unlocked ")
-		}()
+func (obsvbl *channelObservable[V]) onUnsubscribe(toRemove *channelObserver[V]) {
+	// must lock to iterato over and modify observers list
+	obsvbl.observersMu.Lock()
+	defer obsvbl.observersMu.Unlock()
 
-		for i, observer := range obsvbl.observers {
-			if observer == toRemove {
-				obsvbl.observers = append((obsvbl.observers)[:i], (obsvbl.observers)[i+1:]...)
-				break
-			}
+	for i, observer := range obsvbl.observers {
+		if observer == toRemove {
+			obsvbl.observers = append((obsvbl.observers)[:i], (obsvbl.observers)[i+1:]...)
+			break
 		}
 	}
 }
