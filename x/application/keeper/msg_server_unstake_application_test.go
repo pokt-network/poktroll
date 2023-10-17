@@ -45,10 +45,12 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 		Address: addr,
 	}
 
-	// // Update the staked application
+	// Update the staked application
 	_, err = srv.UnstakeApplication(wctx, updatedApp)
 	require.NoError(t, err)
-	foundApp, isAppFound = k.GetApplication(ctx, addr)
+
+	// Make sure the app can no longer be found after unstaking
+	_, isAppFound = k.GetApplication(ctx, addr)
 	require.False(t, isAppFound)
 }
 

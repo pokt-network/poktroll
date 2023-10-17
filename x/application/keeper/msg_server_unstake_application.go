@@ -42,7 +42,7 @@ func (k msgServer) UnstakeApplication(
 	}
 
 	// Update the Application in the store
-	k.RemoveApplication(ctx, string(appAddress))
+	k.RemoveApplication(ctx, appAddress.String())
 	logger.Info("Successfully removed the application: %+v", app)
 
 	return &types.MsgUnstakeApplicationResponse{}, nil
