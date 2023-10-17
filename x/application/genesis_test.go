@@ -1,15 +1,16 @@
 package application_test
 
 import (
+	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
 	"pocket/x/application"
 	"pocket/x/application/types"
-	"testing"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.

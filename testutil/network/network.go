@@ -2,10 +2,6 @@ package network
 
 import (
 	"fmt"
-	"pocket/app"
-	"pocket/testutil/nullify"
-	"pocket/testutil/sample"
-	"pocket/x/application/types"
 	"testing"
 	"time"
 
@@ -25,6 +21,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
+
+	"pocket/app"
+	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
+	"pocket/x/application/types"
 )
 
 type (

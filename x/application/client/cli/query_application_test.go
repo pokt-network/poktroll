@@ -2,9 +2,6 @@ package cli_test
 
 import (
 	"fmt"
-	"pocket/testutil/nullify"
-	"pocket/x/application/client/cli"
-	"pocket/x/application/types"
 	"strconv"
 	"testing"
 
@@ -14,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/nullify"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 )
 
 func TestShowApplication(t *testing.T) {

@@ -1,9 +1,6 @@
 package keeper
 
 import (
-	mocks "pocket/testutil/application/mocks"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 	"testing"
 
 	tmdb "github.com/cometbft/cometbft-db"
@@ -17,6 +14,10 @@ import (
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+
+	mocks "pocket/testutil/application/mocks"
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 )
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {

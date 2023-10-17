@@ -2,12 +2,9 @@ package cli_test
 
 import (
 	"fmt"
-	"pocket/testutil/network"
-	"pocket/x/application/client/cli"
-	"pocket/x/application/types"
 	"testing"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -15,6 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/network"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 )
 
 func TestCLI_StakeApplication(t *testing.T) {
@@ -41,7 +42,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		desc        string
 		address     string
 		stakeString string
-		err         *errorsmod.Error
+		err         *sdkerrors.Error
 	}{
 		{
 			desc:        "stake application: valid",

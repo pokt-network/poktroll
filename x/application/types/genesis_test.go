@@ -3,11 +3,11 @@ package types_test
 import (
 	"testing"
 
-	"pocket/testutil/sample"
-	"pocket/x/application/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"pocket/testutil/sample"
+	"pocket/x/application/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

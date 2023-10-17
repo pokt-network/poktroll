@@ -2,13 +2,14 @@ package keeper_test
 
 import (
 	"context"
-	keepertest "pocket/testutil/keeper"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	keepertest "pocket/testutil/keeper"
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 )
 
 func setupMsgServer(t testing.TB) (types.MsgServer, context.Context) {

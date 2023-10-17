@@ -3,7 +3,8 @@ package types
 import (
 	"fmt"
 
-	errorsmod "cosmossdk.io/errors"
+
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -35,20 +36,20 @@ func (gs GenesisState) Validate() error {
 	// Check that the stake value for the apps is valid
 	for _, app := range gs.ApplicationList {
 		if app.Stake == nil {
-			return errorsmod.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
+			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
 		}
 		stake, err := sdk.ParseCoinNormalized(app.Stake.String())
 		if !stake.IsValid() {
-			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application %v; (%v)", app.Stake, stake.Validate())
+			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application %v; (%v)", app.Stake, stake.Validate())
 		}
 		if err != nil {
-			return errorsmod.Wrapf(ErrAppInvalidStake, "cannot parse stake amount for application %v; (%v)", app.Stake, err)
+			return sdkerrors.Wrapf(ErrAppInvalidStake, "cannot parse stake amount for application %v; (%v)", app.Stake, err)
 		}
 		if stake.IsZero() || stake.IsNegative() {
-			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", app.Stake)
+			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", app.Stake)
 		}
 		if stake.Denom != "upokt" {
-			return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
+			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
 		}
 	}
 

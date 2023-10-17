@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	// "github.com/cosmos/cosmos-sdk/client/flags"
 	"pocket/x/supplier/types"
 )
 
@@ -32,6 +31,7 @@ func GetTxCmd() *cobra.Command {
 
 	cmd.AddCommand(CmdStakeSupplier())
 	cmd.AddCommand(CmdUnstakeSupplier())
+	cmd.AddCommand(CmdCreateClaim())
 	// this line is used by starport scaffolding # 1
 
 	return cmd
