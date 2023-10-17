@@ -2,12 +2,14 @@ package simulation
 
 import (
 	"math/rand"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 )
 
 // TODO(@Olshansk): Implement simulation for application staking

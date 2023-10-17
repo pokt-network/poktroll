@@ -1,14 +1,15 @@
 package keeper_test
 
 import (
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	keepertest "pocket/testutil/keeper"
+	"pocket/testutil/sample"
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {

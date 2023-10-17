@@ -1,13 +1,14 @@
 package cli
 
 import (
-	"pocket/x/application/types"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+
+	"pocket/x/application/types"
 )
 
 var _ = strconv.Itoa(0)

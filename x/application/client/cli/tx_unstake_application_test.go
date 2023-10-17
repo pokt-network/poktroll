@@ -2,19 +2,21 @@ package cli_test
 
 import (
 	"fmt"
-	"pocket/testutil/network"
-	"pocket/x/application/client/cli"
-	"pocket/x/application/types"
 	"testing"
 
 	errorsmod "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
+
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/network"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 )
 
 func TestCLI_UnstakeApplication(t *testing.T) {

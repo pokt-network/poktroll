@@ -196,7 +196,7 @@ app3_stake: ## Stake app3
 	APP=app3 make app_stake
 
 .PHONY: app_unstake
-app_stake: ## Unstake an application (must specify the APP env var)
+app_unstake: ## Unstake an application (must specify the APP env var)
 	pocketd --home=$(POCKETD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_unstake
