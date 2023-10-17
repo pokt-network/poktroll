@@ -3,12 +3,12 @@ package types
 // DONTCOVER
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 )
 
 // x/application module sentinel errors
 var (
-	ErrAppInvalidStake   = errorsmod.Register(ModuleName, 1, "invalid application stake")
-	ErrAppInvalidAddress = errorsmod.Register(ModuleName, 2, "invalid application address")
-	ErrAppUnauthorized   = errorsmod.Register(ModuleName, 3, "unauthorized application signer")
+	ErrAppInvalidStake   = sdkerrors.Register(ModuleName, 1, "invalid application stake")
+	ErrAppInvalidAddress = sdkerrors.Register(ModuleName, 2, "invalid application address")
+	ErrAppUnauthorized   = sdkerrors.Register(ModuleName, 3, "unauthorized application signer")
 )

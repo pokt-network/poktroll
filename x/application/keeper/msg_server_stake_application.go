@@ -4,7 +4,7 @@ import (
 	"context"
 	"pocket/x/application/types"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -77,16 +77,16 @@ func (k msgServer) updateApplication(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != app.Address {
-		return errorsmod.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
+		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
 	}
 
 	if msg.Stake == nil {
-		return errorsmod.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
+		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
 	}
 
 	if msg.Stake.IsLTE(*app.Stake) {
 
-		return errorsmod.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 
 	app.Stake = msg.Stake

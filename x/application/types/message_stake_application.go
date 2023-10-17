@@ -1,7 +1,7 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 )
@@ -46,25 +46,25 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		return errorsmod.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.Address, err)
+		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.Address, err)
 	}
 
 	// Validate the stake amount
 	if msg.Stake == nil {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "nil application stake; (%v)", err)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "nil application stake; (%v)", err)
 	}
 	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
 	if !stake.IsValid() {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid application stake %v; (%v)", msg.Stake, stake.Validate())
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid application stake %v; (%v)", msg.Stake, stake.Validate())
 	}
 	if err != nil {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "cannot parse application stake %v; (%v)", msg.Stake, err)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "cannot parse application stake %v; (%v)", msg.Stake, err)
 	}
 	if stake.IsZero() || stake.IsNegative() {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
 	}
 	if stake.Denom != "upokt" {
-		return errorsmod.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
 	}
 
 	return nil
