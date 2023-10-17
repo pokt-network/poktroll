@@ -2,7 +2,6 @@ package channel
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -67,96 +66,59 @@ func (obsvr *channelObserver[V]) Unsubscribe() {
 
 // Ch returns a receive-only subscription channel.
 func (obsvr *channelObserver[V]) Ch() <-chan V {
-	//fmt.Println("obssvr#Ch:80 locking")
-	////for {
-	////	if obsvr.observerMu.TryRLock() {
-	////		break
-	////	}
-	////	fmt.Println("retrying")
-	////	time.Sleep(30 * time.Millisecond)
-	////}
-	////obsvr.observerMu.RLock()
-	//defer func() {
-	//	fmt.Println("obssvr#Ch:83 unlocking")
-	//	//obsvr.observerMu.RUnlock()
-	//}()
-
 	return obsvr.observerCh
 }
 
 func (obsvr *channelObserver[V]) unsubscribe() {
-	//fmt.Println("[obsersverMu] unsubscribe locking...")
 	obsvr.observerMu.Lock()
-	//fmt.Println("[obsersverMu] ...unsubscribe locked")
-	defer obsvr.observerMu.Unlock()
+	defer func() {
+		obsvr.observerMu.Unlock()
+	}()
 
 	if obsvr.closed {
-		//fmt.Println("[obsersverMu] unsubscribe unlocking (closed)...")
-		//obsvr.observerMu.Unlock()
-		//fmt.Println("[obsersverMu] ...unsubscribe unlocked (closed)")
 		return
 	}
 
-	fmt.Printf("[obsersverMu] channelObserver#Unsubscribe: closing %p\n", obsvr.observerCh)
 	close(obsvr.observerCh)
 	obsvr.closed = true
-	//fmt.Println("[obsersverMu] unsubscribe unlocking (open)...")
-	//obsvr.observerMu.Unlock()
-	//fmt.Println("[obsersverMu] ...unsubscribe unlocked (open)")
-
 	obsvr.onUnsubscribe(obsvr)
 }
 
 // notify is used called by observable to send on the observer channel. Can't
 // use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
-	//valueStr := fmt.Sprintf("%s", value)
-	//fmt.Printf("notify called, value: %s\n", valueStr)
-
 	defer obsvr.observerMu.RUnlock()
 
-	// TODO_THIS_COMMIT: (dis)prove the need for the send retry loop via tests.
-	sendRetryTicker := time.NewTicker(sendRetryInterval)
+	sendRetryTicker := time.NewTicker(sendRetryInterval / 2)
 	// wait sendRetryInterval before releasing the lock and trying again.
 	for {
-		//fmt.Println(valueStr)
-		//if valueStr == "message-9" {
-		//	fmt.Println("on message-9")
-		//}
-
-		// TODO_THIS_COMMIT: prove this is necessary w/ a test
+		// observerMu must remain read-locked until the value is sent on observerCh
 		if !obsvr.observerMu.TryRLock() {
 			time.Sleep(sendRetryInterval)
 			continue
 		}
 		if obsvr.closed {
-			//obsvr.observerMu.RUnlock()
 			return
 		}
-		// NO!!! - obsvr.observerMu.RUnlock()
 
 		select {
 		case <-obsvr.ctx.Done():
-			fmt.Println("ctx done!")
-			//obsvr.observerMu.RUnlock()
-			// TECHDEBT: add a  default path which buffers values so that the sender
-			// doesn't block and other consumers can still receive.
-			// TECHDEBT: add some logic to drain the buffer at some appropriate time
-
-			// TODO_THIS_COMMIT: is this redundant?
-			//obsvr.unsubscribe()
+			// if the context is done just release the read-lock (deferred)
 			return
 		case obsvr.observerCh <- value:
-			//obsvr.observerMu.RUnlock()
-			//fmt.Printf("sending value: %s\n", valueStr)
 			return
-		//default:
 		case <-sendRetryTicker.C:
-			// if channel is blocked,
-			fmt.Println("send loop looping")
+			// CONSIDERATION: repurpose this retry loop into a default path which
+			// buffers values so that the producer doesn't block and other observers
+			// can still be notified.
+			// TECHDEBT: add some logic to drain the buffer at some appropriate time
+
+			// if the context isn't done and channel is full (i.e. blocking),
+			// release the read-lock to give writer-lockers a turn. This case
+			// continues the loop, re-read-locking and trying again.
 			obsvr.observerMu.RUnlock()
 		}
 
-		time.Sleep(sendRetryInterval)
+		time.Sleep(sendRetryInterval / 2)
 	}
 }

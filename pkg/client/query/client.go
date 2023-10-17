@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
 	"sync"
@@ -125,9 +124,7 @@ func (qClient *queryClient) EventsObservable(
 
 	go func() {
 		<-ctx.Done()
-		log.Println("closing websocket")
 		qClient.close()
-		fmt.Println("done closing")
 	}()
 
 	return eventsObservable, errCh
@@ -142,12 +139,8 @@ func (qClient *queryClient) close() {
 	defer qClient.eventsMu.Unlock()
 
 	for _, event := range qClient.events {
-		fmt.Println("closing conn.observable...")
 		_ = event.conn.Close()
-		fmt.Println("... conn.observable closed")
-		fmt.Println("closing event.observable...")
 		event.observable.Close()
-		fmt.Println("... event.observable closed")
 	}
 }
 
