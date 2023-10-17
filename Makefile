@@ -109,6 +109,10 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
 
+.PHONY: install_ci_deps
+install_ci_deps: ## Installs the tools necessary for CI
+	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+
 #############
 ### TODOS ###
 #############

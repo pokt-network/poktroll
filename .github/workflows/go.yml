@@ -7,7 +7,6 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: ["main"]
 
 jobs:
   build:
@@ -26,6 +25,9 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.20"
+
+      - name: Install CI dependencies
+        run: make install_ci_deps
 
       - name: Build
         run: ignite chain build --debug
