@@ -32,6 +32,10 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUnstakeSupplier int = 100
 
+	opWeightMsgCreateClaim = "op_weight_msg_create_claim"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgCreateClaim int = 100
+
 	opWeightMsgSubmitProof = "op_weight_msg_submit_proof"
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgSubmitProof int = 100
@@ -86,6 +90,17 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		suppliersimulation.SimulateMsgUnstakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
+	var weightMsgCreateClaim int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgCreateClaim, &weightMsgCreateClaim, nil,
+		func(_ *rand.Rand) {
+			weightMsgCreateClaim = defaultWeightMsgCreateClaim
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgCreateClaim,
+		suppliersimulation.SimulateMsgCreateClaim(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	var weightMsgSubmitProof int
 	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgSubmitProof, &weightMsgSubmitProof, nil,
 		func(_ *rand.Rand) {
@@ -118,6 +133,14 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgUnstakeSupplier,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				suppliersimulation.SimulateMsgUnstakeSupplier(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgCreateClaim,
+			defaultWeightMsgCreateClaim,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				suppliersimulation.SimulateMsgCreateClaim(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

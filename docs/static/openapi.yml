@@ -76064,6 +76064,8 @@ definitions:
     properties:
       address:
         type: string
+  pocket.supplier.MsgCreateClaimResponse:
+    type: object
   pocket.supplier.MsgStakeSupplierResponse:
     type: object
   pocket.supplier.MsgSubmitProofResponse:

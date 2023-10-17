@@ -10,6 +10,7 @@ option go_package = "pocket/x/supplier/types";
 service Msg {
   rpc StakeSupplier   (MsgStakeSupplier  ) returns (MsgStakeSupplierResponse  );
   rpc UnstakeSupplier (MsgUnstakeSupplier) returns (MsgUnstakeSupplierResponse);
+  rpc CreateClaim     (MsgCreateClaim    ) returns (MsgCreateClaimResponse    );
   rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
 message MsgUnstakeSupplier {
@@ -23,6 +24,16 @@ message MsgStakeSupplier {
 message MsgUnstakeSupplierResponse {}
 
 message MsgStakeSupplierResponse {}
+
+message MsgCreateClaim {
+  string                       supplier_address = 1;
+  pocket.session.SessionHeader session_header   = 2;
+  bytes                        root_hash        = 3;
+}
+
+message MsgCreateClaimResponse {}
+
+
 
 message MsgSubmitProof {
   string                       supplier_address = 1;
