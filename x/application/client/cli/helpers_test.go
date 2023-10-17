@@ -2,11 +2,12 @@
 package cli_test
 
 import (
+	"strconv"
+	"testing"
+
 	"pocket/cmd/pocketd/cmd"
 	"pocket/testutil/network"
 	"pocket/x/application/types"
-	"strconv"
-	"testing"
 )
 
 // Dummy variable to avoid unused import error.

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
@@ -110,34 +111,26 @@ import (
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
 	"github.com/spf13/cast"
 
-	pocketmodule "pocket/x/pocket"
-	pocketmodulekeeper "pocket/x/pocket/keeper"
-	pocketmoduletypes "pocket/x/pocket/types"
-
-	servicemodule "pocket/x/service"
-	servicemodulekeeper "pocket/x/service/keeper"
-	servicemoduletypes "pocket/x/service/types"
-
-	sessionmodule "pocket/x/session"
-	sessionmodulekeeper "pocket/x/session/keeper"
-	sessionmoduletypes "pocket/x/session/types"
-
+	appparams "pocket/app/params"
+	"pocket/docs"
 	applicationmodule "pocket/x/application"
 	applicationmodulekeeper "pocket/x/application/keeper"
 	applicationmoduletypes "pocket/x/application/types"
-
-	suppliermodule "pocket/x/supplier"
-	suppliermodulekeeper "pocket/x/supplier/keeper"
-	suppliermoduletypes "pocket/x/supplier/types"
-
 	gatewaymodule "pocket/x/gateway"
 	gatewaymodulekeeper "pocket/x/gateway/keeper"
 	gatewaymoduletypes "pocket/x/gateway/types"
-
-	// this line is used by starport scaffolding # stargate/app/moduleImport
-
-	appparams "pocket/app/params"
-	"pocket/docs"
+	pocketmodule "pocket/x/pocket"
+	pocketmodulekeeper "pocket/x/pocket/keeper"
+	pocketmoduletypes "pocket/x/pocket/types"
+	servicemodule "pocket/x/service"
+	servicemodulekeeper "pocket/x/service/keeper"
+	servicemoduletypes "pocket/x/service/types"
+	sessionmodule "pocket/x/session"
+	sessionmodulekeeper "pocket/x/session/keeper"
+	sessionmoduletypes "pocket/x/session/types"
+	suppliermodule "pocket/x/supplier"
+	suppliermodulekeeper "pocket/x/supplier/keeper"
+	suppliermoduletypes "pocket/x/supplier/types"
 )
 
 const (
