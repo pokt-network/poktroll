@@ -71,7 +71,9 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 
 	// Update the staked application
 	_, err := srv.UnstakeApplication(wctx, updatedApp)
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrAppNotFound)
+
 	_, isAppFound = k.GetApplication(ctx, addr)
 	require.False(t, isAppFound)
 }
