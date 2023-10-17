@@ -40,13 +40,9 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.Equal(t, addr, foundApp.Address)
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 
-	// Prepare an updated application with a higher stake
-	updatedApp := &types.MsgUnstakeApplication{
-		Address: addr,
-	}
-
-	// Update the staked application
-	_, err = srv.UnstakeApplication(wctx, updatedApp)
+	// Unstake the application
+	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
+	_, err = srv.UnstakeApplication(wctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the app can no longer be found after unstaking
@@ -66,13 +62,9 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	_, isAppFound := k.GetApplication(ctx, addr)
 	require.False(t, isAppFound)
 
-	// Prepare an updated application with a higher stake
-	updatedApp := &types.MsgUnstakeApplication{
-		Address: addr,
-	}
-
-	// Update the staked application
-	_, err := srv.UnstakeApplication(wctx, updatedApp)
+	// Unstake the application
+	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
+	_, err := srv.UnstakeApplication(wctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrAppNotFound)
 

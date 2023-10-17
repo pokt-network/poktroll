@@ -34,7 +34,7 @@ func (k msgServer) UnstakeApplication(
 		return nil, err
 	}
 
-	// Send the coins from the application to the staked application pool
+	// Send the coins from the application pool back to the application
 	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, appAddress, []sdk.Coin{*app.Stake})
 	if err != nil {
 		logger.Error("could not send %v coins from %s module to %s account due to %v", app.Stake, appAddress, types.ModuleName, err)

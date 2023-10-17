@@ -90,7 +90,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
 	network.InitAccount(t, net, appAccount.Address)
 
-	// Stake the tests
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			// Wait for a new block to be committed
