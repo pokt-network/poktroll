@@ -42,19 +42,18 @@ type channelObserver[V any] struct {
 	closed bool
 }
 
-type UnsubscribeFactory[V any] func() UnsubscribeFunc[V]
 type UnsubscribeFunc[V any] func(toRemove *channelObserver[V])
 
 func NewObserver[V any](
 	ctx context.Context,
-	onUnsubscribeFactory UnsubscribeFactory[V],
+	onUnsubscribe UnsubscribeFunc[V],
 ) *channelObserver[V] {
 	// Create a channel for the subscriber and append it to the observers list
 	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),
 		observerCh:    make(chan V, observerBufferSize),
-		onUnsubscribe: onUnsubscribeFactory(),
+		onUnsubscribe: onUnsubscribe,
 	}
 }
 
@@ -73,9 +72,7 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 // removes the subscription from its observable's observers list via onUnsubscribe.
 func (obsvr *channelObserver[V]) unsubscribe() {
 	obsvr.observerMu.Lock()
-	defer func() {
-		obsvr.observerMu.Unlock()
-	}()
+	defer obsvr.observerMu.Unlock()
 
 	if obsvr.closed {
 		return

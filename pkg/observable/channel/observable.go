@@ -52,8 +52,8 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 	return obs, obs.producer
 }
 
-// WithProducer returns an option function sets the given producer in an observable
-// when passed to NewObservable().
+// WithProducer returns an option function which sets the given producer of the
+// resulting observable when passed to NewObservable().
 func WithProducer[V any](producer chan V) option[V] {
 	return func(obs *channelObservable[V]) {
 		obs.producer = producer
@@ -63,6 +63,7 @@ func WithProducer[V any](producer chan V) option[V] {
 // Subscribe returns an observer which is notified when the producer channel
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
+	// must lock observersMu so that we can safely append to the observers list
 	obsvbl.observersMu.Lock()
 	defer obsvbl.observersMu.Unlock()
 
