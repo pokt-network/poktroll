@@ -261,7 +261,7 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	eventsObserver := eventsObservable.Subscribe(ctx)
 	go func() {
 		for event := range eventsObserver.Ch() {
-			fmt.Printf("handling event: %s\n", string(event))
+			//fmt.Printf("handling event: %s\n", string(event))
 			require.Equal(t, testEvent(handleEventCounter), string(event))
 			handleEventCounter++
 			time.Sleep(10 * time.Millisecond)

@@ -61,7 +61,6 @@ func WithDialer(dialer client.Dialer) client.Option {
 
 // TODO_THIS_COMMIT: move
 type eventStat struct {
-	sync.Mutex
 	observable observable.Observable[[]byte]
 	conn       client.Connection
 	errCh      chan error

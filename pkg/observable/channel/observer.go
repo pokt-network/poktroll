@@ -85,16 +85,14 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 }
 
 func (obsvr *channelObserver[V]) unsubscribe() {
-	fmt.Println("[obsersverMu] unsubscribe locking...")
+	//fmt.Println("[obsersverMu] unsubscribe locking...")
 	obsvr.observerMu.Lock()
-	fmt.Println("[obsersverMu] ...unsubscribe locked")
-	//defer func() {
-	//	obsvr.observerMu.Unlock()
-	//}()
+	//fmt.Println("[obsersverMu] ...unsubscribe locked")
+	defer obsvr.observerMu.Unlock()
 
 	if obsvr.closed {
 		//fmt.Println("[obsersverMu] unsubscribe unlocking (closed)...")
-		obsvr.observerMu.Unlock()
+		//obsvr.observerMu.Unlock()
 		//fmt.Println("[obsersverMu] ...unsubscribe unlocked (closed)")
 		return
 	}
@@ -103,7 +101,7 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 	close(obsvr.observerCh)
 	obsvr.closed = true
 	//fmt.Println("[obsersverMu] unsubscribe unlocking (open)...")
-	obsvr.observerMu.Unlock()
+	//obsvr.observerMu.Unlock()
 	//fmt.Println("[obsersverMu] ...unsubscribe unlocked (open)")
 
 	obsvr.onUnsubscribe(obsvr)
@@ -115,7 +113,9 @@ func (obsvr *channelObserver[V]) notify(value V) {
 	//valueStr := fmt.Sprintf("%s", value)
 	//fmt.Printf("notify called, value: %s\n", valueStr)
 
-	// TODO_THIS_COMMIT: prove the need for the send retry loop via tests.
+	defer obsvr.observerMu.RUnlock()
+
+	// TODO_THIS_COMMIT: (dis)prove the need for the send retry loop via tests.
 	sendRetryTicker := time.NewTicker(sendRetryInterval)
 	// wait sendRetryInterval before releasing the lock and trying again.
 	for {
@@ -123,17 +123,22 @@ func (obsvr *channelObserver[V]) notify(value V) {
 		//if valueStr == "message-9" {
 		//	fmt.Println("on message-9")
 		//}
-		obsvr.observerMu.RLock()
+
+		// TODO_THIS_COMMIT: prove this is necessary w/ a test
+		if !obsvr.observerMu.TryRLock() {
+			time.Sleep(sendRetryInterval)
+			continue
+		}
 		if obsvr.closed {
 			//obsvr.observerMu.RUnlock()
 			return
 		}
-		//obsvr.observerMu.RUnlock()
+		// NO!!! - obsvr.observerMu.RUnlock()
 
 		select {
 		case <-obsvr.ctx.Done():
 			fmt.Println("ctx done!")
-			obsvr.observerMu.RUnlock()
+			//obsvr.observerMu.RUnlock()
 			// TECHDEBT: add a  default path which buffers values so that the sender
 			// doesn't block and other consumers can still receive.
 			// TECHDEBT: add some logic to drain the buffer at some appropriate time
@@ -142,7 +147,7 @@ func (obsvr *channelObserver[V]) notify(value V) {
 			//obsvr.unsubscribe()
 			return
 		case obsvr.observerCh <- value:
-			obsvr.observerMu.RUnlock()
+			//obsvr.observerMu.RUnlock()
 			//fmt.Printf("sending value: %s\n", valueStr)
 			return
 		//default:

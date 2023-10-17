@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"pocket/pkg/observable"
 	"sync"
-	"time"
 )
 
 var _ observable.Observable[any] = &channelObservable[any]{}
@@ -86,22 +85,20 @@ func (obsvbl *channelObservable[V]) Close() {
 // CONSIDERATION: decide whether this should close the producer channel; perhaps
 // only if it was provided.
 func (obsvbl *channelObservable[V]) close() {
-	fmt.Println("[observersMu] close Rlocking...")
+	//fmt.Println("[observersMu] close Rlocking...")
 	obsvbl.observersMu.Lock()
-	fmt.Println("[observersMu] ...close Rlocked")
-	//defer func() {
-	//	fmt.Println("[observersMu] close Runlocking...")
-	//	obsvbl.observersMu.Unlock()
-	//	fmt.Println("[observersMu] ...close Runlocked")
-	//}()
+	//fmt.Println("[observersMu] ...close Rlocked")
+	defer obsvbl.observersMu.Unlock()
+	//fmt.Println("[observersMu] close Runlocking...")
+	//fmt.Println("[observersMu] ...close Runlocked")
 
 	observers := make([]*channelObserver[V], len(obsvbl.observers))
 	for i, observer := range obsvbl.observers {
 		observers[i] = observer
 	}
-	fmt.Println("[observersMu] close Runlocking...")
-	obsvbl.observersMu.Unlock()
-	fmt.Println("[observersMu] ...close Runlocked")
+	//fmt.Println("[observersMu] close Runlocking...")
+	//obsvbl.observersMu.Unlock()
+	//fmt.Println("[observersMu] ...close Runlocked")
 
 	for _, obsvr := range observers {
 		fmt.Printf("channelObservable#goProduce: unsubscribing %p\n", obsvr)
@@ -109,40 +106,41 @@ func (obsvbl *channelObservable[V]) close() {
 	}
 
 	// clear observers
-	fmt.Println("[observersMu] close Rlocking...")
-	obsvbl.observersMu.Lock()
-	fmt.Println("[observersMu] ...close Rlocked")
+	//fmt.Println("[observersMu] close Rlocking...")
+	//obsvbl.observersMu.Lock()
+	//fmt.Println("[observersMu] ...close Rlocked")
 	obsvbl.observers = []*channelObserver[V]{}
-	fmt.Println("[observersMu] close Runlocking...")
-	obsvbl.observersMu.Unlock()
-	fmt.Println("[observersMu] ...close Runlocked")
+	//fmt.Println("[observersMu] close Runlocking...")
+	//obsvbl.observersMu.Unlock()
+	//fmt.Println("[observersMu] ...close Runlocked")
 }
 
 // goProduce to the producer and notify observers when values are received. This
 // function is blocking and should be run in a goroutine.
 func (obsvbl *channelObservable[V]) goProduce(producer <-chan V) {
-	var observers []*channelObserver[V]
+	//var observers []*channelObserver[V]
 	for notification := range producer {
 		//fmt.Printf("producer received notification: %s\n", notification)
+		// TODO_THIS_COMMIT: (dis)prove the need for this in a test
 		// copy observers to avoid holding the lock while notifying
-		for {
-			//fmt.Println("[obsersversMu] goProduce Rlocking...")
-			if !obsvbl.observersMu.TryRLock() {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
-			observers = make([]*channelObserver[V], len(obsvbl.observers))
-			//obsvbl.observersMu.RLock()
-			//fmt.Println("[obsersversMu] ...goProduce Rlocked")
-			//observers := make([]*channelObserver[V], len(obsvbl.observers))
-			for i, obsvr := range obsvbl.observers {
-				observers[i] = obsvr
-			}
-			//fmt.Println("[obsersversMu] goProduce Runlocking...")
-			obsvbl.observersMu.RUnlock()
-			//fmt.Println("[obsersversMu] ...goProduce Runlocked")
-			break
+		//for {
+		//	//fmt.Println("[obsersversMu] goProduce Rlocking...")
+		//	if !obsvbl.observersMu.TryRLock() {
+		//		time.Sleep(100 * time.Millisecond)
+		//		continue
+		//	}
+		//	observers = make([]*channelObserver[V], len(obsvbl.observers))
+		obsvbl.observersMu.RLock()
+		fmt.Println("[obsersversMu] ...goProduce Rlocked")
+		observers := make([]*channelObserver[V], len(obsvbl.observers))
+		for i, obsvr := range obsvbl.observers {
+			observers[i] = obsvr
 		}
+		//fmt.Println("[obsersversMu] goProduce Runlocking...")
+		obsvbl.observersMu.RUnlock()
+		//fmt.Println("[obsersversMu] ...goProduce Runlocked")
+		//	break
+		//}
 
 		// notify observers
 		for _, obsvr := range observers {
@@ -168,17 +166,14 @@ func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Obs
 // observable's list of observers.
 func (obsvbl *channelObservable[V]) onUnsubscribeFactory() UnsubscribeFunc[V] {
 	return func(toRemove *channelObserver[V]) {
-		fmt.Println("[obsersversMu] onunsubscribe locking...")
+		//fmt.Println("[obsersversMu] onunsubscribe locking...")
 		obsvbl.observersMu.Lock()
-		fmt.Println("[obsersversMu] ...onunsubscribe locked")
-		defer func() {
-			fmt.Println("[obsersversMu] onunsubscribe unlocking...")
-			obsvbl.observersMu.Unlock()
-			fmt.Println("[obsersversMu] ...onunsubscribe unlocked")
-		}()
-		observers := obsvbl.observers
+		//fmt.Println("[obsersversMu] ...onunsubscribe locked")
+		defer obsvbl.observersMu.Unlock()
+		//fmt.Println("[obsersversMu] onunsubscribe unlocking...")
+		//fmt.Println("[obsersversMu] ...onunsubscribe unlocked")
 
-		for i, observer := range observers {
+		for i, observer := range obsvbl.observers {
 			if observer == toRemove {
 				obsvbl.observers = append((obsvbl.observers)[:i], (obsvbl.observers)[i+1:]...)
 				break
