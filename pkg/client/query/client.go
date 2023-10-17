@@ -113,7 +113,7 @@ func (qClient *queryClient) EventsObservable(
 	}
 
 	go func() {
-		if err := qClient.goListen(conn, eventsProducer); err != nil {
+		if err := qClient.goProduceEvents(conn, eventsProducer); err != nil {
 			// only propagate error if it's not a context cancellation error
 			if !errors.Is(ctx.Err(), context.Canceled) {
 				// TODO_THIS_COMMIT: refactor to cosmos-sdk error
@@ -128,6 +128,7 @@ func (qClient *queryClient) EventsObservable(
 		<-ctx.Done()
 		log.Println("closing websocket")
 		qClient.close()
+		fmt.Println("done closing")
 	}()
 
 	return eventsObservable, errCh
@@ -142,15 +143,18 @@ func (qClient *queryClient) close() {
 	defer qClient.eventsMu.Unlock()
 
 	for _, event := range qClient.events {
+		fmt.Println("closing conn.observable...")
 		_ = event.conn.Close()
+		fmt.Println("... conn.observable closed")
+		fmt.Println("closing event.observable...")
 		event.observable.Close()
-		fmt.Println("test")
+		fmt.Println("... event.observable closed")
 	}
 }
 
-// goListen blocks on reading messages from a websocket connection.
+// goProduceEvents blocks on reading messages from a websocket connection.
 // IMPORTANT: it is intended to be called from within a go routine.
-func (qClient *queryClient) goListen(
+func (qClient *queryClient) goProduceEvents(
 	conn client.Connection,
 	eventsProducer chan<- []byte,
 ) error {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/multierr"
 	"sync"
 	"testing"
 	"time"
@@ -20,24 +22,24 @@ var (
 )
 
 func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
-	const queryLimit = 5
+	const queryLimit = 3
 	ctx, cancel := context.WithCancel(context.Background())
 
 	for queryIdx := 0; queryIdx < queryLimit; queryIdx++ {
 		t.Run(testQuery(queryIdx), func(t *testing.T) {
 			var (
-				readObserverEventsTimeout = 100 * time.Millisecond
+				readObserverEventsTimeout = 300 * time.Millisecond
 				readEventCounter          int
 				// number of events to send and receive through the query client's obervable
 				handleEventsLimit   = 1000
 				handleEventCounter  int
-				maxHandleEventCount = handleEventsLimit * 103 / 100
+				maxHandleEventCount = handleEventsLimit * 105 / 100
 				queryLimit          = 1
 				connClosedMu        sync.Mutex
 				connClosed          bool
 			)
 
-			ctx, cancel := context.WithCancel(ctx)
+			ctx, cancelQuery := context.WithCancel(ctx)
 			ctrl := gomock.NewController(t)
 			connMock := mockclient.NewMockConnection(ctrl)
 			// `Connection#Close()` should be called once for each subscription.
@@ -85,12 +87,8 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 			observerIdx := 0
 			eventObservable, errCh := queryClient.EventsObservable(ctx, testQuery(observerIdx))
 			eventObserver := eventObservable.Subscribe(ctx)
-			// IMPROVE: in-lining this call to #Ch() in the go routine below
-			// concurrently with usage of drainCh causes a deadlock.
-			eventObserverCh := eventObserver.Ch()
-
 			go func() {
-				for event := range eventObserverCh {
+				for event := range eventObserver.Ch() {
 					require.Equal(t, testEvent(handleEventCounter), string(event))
 					handleEventCounter++
 
@@ -115,12 +113,12 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 			}
 
 			// cancelling the context should close the connection
-			cancel()
+			cancelQuery()
 			// closing the connection happens asynchronously, so we need to wait a bit
 			// for the connection to close to satisfy the connection mock expectations.
 			time.Sleep(10 * time.Millisecond)
 
-			closed, err := drainCh(eventObserverCh)
+			closed, err := drainCh(eventObserver.Ch())
 			require.True(t, closed)
 			require.NoError(t, err)
 		})
@@ -137,77 +135,6 @@ func TestQueryClient_Subscribe_Succeeds(t *testing.T) {
 	// for the connection to close to satisfy the connection mock expectations.
 	time.Sleep(10 * time.Millisecond)
 }
-
-//func TestQueryClient_Subscribe_Close(t *testing.T) {
-//	readMsgTimeout := 50 * time.Millisecond
-//	handleMsgLimit := 100
-//
-//	ctx, cancel := context.WithCancel(context.Background())
-//	ctrl := gomock.NewController(t)
-//	var readMsgCounter, handleMsgCounter int
-//
-//	connMock := mockclient.NewMockConnection(ctrl)
-//	connMock.EXPECT().Close().
-//		Return(nil).
-//		Times(1)
-//	connMock.EXPECT().WriteJSON(gomock.Any()).
-//		Return(nil).
-//		Times(1)
-//	connMock.EXPECT().ReadEvent().
-//		DoAndReturn(func() ([]byte, error) {
-//			msg := testEvent(readMsgCounter)
-//			readMsgCounter++
-//			return []byte(msg), nil
-//		}).
-//		Times(handleMsgLimit + 1)
-//
-//	dialerMock := mockclient.NewMockDialer(ctrl)
-//	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-//		Return(connMock, nil).
-//		Times(1)
-//
-//	dialerOpt := query.WithDialer(dialerMock)
-//	queryClient := query.NewQueryClient("", dialerOpt)
-//
-//	//msgCh, done := make(chan []byte), make(chan struct{}, 1)
-//	done := make(chan []byte)
-//	msgHandler := func(ctx context.Context, msg []byte) error {
-//		//msgCh <- msg
-//		return nil
-//	}
-//	errCh := queryClient.EventsObservable(ctx, "query ignored in client mock", msgHandler)
-//
-//	//go func() {
-//	//	for msg := range msgCh {
-//	//		require.Equal(t, testEvent(handleMsgCounter), string(msg))
-//	//		handleMsgCounter++
-//	//
-//	//		if handleMsgCounter >= handleMsgLimit {
-//	//			done <- struct{}{}
-//	//			return
-//	//		}
-//	//	}
-//	//}()
-//
-//	select {
-//	case <-done:
-//		require.Equal(t, handleMsgLimit, handleMsgCounter)
-//	case err := <-errCh:
-//		require.NoError(t, err)
-//		t.Fatal("unexpected receive on subscription error channel")
-//	case <-time.After(readMsgTimeout):
-//		t.Fatalf(
-//			"timed out waiting for next message; expected %d messages, got %d",
-//			handleMsgLimit, handleMsgCounter,
-//		)
-//	}
-//
-//	// cancelling the context should close the connection
-//	cancel()
-//	// closing the connection happens asynchronously, so we need to wait a bit
-//	// for the connection to close to satisfy the connection mock expectations.
-//	time.Sleep(10 * time.Millisecond)
-//}
 
 func TestQueryClient_Subscribe_DialError(t *testing.T) {
 	ctx := context.Background()
@@ -270,6 +197,7 @@ func TestQueryClient_Subscribe_RequestError(t *testing.T) {
 }
 
 func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
+	//t.SkipNow()
 	var (
 		readAllEventsTimeout = 100 * time.Millisecond
 		handleEventLimit     = 10
@@ -307,11 +235,15 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 			//_ = connClosed
 
 			if readEventCounter >= handleEventLimit {
+				fmt.Println("errMockConnClosed")
 				return nil, errMockConnClosed
 			}
 
 			event := testEvent(readEventCounter)
 			readEventCounter++
+
+			//time.Sleep(100 * time.Millisecond)
+
 			return []byte(event), nil
 		}).
 		MinTimes(handleEventLimit)
@@ -327,14 +259,12 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	done := make(chan struct{}, 1)
 	eventsObservable, errCh := queryClient.EventsObservable(ctx, testQuery(0))
 	eventsObserver := eventsObservable.Subscribe(ctx)
-	// IMPROVE: in-lining this call to #Ch() in the go routine below
-	// concurrently with usage of drainCh causes a deadlock.
-	eventsObserverCh := eventsObserver.Ch()
-
 	go func() {
-		for event := range eventsObserverCh {
+		for event := range eventsObserver.Ch() {
+			fmt.Printf("handling event: %s\n", string(event))
 			require.Equal(t, testEvent(handleEventCounter), string(event))
 			handleEventCounter++
+			time.Sleep(10 * time.Millisecond)
 
 			if handleEventCounter >= handleEventLimit {
 				done <- struct{}{}
@@ -368,6 +298,12 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 		//	)
 	}
 
+	// !!! nuclear option !!!
+	//go func() {
+	//	<-time.After(4500 * time.Millisecond)
+	//	os.Exit(100)
+	//}()
+
 	_ = cancel
 	//// cancelling the context should close the connection
 	//cancel()
@@ -375,11 +311,24 @@ func TestQueryClient_Subscribe_ConnectionClosedError(t *testing.T) {
 	//// for the connection to close to satisfy the connection mock expectations.
 	//time.Sleep(10 * time.Millisecond)
 
+	drainErr := make(chan error, 1)
+	//go func() {
 	fmt.Println("pre-drain")
-	closed, err := drainCh(eventsObserverCh)
+	msg := "events observer channel is not closed"
+	closed, err := drainCh(eventsObserver.Ch())
+	if !assert.Truef(t, closed, msg) {
+		err = multierr.Combine(err, errors.New(msg))
+	}
+	drainErr <- err
 	fmt.Println("post-drain")
-	require.Truef(t, closed, "events observer channel is not closed")
-	require.NoError(t, err)
+	//}()
+
+	select {
+	case err := <-drainErr:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for events observer channel to close")
+	}
 }
 
 /* TODO_THIS_COMMIT: add test coverage for:

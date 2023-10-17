@@ -18,7 +18,10 @@ const (
 	// sendRetryInterval is the duration between attempts to send on the observer's
 	// channel. It facilitates a branch in a for loop which unlocks the observer's
 	// mutex and tries again.
-	sendRetryInterval = 30 * time.Millisecond
+	// NOTE: setting this too low can cause the send retry loop to "slip", giving
+	// up on a send attempt before the channel is ready to receive for multiple
+	// iterations of the loop.
+	sendRetryInterval = 100 * time.Millisecond
 )
 
 var _ observable.Observer[any] = &channelObserver[any]{}
@@ -59,59 +62,73 @@ func NewObserver[V any](
 // Unsubscribe closes the subscription channel and removes the subscription from
 // the observable.
 func (obsvr *channelObserver[V]) Unsubscribe() {
-	fmt.Println("")
-	obsvr.observerMu.Lock()
-	defer func() {
-		obsvr.observerMu.Unlock()
-	}()
-
-	if obsvr.closed {
-		return
-	}
-
-	fmt.Printf("channelObserver#Unsubscribe: closing %p\n", obsvr.observerCh)
-	close(obsvr.observerCh)
-	obsvr.closed = true
-
-	obsvr.onUnsubscribe(obsvr)
+	obsvr.unsubscribe()
 }
 
 // Ch returns a receive-only subscription channel.
 func (obsvr *channelObserver[V]) Ch() <-chan V {
-	fmt.Println("obssvr#Ch:80 locking")
-	//for {
-	//	if obsvr.observerMu.TryRLock() {
-	//		break
-	//	}
-	//	fmt.Println("retrying")
-	//	time.Sleep(30 * time.Millisecond)
-	//}
-	obsvr.observerMu.RLock()
-	defer func() {
-		fmt.Println("obssvr#Ch:83 unlocking")
-		obsvr.observerMu.RUnlock()
-	}()
+	//fmt.Println("obssvr#Ch:80 locking")
+	////for {
+	////	if obsvr.observerMu.TryRLock() {
+	////		break
+	////	}
+	////	fmt.Println("retrying")
+	////	time.Sleep(30 * time.Millisecond)
+	////}
+	////obsvr.observerMu.RLock()
+	//defer func() {
+	//	fmt.Println("obssvr#Ch:83 unlocking")
+	//	//obsvr.observerMu.RUnlock()
+	//}()
 
 	return obsvr.observerCh
+}
+
+func (obsvr *channelObserver[V]) unsubscribe() {
+	fmt.Println("[obsersverMu] unsubscribe locking...")
+	obsvr.observerMu.Lock()
+	fmt.Println("[obsersverMu] ...unsubscribe locked")
+	//defer func() {
+	//	obsvr.observerMu.Unlock()
+	//}()
+
+	if obsvr.closed {
+		//fmt.Println("[obsersverMu] unsubscribe unlocking (closed)...")
+		obsvr.observerMu.Unlock()
+		//fmt.Println("[obsersverMu] ...unsubscribe unlocked (closed)")
+		return
+	}
+
+	fmt.Printf("[obsersverMu] channelObserver#Unsubscribe: closing %p\n", obsvr.observerCh)
+	close(obsvr.observerCh)
+	obsvr.closed = true
+	//fmt.Println("[obsersverMu] unsubscribe unlocking (open)...")
+	obsvr.observerMu.Unlock()
+	//fmt.Println("[obsersverMu] ...unsubscribe unlocked (open)")
+
+	obsvr.onUnsubscribe(obsvr)
 }
 
 // notify is used called by observable to send on the observer channel. Can't
 // use channelObserver#Ch because it's receive-only.
 func (obsvr *channelObserver[V]) notify(value V) {
+	//valueStr := fmt.Sprintf("%s", value)
+	//fmt.Printf("notify called, value: %s\n", valueStr)
+
 	// TODO_THIS_COMMIT: prove the need for the send retry loop via tests.
 	sendRetryTicker := time.NewTicker(sendRetryInterval)
 	// wait sendRetryInterval before releasing the lock and trying again.
 	for {
-		valueStr := fmt.Sprintf("%s", value)
-		fmt.Println(valueStr)
-		if valueStr == "message-9" {
-			fmt.Println("on message-9")
-		}
+		//fmt.Println(valueStr)
+		//if valueStr == "message-9" {
+		//	fmt.Println("on message-9")
+		//}
 		obsvr.observerMu.RLock()
 		if obsvr.closed {
-			obsvr.observerMu.RUnlock()
+			//obsvr.observerMu.RUnlock()
 			return
 		}
+		//obsvr.observerMu.RUnlock()
 
 		select {
 		case <-obsvr.ctx.Done():
@@ -120,10 +137,13 @@ func (obsvr *channelObserver[V]) notify(value V) {
 			// TECHDEBT: add a  default path which buffers values so that the sender
 			// doesn't block and other consumers can still receive.
 			// TECHDEBT: add some logic to drain the buffer at some appropriate time
+
+			// TODO_THIS_COMMIT: is this redundant?
+			//obsvr.unsubscribe()
 			return
 		case obsvr.observerCh <- value:
-			fmt.Println("sending value")
 			obsvr.observerMu.RUnlock()
+			//fmt.Printf("sending value: %s\n", valueStr)
 			return
 		//default:
 		case <-sendRetryTicker.C:
