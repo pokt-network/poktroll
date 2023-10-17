@@ -2,13 +2,13 @@ package cli
 
 import (
 	"fmt"
+	"pocket/x/supplier/types"
+
 	"time"
 
-	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	// "github.com/cosmos/cosmos-sdk/client/flags"
-	"pocket/x/supplier/types"
+	"github.com/spf13/cobra"
 )
 
 var (

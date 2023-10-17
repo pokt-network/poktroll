@@ -2,16 +2,13 @@ package network
 
 import (
 	"fmt"
-	"pocket/app"
-	"pocket/testutil/nullify"
-	"pocket/testutil/sample"
-	"pocket/x/application/types"
 	"testing"
 	"time"
 
 	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -25,6 +22,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
+
+	"pocket/app"
+	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
+	"pocket/x/application/types"
 )
 
 type (

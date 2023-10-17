@@ -1,17 +1,18 @@
 package keeper_test
 
 import (
-	"pocket/cmd/pocketd/cmd"
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
+
+	"pocket/cmd/pocketd/cmd"
+	keepertest "pocket/testutil/keeper"
+	"pocket/testutil/nullify"
+	"pocket/x/application/keeper"
+	"pocket/x/application/types"
 )
 
 // Prevent strconv unused error

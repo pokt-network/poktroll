@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"context"
-	"pocket/x/application/types"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"pocket/x/application/types"
 )
 
 func (k msgServer) StakeApplication(

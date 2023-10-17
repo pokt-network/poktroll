@@ -2,18 +2,20 @@ package cli_test
 
 import (
 	"fmt"
-	"pocket/testutil/nullify"
-	"pocket/x/application/client/cli"
-	"pocket/x/application/types"
 	"strconv"
 	"testing"
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/nullify"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 )
 
 func TestShowApplication(t *testing.T) {
