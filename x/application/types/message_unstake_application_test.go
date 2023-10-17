@@ -3,9 +3,10 @@ package types
 import (
 	"testing"
 
+	"pocket/testutil/sample"
+
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
-	"pocket/testutil/sample"
 )
 
 func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
@@ -15,16 +16,22 @@ func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "valid",
+			msg: MsgUnstakeApplication{
+				Address: sample.AccAddress(),
+			},
+		},
+		{
+			name: "invalid - missing address",
+			msg:  MsgUnstakeApplication{},
+			err:  sdkerrors.ErrInvalidAddress,
+		},
+		{
+			name: "invalid - invalid address",
 			msg: MsgUnstakeApplication{
 				Address: "invalid_address",
 			},
 			err: sdkerrors.ErrInvalidAddress,
-		}, {
-			name: "valid address",
-			msg: MsgUnstakeApplication{
-				Address: sample.AccAddress(),
-			},
 		},
 	}
 	for _, tt := range tests {
