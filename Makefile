@@ -1,8 +1,12 @@
 .SILENT:
 
 POCKETD_HOME := ./localnet/pocketd
+<<<<<<< HEAD
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 POCKET_ADDR_PREFIX = pokt
+=======
+POCKET_NODE := tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+>>>>>>> main
 
 ########################
 ### Makefile Helpers ###
@@ -98,6 +102,10 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 #############
 ### Tests ###
 #############
+
+.PHONY: test_e2e
+test_e2e: ## Run all E2E tests
+	export POCKET_NODE=$(POCKET_NODE) POCKETD_HOME=../../$(POCKETD_HOME) && go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
