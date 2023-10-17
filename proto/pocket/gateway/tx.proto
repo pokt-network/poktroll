@@ -1,7 +1,22 @@
 syntax = "proto3";
+
 package pocket.gateway;
 
 option go_package = "pocket/x/gateway/types";
 
 // Msg defines the Msg service.
-service Msg {}
+service Msg {
+  rpc StakeGateway   (MsgStakeGateway  ) returns (MsgStakeGatewayResponse  );
+  rpc UnstakeGateway (MsgUnstakeGateway) returns (MsgUnstakeGatewayResponse);
+}
+message MsgStakeGateway {
+  string address = 1;
+}
+
+message MsgStakeGatewayResponse {}
+
+message MsgUnstakeGateway {
+  string address = 1;
+}
+
+message MsgUnstakeGatewayResponse {}
