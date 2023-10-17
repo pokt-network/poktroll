@@ -3,6 +3,14 @@
 POCKETD_HOME := ./localnet/pocketd
 POCKET_NODE := tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 
+####################
+### Dependencies ###
+####################
+
+.PHONY: install_ci_deps
+install_ci_deps: ## Installs `mockgen`
+	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+
 ########################
 ### Makefile Helpers ###
 ########################
