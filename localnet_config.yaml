@@ -1,9 +1,0 @@
-gateways:
-  count: 0
-helm_chart_local_repo:
-  enabled: false
-  path: ../helm-charts
-relayers:
-  count: 1
-sequencers:
-  count: 1
