@@ -37,6 +37,7 @@ func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
