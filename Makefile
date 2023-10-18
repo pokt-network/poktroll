@@ -1,7 +1,8 @@
 .SILENT:
 
 POCKETD_HOME := ./localnet/pocketd
-POCKET_NODE := tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_ADDR_PREFIX = pokt
 
 ####################
 ### Dependencies ###
@@ -116,7 +117,11 @@ go_test: go_version_check ## Run all go tests
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	go generate ./x/application/types/
 	go generate ./x/gateway/types/
+
+.PHONY: go_develop
+go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###
@@ -174,3 +179,59 @@ todo_count: ## Print a count of all the TODOs in the project
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
 	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "DISCUSS_IN_THIS_COMMIT"
+
+####################
+### Applications ###
+####################
+
+.PHONY: app_list
+app_list: ## List all the staked applications
+	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
+
+.PHONY: app_stake
+app_stake: ## Stake tokens for the application specified (must specify the APP env var)
+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_stake
+app1_stake: ## Stake app1
+	APP=app1 make app_stake
+
+.PHONY: app2_stake
+app2_stake: ## Stake app2
+	APP=app2 make app_stake
+
+.PHONY: app3_stake
+app3_stake: ## Stake app3
+	APP=app3 make app_stake
+
+################
+### Accounts ###
+################
+
+.PHONY: acc_balance_query
+acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
+	@echo "~~~ Balances ~~~"
+	pocketd --home=$(POCKETD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	@echo "~~~ Spendable Balances ~~~"
+	@echo "Querying spendable balance for $(ACC)"
+	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+
+.PHONY: acc_balance_query_app_module
+acc_balance_query_app_module: ## Query the balance of the network level "application" module
+	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+
+.PHONY: acc_balance_query_app1
+acc_balance_query_app1: ## Query the balance of app1
+	make acc_balance_query ACC=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+
+.PHONY: acc_balance_total_supply
+acc_balance_total_supply: ## Query the total supply of the network
+	pocketd --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
+
+######################
+### Ignite Helpers ###
+######################
+
+.PHONY: ignite_acc_list
+ignite_acc_list: ## List all the accounts in LocalNet
+	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)

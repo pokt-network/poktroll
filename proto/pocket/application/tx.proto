@@ -2,16 +2,24 @@ syntax = "proto3";
 
 package pocket.application;
 
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
+
 option go_package = "pocket/x/application/types";
 
 // Msg defines the Msg service.
 service Msg {
-  rpc StakeApplication (MsgStakeApplication) returns (MsgStakeApplicationResponse);
+  rpc StakeApplication   (MsgStakeApplication  ) returns (MsgStakeApplicationResponse  );
   rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
 }
-
 message MsgStakeApplication {
-  string address = 1;
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
+  // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
+  // repeated service.ServiceId service_ids = 3; // The ID of the service this session is servicing
 }
 
 message MsgStakeApplicationResponse {}
