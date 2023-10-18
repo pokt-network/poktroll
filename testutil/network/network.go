@@ -5,20 +5,27 @@ import (
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
 	"pocket/app"
+	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
+	"pocket/x/application/types"
 )
 
 type (
@@ -89,4 +96,45 @@ func DefaultConfig() network.Config {
 		SigningAlgo:     string(hd.Secp256k1Type),
 		KeyringOptions:  []keyring.Option{},
 	}
+}
+
+// applicationModuleGenesis generates a GenesisState object with a given number of applications.
+// It returns the populated GenesisState object.
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *types.GenesisState {
+	t.Helper()
+	state := types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
+		application := types.Application{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+		}
+		nullify.Fill(&application)
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+// HydrateGenesisState adds a given module's GenesisState to the network's genesis state.
+func HydrateGenesisState(t *testing.T, cfg *network.Config, moduleGenesisState *types.GenesisState, moduleName string) {
+	t.Helper()
+	buf, err := cfg.Codec.MarshalJSON(moduleGenesisState)
+	require.NoError(t, err)
+	cfg.GenesisState[moduleName] = buf
+}
+
+// Initialize an Account by sending it some funds from the validator in the network to the address provided
+func InitAccount(t *testing.T, net *Network, addr cosmostypes.AccAddress) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	_, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
+	require.NoError(t, err)
 }

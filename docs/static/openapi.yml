@@ -46453,6 +46453,26 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: The Bech32 address of the application
+                    stake:
+                      title: The total amount of uPOKT the application has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                  title: >-
+                    Application defines the type used to store an on-chain
+                    definition and state for an application
               pagination:
                 type: object
                 properties:
@@ -46573,6 +46593,26 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: The Bech32 address of the application
+                  stake:
+                    title: The total amount of uPOKT the application has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+                title: >-
+                  Application defines the type used to store an on-chain
+                  definition and state for an application
         default:
           description: An unexpected error response.
           schema:
@@ -75914,6 +75954,23 @@ definitions:
     properties:
       address:
         type: string
+        title: The Bech32 address of the application
+      stake:
+        title: The total amount of uPOKT the application has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+    title: >-
+      Application defines the type used to store an on-chain definition and
+      state for an application
   pocket.application.MsgStakeApplicationResponse:
     type: object
   pocket.application.MsgUnstakeApplicationResponse:
@@ -75931,6 +75988,26 @@ definitions:
           properties:
             address:
               type: string
+              title: The Bech32 address of the application
+            stake:
+              title: The total amount of uPOKT the application has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+          title: >-
+            Application defines the type used to store an on-chain definition
+            and state for an application
       pagination:
         type: object
         properties:
@@ -75965,6 +76042,26 @@ definitions:
         properties:
           address:
             type: string
+            title: The Bech32 address of the application
+          stake:
+            title: The total amount of uPOKT the application has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
+        title: >-
+          Application defines the type used to store an on-chain definition and
+          state for an application
   pocket.application.QueryParamsResponse:
     type: object
     properties:
@@ -76113,11 +76210,41 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.session.SessionHeader:
+    type: object
+    properties:
+      application_address:
+        type: string
+        title: The address of the application this session is for
+      session_block_start_height:
+        type: string
+        format: int64
+        description: The height at which this session started
+        title: >-
+          TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto
+          is defined
+
+          service.ServiceId service_id = 2; // The ID of the service this
+          session is servicing
+      session_id:
+        type: string
+        description: A unique pseudoranom ID for this session
+        title: >-
+          NOTE: session_id can be derived from the above values using on-chain
+          but is included in the header for convenience
+    description: >-
+      SessionHeader is a lightweight header for a session that can be passed
+      around.
+
+      It is the minimal amount of data required to hydrate & retrieve all data
+      relevant to the session.
   pocket.shared.Supplier:
     type: object
     properties:
       address:
         type: string
+  pocket.supplier.MsgCreateClaimResponse:
+    type: object
   pocket.supplier.MsgStakeSupplierResponse:
     type: object
   pocket.supplier.MsgUnstakeSupplierResponse:
