@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/testutil/network"
 	"pocket/testutil/nullify"
 	"pocket/x/gateway/client/cli"
 	"pocket/x/gateway/types"
@@ -20,23 +19,6 @@ import (
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
-
-func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {
-	t.Helper()
-	cfg := network.DefaultConfig()
-	state := types.GenesisState{}
-	for i := 0; i < n; i++ {
-		gateway := types.Gateway{
-			Address: strconv.Itoa(i),
-		}
-		nullify.Fill(&gateway)
-		state.GatewayList = append(state.GatewayList, gateway)
-	}
-	buf, err := cfg.Codec.MarshalJSON(&state)
-	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.GatewayList
-}
 
 func TestShowGateway(t *testing.T) {
 	net, objs := networkWithGatewayObjects(t, 2)

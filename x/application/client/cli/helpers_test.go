@@ -8,6 +8,8 @@ import (
 	"pocket/cmd/pocketd/cmd"
 	"pocket/testutil/network"
 	"pocket/x/application/types"
+
+	"github.com/stretchr/testify/require"
 )
 
 // Dummy variable to avoid unused import error.
@@ -24,6 +26,8 @@ func networkWithApplicationObjects(t *testing.T, n int) (*network.Network, []typ
 	t.Helper()
 	cfg := network.DefaultConfig()
 	appGenesisState := network.DefaultApplicationModuleGenesisState(t, n)
-	network.HydrateGenesisState(t, &cfg, appGenesisState, types.ModuleName)
+	buf, err := cfg.Codec.MarshalJSON(appGenesisState)
+	require.NoError(t, err)
+	cfg.GenesisState[types.ModuleName] = buf
 	return network.New(t, cfg), appGenesisState.ApplicationList
 }

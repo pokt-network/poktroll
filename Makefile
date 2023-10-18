@@ -181,6 +181,30 @@ todo_this_commit: ## List all the TODOs needed to be done in this commit
 	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "DISCUSS_IN_THIS_COMMIT"
 
 ####################
+###   Gateways   ###
+####################
+
+.PHONY: gateway_list
+gateway_list: ## List all the staked gateways
+	pocketd --home=$(POCKETD_HOME) q gateway list-gateway --node $(POCKET_NODE)
+
+.PHONY: gateway_stake
+gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
+	pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(gateway) --node $(POCKET_NODE)
+
+.PHONY: gateway1_stake
+gateway1_stake: ## Stake gateway1
+	gateway=gateway1 make gateway_stake
+
+.PHONY: gateway2_stake
+gateway2_stake: ## Stake gateway2
+	gateway=gateway2 make gateway_stake
+
+.PHONY: gateway3_stake
+gateway3_stake: ## Stake gateway3
+	gateway=gateway3 make gateway_stake
+
+####################
 ### Applications ###
 ####################
 
