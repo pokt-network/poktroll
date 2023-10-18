@@ -32,15 +32,15 @@ accounts:
     mnemonic: "client city senior tenant source soda spread buffalo shaft amused bar carbon keen off feel coral easily announce metal orphan sustain maple expand loop"
     coins:
       - 330000000upokt
-  - name: portal1
+  - name: gateway1
     mnemonic: "salt iron goat also absorb depend involve agent apology between lift shy door left bulb arrange industry father jelly olive rifle return predict into"
     coins:
       - 100000000upokt
-  - name: portal2
+  - name: gateway2
     mnemonic: "suffer wet jelly furnace cousin flip layer render finish frequent pledge feature economy wink like water disease final erase goat include apple state furnace"
     coins:
       - 200000000upokt
-  - name: portal3
+  - name: gateway3
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt

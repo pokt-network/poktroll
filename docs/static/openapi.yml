@@ -46690,6 +46690,23 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: The Bech32 address of the gateway
+                    stake:
+                      title: The total amount of uPOKT the gateway has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
               pagination:
                 type: object
                 properties:
@@ -46810,6 +46827,23 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: The Bech32 address of the gateway
+                  stake:
+                    title: The total amount of uPOKT the gateway has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
         default:
           description: An unexpected error response.
           schema:
@@ -76040,6 +76074,20 @@ definitions:
     properties:
       address:
         type: string
+        title: The Bech32 address of the gateway
+      stake:
+        title: The total amount of uPOKT the gateway has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
   pocket.gateway.MsgStakeGatewayResponse:
     type: object
   pocket.gateway.MsgUnstakeGatewayResponse:
@@ -76057,6 +76105,23 @@ definitions:
           properties:
             address:
               type: string
+              title: The Bech32 address of the gateway
+            stake:
+              title: The total amount of uPOKT the gateway has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
       pagination:
         type: object
         properties:
@@ -76091,6 +76156,23 @@ definitions:
         properties:
           address:
             type: string
+            title: The Bech32 address of the gateway
+          stake:
+            title: The total amount of uPOKT the gateway has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
   pocket.gateway.QueryParamsResponse:
     type: object
     properties:
