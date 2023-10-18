@@ -46453,7 +46453,11 @@ paths:
                   properties:
                     address:
                       type: string
-                      title: The Bech32 address of the application
+                      title: >-
+                        The Bech32 address of the application using cosmos'
+                        ScalarDescriptor to ensure deterministic deterministic
+                        encoding using cosmos' ScalarDescriptor to ensure
+                        deterministic deterministic encoding
                     stake:
                       title: The total amount of uPOKT the application has staked
                       type: object
@@ -46593,7 +46597,11 @@ paths:
                 properties:
                   address:
                     type: string
-                    title: The Bech32 address of the application
+                    title: >-
+                      The Bech32 address of the application using cosmos'
+                      ScalarDescriptor to ensure deterministic deterministic
+                      encoding using cosmos' ScalarDescriptor to ensure
+                      deterministic deterministic encoding
                   stake:
                     title: The total amount of uPOKT the application has staked
                     type: object
@@ -47065,6 +47073,9 @@ paths:
                   properties:
                     address:
                       type: string
+                  description: >-
+                    Supplier is the type defining the actor in Pocket Network
+                    that provides RPC services.
               pagination:
                 type: object
                 properties:
@@ -47185,6 +47196,9 @@ paths:
                 properties:
                   address:
                     type: string
+                description: >-
+                  Supplier is the type defining the actor in Pocket Network that
+                  provides RPC services.
         default:
           description: An unexpected error response.
           schema:
@@ -75954,7 +75968,10 @@ definitions:
     properties:
       address:
         type: string
-        title: The Bech32 address of the application
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic deterministic encoding using cosmos'
+          ScalarDescriptor to ensure deterministic deterministic encoding
       stake:
         title: The total amount of uPOKT the application has staked
         type: object
@@ -75988,7 +76005,11 @@ definitions:
           properties:
             address:
               type: string
-              title: The Bech32 address of the application
+              title: >-
+                The Bech32 address of the application using cosmos'
+                ScalarDescriptor to ensure deterministic deterministic encoding
+                using cosmos' ScalarDescriptor to ensure deterministic
+                deterministic encoding
             stake:
               title: The total amount of uPOKT the application has staked
               type: object
@@ -76042,7 +76063,11 @@ definitions:
         properties:
           address:
             type: string
-            title: The Bech32 address of the application
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic deterministic encoding
+              using cosmos' ScalarDescriptor to ensure deterministic
+              deterministic encoding
           stake:
             title: The total amount of uPOKT the application has staked
             type: object
@@ -76215,8 +76240,10 @@ definitions:
     properties:
       application_address:
         type: string
-        title: The address of the application this session is for
-      session_block_start_height:
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic encoding
+      session_start_block_height:
         type: string
         format: int64
         description: The height at which this session started
@@ -76243,6 +76270,9 @@ definitions:
     properties:
       address:
         type: string
+    description: >-
+      Supplier is the type defining the actor in Pocket Network that provides
+      RPC services.
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -76262,6 +76292,9 @@ definitions:
           properties:
             address:
               type: string
+          description: >-
+            Supplier is the type defining the actor in Pocket Network that
+            provides RPC services.
       pagination:
         type: object
         properties:
@@ -76296,6 +76329,9 @@ definitions:
         properties:
           address:
             type: string
+        description: >-
+          Supplier is the type defining the actor in Pocket Network that
+          provides RPC services.
   pocket.supplier.QueryParamsResponse:
     type: object
     properties:
