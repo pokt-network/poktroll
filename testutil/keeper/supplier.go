@@ -15,7 +15,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "pocket/testutil/application/mocks"
+	mocks "pocket/testutil/supplier/mocks"
 	"pocket/x/supplier/keeper"
 	"pocket/x/supplier/types"
 )
