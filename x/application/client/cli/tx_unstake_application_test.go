@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -41,7 +41,7 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	tests := []struct {
 		desc    string
 		address string
-		err     *errorsmod.Error
+		err     *sdkerrors.Error
 	}{
 		{
 			desc:    "unstake application: valid",

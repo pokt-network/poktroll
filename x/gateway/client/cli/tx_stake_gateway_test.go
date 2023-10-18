@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"pocket/testutil/network"
-	"pocket/x/gateway/client/cli"
-	"pocket/x/gateway/types"
-
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -16,6 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/network"
+	"pocket/x/gateway/client/cli"
+	"pocket/x/gateway/types"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 		desc        string
 		address     string
 		stakeAmount string
-		err         *errors.Error
+		err         *sdkerrors.Error
 	}{
 		{
 			desc:        "stake gateway: invalid address",
