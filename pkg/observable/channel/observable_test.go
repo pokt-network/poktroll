@@ -3,7 +3,6 @@ package channel_test
 import (
 	"context"
 	"fmt"
-	"pocket/internal/testchannel"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	"pocket/internal/testchannel"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
 )
