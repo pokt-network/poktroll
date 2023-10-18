@@ -17,8 +17,8 @@ var _ = strconv.Itoa(0)
 func CmdStakeGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-gateway [amount]",
-		Short: "Stake an gateway",
-		Long: `Stake an gateway with the provided parameters. This is a broadcast operation that
+		Short: "Stake a gateway",
+		Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the gateway specified by the 'from' address.
 Example:
 $ pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)`,

@@ -17,8 +17,8 @@ func CmdUnstakeGateway() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
 		Use:   "unstake-gateway [amount]",
-		Short: "Unstake an gateway",
-		Long: `Unstake an gateway. This is a broadcast operation that will unstake
+		Short: "Unstake a gateway",
+		Long: `Unstake a gateway. This is a broadcast operation that will unstake
 the gateway specified by the 'from' address.
 Example:
 $ pocketd --home=$(POCKETD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)`,
