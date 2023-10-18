@@ -156,7 +156,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				t.Logf("unsusbscribed %d", i)
 
 				// must drain the channel first to ensure it is closed
-				closed, err := drainCh(observer.Ch())
+				closed, err := testchannel.DrainChannel(observer.Ch())
 				require.NoError(t, err)
 				require.True(t, closed)
 			}
@@ -234,21 +234,6 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 				t.Fatal("observer channel left open")
 			}
 		})
-	}
-}
-
-// TODO_THIS_COMMIT: move & de-dup
-func drainCh[V any](ch <-chan V) (closed bool, err error) {
-	for {
-		select {
-		case _, ok := <-ch:
-			if !ok {
-				return true, nil
-			}
-			continue
-		default:
-			return false, fmt.Errorf("observer channel left open")
-		}
 	}
 }
 
