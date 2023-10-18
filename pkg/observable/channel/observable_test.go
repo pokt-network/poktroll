@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	productionDelay          = 2 * time.Millisecond
-	notifyTimeout            = 50 * time.Millisecond
-	unsubscribeSleepDuration = notifyTimeout * 2
+	productionDelay        = 2 * time.Millisecond
+	notifyTimeout          = 50 * time.Millisecond
+	cancelUnsubscribeDelay = notifyTimeout * 2
 )
 
 func TestChannelObservable_NotifyObservers(t *testing.T) {
@@ -205,7 +205,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 			lifecycleFn: func() observable.Observer[int] {
 				observer := obsvbl.Subscribe(ctx)
 				cancel()
-				time.Sleep(unsubscribeSleepDuration)
+				time.Sleep(cancelUnsubscribeDelay)
 				observer.Unsubscribe()
 				return observer
 			},
@@ -215,7 +215,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 			lifecycleFn: func() observable.Observer[int] {
 				observer := obsvbl.Subscribe(ctx)
 				observer.Unsubscribe()
-				time.Sleep(unsubscribeSleepDuration)
+				time.Sleep(cancelUnsubscribeDelay)
 				cancel()
 				return observer
 			},
