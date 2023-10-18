@@ -3,6 +3,7 @@ package channel_test
 import (
 	"context"
 	"fmt"
+	"pocket/internal/testchannel"
 	"testing"
 	"time"
 
@@ -15,8 +16,8 @@ import (
 )
 
 const (
-	productionDelay          = 10 * time.Millisecond
-	notifyTimeout            = productionDelay * 4
+	productionDelay          = 2 * time.Millisecond
+	notifyTimeout            = 50 * time.Millisecond
 	unsubscribeSleepDuration = notifyTimeout * 2
 )
 
@@ -85,13 +86,12 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
-			t.Logf("producer: %p", tt.producer)
 			obsvbl, producer := channel.NewObservable[*int](
 				channel.WithProducer(tt.producer),
 			)
 			require.NotNil(t, obsvbl)
 			require.NotNil(t, producer)
-			produceWithDelay := syncSendWithDelayFactory(producer, productionDelay)
+			produce := produceWithDelay(producer, productionDelay)
 
 			// construct 3 distinct observers, each with its own channel
 			observers := make([]observable.Observer[*int], 1)
@@ -128,32 +128,26 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 				// concurrently await notification or timeout to avoid blocking on
 				// empty and/or non-buffered producers.
-				group.Go(goNotifiedOrTimedOutFactory(obsvr, next, done))
+				group.Go(goNotifiedOrTimedOutFactory(obsvr, next, done, notifyTimeout))
 			}
 
 			// notify with test input
-			t.Logf("sending to producer %p", producer)
-			for i, input := range tt.inputs {
+			for _, input := range tt.inputs {
 				inputPtr := new(int)
 				*inputPtr = input
-				t.Logf("sending input ptr: %d %p", input, inputPtr)
 
 				// simulating IO delay in sequential message production
-				produceWithDelay(inputPtr)
-
-				t.Logf("send input %d", i)
+				produce(inputPtr)
 			}
 			cancel()
 
 			// wait for obsvbl to be notified or timeout
 			err := group.Wait()
 			require.NoError(t, err)
-			t.Log("errgroup done")
 
 			// unsubscribing should close obsvr channel(s)
-			for i, observer := range observers {
+			for _, observer := range observers {
 				observer.Unsubscribe()
-				t.Logf("unsusbscribed %d", i)
 
 				// must drain the channel first to ensure it is closed
 				closed, err := testchannel.DrainChannel(observer.Ch())
@@ -254,7 +248,7 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 	require.NotNil(t, obsvbl)
 	require.NotNil(t, producer)
 	// simulate IO delay in sequential message production
-	produceWithDelay := syncSendWithDelayFactory(producer, productionDelay)
+	produceWithDelay := produceWithDelay(producer, productionDelay)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
@@ -325,11 +319,11 @@ func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
 	t.Skip("add coverage: all observers should close when producer closes")
 }
 
-func syncSendWithDelayFactory[V any](producer chan<- V, delay time.Duration) func(value V) {
+func produceWithDelay[V any](producer chan<- V, delay time.Duration) func(value V) {
 	return func(value V) {
-		time.Sleep(delay)
+		time.Sleep(delay / 2)
 		producer <- value
-		time.Sleep(delay)
+		time.Sleep(delay / 2)
 	}
 }
 
@@ -337,6 +331,7 @@ func goNotifiedOrTimedOutFactory[V any](
 	obsvr observable.Observer[V],
 	next func(index int, output V) error,
 	done func(outputs []V) error,
+	timeoutDuration time.Duration,
 ) func() error {
 	var (
 		outputIndex int
@@ -347,7 +342,7 @@ func goNotifiedOrTimedOutFactory[V any](
 			select {
 			case output, ok := <-obsvr.Ch():
 				if !ok {
-					break
+					return done(outputs)
 				}
 
 				if err := next(outputIndex, output); err != nil {
@@ -357,15 +352,9 @@ func goNotifiedOrTimedOutFactory[V any](
 				outputs = append(outputs, output)
 				outputIndex++
 				continue
-			case <-time.After(notifyTimeout):
+			case <-time.After(timeoutDuration):
 				return fmt.Errorf("timed out waiting for observer to be notified")
 			}
-
-			if err := done(outputs); err != nil {
-				return err
-			}
-			return nil
 		}
-
 	}
 }

@@ -2,7 +2,6 @@ package channel
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -147,7 +146,6 @@ func (obsvbl *channelObservable[V]) goProduce(producer <-chan V) {
 // It is blocking and intended to be called in a goroutine.
 func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
 	<-ctx.Done()
-	fmt.Println("goUnsubscribeOnDone: context done")
 	subscription.Unsubscribe()
 }
 
