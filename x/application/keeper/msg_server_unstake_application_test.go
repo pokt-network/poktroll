@@ -25,9 +25,10 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
+	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
 	app := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &initialStake,
 	}
 
 	// Stake the application
@@ -38,7 +39,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
 	require.Equal(t, addr, foundApp.Address)
-	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
+	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
