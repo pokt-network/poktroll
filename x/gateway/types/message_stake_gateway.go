@@ -10,10 +10,10 @@ const TypeMsgStakeGateway = "stake_gateway"
 
 var _ sdk.Msg = &MsgStakeGateway{}
 
-func NewMsgStakeGateway(address string, stakeAmount types.Coin) *MsgStakeGateway {
+func NewMsgStakeGateway(address string, stake types.Coin) *MsgStakeGateway {
 	return &MsgStakeGateway{
 		Address: address,
-		Stake:   &stakeAmount,
+		Stake:   &stake,
 	}
 }
 

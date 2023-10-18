@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"pocket/testutil/network"
 	"pocket/x/gateway/client/cli"
 	"pocket/x/gateway/types"
 
@@ -50,6 +51,12 @@ func TestCLI_StakeGateway(t *testing.T) {
 			err:         types.ErrGatewayInvalidAddress,
 		},
 		{
+			desc: "stake gateway: missing address",
+			// address:     gatewayAccount.Address.String(),
+			stakeAmount: "1000upokt",
+			err:         types.ErrGatewayInvalidAddress,
+		},
+		{
 			desc:        "stake gateway: invalid stake amount (zero)",
 			address:     gatewayAccount.Address.String(),
 			stakeAmount: "0upokt",
@@ -87,13 +94,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 	}
 
 	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	sendArgs := []string{
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
-	}
-	sendArgs = append(sendArgs, commonArgs...)
-	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
-	_, err := clitestutil.MsgSendExec(ctx, net.Validators[0].Address, gatewayAccount.Address, amount, sendArgs...)
-	require.NoError(t, err)
+	network.InitAccount(t, net, gatewayAccount.Address)
 
 	// Stake the tests
 	for _, tt := range tests {
@@ -116,12 +117,14 @@ func TestCLI_StakeGateway(t *testing.T) {
 				require.Contains(t, stat.Message(), tt.err.Error())
 				return
 			}
+			require.NoError(t, err)
 
 			require.NoError(t, err)
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)
-			fmt.Println(resp)
+			require.NotNil(t, resp.TxHash)
+			require.Equal(t, uint32(0), resp.Code)
 		})
 	}
 }

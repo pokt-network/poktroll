@@ -6,8 +6,7 @@ import "cosmossdk.io/errors"
 
 // x/gateway module sentinel errors
 var (
-	ErrSample                = errors.Register(ModuleName, 1100, "sample error")
-	ErrGatewayInvalidAddress = errors.Register(ModuleName, 1101, "invalid gateway address")
-	ErrGatewayInvalidStake   = errors.Register(ModuleName, 1102, "invalid gateway stake")
-	ErrGatewayUnauthorized   = errors.Register(ModuleName, 1103, "unauthorized signer")
+	ErrGatewayInvalidAddress = errors.Register(ModuleName, 1, "invalid gateway address")
+	ErrGatewayInvalidStake   = errors.Register(ModuleName, 2, "invalid gateway stake")
+	ErrGatewayUnauthorized   = errors.Register(ModuleName, 3, "unauthorized signer")
 )

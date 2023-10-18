@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,8 @@ import (
 	"pocket/app"
 	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
-	"pocket/x/application/types"
+	app_types "pocket/x/application/types"
+	gateway_types "pocket/x/gateway/types"
 )
 
 type (
@@ -98,14 +99,14 @@ func DefaultConfig() network.Config {
 	}
 }
 
-// applicationModuleGenesis generates a GenesisState object with a given number of applications.
+// DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
-func DefaultApplicationModuleGenesisState(t *testing.T, n int) *types.GenesisState {
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
 	t.Helper()
-	state := types.DefaultGenesis()
+	state := app_types.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
-		application := types.Application{
+		application := app_types.Application{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
@@ -115,16 +116,25 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *types.GenesisSta
 	return state
 }
 
-// HydrateGenesisState adds a given module's GenesisState to the network's genesis state.
-func HydrateGenesisState(t *testing.T, cfg *network.Config, moduleGenesisState *types.GenesisState, moduleName string) {
+// DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
+// It returns the populated GenesisState object.
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.GenesisState {
 	t.Helper()
-	buf, err := cfg.Codec.MarshalJSON(moduleGenesisState)
-	require.NoError(t, err)
-	cfg.GenesisState[moduleName] = buf
+	state := gateway_types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
+		gateway := gateway_types.Gateway{
+			Address: strconv.Itoa(i),
+			Stake:   &stake,
+		}
+		nullify.Fill(&gateway)
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
 }
 
 // Initialize an Account by sending it some funds from the validator in the network to the address provided
-func InitAccount(t *testing.T, net *Network, addr cosmostypes.AccAddress) {
+func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
 	val := net.Validators[0]
 	ctx := val.ClientCtx

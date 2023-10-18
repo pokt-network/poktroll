@@ -75,7 +75,7 @@ func (k msgServer) updateGateway(
 	if msg.Stake == nil {
 		return errors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
 	}
-	if gateway.Stake.IsGTE(*msg.Stake) {
+	if msg.Stake.IsLTE(*gateway.Stake) {
 		return errors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
 	}
 	gateway.Stake = msg.Stake
