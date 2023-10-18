@@ -39,8 +39,7 @@ func (msg *MsgUnstakeGateway) GetSignBytes() []byte {
 func (msg *MsgUnstakeGateway) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		// TODO(@h5law): Replace with a proper error
-		return sdkerrors.Wrapf(ErrSample, "invalid address address (%s)", err)
+		return sdkerrors.Wrapf(ErrGatewayInvalidAddress, "invalid address address (%s)", err)
 	}
 	return nil
 }

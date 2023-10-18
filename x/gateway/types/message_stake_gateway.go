@@ -1,9 +1,8 @@
 package types
 
 import (
-	sdkerrors "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 )
@@ -63,7 +62,6 @@ func (msg *MsgStakeGateway) ValidateBasic() error {
 	}
 	if stakeAmount.Denom != "upokt" {
 		return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", msg.Stake)
->>>>>>> main
 	}
 	return nil
 }
