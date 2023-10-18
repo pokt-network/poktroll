@@ -3,10 +3,10 @@ package types
 import (
 	"testing"
 
-	"pocket/testutil/sample"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"pocket/testutil/sample"
 )
 
 func TestMsgStakeGateway_ValidateBasic(t *testing.T) {

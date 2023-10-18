@@ -23,6 +23,8 @@ message MsgStakeGateway {
 message MsgStakeGatewayResponse {}
 
 message MsgUnstakeGateway {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
   string address = 1;
 }
 

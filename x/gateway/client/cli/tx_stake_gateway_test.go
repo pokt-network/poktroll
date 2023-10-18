@@ -96,7 +96,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
 	network.InitAccount(t, net, gatewayAccount.Address)
 
-	// Stake the tests
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			// Wait for a new block to be committed

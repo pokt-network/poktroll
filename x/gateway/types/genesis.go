@@ -22,29 +22,29 @@ func DefaultGenesis() *GenesisState {
 func (gs GenesisState) Validate() error {
 	gatewayIndexMap := make(map[string]struct{})
 
-	for _, elem := range gs.GatewayList {
+	for _, gateway := range gs.GatewayList {
 		// Check for duplicated index in gateway
-		index := string(GatewayKey(elem.Address))
+		index := string(GatewayKey(gateway.Address))
 		if _, ok := gatewayIndexMap[index]; ok {
 			return errors.Wrap(ErrGatewayInvalidAddress, "duplicated index for gateway")
 		}
 		gatewayIndexMap[index] = struct{}{}
 		// Validate the stake of each gateway
-		if elem.Stake == nil {
+		if gateway.Stake == nil {
 			return errors.Wrap(ErrGatewayInvalidStake, "nil stake amount for gateway")
 		}
-		stakeAmount, err := sdk.ParseCoinNormalized(elem.Stake.String())
+		stakeAmount, err := sdk.ParseCoinNormalized(gateway.Stake.String())
 		if !stakeAmount.IsValid() {
-			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", elem.Stake, stakeAmount.Validate())
+			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", gateway.Stake, stakeAmount.Validate())
 		}
 		if err != nil {
-			return errors.Wrapf(ErrGatewayInvalidStake, "cannot parse stake amount for gateway %v; (%v)", elem.Stake, err)
+			return errors.Wrapf(ErrGatewayInvalidStake, "cannot parse stake amount for gateway %v; (%v)", gateway.Stake, err)
 		}
 		if stakeAmount.IsZero() || stakeAmount.IsNegative() {
-			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", elem.Stake)
+			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", gateway.Stake)
 		}
 		if stakeAmount.Denom != "upokt" {
-			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", elem.Stake)
+			return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", gateway.Stake)
 		}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
