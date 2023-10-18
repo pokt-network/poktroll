@@ -36,6 +36,12 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *types.MsgSubmitProof)
 			- supplier address
 			- session header
 			- proof
+
+		## Accounting
+		1. [ ] extract work done from root hash
+		2. [ ] calculate reward/burn token with governance-based multiplier
+		3. [ ] reward supplier
+		4. [ ] burn application tokens
 	*/
 
 	_ = ctx
