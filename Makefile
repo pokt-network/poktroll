@@ -3,6 +3,14 @@
 POCKETD_HOME := ./localnet/pocketd
 POCKET_NODE := tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 
+####################
+### Dependencies ###
+####################
+
+.PHONY: install_ci_deps
+install_ci_deps: ## Installs `mockgen`
+	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+
 ########################
 ### Makefile Helpers ###
 ########################
@@ -58,7 +66,7 @@ warn_destructive: ## Print WARNING to the user
 
 .PHONY: proto_regen
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs rm
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
 
 #######################
@@ -105,6 +113,10 @@ test_e2e: ## Run all E2E tests
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
 	go test -v ./...
+
+.PHONY: go_mockgen
+go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	go generate ./x/gateway/types/
 
 #############
 ### TODOS ###

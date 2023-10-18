@@ -7,7 +7,6 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: ["main"]
 
 jobs:
   build:
@@ -27,8 +26,20 @@ jobs:
         with:
           go-version: "1.20"
 
+      - name: Generate protobufs
+        run: make proto_regen
+
+      - name: Install CI dependencies
+        run: make install_ci_deps
+
+      - name: Generate mocks
+        run: make go_mockgen
+
       - name: Build
-        run: ignite chain build --debug
+        run: ignite chain build --debug --skip-proto
+
+      - name: Mockgen
+        run: make go_mockgen
 
       - name: Test
         run: go test -v ./...
