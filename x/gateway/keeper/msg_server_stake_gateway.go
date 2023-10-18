@@ -3,10 +3,10 @@ package keeper
 import (
 	"context"
 
-	"pocket/x/gateway/types"
-
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"pocket/x/gateway/types"
 )
 
 func (k msgServer) StakeGateway(
@@ -70,13 +70,13 @@ func (k msgServer) updateGateway(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return errors.Wrapf(types.ErrGatewayUnauthorized, "msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
+		return sdkerrors.Wrapf(types.ErrGatewayUnauthorized, "msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
 	}
 	if msg.Stake == nil {
-		return errors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
+		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*gateway.Stake) {
-		return errors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
+		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
 	}
 	gateway.Stake = msg.Stake
 	return nil

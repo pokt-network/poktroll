@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"pocket/testutil/network"
-	"pocket/x/gateway/client/cli"
-	"pocket/x/gateway/types"
-
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
@@ -16,6 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
+
+	"pocket/testutil/network"
+	"pocket/x/gateway/client/cli"
+	"pocket/x/gateway/types"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
@@ -39,57 +39,57 @@ func TestCLI_StakeGateway(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc        string
-		address     string
-		stakeAmount string
-		err         *errors.Error
+		desc    string
+		address string
+		stake   string
+		err     *sdkerrors.Error
 	}{
 		{
-			desc:        "stake gateway: invalid address",
-			address:     "invalid",
-			stakeAmount: "1000upokt",
-			err:         types.ErrGatewayInvalidAddress,
+			desc:    "stake gateway: invalid address",
+			address: "invalid",
+			stake:   "1000upokt",
+			err:     types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
 			// address:     gatewayAccount.Address.String(),
-			stakeAmount: "1000upokt",
-			err:         types.ErrGatewayInvalidAddress,
+			stake: "1000upokt",
+			err:   types.ErrGatewayInvalidAddress,
 		},
 		{
-			desc:        "stake gateway: invalid stake amount (zero)",
-			address:     gatewayAccount.Address.String(),
-			stakeAmount: "0upokt",
-			err:         types.ErrGatewayInvalidStake,
+			desc:    "stake gateway: invalid stake amount (zero)",
+			address: gatewayAccount.Address.String(),
+			stake:   "0upokt",
+			err:     types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:        "stake gateway: invalid stake amount (negative)",
-			address:     gatewayAccount.Address.String(),
-			stakeAmount: "-1000upokt",
-			err:         types.ErrGatewayInvalidStake,
+			desc:    "stake gateway: invalid stake amount (negative)",
+			address: gatewayAccount.Address.String(),
+			stake:   "-1000upokt",
+			err:     types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:        "stake gateway: invalid stake denom",
-			address:     gatewayAccount.Address.String(),
-			stakeAmount: "1000invalid",
-			err:         types.ErrGatewayInvalidStake,
+			desc:    "stake gateway: invalid stake denom",
+			address: gatewayAccount.Address.String(),
+			stake:   "1000invalid",
+			err:     types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:        "stake gateway: invalid stake missing denom",
-			address:     gatewayAccount.Address.String(),
-			stakeAmount: "1000",
-			err:         types.ErrGatewayInvalidStake,
+			desc:    "stake gateway: invalid stake missing denom",
+			address: gatewayAccount.Address.String(),
+			stake:   "1000",
+			err:     types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing stake",
 			address: gatewayAccount.Address.String(),
-			// stakeAmount: "1000upokt",
+			// stake: "1000upokt",
 			err: types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:        "stake gateway: valid",
-			address:     gatewayAccount.Address.String(),
-			stakeAmount: "1000upokt",
+			desc:    "stake gateway: valid",
+			address: gatewayAccount.Address.String(),
+			stake:   "1000upokt",
 		},
 	}
 
@@ -104,7 +104,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stakeAmount,
+				tt.stake,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)

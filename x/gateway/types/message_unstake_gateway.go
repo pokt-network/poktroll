@@ -1,7 +1,7 @@
 package types
 
 import (
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -40,7 +40,7 @@ func (msg *MsgUnstakeGateway) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		return errors.Wrapf(ErrGatewayInvalidAddress, "invalid gateway address %s; (%v)", msg.Address, err)
+		return sdkerrors.Wrapf(ErrGatewayInvalidAddress, "invalid gateway address %s; (%v)", msg.Address, err)
 	}
 	return nil
 }

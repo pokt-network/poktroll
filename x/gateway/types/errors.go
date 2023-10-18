@@ -1,13 +1,15 @@
 package types
 
-import "cosmossdk.io/errors"
-
 // DONTCOVER
+
+import (
+	sdkerrors "cosmossdk.io/errors"
+)
 
 // x/gateway module sentinel errors
 var (
-	ErrGatewayInvalidAddress = errors.Register(ModuleName, 1, "invalid gateway address")
-	ErrGatewayInvalidStake   = errors.Register(ModuleName, 2, "invalid gateway stake")
-	ErrGatewayUnauthorized   = errors.Register(ModuleName, 3, "unauthorized signer")
-	ErrGatewayNotFound       = errors.Register(ModuleName, 4, "gateway not found")
+	ErrGatewayInvalidAddress = sdkerrors.Register(ModuleName, 1, "invalid gateway address")
+	ErrGatewayInvalidStake   = sdkerrors.Register(ModuleName, 2, "invalid gateway stake")
+	ErrGatewayUnauthorized   = sdkerrors.Register(ModuleName, 3, "unauthorized signer")
+	ErrGatewayNotFound       = sdkerrors.Register(ModuleName, 4, "gateway not found")
 )

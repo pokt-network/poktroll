@@ -14,19 +14,19 @@ import (
 	"google.golang.org/grpc/status"
 
 	"pocket/testutil/network"
-	"pocket/x/gateway/client/cli"
-	"pocket/x/gateway/types"
+	"pocket/x/application/client/cli"
+	"pocket/x/application/types"
 )
 
-func TestCLI_UnstakeGateway(t *testing.T) {
-	net, _ := networkWithGatewayObjects(t, 2)
+func TestCLI_UnstakeApplication(t *testing.T) {
+	net, _ := networkWithApplicationObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
-	// Create a keyring and add an account for the gateway to be unstaked
+	// Create a keyring and add an account for the application to be unstaked
 	kr := ctx.Keyring
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	gatewayAccount := accounts[0]
+	appAccount := accounts[0]
 
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
@@ -44,23 +44,23 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 		err     *sdkerrors.Error
 	}{
 		{
-			desc:    "unstake gateway: valid",
-			address: gatewayAccount.Address.String(),
+			desc:    "unstake application: valid",
+			address: appAccount.Address.String(),
 		},
 		{
-			desc: "unstake gateway: missing address",
-			// address: gatewayAccount.Address.String(),
-			err: types.ErrGatewayInvalidAddress,
+			desc: "unstake application: missing address",
+			// address:     "explicitly missing",
+			err: types.ErrAppInvalidAddress,
 		},
 		{
-			desc:    "unstake gateway: invalid address",
+			desc:    "unstake application: invalid address",
 			address: "invalid",
-			err:     types.ErrGatewayInvalidAddress,
+			err:     types.ErrAppInvalidAddress,
 		},
 	}
 
-	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, gatewayAccount.Address)
+	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, appAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -75,7 +75,7 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeGateway(), args)
+			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeApplication(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {

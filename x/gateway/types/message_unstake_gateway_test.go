@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	"pocket/testutil/sample"
-
 	"github.com/stretchr/testify/require"
+
+	"pocket/testutil/sample"
 )
 
 func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {

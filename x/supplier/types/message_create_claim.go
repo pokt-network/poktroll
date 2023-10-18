@@ -1,8 +1,8 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	sessiontypes "pocket/x/session/types"
 )
@@ -43,7 +43,8 @@ func (msg *MsgCreateClaim) GetSignBytes() []byte {
 func (msg *MsgCreateClaim) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid supplierAddress address (%s)", err)
+		// TODO(@bryanchriswhite): Replace with a proper error
+		return sdkerrors.Wrapf(ErrSample, "invalid supplierAddress address (%s)", err)
 	}
 	return nil
 }
