@@ -18,12 +18,12 @@ import (
 	"pocket/x/gateway/types"
 )
 
-func TestCLI_StakeGateway(t *testing.T) {
+func TestCLI_UnstakeGateway(t *testing.T) {
 	net, _ := networkWithGatewayObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
-	// Create a keyring and add an account for the gateway to be staked
+	// Create a keyring and add an account for the gateway to be unstaked
 	kr := ctx.Keyring
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	gatewayAccount := accounts[0]
@@ -41,55 +41,21 @@ func TestCLI_StakeGateway(t *testing.T) {
 	tests := []struct {
 		desc    string
 		address string
-		stake   string
 		err     *sdkerrors.Error
 	}{
 		{
-			desc:    "stake gateway: invalid address",
+			desc:    "unstake gateway: valid",
+			address: gatewayAccount.Address.String(),
+		},
+		{
+			desc: "unstake gateway: missing address",
+			// address: gatewayAccount.Address.String(),
+			err: types.ErrGatewayInvalidAddress,
+		},
+		{
+			desc:    "unstake gateway: invalid address",
 			address: "invalid",
-			stake:   "1000upokt",
 			err:     types.ErrGatewayInvalidAddress,
-		},
-		{
-			desc: "stake gateway: missing address",
-			// address:     gatewayAccount.Address.String(),
-			stake: "1000upokt",
-			err:   types.ErrGatewayInvalidAddress,
-		},
-		{
-			desc:    "stake gateway: invalid stake amount (zero)",
-			address: gatewayAccount.Address.String(),
-			stake:   "0upokt",
-			err:     types.ErrGatewayInvalidStake,
-		},
-		{
-			desc:    "stake gateway: invalid stake amount (negative)",
-			address: gatewayAccount.Address.String(),
-			stake:   "-1000upokt",
-			err:     types.ErrGatewayInvalidStake,
-		},
-		{
-			desc:    "stake gateway: invalid stake denom",
-			address: gatewayAccount.Address.String(),
-			stake:   "1000invalid",
-			err:     types.ErrGatewayInvalidStake,
-		},
-		{
-			desc:    "stake gateway: invalid stake missing denom",
-			address: gatewayAccount.Address.String(),
-			stake:   "1000",
-			err:     types.ErrGatewayInvalidStake,
-		},
-		{
-			desc:    "stake gateway: invalid stake missing stake",
-			address: gatewayAccount.Address.String(),
-			// stake: "1000upokt",
-			err: types.ErrGatewayInvalidStake,
-		},
-		{
-			desc:    "stake gateway: valid",
-			address: gatewayAccount.Address.String(),
-			stake:   "1000upokt",
 		},
 	}
 
@@ -104,13 +70,14 @@ func TestCLI_StakeGateway(t *testing.T) {
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stake,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeGateway(), args)
+			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeGateway(), args)
+
+			// Validate the error if one is expected
 			if tt.err != nil {
 				stat, ok := status.FromError(tt.err)
 				require.True(t, ok)
@@ -119,9 +86,9 @@ func TestCLI_StakeGateway(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			require.NoError(t, err)
+			// Check the response
 			var resp sdk.TxResponse
-			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
+			require.NoError(t, net.Config.Codec.UnmarshalJSON(outUnstake.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
 			require.Equal(t, uint32(0), resp.Code)

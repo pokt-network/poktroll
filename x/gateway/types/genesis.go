@@ -33,17 +33,17 @@ func (gs GenesisState) Validate() error {
 		if gateway.Stake == nil {
 			return sdkerrors.Wrap(ErrGatewayInvalidStake, "nil stake amount for gateway")
 		}
-		stakeAmount, err := sdk.ParseCoinNormalized(gateway.Stake.String())
-		if !stakeAmount.IsValid() {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", gateway.Stake, stakeAmount.Validate())
+		stake, err := sdk.ParseCoinNormalized(gateway.Stake.String())
+		if !stake.IsValid() {
+			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", gateway.Stake, stake.Validate())
 		}
 		if err != nil {
 			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "cannot parse stake amount for gateway %v; (%v)", gateway.Stake, err)
 		}
-		if stakeAmount.IsZero() || stakeAmount.IsNegative() {
+		if stake.IsZero() || stake.IsNegative() {
 			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", gateway.Stake)
 		}
-		if stakeAmount.Denom != "upokt" {
+		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", gateway.Stake)
 		}
 	}

@@ -49,17 +49,17 @@ func (msg *MsgStakeGateway) ValidateBasic() error {
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "nil gateway stake; (%v)", err)
 	}
-	stakeAmount, err := sdk.ParseCoinNormalized(msg.Stake.String())
-	if !stakeAmount.IsValid() {
-		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid gateway stake %v; (%v)", msg.Stake, stakeAmount.Validate())
+	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
+	if !stake.IsValid() {
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid gateway stake %v; (%v)", msg.Stake, stake.Validate())
 	}
 	if err != nil {
 		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "cannot parse gateway stake %v; (%v)", msg.Stake, err)
 	}
-	if stakeAmount.IsZero() || stakeAmount.IsNegative() {
+	if stake.IsZero() || stake.IsNegative() {
 		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", msg.Stake)
 	}
-	if stakeAmount.Denom != "upokt" {
+	if stake.Denom != "upokt" {
 		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", msg.Stake)
 	}
 	return nil
