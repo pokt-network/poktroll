@@ -39,6 +39,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	// this line is used by starport scaffolding # root/moduleImport
+
 	"pocket/app"
 	appparams "pocket/app/params"
 )
