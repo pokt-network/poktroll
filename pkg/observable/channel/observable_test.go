@@ -157,9 +157,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				observer.Unsubscribe()
 
 				// must drain the channel first to ensure it is closed
-				closed, err := testchannel.DrainChannel(observer.Ch())
+				err := testchannel.DrainChannel(observer.Ch())
 				require.NoError(t, err)
-				require.True(t, closed)
 			}
 		})
 	}
