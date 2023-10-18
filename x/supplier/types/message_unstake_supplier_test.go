@@ -19,7 +19,7 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgUnstakeSupplier{
 				Address: "invalid_address",
 			},
-			err: ErrSample,
+			err: ErrSupplierInvalidAddress,
 		}, {
 			name: "valid address",
 			msg: MsgUnstakeSupplier{

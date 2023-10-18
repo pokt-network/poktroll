@@ -43,8 +43,7 @@ func (msg *MsgCreateClaim) GetSignBytes() []byte {
 func (msg *MsgCreateClaim) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
 	if err != nil {
-		// TODO(@bryanchriswhite): Replace with a proper error
-		return sdkerrors.Wrapf(ErrSample, "invalid supplierAddress address (%s)", err)
+		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid supplierAddress address (%s)", err)
 	}
 	return nil
 }

@@ -21,7 +21,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
 			},
-			err: ErrSample,
+			err: ErrSupplierInvalidAddress,
 		}, {
 			name: "valid address",
 			msg: MsgCreateClaim{
