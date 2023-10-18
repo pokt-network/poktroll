@@ -16,12 +16,12 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 		## Validation
 
 		### Session validation
-		1. [ ] claimed session ID == retrieved session ID
+		1. [ ] claimed session ID matches on-chain session ID
 		2. [ ] this supplier is in the session's suppliers list
 
 		### Msg distribution validation (depends on session validation)
-		1. [ ] pseudo-randomize earliest block offset
-		2. [ ] governance-based earliest block offset
+		1. [ ] governance-based earliest block offset
+		2. [ ] pseudo-randomize earliest block offset
 
 		### Claim validation
 		1. [ ] session validation
