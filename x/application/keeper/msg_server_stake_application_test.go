@@ -25,13 +25,13 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	app := &types.MsgStakeApplication{
+	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(wctx, app)
+	_, err := srv.StakeApplication(wctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the application exists
@@ -41,13 +41,13 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 
 	// Prepare an updated application with a higher stake
-	updatedApp := &types.MsgStakeApplication{
+	updateStakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
 	}
 
 	// Update the staked application
-	_, err = srv.StakeApplication(wctx, updatedApp)
+	_, err = srv.StakeApplication(wctx, updateStakeMsg)
 	require.NoError(t, err)
 	foundApp, isAppFound = k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
@@ -61,25 +61,25 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 
 	// Prepare the application
 	addr := sample.AccAddress()
-	app := &types.MsgStakeApplication{
+	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the application & verify that the application exists
-	_, err := srv.StakeApplication(wctx, app)
+	_, err := srv.StakeApplication(wctx, stakeMsg)
 	require.NoError(t, err)
 	_, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
 
 	// Prepare an updated application with a lower stake
-	updatedApp := &types.MsgStakeApplication{
+	updateMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
 	}
 
 	// Verify that it fails
-	_, err = srv.StakeApplication(wctx, updatedApp)
+	_, err = srv.StakeApplication(wctx, updateMsg)
 	require.Error(t, err)
 
 	// Verify that the application stake is unchanged

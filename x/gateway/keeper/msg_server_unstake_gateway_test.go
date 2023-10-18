@@ -26,13 +26,13 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 	// Prepare the gateway
 	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
-	gateway := &types.MsgStakeGateway{
+	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
 
 	// Stake the gateway
-	_, err := srv.StakeGateway(wctx, gateway)
+	_, err := srv.StakeGateway(wctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the gateway exists

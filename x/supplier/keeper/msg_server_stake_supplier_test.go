@@ -24,14 +24,14 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	_, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.False(t, isSupplierFound)
 
-	// Prepare the supplier
-	supplier := &types.MsgStakeSupplier{
+	// Prepare the stakeMsg
+	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the supplier
-	_, err := srv.StakeSupplier(wctx, supplier)
+	_, err := srv.StakeSupplier(wctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
@@ -41,13 +41,13 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
 
 	// Prepare an updated supplier with a higher stake
-	updatedSupplier := &types.MsgStakeSupplier{
+	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
 	}
 
 	// Update the staked supplier
-	_, err = srv.StakeSupplier(wctx, updatedSupplier)
+	_, err = srv.StakeSupplier(wctx, updateMsg)
 	require.NoError(t, err)
 	foundSupplier, isSupplierFound = k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
@@ -61,25 +61,25 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 
 	// Prepare the supplier
 	addr := sample.AccAddress()
-	supplier := &types.MsgStakeSupplier{
+	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 	}
 
 	// Stake the supplier & verify that the supplier exists
-	_, err := srv.StakeSupplier(wctx, supplier)
+	_, err := srv.StakeSupplier(wctx, stakeMsg)
 	require.NoError(t, err)
 	_, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
-	updatedSupplier := &types.MsgStakeSupplier{
+	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
 	}
 
 	// Verify that it fails
-	_, err = srv.StakeSupplier(wctx, updatedSupplier)
+	_, err = srv.StakeSupplier(wctx, updateMsg)
 	require.Error(t, err)
 
 	// Verify that the supplier stake is unchanged

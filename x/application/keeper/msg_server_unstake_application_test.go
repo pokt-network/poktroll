@@ -26,13 +26,13 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Prepare the application
 	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
-	app := &types.MsgStakeApplication{
+	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &initialStake,
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(wctx, app)
+	_, err := srv.StakeApplication(wctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the application exists
