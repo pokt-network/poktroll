@@ -17,7 +17,7 @@ import (
 
 const (
 	productionDelay        = 2 * time.Millisecond
-	notifyTimeout          = 50 * time.Millisecond
+	notifyTimeout          = productionDelay * 5
 	cancelUnsubscribeDelay = notifyTimeout * 2
 )
 
