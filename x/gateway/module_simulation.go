@@ -3,14 +3,15 @@ package gateway
 import (
 	"math/rand"
 
+	"pocket/testutil/sample"
+	gatewaysimulation "pocket/x/gateway/simulation"
+	"pocket/x/gateway/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-	"pocket/testutil/sample"
-	gatewaysimulation "pocket/x/gateway/simulation"
-	"pocket/x/gateway/types"
 )
 
 // avoid unused import issue
@@ -23,7 +24,15 @@ var (
 )
 
 const (
-// this line is used by starport scaffolding # simapp/module/const
+	opWeightMsgStakeGateway = "op_weight_msg_stake_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgStakeGateway int = 100
+
+	opWeightMsgUnstakeGateway = "op_weight_msg_unstake_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgUnstakeGateway int = 100
+
+	// this line is used by starport scaffolding # simapp/module/const
 )
 
 // GenerateGenesisState creates a randomized GenState of the module.
@@ -51,6 +60,28 @@ func (AppModule) ProposalContents(_ module.SimulationState) []simtypes.WeightedP
 func (am AppModule) WeightedOperations(simState module.SimulationState) []simtypes.WeightedOperation {
 	operations := make([]simtypes.WeightedOperation, 0)
 
+	var weightMsgStakeGateway int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgStakeGateway, &weightMsgStakeGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgStakeGateway = defaultWeightMsgStakeGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgStakeGateway,
+		gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
+	var weightMsgUnstakeGateway int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgUnstakeGateway, &weightMsgUnstakeGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgUnstakeGateway = defaultWeightMsgUnstakeGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUnstakeGateway,
+		gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -59,6 +90,22 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 // ProposalMsgs returns msgs used for governance proposals for simulations.
 func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.WeightedProposalMsg {
 	return []simtypes.WeightedProposalMsg{
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgStakeGateway,
+			defaultWeightMsgStakeGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUnstakeGateway,
+			defaultWeightMsgUnstakeGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				gatewaysimulation.SimulateMsgUnstakeGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
 		// this line is used by starport scaffolding # simapp/module/OpMsg
 	}
 }
