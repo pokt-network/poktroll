@@ -1,4 +1,5 @@
 securityContext:
+  # Allows to run delve inside a container.
   allowPrivilegeEscalation: true
   capabilities:
     add: ["SYS_PTRACE"]

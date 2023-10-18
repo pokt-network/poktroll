@@ -4,11 +4,11 @@ load('ext://helm_resource', "helm_resource", 'helm_repo')
 # A list of directories where changes trigger a hot-reload of the sequencer
 hot_reload_dirs = ['app', 'cmd', 'tools', 'x']
 
-# Create localnet config file from defaults, and if default configuration doesn't exist in it - populate with default values
+# Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "relayers": {"count": 1},
-    "gateways": {"count": 0},
+    "gateways": {"count": 1},
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
@@ -21,7 +21,7 @@ if (localnet_config_file != localnet_config) or (
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
-# Configure helm chart reference. If using local repo, set the path to the local repo, otherwise use our own helm repo
+# Configure helm chart reference. If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
 helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
 sequencer_chart = "pokt-network/poktroll-sequencer"
 poktroll_chart = "pokt-network/poktroll"
@@ -84,6 +84,7 @@ WORKDIR /
 # Run celestia and anvil nodes
 k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/anvil.yaml'])
 
+# Run pocket-specific nodes (sequencer, relayers, etc...)
 helm_resource("sequencer", sequencer_chart, flags=['--values=./localnet/kubernetes/values-common.yaml'], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
 helm_resource("relayers", poktroll_chart, flags=['--values=./localnet/kubernetes/values-common.yaml', '--set=replicaCount=' + str(localnet_config["relayers"]["count"])], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
 
