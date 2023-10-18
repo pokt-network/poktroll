@@ -190,19 +190,35 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(gateway) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
-	gateway=gateway1 make gateway_stake
+	GATEWAY=gateway1 make gateway_stake
 
 .PHONY: gateway2_stake
 gateway2_stake: ## Stake gateway2
-	gateway=gateway2 make gateway_stake
+	GATEWAY=gateway2 make gateway_stake
 
 .PHONY: gateway3_stake
 gateway3_stake: ## Stake gateway3
-	gateway=gateway3 make gateway_stake
+	GATEWAY=gateway3 make gateway_stake
+
+.PHONY: gateway_unstake
+gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
+	pocketd --home=$(POCKETD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+
+.PHONY: gateway1_unstake
+gateway1_unstake: ## Unstake gateway1
+	GATEWAY=gateway1 make gateway_unstake
+
+.PHONY: gateway2_unstake
+gateway2_unstake: ## Unstake gateway2
+	GATEWAY=gateway2 make gateway_unstake
+
+.PHONY: gateway3_unstake
+gateway3_unstake: ## Unstake gateway3
+	GATEWAY=gateway3 make gateway_unstake
 
 ####################
 ### Applications ###
