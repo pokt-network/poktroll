@@ -48,7 +48,7 @@ func NewObserver[V any](
 	ctx context.Context,
 	onUnsubscribe UnsubscribeFunc[V],
 ) *channelObserver[V] {
-	// Create a channel for the subscriber and append it to the observers list
+	// Create a channel for the observer and append it to the observers list
 	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),

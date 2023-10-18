@@ -31,7 +31,7 @@ type channelObservable[V any] struct {
 // receives a value.
 // func NewObservable[V any](producer chan V) (observable.Observable[V], chan<- V) {
 func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
-	// initialize an observer that publishes messages from 1 producer to N observers
+	// initialize an observable that publishes messages from 1 producer to N observers
 	obs := &channelObservable[V]{
 		observersMu: &sync.RWMutex{},
 		observers:   []*channelObserver[V]{},
