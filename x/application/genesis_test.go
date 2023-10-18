@@ -3,23 +3,28 @@ package application_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
 	"pocket/x/application"
 	"pocket/x/application/types"
 )
 
+// Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.
 func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
-
 		ApplicationList: []types.Application{
 			{
-				Address: "0",
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 			},
 			{
-				Address: "1",
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

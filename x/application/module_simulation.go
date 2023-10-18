@@ -3,15 +3,15 @@ package application
 import (
 	"math/rand"
 
-	"pocket/testutil/sample"
-	applicationsimulation "pocket/x/application/simulation"
-	"pocket/x/application/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+
+	"pocket/testutil/sample"
+	applicationsimulation "pocket/x/application/simulation"
+	"pocket/x/application/types"
 )
 
 // avoid unused import issue

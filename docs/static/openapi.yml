@@ -46453,6 +46453,30 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: >-
+                        The Bech32 address of the application using cosmos'
+                        ScalarDescriptor to ensure deterministic deterministic
+                        encoding using cosmos' ScalarDescriptor to ensure
+                        deterministic deterministic encoding
+                    stake:
+                      title: The total amount of uPOKT the application has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
+                  title: >-
+                    Application defines the type used to store an on-chain
+                    definition and state for an application
               pagination:
                 type: object
                 properties:
@@ -46573,6 +46597,30 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: >-
+                      The Bech32 address of the application using cosmos'
+                      ScalarDescriptor to ensure deterministic deterministic
+                      encoding using cosmos' ScalarDescriptor to ensure
+                      deterministic deterministic encoding
+                  stake:
+                    title: The total amount of uPOKT the application has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+                title: >-
+                  Application defines the type used to store an on-chain
+                  definition and state for an application
         default:
           description: An unexpected error response.
           schema:
@@ -46650,6 +46698,23 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: The Bech32 address of the gateway
+                    stake:
+                      title: The total amount of uPOKT the gateway has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
               pagination:
                 type: object
                 properties:
@@ -46770,6 +46835,23 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: The Bech32 address of the gateway
+                  stake:
+                    title: The total amount of uPOKT the gateway has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
         default:
           description: An unexpected error response.
           schema:
@@ -46991,6 +47073,9 @@ paths:
                   properties:
                     address:
                       type: string
+                  description: >-
+                    Supplier is the type defining the actor in Pocket Network
+                    that provides RPC services.
               pagination:
                 type: object
                 properties:
@@ -47111,6 +47196,9 @@ paths:
                 properties:
                   address:
                     type: string
+                description: >-
+                  Supplier is the type defining the actor in Pocket Network that
+                  provides RPC services.
         default:
           description: An unexpected error response.
           schema:
@@ -75880,6 +75968,26 @@ definitions:
     properties:
       address:
         type: string
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic deterministic encoding using cosmos'
+          ScalarDescriptor to ensure deterministic deterministic encoding
+      stake:
+        title: The total amount of uPOKT the application has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
+    title: >-
+      Application defines the type used to store an on-chain definition and
+      state for an application
   pocket.application.MsgStakeApplicationResponse:
     type: object
   pocket.application.MsgUnstakeApplicationResponse:
@@ -75897,6 +76005,30 @@ definitions:
           properties:
             address:
               type: string
+              title: >-
+                The Bech32 address of the application using cosmos'
+                ScalarDescriptor to ensure deterministic deterministic encoding
+                using cosmos' ScalarDescriptor to ensure deterministic
+                deterministic encoding
+            stake:
+              title: The total amount of uPOKT the application has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+          title: >-
+            Application defines the type used to store an on-chain definition
+            and state for an application
       pagination:
         type: object
         properties:
@@ -75931,6 +76063,30 @@ definitions:
         properties:
           address:
             type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic deterministic encoding
+              using cosmos' ScalarDescriptor to ensure deterministic
+              deterministic encoding
+          stake:
+            title: The total amount of uPOKT the application has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
+        title: >-
+          Application defines the type used to store an on-chain definition and
+          state for an application
   pocket.application.QueryParamsResponse:
     type: object
     properties:
@@ -75943,6 +76099,20 @@ definitions:
     properties:
       address:
         type: string
+        title: The Bech32 address of the gateway
+      stake:
+        title: The total amount of uPOKT the gateway has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
   pocket.gateway.MsgStakeGatewayResponse:
     type: object
   pocket.gateway.MsgUnstakeGatewayResponse:
@@ -75960,6 +76130,23 @@ definitions:
           properties:
             address:
               type: string
+              title: The Bech32 address of the gateway
+            stake:
+              title: The total amount of uPOKT the gateway has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
       pagination:
         type: object
         properties:
@@ -75994,6 +76181,23 @@ definitions:
         properties:
           address:
             type: string
+            title: The Bech32 address of the gateway
+          stake:
+            title: The total amount of uPOKT the gateway has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
   pocket.gateway.QueryParamsResponse:
     type: object
     properties:
@@ -76036,8 +76240,10 @@ definitions:
     properties:
       application_address:
         type: string
-        title: The address of the application this session is for
-      session_block_start_height:
+        title: >-
+          The Bech32 address of the application using cosmos' ScalarDescriptor
+          to ensure deterministic encoding
+      session_start_block_height:
         type: string
         format: int64
         description: The height at which this session started
@@ -76064,6 +76270,9 @@ definitions:
     properties:
       address:
         type: string
+    description: >-
+      Supplier is the type defining the actor in Pocket Network that provides
+      RPC services.
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -76085,6 +76294,9 @@ definitions:
           properties:
             address:
               type: string
+          description: >-
+            Supplier is the type defining the actor in Pocket Network that
+            provides RPC services.
       pagination:
         type: object
         properties:
@@ -76119,6 +76331,9 @@ definitions:
         properties:
           address:
             type: string
+        description: >-
+          Supplier is the type defining the actor in Pocket Network that
+          provides RPC services.
   pocket.supplier.QueryParamsResponse:
     type: object
     properties:

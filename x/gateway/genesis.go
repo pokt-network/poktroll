@@ -2,6 +2,7 @@ package gateway
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"pocket/x/gateway/keeper"
 	"pocket/x/gateway/types"
 )
@@ -9,8 +10,8 @@ import (
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the gateway
-	for _, elem := range genState.GatewayList {
-		k.SetGateway(ctx, elem)
+	for _, gateway := range genState.GatewayList {
+		k.SetGateway(ctx, gateway)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
