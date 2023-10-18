@@ -3,7 +3,6 @@ package channel
 import (
 	"context"
 	"sync"
-	"time"
 
 	"pocket/pkg/observable"
 )
@@ -110,18 +109,11 @@ func (obsvbl *channelObservable[V]) close() {
 func (obsvbl *channelObservable[V]) goProduce(producer <-chan V) {
 	var observers []*channelObserver[V]
 	for notification := range producer {
-		//fmt.Printf("producer received notification: %s\n", notification)
-		// TODO_THIS_COMMIT: (dis)prove the need for this in a test
-		// copy observers to avoid holding the lock while notifying
 		for {
-			//fmt.Println("[obsersversMu] goProduce Rlocking...")
 			if !obsvbl.observersMu.TryRLock() {
-				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 			observers = make([]*channelObserver[V], len(obsvbl.observers))
-			//obsvbl.observersMu.RLock()
-			//observers := make([]*channelObserver[V], len(obsvbl.observers))
 			for i, obsvr := range obsvbl.observers {
 				observers[i] = obsvr
 			}

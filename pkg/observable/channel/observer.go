@@ -96,7 +96,7 @@ func (obsvr *channelObserver[V]) notify(value V) {
 	for {
 		// observerMu must remain read-locked until the value is sent on observerCh
 		if !obsvr.observerMu.TryRLock() {
-			time.Sleep(sendRetryInterval)
+			time.Sleep(sendRetryInterval / 2)
 			continue
 		}
 		if obsvr.closed {
