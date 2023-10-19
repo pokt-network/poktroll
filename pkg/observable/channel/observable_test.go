@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	publishDelay           = 2 * time.Millisecond
-	notifyTimeout          = publishDelay * 5
-	cancelUnsubscribeDelay = notifyTimeout * 2
+	publishDelay           = 100 * time.Microsecond
+	notifyTimeout          = publishDelay * 20
+	cancelUnsubscribeDelay = publishDelay * 2
 )
 
 func TestChannelObservable_NotifyObservers(t *testing.T) {

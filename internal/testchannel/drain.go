@@ -1,11 +1,10 @@
 package testchannel
 
 import (
-	"errors"
 	"time"
-)
 
-var errChanNotClosed = errors.New("channel is not closed")
+	"pocket/pkg/observable"
+)
 
 // DrainChannel attempts to receive from the given channel, blocking, until it is
 // empty. It returns an error if the channel is not closed by the time it's empty.
@@ -21,7 +20,7 @@ func DrainChannel[V any](ch <-chan V) error {
 			}
 			return nil
 		case <-time.After(time.Millisecond):
-			return errChanNotClosed
+			return observable.ErrObserverClosed
 		}
 	}
 }
