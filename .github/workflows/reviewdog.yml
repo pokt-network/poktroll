@@ -5,8 +5,10 @@ on:
     branches: ["main"]
 
 jobs:
-  check_todo_in_this_commit:
-    name: Check TODO_IN_THIS_COMMIT
+  # Makes sure that comments like TODO_IN_THIS_PR or TODO_IN_THIS_COMMIT block merging to main
+  # More info: https://github.com/pokt-network/action-fail-on-found
+  check_todo_in_this:
+    name: Check TODO_IN_THIS_
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,12 +16,13 @@ jobs:
         with:
           github_token: ${{ secrets.github_token }}
           reporter: github-pr-review
-          level: warning
+          level: error
           fail_on_error: true
-          pattern: TODO_DISCUSS_IN_THIS_COMMIT|TODO_IN_THIS_COMMIT
+          pattern: TODO_IN_THIS_
 
-  misspell:
-    name: runner / misspell
+  # More info: https://github.com/reviewdog/action-misspell
+  check_misspell:
+    name: Check misspelling
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
