@@ -1,22 +1,24 @@
 package cli
 
 import (
-	"strconv"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+
 	"pocket/x/supplier/types"
 )
 
-var _ = strconv.Itoa(0)
-
 func CmdUnstakeSupplier() *cobra.Command {
+	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
 		Use:   "unstake-supplier",
-		Short: "Broadcast message unstake-supplier",
-		Args:  cobra.ExactArgs(0),
+		Short: "Unstake a supplier",
+		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
+
+Example:
+$ pocketd --home=$(POCKETD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 			clientCtx, err := client.GetClientTxContext(cmd)

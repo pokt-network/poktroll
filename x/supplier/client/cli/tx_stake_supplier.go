@@ -19,8 +19,8 @@ func CmdStakeSupplier() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-supplier [amount]",
 		Short: "Stake a supplier",
-		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
-will stake the tokens and associate them with the supplier specified by the 'from' address.
+		Long: `Unstake a supplier. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
+
 Example:
 $ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(1),

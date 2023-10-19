@@ -3,15 +3,16 @@ package keeper
 import (
 	"context"
 
-	"pocket/x/gateway/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"pocket/x/gateway/types"
 )
 
 // TODO(@h5law): Implementation the unstaking procedure for a gateway
-//				- determine unbonding period (#73)
-//				- undelegation for delegated apps (#39)
-
+//   - determine unbonding period (#73)
+//   - undelegation for delegated apps (#39)
+//
+// TODO(#73): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,
