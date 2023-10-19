@@ -120,6 +120,7 @@ go_test: go_version_check ## Run all go tests
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
+	go generate ./x/supplier/types/
 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
