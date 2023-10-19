@@ -152,7 +152,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			err := group.Wait()
 			require.NoError(t, err)
 
-			// unsubscribing should close obsvr channel(s)
+			// unsubscribing should unsubscribeAll obsvr channel(s)
 			for _, observer := range observers {
 				observer.Unsubscribe()
 
@@ -323,7 +323,7 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 
 // TECHDEBT/INCOMPLETE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
-	t.Skip("add coverage: all observers should close when publishCh closes")
+	t.Skip("add coverage: all observers should unsubscribeAll when publishCh closes")
 }
 
 func produceWithDelay[V any](producer chan<- V, delay time.Duration) func(value V) {

@@ -67,22 +67,22 @@ func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Ob
 	observer := NewObserver[V](ctx, obsvbl.onUnsubscribe)
 	obsvbl.observers = append(obsvbl.observers, observer)
 
-	// caller can rely on context cancellation or call Close() to unsubscribe
+	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
 	// active observers
 	if ctx != nil {
-		// asynchronously wait for the context to close and unsubscribe
+		// asynchronously wait for the context to unsubscribeAll and unsubscribe
 		go goUnsubscribeOnDone[V](ctx, observer)
 	}
 	return observer
 }
 
-func (obsvbl *channelObservable[V]) Close() {
-	obsvbl.close()
+// UnsubscribeAll unsubscribes and removes all observers from the observable.
+func (obsvbl *channelObservable[V]) UnsubscribeAll() {
+	obsvbl.unsubscribeAll()
 }
 
-// TODO_CONSIDERATION: decide whether this should close the publishCh channel; perhaps
-// only if it was provided.
-func (obsvbl *channelObservable[V]) close() {
+// unsubscribeAll unsubscribes and removes all observers from the observable.
+func (obsvbl *channelObservable[V]) unsubscribeAll() {
 	// Copy currentObservers to avoid holding the lock while unsubscribing them.
 	// The current observers at this time is the canonical set of observers which
 	// will be unsubscribed.
@@ -123,7 +123,7 @@ func (obsvbl *channelObservable[V]) goProduce(publisher <-chan V) {
 	}
 
 	// Here we know that the publishCh has been isClosed, all currentObservers should be isClosed as well
-	obsvbl.close()
+	obsvbl.unsubscribeAll()
 }
 
 func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserver[V]) {

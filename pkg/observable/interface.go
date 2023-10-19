@@ -14,7 +14,7 @@ import "context"
 // It is analogous to a publisher in a "Fan-Out" system design.
 type Observable[V any] interface {
 	Subscribe(context.Context) Observer[V]
-	Close()
+	UnsubscribeAll()
 }
 
 // Observer is a generic interface that provides access to the notified
