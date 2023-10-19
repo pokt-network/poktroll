@@ -17,6 +17,8 @@ service Msg {
   rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
 message MsgUnstakeSupplier {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
   string address = 1;
 }
 
