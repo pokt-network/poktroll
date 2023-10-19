@@ -1,0 +1,59 @@
+syntax = "proto3";
+package pocket.shared;
+
+// NOTE that the `shared` package is not a Cosmos module,
+// but rather a manually created package to resolve circular dependencies.
+
+// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
+
+option go_package = "pocket/x/shared/types";
+
+// ServiceId message to encapsulate unique and semantic identifiers for a service on the network
+message ServiceId {
+    string id = 1; // Unique identifier for the service
+    string name = 2; // Semantic name for the service
+}
+
+// SupplierServiceConfig holds the service configuration the application stakes for
+message ApplicationServiceConfig {
+    ServiceId id = 1; // Unique and semantic identifier for the service
+    // TODO_RESEARCH: There is an opportunity for applications to advertise what kind of configurations (and price)
+    // they want, but it is out of scope for the MVP.
+    // repeated RPCConfig rpc_configs = 2; // List of endpoints for the service
+}
+
+// SupplierServiceConfig holds the service configuration the supplier stakes for
+message SupplierServiceConfig {
+    ServiceId id = 1; // Unique and semantic identifier for the service
+    repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
+}
+
+// Endpoint message to hold service configuration details
+message SupplierEndpoint {
+    string url = 1; // URL of the endpoint
+    RPCType rpc_type = 2; // Type of RPC exposed on the url above
+    repeated ConfigOption configs = 3; // Additional configuration options for the endpoint
+}
+
+// Enum to define RPC types
+enum RPCType {
+    UNKNOWN_RPC = 0; // Undefined RPC type
+    GRPC = 1; // gRPC
+    WEBSOCKET = 2; // WebSocket
+    JSON_RPC = 3; // JSON-RPC
+    // Add new RPC types here as needed
+}
+
+// Enum to define configuration options
+// TODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing on-chain QoS.
+enum ConfigOptions {
+    UNKNOWN_CONFIG = 0; // Undefined config option
+    TIMEOUT = 1; // Timeout setting
+    // Add new config options here as needed
+}
+
+// Key-value wrapper for config options, as proto maps can't be keyed by enums
+message ConfigOption {
+    ConfigOptions key = 1; // Config option key
+    string value = 2; // Config option value
+}

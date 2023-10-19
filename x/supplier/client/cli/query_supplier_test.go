@@ -14,6 +14,7 @@ import (
 
 	"pocket/testutil/network"
 	"pocket/testutil/nullify"
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/client/cli"
 	"pocket/x/supplier/types"
 )
@@ -21,12 +22,12 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []types.Supplier) {
+func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
-		supplier := types.Supplier{
+		supplier := sharedtypes.Supplier{
 			Address: strconv.Itoa(i),
 		}
 		nullify.Fill(&supplier)
@@ -51,7 +52,7 @@ func TestShowSupplier(t *testing.T) {
 
 		args []string
 		err  error
-		obj  types.Supplier
+		obj  sharedtypes.Supplier
 	}{
 		{
 			desc:      "found",

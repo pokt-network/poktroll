@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+
+	sharedtypes "pocket/x/shared/types"
 )
 
 // DefaultIndex is the default global index
@@ -10,7 +12,7 @@ const DefaultIndex uint64 = 1
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
-		SupplierList: []Supplier{},
+		SupplierList: []sharedtypes.Supplier{},
 		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}
@@ -22,8 +24,8 @@ func (gs GenesisState) Validate() error {
 	// Check for duplicated index in supplier
 	supplierIndexMap := make(map[string]struct{})
 
-	for _, elem := range gs.SupplierList {
-		index := string(SupplierKey(elem.Address))
+	for _, supplier := range gs.SupplierList {
+		index := string(SupplierKey(supplier.Address))
 		if _, ok := supplierIndexMap[index]; ok {
 			return fmt.Errorf("duplicated index for supplier")
 		}

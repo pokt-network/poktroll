@@ -1,0 +1,14 @@
+syntax = "proto3";
+package pocket.shared;
+
+// NOTE that the `shared` package is not a Cosmos module,
+// but rather a manually created package to resolve circular dependencies.
+
+option go_package = "pocket/x/shared/types";
+
+// Supplier is the type defining the actor in Pocket Network that provides RPC services.
+message Supplier {
+  string address = 1;
+
+}
+

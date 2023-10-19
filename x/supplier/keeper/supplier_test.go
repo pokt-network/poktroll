@@ -6,17 +6,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Supplier {
-	items := make([]types.Supplier, n)
+func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Supplier {
+	items := make([]sharedtypes.Supplier, n)
 	for i := range items {
 		items[i].Address = strconv.Itoa(i)
 
