@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -12,8 +13,8 @@ const (
 	// TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
 	// relevant in the context of the behavior of the observable when it has multiple
 	// observers which consume at different rates.
-	// observerBufferSize is the buffer size of a channelObserver's channel.
-	observerBufferSize = 1
+	// defaultSubscribeBufferSize is the buffer size of a channelObserver's channel.
+	defaultSubscribeBufferSize = 50
 	// sendRetryInterval is the duration between attempts to send on the observer's
 	// channel in the event that it's full. It facilitates a branch in a for loop
 	// which unlocks the observer's mutex and tries again.
@@ -52,7 +53,7 @@ func NewObserver[V any](
 	return &channelObserver[V]{
 		ctx:           ctx,
 		observerMu:    new(sync.RWMutex),
-		observerCh:    make(chan V, observerBufferSize),
+		observerCh:    make(chan V, defaultSubscribeBufferSize),
 		onUnsubscribe: onUnsubscribe,
 	}
 }
@@ -75,6 +76,14 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 	defer obsvr.observerMu.Unlock()
 
 	if obsvr.isClosed {
+		// log the fact that this case was encountered such that an extreme change
+		// in its frequency would be obvious.
+		// TODO_TECHDEBT: integrate with structured logger once available
+		// TODO_CONSIDERATION: alternative perspective:
+		//   1. this is library code; prefer fewer external dependencies, esp. I/O
+		//   2. the stdlib log pkg is pretty good, idiomatic, and globally
+		//      configurable; perhaps it is sufficient
+		log.Printf("%s", observable.ErrObserverClosed.Wrap("redundant unsubscribe"))
 		return
 	}
 

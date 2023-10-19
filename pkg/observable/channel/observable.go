@@ -6,6 +6,12 @@ import (
 	"sync"
 )
 
+// TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
+// relevant in the context of the behavior of the observable when it has multiple
+// observers which consume at different rates.
+// defaultSubscribeBufferSize is the buffer size of a channelObserver's channel.
+const defaultPublishBufferSize = 50
+
 var _ observable.Observable[any] = &channelObservable[any]{}
 
 // option is a function which receives and can modify the channelObservable state.
@@ -40,20 +46,20 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 
 	// if the caller does not provide a publishCh, create a new one and return it
 	if obs.publishCh == nil {
-		obs.publishCh = make(chan V)
+		obs.publishCh = make(chan V, defaultPublishBufferSize)
 	}
 
 	// start listening to the publishCh and emit values to observers
-	go obs.goProduce(obs.publishCh)
+	go obs.goPublish(obs.publishCh)
 
 	return obs, obs.publishCh
 }
 
-// WithProducer returns an option function which sets the given publishCh of the
+// WithPublisher returns an option function which sets the given publishCh of the
 // resulting observable when passed to NewObservable().
-func WithProducer[V any](producer chan V) option[V] {
+func WithPublisher[V any](publishCh chan V) option[V] {
 	return func(obs *channelObservable[V]) {
-		obs.publishCh = producer
+		obs.publishCh = publishCh
 	}
 }
 
@@ -102,9 +108,9 @@ func (obsvbl *channelObservable[V]) unsubscribeAll() {
 	obsvbl.observersMu.Unlock()
 }
 
-// goProduce to the publishCh and notify observers when values are received. This
-// function is blocking and should be run in a goroutine.
-func (obsvbl *channelObservable[V]) goProduce(publisher <-chan V) {
+// goPublish to the publishCh and notify observers when values are received.
+// This function is blocking and should be run in a goroutine.
+func (obsvbl *channelObservable[V]) goPublish(publisher <-chan V) {
 	for notification := range publisher {
 		// Copy currentObservers to avoid holding the lock while notifying them.
 		// New or existing Observers may (un)subscribe while this notification
@@ -122,10 +128,13 @@ func (obsvbl *channelObservable[V]) goProduce(publisher <-chan V) {
 		}
 	}
 
-	// Here we know that the publishCh has been isClosed, all currentObservers should be isClosed as well
+	// Here we know that the publisher channel has been closed.
+	// Unsubscribe all observers as they can no longer receive notifications.
 	obsvbl.unsubscribeAll()
 }
 
+// copyObservers returns a copy of the current observers list. It is safe to
+// call concurrently.
 func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserver[V]) {
 	defer obsvbl.observersMu.RUnlock()
 

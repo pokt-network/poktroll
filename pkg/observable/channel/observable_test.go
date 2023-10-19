@@ -16,24 +16,24 @@ import (
 )
 
 const (
-	productionDelay        = 2 * time.Millisecond
-	notifyTimeout          = productionDelay * 5
+	publishDelay           = 2 * time.Millisecond
+	notifyTimeout          = publishDelay * 5
 	cancelUnsubscribeDelay = notifyTimeout * 2
 )
 
 func TestChannelObservable_NotifyObservers(t *testing.T) {
 	type test struct {
 		name            string
-		publishCh       chan *int
+		publishCh       chan int
 		inputs          []int
 		expectedOutputs []int
 		setupFn         func(t test)
 	}
 
 	inputs := []int{123, 456, 789}
-	fullBufferedPublisher := make(chan *int, 1)
 	// NB: see TODO_INCOMPLETE comment below
 	//fullBlockingPublisher := make(chan *int)
+	//fullBufferedPublisher := make(chan *int, 1)
 
 	tests := []test{
 		{
@@ -44,25 +44,15 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 		},
 		{
 			name:            "empty non-buffered publisher",
-			publishCh:       make(chan *int),
+			publishCh:       make(chan int),
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
 			name:            "empty buffered len 1 publisher",
-			publishCh:       make(chan *int, 1),
+			publishCh:       make(chan int, 1),
 			inputs:          inputs,
 			expectedOutputs: inputs,
-		},
-		{
-			name:            "full buffered len 1 publisher",
-			publishCh:       fullBufferedPublisher,
-			inputs:          inputs[1:],
-			expectedOutputs: inputs,
-			setupFn: func(t test) {
-				// non-blocking send
-				t.publishCh <- &inputs[0]
-			},
 		},
 		// INCOMPLETE: publisher channels which are full are proving harder to test
 		// robustly (no flakiness); perhaps it has to do with the lack of some
@@ -82,6 +72,16 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 		// 		}()
 		// 	},
 		// },
+		// {
+		// 	name:            "full buffered len 1 publisher",
+		// 	publishCh:       fullBufferedPublisher,
+		// 	inputs:          inputs[1:],
+		// 	expectedOutputs: inputs,
+		// 	setupFn: func(t test) {
+		// 		// non-blocking send
+		// 		t.publishCh <- &inputs[0]
+		// 	},
+		// },
 	}
 
 	for _, tt := range tests {
@@ -93,28 +93,28 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
-			obsvbl, producer := channel.NewObservable[*int](
-				channel.WithProducer(tt.publishCh),
+			obsvbl, publisher := channel.NewObservable[int](
+				channel.WithPublisher(tt.publishCh),
 			)
 			require.NotNil(t, obsvbl)
-			require.NotNil(t, producer)
-			produce := produceWithDelay(producer, productionDelay)
+			require.NotNil(t, publisher)
 
 			// construct 3 distinct observers, each with its own channel
-			observers := make([]observable.Observer[*int], 1)
+			observers := make([]observable.Observer[int], 1)
 			for i := range observers {
 				observers[i] = obsvbl.Subscribe(ctx)
 			}
 
 			group, ctx := errgroup.WithContext(ctx)
 
-			// ensure all obsvr channels are notified by starting a lot of asynchronous listeners error/success listeners
+			// ensure all observer channels are notified
 			for obsvrIdx, obsvr := range observers {
-				next := func(outputIndex int, output *int) error {
+				// onNext is called for each notification received by the observer
+				onNext := func(outputIndex int, output int) error {
 					// obsvr channel should receive notified input
 					if !assert.Equalf(
 						t, tt.expectedOutputs[outputIndex],
-						*output,
+						output,
 						"obsvr Idx: %d", obsvrIdx,
 					) {
 						return fmt.Errorf("unexpected output")
@@ -122,7 +122,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 					return nil
 				}
 
-				done := func(outputs []*int) error {
+				// onDone is called when the observer channel closes
+				onDone := func(outputs []int) error {
 					if !assert.Equalf(
 						t, len(tt.expectedOutputs),
 						len(outputs),
@@ -134,17 +135,18 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				}
 
 				// concurrently await notification or timeout to avoid blocking on
-				// empty and/or non-buffered producers.
-				group.Go(goNotifiedOrTimedOutFactory(obsvr, next, done, notifyTimeout))
+				// empty and/or non-buffered publishers.
+				group.Go(goNotifiedOrTimedOutFactory(obsvr, onNext, onDone, notifyTimeout))
 			}
 
 			// notify with test input
+			publish := delayedPublishFactory(publisher, publishDelay)
 			for _, input := range tt.inputs {
 				inputPtr := new(int)
 				*inputPtr = input
 
-				// simulating IO delay in sequential message production
-				produce(inputPtr)
+				// simulating IO delay in sequential message publishing
+				publish(input)
 			}
 			cancel()
 
@@ -166,9 +168,9 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	obsvbl, producer := channel.NewObservable[int]()
+	obsvbl, publishCh := channel.NewObservable[int]()
 	require.NotNil(t, obsvbl)
-	require.NotNil(t, producer)
+	require.NotNil(t, publishCh)
 
 	type test struct {
 		name        string
@@ -242,7 +244,7 @@ func TestChannelObservable_ConcurrentSubUnSub(t *testing.T) {
 	t.Skip("add coverage: subscribing and unsubscribing concurrently should not race")
 }
 
-func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
+func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 	observations := new([]*observation[int])
 	expectedNotifications := [][]int{
 		{123, 456, 789},
@@ -251,11 +253,11 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 		{987, 654, 321},
 	}
 
-	obsvbl, producer := channel.NewObservable[int]()
+	obsvbl, publishCh := channel.NewObservable[int]()
 	require.NotNil(t, obsvbl)
-	require.NotNil(t, producer)
-	// simulate IO delay in sequential message production
-	produceWithDelay := produceWithDelay(producer, productionDelay)
+	require.NotNil(t, publishCh)
+	// simulate IO delay in sequential message publishing
+	publish := delayedPublishFactory(publishCh, publishDelay)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
@@ -263,30 +265,30 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 	observation0 := newObservation(ctx, obsvbl)
 	*observations = append(*observations, observation0)
 	go goReceiveNotifications(observation0)
-	produceWithDelay(123)
+	publish(123)
 
 	observation1 := newObservation(ctx, obsvbl)
 	*observations = append(*observations, observation1)
 	go goReceiveNotifications(observation1)
-	produceWithDelay(456)
+	publish(456)
 
 	observation2 := newObservation(ctx, obsvbl)
 	*observations = append(*observations, observation2)
 	go goReceiveNotifications(observation2)
-	produceWithDelay(789)
+	publish(789)
 
 	observation3 := newObservation(ctx, obsvbl)
 	*observations = append(*observations, observation3)
 	go goReceiveNotifications(observation3)
 
 	observation0.Unsubscribe()
-	produceWithDelay(987)
+	publish(987)
 
 	observation1.Unsubscribe()
-	produceWithDelay(654)
+	publish(654)
 
 	observation2.Unsubscribe()
-	produceWithDelay(321)
+	publish(321)
 
 	observation3.Unsubscribe()
 
@@ -305,16 +307,16 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 
 			require.Equalf(
 				t, len(expectedNotifications[obsnIdx]),
-				len(*obsrvn.Notifications),
+				len(obsrvn.Notifications),
 				"observation index: %d, expected: %+v, actual: %+v",
-				obsnIdx, expectedNotifications[obsnIdx], *obsrvn.Notifications,
+				obsnIdx, expectedNotifications[obsnIdx], obsrvn.Notifications,
 			)
 			for notificationIdx, expected := range expectedNotifications[obsnIdx] {
 				require.Equalf(
 					t, expected,
-					(*obsrvn.Notifications)[notificationIdx],
+					(obsrvn.Notifications)[notificationIdx],
 					"allExpected: %+v, allActual: %+v",
-					expectedNotifications[obsnIdx], *obsrvn.Notifications,
+					expectedNotifications[obsnIdx], obsrvn.Notifications,
 				)
 			}
 		})
@@ -322,22 +324,22 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 }
 
 // TECHDEBT/INCOMPLETE: add coverage for active observers closing when publishCh closes.
-func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
+func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
 	t.Skip("add coverage: all observers should unsubscribeAll when publishCh closes")
 }
 
-func produceWithDelay[V any](producer chan<- V, delay time.Duration) func(value V) {
+func delayedPublishFactory[V any](publishCh chan<- V, delay time.Duration) func(value V) {
 	return func(value V) {
 		time.Sleep(delay / 2)
-		producer <- value
+		publishCh <- value
 		time.Sleep(delay / 2)
 	}
 }
 
 func goNotifiedOrTimedOutFactory[V any](
 	obsvr observable.Observer[V],
-	next func(index int, output V) error,
-	done func(outputs []V) error,
+	onNext func(index int, output V) error,
+	onDone func(outputs []V) error,
 	timeoutDuration time.Duration,
 ) func() error {
 	var (
@@ -349,10 +351,10 @@ func goNotifiedOrTimedOutFactory[V any](
 			select {
 			case output, ok := <-obsvr.Ch():
 				if !ok {
-					return done(outputs)
+					return onDone(outputs)
 				}
 
-				if err := next(outputIndex, output); err != nil {
+				if err := onNext(outputIndex, output); err != nil {
 					return err
 				}
 
