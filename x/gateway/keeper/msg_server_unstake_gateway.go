@@ -8,10 +8,7 @@ import (
 	"pocket/x/gateway/types"
 )
 
-// TODO(@h5law): Implementation the unstaking procedure for a gateway
-//   - determine unbonding period (#73)
-//   - undelegation for delegated apps (#39)
-//
+// TODO_TECHDEBT(#49): Add un-delegation from delegated apps
 // TODO(#73): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,

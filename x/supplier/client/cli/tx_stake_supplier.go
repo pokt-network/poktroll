@@ -22,7 +22,7 @@ func CmdStakeSupplier() *cobra.Command {
 		Long: `Unstake a supplier. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
 
 Example:
-$ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeString := args[0]
