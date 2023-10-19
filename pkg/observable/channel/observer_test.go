@@ -16,7 +16,7 @@ func TestObserver_Unsubscribe(t *testing.T) {
 	)
 	obsvr := &channelObserver[int]{
 		observerMu: &sync.RWMutex{},
-		// using a buffered  channel to keep the test synchronous
+		// using a buffered channel to keep the test synchronous
 		observerCh: inputCh,
 		onUnsubscribe: func(toRemove *channelObserver[int]) {
 			onUnsubscribeCalled = true
@@ -43,7 +43,7 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 	obsvr := &channelObserver[int]{
 		ctx:        context.Background(),
 		observerMu: &sync.RWMutex{},
-		// using a buffered  channel to keep the test synchronous
+		// using a buffered channel to keep the test synchronous
 		observerCh: inputCh,
 		onUnsubscribe: func(toRemove *channelObserver[int]) {
 			onUnsubscribeCalled = true

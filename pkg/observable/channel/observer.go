@@ -83,13 +83,15 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 	obsvr.onUnsubscribe(obsvr)
 }
 
-// notify is used called by observable to send on the observer channel. Can't
-// use channelObserver#Ch because it's receive-only. It will block if the channel
-// is full but will release the read-lock for half of the sendRetryInterval. The
-// other half holds is spent holding the read-lock and waiting for the (full)
-// channel to be ready to receive.
+// notify is called by observable to send a msg on the observer's channel.
+// We can't use channelObserver#Ch because it's intended to be a
+// receive-only channel. The channel will block if it is full (determined by the buffer
+// size)
+// if the channel's buffer is full, we will retry after sendRetryInterval/s.
+// The other half is spent holding the read-lock and waiting for the (full) channel
+// to be ready to receive.
 func (obsvr *channelObserver[V]) notify(value V) {
-	defer obsvr.observerMu.RUnlock()
+	defer obsvr.observerMu.RUnlock() // defer releasing a read lock
 
 	sendRetryTicker := time.NewTicker(sendRetryInterval / 2)
 	for {
@@ -109,6 +111,7 @@ func (obsvr *channelObserver[V]) notify(value V) {
 			// if the context is done just release the read-lock (deferred)
 			return
 		case obsvr.observerCh <- value:
+			// if observerCh has space in its buffer, the value is written to it
 			return
 		// if the context isn't done and channel is full (i.e. blocking),
 		// release the read-lock to give write-lockers a turn. This case

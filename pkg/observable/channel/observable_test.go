@@ -32,7 +32,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 	inputs := []int{123, 456, 789}
 	fullBufferedPublisher := make(chan *int, 1)
-	// NB: see INCOMPLETE comment below
+	// NB: see TODO_INCOMPLETE comment below
 	//fullBlockingPublisher := make(chan *int)
 
 	tests := []test{
@@ -108,7 +108,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 			group, ctx := errgroup.WithContext(ctx)
 
-			// ensure all obsvr channels are notified
+			// ensure all obsvr channels are notified by starting a lot of asynchronous listeners error/success listeners
 			for obsvrIdx, obsvr := range observers {
 				next := func(outputIndex int, output *int) error {
 					// obsvr channel should receive notified input
@@ -237,6 +237,7 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 	}
 }
 
+// TODO_INCOMPLETE/TODO_TECHDEBT: Implement `TestChannelObservable_ConcurrentSubUnSub`
 func TestChannelObservable_ConcurrentSubUnSub(t *testing.T) {
 	t.Skip("add coverage: subscribing and unsubscribing concurrently should not race")
 }

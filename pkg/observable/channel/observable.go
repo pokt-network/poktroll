@@ -15,12 +15,12 @@ type option[V any] func(obs *channelObservable[V])
 // via its corresponding publishCh channel.
 type channelObservable[V any] struct {
 	// publishCh is an observable-wide channel that is used to receive values
-	// which are subsequently re-sent to observers.
+	// which are subsequently fanned out to observers.
 	publishCh chan V
 	// observersMu protects observers from concurrent access/updates
 	observersMu *sync.RWMutex
 	// observers is a list of channelObservers that will be notified when publishCh
-	// receives a value.
+	// receives a new value.
 	observers []*channelObserver[V]
 }
 
@@ -60,7 +60,7 @@ func WithProducer[V any](producer chan V) option[V] {
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	// must lock observersMu so that we can safely append to the observers list
+	// must (write) lock observersMu so that we can safely append to the observers list
 	obsvbl.observersMu.Lock()
 	defer obsvbl.observersMu.Unlock()
 
@@ -145,8 +145,8 @@ func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserve
 	return observers
 }
 
-// goUnsubscribeOnDone unsubscribes from the subscription when the context is.
-// It is blocking and intended to be called in a goroutine.
+// goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
+// It is a blocking function and intended to be called in a goroutine.
 func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
 	<-ctx.Done()
 	subscription.Unsubscribe()
@@ -155,7 +155,7 @@ func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Obs
 // onUnsubscribe returns a function that removes a given channelObserver from the
 // observable's list of observers.
 func (obsvbl *channelObservable[V]) onUnsubscribe(toRemove *channelObserver[V]) {
-	// must lock to iterato over and modify observers list
+	// must (write) lock to iterate over and modify the observers list
 	obsvbl.observersMu.Lock()
 	defer obsvbl.observersMu.Unlock()
 
