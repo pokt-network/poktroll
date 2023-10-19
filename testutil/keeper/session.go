@@ -12,8 +12,10 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	mocks "pocket/testutil/session/mocks"
 	"pocket/x/session/keeper"
 	"pocket/x/session/types"
 )
@@ -31,6 +33,12 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
+	ctrl := gomock.NewController(t)
+	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
+	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), gomock.Any()).AnyTimes()
+	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
+	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -42,6 +50,9 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		storeKey,
 		memStoreKey,
 		paramsSubspace,
+
+		mockAppKeeper,
+		mockSupplierKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

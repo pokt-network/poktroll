@@ -1,6 +1,6 @@
 package types
 
-//go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper, BankKeeper,ApplicationKeeper,SupplierKeeper
+//go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

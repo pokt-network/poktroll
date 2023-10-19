@@ -1,14 +1,22 @@
-package keeper
+package keeper_test
 
 import (
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	testkeeper "pocket/testutil/keeper"
+	sharedtypes "pocket/x/shared/types"
 )
 
 func TestSession_GetSession_Success(t *testing.T) {
-	// keeper, ctx := testkeeper.SessionKeeper(t)
+	keeper, ctx := testkeeper.SessionKeeper(t)
 	// wctx := sdk.WrapSDKContext(ctx)
-	// res := keeper.GetSession(wctx, "add", nil, 10)
-	// fmt.Println(res)
+	serviceId := sharedtypes.ServiceId{Id: "1"}
+	res, err := keeper.GetSession(ctx, "add", &serviceId, 10)
+	require.NoError(t, err)
+	fmt.Println(res)
 	// keeper.SetParams(ctx, params)
 
 	// response, err := keeper.Params(wctx, &types.QueryParamsRequest{})
@@ -16,44 +24,23 @@ func TestSession_GetSession_Success(t *testing.T) {
 	// require.Equal(t, &types.QueryParamsResponse{Params: params}, response)
 }
 
-// package utility
-
-// import (
-// 	"fmt"
-// 	"math"
-// 	"testing"
-
-// 	"github.com/pokt-network/pocket/runtime/test_artifacts"
-// 	coreTypes "github.com/pokt-network/pocket/shared/core/types"
-// 	"github.com/pokt-network/pocket/shared/crypto"
-// 	"github.com/pokt-network/pocket/shared/messaging"
-// 	"github.com/pokt-network/pocket/utility/types"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	"gonum.org/v1/gonum/stat/combin"
-// )
-
-// // TECHDEBT(#697): Geozones are not current implemented, used or tested
-
-// func TestSession_GetSession_SingleFishermanSingleServicerBaseCase(t *testing.T) {
+// func TestSession_GetSession_SingleSupplierBaseCase(t *testing.T) {
 // 	// Test parameters
 // 	height := int64(1)
-// 	relayChain := test_artifacts.DefaultChains[0]
-// 	geoZone := "unused_geo"
-// 	numFishermen := 1
-// 	numServicers := 1
+// 	serviceId := "1"
+// 	numSuppliers := 1
 // 	// needs to be manually updated if business logic changes
 // 	expectedSessionId := "b1e9791358aae070ac7f86fdb74e5a9d26fff025fb737a2114ccf9ad95b624bd"
 
-// 	runtimeCfg, utilityMod, _ := prepareEnvironment(t, 5, numServicers, 1, numFishermen)
+// 	runtimeCfg, utilityMod, _ := prepareEnvironment(t, 5, numSuppliers, 1, numFishermen)
 
 // 	// Sanity check genesis
 // 	require.Len(t, runtimeCfg.GetGenesis().Applications, 1)
 // 	app := runtimeCfg.GetGenesis().Applications[0]
 // 	require.Len(t, runtimeCfg.GetGenesis().Fishermen, 1)
 // 	fisher := runtimeCfg.GetGenesis().Fishermen[0]
-// 	require.Len(t, runtimeCfg.GetGenesis().Servicers, 1)
-// 	servicer := runtimeCfg.GetGenesis().Servicers[0]
+// 	require.Len(t, runtimeCfg.GetGenesis().Suppliers, 1)
+// 	supplier := runtimeCfg.GetGenesis().Suppliers[0]
 
 // 	// Verify some of the session defaults
 // 	session, err := utilityMod.GetSession(app.Address, height, relayChain, geoZone)
@@ -65,8 +52,8 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	require.Equal(t, relayChain, session.RelayChain)
 // 	require.Equal(t, geoZone, session.GeoZone)
 // 	require.Equal(t, app.Address, session.Application.Address)
-// 	require.Len(t, session.Servicers, numServicers)
-// 	require.Equal(t, servicer.Address, session.Servicers[0].Address)
+// 	require.Len(t, session.Suppliers, numSuppliers)
+// 	require.Equal(t, supplier.Address, session.Suppliers[0].Address)
 // 	require.Len(t, session.Fishermen, numFishermen)
 // 	require.Equal(t, fisher.Address, session.Fishermen[0].Address)
 // }
@@ -94,9 +81,9 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	_, err = utilityMod.GetSession(addr, 1, "chain", "unused_geo")
 // 	require.Error(t, err)
 
-// 	// Expect an error trying to get a session for a non-existent application
-// 	_, err = utilityMod.GetSession(addr, 1, test_artifacts.DefaultChains[0], "unused_geo")
-// 	require.Error(t, err)
+// // Expect an error trying to get a session for a non-existent application
+// _, err = utilityMod.GetSession(addr, 1, test_artifacts.DefaultChains[0], "unused_geo")
+// require.Error(t, err)
 // }
 
 // func TestSession_GetSession_InvalidFutureSession(t *testing.T) {
@@ -137,61 +124,61 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 		require.NoError(t, err)
 // 	}
 
-// 	// Verify that currentHeight + 2 fails
-// 	_, err = utilityMod.GetSession(app.Address, currentHeight+2, relayChain, geoZone)
-// 	require.Error(t, err)
+// // Verify that currentHeight + 2 fails
+// _, err = utilityMod.GetSession(app.Address, currentHeight+2, relayChain, geoZone)
+// require.Error(t, err)
 // }
 
-// func TestSession_GetSession_ServicersAndFishermenCounts_TotalAvailability(t *testing.T) {
-// 	// Prepare an environment with a lot of servicers and fishermen
-// 	numStakedServicers := 100
+// func TestSession_GetSession_SuppliersAndFishermenCounts_TotalAvailability(t *testing.T) {
+// 	// Prepare an environment with a lot of suppliers and fishermen
+// 	numStakedSuppliers := 100
 // 	numStakedFishermen := 100
-// 	runtimeCfg, utilityMod, persistenceMod := prepareEnvironment(t, 5, numStakedServicers, 1, numStakedFishermen)
+// 	runtimeCfg, utilityMod, persistenceMod := prepareEnvironment(t, 5, numStakedSuppliers, 1, numStakedFishermen)
 
 // 	// Vary the number of actors per session using gov params and check that the session is populated with the correct number of actorss
 // 	tests := []struct {
 // 		name                   string
-// 		numServicersPerSession int64
+// 		numSuppliersPerSession int64
 // 		numFishermanPerSession int64
-// 		wantServicerCount      int
+// 		wantSupplierCount      int
 // 		wantFishermanCount     int
 // 	}{
 // 		{
 // 			name:                   "more actors per session than available in network",
-// 			numServicersPerSession: int64(numStakedServicers) * 10,
+// 			numSuppliersPerSession: int64(numStakedSuppliers) * 10,
 // 			numFishermanPerSession: int64(numStakedFishermen) * 10,
-// 			wantServicerCount:      numStakedServicers,
+// 			wantSupplierCount:      numStakedSuppliers,
 // 			wantFishermanCount:     numStakedFishermen,
 // 		},
 // 		{
 // 			name:                   "less actors per session than available in network",
-// 			numServicersPerSession: int64(numStakedServicers) / 2,
+// 			numSuppliersPerSession: int64(numStakedSuppliers) / 2,
 // 			numFishermanPerSession: int64(numStakedFishermen) / 2,
-// 			wantServicerCount:      numStakedServicers / 2,
+// 			wantSupplierCount:      numStakedSuppliers / 2,
 // 			wantFishermanCount:     numStakedFishermen / 2,
 // 		},
 // 		{
 // 			name:                   "same number of actors per session as available in network",
-// 			numServicersPerSession: int64(numStakedServicers),
+// 			numSuppliersPerSession: int64(numStakedSuppliers),
 // 			numFishermanPerSession: int64(numStakedFishermen),
-// 			wantServicerCount:      numStakedServicers,
+// 			wantSupplierCount:      numStakedSuppliers,
 // 			wantFishermanCount:     numStakedFishermen,
 // 		},
 // 		{
-// 			name:                   "more than enough servicers but not enough fishermen",
-// 			numServicersPerSession: int64(numStakedServicers) / 2,
+// 			name:                   "more than enough suppliers but not enough fishermen",
+// 			numSuppliersPerSession: int64(numStakedSuppliers) / 2,
 // 			numFishermanPerSession: int64(numStakedFishermen) * 10,
-// 			wantServicerCount:      numStakedServicers / 2,
+// 			wantSupplierCount:      numStakedSuppliers / 2,
 // 			wantFishermanCount:     numStakedFishermen,
 // 		},
 // 		{
-// 			name:                   "more than enough fishermen but not enough servicers",
-// 			numServicersPerSession: int64(numStakedServicers) * 10,
+// 			name:                   "more than enough fishermen but not enough suppliers",
+// 			numSuppliersPerSession: int64(numStakedSuppliers) * 10,
 // 			numFishermanPerSession: int64(numStakedFishermen) / 2,
-// 			wantServicerCount:      numStakedServicers,
+// 			wantSupplierCount:      numStakedSuppliers,
 // 			wantFishermanCount:     numStakedFishermen / 2,
 // 		},
-// 	}
+// }
 
 // 	// Constant parameters for testing
 // 	updateParamsHeight := int64(1)
@@ -210,12 +197,12 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 			})
 // 			require.NoError(t, err)
 
-// 			// Update the number of servicers and fishermen per session gov params
+// 			// Update the number of suppliers and fishermen per session gov params
 // 			writeCtx, err := persistenceMod.NewRWContext(updateParamsHeight)
 // 			require.NoError(t, err)
 // 			defer writeCtx.Release()
 
-// 			err = writeCtx.SetParam(types.ServicersPerSessionParamName, tt.numServicersPerSession)
+// 			err = writeCtx.SetParam(types.SuppliersPerSessionParamName, tt.numSuppliersPerSession)
 // 			require.NoError(t, err)
 // 			err = writeCtx.SetParam(types.FishermanPerSessionParamName, tt.numFishermanPerSession)
 // 			require.NoError(t, err)
@@ -225,58 +212,58 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 			// Verify that the session is populated with the correct number of actors
 // 			session, err := utilityMod.GetSession(app.Address, querySessionHeight, relayChain, geoZone)
 // 			require.NoError(t, err)
-// 			require.Equal(t, tt.wantServicerCount, len(session.Servicers))
+// 			require.Equal(t, tt.wantSupplierCount, len(session.Suppliers))
 // 			require.Equal(t, tt.wantFishermanCount, len(session.Fishermen))
 // 		})
 // 	}
 // }
 
-// func TestSession_GetSession_ServicersAndFishermenCounts_ChainAvailability(t *testing.T) {
+// func TestSession_GetSession_SuppliersAndFishermenCounts_ChainAvailability(t *testing.T) {
 // 	// Constant parameters for testing
-// 	numServicersPerSession := 10
+// 	numSuppliersPerSession := 10
 // 	numFishermenPerSession := 2
 
-// 	// Make sure there are MORE THAN ENOUGH servicers and fishermen in the network for each session for chain 1
-// 	servicersChain1, servicerKeysChain1 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_SERVICER, numServicersPerSession*2, []string{"chn1"})
+// 	// Make sure there are MORE THAN ENOUGH suppliers and fishermen in the network for each session for chain 1
+// 	suppliersChain1, supplierKeysChain1 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_SERVICER, numSuppliersPerSession*2, []string{"chn1"})
 // 	fishermenChain1, fishermenKeysChain1 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_FISH, numFishermenPerSession*2, []string{"chn1"})
 
-// 	// Make sure there are NOT ENOUGH servicers and fishermen in the network for each session for chain 2
-// 	servicersChain2, servicerKeysChain2 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_SERVICER, numServicersPerSession/2, []string{"chn2"})
+// 	// Make sure there are NOT ENOUGH suppliers and fishermen in the network for each session for chain 2
+// 	suppliersChain2, supplierKeysChain2 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_SERVICER, numSuppliersPerSession/2, []string{"chn2"})
 // 	fishermenChain2, fishermenKeysChain2 := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_FISH, numFishermenPerSession/2, []string{"chn2"})
 
 // 	application, applicationKey := test_artifacts.NewActors(coreTypes.ActorType_ACTOR_TYPE_APP, 1, []string{"chn1", "chn2", "chn3"})
 
 // 	//nolint:gocritic // intentionally not appending result to a new slice
-// 	actors := append(application, append(servicersChain1, append(servicersChain2, append(fishermenChain1, fishermenChain2...)...)...)...)
+// 	actors := append(application, append(suppliersChain1, append(suppliersChain2, append(fishermenChain1, fishermenChain2...)...)...)...)
 // 	//nolint:gocritic // intentionally not appending result to a new slice
-// 	keys := append(applicationKey, append(servicerKeysChain1, append(servicerKeysChain2, append(fishermenKeysChain1, fishermenKeysChain2...)...)...)...)
+// 	keys := append(applicationKey, append(supplierKeysChain1, append(supplierKeysChain2, append(fishermenKeysChain1, fishermenKeysChain2...)...)...)...)
 
 // 	// Prepare the environment
 // 	runtimeCfg, utilityMod, persistenceMod := prepareEnvironment(t, 5, 0, 0, 0, test_artifacts.WithActors(actors, keys))
 
-// 	// Vary the chain and check the number of fishermen and servicers returned for each one
+// 	// Vary the chain and check the number of fishermen and suppliers returned for each one
 // 	tests := []struct {
 // 		name               string
 // 		chain              string
-// 		wantServicerCount  int
+// 		wantSupplierCount  int
 // 		wantFishermanCount int
 // 	}{
 // 		{
-// 			name:               "chn1 has enough servicers and fishermen",
+// 			name:               "chn1 has enough suppliers and fishermen",
 // 			chain:              "chn1",
-// 			wantServicerCount:  numServicersPerSession,
+// 			wantSupplierCount:  numSuppliersPerSession,
 // 			wantFishermanCount: numFishermenPerSession,
 // 		},
 // 		{
-// 			name:               "chn2 does not have enough servicers and fishermen",
+// 			name:               "chn2 does not have enough suppliers and fishermen",
 // 			chain:              "chn2",
-// 			wantServicerCount:  numServicersPerSession / 2,
+// 			wantSupplierCount:  numSuppliersPerSession / 2,
 // 			wantFishermanCount: numFishermenPerSession / 2,
 // 		},
 // 		{
-// 			name:               "chn3 has no servicers and fishermen",
+// 			name:               "chn3 has no suppliers and fishermen",
 // 			chain:              "chn3",
-// 			wantServicerCount:  0,
+// 			wantSupplierCount:  0,
 // 			wantFishermanCount: 0,
 // 		},
 // 	}
@@ -288,10 +275,10 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	})
 // 	require.NoError(t, err)
 
-// 	// Update the number of servicers and fishermen per session gov params
+// 	// Update the number of suppliers and fishermen per session gov params
 // 	writeCtx, err := persistenceMod.NewRWContext(1)
 // 	require.NoError(t, err)
-// 	err = writeCtx.SetParam(types.ServicersPerSessionParamName, numServicersPerSession)
+// 	err = writeCtx.SetParam(types.SuppliersPerSessionParamName, numSuppliersPerSession)
 // 	require.NoError(t, err)
 // 	err = writeCtx.SetParam(types.FishermanPerSessionParamName, numFishermenPerSession)
 // 	require.NoError(t, err)
@@ -307,7 +294,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 		t.Run(tt.name, func(t *testing.T) {
 // 			session, err := utilityMod.GetSession(app.Address, 2, tt.chain, geoZone)
 // 			require.NoError(t, err)
-// 			require.Len(t, session.Servicers, tt.wantServicerCount)
+// 			require.Len(t, session.Suppliers, tt.wantSupplierCount)
 // 			require.Len(t, session.Fishermen, tt.wantFishermanCount)
 // 		})
 // 	}
@@ -387,29 +374,29 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	}
 // }
 
-// func TestSession_GetSession_ServicersAndFishermanEntropy(t *testing.T) {
-// 	// Prepare an environment with a lot of servicers and fishermen
-// 	numServicers := 1000
+// func TestSession_GetSession_SuppliersAndFishermanEntropy(t *testing.T) {
+// 	// Prepare an environment with a lot of suppliers and fishermen
+// 	numSuppliers := 1000
 // 	numFishermen := 1000 // make them equal for simplicity
-// 	numServicersPerSession := 10
+// 	numSuppliersPerSession := 10
 // 	numFishermenPerSession := 10 // make them equal for simplicity
 // 	numApplications := 3
 // 	numBlocksPerSession := 2 // expect a different every other height
 
 // 	// Determine probability of overlap using combinatorics
-// 	// numChoices = (numServicers) C (numServicersPerSession)
-// 	numChoices := combin.GeneralizedBinomial(float64(numServicers), float64(numServicersPerSession))
-// 	// numChoicesRemaining = (numServicers - numServicersPerSession) C (numServicersPerSession)
-// 	numChoicesRemaining := combin.GeneralizedBinomial(float64(numServicers-numServicersPerSession), float64(numServicersPerSession))
+// 	// numChoices = (numSuppliers) C (numSuppliersPerSession)
+// 	numChoices := combin.GeneralizedBinomial(float64(numSuppliers), float64(numSuppliersPerSession))
+// 	// numChoicesRemaining = (numSuppliers - numSuppliersPerSession) C (numSuppliersPerSession)
+// 	numChoicesRemaining := combin.GeneralizedBinomial(float64(numSuppliers-numSuppliersPerSession), float64(numSuppliersPerSession))
 // 	probabilityOfOverlap := (numChoices - numChoicesRemaining) / numChoices
 
 // 	// Prepare the environment
-// 	runtimeCfg, utilityMod, persistenceMod := prepareEnvironment(t, 5, numServicers, numApplications, numFishermen)
+// 	runtimeCfg, utilityMod, persistenceMod := prepareEnvironment(t, 5, numSuppliers, numApplications, numFishermen)
 
-// 	// Set the number of servicers and fishermen per session gov params
+// 	// Set the number of suppliers and fishermen per session gov params
 // 	writeCtx, err := persistenceMod.NewRWContext(1)
 // 	require.NoError(t, err)
-// 	err = writeCtx.SetParam(types.ServicersPerSessionParamName, numServicersPerSession)
+// 	err = writeCtx.SetParam(types.SuppliersPerSessionParamName, numSuppliersPerSession)
 // 	require.NoError(t, err)
 // 	err = writeCtx.SetParam(types.FishermanPerSessionParamName, numFishermenPerSession)
 // 	require.NoError(t, err)
@@ -419,7 +406,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	require.NoError(t, err)
 // 	writeCtx.Release()
 
-// 	// Keep the relay chain and geoZone static, but vary the app and height to verify that the servicers and fishermen vary
+// 	// Keep the relay chain and geoZone static, but vary the app and height to verify that the suppliers and fishermen vary
 // 	relayChain := test_artifacts.DefaultChains[0]
 // 	geoZone := "unused_geo"
 
@@ -430,10 +417,10 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	app3 := runtimeCfg.GetGenesis().Applications[2]
 
 // 	// Keep track of the actors from the session at the previous height to verify a delta
-// 	var app1PrevServicers, app2PrevServicers, app3PrevServicers []*coreTypes.Actor
+// 	var app1PrevSuppliers, app2PrevSuppliers, app3PrevSuppliers []*coreTypes.Actor
 // 	var app1PrevFishermen, app2PrevFishermen, app3PrevFishermen []*coreTypes.Actor
 
-// 	// The number of blocks to increase until we expect a different set of servicers and fishermen; see numBlocksPerSession
+// 	// The number of blocks to increase until we expect a different set of suppliers and fishermen; see numBlocksPerSession
 // 	numBlocksUntilChange := 0
 
 // 	// Commit new blocks for all the heights that failed above
@@ -445,10 +432,10 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 		session3, err := utilityMod.GetSession(app3.Address, height, relayChain, geoZone)
 // 		require.NoError(t, err)
 
-// 		// All the sessions have the same number of servicers
-// 		require.Len(t, session1.Servicers, numServicersPerSession)
-// 		require.Equal(t, len(session1.Servicers), len(session2.Servicers))
-// 		require.Equal(t, len(session1.Servicers), len(session3.Servicers))
+// 		// All the sessions have the same number of suppliers
+// 		require.Len(t, session1.Suppliers, numSuppliersPerSession)
+// 		require.Equal(t, len(session1.Suppliers), len(session2.Suppliers))
+// 		require.Equal(t, len(session1.Suppliers), len(session3.Suppliers))
 
 // 		// All the sessions have the same number of fishermen
 // 		require.Len(t, session1.Fishermen, numFishermenPerSession)
@@ -456,39 +443,39 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 		require.Equal(t, len(session1.Fishermen), len(session3.Fishermen))
 
 // 		// Assert different services between apps
-// 		assertActorsDifference(t, session1.Servicers, session2.Servicers, probabilityOfOverlap)
-// 		assertActorsDifference(t, session1.Servicers, session3.Servicers, probabilityOfOverlap)
+// 		assertActorsDifference(t, session1.Suppliers, session2.Suppliers, probabilityOfOverlap)
+// 		assertActorsDifference(t, session1.Suppliers, session3.Suppliers, probabilityOfOverlap)
 
 // 		// Assert different fishermen between apps
 // 		assertActorsDifference(t, session1.Fishermen, session2.Fishermen, probabilityOfOverlap)
 // 		assertActorsDifference(t, session1.Fishermen, session3.Fishermen, probabilityOfOverlap)
 
 // 		if numBlocksUntilChange == 0 {
-// 			// Assert different servicers between heights for the same app
-// 			assertActorsDifference(t, app1PrevServicers, session1.Servicers, probabilityOfOverlap)
-// 			assertActorsDifference(t, app2PrevServicers, session2.Servicers, probabilityOfOverlap)
-// 			assertActorsDifference(t, app3PrevServicers, session3.Servicers, probabilityOfOverlap)
+// 			// Assert different suppliers between heights for the same app
+// 			assertActorsDifference(t, app1PrevSuppliers, session1.Suppliers, probabilityOfOverlap)
+// 			assertActorsDifference(t, app2PrevSuppliers, session2.Suppliers, probabilityOfOverlap)
+// 			assertActorsDifference(t, app3PrevSuppliers, session3.Suppliers, probabilityOfOverlap)
 
 // 			// Assert different fishermen between heights for the same app
 // 			assertActorsDifference(t, app1PrevFishermen, session1.Fishermen, probabilityOfOverlap)
 // 			assertActorsDifference(t, app2PrevFishermen, session2.Fishermen, probabilityOfOverlap)
 // 			assertActorsDifference(t, app3PrevFishermen, session3.Fishermen, probabilityOfOverlap)
 
-// 			// Store the new servicers and fishermen for the next height
-// 			app1PrevServicers = session1.Servicers
-// 			app2PrevServicers = session2.Servicers
-// 			app3PrevServicers = session3.Servicers
+// 			// Store the new suppliers and fishermen for the next height
+// 			app1PrevSuppliers = session1.Suppliers
+// 			app2PrevSuppliers = session2.Suppliers
+// 			app3PrevSuppliers = session3.Suppliers
 // 			app1PrevFishermen = session1.Fishermen
 // 			app2PrevFishermen = session2.Fishermen
 // 			app3PrevFishermen = session3.Fishermen
 
-// 			// Reset the number of blocks until we expect a different set of servicers and fishermen
+// 			// Reset the number of blocks until we expect a different set of suppliers and fishermen
 // 			numBlocksUntilChange = numBlocksPerSession - 1
 // 		} else {
-// 			// Assert the same servicers between heights for the same app
-// 			require.ElementsMatch(t, app1PrevServicers, session1.Servicers)
-// 			require.ElementsMatch(t, app2PrevServicers, session2.Servicers)
-// 			require.ElementsMatch(t, app3PrevServicers, session3.Servicers)
+// 			// Assert the same suppliers between heights for the same app
+// 			require.ElementsMatch(t, app1PrevSuppliers, session1.Suppliers)
+// 			require.ElementsMatch(t, app2PrevSuppliers, session2.Suppliers)
+// 			require.ElementsMatch(t, app3PrevSuppliers, session3.Suppliers)
 
 // 			// Assert the same fishermen between heights for the same app
 // 			require.ElementsMatch(t, app1PrevFishermen, session1.Fishermen)
@@ -511,7 +498,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 // 	// TODO: What if an Application unbonds (unstaking period elapses) mid session?
 // }
 
-// func TestSession_GetSession_ServicersAndFishermenCounts_GeoZoneAvailability(t *testing.T) {
+// func TestSession_GetSession_SuppliersAndFishermenCounts_GeoZoneAvailability(t *testing.T) {
 // 	// TECHDEBT(#697): Once GeoZones are implemented, the tests need to be added as well
 // 	// Cases: Invalid, unused, non-existent, empty, insufficiently complete, etc...
 // }
