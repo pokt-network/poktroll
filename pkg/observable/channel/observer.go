@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// DISCUSS: what should this be? should it be configurable? It seems to be most
+	// TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
 	// relevant in the context of the behavior of the observable when it has multiple
 	// observers which consume at different rates.
 	// observerBufferSize is the buffer size of a channelObserver's channel.
@@ -31,15 +31,15 @@ type channelObserver[V any] struct {
 	// onUnsubscribe is called in Observer#Unsubscribe, removing the respective
 	// observer from observers in a concurrency-safe manner.
 	onUnsubscribe func(toRemove *channelObserver[V])
-	// observerMu protects the observerCh and closed fields.
+	// observerMu protects the observerCh and isClosed fields.
 	observerMu *sync.RWMutex
 	// observerCh is the channel that is used to emit values to the observer.
 	// I.e. on the "N" side of the 1:N relationship between observable and
 	// observer.
 	observerCh chan V
-	// closed indicates whether the observer has been closed. It's set in
-	// unsubscribe; closed observers can't be reused.
-	closed bool
+	// isClosed indicates whether the observer has been isClosed. It's set in
+	// unsubscribe; isClosed observers can't be reused.
+	isClosed bool
 }
 
 type UnsubscribeFunc[V any] func(toRemove *channelObserver[V])
@@ -68,18 +68,18 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 	return obsvr.observerCh
 }
 
-// unsubscribe closes the subscription channel, marks the observer as closed, and
+// unsubscribe closes the subscription channel, marks the observer as isClosed, and
 // removes the subscription from its observable's observers list via onUnsubscribe.
 func (obsvr *channelObserver[V]) unsubscribe() {
 	obsvr.observerMu.Lock()
 	defer obsvr.observerMu.Unlock()
 
-	if obsvr.closed {
+	if obsvr.isClosed {
 		return
 	}
 
 	close(obsvr.observerCh)
-	obsvr.closed = true
+	obsvr.isClosed = true
 	obsvr.onUnsubscribe(obsvr)
 }
 
@@ -91,15 +91,16 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 func (obsvr *channelObserver[V]) notify(value V) {
 	defer obsvr.observerMu.RUnlock()
 
-	// if observerCh is full, release the lock and try again every sendRetryInterval.
 	sendRetryTicker := time.NewTicker(sendRetryInterval / 2)
 	for {
 		// observerMu must remain read-locked until the value is sent on observerCh
+		// in the event that it would be isClosed concurrently (i.e. this observer
+		// unsubscribes), which could cause a "send on isClosed channel" error.
 		if !obsvr.observerMu.TryRLock() {
 			time.Sleep(sendRetryInterval / 2)
 			continue
 		}
-		if obsvr.closed {
+		if obsvr.isClosed {
 			return
 		}
 
@@ -109,15 +110,17 @@ func (obsvr *channelObserver[V]) notify(value V) {
 			return
 		case obsvr.observerCh <- value:
 			return
+		// if the context isn't done and channel is full (i.e. blocking),
+		// release the read-lock to give write-lockers a turn. This case
+		// continues the loop, re-read-locking and trying again.
 		case <-sendRetryTicker.C:
 			// CONSIDERATION: repurpose this retry loop into a default path which
-			// buffers values so that the producer doesn't block and other observers
+			// buffers values so that the publishCh doesn't block and other observers
 			// can still be notified.
 			// TECHDEBT: add some logic to drain the buffer at some appropriate time
 
-			// if the context isn't done and channel is full (i.e. blocking),
-			// release the read-lock to give writer-lockers a turn. This case
-			// continues the loop, re-read-locking and trying again.
+			// this case implies that the (read) lock was acquired, so it must
+			// be unlocked before continuing the send retry loop.
 			obsvr.observerMu.RUnlock()
 		}
 		time.Sleep(sendRetryInterval / 2)

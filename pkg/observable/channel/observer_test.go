@@ -24,14 +24,14 @@ func TestObserver_Unsubscribe(t *testing.T) {
 	}
 
 	// should initially be open
-	require.Equal(t, false, obsvr.closed)
+	require.Equal(t, false, obsvr.isClosed)
 
 	inputCh <- 1
-	require.Equal(t, false, obsvr.closed)
+	require.Equal(t, false, obsvr.isClosed)
 
 	obsvr.Unsubscribe()
-	// should be closed after `#Unsubscribe()`
-	require.Equal(t, true, obsvr.closed)
+	// should be isClosed after `#Unsubscribe()`
+	require.Equal(t, true, obsvr.isClosed)
 	require.True(t, onUnsubscribeCalled)
 }
 
@@ -51,7 +51,7 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 	}
 
 	// should initially be open
-	require.Equal(t, false, obsvr.closed)
+	require.Equal(t, false, obsvr.isClosed)
 
 	done := make(chan struct{}, 1)
 	go func() {
@@ -71,10 +71,10 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 	// wait a bit, then assert that the observer is still open
 	time.Sleep(50 * time.Millisecond)
 
-	require.Equal(t, false, obsvr.closed)
+	require.Equal(t, false, obsvr.isClosed)
 
 	obsvr.Unsubscribe()
-	// should be closed after `#Unsubscribe()`
-	require.Equal(t, true, obsvr.closed)
+	// should be isClosed after `#Unsubscribe()`
+	require.Equal(t, true, obsvr.isClosed)
 	require.True(t, onUnsubscribeCalled)
 }

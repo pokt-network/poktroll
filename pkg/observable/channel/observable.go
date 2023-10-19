@@ -2,9 +2,8 @@ package channel
 
 import (
 	"context"
-	"sync"
-
 	"pocket/pkg/observable"
+	"sync"
 )
 
 var _ observable.Observable[any] = &channelObservable[any]{}
@@ -13,23 +12,23 @@ var _ observable.Observable[any] = &channelObservable[any]{}
 type option[V any] func(obs *channelObservable[V])
 
 // channelObservable implements the observable.Observable interface and can be notified
-// via its corresponding producer channel.
+// via its corresponding publishCh channel.
 type channelObservable[V any] struct {
-	// producer is an observable-wide channel that is used to receive values
+	// publishCh is an observable-wide channel that is used to receive values
 	// which are subsequently re-sent to observers.
-	producer chan V
+	publishCh chan V
 	// observersMu protects observers from concurrent access/updates
 	observersMu *sync.RWMutex
-	// observers is a list of channelObservers that will be notified when producer
+	// observers is a list of channelObservers that will be notified when publishCh
 	// receives a value.
 	observers []*channelObserver[V]
 }
 
-// NewObservable creates a new observable is notified when the producer channel
+// NewObservable creates a new observable is notified when the publishCh channel
 // receives a value.
-// func NewObservable[V any](producer chan V) (observable.Observable[V], chan<- V) {
+// func NewObservable[V any](publishCh chan V) (observable.Observable[V], chan<- V) {
 func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
-	// initialize an observable that publishes messages from 1 producer to N observers
+	// initialize an observable that publishes messages from 1 publishCh to N observers
 	obs := &channelObservable[V]{
 		observersMu: &sync.RWMutex{},
 		observers:   []*channelObserver[V]{},
@@ -39,26 +38,26 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 		opt(obs)
 	}
 
-	// if the caller does not provide a producer, create a new one and return it
-	if obs.producer == nil {
-		obs.producer = make(chan V)
+	// if the caller does not provide a publishCh, create a new one and return it
+	if obs.publishCh == nil {
+		obs.publishCh = make(chan V)
 	}
 
-	// start listening to the producer and emit values to observers
-	go obs.goProduce(obs.producer)
+	// start listening to the publishCh and emit values to observers
+	go obs.goProduce(obs.publishCh)
 
-	return obs, obs.producer
+	return obs, obs.publishCh
 }
 
-// WithProducer returns an option function which sets the given producer of the
+// WithProducer returns an option function which sets the given publishCh of the
 // resulting observable when passed to NewObservable().
 func WithProducer[V any](producer chan V) option[V] {
 	return func(obs *channelObservable[V]) {
-		obs.producer = producer
+		obs.publishCh = producer
 	}
 }
 
-// Subscribe returns an observer which is notified when the producer channel
+// Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
 	// must lock observersMu so that we can safely append to the observers list
@@ -81,57 +80,69 @@ func (obsvbl *channelObservable[V]) Close() {
 	obsvbl.close()
 }
 
-// CONSIDERATION: decide whether this should close the producer channel; perhaps
+// TODO_CONSIDERATION: decide whether this should close the publishCh channel; perhaps
 // only if it was provided.
 func (obsvbl *channelObservable[V]) close() {
-	// must lock in order to copy the observers list
-	obsvbl.observersMu.Lock()
-	// copy observers to avoid holding the lock while unsubscribing them
-	var activeObservers = make([]*channelObserver[V], len(obsvbl.observers))
-	for idx, toClose := range obsvbl.observers {
-		activeObservers[idx] = toClose
-	}
-	// unlock before unsubscribing to avoid deadlock
-	obsvbl.observersMu.Unlock()
+	// Copy currentObservers to avoid holding the lock while unsubscribing them.
+	// The current observers at this time is the canonical set of observers which
+	// will be unsubscribed.
+	// New or existing Observers may (un)subscribe while the observable is closing.
+	// Any such observers won't be isClosed but will also stop receiving notifications
+	// immediately (if they receive any at all).
+	currentObservers := obsvbl.copyObservers()
 
-	for _, observer := range activeObservers {
+	for _, observer := range currentObservers {
 		observer.Unsubscribe()
 	}
 
-	// clear observers
+	// Reset observers to an empty list. This purges any observers which might have
+	// subscribed while the observable was closing.
 	obsvbl.observersMu.Lock()
 	obsvbl.observers = []*channelObserver[V]{}
 	obsvbl.observersMu.Unlock()
 }
 
-// goProduce to the producer and notify observers when values are received. This
+// goProduce to the publishCh and notify observers when values are received. This
 // function is blocking and should be run in a goroutine.
-func (obsvbl *channelObservable[V]) goProduce(producer <-chan V) {
-	var observers []*channelObserver[V]
-	for notification := range producer {
-		for {
-			if !obsvbl.observersMu.TryRLock() {
-				continue
-			}
-			observers = make([]*channelObserver[V], len(obsvbl.observers))
-			for i, obsvr := range obsvbl.observers {
-				observers[i] = obsvr
-			}
-			obsvbl.observersMu.RUnlock()
-			break
-		}
+func (obsvbl *channelObservable[V]) goProduce(publisher <-chan V) {
+	for notification := range publisher {
+		// Copy currentObservers to avoid holding the lock while notifying them.
+		// New or existing Observers may (un)subscribe while this notification
+		// is being fanned out to the "current" set  of currentObservers.
+		// The state of currentObservers at this time is the canonical set of currentObservers
+		// which receive this notification.
+		currentObservers := obsvbl.copyObservers()
 
-		// notify observers
-		for _, obsvr := range observers {
-			// CONSIDERATION: perhaps continue trying to avoid making this
+		// notify currentObservers
+		for _, obsvr := range currentObservers {
+			// TODO_CONSIDERATION: perhaps continue trying to avoid making this
 			// notification async as it would effectively use goroutines
-			// in memory as a buffer (with little control surface).
+			// in memory as a buffer (unbounded).
 			obsvr.notify(notification)
 		}
 	}
 
-	// Here we know that the producer has been closed, all observers should be closed as well
+	// Here we know that the publishCh has been isClosed, all currentObservers should be isClosed as well
 	obsvbl.close()
+}
+
+func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserver[V]) {
+	defer obsvbl.observersMu.RUnlock()
+
+	// This loop blocks on acquiring a read lock on observersMu. If TryRLock
+	// fails, the loop continues until it succeeds. This is intended to give
+	// callers a guarantee that this copy operation won't contribute to a deadlock.
+	for {
+		// block until a read lock can be acquired
+		if obsvbl.observersMu.TryRLock() {
+			break
+		}
+	}
+
+	observers = make([]*channelObserver[V], len(obsvbl.observers))
+	copy(observers, obsvbl.observers)
+
+	return observers
 }
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is.

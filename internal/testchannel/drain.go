@@ -2,6 +2,7 @@ package testchannel
 
 import (
 	"errors"
+	"time"
 )
 
 var errChanNotClosed = errors.New("channel is not closed")
@@ -15,11 +16,11 @@ func DrainChannel[V any](ch <-chan V) error {
 	for {
 		select {
 		case _, ok := <-ch:
-			if !ok {
-				return nil
+			if ok {
+				continue
 			}
-			continue
-		default:
+			return nil
+		case <-time.After(time.Millisecond):
 			return errChanNotClosed
 		}
 	}

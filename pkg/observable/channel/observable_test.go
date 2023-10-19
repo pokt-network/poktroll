@@ -24,62 +24,62 @@ const (
 func TestChannelObservable_NotifyObservers(t *testing.T) {
 	type test struct {
 		name            string
-		producer        chan *int
+		publishCh       chan *int
 		inputs          []int
 		expectedOutputs []int
 		setupFn         func(t test)
 	}
 
 	inputs := []int{123, 456, 789}
+	fullBufferedPublisher := make(chan *int, 1)
 	// NB: see INCOMPLETE comment below
-	// fullBlockingProducer := make(chan *int)
-	// fullBufferedProducer := make(chan *int, 1)
+	//fullBlockingPublisher := make(chan *int)
 
 	tests := []test{
 		{
-			name:            "nil producer",
-			producer:        nil,
+			name:            "nil publisher",
+			publishCh:       nil,
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
-			name:            "empty non-buffered producer",
-			producer:        make(chan *int),
+			name:            "empty non-buffered publisher",
+			publishCh:       make(chan *int),
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
 		{
-			name:            "empty buffered len 1 producer",
-			producer:        make(chan *int, 1),
+			name:            "empty buffered len 1 publisher",
+			publishCh:       make(chan *int, 1),
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
-		// INCOMPLETE: producer channels which are full are proving harder to test
+		{
+			name:            "full buffered len 1 publisher",
+			publishCh:       fullBufferedPublisher,
+			inputs:          inputs[1:],
+			expectedOutputs: inputs,
+			setupFn: func(t test) {
+				// non-blocking send
+				t.publishCh <- &inputs[0]
+			},
+		},
+		// INCOMPLETE: publisher channels which are full are proving harder to test
 		// robustly (no flakiness); perhaps it has to do with the lack of some
 		// kind of guarantee about the receiver order on the consumer side.
 		//
 		// The following scenarios should generally pass but are flaky:
 		//
 		// {
-		// 	name:            "full non-buffered producer",
-		// 	producer:        fullBlockingProducer,
+		// 	name:            "full non-buffered publisher",
+		// 	publishCh:       fullBlockingPublisher,
 		// 	inputs:          inputs[1:],
 		// 	expectedOutputs: inputs,
 		// 	setupFn: func(t test) {
 		// 		go func() {
 		// 			// blocking send
-		// 			t.producer <- &inputs[0]
+		// 			t.publishCh <- &inputs[0]
 		// 		}()
-		// 	},
-		// },
-		// {
-		// 	name:            "full buffered len 1 producer",
-		// 	producer:        fullBufferedProducer,
-		// 	inputs:          inputs[1:],
-		// 	expectedOutputs: inputs,
-		// 	setupFn: func(t test) {
-		// 		// non-blocking send
-		// 		t.producer <- &inputs[0]
 		// 	},
 		// },
 	}
@@ -94,7 +94,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			t.Cleanup(cancel)
 
 			obsvbl, producer := channel.NewObservable[*int](
-				channel.WithProducer(tt.producer),
+				channel.WithProducer(tt.publishCh),
 			)
 			require.NotNil(t, obsvbl)
 			require.NotNil(t, producer)
@@ -156,7 +156,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			for _, observer := range observers {
 				observer.Unsubscribe()
 
-				// must drain the channel first to ensure it is closed
+				// must drain the channel first to ensure it is isClosed
 				err := testchannel.DrainChannel(observer.Ch())
 				require.NoError(t, err)
 			}
@@ -320,9 +320,9 @@ func TestChannelObservable_SequentialProductionAndUnsubscription(t *testing.T) {
 	}
 }
 
-// TECHDEBT/INCOMPLETE: add coverage for active observers closing when producer closes.
+// TECHDEBT/INCOMPLETE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnProducerClose(t *testing.T) {
-	t.Skip("add coverage: all observers should close when producer closes")
+	t.Skip("add coverage: all observers should close when publishCh closes")
 }
 
 func produceWithDelay[V any](producer chan<- V, delay time.Duration) func(value V) {
