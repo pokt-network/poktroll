@@ -50,5 +50,8 @@ ts-client/
 .tool-versions
 
 # Proto artifacts
-*/*.pb.go
-*/*.pb.gw.go
+**/*.pb.go
+**/*.pb.gw.go
+
+# Mock
+**/*_mock.go

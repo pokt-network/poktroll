@@ -3,10 +3,13 @@ package types
 // DONTCOVER
 
 import (
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkerrors "cosmossdk.io/errors"
 )
 
 // x/application module sentinel errors
 var (
-	ErrSample = sdkerrors.Register(ModuleName, 1100, "sample error")
+	ErrAppInvalidStake   = sdkerrors.Register(ModuleName, 1, "invalid application stake")
+	ErrAppInvalidAddress = sdkerrors.Register(ModuleName, 2, "invalid application address")
+	ErrAppUnauthorized   = sdkerrors.Register(ModuleName, 3, "unauthorized application signer")
+	ErrAppNotFound       = sdkerrors.Register(ModuleName, 4, "application not found")
 )

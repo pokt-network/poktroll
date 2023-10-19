@@ -3,8 +3,8 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
 	"pocket/testutil/sample"
 )
 
@@ -21,7 +21,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrSample,
 		}, {
 			name: "valid address",
 			msg: MsgCreateClaim{

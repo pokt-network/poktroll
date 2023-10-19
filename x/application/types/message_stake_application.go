@@ -1,17 +1,23 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	types "github.com/cosmos/cosmos-sdk/types"
 )
 
 const TypeMsgStakeApplication = "stake_application"
 
 var _ sdk.Msg = &MsgStakeApplication{}
 
-func NewMsgStakeApplication(address string) *MsgStakeApplication {
+func NewMsgStakeApplication(
+	address string,
+	stake types.Coin,
+
+) *MsgStakeApplication {
 	return &MsgStakeApplication{
 		Address: address,
+		Stake:   &stake,
 	}
 }
 
@@ -37,9 +43,29 @@ func (msg *MsgStakeApplication) GetSignBytes() []byte {
 }
 
 func (msg *MsgStakeApplication) ValidateBasic() error {
+	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address address (%s)", err)
+		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.Address, err)
 	}
+
+	// Validate the stake amount
+	if msg.Stake == nil {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "nil application stake; (%v)", err)
+	}
+	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
+	if !stake.IsValid() {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid application stake %v; (%v)", msg.Stake, stake.Validate())
+	}
+	if err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "cannot parse application stake %v; (%v)", msg.Stake, err)
+	}
+	if stake.IsZero() || stake.IsNegative() {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
+	}
+	if stake.Denom != "upokt" {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
+	}
+
 	return nil
 }
