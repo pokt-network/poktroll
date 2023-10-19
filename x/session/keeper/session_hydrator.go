@@ -8,8 +8,6 @@ import (
 	"math/rand"
 
 	sdkerrors "cosmossdk.io/errors"
-	"github.com/cometbft/cometbft/libs/log"
-	cmtlogger "github.com/cometbft/cometbft/libs/log"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
@@ -26,8 +24,6 @@ const (
 )
 
 type sessionHydrator struct {
-	logger log.Logger
-
 	// The session header that is used to hydrate the reset of the session data
 	sessionHeader *types.SessionHeader
 
@@ -39,74 +35,57 @@ type sessionHydrator struct {
 
 	// A redundant helper that maintains a hex decoded copy of `session.Id` used for session hydration
 	sessionIdBz []byte
-
-	// keeper & context related params
-	k   *Keeper
-	ctx *sdk.Context
 }
 
 func NewSessionHydrator(
-	logger cmtlogger.Logger,
 	appAddress string,
-	serviceId *sharedtypes.ServiceId,
+	serviceId string,
 	blockHeight int64,
-	k Keeper,
-	ctx sdk.Context,
 ) *sessionHydrator {
-	shLogger := logger.With("method", "NewSessionHydrator").
-		With("appAddr", appAddress).
-		With("serviceId.Id", serviceId.Id).
-		With("blockHeight", blockHeight)
 
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
-		ServiceId: &sharedtypes.ServiceId{
-			Id:   serviceId.Id,
-			Name: serviceId.Name,
-		},
+		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
 	}
 
 	return &sessionHydrator{
-		logger:        shLogger,
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
 		blockHeight:   blockHeight,
 		sessionIdBz:   make([]byte, 0),
-		k:             &k,
-		ctx:           &ctx,
 	}
 }
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-func (sh *sessionHydrator) hydrateSession() (*types.Session, error) {
-	sh.logger.Info("About to start hydrating the session")
+func (k Keeper) hydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
+	logger := k.Logger(ctx).With("method", "hydrateSession")
 
-	if err := sh.hydrateSessionMetadata(); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate session metadata: %v", err)
+	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate the session metadata: %v", err)
 	}
-	sh.logger.Debug("Finished hydrating session metadata")
+	logger.Debug("Finished hydrating session metadata")
 
-	if err := sh.hydrateSessionID(); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate session ID: %v", err)
+	if err := k.hydrateSessionID(ctx, sh); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate the session ID: %v", err)
 	}
-	sh.logger.Info("Finished hydrating session ID: %s", sh.sessionHeader.SessionId)
+	logger.Info("Finished hydrating session ID: %s", sh.sessionHeader.SessionId)
 
-	if err := sh.hydrateSessionApplication(); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate session application: %v", err)
+	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate application for session: %v", err)
 	}
-	sh.logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
+	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
 
-	if err := sh.hydrateSessionSuppliers(); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate session suppliers: %v", err)
+	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
+		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate suppliers for session: %v", err)
 	}
-	sh.logger.Debug("Finished hydrating session suppliers: %+v")
+	logger.Debug("Finished hydrating session suppliers: %+v")
 
 	return sh.session, nil
 }
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
-func (sh *sessionHydrator) hydrateSessionMetadata() error {
+func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
 	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession)
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
@@ -114,9 +93,9 @@ func (sh *sessionHydrator) hydrateSessionMetadata() error {
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
-func (sh *sessionHydrator) hydrateSessionID() error {
+func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	// TECHDEBT(@Olshansk): Need to retrieve the block hash at SessionStartBlockHeight, NOT THE CURRENT ONE
-	prevHashBz := sh.ctx.HeaderHash()
+	prevHashBz := ctx.HeaderHash()
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
 	sessionHeightBz := make([]byte, 8)
@@ -129,8 +108,8 @@ func (sh *sessionHydrator) hydrateSessionID() error {
 }
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
-func (sh *sessionHydrator) hydrateSessionApplication() error {
-	app, appIsFound := sh.k.appKeeper.GetApplication(*sh.ctx, sh.sessionHeader.ApplicationAddress)
+func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
+	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
 		return sdkerrors.Wrapf(types.ErrHydratingSession, "failed to find session application")
 	}
@@ -139,10 +118,12 @@ func (sh *sessionHydrator) hydrateSessionApplication() error {
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
-func (sh *sessionHydrator) hydrateSessionSuppliers() error {
+func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
+	logger := k.Logger(ctx).With("method", "hydrateSessionSuppliers")
+
 	// TECHDEBT(@Olshansk): Need to retrieve the suppliers at SessionStartBlockHeight, NOT THE CURRENT ONE
 	// retrieve the suppliers at the current block height
-	suppliers := sh.k.supplierKeeper.GetAllSupplier(*sh.ctx)
+	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, supplier := range suppliers {
@@ -156,7 +137,7 @@ func (sh *sessionHydrator) hydrateSessionSuppliers() error {
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		sh.logger.Info("number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
+		logger.Info("number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
 		sh.session.Suppliers = candidateSuppliers
 	} else {
 		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)

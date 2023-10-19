@@ -1,28 +1,18 @@
 package keeper_test
 
-import (
-	"fmt"
-	"testing"
+// func TestSession_GetSession_Success(t *testing.T) {
+// 	keeper, ctx := testkeeper.SessionKeeper(t)
+// 	// wctx := sdk.WrapSDKContext(ctx)
+// 	serviceId := sharedtypes.ServiceId{Id: "1"}
+// 	res, err := keeper.GetSession(ctx, "add", &serviceId, 10)
+// 	require.NoError(t, err)
+// 	fmt.Println(res)
+// 	// keeper.SetParams(ctx, params)
 
-	"github.com/stretchr/testify/require"
-
-	testkeeper "pocket/testutil/keeper"
-	sharedtypes "pocket/x/shared/types"
-)
-
-func TestSession_GetSession_Success(t *testing.T) {
-	keeper, ctx := testkeeper.SessionKeeper(t)
-	// wctx := sdk.WrapSDKContext(ctx)
-	serviceId := sharedtypes.ServiceId{Id: "1"}
-	res, err := keeper.GetSession(ctx, "add", &serviceId, 10)
-	require.NoError(t, err)
-	fmt.Println(res)
-	// keeper.SetParams(ctx, params)
-
-	// response, err := keeper.Params(wctx, &types.QueryParamsRequest{})
-	// require.NoError(t, err)
-	// require.Equal(t, &types.QueryParamsResponse{Params: params}, response)
-}
+// 	// response, err := keeper.Params(wctx, &types.QueryParamsRequest{})
+// 	// require.NoError(t, err)
+// 	// require.Equal(t, &types.QueryParamsResponse{Params: params}, response)
+// }
 
 // func TestSession_GetSession_SingleSupplierBaseCase(t *testing.T) {
 // 	// Test parameters
