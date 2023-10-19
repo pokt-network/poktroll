@@ -102,13 +102,12 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 func (obsvr *channelObserver[V]) notify(value V) {
 	defer obsvr.observerMu.RUnlock() // defer releasing a read lock
 
-	sendRetryTicker := time.NewTicker(sendRetryInterval / 2)
+	sendRetryTicker := time.NewTicker(sendRetryInterval)
 	for {
 		// observerMu must remain read-locked until the value is sent on observerCh
 		// in the event that it would be isClosed concurrently (i.e. this observer
 		// unsubscribes), which could cause a "send on isClosed channel" error.
 		if !obsvr.observerMu.TryRLock() {
-			time.Sleep(sendRetryInterval / 2)
 			continue
 		}
 		if obsvr.isClosed {
@@ -135,6 +134,5 @@ func (obsvr *channelObserver[V]) notify(value V) {
 			// be unlocked before continuing the send retry loop.
 			obsvr.observerMu.RUnlock()
 		}
-		time.Sleep(sendRetryInterval / 2)
 	}
 }

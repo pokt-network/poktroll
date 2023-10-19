@@ -330,9 +330,11 @@ func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
 
 func delayedPublishFactory[V any](publishCh chan<- V, delay time.Duration) func(value V) {
 	return func(value V) {
-		time.Sleep(delay / 2)
 		publishCh <- value
-		time.Sleep(delay / 2)
+		// simulate IO delay in sequential message publishing
+		// NB: this make the test code safer as concurrent operations have more
+		// time to react; i.e. interact with the test harness.
+		time.Sleep(delay)
 	}
 }
 
