@@ -7,6 +7,8 @@ import (
 	"pocket/pkg/observable"
 )
 
+// NOTE: this file does not contain any tests, only test helpers.
+
 // observation is a data structure that embeds an observer
 // and keeps track of the received notifications.
 // It uses generics with type parameter V.
