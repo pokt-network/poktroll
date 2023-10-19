@@ -8,5 +8,5 @@ import (
 
 // x/session module sentinel errors
 var (
-	ErrSample = sdkerrors.Register(ModuleName, 1100, "sample error")
+	ErrHydratingSession = sdkerrors.Register(ModuleName, 1, "error during session hydration")
 )

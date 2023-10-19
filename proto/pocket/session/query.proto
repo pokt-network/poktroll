@@ -3,7 +3,6 @@ package pocket.session;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/session/params.proto";
 
 option go_package = "pocket/x/session/types";

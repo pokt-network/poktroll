@@ -16,16 +16,18 @@ message ServiceId {
 
 // SupplierServiceConfig holds the service configuration the application stakes for
 message ApplicationServiceConfig {
-    ServiceId id = 1; // Unique and semantic identifier for the service
-    // TODO_RESEARCH: There is an opportunity for applications to advertise what kind of configurations (and price)
-    // they want, but it is out of scope for the MVP.
+    repeated ServiceId service_id = 1; // Unique and semantic identifier for the service
+    // TODO_RESEARCH: There is an opportunity for applications to advertise the max
+    // they're willing to pay for a certain configuration/price, but this is outside of scope.
     // repeated RPCConfig rpc_configs = 2; // List of endpoints for the service
 }
 
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 message SupplierServiceConfig {
-    ServiceId id = 1; // Unique and semantic identifier for the service
+    ServiceId service_id = 1; // Unique and semantic identifier for the service
     repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
+    // TODO_RESEARCH: There is an opportunity for supplier to advertise the min
+    // they're willing to earn for a certain configuration/price, but this is outside of scope.
 }
 
 // Endpoint message to hold service configuration details
