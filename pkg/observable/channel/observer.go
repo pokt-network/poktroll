@@ -117,10 +117,10 @@ func (obsvr *channelObserver[V]) notify(value V) {
 		// release the read-lock to give write-lockers a turn. This case
 		// continues the loop, re-read-locking and trying again.
 		case <-sendRetryTicker.C:
-			// CONSIDERATION: repurpose this retry loop into a default path which
+			// TODO_CONSIDERATION: repurpose this retry loop into a default path which
 			// buffers values so that the publishCh doesn't block and other observers
 			// can still be notified.
-			// TECHDEBT: add some logic to drain the buffer at some appropriate time
+			// TODO_TECHDEBT: add some logic to periodically drain the buffer at some appropriate time
 
 			// this case implies that the (read) lock was acquired, so it must
 			// be unlocked before continuing the send retry loop.
