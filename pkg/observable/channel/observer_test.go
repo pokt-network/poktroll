@@ -63,7 +63,6 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 			}
 
 			obsvr.notify(inputIdx)
-			//time.Sleep(50 * time.Millisecond)
 		}
 	}()
 	t.Cleanup(func() { done <- struct{}{} })
