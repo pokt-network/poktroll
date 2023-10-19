@@ -2,16 +2,20 @@ package network
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
+	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
 	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,6 +23,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"pocket/app"
+	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
+	app_types "pocket/x/application/types"
+	gateway_types "pocket/x/gateway/types"
 )
 
 type (
@@ -89,4 +97,54 @@ func DefaultConfig() network.Config {
 		SigningAlgo:     string(hd.Secp256k1Type),
 		KeyringOptions:  []keyring.Option{},
 	}
+}
+
+// DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
+// It returns the populated GenesisState object.
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
+	t.Helper()
+	state := app_types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
+		application := app_types.Application{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+		}
+		nullify.Fill(&application)
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+// DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
+// It returns the populated GenesisState object.
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.GenesisState {
+	t.Helper()
+	state := gateway_types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
+		gateway := gateway_types.Gateway{
+			Address: strconv.Itoa(i),
+			Stake:   &stake,
+		}
+		nullify.Fill(&gateway)
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
+// Initialize an Account by sending it some funds from the validator in the network to the address provided
+func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	_, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
+	require.NoError(t, err)
 }

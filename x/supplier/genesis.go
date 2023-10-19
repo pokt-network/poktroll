@@ -2,6 +2,7 @@ package supplier
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"pocket/x/supplier/keeper"
 	"pocket/x/supplier/types"
 )
@@ -9,8 +10,8 @@ import (
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the supplier
-	for _, elem := range genState.SupplierList {
-		k.SetSupplier(ctx, elem)
+	for _, supplier := range genState.SupplierList {
+		k.SetSupplier(ctx, supplier)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)

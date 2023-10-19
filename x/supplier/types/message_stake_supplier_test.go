@@ -3,8 +3,8 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
+
 	"pocket/testutil/sample"
 )
 
@@ -19,7 +19,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrSample,
 		}, {
 			name: "valid address",
 			msg: MsgStakeSupplier{
