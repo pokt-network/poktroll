@@ -1,7 +1,39 @@
 load('ext://restart_process', 'docker_build_with_restart')
+load('ext://helm_resource', "helm_resource", 'helm_repo')
 
 # A list of directories where changes trigger a hot-reload of the sequencer
 hot_reload_dirs = ['app', 'cmd', 'tools', 'x']
+
+# Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
+localnet_config_path = "localnet_config.yaml"
+localnet_config_defaults = {
+    "relayers": {"count": 1},
+    "gateways": {"count": 1},
+   # By default, we use the `helm_repo` function below to point to the remote repository
+   # but can update it to the locally cloned repo for testing & development
+    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+}
+localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
+localnet_config = {}
+localnet_config.update(localnet_config_defaults)
+localnet_config.update(localnet_config_file)
+if (localnet_config_file != localnet_config) or (
+    not os.path.exists(localnet_config_path)
+):
+    print("Updating " + localnet_config_path + " with defaults")
+    local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
+
+# Configure helm chart reference. If using a local repo, set the path to the local repo; otherwise, use our own helm repo.
+helm_repo("pokt-network", "https://pokt-network.github.io/helm-charts/")
+sequencer_chart = "pokt-network/poktroll-sequencer"
+poktroll_chart = "pokt-network/poktroll"
+if localnet_config["helm_chart_local_repo"]["enabled"]:
+    helm_chart_local_repo = localnet_config["helm_chart_local_repo"]["path"]
+    hot_reload_dirs.append(helm_chart_local_repo)
+    print("Using local helm chart repo " + helm_chart_local_repo)
+
+    sequencer_chart = helm_chart_local_repo + "/charts/poktroll-sequencer"
+    poktroll_chart = helm_chart_local_repo + "/charts/poktroll"
 
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
@@ -51,11 +83,15 @@ WORKDIR /
     live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
 )
 
-# Run pocketd, relayer, celestia and anvil nodes
-k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/pocketd.yaml', 'localnet/kubernetes/pocketd-relayer.yaml', 'localnet/kubernetes/anvil.yaml'])
+# Run celestia and anvil nodes
+k8s_yaml(['localnet/kubernetes/celestia-rollkit.yaml', 'localnet/kubernetes/anvil.yaml'])
+
+# Run pocket-specific nodes (sequencer, relayers, etc...)
+helm_resource("sequencer", sequencer_chart, flags=['--values=./localnet/kubernetes/values-common.yaml'], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
+helm_resource("relayers", poktroll_chart, flags=['--values=./localnet/kubernetes/values-common.yaml', '--set=replicaCount=' + str(localnet_config["relayers"]["count"])], image_deps=["pocketd"], image_keys=[('image.repository', 'image.tag')])
 
 # Configure tilt resources (tilt labels and port forawards) for all of the nodes above
 k8s_resource('celestia-rollkit', labels=["blockchains"], port_forwards=['26657', '26658', '26659'])
-k8s_resource('pocketd', labels=["blockchains"], resource_deps=['celestia-rollkit'], port_forwards=['36657', '40004'])
-k8s_resource('pocketd-relayer', labels=["blockchains"], resource_deps=['pocketd'], port_forwards=['8545', '8546', '40005'])
+k8s_resource('sequencer', labels=["blockchains"], resource_deps=['celestia-rollkit'], port_forwards=['36657', '40004'])
+k8s_resource('relayers', labels=["blockchains"], resource_deps=['sequencer'], port_forwards=['8545', '8546', '40005'])
 k8s_resource('anvil', labels=["blockchains"], port_forwards=['8547'])
