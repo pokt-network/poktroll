@@ -1,7 +1,7 @@
 package types
 
 import (
-	"cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 )
@@ -42,25 +42,25 @@ func (msg *MsgStakeGateway) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		return errors.Wrapf(ErrGatewayInvalidAddress, "invalid gateway address %s; (%v)", msg.Address, err)
+		return sdkerrors.Wrapf(ErrGatewayInvalidAddress, "invalid gateway address %s; (%v)", msg.Address, err)
 	}
 
 	// Validate the stake amount
 	if msg.Stake == nil {
-		return errors.Wrapf(ErrGatewayInvalidStake, "nil gateway stake; (%v)", err)
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "nil gateway stake; (%v)", err)
 	}
-	stakeAmount, err := sdk.ParseCoinNormalized(msg.Stake.String())
-	if !stakeAmount.IsValid() {
-		return errors.Wrapf(ErrGatewayInvalidStake, "invalid gateway stake %v; (%v)", msg.Stake, stakeAmount.Validate())
+	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
+	if !stake.IsValid() {
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid gateway stake %v; (%v)", msg.Stake, stake.Validate())
 	}
 	if err != nil {
-		return errors.Wrapf(ErrGatewayInvalidStake, "cannot parse gateway stake %v; (%v)", msg.Stake, err)
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "cannot parse gateway stake %v; (%v)", msg.Stake, err)
 	}
-	if stakeAmount.IsZero() || stakeAmount.IsNegative() {
-		return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", msg.Stake)
+	if stake.IsZero() || stake.IsNegative() {
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", msg.Stake)
 	}
-	if stakeAmount.Denom != "upokt" {
-		return errors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", msg.Stake)
+	if stake.Denom != "upokt" {
+		return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", msg.Stake)
 	}
 	return nil
 }

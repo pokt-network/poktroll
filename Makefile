@@ -8,6 +8,7 @@ POCKET_ADDR_PREFIX = pokt
 ### Dependencies ###
 ####################
 
+# TODO: Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
@@ -98,7 +99,7 @@ localnet_down: ## Delete resources created by localnet
 .PHONY: localnet_regenesis
 localnet_regenesis: ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-	ignite chain init --skip-proto
+	ignite chain init
 	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
@@ -190,19 +191,35 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(gateway) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
-	gateway=gateway1 make gateway_stake
+	GATEWAY=gateway1 make gateway_stake
 
 .PHONY: gateway2_stake
 gateway2_stake: ## Stake gateway2
-	gateway=gateway2 make gateway_stake
+	GATEWAY=gateway2 make gateway_stake
 
 .PHONY: gateway3_stake
 gateway3_stake: ## Stake gateway3
-	gateway=gateway3 make gateway_stake
+	GATEWAY=gateway3 make gateway_stake
+
+.PHONY: gateway_unstake
+gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
+	pocketd --home=$(POCKETD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+
+.PHONY: gateway1_unstake
+gateway1_unstake: ## Unstake gateway1
+	GATEWAY=gateway1 make gateway_unstake
+
+.PHONY: gateway2_unstake
+gateway2_unstake: ## Unstake gateway2
+	GATEWAY=gateway2 make gateway_unstake
+
+.PHONY: gateway3_unstake
+gateway3_unstake: ## Unstake gateway3
+	GATEWAY=gateway3 make gateway_unstake
 
 ####################
 ### Applications ###
@@ -227,6 +244,22 @@ app2_stake: ## Stake app2
 .PHONY: app3_stake
 app3_stake: ## Stake app3
 	APP=app3 make app_stake
+
+.PHONY: app_unstake
+app_unstake: ## Unstake an application (must specify the APP env var)
+	pocketd --home=$(POCKETD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_unstake
+app1_unstake: ## Unstake app1
+	APP=app1 make app_unstake
+
+.PHONY: app2_unstake
+app2_unstake: ## Unstake app2
+	APP=app2 make app_unstake
+
+.PHONY: app3_unstake
+app3_unstake: ## Unstake app3
+	APP=app3 make app_unstake
 
 ################
 ### Accounts ###
