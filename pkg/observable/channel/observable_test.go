@@ -38,7 +38,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 	tests := []test{
 		{
-			name:            "nil publisher",
+			name:            "nil publisher (default buffer size)",
 			publishCh:       nil,
 			inputs:          inputs,
 			expectedOutputs: inputs,
@@ -55,7 +55,13 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
-		// TODO_INCOMPLETE: publisher channels which are full are proving harder to test
+		{
+			name:            "empty buffered len 1000 publisher",
+			publishCh:       make(chan int, 1000),
+			inputs:          inputs,
+			expectedOutputs: inputs,
+		},
+		// TODO_INCOMPLETE(#81): publisher channels which are full are proving harder to test
 		// robustly (no flakiness); perhaps it has to do with the lack of some
 		// kind of guarantee about the receiver order on the consumer side.
 		//
@@ -156,7 +162,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			err := group.Wait()
 			require.NoError(t, err)
 
-			// unsubscribing should unsubscribeAll obsvr channel(s)
+			// unsubscribing should close observer channel(s)
 			for _, observer := range observers {
 				observer.Unsubscribe()
 
@@ -205,6 +211,8 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 			},
 		},
 		{
+			// NOTE: this will log a warning that can be ignored:
+			// >  redundant unsubscribe: observer is closed
 			name: "cancel then unsubscribe",
 			lifecycleFn: func() observable.Observer[int] {
 				observer := obsvbl.Subscribe(ctx)
@@ -215,6 +223,8 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 			},
 		},
 		{
+			// NOTE: this will log a warning that can be ignored:
+			// >  redundant unsubscribe: observer is closed
 			name: "unsubscribe then cancel",
 			lifecycleFn: func() observable.Observer[int] {
 				observer := obsvbl.Subscribe(ctx)
