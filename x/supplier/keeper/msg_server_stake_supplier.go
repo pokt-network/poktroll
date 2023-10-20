@@ -25,9 +25,7 @@ func (k msgServer) StakeSupplier(
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 	if !isSupplierFound {
 		logger.Info("Supplier not found. Creating new supplier for address %s", msg.Address)
-		if err = k.createSupplier(ctx, &supplier, msg); err != nil {
-			return nil, err
-		}
+		supplier = k.createSupplier(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
 		logger.Info("Supplier found. Updating supplier for address %s", msg.Address)
