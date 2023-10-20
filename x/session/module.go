@@ -14,7 +14,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	appkeeper "pocket/x/application/keeper"
 	"pocket/x/session/client/cli"
 	"pocket/x/session/keeper"
 	"pocket/x/session/types"

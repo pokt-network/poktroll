@@ -42,12 +42,10 @@ func NewSessionHydrator(
 	serviceId string,
 	blockHeight int64,
 ) *sessionHydrator {
-
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
 		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
 	}
-
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
@@ -58,7 +56,7 @@ func NewSessionHydrator(
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-func (k Keeper) hydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
+func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger(ctx).With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {

@@ -1,5 +1,25 @@
 package keeper_test
 
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	keepertest "pocket/testutil/keeper"
+	"pocket/x/session/keeper"
+)
+
+func TestSession_HydrateSession_Success(t *testing.T) {
+	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	blockHeight := int64(1)
+
+	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestAppAddress, keepertest.TestServiceId, blockHeight)
+
+	session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
+	require.NoError(t, err)
+	require.Equal(t, keepertest.TestAppAddress, session.Application.Address)
+}
+
 // func TestSession_GetSession_Success(t *testing.T) {
 // 	keeper, ctx := testkeeper.SessionKeeper(t)
 // 	// wctx := sdk.WrapSDKContext(ctx)

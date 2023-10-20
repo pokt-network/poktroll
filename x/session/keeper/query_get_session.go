@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -18,12 +17,13 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId, req.BlockHeight)
-
-	session, err := k.hydrateSession(ctx, sessionHydrator)
+	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(session)
-	return nil, nil
+	res := &types.QueryGetSessionResponse{
+		Session: session,
+	}
+	return res, nil
 }
