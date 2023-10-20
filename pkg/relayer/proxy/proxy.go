@@ -10,14 +10,13 @@ import (
 	blocktypes "pocket/pkg/client"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
-	"pocket/pkg/relayerproxy"
 	"pocket/x/service/types"
 	sessiontypes "pocket/x/session/types"
 	suppliertypes "pocket/x/supplier/types"
 )
 
 var (
-	_ relayerproxy.RelayerProxy = &relayerProxy{}
+	_ RelayerProxy = &relayerProxy{}
 )
 
 type relayerProxy struct {
@@ -61,7 +60,7 @@ func NewRelayerProxy(
 	keyName string,
 	keyring keyring.Keyring,
 	blocksClient blocktypes.BlockClient,
-) relayerproxy.RelayerProxy {
+) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)

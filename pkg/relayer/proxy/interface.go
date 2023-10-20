@@ -1,4 +1,4 @@
-package relayerproxy
+package proxy
 
 import (
 	"context"
