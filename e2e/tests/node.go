@@ -69,10 +69,8 @@ func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
 	args = append(base, args...)
 	cmd := exec.Command("pocketd", args...)
 	r := &commandResult{}
-	out, err := cmd.CombinedOutput()
+	out, err := cmd.Output()
 	if err != nil {
-		fmt.Println(cmd.String())
-		fmt.Println(string(out))
 		return nil, err
 	}
 	r.Stdout = string(out)
