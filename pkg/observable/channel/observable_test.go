@@ -11,6 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"pocket/internal/testchannel"
+	"pocket/internal/testerrors"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
 )
@@ -118,7 +119,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 						output,
 						"obsvr Idx: %d", obsvrIdx,
 					) {
-						return fmt.Errorf("unexpected output")
+						return testerrors.ErrAsync
 					}
 					return nil
 				}
@@ -130,7 +131,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 						len(outputs),
 						"obsvr addr: %p", obsvr,
 					) {
-						return fmt.Errorf("unexpected number of outputs")
+						return testerrors.ErrAsync
 					}
 					return nil
 				}
