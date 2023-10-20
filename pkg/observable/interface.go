@@ -1,7 +1,5 @@
 package observable
 
-// TODO(@bryanchriswhite): Add a README for the observable.
-
 import "context"
 
 // NOTE: We explicitly decided to write a small and custom notifications package
