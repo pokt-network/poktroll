@@ -154,9 +154,12 @@ func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserve
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is a blocking function and intended to be called in a goroutine.
-func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
+func goUnsubscribeOnDone[V any](ctx context.Context, observer observable.Observer[V]) {
 	<-ctx.Done()
-	subscription.Unsubscribe()
+	if observer.IsClosed() {
+		return
+	}
+	observer.Unsubscribe()
 }
 
 // onUnsubscribe returns a function that removes a given observer from the

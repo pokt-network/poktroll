@@ -21,4 +21,5 @@ type Observable[V any] interface {
 type Observer[V any] interface {
 	Unsubscribe()
 	Ch() <-chan V
+	IsClosed() bool
 }
