@@ -61,15 +61,12 @@ func (k msgServer) StakeSupplier(
 
 func (k msgServer) createSupplier(
 	ctx sdk.Context,
-	supplier *sharedtypes.Supplier,
 	msg *types.MsgStakeSupplier,
-) error {
-	*supplier = sharedtypes.Supplier{
+) sharedtypes.Supplier {
+	return sharedtypes.Supplier{
 		Address: msg.Address,
 		Stake:   msg.Stake,
 	}
-
-	return nil
 }
 
 func (k msgServer) updateSupplier(

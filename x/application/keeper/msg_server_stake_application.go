@@ -60,15 +60,12 @@ func (k msgServer) StakeApplication(
 
 func (k msgServer) createApplication(
 	ctx sdk.Context,
-	app *types.Application,
 	msg *types.MsgStakeApplication,
-) error {
-	*app = types.Application{
+) types.Application {
+	return types.Application{
 		Address: msg.Address,
 		Stake:   msg.Stake,
 	}
-
-	return nil
 }
 
 func (k msgServer) updateApplication(
