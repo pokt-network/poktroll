@@ -54,11 +54,12 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			inputs:          inputs,
 			expectedOutputs: inputs,
 		},
-		// INCOMPLETE: publisher channels which are full are proving harder to test
+		// TODO_INCOMPLETE: publisher channels which are full are proving harder to test
 		// robustly (no flakiness); perhaps it has to do with the lack of some
 		// kind of guarantee about the receiver order on the consumer side.
 		//
 		// The following scenarios should generally pass but are flaky:
+		// (see: docs/pkg/observable/README.md regarding synchronization and buffering)
 		//
 		// {
 		// 	name:            "full non-buffered publisher",
@@ -323,7 +324,7 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 	}
 }
 
-// TECHDEBT/INCOMPLETE: add coverage for active observers closing when publishCh closes.
+// TODO_TECHDEBT/TODO_INCOMPLETE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
 	t.Skip("add coverage: all observers should unsubscribeAll when publishCh closes")
 }
