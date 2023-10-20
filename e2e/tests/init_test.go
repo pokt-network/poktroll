@@ -12,10 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var addrRe *regexp.Regexp
+var (
+	addrRe        *regexp.Regexp
+	accNameToAddr = make(map[string]string)
+	keyRingFlag   = "--keyring-backend=test"
+)
 
 func init() {
-	addrRe = regexp.MustCompile(`address:\s+(pokt1\w+)`)
+	addrRe = regexp.MustCompile(`address: (\S+)\s+name: (\S+)`)
 }
 
 type suite struct {
@@ -30,7 +34,9 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path("*.feature").Run()
+	runner := gocuke.NewRunner(t, &suite{}).Path("*.feature")
+	runner = runner.Step(`^the user sends (\d+) uPOKT from account (\w+) to account (\w+)$`, (*suite).TheUserSendsUpoktFromAccountToAccount)
+	runner.Run()
 }
 
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
@@ -56,17 +62,16 @@ func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	}
 }
 
-func (s *suite) TheUserSendsUpoktToAnotherAddress(amount int64) {
-	addrs := s.getAddresses()
+func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, acc1, acc2 string) {
+	s.buildAddrMap()
 	args := []string{
 		"tx",
 		"bank",
 		"send",
-		addrs[0],
-		addrs[1],
+		accNameToAddr[acc1],
+		accNameToAddr[acc2],
 		fmt.Sprintf("%dupokt", amount),
-		"--keyring-backend",
-		"test",
+		keyRingFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -76,20 +81,17 @@ func (s *suite) TheUserSendsUpoktToAnotherAddress(amount int64) {
 	s.pocketd.result = res
 }
 
-func (s *suite) getAddresses() [2]string {
-	var strs [2]string
+func (s *suite) buildAddrMap() {
 	res, err := s.pocketd.RunCommand(
-		"keys", "list", "--keyring-backend", "test",
+		"keys", "list", keyRingFlag,
 	)
 	if err != nil {
 		s.Fatalf("error getting keys: %s", err)
 	}
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
-	if len(matches) >= 2 {
-		strs[0] = matches[0][1]
-		strs[1] = matches[len(matches)-1][1]
-	} else {
-		s.Fatalf("could not find two addresses in output: %s", res.Stdout)
+	for _, match := range matches {
+		name := match[2]
+		address := match[1]
+		accNameToAddr[name] = address
 	}
-	return strs
 }
