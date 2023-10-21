@@ -3,14 +3,13 @@ package keeper_test
 import (
 	"testing"
 
-	keepertest "pocket/testutil/keeper"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 
+	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/sample"
 	"pocket/x/gateway/keeper"
 	"pocket/x/gateway/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
@@ -27,13 +26,13 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Prepare the gateway
 	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
-	gateway := &types.MsgStakeGateway{
+	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
 
 	// Stake the gateway
-	_, err := srv.StakeGateway(wctx, gateway)
+	_, err := srv.StakeGateway(wctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the gateway exists
@@ -44,13 +43,13 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 
 	// Prepare an updated gateway with a higher stake
 	updatedStake := sdk.NewCoin("upokt", sdk.NewInt(200))
-	updatedGateway := &types.MsgStakeGateway{
+	updateMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
 
 	// Update the staked gateway
-	_, err = srv.StakeGateway(wctx, updatedGateway)
+	_, err = srv.StakeGateway(wctx, updateMsg)
 	require.NoError(t, err)
 	foundGateway, isGatewayFound = k.GetGateway(ctx, addr)
 	require.True(t, isGatewayFound)
@@ -65,26 +64,26 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	// Prepare the gateway
 	addr := sample.AccAddress()
 	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
-	gateway := &types.MsgStakeGateway{
+	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
 	}
 
 	// Stake the gateway & verify that the gateway exists
-	_, err := srv.StakeGateway(wctx, gateway)
+	_, err := srv.StakeGateway(wctx, stakeMsg)
 	require.NoError(t, err)
 	_, isGatewayFound := k.GetGateway(ctx, addr)
 	require.True(t, isGatewayFound)
 
 	// Prepare an updated gateway with a lower stake
 	updatedStake := sdk.NewCoin("upokt", sdk.NewInt(50))
-	updatedGateway := &types.MsgStakeGateway{
+	updateMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
 	}
 
 	// Verify that it fails
-	_, err = srv.StakeGateway(wctx, updatedGateway)
+	_, err = srv.StakeGateway(wctx, updateMsg)
 	require.Error(t, err)
 
 	// Verify that the gateway stake is unchanged

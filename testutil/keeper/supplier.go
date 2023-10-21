@@ -12,7 +12,10 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+
+	mocks "pocket/testutil/supplier/mocks"
 	"pocket/x/supplier/keeper"
 	"pocket/x/supplier/types"
 )
@@ -30,6 +33,11 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
+	ctrl := gomock.NewController(t)
+	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -41,7 +49,7 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		storeKey,
 		memStoreKey,
 		paramsSubspace,
-		nil,
+		mockBankKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

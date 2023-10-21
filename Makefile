@@ -120,6 +120,7 @@ go_test: go_version_check ## Run all go tests
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
+	go generate ./x/supplier/types/
 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
@@ -260,6 +261,30 @@ app2_unstake: ## Unstake app2
 .PHONY: app3_unstake
 app3_unstake: ## Unstake app3
 	APP=app3 make app_unstake
+
+#################
+### Suppliers ###
+#################
+
+.PHONY: supplier_list
+supplier_list: ## List all the staked supplier
+	pocketd --home=$(POCKETD_HOME) q supplier list-supplier --node $(POCKET_NODE)
+
+.PHONY: supplier_stake
+supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
+	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+
+.PHONY: supplier1_stake
+supplier1_stake: ## Stake supplier1
+	SUPPLIER=supplier1 make supplier_stake
+
+.PHONY: supplier2_stake
+supplier2_stake: ## Stake supplier2
+	SUPPLIER=supplier2 make supplier_stake
+
+.PHONY: supplier3_stake
+supplier3_stake: ## Stake supplier3
+	SUPPLIER=supplier3 make supplier_stake
 
 ################
 ### Accounts ###

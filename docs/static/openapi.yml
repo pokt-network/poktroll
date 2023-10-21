@@ -47102,6 +47102,27 @@ paths:
                   properties:
                     address:
                       type: string
+                      title: >-
+                        The Bech32 address of the supplier using cosmos'
+                        ScalarDescriptor to ensure deterministic deterministic
+                        encoding using cosmos' ScalarDescriptor to ensure
+                        deterministic deterministic encoding
+                    stake:
+                      title: The total amount of uPOKT the supplier has staked
+                      type: object
+                      properties:
+                        denom:
+                          type: string
+                        amount:
+                          type: string
+                      description: >-
+                        Coin defines a token with a denomination and an amount.
+
+
+                        NOTE: The amount field is an Int which implements the
+                        custom method
+
+                        signatures required by gogoproto.
                   description: >-
                     Supplier is the type defining the actor in Pocket Network
                     that provides RPC services.
@@ -47225,6 +47246,27 @@ paths:
                 properties:
                   address:
                     type: string
+                    title: >-
+                      The Bech32 address of the supplier using cosmos'
+                      ScalarDescriptor to ensure deterministic deterministic
+                      encoding using cosmos' ScalarDescriptor to ensure
+                      deterministic deterministic encoding
+                  stake:
+                    title: The total amount of uPOKT the supplier has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
                 description: >-
                   Supplier is the type defining the actor in Pocket Network that
                   provides RPC services.
@@ -76301,6 +76343,23 @@ definitions:
     properties:
       address:
         type: string
+        title: >-
+          The Bech32 address of the supplier using cosmos' ScalarDescriptor to
+          ensure deterministic deterministic encoding using cosmos'
+          ScalarDescriptor to ensure deterministic deterministic encoding
+      stake:
+        title: The total amount of uPOKT the supplier has staked
+        type: object
+        properties:
+          denom:
+            type: string
+          amount:
+            type: string
+        description: |-
+          Coin defines a token with a denomination and an amount.
+
+          NOTE: The amount field is an Int which implements the custom method
+          signatures required by gogoproto.
     description: >-
       Supplier is the type defining the actor in Pocket Network that provides
       RPC services.
@@ -76325,6 +76384,27 @@ definitions:
           properties:
             address:
               type: string
+              title: >-
+                The Bech32 address of the supplier using cosmos'
+                ScalarDescriptor to ensure deterministic deterministic encoding
+                using cosmos' ScalarDescriptor to ensure deterministic
+                deterministic encoding
+            stake:
+              title: The total amount of uPOKT the supplier has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
           description: >-
             Supplier is the type defining the actor in Pocket Network that
             provides RPC services.
@@ -76362,6 +76442,26 @@ definitions:
         properties:
           address:
             type: string
+            title: >-
+              The Bech32 address of the supplier using cosmos' ScalarDescriptor
+              to ensure deterministic deterministic encoding using cosmos'
+              ScalarDescriptor to ensure deterministic deterministic encoding
+          stake:
+            title: The total amount of uPOKT the supplier has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
         description: >-
           Supplier is the type defining the actor in Pocket Network that
           provides RPC services.

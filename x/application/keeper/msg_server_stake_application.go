@@ -24,9 +24,7 @@ func (k msgServer) StakeApplication(
 	app, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info("Application not found. Creating new application for address %s", msg.Address)
-		if err = k.createApplication(ctx, &app, msg); err != nil {
-			return nil, err
-		}
+		app = k.createApplication(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
 		logger.Info("Application found. Updating application for address %s", msg.Address)
@@ -60,15 +58,12 @@ func (k msgServer) StakeApplication(
 
 func (k msgServer) createApplication(
 	ctx sdk.Context,
-	app *types.Application,
 	msg *types.MsgStakeApplication,
-) error {
-	*app = types.Application{
+) types.Application {
+	return types.Application{
 		Address: msg.Address,
 		Stake:   msg.Stake,
 	}
-
-	return nil
 }
 
 func (k msgServer) updateApplication(

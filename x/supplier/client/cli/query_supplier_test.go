@@ -12,32 +12,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/testutil/network"
 	"pocket/testutil/nullify"
 	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/client/cli"
 	"pocket/x/supplier/types"
 )
-
-// Prevent strconv unused error
-var _ = strconv.IntSize
-
-func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier) {
-	t.Helper()
-	cfg := network.DefaultConfig()
-	state := types.GenesisState{}
-	for i := 0; i < n; i++ {
-		supplier := sharedtypes.Supplier{
-			Address: strconv.Itoa(i),
-		}
-		nullify.Fill(&supplier)
-		state.SupplierList = append(state.SupplierList, supplier)
-	}
-	buf, err := cfg.Codec.MarshalJSON(&state)
-	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.SupplierList
-}
 
 func TestShowSupplier(t *testing.T) {
 	net, objs := networkWithSupplierObjects(t, 2)
