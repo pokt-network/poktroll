@@ -41,17 +41,7 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	runner := gocuke.NewRunner(t, &suite{}).Path("*.feature")
-	runner = registerSteps(runner)
-	runner.Run()
-}
-
-func registerSteps(runner *gocuke.Runner) *gocuke.Runner {
-	return runner.
-		Step(`^the user sends (\d+) uPOKT from account (\w+) to account (\w+)$`, (*suite).TheUserSendsUpoktFromAccountToAccount).
-		Step(`^the account (\w+) has a balance greater than (\d+) uPOKT$`, (*suite).TheAccountHasABalanceGreaterThanUpokt).
-		Step(`^an account exists for (\w+)$`, (*suite).AnAccountExistsFor).
-		Step(`^the account balance of (\w+) should be (\d+) uPOKT (\w+) than before$`, (*suite).TheAccountBalanceOfShouldBeUpoktThanBefore)
+	gocuke.NewRunner(t, &suite{}).Path("*.feature").Run()
 }
 
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
