@@ -76017,6 +76017,8 @@ definitions:
     title: >-
       Application defines the type used to store an on-chain definition and
       state for an application
+  pocket.application.MsgDelegateToGatewayResponse:
+    type: object
   pocket.application.MsgStakeApplicationResponse:
     type: object
   pocket.application.MsgUnstakeApplicationResponse:
