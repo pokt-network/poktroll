@@ -175,6 +175,7 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
+	s.Helper()
 	args := []string{
 		"query",
 		actorType,
