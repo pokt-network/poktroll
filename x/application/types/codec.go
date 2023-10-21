@@ -11,6 +11,7 @@ func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgStakeApplication{}, "application/StakeApplication", nil)
 	cdc.RegisterConcrete(&MsgUnstakeApplication{}, "application/UnstakeApplication", nil)
 	cdc.RegisterConcrete(&MsgDelegateToGateway{}, "application/DelegateToGateway", nil)
+	cdc.RegisterConcrete(&MsgUndelegateFromGateway{}, "application/UndelegateFromGateway", nil)
 	// this line is used by starport scaffolding # 2
 }
 
@@ -21,6 +22,9 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	)
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgDelegateToGateway{},
+	)
+	registry.RegisterImplementations((*sdk.Msg)(nil),
+		&MsgUndelegateFromGateway{},
 	)
 	// this line is used by starport scaffolding # 3
 
