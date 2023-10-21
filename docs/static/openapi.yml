@@ -76063,6 +76063,8 @@ definitions:
     type: object
   pocket.application.MsgStakeApplicationResponse:
     type: object
+  pocket.application.MsgUndelegateFromGatewayResponse:
+    type: object
   pocket.application.MsgUnstakeApplicationResponse:
     type: object
   pocket.application.Params:
