@@ -122,6 +122,84 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 	time.Sleep(time.Duration(dur) * time.Second)
 }
 
+func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
+	args := []string{
+		"tx",
+		actorType,
+		fmt.Sprintf("stake-%s", actorType),
+		fmt.Sprintf("%dupokt", amount),
+		"--from",
+		accName,
+		keyRingFlag,
+		"-y",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	if err != nil {
+		s.Fatalf("error staking %s: %s", actorType, err)
+	}
+	s.pocketd.result = res
+}
+
+func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string) {
+	args := []string{
+		"tx",
+		actorType,
+		fmt.Sprintf("unstake-%s", actorType),
+		"--from",
+		accName,
+		keyRingFlag,
+		"-y",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	if err != nil {
+		s.Fatalf("error unstaking %s: %s", actorType, err)
+	}
+	s.pocketd.result = res
+}
+
+func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
+	found, _ := s.getStakedAmount(actorType, accName)
+	if found {
+		s.Fatalf("account %s is staked", accName)
+	}
+}
+
+func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
+	found, stakeAmount := s.getStakedAmount(actorType, accName)
+	if !found {
+		s.Fatalf("account %s is not staked", accName)
+	}
+	if int64(stakeAmount) != amount {
+		s.Fatalf("account %s stake amount is not %d", accName, amount)
+	}
+}
+
+func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
+	args := []string{
+		"query",
+		actorType,
+		fmt.Sprintf("list-%s", actorType),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	if err != nil {
+		s.Fatalf("error getting %s: %s", actorType, err)
+	}
+	s.pocketd.result = res
+	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
+	amount := 0
+	if found {
+		escapedAddress := regexp.QuoteMeta(accNameToAddrMap[accName])
+		stakedAmountRe := regexp.MustCompile(`address: ` + escapedAddress + `\s+stake:\s+amount: "(\d+)"`)
+		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
+		if len(matches) < 2 {
+			s.Fatalf("no stake amount found for %s", accName)
+		}
+		amount, err = strconv.Atoi(matches[1])
+		require.NoError(s, err)
+	}
+	return found, amount
+}
+
 func (s *suite) buildAddrMap() {
 	s.Helper()
 	res, err := s.pocketd.RunCommand(
@@ -130,6 +208,7 @@ func (s *suite) buildAddrMap() {
 	if err != nil {
 		s.Fatalf("error getting keys: %s", err)
 	}
+	s.pocketd.result = res
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
 	for _, match := range matches {
 		name := match[2]
