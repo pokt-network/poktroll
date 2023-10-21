@@ -56,7 +56,10 @@ func (k msgServer) StakeGateway(
 	return &types.MsgStakeGatewayResponse{}, nil
 }
 
-func (k msgServer) createGateway(ctx sdk.Context, msg *types.MsgStakeGateway) types.Gateway {
+func (k msgServer) createGateway(
+	ctx sdk.Context,
+	msg *types.MsgStakeGateway,
+) types.Gateway {
 	return types.Gateway{
 		Address: msg.Address,
 		Stake:   msg.Stake,

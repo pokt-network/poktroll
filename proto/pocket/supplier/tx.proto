@@ -3,6 +3,7 @@ syntax = "proto3";
 package pocket.supplier;
 
 import "cosmos_proto/cosmos.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
 import "pocket/session/session.proto";
 
@@ -15,17 +16,25 @@ service Msg {
   rpc CreateClaim     (MsgCreateClaim    ) returns (MsgCreateClaimResponse    );
   rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
-message MsgUnstakeSupplier {
-  string address = 1;
-}
 
 message MsgStakeSupplier {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the supplier has staked. Must be ≥ to the current amount that the supplier has staked (if any)
+  // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
+  // repeated service.SupplierServiceConfig services = 3; // The ID of the service this session is servicing
+}
+
+message MsgStakeSupplierResponse {}
+
+message MsgUnstakeSupplier {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
   string address = 1;
 }
 
 message MsgUnstakeSupplierResponse {}
-
-message MsgStakeSupplierResponse {}
 
 message MsgCreateClaim {
   option (cosmos.msg.v1.signer) = "supplier_address";

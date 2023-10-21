@@ -3,6 +3,9 @@ package types
 import (
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sharedtypes "pocket/x/shared/types"
 )
 
@@ -23,7 +26,6 @@ func DefaultGenesis() *GenesisState {
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in supplier
 	supplierIndexMap := make(map[string]struct{})
-
 	for _, supplier := range gs.SupplierList {
 		index := string(SupplierKey(supplier.Address))
 		if _, ok := supplierIndexMap[index]; ok {
@@ -31,6 +33,27 @@ func (gs GenesisState) Validate() error {
 		}
 		supplierIndexMap[index] = struct{}{}
 	}
+
+	// Check that the stake value for the suppliers is valid
+	for _, supplier := range gs.SupplierList {
+		if supplier.Stake == nil {
+			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "nil stake amount for supplier")
+		}
+		stake, err := sdk.ParseCoinNormalized(supplier.Stake.String())
+		if !stake.IsValid() {
+			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount for supplier %v; (%v)", supplier.Stake, stake.Validate())
+		}
+		if err != nil {
+			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "cannot parse stake amount for supplier %v; (%v)", supplier.Stake, err)
+		}
+		if stake.IsZero() || stake.IsNegative() {
+			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount for supplier: %v <= 0", supplier.Stake)
+		}
+		if stake.Denom != "upokt" {
+			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", supplier.Stake)
+		}
+	}
+
 	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
