@@ -7,7 +7,7 @@ import (
 
 const TypeMsgDelegateToGateway = "delegate_to_gateway"
 
-var _ sdk.Msg = &MsgDelegateToGateway{}
+var _ sdk.Msg = (*MsgDelegateToGateway)(nil)
 
 func NewMsgDelegateToGateway(address string) *MsgDelegateToGateway {
 	return &MsgDelegateToGateway{
