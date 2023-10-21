@@ -16,9 +16,6 @@ service Msg {
   rpc CreateClaim     (MsgCreateClaim    ) returns (MsgCreateClaimResponse    );
   rpc SubmitProof     (MsgSubmitProof    ) returns (MsgSubmitProofResponse    );
 }
-message MsgUnstakeSupplier {
-  string address = 1;
-}
 
 message MsgStakeSupplier {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
@@ -29,9 +26,15 @@ message MsgStakeSupplier {
   // repeated service.SupplierServiceConfig services = 3; // The ID of the service this session is servicing
 }
 
-message MsgUnstakeSupplierResponse {}
-
 message MsgStakeSupplierResponse {}
+
+message MsgUnstakeSupplier {
+  option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+
+  string address = 1;
+}
+
+message MsgUnstakeSupplierResponse {}
 
 message MsgCreateClaim {
   option (cosmos.msg.v1.signer) = "supplier_address";

@@ -286,6 +286,22 @@ supplier2_stake: ## Stake supplier2
 supplier3_stake: ## Stake supplier3
 	SUPPLIER=supplier3 make supplier_stake
 
+.PHONY: supplier_unstake
+supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
+	pocketd --home=$(POCKETD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+
+.PHONY: supplier1_unstake
+supplier1_unstake: ## Unstake supplier1
+	SUPPLIER=supplier1 make supplier_unstake
+
+.PHONY: supplier2_unstake
+supplier2_unstake: ## Unstake supplier2
+	SUPPLIER=supplier2 make supplier_unstake
+
+.PHONY: supplier3_unstake
+supplier3_unstake: ## Unstake supplier3
+	SUPPLIER=supplier3 make supplier_unstake
+
 ################
 ### Accounts ###
 ################
