@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	addrRe        *regexp.Regexp
-	amountRe      *regexp.Regexp
-	accNameToAddr = make(map[string]string)
-	keyRingFlag   = "--keyring-backend=test"
+	addrRe           *regexp.Regexp
+	amountRe         *regexp.Regexp
+	accNameToAddrMap = make(map[string]string)
+	keyRingFlag      = "--keyring-backend=test"
 )
 
 func init() {
@@ -28,13 +28,14 @@ func init() {
 
 type suite struct {
 	gocuke.TestingT
-	pocketd   *pocketdBin
-	tempState map[string]any // temporary state for each scenario
+	pocketd       *pocketdBin
+	scenarioState map[string]any // temporary state for each scenario
 }
 
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
-	s.tempState = make(map[string]any)
+	s.scenarioState = make(map[string]any)
+	s.buildAddrMap()
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -49,7 +50,7 @@ func registerSteps(runner *gocuke.Runner) *gocuke.Runner {
 	return runner.
 		Step(`^the user sends (\d+) uPOKT from account (\w+) to account (\w+)$`, (*suite).TheUserSendsUpoktFromAccountToAccount).
 		Step(`^the account (\w+) has a balance greater than (\d+) uPOKT$`, (*suite).TheAccountHasABalanceGreaterThanUpokt).
-		Step(`^the account balance is known for (\w+)$`, (*suite).TheAccountBalanceIsKnownFor).
+		Step(`^an account exists for (\w+)$`, (*suite).AnAccountExistsFor).
 		Step(`^the account balance of (\w+) should be (\d+) uPOKT (\w+) than before$`, (*suite).TheAccountBalanceOfShouldBeUpoktThanBefore)
 }
 
@@ -76,14 +77,13 @@ func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	}
 }
 
-func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, acc1, acc2 string) {
-	s.buildAddrMap()
+func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
 	args := []string{
 		"tx",
 		"bank",
 		"send",
-		accNameToAddr[acc1],
-		accNameToAddr[acc2],
+		accNameToAddrMap[accName1],
+		accNameToAddrMap[accName2],
 		fmt.Sprintf("%dupokt", amount),
 		keyRingFlag,
 		"-y",
@@ -95,84 +95,33 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, acc1, acc2 s
 	s.pocketd.result = res
 }
 
-func (s *suite) TheAccountHasABalanceGreaterThanUpokt(acc string, amount int64) {
-	s.buildAddrMap()
-	args := []string{
-		"query",
-		"bank",
-		"balances",
-		accNameToAddr[acc],
+func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
+	bal := s.getAccBalance(accName)
+	if int64(bal) < amount {
+		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
 	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
-	}
-	s.pocketd.result = res
-	match := amountRe.FindStringSubmatch(res.Stdout)
-	if len(match) < 2 {
-		s.Fatalf("no balance found for %s", acc)
-	}
-	found, err := strconv.Atoi(match[1])
-	require.NoError(s, err)
-	if int64(found) < amount {
-		s.Fatalf("account %s does not have enough upokt: %d < %d", acc, found, amount)
-	}
-	s.tempState[acc] = found // save the balance for later
+	s.scenarioState[accName] = bal // save the balance for later
 }
 
-func (s *suite) TheAccountBalanceIsKnownFor(acc string) {
-	s.buildAddrMap()
-	args := []string{
-		"query",
-		"bank",
-		"balances",
-		accNameToAddr[acc],
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
-	}
-	s.pocketd.result = res
-	match := amountRe.FindStringSubmatch(res.Stdout)
-	if len(match) < 2 {
-		s.Fatalf("no balance found for %s", acc)
-	}
-	found, err := strconv.Atoi(match[1])
-	require.NoError(s, err)
-	s.tempState[acc] = found // save the balance for later
+func (s *suite) AnAccountExistsFor(accName string) {
+	bal := s.getAccBalance(accName)
+	s.scenarioState[accName] = bal // save the balance for later
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(acc string, amount int64, condition string) {
-	s.buildAddrMap()
-	prev, ok := s.tempState[acc]
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
+	prev, ok := s.scenarioState[accName]
 	if !ok {
-		s.Fatalf("no previous balance found for %s", acc)
+		s.Fatalf("no previous balance found for %s", accName)
 	}
-	args := []string{
-		"query",
-		"bank",
-		"balances",
-		accNameToAddr[acc],
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
-	}
-	s.pocketd.result = res
-	match := amountRe.FindStringSubmatch(res.Stdout)
-	if len(match) < 2 {
-		s.Fatalf("no balance found for %s", acc)
-	}
-	found, err := strconv.Atoi(match[1])
-	require.NoError(s, err)
+	bal := s.getAccBalance(accName)
 	switch condition {
 	case "more":
-		if found <= prev.(int) {
-			s.Fatalf("account %s does not have more upokt: %d <= %d", acc, found, prev)
+		if bal <= prev.(int) {
+			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, bal, prev)
 		}
 	case "less":
-		if found >= prev.(int) {
-			s.Fatalf("account %s does not have less upokt: %d >= %d", acc, found, prev)
+		if bal >= prev.(int) {
+			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, bal, prev)
 		}
 	default:
 		s.Fatalf("unknown condition %s", condition)
@@ -184,9 +133,7 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 }
 
 func (s *suite) buildAddrMap() {
-	if len(accNameToAddr) > 0 {
-		return
-	}
+	s.Helper()
 	res, err := s.pocketd.RunCommand(
 		"keys", "list", keyRingFlag,
 	)
@@ -197,6 +144,28 @@ func (s *suite) buildAddrMap() {
 	for _, match := range matches {
 		name := match[2]
 		address := match[1]
-		accNameToAddr[name] = address
+		accNameToAddrMap[name] = address
 	}
+}
+
+func (s *suite) getAccBalance(accName string) int {
+	s.Helper()
+	args := []string{
+		"query",
+		"bank",
+		"balances",
+		accNameToAddrMap[accName],
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	if err != nil {
+		s.Fatalf("error getting balance: %s", err)
+	}
+	s.pocketd.result = res
+	match := amountRe.FindStringSubmatch(res.Stdout)
+	if len(match) < 2 {
+		s.Fatalf("no balance found for %s", accName)
+	}
+	found, err := strconv.Atoi(match[1])
+	require.NoError(s, err)
+	return found
 }
