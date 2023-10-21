@@ -9,7 +9,7 @@ import (
 )
 
 // TODO_TECHDEBT(#49): Add un-delegation from delegated apps
-// TODO(#73): Determine if an application needs an unbonding period after unstaking.
+// TODO(#73): Determine if a gateway needs an unbonding period after unstaking.
 func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,
