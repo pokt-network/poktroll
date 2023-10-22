@@ -38,6 +38,10 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -50,6 +54,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		memStoreKey,
 		paramsSubspace,
 		mockBankKeeper,
+		mockAccountKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

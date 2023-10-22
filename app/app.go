@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -589,6 +590,7 @@ func New(
 		app.GetSubspace(applicationmoduletypes.ModuleName),
 
 		app.BankKeeper,
+		app.AccountKeeper,
 	)
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
@@ -609,7 +611,6 @@ func New(
 		app.GetSubspace(gatewaymoduletypes.ModuleName),
 
 		app.BankKeeper,
-		app.AccountKeeper,
 	)
 	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
 
