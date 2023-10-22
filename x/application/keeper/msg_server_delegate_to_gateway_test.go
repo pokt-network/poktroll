@@ -17,7 +17,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
-	// Generate an address for the application
+	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
 	gatewayAddr1, gatewayPubKey1 := sample.AddrAndPubKey()
 	gatewayAddr2, gatewayPubKey2 := sample.AddrAndPubKey()
@@ -26,7 +26,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr1)
 	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr2)
 
-	// Prepare the application and gateway
+	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
@@ -85,7 +85,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
-	// Generate an address for the application
+	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
 	gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
 	keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
