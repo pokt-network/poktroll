@@ -13,4 +13,5 @@ var (
 	ErrAppUnauthorized          = sdkerrors.Register(ModuleName, 3, "unauthorized application signer")
 	ErrAppNotFound              = sdkerrors.Register(ModuleName, 4, "application not found")
 	ErrAppInvalidGatewayAddress = sdkerrors.Register(ModuleName, 5, "invalid gateway address")
+	ErrAppAnyIsNotPubKey        = sdkerrors.Register(ModuleName, 6, "any type is not cryptotypes.PubKey")
 )

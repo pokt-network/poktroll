@@ -32,7 +32,7 @@ func (gs GenesisState) Validate() error {
 		applicationIndexMap[index] = struct{}{}
 	}
 
-	// Check that the stake value for the apps is valid
+	// Check that the stake value for the apps is valid and that the delegatee pubkeys are valid
 	for _, app := range gs.ApplicationList {
 		if app.Stake == nil {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
@@ -49,6 +49,11 @@ func (gs GenesisState) Validate() error {
 		}
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
+		}
+		for _, delegatee := range app.DelegateePubKeys {
+			if _, err := anyToPubKey(delegatee); err != nil {
+				return sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "invalid delegatee pubkey for application %v", delegatee)
+			}
 		}
 	}
 
