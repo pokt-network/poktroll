@@ -12,7 +12,6 @@ import (
 	"pocket/x/application/types"
 )
 
-// TODO_IN_THIS_PR: Somehow stake the gateway so its public key is discoverable
 func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(*k)
