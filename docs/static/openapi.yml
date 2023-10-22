@@ -46651,6 +46651,11 @@ paths:
                                 "@type": "type.googleapis.com/google.protobuf.Duration",
                                 "value": "1.212s"
                               }
+                      description: >-
+                        The Gateway's corresponding cosmos.crypto.PubKey
+                        (interface) encoded into an cosmos.codec.Any for use in
+                        the non nullable slice of delegatees the application is
+                        delegated to.
                       title: >-
                         TODO(@Olshansk): Uncomment the line below once the
                         `ServiceId` proto is defined
@@ -47145,6 +47150,11 @@ paths:
                               "@type": "type.googleapis.com/google.protobuf.Duration",
                               "value": "1.212s"
                             }
+                    description: >-
+                      The Gateway's corresponding cosmos.crypto.PubKey
+                      (interface) encoded into an cosmos.codec.Any for use in
+                      the non nullable slice of delegatees the application is
+                      delegated to.
                     title: >-
                       TODO(@Olshansk): Uncomment the line below once the
                       `ServiceId` proto is defined
@@ -77085,6 +77095,10 @@ definitions:
                   "@type": "type.googleapis.com/google.protobuf.Duration",
                   "value": "1.212s"
                 }
+        description: >-
+          The Gateway's corresponding cosmos.crypto.PubKey (interface) encoded
+          into an cosmos.codec.Any for use in the non nullable slice of
+          delegatees the application is delegated to.
         title: >-
           TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto
           is defined
@@ -77307,6 +77321,10 @@ definitions:
                         "@type": "type.googleapis.com/google.protobuf.Duration",
                         "value": "1.212s"
                       }
+              description: >-
+                The Gateway's corresponding cosmos.crypto.PubKey (interface)
+                encoded into an cosmos.codec.Any for use in the non nullable
+                slice of delegatees the application is delegated to.
               title: >-
                 TODO(@Olshansk): Uncomment the line below once the `ServiceId`
                 proto is defined
@@ -77540,6 +77558,10 @@ definitions:
                       "@type": "type.googleapis.com/google.protobuf.Duration",
                       "value": "1.212s"
                     }
+            description: >-
+              The Gateway's corresponding cosmos.crypto.PubKey (interface)
+              encoded into an cosmos.codec.Any for use in the non nullable slice
+              of delegatees the application is delegated to.
             title: >-
               TODO(@Olshansk): Uncomment the line below once the `ServiceId`
               proto is defined
