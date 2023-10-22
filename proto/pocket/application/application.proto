@@ -5,6 +5,8 @@ option go_package = "pocket/x/application/types";
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
 
 // Application defines the type used to store an on-chain definition and state for an application
 message Application {
@@ -12,5 +14,5 @@ message Application {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
   // repeated service.ServiceId service_ids = 3; // The ID of the service this session is servicing
+  repeated google.protobuf.Any delegateePubKeys = 4 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey", (gogoproto.nullable) = false];
 }
-

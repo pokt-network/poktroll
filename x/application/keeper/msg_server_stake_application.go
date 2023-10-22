@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdkerrors "cosmossdk.io/errors"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"pocket/x/application/types"
@@ -61,8 +62,9 @@ func (k msgServer) createApplication(
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
-		Address: msg.Address,
-		Stake:   msg.Stake,
+		Address:          msg.Address,
+		Stake:            msg.Stake,
+		DelegateePubKeys: make([]codectypes.Any, 0),
 	}
 }
 
@@ -81,7 +83,6 @@ func (k msgServer) updateApplication(
 	}
 
 	if msg.Stake.IsLTE(*app.Stake) {
-
 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 
