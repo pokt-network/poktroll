@@ -17,3 +17,10 @@ func AccAddress() string {
 func AccPubKey() cryptotypes.PubKey {
 	return ed25519.GenPrivKey().PubKey()
 }
+
+// AddrAndPubKey returns a sample account address and public key
+func AddrAndPubKey() (string, cryptotypes.PubKey) {
+	pk := ed25519.GenPrivKey().PubKey()
+	addr := pk.Address()
+	return sdk.AccAddress(addr).String(), pk
+}

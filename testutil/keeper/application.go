@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"fmt"
 	"testing"
 
 	tmdb "github.com/cometbft/cometbft-db"
@@ -8,6 +9,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/store"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,6 +21,12 @@ import (
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
 )
+
+var AddrToPubKeyMap map[string]cryptotypes.PubKey
+
+func init() {
+	AddrToPubKeyMap = make(map[string]cryptotypes.PubKey)
+}
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -40,7 +48,14 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
-	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).AnyTimes()
+	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).DoAndReturn(func(_ sdk.Context, address sdk.AccAddress) (cryptotypes.PubKey, error) {
+		addr := address.String()
+		found, ok := AddrToPubKeyMap[addr]
+		if !ok {
+			return nil, fmt.Errorf("public key not found for address: %s", addr)
+		}
+		return found, nil
+	}).AnyTimes()
 
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,

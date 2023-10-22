@@ -14,4 +14,6 @@ var (
 	ErrAppNotFound              = sdkerrors.Register(ModuleName, 4, "application not found")
 	ErrAppInvalidGatewayAddress = sdkerrors.Register(ModuleName, 5, "invalid gateway address")
 	ErrAppAnyIsNotPubKey        = sdkerrors.Register(ModuleName, 6, "any type is not cryptotypes.PubKey")
+	ErrAppAnyConversion         = sdkerrors.Register(ModuleName, 7, "unable to convert to any type")
+	ErrAppAlreadyDelegated      = sdkerrors.Register(ModuleName, 8, "application already delegated to gateway")
 )
