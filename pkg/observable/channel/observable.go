@@ -2,8 +2,9 @@ package channel
 
 import (
 	"context"
-	"pocket/pkg/observable"
 	"sync"
+
+	"pocket/pkg/observable"
 )
 
 // TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
@@ -50,7 +51,7 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 	}
 
 	// start listening to the publishCh and emit values to observers
-	go obs.goPublish(obs.publishCh)
+	go obs.goPublish()
 
 	return obs, obs.publishCh
 }
@@ -110,8 +111,8 @@ func (obsvbl *channelObservable[V]) unsubscribeAll() {
 
 // goPublish to the publishCh and notify observers when values are received.
 // This function is blocking and should be run in a goroutine.
-func (obsvbl *channelObservable[V]) goPublish(publisher <-chan V) {
-	for notification := range publisher {
+func (obsvbl *channelObservable[V]) goPublish() {
+	for notification := range obsvbl.publishCh {
 		// Copy currentObservers to avoid holding the lock while notifying them.
 		// New or existing Observers may (un)subscribe while this notification
 		// is being fanned out.
