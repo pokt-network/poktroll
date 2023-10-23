@@ -7,7 +7,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	blocktypes "pocket/pkg/client"
+	// TODO_INCOMPLETE(@red-0ne): Import the appropriate block client interface once available.
+	// blocktypes "pocket/pkg/client"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
 	"pocket/x/service/types"
@@ -25,7 +26,8 @@ type relayerProxy struct {
 
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
-	blockClient blocktypes.BlockClient
+	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
+	// blockClient blocktypes.BlockClient
 
 	// accountsQuerier is the querier used to get account data (e.g. app publicKey) from the blockchain,
 	// which, in the context of the RelayerProxy, is used to verify the relay request signatures.
@@ -57,7 +59,9 @@ func NewRelayerProxy(
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,
-	blockClient blocktypes.BlockClient,
+
+	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
+	// blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
@@ -66,9 +70,10 @@ func NewRelayerProxy(
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
+		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
+		// blockClient:          blockClient,
 		keyName:              keyName,
 		keyring:              keyring,
-		blockClient:          blockClient,
 		accountsQuerier:      accountQuerier,
 		supplierQuerier:      supplierQuerier,
 		sessionQuerier:       sessionQuerier,
