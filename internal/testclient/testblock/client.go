@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"pocket/internal/testclient"
-	"pocket/internal/testclient/testquery"
+	"pocket/internal/testclient/testeventsquery"
 	"pocket/pkg/client"
 	"pocket/pkg/client/block"
 )
@@ -16,7 +16,7 @@ import (
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
-	queryClient := testquery.NewLocalnetClient(t)
+	queryClient := testeventsquery.NewLocalnetClient(t)
 	require.NotNil(t, queryClient)
 
 	deps := depinject.Supply(queryClient)

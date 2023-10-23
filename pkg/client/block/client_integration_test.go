@@ -33,7 +33,7 @@ func TestBlockClient_BlocksObservable(t *testing.T) {
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	blockSub := blockClient.CommittedBlocksSequence().Subscribe(ctx)
+	blockSub := blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
 
 	var (
 		blockMu      sync.Mutex
