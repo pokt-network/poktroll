@@ -14,7 +14,6 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	blockHeight := int64(1)
 
 	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestAppAddress, keepertest.TestServiceId, blockHeight)
-
 	session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 	require.NoError(t, err)
 
@@ -38,23 +37,52 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 	// Currently assumes NumBlocksPerSession=4
 	tests := []test{
 		{
-			name: "blockHeight = 0",
+			name:        "blockHeight = 0",
+			blockHeight: 0,
+
+			expectedNumBlocksPerSession: 4,
+			expectedSessionNumber:       0,
+			expectedSessionStartBlock:   0,
 		},
 		{
-			name: "blockHeight = 1",
+			name:        "blockHeight = 1",
+			blockHeight: 1,
+
+			expectedNumBlocksPerSession: 4,
+			expectedSessionNumber:       0,
+			expectedSessionStartBlock:   0,
 		},
 		{
-			name: "blockHeight = sessionHeight",
+			name:        "blockHeight = sessionHeight",
+			blockHeight: 4,
+
+			expectedNumBlocksPerSession: 4,
+			expectedSessionNumber:       1,
+			expectedSessionStartBlock:   4,
 		},
 		{
-			name: "blockHeight != sessionHeight",
+			name:        "blockHeight != sessionHeight",
+			blockHeight: 5,
+
+			expectedNumBlocksPerSession: 4,
+			expectedSessionNumber:       1,
+			expectedSessionStartBlock:   4,
 		},
 	}
 
+	appAddr := keepertest.TestAppAddress
+	serviceId := keepertest.TestServiceId
+	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// sessionKeeper, ctx := keepertest.SessionKeeper(t)
-			// blockHeight := int64(1)
+			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, tt.blockHeight)
+			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
+			require.NoError(t, err)
+
+			require.Equal(t, tt.expectedNumBlocksPerSession, session.NumBlocksPerSession)
+			require.Equal(t, tt.expectedSessionNumber, session.SessionNumber)
+			require.Equal(t, tt.expectedSessionStartBlock, session.Header.SessionStartBlockHeight)
 		})
 	}
 }
