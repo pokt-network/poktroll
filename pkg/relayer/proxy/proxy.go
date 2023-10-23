@@ -44,7 +44,7 @@ type relayerProxy struct {
 	// providedServices is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
 	// the client that proxies the request to the supported native service.
-	providedServices map[string][]ProvidedService
+	providedServices map[string][]*ProvidedService
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -106,7 +106,7 @@ func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 func buildProvidedServices(
 	ctx context.Context,
 	supplierQuerier suppliertypes.QueryClient,
-) map[string]ProvidedService {
+) map[string][]*ProvidedService {
 	panic("TODO: implement buildProvidedServices")
 }
 
