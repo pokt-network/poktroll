@@ -92,7 +92,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
 func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
-	// TECHDEBT(@Olshansk): Need to retrieve the block hash at SessionStartBlockHeight, NOT THE CURRENT ONE
+	// TODO_TECHDEBT: Need to retrieve the block hash at SessionStartBlockHeight, NOT THE CURRENT ONE
 	prevHashBz := ctx.HeaderHash()
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
