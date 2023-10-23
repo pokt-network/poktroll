@@ -64,6 +64,7 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 	}
 }
 
+// Next synchronously returns the next value from the observable.
 func (obsvbl *channelObservable[V]) Next(ctx context.Context) V {
 	tempObserver := obsvbl.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
