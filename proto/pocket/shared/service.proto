@@ -1,17 +1,19 @@
 syntax = "proto3";
-package pocket.shared;
 
 // NOTE that the `shared` package is not a Cosmos module,
 // but rather a manually created package to resolve circular dependencies.
-
-// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
+package pocket.shared;
 
 option go_package = "pocket/x/shared/types";
+
+// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
 
 // ServiceId message to encapsulate unique and semantic identifiers for a service on the network
 message ServiceId {
     string id = 1; // Unique identifier for the service
-    string name = 2; // Semantic name for the service
+    string name = 2; // (Optional) Semantic human readable name for the service
+    // NOTE: `ServiceId.Id` may seem redundant but was desigtned created to enable more complex service identification
+    // gener
 }
 
 // SupplierServiceConfig holds the service configuration the application stakes for

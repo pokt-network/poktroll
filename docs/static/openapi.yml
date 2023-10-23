@@ -47042,7 +47042,9 @@ paths:
                             title: Unique identifier for the service
                           name:
                             type: string
-                            title: Semantic name for the service
+                            title: >-
+                              (Optional) Semantic human readable name for the
+                              service
                       session_start_block_height:
                         type: string
                         format: int64
@@ -47107,7 +47109,9 @@ paths:
                               title: Unique identifier for the service
                             name:
                               type: string
-                              title: Semantic name for the service
+                              title: >-
+                                (Optional) Semantic human readable name for the
+                                service
                           title: >-
                             ServiceId message to encapsulate unique and semantic
                             identifiers for a service on the network
@@ -47153,7 +47157,9 @@ paths:
                                     title: Unique identifier for the service
                                   name:
                                     type: string
-                                    title: Semantic name for the service
+                                    title: >-
+                                      (Optional) Semantic human readable name
+                                      for the service
                               endpoints:
                                 type: array
                                 items:
@@ -47252,8 +47258,13 @@ paths:
           in: query
           required: false
           type: string
-        - name: service_id
-          description: The service id to query the session for
+        - name: service_id.id
+          description: Unique identifier for the service
+          in: query
+          required: false
+          type: string
+        - name: service_id.name
+          description: (Optional) Semantic human readable name for the service
           in: query
           required: false
           type: string
@@ -76778,7 +76789,7 @@ definitions:
                     title: Unique identifier for the service
                   name:
                     type: string
-                    title: Semantic name for the service
+                    title: (Optional) Semantic human readable name for the service
               session_start_block_height:
                 type: string
                 format: int64
@@ -76841,7 +76852,7 @@ definitions:
                       title: Unique identifier for the service
                     name:
                       type: string
-                      title: Semantic name for the service
+                      title: (Optional) Semantic human readable name for the service
                   title: >-
                     ServiceId message to encapsulate unique and semantic
                     identifiers for a service on the network
@@ -76886,7 +76897,9 @@ definitions:
                             title: Unique identifier for the service
                           name:
                             type: string
-                            title: Semantic name for the service
+                            title: >-
+                              (Optional) Semantic human readable name for the
+                              service
                       endpoints:
                         type: array
                         items:
@@ -76985,7 +76998,7 @@ definitions:
                 title: Unique identifier for the service
               name:
                 type: string
-                title: Semantic name for the service
+                title: (Optional) Semantic human readable name for the service
           session_start_block_height:
             type: string
             format: int64
@@ -77048,7 +77061,7 @@ definitions:
                   title: Unique identifier for the service
                 name:
                   type: string
-                  title: Semantic name for the service
+                  title: (Optional) Semantic human readable name for the service
               title: >-
                 ServiceId message to encapsulate unique and semantic identifiers
                 for a service on the network
@@ -77093,7 +77106,9 @@ definitions:
                         title: Unique identifier for the service
                       name:
                         type: string
-                        title: Semantic name for the service
+                        title: >-
+                          (Optional) Semantic human readable name for the
+                          service
                   endpoints:
                     type: array
                     items:
@@ -77177,7 +77192,7 @@ definitions:
             title: Unique identifier for the service
           name:
             type: string
-            title: Semantic name for the service
+            title: (Optional) Semantic human readable name for the service
       session_start_block_height:
         type: string
         format: int64
@@ -77282,7 +77297,7 @@ definitions:
                   title: Unique identifier for the service
                 name:
                   type: string
-                  title: Semantic name for the service
+                  title: (Optional) Semantic human readable name for the service
             endpoints:
               type: array
               items:
@@ -77403,7 +77418,7 @@ definitions:
             title: Unique identifier for the service
           name:
             type: string
-            title: Semantic name for the service
+            title: (Optional) Semantic human readable name for the service
       endpoints:
         type: array
         items:

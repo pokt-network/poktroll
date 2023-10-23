@@ -17,8 +17,8 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
+// TODO(#21): Make these configurable governance param
 const (
-	// TODO(#XXX): Make these onfigurable governance param
 	NumBlocksPerSession   = 4
 	NumSupplierPerSession = 15
 )

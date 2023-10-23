@@ -100,23 +100,29 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 func appKeeperMock(t testing.TB) types.ApplicationKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
+
+	getAppFn := func(_ context.Context, appAddr string) (apptypes.Application, bool) {
+		if appAddr == TestAppAddress {
+			return TestApplication, true
+		}
+		return apptypes.Application{}, false
+	}
+
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
-	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
-		func(_ context.Context, appAddr string) (apptypes.Application, bool) {
-			if appAddr == TestAppAddress {
-				return TestApplication, true
-			}
-			return apptypes.Application{}, false
-		},
-	)
+	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(getAppFn)
 	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), TestAppAddress).AnyTimes().Return(TestApplication, true)
+
 	return mockAppKeeper
 }
 
 func supplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
+
+	allSuppliers := []sharedtypes.Supplier{TestSupplier}
+
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes().Return([]sharedtypes.Supplier{TestSupplier})
+	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes().Return(allSuppliers)
+
 	return mockSupplierKeeper
 }
