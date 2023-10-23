@@ -44,5 +44,5 @@ jobs:
           reporter: github-pr-review
           level: error
           fail_on_error: true
-          pattern: var _ .\+ = &.\+{}
+          pattern: var _ .* = &.*{}
           ignore: .github,.git
