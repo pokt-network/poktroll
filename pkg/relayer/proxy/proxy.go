@@ -15,26 +15,24 @@ import (
 	suppliertypes "pocket/x/supplier/types"
 )
 
-var (
-	_ RelayerProxy = &relayerProxy{}
-)
+var _ RelayerProxy = &relayerProxy{}
 
 type relayerProxy struct {
-	// keyName is the supplier's key name in the keyring. It is used along with the keyring to
+	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
 	keyName string
 	keyring keyring.Keyring
 
-	// blocksClient is the client used to get the latest block height from the blockchain
-	// and be notified about new blocks to update the current session when needed.
-	blocksClient blocktypes.BlockClient
+	// blocksClient is the client used to get the block at the latest height from the blockchain
+	// and be notified of new incoming blocks. It is used to update the current session data.
+	blockClient blocktypes.BlockClient
 
-	// accountsQuerier is the querier used to get the application public key from the blockchain,
-	// which is used to verify the relay request signatures.
+	// accountsQuerier is the querier used to get account data (e.g. app publicKey) from the blockchain,
+	// which, in the context of the RelayerProxy, is used to verify the relay request signatures.
 	accountsQuerier accounttypes.QueryClient
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
-	// which contains the supported services, the RPC types, and endpoints needed to query the services.
+	// which contains the supported services, RPC types, and endpoints, etc...
 	supplierQuerier suppliertypes.QueryClient
 
 	// sessionQuerier is the querier used to get the current session from the blockchain,
@@ -44,7 +42,7 @@ type relayerProxy struct {
 	// providedServices is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
 	// the client that proxies the request to the supported native service.
-	providedServices map[string]ProvidedService
+	providedServices map[string][]ProvidedService
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -59,7 +57,7 @@ func NewRelayerProxy(
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,
-	blocksClient blocktypes.BlockClient,
+	blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
@@ -70,7 +68,7 @@ func NewRelayerProxy(
 	return &relayerProxy{
 		keyName:              keyName,
 		keyring:              keyring,
-		blocksClient:         blocksClient,
+		blockClient:          blockClient,
 		accountsQuerier:      accountQuerier,
 		supplierQuerier:      supplierQuerier,
 		sessionQuerier:       sessionQuerier,
@@ -80,16 +78,21 @@ func NewRelayerProxy(
 	}
 }
 
+// Start starts all supported proxies and returns an error if any of them fail to start.
 func (rp *relayerProxy) Start(ctx context.Context) error {
-	panic("not implemented")
+	panic("TODO: implement relayerProxy.Start")
 }
 
-func (rp *relayerProxy) Stop() error {
-	panic("not implemented")
+// Stop stops all supported proxies and returns an error if any of them fail.
+func (rp *relayerProxy) Stop(ctx context.Context) error {
+	panic("TODO: implement relayerProxy.Stop")
 }
 
+// ServedRelays returns an observable that notifies the miner about the relays that have been served.
+// A served relay is one whose RelayRequest's signature and session have been verified,
+// and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
-	panic("not implemented")
+	panic("TODO: implement relayerProxy.ServedRelays")
 }
 
 // buildProvidedServices builds the provided services map from the supplier's advertised information.
@@ -99,10 +102,10 @@ func buildProvidedServices(
 	ctx context.Context,
 	supplierQuerier suppliertypes.QueryClient,
 ) map[string]ProvidedService {
-	panic("not implemented")
+	panic("TODO: implement buildProvidedServices")
 }
 
-// TODO_INCOMPLETE: Add the appropriate server and client interfaces to be implemented by each RPC type.
+// TODO_INCOMPLETE(@red-0ne): Add the appropriate server and client interfaces to be implemented by each RPC type.
 type ProvidedService struct {
 	serviceId string
 	server    struct{}
