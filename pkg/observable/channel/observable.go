@@ -2,8 +2,9 @@ package channel
 
 import (
 	"context"
-	"pocket/pkg/observable"
 	"sync"
+
+	"pocket/pkg/observable"
 )
 
 // TODO_DISCUSS: what should this be? should it be configurable? It seems to be most
@@ -50,7 +51,7 @@ func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V
 	}
 
 	// start listening to the publishCh and emit values to observers
-	go obs.goPublish(obs.publishCh)
+	go obs.goPublish()
 
 	return obs, obs.publishCh
 }
@@ -61,6 +62,15 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 	return func(obs *channelObservable[V]) {
 		obs.publishCh = publishCh
 	}
+}
+
+// Next synchronously returns the next value from the observable.
+func (obsvbl *channelObservable[V]) Next(ctx context.Context) V {
+	tempObserver := obsvbl.Subscribe(ctx)
+	defer tempObserver.Unsubscribe()
+
+	val := <-tempObserver.Ch()
+	return val
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
@@ -110,8 +120,8 @@ func (obsvbl *channelObservable[V]) unsubscribeAll() {
 
 // goPublish to the publishCh and notify observers when values are received.
 // This function is blocking and should be run in a goroutine.
-func (obsvbl *channelObservable[V]) goPublish(publisher <-chan V) {
-	for notification := range publisher {
+func (obsvbl *channelObservable[V]) goPublish() {
+	for notification := range obsvbl.publishCh {
 		// Copy currentObservers to avoid holding the lock while notifying them.
 		// New or existing Observers may (un)subscribe while this notification
 		// is being fanned out.
@@ -154,9 +164,12 @@ func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserve
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is a blocking function and intended to be called in a goroutine.
-func goUnsubscribeOnDone[V any](ctx context.Context, subscription observable.Observer[V]) {
+func goUnsubscribeOnDone[V any](ctx context.Context, observer observable.Observer[V]) {
 	<-ctx.Done()
-	subscription.Unsubscribe()
+	if observer.IsClosed() {
+		return
+	}
+	observer.Unsubscribe()
 }
 
 // onUnsubscribe returns a function that removes a given observer from the
