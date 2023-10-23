@@ -17,7 +17,7 @@ type RelayerProxy interface {
 	Start(ctx context.Context) error
 
 	// Stop stops all supported proxies and returns an error if any of them fail.
-	Stop() error
+	Stop(ctx context.Context) error
 
 	// ServedRelays returns an observable that notifies the miner about the relays that have been served.
 	// A served relay is one whose RelayRequest's signature and session have been verified,
