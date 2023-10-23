@@ -16,7 +16,7 @@ import (
 	suppliertypes "pocket/x/supplier/types"
 )
 
-var _ RelayerProxy = &relayerProxy{}
+var _ RelayerProxy = (*relayerProxy)(nil)
 
 type relayerProxy struct {
 	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to

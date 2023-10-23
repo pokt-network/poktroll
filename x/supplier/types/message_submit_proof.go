@@ -9,7 +9,7 @@ import (
 
 const TypeMsgSubmitProof = "submit_proof"
 
-var _ sdk.Msg = &MsgSubmitProof{}
+var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
 func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{

@@ -42,7 +42,7 @@ type PocketClient interface {
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
-var _ PocketClient = &pocketdBin{}
+var _ PocketClient = (*pocketdBin)(nil)
 
 // pocketdBin holds the reults of the last command that was run
 type pocketdBin struct {

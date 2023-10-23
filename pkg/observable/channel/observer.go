@@ -24,7 +24,7 @@ const (
 	sendRetryInterval = 100 * time.Millisecond
 )
 
-var _ observable.Observer[any] = &channelObserver[any]{}
+var _ observable.Observer[any] = (*channelObserver[any])(nil)
 
 // channelObserver implements the observable.Observer interface.
 type channelObserver[V any] struct {
