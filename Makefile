@@ -265,6 +265,22 @@ app2_unstake: ## Unstake app2
 app3_unstake: ## Unstake app3
 	APP=app3 make app_unstake
 
+.PHONY: app_delegate
+app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
+	pocketd --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_delegate_gateway1
+app1_delegate_gateway1: ## Delegate trust to gateway1
+	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_delegate
+
+.PHONY: app2_delegate_gateway2
+app2_delegate_gateway2: ## Delegate trust to gateway2
+	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_delegate
+
+.PHONY: app3_delegate_gateway3
+app3_delegate_gateway3: ## Delegate trust to gateway3
+	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_delegate
+
 #################
 ### Suppliers ###
 #################

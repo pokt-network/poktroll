@@ -17,15 +17,19 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	logger := k.Logger(ctx).With("method", "DelegateToGateway")
 	logger.Info("About to delegate application to gateway with msg: %v", msg)
 
-	// DISCUSS_IN_THIS_PR: Should an application have to stake prior to delegation?
-
 	// Retrieve the application from the store
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
 		logger.Info("Application not found with address [%s]", msg.AppAddress)
-		return nil, types.ErrAppNotFound
+		return nil, sdkerrors.Wrapf(types.ErrAppNotFound, "application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info("Application found with address [%s]", msg.AppAddress)
+
+	// Check if the gateway is staked
+	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress); !found {
+		logger.Info("Gateway not found with address [%s]", msg.GatewayAddress)
+		return nil, sdkerrors.Wrapf(types.ErrAppGatewayNotFound, "gateway not found with address: %s", msg.GatewayAddress)
+	}
 
 	// Check if the application is already delegated to the gateway
 	for _, delegateePubKey := range app.DelegateePubKeys {

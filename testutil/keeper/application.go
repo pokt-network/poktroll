@@ -20,6 +20,7 @@ import (
 	mocks "pocket/testutil/application/mocks"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	gatewaytypes "pocket/x/gateway/types"
 )
 
 var AddrToPubKeyMap map[string]cryptotypes.PubKey
@@ -57,6 +58,15 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		return found, nil
 	}).AnyTimes()
 
+	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
+	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
+		return gatewaytypes.Gateway{
+			Address: addr,
+			Stake:   &stake,
+		}, true
+	}).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -70,6 +80,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		paramsSubspace,
 		mockBankKeeper,
 		mockAccountKeeper,
+		mockGatewayKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

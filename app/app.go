@@ -583,17 +583,6 @@ func New(
 	)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
-		appCodec,
-		keys[applicationmoduletypes.StoreKey],
-		keys[applicationmoduletypes.MemStoreKey],
-		app.GetSubspace(applicationmoduletypes.ModuleName),
-
-		app.BankKeeper,
-		app.AccountKeeper,
-	)
-	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
-
 	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
 		appCodec,
 		keys[suppliermoduletypes.StoreKey],
@@ -613,6 +602,18 @@ func New(
 		app.BankKeeper,
 	)
 	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
+		appCodec,
+		keys[applicationmoduletypes.StoreKey],
+		keys[applicationmoduletypes.MemStoreKey],
+		app.GetSubspace(applicationmoduletypes.ModuleName),
+
+		app.BankKeeper,
+		app.AccountKeeper,
+		app.GatewayKeeper,
+	)
+	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
