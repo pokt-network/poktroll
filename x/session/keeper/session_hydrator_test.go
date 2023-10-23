@@ -13,14 +13,14 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	blockHeight := int64(1)
 
-	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestAppAddress, keepertest.TestServiceId, blockHeight)
+	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestApp1Address, keepertest.TestServiceId1, blockHeight)
 	session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 	require.NoError(t, err)
 
 	// sessionHeader := session.SessionHeader
 
-	require.Equal(t, keepertest.TestAppAddress, session.Application.Address)
-	require.Equal(t, keepertest.TestAppAddress, session.Application.Address)
+	require.Equal(t, keepertest.TestApp1Address, session.Application.Address)
+	require.Equal(t, keepertest.TestApp1Address, session.Application.Address)
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
@@ -70,8 +70,8 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 		},
 	}
 
-	appAddr := keepertest.TestAppAddress
-	serviceId := keepertest.TestServiceId
+	appAddr := keepertest.TestApp1Address
+	serviceId := keepertest.TestServiceId1
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 
 	for _, tt := range tests {
@@ -89,12 +89,19 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 func TestSession_HydrateSession_SessionId(t *testing.T) {
 	type test struct {
-		name        string
-		blockHeight int64
-		appAddress  string
-		serviceId   string
+		name string
 
-		expectedSessionId string
+		blockHeight1 int64
+		blockHeight2 int64
+
+		appAddr1 string
+		appAddr2 string
+
+		serviceId1 string
+		serviceId2 string
+
+		expectedSessionId1 string
+		expectedSessionId2 string
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
@@ -102,17 +109,67 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	tests := []test{
 		{
 			name: "(app1, svc1): sessionId at first session block != sessionId at next session block",
+
+			blockHeight1: 4,
+			blockHeight2: 8,
+
+			appAddr1: keepertest.TestApp1Address, // app1
+			appAddr2: keepertest.TestApp1Address, // app1
+
+			serviceId1: keepertest.TestServiceId1, // svc1
+			serviceId2: keepertest.TestServiceId1, // svc1
+
+			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
+			expectedSessionId2: "46b797bf320f813a2c420e2e6bf48cf60cef6f31c1d54d5669f8de805fbb7a29",
 		},
 		{
 			name: "app1: sessionId for svc1 != sessionId for svc2",
+
+			blockHeight1: 4,
+			blockHeight2: 4,
+
+			appAddr1: keepertest.TestApp1Address, // app1
+			appAddr2: keepertest.TestApp1Address, // app1
+
+			serviceId1: keepertest.TestServiceId1, // svc1
+			serviceId2: keepertest.TestServiceId2, // svc2
+
+			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
+			expectedSessionId2: "14346dd61c7a6d3831d17c6d3d134f61af054857373b7080f92b91ae7de505b1",
 		},
 		{
 			name: "svc1: sessionId for app1 != sessionId for app2",
+
+			blockHeight1: 4,
+			blockHeight2: 4,
+
+			appAddr1: keepertest.TestApp1Address, // app1
+			appAddr2: keepertest.TestApp2Address, // app2
+
+			serviceId1: keepertest.TestServiceId1, // svc1
+			serviceId2: keepertest.TestServiceId1, // svc1
+
+			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
+			expectedSessionId2: "af38ae7df6bbae4669e0d12471d32fe8f5343546171675b5e3191421ba9f1df2",
 		},
 	}
 
+	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {})
+		t.Run(tt.name, func(t *testing.T) {
+			sessionHydrator1 := keeper.NewSessionHydrator(tt.appAddr1, tt.serviceId1, tt.blockHeight1)
+			session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
+			require.NoError(t, err)
+
+			sessionHydrator2 := keeper.NewSessionHydrator(tt.appAddr2, tt.serviceId2, tt.blockHeight2)
+			session2, err := sessionKeeper.HydrateSession(ctx, sessionHydrator2)
+			require.NoError(t, err)
+
+			require.NotEqual(t, session1.Header.SessionId, session2.Header.SessionId)
+			require.Equal(t, tt.expectedSessionId1, session1.Header.SessionId)
+			require.Equal(t, tt.expectedSessionId2, session2.Header.SessionId)
+		})
 	}
 }
 

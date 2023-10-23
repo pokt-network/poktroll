@@ -25,15 +25,33 @@ import (
 )
 
 var (
-	TestServiceId = "svc1"
+	TestServiceId1 = "svc1"
+	TestServiceId2 = "svc2"
 
-	TestAppAddress  = sample.AccAddress()
-	TestApplication = apptypes.Application{
-		Address: TestAppAddress,
+	TestApp1Address = "pokt106grzmkmep67pdfrm6ccl9snynryjqus6l3vct" // Generated via sample.AccAddress()
+	TestApp1        = apptypes.Application{
+		Address: TestApp1Address,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceIds: []*sharedtypes.ServiceId{
 			{
-				Id: TestServiceId,
+				Id: TestServiceId1,
+			},
+			{
+				Id: TestServiceId2,
+			},
+		},
+	}
+
+	TestApp2Address = "pokt1dm7tr0a99ja232gzt5rjtrl7hj6z6h40669fwh" // Generated via sample.AccAddress()
+	TestApp2        = apptypes.Application{
+		Address: TestApp1Address,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		ServiceIds: []*sharedtypes.ServiceId{
+			{
+				Id: TestServiceId1,
+			},
+			{
+				Id: TestServiceId2,
 			},
 		},
 	}
@@ -45,7 +63,7 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId},
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,
@@ -102,15 +120,19 @@ func appKeeperMock(t testing.TB) types.ApplicationKeeper {
 	ctrl := gomock.NewController(t)
 
 	getAppFn := func(_ context.Context, appAddr string) (apptypes.Application, bool) {
-		if appAddr == TestAppAddress {
-			return TestApplication, true
+		switch appAddr {
+		case TestApp1Address:
+			return TestApp1, true
+		case TestApp2Address:
+			return TestApp2, true
+		default:
+			return apptypes.Application{}, false
 		}
-		return apptypes.Application{}, false
 	}
 
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(getAppFn)
-	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), TestAppAddress).AnyTimes().Return(TestApplication, true)
+	mockAppKeeper.EXPECT().GetApplication(gomock.Any(), TestApp1Address).AnyTimes().Return(TestApp1, true)
 
 	return mockAppKeeper
 }
