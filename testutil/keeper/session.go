@@ -24,6 +24,8 @@ import (
 	sharedtypes "pocket/x/shared/types"
 )
 
+type option[V any] func(k *keeper.Keeper)
+
 var (
 	TestServiceId1 = "svc1"
 	TestServiceId2 = "svc2"
@@ -84,7 +86,7 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
+func SessionKeeper(t testing.TB, opts ...option[any]) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
 
@@ -97,8 +99,8 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
-	mockAppKeeper := appKeeperMock(t)
-	mockSupplierKeeper := supplierKeeperMock(t)
+	mockAppKeeper := defaultAppKeeperMock(t)
+	mockSupplierKeeper := defaultSupplierKeeperMock(t)
 
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
@@ -116,6 +118,10 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		mockSupplierKeeper,
 	)
 
+	for _, opt := range opts {
+		opt(k)
+	}
+
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
@@ -124,7 +130,7 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	return k, ctx
 }
 
-func appKeeperMock(t testing.TB) types.ApplicationKeeper {
+func defaultAppKeeperMock(t testing.TB) types.ApplicationKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -146,7 +152,7 @@ func appKeeperMock(t testing.TB) types.ApplicationKeeper {
 	return mockAppKeeper
 }
 
-func supplierKeeperMock(t testing.TB) types.SupplierKeeper {
+func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -156,4 +162,12 @@ func supplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes().Return(allSuppliers)
 
 	return mockSupplierKeeper
+}
+
+// WithPublisher returns an option function which sets the given publishCh of the
+// resulting observable when passed to NewObservable().
+func WithSupplierKeeperMock(supplierKeeper types.SupplierKeeper) option[any] {
+	return func(k *keeper.Keeper) {
+		k.supplierKeeper = supplierKeeper
+	}
 }

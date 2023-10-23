@@ -195,6 +195,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 }
 
+// TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	type test struct {
 		name    string
@@ -241,28 +242,42 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 }
 
+// TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	type test struct {
 		name       string
 		appAddress string
 		serviceId  string
 
-		expectedErr error
+		numExpectedSuppliers int
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []test{
 		{
-			name: "no suppliers available",
+			name:       "no suppliers available",
+			appAddress: keepertest.TestApp1Address, // app1
+			serviceId:  "svc_unknown",
+
+			numExpectedSuppliers: 0,
 		},
 		{
-			name: "num suppliers available is less than the num suppliers per session",
+			name:       "num suppliers available is less than the num suppliers per session",
+			appAddress: keepertest.TestApp1Address, // app1
+			serviceId:  keepertest.TestServiceId1,  // svc1
+
+			numExpectedSuppliers: 0,
 		},
-		{
-			name: "num suppliers available is greater than num suppliers per session",
-		},
+		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
+		// {
+		// 	name: "num suppliers available is greater than num suppliers per session",
+		// },
 	}
+
+	serviceId := keepertest.TestServiceId1
+	blockHeight := int64(10)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {})
