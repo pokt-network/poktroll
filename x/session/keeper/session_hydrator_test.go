@@ -8,6 +8,7 @@ import (
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/sample"
 	"pocket/x/session/keeper"
+	"pocket/x/session/types"
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
@@ -213,24 +214,29 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			name:    "app is not found",
 			appAddr: sample.AccAddress(), // Generating a random address on the fly
 
-			expectedErr: nil,
+			expectedErr: types.ErrHydratingSession,
 		},
 		{
 			name:    "invalid app address",
 			appAddr: "invalid",
 
-			expectedErr: nil,
+			expectedErr: types.ErrHydratingSession,
 		},
 	}
 
-	// sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	serviceId := keepertest.TestServiceId1
+	blockHeight := int64(10)
+	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// sessionHydrator1 := keeper.NewSessionHydrator(tt.appAddr1, tt.serviceId1, tt.blockHeight1)
-			// session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
-			// require.NoError(t, err)
-
+			sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, serviceId, blockHeight)
+			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
+			if tt.expectedErr != nil {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
