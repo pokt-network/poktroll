@@ -45,3 +45,4 @@ jobs:
           level: error
           fail_on_error: true
           pattern: var _ .\+ = &.\+{}
+          ignore: .github,.git
