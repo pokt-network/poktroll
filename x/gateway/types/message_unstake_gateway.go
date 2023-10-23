@@ -7,7 +7,7 @@ import (
 
 const TypeMsgUnstakeGateway = "unstake_gateway"
 
-var _ sdk.Msg = &MsgUnstakeGateway{}
+var _ sdk.Msg = (*MsgUnstakeGateway)(nil)
 
 func NewMsgUnstakeGateway(address string) *MsgUnstakeGateway {
 	return &MsgUnstakeGateway{
