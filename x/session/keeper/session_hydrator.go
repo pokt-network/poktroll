@@ -80,6 +80,8 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 	logger.Debug("Finished hydrating session suppliers: %+v")
 
 	sh.session.Header = sh.sessionHeader
+	sh.session.SessionId = sh.sessionHeader.SessionId
+
 	return sh.session, nil
 }
 

@@ -71,6 +71,15 @@ var (
 					},
 				},
 			},
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     TestSupplierUrl,
+						RpcType: sharedtypes.RPCType_GRPC,
+					},
+				},
+			},
 		},
 	}
 )
