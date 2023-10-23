@@ -69,6 +69,15 @@ func (obsvr *channelObserver[V]) Ch() <-chan V {
 	return obsvr.observerCh
 }
 
+// IsClosed returns true if the observer has been unsubscribed.
+// A closed observer cannot be reused.
+func (obsvr *channelObserver[V]) IsClosed() bool {
+	obsvr.observerMu.Lock()
+	defer obsvr.observerMu.Unlock()
+
+	return obsvr.isClosed
+}
+
 // unsubscribe closes the subscription channel, marks the observer as isClosed, and
 // removes the subscription from its observable's observers list via onUnsubscribe.
 func (obsvr *channelObserver[V]) unsubscribe() {
