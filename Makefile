@@ -232,20 +232,20 @@ app_list: ## List all the staked applications
 	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
 
 .PHONY: app_stake
-app_stake: ## Stake tokens for the application specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1
-	APP=app1 make app_stake
+	SERVICES=svc1,svc2 APP=app1 make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	APP=app2 make app_stake
+	SERVICES=svc2,svc3 APP=app2 make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	APP=app3 make app_stake
+	SERVICES=svc3,svc4 APP=app3 make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
