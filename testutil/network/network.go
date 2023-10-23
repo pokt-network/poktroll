@@ -27,6 +27,8 @@ import (
 	"pocket/testutil/sample"
 	app_types "pocket/x/application/types"
 	gateway_types "pocket/x/gateway/types"
+	shared_types "pocket/x/shared/types"
+	supplier_types "pocket/x/supplier/types"
 )
 
 type (
@@ -129,6 +131,23 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.Genesi
 		}
 		nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
+// DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
+// It returns the populated GenesisState object.
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *supplier_types.GenesisState {
+	t.Helper()
+	state := supplier_types.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
+		gateway := shared_types.Supplier{
+			Address: strconv.Itoa(i),
+			Stake:   &stake,
+		}
+		nullify.Fill(&gateway)
+		state.SupplierList = append(state.SupplierList, gateway)
 	}
 	return state
 }

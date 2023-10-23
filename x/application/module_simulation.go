@@ -32,6 +32,14 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgUnstakeApplication int = 100
 
+	opWeightMsgDelegateToGateway = "op_weight_msg_delegate_to_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgDelegateToGateway int = 100
+
+	opWeightMsgUndelegateFromGateway = "op_weight_msg_undelegate_from_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgUndelegateFromGateway int = 100
+
 	// this line is used by starport scaffolding # simapp/module/const
 )
 
@@ -82,6 +90,28 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
+	var weightMsgDelegateToGateway int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgDelegateToGateway, &weightMsgDelegateToGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgDelegateToGateway = defaultWeightMsgDelegateToGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgDelegateToGateway,
+		applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
+	var weightMsgUndelegateFromGateway int
+	simState.AppParams.GetOrGenerate(simState.Cdc, opWeightMsgUndelegateFromGateway, &weightMsgUndelegateFromGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgUndelegateFromGateway = defaultWeightMsgUndelegateFromGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUndelegateFromGateway,
+		applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -103,6 +133,22 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgUnstakeApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgDelegateToGateway,
+			defaultWeightMsgDelegateToGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUndelegateFromGateway,
+			defaultWeightMsgUndelegateFromGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

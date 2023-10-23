@@ -3,29 +3,27 @@ package types
 import (
 	"testing"
 
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
-
 	"pocket/testutil/sample"
 )
 
-// TODO(@bryanchriswhite): Add unit tests for message validation when adding the business logic.
-
-func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
+func TestMsgUndelegateFromGateway_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		name string
-		msg  MsgCreateClaim
+		msg  MsgUndelegateFromGateway
 		err  error
 	}{
 		{
 			name: "invalid address",
-			msg: MsgCreateClaim{
-				SupplierAddress: "invalid_address",
+			msg: MsgUndelegateFromGateway{
+				Address: "invalid_address",
 			},
-			err: ErrSupplierInvalidAddress,
+			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "valid address",
-			msg: MsgCreateClaim{
-				SupplierAddress: sample.AccAddress(),
+			msg: MsgUndelegateFromGateway{
+				Address: sample.AccAddress(),
 			},
 		},
 	}

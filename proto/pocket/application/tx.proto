@@ -10,14 +10,16 @@ option go_package = "pocket/x/application/types";
 
 // Msg defines the Msg service.
 service Msg {
-  rpc StakeApplication   (MsgStakeApplication  ) returns (MsgStakeApplicationResponse  );
-  rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
+  rpc StakeApplication      (MsgStakeApplication     ) returns (MsgStakeApplicationResponse     );
+  rpc UnstakeApplication    (MsgUnstakeApplication   ) returns (MsgUnstakeApplicationResponse   );
+  rpc DelegateToGateway     (MsgDelegateToGateway    ) returns (MsgDelegateToGatewayResponse    );
+  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse);
 }
 message MsgStakeApplication {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string                   address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  cosmos.base.v1beta1.Coin stake   = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
 
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
-  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
   // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
   // repeated service.ServiceId service_ids = 3; // The ID of the service this session is servicing
 }
@@ -26,8 +28,20 @@ message MsgStakeApplicationResponse {}
 
 message MsgUnstakeApplication {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
-
   string address = 1;
 }
 
 message MsgUnstakeApplicationResponse {}
+
+message MsgDelegateToGateway {
+  string address = 1;
+}
+
+message MsgDelegateToGatewayResponse {}
+
+message MsgUndelegateFromGateway {
+  string address = 1;
+}
+
+message MsgUndelegateFromGatewayResponse {}
+

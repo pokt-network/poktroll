@@ -1,24 +1,22 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
-
-	"pocket/x/supplier/types"
+	"pocket/x/application/types"
 )
 
-func CmdUnstakeSupplier() *cobra.Command {
-	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
-	cmd := &cobra.Command{
-		Use:   "unstake-supplier",
-		Short: "Unstake a supplier",
-		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
+var _ = strconv.Itoa(0)
 
-Example:
-$ pocketd --home=$(POCKETD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
-		Args: cobra.ExactArgs(0),
+func CmdDelegateToGateway() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "delegate-to-gateway",
+		Short: "Broadcast message delegate-to-gateway",
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -26,7 +24,7 @@ $ pocketd --home=$(POCKETD_HOME) tx supplier unstake-supplier --keyring-backend 
 				return err
 			}
 
-			msg := types.NewMsgUnstakeSupplier(
+			msg := types.NewMsgDelegateToGateway(
 				clientCtx.GetFromAddress().String(),
 			)
 			if err := msg.ValidateBasic(); err != nil {

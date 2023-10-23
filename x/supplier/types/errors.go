@@ -8,5 +8,8 @@ import (
 
 // x/supplier module sentinel errors
 var (
-	ErrSample = sdkerrors.Register(ModuleName, 1100, "sample error")
+	ErrSupplierInvalidStake   = sdkerrors.Register(ModuleName, 1, "invalid supplier stake")
+	ErrSupplierInvalidAddress = sdkerrors.Register(ModuleName, 2, "invalid supplier address")
+	ErrSupplierUnauthorized   = sdkerrors.Register(ModuleName, 3, "unauthorized supplier signer")
+	ErrSupplierNotFound       = sdkerrors.Register(ModuleName, 4, "supplier not found")
 )
