@@ -49,6 +49,8 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+	// because the gateways are not staked this is needed to mock the GetPubKey method which
+	// returns nil if the actor cannot be found on chain (ie. not staked)
 	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).DoAndReturn(func(_ sdk.Context, address sdk.AccAddress) (cryptotypes.PubKey, error) {
 		addr := address.String()
 		found, ok := AddrToPubKeyMap[addr]

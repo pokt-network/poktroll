@@ -140,3 +140,38 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	foundGatewayAddr = types.PublicKeyToAddress(foundPubKey)
 	require.Equal(t, gatewayAddr, foundGatewayAddr)
 }
+
+func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k)
+	wctx := sdk.WrapSDKContext(ctx)
+
+	// Generate an address for the application and gateway
+	appAddr := sample.AccAddress()
+	gatewayAddr := sample.AccAddress()
+
+	// Prepare the application
+	stakeMsg := &types.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+	}
+
+	// Stake the application & verify that the application exists
+	_, err := srv.StakeApplication(wctx, stakeMsg)
+	require.NoError(t, err)
+	_, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+
+	// Prepare the delegation message
+	delegateMsg := &types.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: gatewayAddr,
+	}
+
+	// Attempt to delegate the application to the unstaked gateway
+	_, err = srv.DelegateToGateway(wctx, delegateMsg)
+	require.Error(t, err)
+	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, 0, len(foundApp.DelegateePubKeys))
+}
