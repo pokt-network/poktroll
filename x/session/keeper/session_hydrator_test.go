@@ -35,7 +35,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the application
 	app := session.Application
 	require.Equal(t, keepertest.TestApp1Address, app.Address)
-	require.Len(t, app.ServiceIds, 2)
+	require.Len(t, app.ServiceConfigs, 2)
 
 	// Check the suppliers
 	suppliers := session.Suppliers

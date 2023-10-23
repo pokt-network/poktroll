@@ -4,6 +4,9 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
+
+	servicehelpers "pocket/x/shared/helpers"
+	sharedtypes "pocket/x/shared/types"
 )
 
 const TypeMsgStakeApplication = "stake_application"
@@ -13,11 +16,22 @@ var _ sdk.Msg = &MsgStakeApplication{}
 func NewMsgStakeApplication(
 	address string,
 	stake types.Coin,
-
+	serviceIds []string,
 ) *MsgStakeApplication {
+	// Convert the serviceIds to the proper ApplicationServiceConfig type (enables future expansion)
+	appServiceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(serviceIds))
+	for idx, serviceId := range serviceIds {
+		appServiceConfigs[idx] = &sharedtypes.ApplicationServiceConfig{
+			ServiceId: &sharedtypes.ServiceId{
+				Id: serviceId,
+			},
+		}
+	}
+
 	return &MsgStakeApplication{
-		Address: address,
-		Stake:   &stake,
+		Address:  address,
+		Stake:    &stake,
+		Services: appServiceConfigs,
 	}
 }
 
@@ -64,7 +78,26 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
 	}
 	if stake.Denom != "upokt" {
-		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application: %v", msg.Stake)
+	}
+
+	// Validate the Services
+	if len(msg.Services) == 0 {
+		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "no services configs provided for application: %v", msg.Services)
+	}
+	for _, serviceConfig := range msg.Services {
+		if serviceConfig == nil {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceConfig cannot be nil: %v", msg.Services)
+		}
+		if serviceConfig.ServiceId == nil {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceId cannot be nil: %v", serviceConfig)
+		}
+		if serviceConfig.ServiceId.Id == "" {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceId.Id cannot be empty: %v", serviceConfig)
+		}
+		if !servicehelpers.IsValidServiceId(serviceConfig.ServiceId.Id) {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "invalid serviceId.Id: %v", serviceConfig)
+		}
 	}
 
 	return nil
