@@ -11,6 +11,7 @@ import "context"
 // notified of new values asynchronously.
 // It is analogous to a publisher in a "Fan-Out" system design.
 type Observable[V any] interface {
+	Next(context.Context) V
 	Subscribe(context.Context) Observer[V]
 	UnsubscribeAll()
 }

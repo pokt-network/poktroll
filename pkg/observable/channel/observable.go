@@ -64,6 +64,14 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 	}
 }
 
+func (obsvbl *channelObservable[V]) Next(ctx context.Context) V {
+	tempObserver := obsvbl.Subscribe(ctx)
+	defer tempObserver.Unsubscribe()
+
+	val := <-tempObserver.Ch()
+	return val
+}
+
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
