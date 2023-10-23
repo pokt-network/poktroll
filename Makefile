@@ -124,7 +124,10 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/session/types/
 
 .PHONY: go_develop
-go_develop: proto_regen go_mockgen go_test ## Generate protos, mocks and run all tests
+go_develop: proto_regen go_mockgen ## Generate protos and mocks
+
+.PHONY: go_develop_and_test
+go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
 #############
 ### TODOS ###
