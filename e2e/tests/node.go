@@ -24,7 +24,7 @@ func init() {
 		defaultRPCURL = fmt.Sprintf("tcp://%s:%d", defaultRPCHost, defaultRPCPort)
 	}
 	if defaultHome == "" {
-		defaultHome = "./localnet/pocketd"
+		defaultHome = "../../localnet/pocketd"
 	}
 }
 
