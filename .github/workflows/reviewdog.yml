@@ -32,3 +32,16 @@ jobs:
           reporter: github-check
           level: warning
           locale: "US"
+
+  check_non_standard_interface_implementations:
+    name: Check for non-standard interface implementation statements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pokt-network/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          pattern: var _ \(.*\) = &\(.*\){}
