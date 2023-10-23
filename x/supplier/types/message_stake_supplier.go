@@ -8,7 +8,7 @@ import (
 
 const TypeMsgStakeSupplier = "stake_supplier"
 
-var _ sdk.Msg = &MsgStakeSupplier{}
+var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 
 func NewMsgStakeSupplier(
 	address string,
