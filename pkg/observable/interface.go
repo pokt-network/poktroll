@@ -11,7 +11,12 @@ import "context"
 // notified of new values asynchronously.
 // It is analogous to a publisher in a "Fan-Out" system design.
 type Observable[V any] interface {
+	// Next synchronously returns the next value from the observable.
+	Next(context.Context) V
+	// Subscribe returns an observer which is notified when the publishCh channel
+	// receives a value.
 	Subscribe(context.Context) Observer[V]
+	// UnsubscribeAll unsubscribes and removes all observers from the observable.
 	UnsubscribeAll()
 }
 
@@ -19,6 +24,12 @@ type Observable[V any] interface {
 // channel and allows unsubscribing from an Observable.
 // It is analogous to a subscriber in a "Fan-Out" system design.
 type Observer[V any] interface {
+	// Unsubscribe closes the subscription channel and removes the subscription from
+	// the observable.
 	Unsubscribe()
+	// Ch returns a receive-only subscription channel.
 	Ch() <-chan V
+	// IsClosed returns true if the observer has been unsubscribed.
+	// A closed observer cannot be reused.
+	IsClosed() bool
 }
