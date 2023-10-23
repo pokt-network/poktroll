@@ -15,42 +15,35 @@ import (
 func TestQueryClient_EventsObservable_Integration(t *testing.T) {
 	const (
 		eventReceiveTimeout = 5 * time.Second
-		observedEventsLimit = 2
+		observedEventsLimit = 3
 	)
 	ctx := context.Background()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
 	require.NotNil(t, queryClient)
 
-	eventsObservable, errCh := queryClient.EventsBytes(ctx, "tm.event='NewBlock'")
-	// check for a synchronous error
-	// TECHDEBT(#70): once Either is available, we can remove the error channel and
-	// instead use an Observable[Either[any, error]]. Return signature can become
-	// `(obsvbl Observable[Either[[]byte, error]], syncErr error)`, where syncErr
-	// is used for synchronous errors and obsvbl will propagate async errors via
-	// the Either.
-	select {
-	case err := <-errCh:
-		require.NoError(t, err)
-	default:
-		// no synchronous error
-	}
+	eventsObservable, err := queryClient.EventsBytes(ctx, "tm.event='NewBlock'")
+	require.NoError(t, err)
+
 	eventsObserver := eventsObservable.Subscribe(ctx)
 
-	var eventCounter int
+	var (
+		eventCounter int
+		done         = make(chan struct{}, 1)
+	)
 	go func() {
 		for range eventsObserver.Ch() {
 			eventCounter++
 
 			if eventCounter >= observedEventsLimit {
-				errCh <- nil
+				done <- struct{}{}
 				return
 			}
 		}
 	}()
 
 	select {
-	case err := <-errCh:
+	case <-done:
 		require.NoError(t, err)
 		require.Equal(t, observedEventsLimit, eventCounter)
 	case <-time.After(eventReceiveTimeout):

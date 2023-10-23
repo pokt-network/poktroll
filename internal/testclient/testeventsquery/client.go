@@ -8,7 +8,7 @@ import (
 	eventsquery "pocket/pkg/client/events_query"
 )
 
-func NewLocalnetClient(t *testing.T, opts ...client.Option) client.EventsQueryClient {
+func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
 	return eventsquery.NewEventsQueryClient(testclient.CometWebsocketURL, opts...)
