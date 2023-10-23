@@ -86,7 +86,7 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB, opts ...option[any]) (*keeper.Keeper, sdk.Context) {
+func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
 
@@ -118,9 +118,9 @@ func SessionKeeper(t testing.TB, opts ...option[any]) (*keeper.Keeper, sdk.Conte
 		mockSupplierKeeper,
 	)
 
-	for _, opt := range opts {
-		opt(k)
-	}
+	// for _, opt := range opts {
+	// 	opt(k)
+	// }
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())
 
@@ -164,10 +164,14 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	return mockSupplierKeeper
 }
 
+// TODO_TECHDEBT: Figure out how to vary the supplierKeep on a per test basis with exposing `SupplierKeeper publically`
+
+// type option[V any] func(k *keeper.Keeper)
+
 // WithPublisher returns an option function which sets the given publishCh of the
 // resulting observable when passed to NewObservable().
-func WithSupplierKeeperMock(supplierKeeper types.SupplierKeeper) option[any] {
-	return func(k *keeper.Keeper) {
-		k.supplierKeeper = supplierKeeper
-	}
-}
+// func WithSupplierKeeperMock(supplierKeeper types.SupplierKeeper) option[any] {
+// 	return func(k *keeper.Keeper) {
+// 		k.supplierKeeper = supplierKeeper
+// 	}
+// }
