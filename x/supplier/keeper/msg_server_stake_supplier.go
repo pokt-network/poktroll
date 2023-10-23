@@ -25,9 +25,7 @@ func (k msgServer) StakeSupplier(
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 	if !isSupplierFound {
 		logger.Info("Supplier not found. Creating new supplier for address %s", msg.Address)
-		if err = k.createSupplier(ctx, &supplier, msg); err != nil {
-			return nil, err
-		}
+		supplier = k.createSupplier(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
 		logger.Info("Supplier found. Updating supplier for address %s", msg.Address)
@@ -61,15 +59,12 @@ func (k msgServer) StakeSupplier(
 
 func (k msgServer) createSupplier(
 	ctx sdk.Context,
-	supplier *sharedtypes.Supplier,
 	msg *types.MsgStakeSupplier,
-) error {
-	*supplier = sharedtypes.Supplier{
+) sharedtypes.Supplier {
+	return sharedtypes.Supplier{
 		Address: msg.Address,
 		Stake:   msg.Stake,
 	}
-
-	return nil
 }
 
 func (k msgServer) updateSupplier(

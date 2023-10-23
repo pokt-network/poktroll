@@ -303,7 +303,6 @@ supplier2_unstake: ## Unstake supplier2
 supplier3_unstake: ## Unstake supplier3
 	SUPPLIER=supplier3 make supplier_unstake
 
-
 ################
 ### Accounts ###
 ################

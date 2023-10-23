@@ -10,8 +10,10 @@ option go_package = "pocket/x/application/types";
 
 // Msg defines the Msg service.
 service Msg {
-  rpc StakeApplication   (MsgStakeApplication  ) returns (MsgStakeApplicationResponse  );
-  rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
+  rpc StakeApplication      (MsgStakeApplication     ) returns (MsgStakeApplicationResponse     );
+  rpc UnstakeApplication    (MsgUnstakeApplication   ) returns (MsgUnstakeApplicationResponse   );
+  rpc DelegateToGateway     (MsgDelegateToGateway    ) returns (MsgDelegateToGatewayResponse    );
+  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse);
 }
 message MsgStakeApplication {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
@@ -26,8 +28,20 @@ message MsgStakeApplicationResponse {}
 
 message MsgUnstakeApplication {
   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
-
   string address = 1;
 }
 
 message MsgUnstakeApplicationResponse {}
+
+message MsgDelegateToGateway {
+  string address = 1;
+}
+
+message MsgDelegateToGatewayResponse {}
+
+message MsgUndelegateFromGateway {
+  string address = 1;
+}
+
+message MsgUndelegateFromGatewayResponse {}
+
