@@ -98,6 +98,9 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		if !servicehelpers.IsValidServiceId(serviceConfig.ServiceId.Id) {
 			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "invalid serviceId.Id: %v", serviceConfig)
 		}
+		if !servicehelpers.IsValidServiceName(serviceConfig.ServiceId.Name) {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "invalid serviceId.Name: %v", serviceConfig)
+		}
 	}
 
 	return nil

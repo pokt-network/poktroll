@@ -122,6 +122,20 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			err: ErrAppInvalidServiceConfigs,
 		},
 		{
+			name: "invalid service configs - invalid service Name that's too long",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: &sharedtypes.ServiceId{
+						Id:   "123",
+						Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
+					}},
+				},
+			},
+			err: ErrAppInvalidServiceConfigs,
+		},
+		{
 			name: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
