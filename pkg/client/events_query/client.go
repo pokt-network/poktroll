@@ -126,42 +126,6 @@ func (eqc *eventsQueryClient) close() {
 	}
 }
 
-// goProduceEventsBz blocks on reading messages from a websocket connection.
-// It is intended to be called from within a go routine.
-func (eqc *eventsQueryClient) goProduceEventsBz(
-	ctx context.Context,
-	conn client.Connection,
-	eventsBzPublishCh chan<- either.Either[[]byte],
-) {
-	// Read and handle messages from the websocket. This loop will exit when the
-	// websocket connection is closed and/or returns an error.
-	for {
-		event, err := conn.Receive()
-		if err != nil {
-			// TODO_CONSIDERATION: should we close the publish channel here too?
-
-			// Stop this goroutine if there's an error.
-			//
-			// See gorilla websocket `Conn#NextReader()` docs:
-			// | Applications must break out of the application's read loop when this method
-			// | returns a non-nil error value. Errors returned from this method are
-			// | permanent. Once this method returns a non-nil error, all subsequent calls to
-			// | this method return the same error.
-
-			// only propagate error if it's not a context cancellation error
-			if !errors.Is(ctx.Err(), context.Canceled) {
-				// TODO_THIS_COMMIT: refactor to cosmos-sdk error
-				eventsBzPublishCh <- either.Error[[]byte](err)
-			}
-
-			eqc.close()
-			return
-		}
-
-		eventsBzPublishCh <- either.Success(event)
-	}
-}
-
 // getNextRequestId increments and returns the JSON-RPC request ID which should
 // be used for the next request. These IDs are expected to be unique (per request).
 func (eqc *eventsQueryClient) getNextRequestId() string {
@@ -195,7 +159,7 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Either[[]byte]]()
 
 	// TODO_INVESTIGATE: does this require retry on error?
-	go eqc.goProduceEventsBz(ctx, conn, eventsBzPublishCh)
+	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
 
 	return &eventsBytesAndConn{
 		eventsBytes: eventsBzObservable,
@@ -231,6 +195,43 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 		return nil, multierr.Combine(subscribeErr, closeErr)
 	}
 	return conn, nil
+}
+
+// goPublishEventsBz blocks on reading messages from a websocket connection.
+// It is intended to be called from within a go routine.
+func (eqc *eventsQueryClient) goPublishEventsBz(
+	ctx context.Context,
+	conn client.Connection,
+	eventsBzPublishCh chan<- either.Either[[]byte],
+) {
+	// Read and handle messages from the websocket. This loop will exit when the
+	// websocket connection is closed and/or returns an error.
+	for {
+		event, err := conn.Receive()
+		if err != nil {
+			// TODO_CONSIDERATION: should we close the publish channel here too?
+
+			// Stop this goroutine if there's an error.
+			//
+			// See gorilla websocket `Conn#NextReader()` docs:
+			// | Applications must break out of the application's read loop when this method
+			// | returns a non-nil error value. Errors returned from this method are
+			// | permanent. Once this method returns a non-nil error, all subsequent calls to
+			// | this method return the same error.
+
+			// Only propagate error if it's not a context cancellation error.
+			if !errors.Is(ctx.Err(), context.Canceled) {
+				// Populate the error side (left) of the either and publish it.
+				eventsBzPublishCh <- either.Error[[]byte](err)
+			}
+
+			eqc.close()
+			return
+		}
+
+		// Populate the []byte side (right) of the either and publish it.
+		eventsBzPublishCh <- either.Success(event)
+	}
 }
 
 // insertEventsBytesAndConn inserts the given eventsBytes into the eventsBytesAndConns map
