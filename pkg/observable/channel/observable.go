@@ -13,7 +13,7 @@ import (
 // defaultSubscribeBufferSize is the buffer size of a observable's publish channel.
 const defaultPublishBufferSize = 50
 
-var _ observable.Observable[any] = &channelObservable[any]{}
+var _ observable.Observable[any] = (*channelObservable[any])(nil)
 
 // option is a function which receives and can modify the channelObservable state.
 type option[V any] func(obs *channelObservable[V])

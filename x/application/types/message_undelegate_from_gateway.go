@@ -7,7 +7,7 @@ import (
 
 const TypeMsgUndelegateFromGateway = "undelegate_from_gateway"
 
-var _ sdk.Msg = &MsgUndelegateFromGateway{}
+var _ sdk.Msg = (*MsgUndelegateFromGateway)(nil)
 
 func NewMsgUndelegateFromGateway(address string) *MsgUndelegateFromGateway {
 	return &MsgUndelegateFromGateway{
