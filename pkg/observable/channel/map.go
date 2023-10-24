@@ -6,6 +6,10 @@ import (
 	"pocket/pkg/observable"
 )
 
+// Map transforms the given observable by applying the given transformFn to each
+// notification received from the observable. If the transformFn returns a skip
+// bool of true, the notification is skipped and not emitted to the resulting
+// observable.
 func Map[S, D any](
 	ctx context.Context,
 	srcObservable observable.Observable[S],

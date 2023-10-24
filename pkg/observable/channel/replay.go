@@ -10,15 +10,28 @@ import (
 
 const replayNotificationTimeout = 1 * time.Second
 
-var _ observable.Observable[any] = &replayObservable[any]{}
+var _ observable.ReplayObservable[any] = &replayObservable[any]{}
 
 type replayObservable[V any] struct {
 	*channelObservable[V]
-	size              int
-	notificationsMu   sync.RWMutex
-	notifications     []V
-	replayObserversMu sync.RWMutex
-	replayObservers   []observable.Observer[V]
+	// replayBufferSize is  the number of replayBuffer to buffer so that they
+	// can be replayed to new observers.
+	replayBufferSize int
+	// replayBufferMu protects replayBuffer from concurrent access/updates.
+	replayBufferMu sync.RWMutex
+	// replayBuffer is the buffer of notifications into which new notifications
+	// will be pushed and which will be sent to new subscribers before any new
+	// notifications are sent.
+	replayBuffer []V
+}
+
+// NewReplayObservable returns a new ReplayObservable with a replay buffer replayBufferSize
+// of n and the corresponding publish channel to notify it of new values.
+func NewReplayObservable[V any](
+	ctx context.Context, n int,
+) (observable.ReplayObservable[V], chan<- V) {
+	obsvbl, publishCh := NewObservable[V]()
+	return Replay[V](ctx, n, obsvbl), publishCh
 }
 
 // Replay returns an observable which replays the last n values published to the
@@ -26,7 +39,7 @@ type replayObservable[V any] struct {
 func Replay[V any](
 	ctx context.Context, n int,
 	srcObsvbl observable.Observable[V],
-) observable.Observable[V] {
+) observable.ReplayObservable[V] {
 	// TODO_HACK/TODO_IMPROVE: more effort is required to make a generic replay
 	// observable; however, as we only have the one observable package (channel),
 	// and aren't anticipating need another, we can get away with this for now.
@@ -37,8 +50,8 @@ func Replay[V any](
 
 	replayObsvbl := &replayObservable[V]{
 		channelObservable: chanObsvbl,
-		size:              n,
-		notifications:     make([]V, 0, n),
+		replayBufferSize:  n,
+		replayBuffer:      make([]V, 0, n),
 	}
 
 	srcObserver := srcObsvbl.Subscribe(ctx)
@@ -47,31 +60,40 @@ func Replay[V any](
 	return replayObsvbl
 }
 
-// Next synchronously returns the next value from the observable. This will always
+// Last synchronously returns the last n values from the replay buffer. This will always
 // return the first value in the replay buffer, if it exists.
-func (ro *replayObservable[V]) Next(ctx context.Context) V {
+func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	tempObserver := ro.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
 
-	val := <-tempObserver.Ch()
-	return val
+	if n > cap(ro.replayBuffer) {
+		n = cap(ro.replayBuffer)
+		// TODO_THIS_COMMIT: log a warning
+	}
+
+	values := make([]V, n)
+	for i, _ := range values {
+		value := <-tempObserver.Ch()
+		values[i] = value
+	}
+	return values
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	ro.notificationsMu.RLock()
-	defer ro.notificationsMu.RUnlock()
+	ro.replayBufferMu.RLock()
+	defer ro.replayBufferMu.RUnlock()
 
 	observer := NewObserver[V](ctx, ro.onUnsubscribe)
 
-	// Replay all buffered notifications to the observer channel buffer before
+	// Replay all buffered replayBuffer to the observer channel buffer before
 	// any new values have an opportunity to send on observerCh (i.e. appending
 	// observer to ro.observers).
 	//
 	// TODO_IMPROVE: this assumes that the observer channel buffer is large enough
-	// to hold all replay (buffered) notifications.
-	for _, notification := range ro.notifications {
+	// to hold all replay (buffered) replayBuffer.
+	for _, notification := range ro.replayBuffer {
 		observer.notify(notification)
 	}
 
@@ -91,19 +113,19 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 	return observer
 }
 
-// goBufferReplayNotifications buffers the last n notifications from a source
+// goBufferReplayNotifications buffers the last n replayBuffer from a source
 // observer. It is intended to be run in a goroutine.
 func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observable.Observer[V]) {
 	for notification := range srcObserver.Ch() {
-		ro.notificationsMu.Lock()
+		ro.replayBufferMu.Lock()
 		// Add the notification to the buffer.
-		if len(ro.notifications) < ro.size {
-			ro.notifications = append(ro.notifications, notification)
+		if len(ro.replayBuffer) < ro.replayBufferSize {
+			ro.replayBuffer = append(ro.replayBuffer, notification)
 		} else {
 			// buffer full, make room for the new notification by removing the
 			// oldest notification.
-			ro.notifications = append(ro.notifications[1:], notification)
+			ro.replayBuffer = append(ro.replayBuffer[1:], notification)
 		}
-		ro.notificationsMu.Unlock()
+		ro.replayBufferMu.Unlock()
 	}
 }

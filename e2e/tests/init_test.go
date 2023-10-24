@@ -5,26 +5,37 @@ package e2e
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 )
 
-var addrRe *regexp.Regexp
+var (
+	addrRe           *regexp.Regexp
+	amountRe         *regexp.Regexp
+	accNameToAddrMap = make(map[string]string)
+	keyRingFlag      = "--keyring-backend=test"
+)
 
 func init() {
-	addrRe = regexp.MustCompile(`address:\s+(pokt1\w+)`)
+	addrRe = regexp.MustCompile(`address: (\S+)\s+name: (\S+)`)
+	amountRe = regexp.MustCompile(`amount: "(.+?)"\s+denom: upokt`)
 }
 
 type suite struct {
 	gocuke.TestingT
-	pocketd *pocketdBin
+	pocketd       *pocketdBin
+	scenarioState map[string]any // temporary state for each scenario
 }
 
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
+	s.scenarioState = make(map[string]any)
+	s.buildAddrMap()
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -56,17 +67,15 @@ func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	}
 }
 
-func (s *suite) TheUserSendsUpoktToAnotherAddress(amount int64) {
-	addrs := s.getAddresses()
+func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
 	args := []string{
 		"tx",
 		"bank",
 		"send",
-		addrs[0],
-		addrs[1],
+		accNameToAddrMap[accName1],
+		accNameToAddrMap[accName2],
 		fmt.Sprintf("%dupokt", amount),
-		"--keyring-backend",
-		"test",
+		keyRingFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -76,20 +85,78 @@ func (s *suite) TheUserSendsUpoktToAnotherAddress(amount int64) {
 	s.pocketd.result = res
 }
 
-func (s *suite) getAddresses() [2]string {
-	var strs [2]string
+func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
+	bal := s.getAccBalance(accName)
+	if int64(bal) < amount {
+		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
+	}
+	s.scenarioState[accName] = bal // save the balance for later
+}
+
+func (s *suite) AnAccountExistsFor(accName string) {
+	bal := s.getAccBalance(accName)
+	s.scenarioState[accName] = bal // save the balance for later
+}
+
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
+	prev, ok := s.scenarioState[accName]
+	if !ok {
+		s.Fatalf("no previous balance found for %s", accName)
+	}
+
+	bal := s.getAccBalance(accName)
+	switch condition {
+	case "more":
+		if bal <= prev.(int) {
+			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, bal, prev)
+		}
+	case "less":
+		if bal >= prev.(int) {
+			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, bal, prev)
+		}
+	default:
+		s.Fatalf("unknown condition %s", condition)
+	}
+}
+
+func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
+	time.Sleep(time.Duration(dur) * time.Second)
+}
+
+func (s *suite) buildAddrMap() {
+	s.Helper()
 	res, err := s.pocketd.RunCommand(
-		"keys", "list", "--keyring-backend", "test",
+		"keys", "list", keyRingFlag,
 	)
 	if err != nil {
 		s.Fatalf("error getting keys: %s", err)
 	}
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
-	if len(matches) >= 2 {
-		strs[0] = matches[0][1]
-		strs[1] = matches[len(matches)-1][1]
-	} else {
-		s.Fatalf("could not find two addresses in output: %s", res.Stdout)
+	for _, match := range matches {
+		name := match[2]
+		address := match[1]
+		accNameToAddrMap[name] = address
 	}
-	return strs
+}
+
+func (s *suite) getAccBalance(accName string) int {
+	s.Helper()
+	args := []string{
+		"query",
+		"bank",
+		"balances",
+		accNameToAddrMap[accName],
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	if err != nil {
+		s.Fatalf("error getting balance: %s", err)
+	}
+	s.pocketd.result = res
+	match := amountRe.FindStringSubmatch(res.Stdout)
+	if len(match) < 2 {
+		s.Fatalf("no balance found for %s", accName)
+	}
+	found, err := strconv.Atoi(match[1])
+	require.NoError(s, err)
+	return found
 }

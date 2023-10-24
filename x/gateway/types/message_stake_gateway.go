@@ -8,7 +8,7 @@ import (
 
 const TypeMsgStakeGateway = "stake_gateway"
 
-var _ sdk.Msg = &MsgStakeGateway{}
+var _ sdk.Msg = (*MsgStakeGateway)(nil)
 
 func NewMsgStakeGateway(address string, stake types.Coin) *MsgStakeGateway {
 	return &MsgStakeGateway{

@@ -7,7 +7,7 @@ import (
 
 const TypeMsgUnstakeApplication = "unstake_application"
 
-var _ sdk.Msg = &MsgUnstakeApplication{}
+var _ sdk.Msg = (*MsgUnstakeApplication)(nil)
 
 func NewMsgUnstakeApplication(address string) *MsgUnstakeApplication {
 	return &MsgUnstakeApplication{
