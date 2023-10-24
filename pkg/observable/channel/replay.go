@@ -25,19 +25,22 @@ type replayObservable[V any] struct {
 	replayBuffer []V
 }
 
-// NewReplayObservable returns a new ReplayObservable with a replay buffer replayBufferSize
-// of n and the corresponding publish channel to notify it of new values.
+// NewReplayObservable returns a new ReplayObservable with the given replay buffer
+// replayBufferSize and the corresponding publish channel to notify it of new values.
 func NewReplayObservable[V any](
-	ctx context.Context, n int,
+	ctx context.Context,
+	replayBufferSize int,
 ) (observable.ReplayObservable[V], chan<- V) {
 	obsvbl, publishCh := NewObservable[V]()
-	return Replay[V](ctx, n, obsvbl), publishCh
+	return Replay[V](ctx, replayBufferSize, obsvbl), publishCh
 }
 
-// Replay returns an observable which replays the last n values published to the
-// source observable to new observers, before publishing new values.
+// Replay returns an observable which replays the last replayBufferSize number of
+// values published to the source observable to new observers, before publishing
+// new values.
 func Replay[V any](
-	ctx context.Context, n int,
+	ctx context.Context,
+	replayBufferSize int,
 	srcObsvbl observable.Observable[V],
 ) observable.ReplayObservable[V] {
 	// TODO_HACK/TODO_IMPROVE: more effort is required to make a generic replay
@@ -50,8 +53,8 @@ func Replay[V any](
 
 	replayObsvbl := &replayObservable[V]{
 		channelObservable: chanObsvbl,
-		replayBufferSize:  n,
-		replayBuffer:      make([]V, 0, n),
+		replayBufferSize:  replayBufferSize,
+		replayBuffer:      make([]V, 0, replayBufferSize),
 	}
 
 	srcObserver := srcObsvbl.Subscribe(ctx)
