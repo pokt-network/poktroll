@@ -6,6 +6,7 @@ import (
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"golang.org/x/sync/errgroup"
 
 	// TODO_INCOMPLETE(@red-0ne): Import the appropriate block client interface once available.
 	// blocktypes "pocket/pkg/client"
@@ -44,7 +45,7 @@ type relayerProxy struct {
 	// providedServices is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
 	// the client that proxies the request to the supported native service.
-	providedServices map[string][]*ProvidedService
+	providedServices map[string][]RelayServer
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -66,18 +67,16 @@ func NewRelayerProxy(
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
-	providedServices := buildProvidedServices(ctx, supplierQuerier)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
 		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-		// blockClient:          blockClient,
+		// blockClient:       blockClient,
 		keyName:              keyName,
 		keyring:              keyring,
 		accountsQuerier:      accountQuerier,
 		supplierQuerier:      supplierQuerier,
 		sessionQuerier:       sessionQuerier,
-		providedServices:     providedServices,
 		servedRelays:         servedRelays,
 		servedRelaysProducer: servedRelaysProducer,
 	}
@@ -85,34 +84,44 @@ func NewRelayerProxy(
 
 // Start starts all supported proxies and returns an error if any of them fail to start.
 func (rp *relayerProxy) Start(ctx context.Context) error {
-	panic("TODO: implement relayerProxy.Start")
+	// The provided services map is built from the supplier's on-chain advertised information,
+	// which is a runtime parameter that can be changed by the supplier.
+	// Build the provided services map at Start instead of NewRelayerProxy to avoid having to
+	// return an error from the constructor.
+	err := rp.BuildProvidedServices(ctx)
+	if err != nil {
+		return err
+	}
+
+	eg, gctx := errgroup.WithContext(ctx)
+
+	for _, providedService := range rp.providedServices {
+		for _, svr := range providedService {
+			server := svr // create a new variable scoped to the anonymous function
+			eg.Go(func() error { return server.Start(gctx) })
+		}
+	}
+
+	return eg.Wait()
 }
 
 // Stop stops all supported proxies and returns an error if any of them fail.
 func (rp *relayerProxy) Stop(ctx context.Context) error {
-	panic("TODO: implement relayerProxy.Stop")
+	eg, gctx := errgroup.WithContext(ctx)
+
+	for _, providedService := range rp.providedServices {
+		for _, svr := range providedService {
+			server := svr // create a new variable scoped to the anonymous function
+			eg.Go(func() error { return server.Stop(gctx) })
+		}
+	}
+
+	return eg.Wait()
 }
 
 // ServedRelays returns an observable that notifies the miner about the relays that have been served.
 // A served relay is one whose RelayRequest's signature and session have been verified,
 // and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
-	panic("TODO: implement relayerProxy.ServedRelays")
-}
-
-// buildProvidedServices builds the provided services map from the supplier's advertised information.
-// It loops over the retrieved `SupplierServiceConfig` and, for each `SupplierEndpoint`, it creates the necessary
-// server and client to populate the corresponding `ProvidedService` struct in the map.
-func buildProvidedServices(
-	ctx context.Context,
-	supplierQuerier suppliertypes.QueryClient,
-) map[string][]*ProvidedService {
-	panic("TODO: implement buildProvidedServices")
-}
-
-// TODO_INCOMPLETE(@red-0ne): Add the appropriate server and client interfaces to be implemented by each RPC type.
-type ProvidedService struct {
-	serviceId string
-	server    struct{}
-	client    struct{}
+	return rp.servedRelays
 }

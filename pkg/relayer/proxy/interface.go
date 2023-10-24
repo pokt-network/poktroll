@@ -24,3 +24,15 @@ type RelayerProxy interface {
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() observable.Observable[*types.Relay]
 }
+
+// RelayServer is the interface of the proxy servers provided by the RelayerProxy.
+type RelayServer interface {
+	// Start starts the service server and returns an error if it fails.
+	Start(ctx context.Context) error
+
+	// Stop terminates the service server and returns an error if it fails.
+	Stop(ctx context.Context) error
+
+	// Name returns the name of the service.
+	Name() string
+}
