@@ -75,10 +75,8 @@ func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryCl
 }
 
 // EventsBytes returns an eventsBytes observable which is notified about chain
-// event messages matching the given query. It receives an either.Either[[]byte] which is
-//
-//	// either an error or the event message bytes.
-//
+// event messages matching the given query. It receives an either.Either[[]byte]
+// which is either an error or the event message bytes.
 // (see: https://pkg.go.dev/github.com/cometbft/cometbft/types#pkg-constants)
 // (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 func (eqc *eventsQueryClient) EventsBytes(
