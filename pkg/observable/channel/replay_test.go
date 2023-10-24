@@ -10,11 +10,11 @@ import (
 )
 
 func TestReplayObservable(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	var (
+		n, values   = 3, []int{1, 2, 3, 4, 5}
+		ctx, cancel = context.WithCancel(context.Background())
+	)
 	t.Cleanup(cancel)
-
-	n := 3
-	values := []int{1, 2, 3, 4, 5}
 
 	obsvbl, publishCh := channel.NewObservable[int]()
 	replayObsvbl := channel.Replay[int](ctx, n, obsvbl)
@@ -71,18 +71,17 @@ func TestReplayObservable(t *testing.T) {
 }
 
 func TestReplayObservable_Next(t *testing.T) {
-	ctx := context.Background()
-	n := 3
+	var n, ctx = 3, context.Background()
+
+	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, n)
+
 	values := []int{1, 2, 3, 4, 5}
-
-	obsvbl, publishCh := channel.NewObservable[int]()
-	replayObsvbl := channel.Replay[int](ctx, n, obsvbl)
-
 	for _, value := range values {
 		publishCh <- value
 		time.Sleep(time.Millisecond)
 	}
 
-	require.Equal(t, 3, replayObsvbl.Next(ctx))
-	require.Equal(t, 3, replayObsvbl.Next(ctx))
+	require.ElementsMatch(t, []int{3}, replayObsvbl.Last(ctx, 1))
+	require.Equal(t, []int{3, 4}, replayObsvbl.Last(ctx, 2))
+	require.Equal(t, []int{3, 4, 5}, replayObsvbl.Last(ctx, 3))
 }
