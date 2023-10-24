@@ -262,18 +262,18 @@ func TestEventsQueryClient_EventsBytes_MultipleObservers(t *testing.T) {
 }
 
 // behavesLikeEitherObserver asserts that the given observer behaves like an
-// observable.Observer[either.Either[[]byte]] by consuming eventsBytes from the
-// observer channel and asserting that they match the expected eventsBytes.
+// observable.Observer[either.Either[V]] by consuming notifications from the
+// observer channel and asserting that they match the expected notification.
 // It also asserts that the observer channel is closed after the expected number
 // of eventsBytes have been received.
-// If onLimit is not nil, it is called when the expected number of eventsBytes
-// have been received.
+// If onLimit is not nil, it is called when the expected number of events have
+// been received.
 // Otherwise, the observer channel is drained and the test fails if it is not
 // closed after the timeout duration.
 func behavesLikeEitherObserver[V any](
 	t *testing.T,
 	observer observable.Observer[either.Either[V]],
-	eventsLimit int,
+	notificationsLimit int,
 	expectedErr error,
 	timeout time.Duration,
 	onLimit func(),
@@ -305,12 +305,16 @@ func behavesLikeEitherObserver[V any](
 			}
 
 			currentEventCount := atomic.LoadInt32(&eventsCounter)
-			if int(currentEventCount) >= eventsLimit {
+			if int(currentEventCount) >= notificationsLimit {
 				// signal completion
 				errCh <- nil
 				return
 			}
 
+			// TODO_IMPROVE: to make this test helper more generic, it should accept
+			// a generic function which generates the expected event for the given
+			// index. Perhaps this function could use an either type which could be
+			// used to consolidate the expectedErr and expectedEvent arguments.
 			expectedEvent := testEvent(currentEventCount)
 			// Require calls t.Fatal internally, which shouldn't happen in a
 			// goroutine other than the test function's.
@@ -333,7 +337,7 @@ func behavesLikeEitherObserver[V any](
 	select {
 	case err := <-errCh:
 		require.NoError(t, err)
-		require.Equal(t, eventsLimit, int(atomic.LoadInt32(&eventsCounter)))
+		require.Equal(t, notificationsLimit, int(atomic.LoadInt32(&eventsCounter)))
 
 		// TODO_THIS_COMMIT: is this necessary?
 		time.Sleep(10 * time.Millisecond)
@@ -344,7 +348,7 @@ func behavesLikeEitherObserver[V any](
 	case <-time.After(timeout):
 		t.Fatalf(
 			"timed out waiting for next event; expected %d events, got %d",
-			eventsLimit, atomic.LoadInt32(&eventsCounter),
+			notificationsLimit, atomic.LoadInt32(&eventsCounter),
 		)
 	}
 
