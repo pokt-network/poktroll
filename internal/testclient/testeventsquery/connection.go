@@ -9,6 +9,12 @@ import (
 	"pocket/internal/mocks/mockclient"
 )
 
+// OneTimeMockConnAndDialer returns a new mock connection and mock dialer that
+// will return the mock connection when DialContext is called. The mock dialer
+// will expect DialContext to be called exactly once. The connection mock will
+// expect Close to be called exactly once.
+// Callers must mock the Receive method with an EXPECT call before the connection
+// mock can be used.
 func OneTimeMockConnAndDialer(t *testing.T) (
 	*mockclient.MockConnection,
 	*mockclient.MockDialer,
@@ -24,15 +30,17 @@ func OneTimeMockConnAndDialer(t *testing.T) (
 	return connMock, dialerMock
 }
 
+// OneTimeMockDialer returns a mock dialer that will return either the given
+// connection mock or error when DialContext is called. The mock dialer will
+// expect DialContext to be called exactly once.
 func OneTimeMockDialer(
 	t *testing.T,
 	eitherConnMock either.Either[*mockclient.MockConnection],
 ) *mockclient.MockDialer {
-	connMock, err := eitherConnMock.ValueOrError()
-
 	ctrl := gomock.NewController(t)
 	dialerMock := mockclient.NewMockDialer(ctrl)
 
+	connMock, err := eitherConnMock.ValueOrError()
 	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
 		Return(connMock, err).
 		Times(1)
