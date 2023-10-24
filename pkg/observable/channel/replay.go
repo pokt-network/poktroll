@@ -10,7 +10,7 @@ import (
 
 const replayNotificationTimeout = 1 * time.Second
 
-var _ observable.Observable[any] = &replayObservable[any]{}
+var _ observable.ReplayObservable[any] = &replayObservable[any]{}
 
 type replayObservable[V any] struct {
 	*channelObservable[V]
@@ -26,7 +26,7 @@ type replayObservable[V any] struct {
 func Replay[V any](
 	ctx context.Context, n int,
 	srcObsvbl observable.Observable[V],
-) observable.Observable[V] {
+) observable.ReplayObservable[V] {
 	// TODO_HACK/TODO_IMPROVE: more effort is required to make a generic replay
 	// observable; however, as we only have the one observable package (channel),
 	// and aren't anticipating need another, we can get away with this for now.
