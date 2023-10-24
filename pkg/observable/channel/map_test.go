@@ -11,7 +11,7 @@ import (
 	"pocket/pkg/observable/channel"
 )
 
-func TestMapWord_BzToPalindrome(t *testing.T) {
+func TestMap_Word_BytesToPalindrome(t *testing.T) {
 	tests := []struct {
 		name    string
 		wordBz  []byte
@@ -77,7 +77,9 @@ func TestMapWord_BzToPalindrome(t *testing.T) {
 	}
 }
 
-// palindrome is a word that is spelled the same forwards and backwards.
+// Palindrome is a word that is spelled the same forwards and backwards.
+// It's used as an example of a type that can be mapped from one observable
+// and has no real utility outside of this test.
 type palindrome struct {
 	forwards  string
 	backwards string
