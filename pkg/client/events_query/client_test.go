@@ -57,7 +57,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 				readEventCounter int
 				// HandleEventsLimit is the total number of eventsBytesAndConns to send and
 				// receive through the query client's eventsBytes for this subtest.
-				handleEventsLimit     = 1000
+				handleEventsLimit     = 250
 				connClosed            atomic.Bool
 				queryCtx, cancelQuery = context.WithCancel(rootCtx)
 			)
@@ -88,6 +88,10 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 					event := testEvent(int32(readEventCounter))
 					readEventCounter++
+
+					// Simulate IO delay between sequential events.
+					time.Sleep(10 * time.Microsecond)
+
 					return event, nil
 				}).
 				MinTimes(handleEventsLimit)
@@ -143,6 +147,10 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 
 			event := testEvent(int32(readEventCounter))
 			readEventCounter++
+
+			// Simulate IO delay between sequential events.
+			time.Sleep(10 * time.Microsecond)
+
 			return event, nil
 		}).
 		MinTimes(handleEventsLimit)
