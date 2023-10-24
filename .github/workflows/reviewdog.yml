@@ -20,6 +20,20 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
+  check_non_standard_interface_implementations:
+    name: Check for non-standard interface implementation statements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pokt-network/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          pattern: var _ .* = &.*{}
+          ignore: .github,.git
+
   # More info: https://github.com/reviewdog/action-misspell
   check_misspell:
     name: Check misspelling

@@ -1,6 +1,3 @@
-Certainly! I've added a section named "Architecture Diagrams" in the documentation template below:
-
-```markdown
 # Package [PackageName]
 
 > Brief one-liner or quote about what this package does.
@@ -16,11 +13,21 @@ Provide a few sentences about the purpose and functionality of this package. Con
 
 Visual representations often make it easier to understand the design and flow of a package. Below are the architecture diagrams that explain the high-level structure and interactions in this package:
 
-![Architecture Overview](./path-to-diagram1.png)
+```mermaid
+---
+title: Architecture Overview
+---
+flowchart
+```
 
 > **Figure 1**: Brief description about what this diagram represents.
 
-![Another Diagram](./path-to-diagram2.png)
+```mermaid
+---
+title: Another Diagram
+---
+flowchart
+```
 
 > **Figure 2**: Brief description about what this other diagram represents.
 

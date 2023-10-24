@@ -24,7 +24,7 @@ const (
 	sendRetryInterval = 100 * time.Millisecond
 )
 
-var _ observable.Observer[any] = &channelObserver[any]{}
+var _ observable.Observer[any] = (*channelObserver[any])(nil)
 
 // channelObserver implements the observable.Observer interface.
 type channelObserver[V any] struct {
@@ -67,6 +67,15 @@ func (obsvr *channelObserver[V]) Unsubscribe() {
 // Ch returns a receive-only subscription channel.
 func (obsvr *channelObserver[V]) Ch() <-chan V {
 	return obsvr.observerCh
+}
+
+// IsClosed returns true if the observer has been unsubscribed.
+// A closed observer cannot be reused.
+func (obsvr *channelObserver[V]) IsClosed() bool {
+	obsvr.observerMu.Lock()
+	defer obsvr.observerMu.Unlock()
+
+	return obsvr.isClosed
 }
 
 // unsubscribe closes the subscription channel, marks the observer as isClosed, and
