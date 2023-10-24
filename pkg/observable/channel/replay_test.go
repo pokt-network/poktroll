@@ -83,6 +83,7 @@ func TestReplayObservable_Next(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	require.Equal(t, 3, replayObsvbl.Next(ctx))
-	require.Equal(t, 3, replayObsvbl.Next(ctx))
+	require.ElementsMatch(t, []int{3}, replayObsvbl.Last(ctx, 1))
+	require.Equal(t, []int{3, 4}, replayObsvbl.Last(ctx, 2))
+	require.Equal(t, []int{3, 4, 5}, replayObsvbl.Last(ctx, 3))
 }

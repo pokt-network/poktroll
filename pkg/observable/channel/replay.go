@@ -47,14 +47,23 @@ func Replay[V any](
 	return replayObsvbl
 }
 
-// Next synchronously returns the next value from the observable. This will always
+// Last synchronously returns the last n values from the replay buffer. This will always
 // return the first value in the replay buffer, if it exists.
-func (ro *replayObservable[V]) Next(ctx context.Context) V {
+func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	tempObserver := ro.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
 
-	val := <-tempObserver.Ch()
-	return val
+	if n > cap(ro.notifications) {
+		n = cap(ro.notifications)
+		// TODO_THIS_COMMIT: log a warning
+	}
+
+	values := make([]V, n)
+	for i, _ := range values {
+		value := <-tempObserver.Ch()
+		values[i] = value
+	}
+	return values
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
