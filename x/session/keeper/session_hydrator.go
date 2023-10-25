@@ -88,6 +88,8 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
+	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
+
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
 	sh.session.SessionNumber = int64(sh.blockHeight/NumBlocksPerSession) + 1
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
@@ -99,7 +101,12 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	// TODO_TECHDEBT: Need to retrieve the block hash at SessionStartBlockHeight, NOT THE CURRENT ONE
 	prevHashBz := ctx.HeaderHash()
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
+
+	// TODO_TECHDEBT: In the future, we will need to valid that the ServiceId is a valid service depending on whether
+	// or not its permissioned  or permissionless
+	// TODO(@Olshansk): Add a check to make sure `IsValidServiceName(ServiceId.Id)` returns True
 	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
+
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
 
@@ -113,7 +120,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
 	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
-		return sdkerrors.Wrapf(types.ErrHydratingSession, "failed to find session application")
+		return sdkerrors.Wrapf(types.ErrAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
 	}
 	sh.session.Application = &app
 	return nil
@@ -138,6 +145,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 				break
 			}
 		}
+	}
+
+	if len(candidateSuppliers) == 0 {
+		logger.Error("[ERROR] no suppliers found for session")
+		return sdkerrors.Wrapf(types.ErrSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.ServiceId, sh.sessionHeader.SessionStartBlockHeight)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {

@@ -26,6 +26,5 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 	res := &types.QueryGetSessionResponse{
 		Session: session,
 	}
-
 	return res, nil
 }

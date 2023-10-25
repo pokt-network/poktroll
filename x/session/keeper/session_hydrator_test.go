@@ -223,6 +223,10 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 			expectedErr: types.ErrHydratingSession,
 		},
+		// TODO_TECHDEBT: Add tests for when:
+		// - Application join/leaves (stakes/unstakes) altogether
+		// - Application adds/removes certain services mid-session
+		// - Application increases stakes mid-session
 	}
 
 	serviceId := keepertest.TestServiceId1
@@ -273,6 +277,10 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 		// {
 		// 	name: "num_suppliers_available > num_suppliers_per_session_param",
 		// },
+		// TODO_TECHDEBT: Add tests for when:
+		// - Supplier join/leaves (stakes/unstakes) altogether
+		// - Supplier adds/removes certain services mid-session
+		// - Supplier increases stakes mid-session
 	}
 
 	blockHeight := int64(10)

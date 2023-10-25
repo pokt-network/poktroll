@@ -12,7 +12,8 @@ option go_package = "pocket/x/shared/types";
 message ServiceId {
     string id = 1; // Unique identifier for the service
     string name = 2; // (Optional) Semantic human readable name for the service
-    // NOTE: `ServiceId.Id` may seem redundant but was designed to enable more complex service identification
+    // NOTE: `ServiceId.Id` may seem redundant but was designed to enable more complex service identification.
+    // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 }
 
 // SupplierServiceConfig holds the service configuration the application stakes for
