@@ -15,7 +15,7 @@ var _ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
 
 type replayObservable[V any] struct {
 	*channelObservable[V]
-	// replayBufferSize is  the number of replayBuffer to buffer so that they
+	// replayBufferSize is the number of notifications to buffer so that they
 	// can be replayed to new observers.
 	replayBufferSize int
 	// replayBufferMu protects replayBuffer from concurrent access/updates.
