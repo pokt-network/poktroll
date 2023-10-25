@@ -21,7 +21,7 @@ type jsonRPCServer struct {
 	relayerProxy RelayerProxy
 }
 
-// NewHTTPServer creates a new HTTP server that listens for incoming relay requests
+// NewJSONRPCServer creates a new HTTP server that listens for incoming relay requests
 // and proxies them to the supported native service.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
 // a RelayServer that listens to incoming RelayRequests
@@ -51,12 +51,14 @@ func (j *jsonRPCServer) Stop(ctx context.Context) error {
 	return j.server.Shutdown(ctx)
 }
 
-// Name returns the name of the service.
-func (j *jsonRPCServer) Name() string {
+// ServiceId returns the serviceId of the service.
+func (j *jsonRPCServer) ServiceId() string {
 	return j.serviceId
 }
 
-// ServeHTTP is the http handler that listens for incoming relay requests.
-func (j *jsonRPCServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	panic("TODO: implement httpServer.ServeHTTP")
+// ServeHTTP listens for incoming relay requests. It implements the respective
+// method of the http.Handler interface. It is called by http.ListenAndServe()
+// when jsonRPCServer is used as an http.Handler with an http.Server.
+// (see https://pkg.go.dev/net/http#Handler)
+func (j *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }

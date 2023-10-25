@@ -19,6 +19,11 @@ import (
 
 var _ RelayerProxy = (*relayerProxy)(nil)
 
+type (
+	serviceId       = string
+	RelayServersMap = map[serviceId][]RelayServer
+)
+
 type relayerProxy struct {
 	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
@@ -42,10 +47,11 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier sessiontypes.QueryClient
 
-	// providedServices is a map of the services provided by the relayer proxy. Each provided service
+	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
-	// the client that proxies the request to the supported native service.
-	providedServices map[string][]RelayServer
+	// the client that relays the request to the supported native service.
+	advertisedRelayServers RelayServersMap
+
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -82,7 +88,7 @@ func NewRelayerProxy(
 	}
 }
 
-// Start starts all supported proxies and returns an error if any of them fail to start.
+// Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
@@ -93,30 +99,30 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 		return err
 	}
 
-	eg, gctx := errgroup.WithContext(ctx)
+	startGroup, gctx := errgroup.WithContext(ctx)
 
-	for _, providedService := range rp.providedServices {
-		for _, svr := range providedService {
+	for _, relayServer := range rp.advertisedRelayServers {
+		for _, svr := range relayServer {
 			server := svr // create a new variable scoped to the anonymous function
-			eg.Go(func() error { return server.Start(gctx) })
+			startGroup.Go(func() error { return server.Start(gctx) })
 		}
 	}
 
-	return eg.Wait()
+	return startGroup.Wait()
 }
 
-// Stop stops all supported proxies and returns an error if any of them fail.
+// Stop concurrently stops all advertised relay servers and returns an error if any of them fails.
 func (rp *relayerProxy) Stop(ctx context.Context) error {
-	eg, gctx := errgroup.WithContext(ctx)
+	stopGroup, gctx := errgroup.WithContext(ctx)
 
-	for _, providedService := range rp.providedServices {
+	for _, providedService := range rp.advertisedRelayServers {
 		for _, svr := range providedService {
 			server := svr // create a new variable scoped to the anonymous function
-			eg.Go(func() error { return server.Stop(gctx) })
+			stopGroup.Go(func() error { return server.Stop(gctx) })
 		}
 	}
 
-	return eg.Wait()
+	return stopGroup.Wait()
 }
 
 // ServedRelays returns an observable that notifies the miner about the relays that have been served.
