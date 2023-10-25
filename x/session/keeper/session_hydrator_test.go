@@ -254,6 +254,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 		serviceId string
 
 		numExpectedSuppliers int
+		expectedErr          error
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
@@ -265,6 +266,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			serviceId: "svc_unknown",
 
 			numExpectedSuppliers: 0,
+			expectedErr:          types.ErrSuppliersNotFound,
 		},
 		{
 			name:      "num_suppliers_available < num_suppliers_per_session_param",
@@ -272,6 +274,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			serviceId: keepertest.TestServiceId1,  // svc1
 
 			numExpectedSuppliers: 1,
+			expectedErr:          nil,
 		},
 		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
 		// {
@@ -291,8 +294,12 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 
 		sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
 		session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
-		require.NoError(t, err)
 
+		if tt.expectedErr != nil {
+			require.ErrorContains(t, err, tt.expectedErr.Error())
+			continue
+		}
+		require.NoError(t, err)
 		require.Len(t, session.Suppliers, tt.numExpectedSuppliers)
 	}
 }
