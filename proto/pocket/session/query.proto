@@ -3,10 +3,11 @@ package pocket.session;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
+
 import "pocket/session/params.proto";
 import "pocket/session/session.proto";
 import "pocket/shared/service.proto";
-import "cosmos_proto/cosmos.proto";
 
 option go_package = "pocket/x/session/types";
 

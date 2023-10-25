@@ -118,6 +118,8 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		mockSupplierKeeper,
 	)
 
+	// TODO_TECHDEBT: See the comment at the bottom of this file explaining
+	// why we don't support options yet.
 	// for _, opt := range opts {
 	// 	opt(k)
 	// }

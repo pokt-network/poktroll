@@ -25,12 +25,12 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId.Id)
 	require.Equal(t, "", sessionHeader.ServiceId.Name)
 	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
-	require.Equal(t, "46b797bf320f813a2c420e2e6bf48cf60cef6f31c1d54d5669f8de805fbb7a29", sessionHeader.SessionId)
+	require.Equal(t, "cb975874ae3c9c12e99be4b8bf76758a34f72f91478f6fc7d16175b7f02061c1", sessionHeader.SessionId)
 
 	// Check the session
 	require.Equal(t, int64(4), session.NumBlocksPerSession)
-	require.Equal(t, "46b797bf320f813a2c420e2e6bf48cf60cef6f31c1d54d5669f8de805fbb7a29", session.SessionId)
-	require.Equal(t, int64(2), session.SessionNumber)
+	require.Equal(t, "cb975874ae3c9c12e99be4b8bf76758a34f72f91478f6fc7d16175b7f02061c1", session.SessionId)
+	require.Equal(t, int64(3), session.SessionNumber)
 
 	// Check the application
 	app := session.Application
@@ -63,7 +63,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			blockHeight: 0,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       0,
+			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   0,
 		},
 		{
@@ -71,7 +71,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			blockHeight: 1,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       0,
+			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   0,
 		},
 		{
@@ -79,7 +79,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			blockHeight: 4,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       1,
+			expectedSessionNumber:       2,
 			expectedSessionStartBlock:   4,
 		},
 		{
@@ -87,7 +87,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			blockHeight: 5,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       1,
+			expectedSessionNumber:       2,
 			expectedSessionStartBlock:   4,
 		},
 	}
@@ -141,8 +141,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId1, // svc1
 
-			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
-			expectedSessionId2: "46b797bf320f813a2c420e2e6bf48cf60cef6f31c1d54d5669f8de805fbb7a29",
+			expectedSessionId1: "945e8c698dd243ba7600ba254bb362b234ce32769c732ef88cbab81eff2a23ba",
+			expectedSessionId2: "cb975874ae3c9c12e99be4b8bf76758a34f72f91478f6fc7d16175b7f02061c1",
 		},
 		{
 			name: "app1: sessionId for svc1 != sessionId for svc2",
@@ -156,8 +156,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId2, // svc2
 
-			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
-			expectedSessionId2: "14346dd61c7a6d3831d17c6d3d134f61af054857373b7080f92b91ae7de505b1",
+			expectedSessionId1: "945e8c698dd243ba7600ba254bb362b234ce32769c732ef88cbab81eff2a23ba",
+			expectedSessionId2: "ae3a89594026cdb62700b9126e79540a1e342dea311075c3548f20b231c8deda",
 		},
 		{
 			name: "svc1: sessionId for app1 != sessionId for app2",
@@ -171,8 +171,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId1, // svc1
 
-			expectedSessionId1: "dfd35b35f37207f2a65fd03e5a78b4f637362cf30673c8c197b93fd2cceef727",
-			expectedSessionId2: "af38ae7df6bbae4669e0d12471d32fe8f5343546171675b5e3191421ba9f1df2",
+			expectedSessionId1: "945e8c698dd243ba7600ba254bb362b234ce32769c732ef88cbab81eff2a23ba",
+			expectedSessionId2: "59e4334a9f3fb59ae7f60f6ed51823904a6bab08df443677a3773ae92b7d9198",
 		},
 	}
 
@@ -223,6 +223,10 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 			expectedErr: types.ErrHydratingSession,
 		},
+		// TODO_TECHDEBT: Add tests for when:
+		// - Application join/leaves (stakes/unstakes) altogether
+		// - Application adds/removes certain services mid-session
+		// - Application increases stakes mid-session
 	}
 
 	serviceId := keepertest.TestServiceId1
@@ -250,29 +254,36 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 		serviceId string
 
 		numExpectedSuppliers int
+		expectedErr          error
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumSupplierPerSession=15
 	tests := []test{
 		{
-			name:      "no suppliers available",
+			name:      "num_suppliers_available = 0",
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc_unknown",
 
 			numExpectedSuppliers: 0,
+			expectedErr:          types.ErrSuppliersNotFound,
 		},
 		{
-			name:      "num suppliers available is less than the num suppliers per session",
+			name:      "num_suppliers_available < num_suppliers_per_session_param",
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: keepertest.TestServiceId1,  // svc1
 
 			numExpectedSuppliers: 1,
+			expectedErr:          nil,
 		},
 		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
 		// {
-		// 	name: "num suppliers available is greater than num suppliers per session",
+		// 	name: "num_suppliers_available > num_suppliers_per_session_param",
 		// },
+		// TODO_TECHDEBT: Add tests for when:
+		// - Supplier join/leaves (stakes/unstakes) altogether
+		// - Supplier adds/removes certain services mid-session
+		// - Supplier increases stakes mid-session
 	}
 
 	blockHeight := int64(10)
@@ -283,8 +294,12 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 
 		sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
 		session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
-		require.NoError(t, err)
 
+		if tt.expectedErr != nil {
+			require.ErrorContains(t, err, tt.expectedErr.Error())
+			continue
+		}
+		require.NoError(t, err)
 		require.Len(t, session.Suppliers, tt.numExpectedSuppliers)
 	}
 }

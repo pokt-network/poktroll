@@ -118,6 +118,7 @@ go_test: go_version_check ## Run all go tests
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	find . -name "*_mock.go" | xargs --no-run-if-empty rm
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/

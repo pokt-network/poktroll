@@ -17,7 +17,7 @@ message SessionHeader {
     shared.ServiceId service_id = 2; // The ID of the service this session is servicing
     int64 session_start_block_height = 3; // The height at which this session started
     // NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
-    string session_id = 4; // A unique pseudoranom ID for this session/
+    string session_id = 4; // A unique pseudoranom ID for this session
 }
 
 // Session is a fully hydrated session object that contains all the information for the Session
