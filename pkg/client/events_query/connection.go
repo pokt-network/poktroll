@@ -6,7 +6,7 @@ import (
 	"pocket/pkg/client"
 )
 
-var _ client.Connection = &websocketConn{}
+var _ client.Connection = (*websocketConn)(nil)
 
 // websocketConn implements the Connection interface using the gorilla websocket
 // transport implementation.

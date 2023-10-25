@@ -17,7 +17,7 @@ import (
 
 const requestIdFmt = "request_%d"
 
-var _ client.EventsQueryClient = &eventsQueryClient{}
+var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
 // which includes a `#EventsBytes()` method for a similar purpose. Perhaps we could
@@ -83,8 +83,17 @@ func (eqc *eventsQueryClient) EventsBytes(
 	ctx context.Context,
 	query string,
 ) (client.EventsBytesObservable, error) {
+	// Must (write) lock eventsBytesAndConnsMu so that we can safely check for
+	// existing subscriptions to the given query or add a new eventsBytes to the
+	// observableConns map.
+	// The lock must be held for both checking and adding to prevent concurrent
+	// calls to this function from racing.
+	eqc.eventsBytesAndConnsMu.Lock()
+	// Deferred (write) unlock.
+	defer eqc.eventsBytesAndConnsMu.Unlock()
+
 	// Check if an event subscription already exists for the given query.
-	if eventsBzConn := eqc.getEventsBytesAndConn(query); eventsBzConn != nil {
+	if eventsBzConn := eqc.eventsBytesAndConns[query]; eventsBzConn != nil {
 		// If found it is returned.
 		return eventsBzConn.eventsBytes, nil
 	}
@@ -96,7 +105,7 @@ func (eqc *eventsQueryClient) EventsBytes(
 	}
 
 	// Insert the new eventsBytes into the eventsBytesAndConns map.
-	eqc.insertEventsBytesAndConn(query, eventsBzConn)
+	eqc.eventsBytesAndConns[query] = eventsBzConn
 
 	// Unsubscribe from the eventsBytes when the context is done.
 	go eqc.goUnsubscribeOnDone(ctx, query)
@@ -129,18 +138,6 @@ func (eqc *eventsQueryClient) close() {
 func (eqc *eventsQueryClient) getNextRequestId() string {
 	eqc.nextRequestId++
 	return fmt.Sprintf(requestIdFmt, eqc.nextRequestId)
-}
-
-// getEventsBytesAndConn returns the eventsBytes and connection for the given query.
-// It is safe to call concurrently.
-func (eqc *eventsQueryClient) getEventsBytesAndConn(query string) *eventsBytesAndConn {
-	// Must (read) lock eventsBytesAndConnsMu so that we can safely check for existing
-	// subscriptions to the given query.
-	eqc.eventsBytesAndConnsMu.RLock()
-	// Deferred (read) unlock.
-	defer eqc.eventsBytesAndConnsMu.RUnlock()
-
-	return eqc.eventsBytesAndConns[query]
 }
 
 // newEventwsBzAndConn creates a new eventsBytes and connection for the given query.
@@ -230,19 +227,6 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 		// Populate the []byte side (right) of the either and publish it.
 		eventsBzPublishCh <- either.Success(event)
 	}
-}
-
-// insertEventsBytesAndConn inserts the given eventsBytes into the eventsBytesAndConns map
-func (eqc *eventsQueryClient) insertEventsBytesAndConn(
-	query string,
-	obsvblConn *eventsBytesAndConn,
-) {
-	// (Write) Lock eventsBytesAndConnsMu so that we can safely add the new eventsBytes
-	// to the observableConns map.
-	eqc.eventsBytesAndConnsMu.Lock()
-	defer eqc.eventsBytesAndConnsMu.Unlock()
-
-	eqc.eventsBytesAndConns[query] = obsvblConn
 }
 
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
