@@ -8,8 +8,7 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
 
-	// TODO_INCOMPLETE(@red-0ne): Import the appropriate block client interface once available.
-	// blocktypes "pocket/pkg/client"
+	blocktypes "pocket/pkg/client"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
 	"pocket/x/service/types"
@@ -32,8 +31,7 @@ type relayerProxy struct {
 
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
-	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-	// blockClient blocktypes.BlockClient
+	blockClient blocktypes.BlockClient
 
 	// accountsQuerier is the querier used to get account data (e.g. app publicKey) from the blockchain,
 	// which, in the context of the RelayerProxy, is used to verify the relay request signatures.
@@ -62,6 +60,12 @@ type relayerProxy struct {
 	// servedRelaysProducer is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
+
+	// clientCtx is the Cosmos' client context used to unmarshal query replies.
+	clientCtx sdkclient.Context
+
+	// supplierAddress is the address of the supplier that the relayer proxy running for.
+	supplierAddress string
 }
 
 func NewRelayerProxy(
@@ -70,8 +74,7 @@ func NewRelayerProxy(
 	keyName string,
 	keyring keyring.Keyring,
 	nativeServicesListenAddress map[serviceId]string,
-	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-	// blockClient blocktypes.BlockClient,
+	blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
@@ -79,8 +82,7 @@ func NewRelayerProxy(
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
-		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-		// blockClient:       blockClient,
+		blockClient:                 blockClient,
 		keyName:                     keyName,
 		keyring:                     keyring,
 		accountsQuerier:             accountQuerier,
@@ -89,6 +91,7 @@ func NewRelayerProxy(
 		nativeServicesListenAddress: nativeServicesListenAddress,
 		servedRelays:                servedRelays,
 		servedRelaysProducer:        servedRelaysProducer,
+		clientCtx:                   clientCtx,
 	}
 }
 
@@ -134,14 +137,4 @@ func (rp *relayerProxy) Stop(ctx context.Context) error {
 // and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 	return rp.servedRelays
-}
-
-// VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
-func (rp *relayerProxy) VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error) {
-	panic("TODO: implement relayerProxy.VerifyRelayRequest")
-}
-
-// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
-func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error) {
-	panic("TODO: implement relayerProxy.SignRelayResponse")
 }

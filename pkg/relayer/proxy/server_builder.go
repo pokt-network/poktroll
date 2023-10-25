@@ -57,6 +57,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	rp.advertisedRelayServers = providedServices
+	rp.supplierAddress = supplierQueryResponse.Supplier.Address
 
 	return nil
 }

@@ -1,0 +1,66 @@
+package proxy
+
+import (
+	"github.com/cometbft/cometbft/crypto"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"golang.org/x/exp/slices"
+
+	"context"
+	"pocket/x/service/types"
+	sessiontypes "pocket/x/session/types"
+)
+
+// VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
+func (rp *relayerProxy) VerifyRelayRequest(
+	ctx context.Context,
+	relayRequest *types.RelayRequest,
+	serviceId serviceId,
+) error {
+	// Query for the application account to get the application's public key to verify the relay request signature.
+	applicationAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	accountQuery := &accounttypes.QueryAccountRequest{Address: applicationAddress}
+	accountResponse, err := rp.accountsQuerier.Account(ctx, accountQuery)
+	if err != nil {
+		return err
+	}
+
+	var payloadBz []byte
+	_, err = relayRequest.Payload.MarshalTo(payloadBz)
+	if err != nil {
+		return err
+	}
+	hash := crypto.Sha256(payloadBz)
+
+	// accountResponse.Account.Value is a protobuf Any type that should be unmarshaled into an AccountI interface.
+	// TODO_DISCUSS: Make sure this is the correct way to unmarshal an AccountI from an Any type.
+	var account accounttypes.AccountI
+	if err := rp.clientCtx.Codec.UnmarshalJSON(accountResponse.Account.Value, account); err != nil {
+		return err
+	}
+
+	if !account.GetPubKey().VerifySignature(hash, relayRequest.Meta.Signature) {
+		return ErrInvalidSignature
+	}
+
+	// Query for the current session to check if relayRequest sessionId matches the current session.
+	currentBlock := rp.blockClient.LatestBlock(ctx)
+	requestSessionId := relayRequest.Meta.SessionHeader.SessionId
+	sessionQuery := &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: applicationAddress,
+		ServiceId:          &sessiontypes.ServiceId{Id: serviceId},
+		BlockHeight:        currentBlock.Height(),
+	}
+	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
+	session := sessionResponse.Session
+
+	if session.SessionId != requestSessionId {
+		return ErrInvalidSession
+	}
+
+	// Check if the relayRequest is allowed to be served by the relayer proxy.
+	if !slices.Contains(session.Suppliers, rp.supplierAddress) {
+		return ErrInvalidSupplier
+	}
+
+	return nil
+}

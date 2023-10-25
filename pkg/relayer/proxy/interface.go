@@ -26,7 +26,7 @@ type RelayerProxy interface {
 
 	// VerifyRelayRequest is a shared method used by RelayServers to check the
 	// relay request signature and session validity.
-	VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error)
+	VerifyRelayRequest(ctx context.Context, relayRequest *types.RelayRequest, serviceId string) error
 
 	// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
 	SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error)
