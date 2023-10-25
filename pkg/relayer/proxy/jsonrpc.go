@@ -7,7 +7,7 @@ import (
 	"pocket/x/service/types"
 )
 
-var _ RelayServer = &jsonRPCServer{}
+var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
 	// serviceId is the id of the service that the server is responsible for.
