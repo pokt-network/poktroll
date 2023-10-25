@@ -2,6 +2,7 @@ package channel
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -63,19 +64,27 @@ func Replay[V any](
 	return replayObsvbl
 }
 
-// Last synchronously returns the last n values from the replay buffer. This will always
-// return the first value in the replay buffer, if it exists.
+// Last synchronously returns the last n values from the replay buffer. If n is
+// greater than the replay buffer size, the entire replay buffer is returned.
+// It blocks until at least n or replayBufferSize (whichever is smaller)
+// notifications have accumulated in the replay buffer.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	tempObserver := ro.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
 
+	// If n is greater than the replay buffer size, return the entire replay buffer.
 	if n > cap(ro.replayBuffer) {
 		n = cap(ro.replayBuffer)
-		// TODO_THIS_COMMIT: log a warning
+		log.Printf(
+			"WARN: requested replay buffer size %d is greater than replay buffer capacity %d; returning entire replay buffer",
+			n, cap(ro.replayBuffer),
+		)
 	}
 
+	// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
 	values := make([]V, n)
 	for i, _ := range values {
+		// Receiving from the observer channel blocks if replayBuffer is empty.
 		value := <-tempObserver.Ch()
 		values[i] = value
 	}
