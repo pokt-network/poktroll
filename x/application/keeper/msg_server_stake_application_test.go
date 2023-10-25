@@ -73,7 +73,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId.Id)
 }
 
-func TestMsgServer_StakeApplication_FailRestakingWithoutServices(t *testing.T) {
+func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
@@ -102,9 +102,38 @@ func TestMsgServer_StakeApplication_FailRestakingWithoutServices(t *testing.T) {
 		Services: []*sharedtypes.ApplicationServiceConfig{},
 	}
 
-	// Fail updating th application
+	// Fail updating the application when the list of services is empty
 	_, err = srv.StakeApplication(wctx, updateStakeMsg)
 	require.Error(t, err)
+
+	// Verify the app still exists and is staked for svc1
+	app, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, appAddr, app.Address)
+	require.Len(t, app.ServiceConfigs, 1)
+	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
+
+	// Prepare the application stake message with an invalid service ID
+	updateStakeMsg = &types.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1 INVALID ! & *"},
+			},
+		},
+	}
+
+	// Fail updating the application when the list of services is empty
+	_, err = srv.StakeApplication(wctx, updateStakeMsg)
+	require.Error(t, err)
+
+	// Verify the app still exists and is staked for svc1
+	app, isAppFound = k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, appAddr, app.Address)
+	require.Len(t, app.ServiceConfigs, 1)
+	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
 }
 
 func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {

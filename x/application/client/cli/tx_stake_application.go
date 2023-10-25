@@ -18,6 +18,9 @@ var _ = strconv.Itoa(0)
 func CmdStakeApplication() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
+		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
+		// This needs to be expand to specify the full ApplicationServiceConfig. Furthermore, providing a flag to
+		// a file where ApplicationServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
 		Use:   "stake-application [amount] [svcId1,svcId2,...,svcIdN]",
 		Short: "Stake an application",
 		Long: `Stake an application with the provided parameters. This is a broadcast operation that
