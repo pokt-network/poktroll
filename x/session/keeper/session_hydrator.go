@@ -104,7 +104,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
 
 	sh.sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, prevHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
-	sh.sessionHeader.SessionId = hex.EncodeToString(shas3Hash(sh.sessionIdBz))
+	sh.sessionHeader.SessionId = hex.EncodeToString(sha3Hash(sh.sessionIdBz))
 
 	return nil
 }
@@ -123,13 +123,15 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
 	logger := k.Logger(ctx).With("method", "hydrateSessionSuppliers")
 
-	// TECHDEBT(@Olshansk): Need to retrieve the suppliers at SessionStartBlockHeight, NOT THE CURRENT ONE
-	// retrieve the suppliers at the current block height
+	// TODO_TECHDEBT(@Olshansk): Need to retrieve the suppliers at SessionStartBlockHeight,
+	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
+	// only retrieving the suppliers at the current block height which could create a discrepancy
+	// if new suppliers were staked mid session.
 	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, supplier := range suppliers {
-		// OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
+		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
 			if supplierServiceConfig.ServiceId.Id == sh.sessionHeader.ServiceId.Id {
 				candidateSuppliers = append(candidateSuppliers, &supplier)
@@ -139,7 +141,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info("number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
+		logger.Info("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
 		sh.session.Suppliers = candidateSuppliers
 	} else {
 		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
@@ -154,7 +156,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIdBz []byte) []*sharedtypes.Supplier {
 	// Take the first 8 bytes of sessionId to use as the seed
 	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(shas3Hash(sessionIdBz)[:8]))
+	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIdBz)[:8]))
 
 	// Retrieve the indices for the candidates
 	actors := make([]*sharedtypes.Supplier, 0)
@@ -169,7 +171,7 @@ func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, se
 // uniqueRandomIndices returns a map of `numIndices` unique random numbers less than `maxIndex`
 // seeded by `seed`.
 // panics if `numIndicies > maxIndex` since that code path SHOULD never be executed.
-// NB: A map pointing to empty structs is used to simulate set behaviour.
+// NB: A map pointing to empty structs is used to simulate set behavior.
 func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
 	// This should never happen
 	if numIndices > maxIndex {
@@ -198,7 +200,7 @@ func concatWithDelimiter(delimiter string, b ...[]byte) (result []byte) {
 	return result
 }
 
-func shas3Hash(bz []byte) []byte {
+func sha3Hash(bz []byte) []byte {
 	hasher := crypto.SHA3_256.New()
 	hasher.Write(bz)
 	return hasher.Sum(nil)

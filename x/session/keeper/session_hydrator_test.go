@@ -256,14 +256,14 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	// Currently assumes NumSupplierPerSession=15
 	tests := []test{
 		{
-			name:      "no suppliers available",
+			name:      "num_suppliers_available = 0",
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc_unknown",
 
 			numExpectedSuppliers: 0,
 		},
 		{
-			name:      "num suppliers available is less than the num suppliers per session",
+			name:      "num_suppliers_available < num_suppliers_per_session_param",
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: keepertest.TestServiceId1,  // svc1
 
@@ -271,7 +271,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 		},
 		// TODO_TECHDEBT: Add this test once we make the num suppliers per session configurable
 		// {
-		// 	name: "num suppliers available is greater than num suppliers per session",
+		// 	name: "num_suppliers_available > num_suppliers_per_session_param",
 		// },
 	}
 
