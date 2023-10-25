@@ -24,7 +24,7 @@ const (
 )
 
 type sessionHydrator struct {
-	// The session header that is used to hydrate the reset of the session data
+	// The session header that is used to hydrate the rest of the session data
 	sessionHeader *types.SessionHeader
 
 	// The fully hydrated session object
@@ -88,7 +88,7 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession)
+	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession) + 1
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
 	return nil
 }
