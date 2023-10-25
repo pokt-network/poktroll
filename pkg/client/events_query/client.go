@@ -17,7 +17,7 @@ import (
 
 const requestIdFmt = "request_%d"
 
-var _ client.EventsQueryClient = &eventsQueryClient{}
+var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
 // which includes a `#EventsBytes()` method for a similar purpose. Perhaps we could

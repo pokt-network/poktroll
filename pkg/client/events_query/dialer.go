@@ -8,7 +8,7 @@ import (
 	"pocket/pkg/client"
 )
 
-var _ client.Dialer = &websocketDialer{}
+var _ client.Dialer = (*websocketDialer)(nil)
 
 // websocketDialer implements the Dialer interface using the gorilla websocket
 // transport implementation.
