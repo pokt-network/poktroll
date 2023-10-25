@@ -6,7 +6,8 @@ import (
 	"pocket/x/service/types"
 )
 
-// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
+// SignRelayResponse is a shared method used by the RelayServers to sign a RelayResponse.Payload.
+// It uses the keyring and keyName to sign the payload and returns the signature.
 func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error) {
 	var payloadBz []byte
 	_, err := relayResponse.Payload.MarshalTo(payloadBz)

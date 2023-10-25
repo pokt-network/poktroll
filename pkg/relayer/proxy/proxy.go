@@ -61,10 +61,10 @@ type relayerProxy struct {
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
 
-	// clientCtx is the Cosmos' client context used to unmarshal query replies.
+	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
 	clientCtx sdkclient.Context
 
-	// supplierAddress is the address of the supplier that the relayer proxy running for.
+	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
 }
 

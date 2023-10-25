@@ -44,7 +44,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	currentBlock := rp.blockClient.LatestBlock(ctx)
-	requestSessionId := relayRequest.Meta.SessionHeader.SessionId
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: applicationAddress,
 		ServiceId:          &sessiontypes.ServiceId{Id: serviceId},
@@ -53,7 +52,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
 	session := sessionResponse.Session
 
-	if session.SessionId != requestSessionId {
+	// Since the retrieved sessionId was in terms of:
+	// - the current block height (which is not provided by the relayRequest)
+	// - serviceId (which is not provided by the relayRequest)
+	// - applicationAddress (which is used to to verify the relayRequest signature)
+	// we can reduce the session validity check to checking if the retrieved session's sessionId
+	// matches the relayRequest sessionId.
+	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
 		return ErrInvalidSession
 	}
 

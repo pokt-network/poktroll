@@ -13,30 +13,30 @@ import (
 var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// serviceId is the id of the service that the server is responsible for.
+	// serviceId is the identifier of the service that the server is responsible for.
 	serviceId string
 
-	// endpointUrl is the url that the server listens to for incoming relay requests.
+	// endpointUrl is the URL that the server listens to for incoming relay requests.
 	endpointUrl string
 
-	// nativeServiceListenAddress is the address of the native service that the server relays requests to.
+	// nativeServiceListenAddress is the address of the native service to which the server relays requests.
 	nativeServiceListenAddress string
 
-	// server is the http server that listens for incoming relay requests.
+	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
 
 	// relayerProxy is the main relayer proxy that the server uses to perform its operations.
 	relayerProxy RelayerProxy
 
-	// servedRelaysProducer is a channel that emits the relays that have been served so that the
-	// servedRelays observable can fan out the notifications to its subscribers.
+	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
+	// the servedRelays observable to fan-out notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
 }
 
 // NewJSONRPCServer creates a new HTTP server that listens for incoming relay requests
-// and proxies them to the supported native service.
+// and relays them to the supported native service.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
-// a RelayServer that listens to incoming RelayRequests
+// a RelayServer that listens to incoming RelayRequests.
 func NewJSONRPCServer(
 	serviceId string,
 	endpointUrl string,
@@ -55,7 +55,7 @@ func NewJSONRPCServer(
 }
 
 // Start starts the service server and returns an error if it fails.
-// It also waits for the passed in context to be done to shut down.
+// It also waits for the passed-in context to be done in order to shut down.
 // This method is blocking and should be called in a goroutine.
 func (j *jsonRPCServer) Start(ctx context.Context) error {
 	go func() {
@@ -82,7 +82,7 @@ func (j *jsonRPCServer) ServiceId() string {
 // (see https://pkg.go.dev/net/http#Handler)
 func (j *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
-	// relay the request to the native service and build the response to be sent back to the client.
+	// Relay the request to the native service and build the response that will be sent back to the client.
 	relay, err := j.serveHTTP(ctx, request)
 	if err != nil {
 		// Reply with an error if relay response could not be built.
@@ -102,25 +102,27 @@ func (j *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Requ
 
 // serveHTTP holds the underlying logic of ServeHTTP.
 func (j *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request) (*types.Relay, error) {
-	// Extract the relay request from the request body
+	// Extract the relay request from the request body.
 	relayRequest, err := j.newRelayRequest(request)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the relay request signature and session
+	// Verify the relay request signature and session.
 	if err := j.relayerProxy.VerifyRelayRequest(ctx, relayRequest, j.serviceId); err != nil {
 		return nil, err
 	}
 
-	// Get the relayRequest payload reader
+	// Get the relayRequest payload's ReadCloser to add it to the http.Request
+	// that will be sent to the native service.
 	var payloadBz []byte
 	if _, err = relayRequest.Payload.MarshalTo(payloadBz); err != nil {
 		return nil, err
 	}
 	requestBodyReader := io.NopCloser(bytes.NewBuffer(payloadBz))
 
-	// Build the request to be sent to the native service
+	// Build the request to be sent to the native service by substituting
+	// the destination URL's host with the native service's listen address.
 	destinationURL, err := url.Parse(request.URL.String())
 	if err != nil {
 		return nil, err
@@ -135,14 +137,15 @@ func (j *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request) (*
 		Body:   requestBodyReader,
 	}
 
-	// Send the relay request to the native service
+	// Send the relay request to the native service.
 	httpResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return nil, err
 	}
 
 	// Build the relay response from the native service response
-	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid.
+	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
+	// and has to be the same as the relayResponse session header.
 	relayResponse, err := j.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
