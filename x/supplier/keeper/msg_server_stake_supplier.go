@@ -19,6 +19,10 @@ func (k msgServer) StakeSupplier(
 	logger := k.Logger(ctx).With("method", "StakeSupplier")
 	logger.Info("About to stake supplier with msg: %v", msg)
 
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	// Check if the supplier already exists or not
 	var err error
 	var coinsToDelegate sdk.Coin
