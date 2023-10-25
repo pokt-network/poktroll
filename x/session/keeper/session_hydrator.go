@@ -19,8 +19,9 @@ var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO(#21): Make these configurable governance param
 const (
-	NumBlocksPerSession   = 4
-	NumSupplierPerSession = 15
+	NumBlocksPerSession         = 4
+	NumSupplierPerSession       = 15
+	SessionIDComponentDelimiter = "."
 )
 
 type sessionHydrator struct {
@@ -88,7 +89,7 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession) + 1
+	sh.session.SessionNumber = int64(sh.blockHeight/NumBlocksPerSession) + 1
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
 	return nil
 }
@@ -102,7 +103,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
 
-	sh.sessionIdBz = concat(prevHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	sh.sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, prevHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
 	sh.sessionHeader.SessionId = hex.EncodeToString(shas3Hash(sh.sessionIdBz))
 
 	return nil
@@ -189,9 +190,10 @@ func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
 	return indicesMap
 }
 
-func concat(b ...[]byte) (result []byte) {
+func concatWithDelimiter(delimiter string, b ...[]byte) (result []byte) {
 	for _, bz := range b {
 		result = append(result, bz...)
+		result = append(result, []byte(delimiter)...)
 	}
 	return result
 }
