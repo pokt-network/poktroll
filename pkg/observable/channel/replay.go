@@ -73,8 +73,8 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	defer tempObserver.Unsubscribe()
 
 	// If n is greater than the replay buffer size, return the entire replay buffer.
-	if n > cap(ro.replayBuffer) {
-		n = cap(ro.replayBuffer)
+	if n > ro.replayBufferSize {
+		n = ro.replayBufferSize
 		log.Printf(
 			"WARN: requested replay buffer size %d is greater than replay buffer capacity %d; returning entire replay buffer",
 			n, cap(ro.replayBuffer),
