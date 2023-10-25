@@ -52,6 +52,9 @@ type relayerProxy struct {
 	// the client that relays the request to the supported native service.
 	advertisedRelayServers RelayServersMap
 
+	// nativeServiceListenAddresses is a map of the native services server's listen addresses
+	// that are supported by the relayer proxy.
+	nativeServicesListenAddress map[serviceId]string
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -66,7 +69,7 @@ func NewRelayerProxy(
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,
-
+	nativeServicesListenAddress map[serviceId]string,
 	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
 	// blockClient blocktypes.BlockClient,
 ) RelayerProxy {
@@ -78,13 +81,14 @@ func NewRelayerProxy(
 	return &relayerProxy{
 		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
 		// blockClient:       blockClient,
-		keyName:              keyName,
-		keyring:              keyring,
-		accountsQuerier:      accountQuerier,
-		supplierQuerier:      supplierQuerier,
-		sessionQuerier:       sessionQuerier,
-		servedRelays:         servedRelays,
-		servedRelaysProducer: servedRelaysProducer,
+		keyName:                     keyName,
+		keyring:                     keyring,
+		accountsQuerier:             accountQuerier,
+		supplierQuerier:             supplierQuerier,
+		sessionQuerier:              sessionQuerier,
+		nativeServicesListenAddress: nativeServicesListenAddress,
+		servedRelays:                servedRelays,
+		servedRelaysProducer:        servedRelaysProducer,
 	}
 }
 
@@ -130,4 +134,14 @@ func (rp *relayerProxy) Stop(ctx context.Context) error {
 // and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 	return rp.servedRelays
+}
+
+// VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
+func (rp *relayerProxy) VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error) {
+	panic("TODO: implement relayerProxy.VerifyRelayRequest")
+}
+
+// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
+func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error) {
+	panic("TODO: implement relayerProxy.SignRelayResponse")
 }

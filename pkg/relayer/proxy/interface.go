@@ -23,6 +23,13 @@ type RelayerProxy interface {
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
 	ServedRelays() observable.Observable[*types.Relay]
+
+	// VerifyRelayRequest is a shared method used by RelayServers to check the
+	// relay request signature and session validity.
+	VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error)
+
+	// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
+	SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error)
 }
 
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.

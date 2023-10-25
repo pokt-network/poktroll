@@ -3,6 +3,8 @@ package proxy
 import (
 	"context"
 	"net/http"
+
+	"pocket/x/service/types"
 )
 
 var _ RelayServer = &jsonRPCServer{}
@@ -14,23 +16,38 @@ type jsonRPCServer struct {
 	// endpointUrl is the url that the server listens to for incoming relay requests.
 	endpointUrl string
 
+	// nativeServiceListenAddress is the address of the native service that the server relays requests to.
+	nativeServiceListenAddress string
+
 	// server is the http server that listens for incoming relay requests.
 	server *http.Server
 
 	// relayerProxy is the main relayer proxy that the server uses to perform its operations.
 	relayerProxy RelayerProxy
+
+	// servedRelaysProducer is a channel that emits the relays that have been served so that the
+	// servedRelays observable can fan out the notifications to its subscribers.
+	servedRelaysProducer chan<- *types.Relay
 }
 
 // NewJSONRPCServer creates a new HTTP server that listens for incoming relay requests
 // and proxies them to the supported native service.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
 // a RelayServer that listens to incoming RelayRequests
-func NewJSONRPCServer(serviceId string, endpointUrl string, proxy RelayerProxy) RelayServer {
+func NewJSONRPCServer(
+	serviceId string,
+	endpointUrl string,
+	nativeServiceListenAddress string,
+	servedRelaysProducer chan<- *types.Relay,
+	proxy RelayerProxy,
+) RelayServer {
 	return &jsonRPCServer{
-		serviceId:    serviceId,
-		endpointUrl:  endpointUrl,
-		server:       &http.Server{Addr: endpointUrl},
-		relayerProxy: proxy,
+		serviceId:                  serviceId,
+		endpointUrl:                endpointUrl,
+		server:                     &http.Server{Addr: endpointUrl},
+		relayerProxy:               proxy,
+		nativeServiceListenAddress: nativeServiceListenAddress,
+		servedRelaysProducer:       servedRelaysProducer,
 	}
 }
 

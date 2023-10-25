@@ -30,6 +30,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	providedServices := make(RelayServersMap)
 	for _, serviceConfig := range services {
 		serviceId := serviceConfig.Id.Id
+		nativeServiceListenAddress := rp.nativeServicesListenAddress[serviceId]
 		serviceEndpoints := make([]RelayServer, len(serviceConfig.Endpoints))
 
 		for _, endpoint := range serviceConfig.Endpoints {
@@ -38,7 +39,13 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			// Switch to the RPC type to create the appropriate RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
-				server = NewJSONRPCServer(serviceId, endpoint.Url, rp)
+				server = NewJSONRPCServer(
+					serviceId,
+					endpoint.Url,
+					nativeServiceListenAddress,
+					rp.servedRelaysProducer,
+					rp,
+				)
 			default:
 				return ErrUnsupportedRPCType
 			}
