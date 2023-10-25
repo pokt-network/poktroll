@@ -37,9 +37,9 @@ func IsValidServiceId(serviceId string) bool {
 	return regexExprServiceId.MatchString(serviceId)
 }
 
-// IsValidServiceId checks if the input string is a valid serviceId
+// IsValidServiceName checks if the input string is a valid serviceName
 func IsValidServiceName(serviceName string) bool {
-	// ServiceId CAN be empty
+	// ServiceName CAN be empty
 	if len(serviceName) == 0 {
 		return true
 	}
