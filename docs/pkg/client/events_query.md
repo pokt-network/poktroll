@@ -18,7 +18,7 @@ The `events_query` package provides a client interface to subscribe to chain eve
 ## Installation
 
 ```bash
-go get github.com/yourusername/pocket/pkg/client/events_query
+go get github.com/pokt-network/poktroll/pkg/client/events_query
 ```
 
 ## Features
