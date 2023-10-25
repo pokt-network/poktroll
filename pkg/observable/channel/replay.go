@@ -11,7 +11,7 @@ import (
 
 const replayNotificationTimeout = 1 * time.Second
 
-var _ observable.ReplayObservable[any] = &replayObservable[any]{}
+var _ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
 
 type replayObservable[V any] struct {
 	*channelObservable[V]
