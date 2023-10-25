@@ -69,8 +69,8 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	tempObserver := ro.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
 
-	if n > cap(ro.replayBuffer) {
-		n = cap(ro.replayBuffer)
+	if n > ro.replayBufferSize {
+		n = ro.replayBufferSize
 		// TODO_THIS_COMMIT: log a warning
 	}
 
