@@ -113,6 +113,8 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 	ro.observersMu.Lock()
 	defer ro.observersMu.Unlock()
 
+	// Explicitly append the observer to the observers list after replaying the
+	// values in replayBuffer so that replayed notifications aren't re-added to it.
 	ro.observers = append(ro.observers, observer)
 
 	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe

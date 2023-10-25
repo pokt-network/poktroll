@@ -14,17 +14,21 @@ import (
 
 func TestReplayObservable(t *testing.T) {
 	var (
-		n           = 3
-		values      = []int{1, 2, 3, 4, 5}
-		errCh       = make(chan error, 1)
-		ctx, cancel = context.WithCancel(context.Background())
+		replayBufferSize = 3
+		values           = []int{1, 2, 3, 4, 5}
+		// the replay buffer is full and has shifted out values with index <
+		// len(values)-replayBufferSize so Last should return values starting
+		// from there.
+		expectedValues = values[len(values)-replayBufferSize:]
+		errCh          = make(chan error, 1)
+		ctx, cancel    = context.WithCancel(context.Background())
 	)
 	t.Cleanup(cancel)
 
 	// NB: intentionally not using NewReplayObservable() to test Replay() directly
 	// and to retain a reference to the wrapped observable for testing.
 	obsvbl, publishCh := channel.NewObservable[int]()
-	replayObsvbl := channel.Replay[int](ctx, n, obsvbl)
+	replayObsvbl := channel.Replay[int](ctx, replayBufferSize, obsvbl)
 
 	// vanilla observer, should be able to receive all values published after subscribing
 	observer := obsvbl.Subscribe(ctx)
@@ -52,10 +56,10 @@ func TestReplayObservable(t *testing.T) {
 	// allow some time for values to be buffered by the replay observable
 	time.Sleep(time.Millisecond)
 
-	// replay observer, should receive the last n values published prior to
+	// replay observer, should receive the last lastN values published prior to
 	// subscribing followed by subsequently published values
 	replayObserver := replayObsvbl.Subscribe(ctx)
-	for _, expected := range values[len(values)-n:] {
+	for _, expected := range expectedValues {
 		select {
 		case v := <-replayObserver.Ch():
 			require.Equal(t, expected, v)
@@ -65,8 +69,10 @@ func TestReplayObservable(t *testing.T) {
 	}
 
 	// second replay observer, should receive the same values as the first
+	// event though it subscribed after all values were published and the
+	// values were already replayed by the first.
 	replayObserver2 := replayObsvbl.Subscribe(ctx)
-	for _, expected := range values[len(values)-n:] {
+	for _, expected := range expectedValues {
 		select {
 		case v := <-replayObserver2.Ch():
 			require.Equal(t, expected, v)
@@ -129,13 +135,13 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 
 func TestReplayObservable_Last_Blocks_Goroutine(t *testing.T) {
 	var (
-		n        = 5
+		lastN    = 5
 		splitIdx = 3
 		values   = []int{1, 2, 3, 4, 5}
 		ctx      = context.Background()
 	)
 
-	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, n)
+	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, lastN)
 
 	// Publish values up to splitIdx.
 	for _, value := range values[:splitIdx] {
@@ -150,8 +156,8 @@ func TestReplayObservable_Last_Blocks_Goroutine(t *testing.T) {
 	// Concurrently call Last with a value greater than the replay buffer size.
 	lastValues := make(chan []int, 1)
 	go func() {
-		// Last should block until n values have been published.
-		lastValues <- replayObsvbl.Last(ctx, n)
+		// Last should block until lastN values have been published.
+		lastValues <- replayObsvbl.Last(ctx, lastN)
 	}()
 
 	select {
