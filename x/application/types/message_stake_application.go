@@ -11,7 +11,7 @@ import (
 
 const TypeMsgStakeApplication = "stake_application"
 
-var _ sdk.Msg = &MsgStakeApplication{}
+var _ sdk.Msg = (*MsgStakeApplication)(nil)
 
 func NewMsgStakeApplication(
 	address string,
