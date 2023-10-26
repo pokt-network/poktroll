@@ -83,7 +83,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 
 	// Validate the application service configs
 	if reason, ok := servicehelpers.AreValidAppServiceConfigs(msg.Services); !ok {
-		return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
+		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, reason)
 	}
 
 	return nil
