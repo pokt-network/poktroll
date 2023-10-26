@@ -22,8 +22,8 @@ var (
 )
 
 func init() {
-	addrRe = regexp.MustCompile(`address: (\S+)\s+name: (\S+)`)
-	amountRe = regexp.MustCompile(`amount: "(.+?)"\s+denom: upokt`)
+	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
+	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 }
 
 type suite struct {
