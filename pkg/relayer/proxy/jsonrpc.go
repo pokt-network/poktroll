@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -89,14 +90,18 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 	if err != nil {
 		// Reply with an error if relay response could not be built.
 		jsrv.replyWithError(writer, err)
+		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := jsrv.sendRelayResponse(relay.Res, writer); err != nil {
 		jsrv.replyWithError(writer, err)
+		log.Print("WARN: failed sending relay response: %s", err)
 		return
 	}
+
+	log.Print("INFO: relay request served successfully")
 
 	// Emit the relay to the servedRelays observable.
 	jsrv.servedRelaysProducer <- relay
