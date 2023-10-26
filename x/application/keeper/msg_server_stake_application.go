@@ -18,7 +18,6 @@ func (k msgServer) StakeApplication(
 	logger := k.Logger(ctx).With("method", "StakeApplication")
 	logger.Info("About to stake application with msg: %v", msg)
 
-	// TODO_TECHDEBT(team): All `msgServer` functions should be updated to leverage the corresponding `ValidateBasic` function for redundancy.
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error("invalid MsgStakeApplication: %v", err)
 		return nil, err
