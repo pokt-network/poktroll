@@ -25,6 +25,7 @@ func (wsConn *websocketConn) Receive() ([]byte, error) {
 
 // Send implements the respective interface method using the underlying websocket.
 func (wsConn *websocketConn) Send(msg []byte) error {
+	// Using the TextMessage message to indicate that msg is UTF-8 encoded.
 	return wsConn.conn.WriteMessage(gorillaws.TextMessage, msg)
 }
 
