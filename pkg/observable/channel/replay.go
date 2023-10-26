@@ -14,7 +14,8 @@ const replayNotificationTimeout = 1 * time.Second
 var _ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
 
 type replayObservable[V any] struct {
-	*channelObservable[V]
+	//*channelObservable[V]
+	observableInternals[V]
 	// replayBufferSize is the number of notifications to buffer so that they
 	// can be replayed to new observers.
 	replayBufferSize int
@@ -44,18 +45,14 @@ func Replay[V any](
 	replayBufferSize int,
 	srcObsvbl observable.Observable[V],
 ) observable.ReplayObservable[V] {
-	// TODO_HACK/TODO_IMPROVE: more effort is required to make a generic replay
-	// observable; however, as we only have the one observable package (channel),
-	// and aren't anticipating need another, we can get away with this for now.
-	chanObsvbl, ok := srcObsvbl.(*channelObservable[V])
-	if !ok {
-		panic("Replay only supports channelObservable")
-	}
+	// Assert that the source observable implements the internals required to
+	// embed and wrap it.
+	internals := srcObsvbl.(observableInternals[V])
 
 	replayObsvbl := &replayObservable[V]{
-		channelObservable: chanObsvbl,
-		replayBufferSize:  replayBufferSize,
-		replayBuffer:      make([]V, 0, replayBufferSize),
+		observableInternals: internals,
+		replayBufferSize:    replayBufferSize,
+		replayBuffer:        make([]V, 0, replayBufferSize),
 	}
 
 	srcObserver := srcObsvbl.Subscribe(ctx)

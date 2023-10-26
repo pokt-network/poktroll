@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"pocket/pkg/observable"
 )
 
 func TestObserver_Unsubscribe(t *testing.T) {
@@ -18,7 +20,7 @@ func TestObserver_Unsubscribe(t *testing.T) {
 		observerMu: &sync.RWMutex{},
 		// using a buffered channel to keep the test synchronous
 		observerCh: publishCh,
-		onUnsubscribe: func(toRemove *channelObserver[int]) {
+		onUnsubscribe: func(toRemove observable.Observer[int]) {
 			onUnsubscribeCalled = true
 		},
 	}
@@ -45,7 +47,7 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 		observerMu: &sync.RWMutex{},
 		// using a buffered channel to keep the test synchronous
 		observerCh: publishCh,
-		onUnsubscribe: func(toRemove *channelObserver[int]) {
+		onUnsubscribe: func(toRemove observable.Observer[int]) {
 			onUnsubscribeCalled = true
 		},
 	}
