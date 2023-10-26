@@ -33,7 +33,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	hash := crypto.Sha256(payloadBz)
 
 	// accountResponse.Account.Value is a protobuf Any type that should be unmarshaled into an AccountI interface.
-	// TODO_DISCUSS: Make sure this is the correct way to unmarshal an AccountI from an Any type.
+	// TODO_TECHDEBT: Make sure our `AccountI`/`any` unmarshalling is correct. See https://github.com/pokt-network/poktroll/pull/101/files/edbd628e9146e232ef58c71cfa8f4be2135cdb50..fbba10626df79f6bf6e2218513dfdeb40a629790#r1372464439
 	var account accounttypes.AccountI
 	if err := rp.clientCtx.Codec.UnmarshalJSON(accQueryRes.Account.Value, account); err != nil {
 		return err
