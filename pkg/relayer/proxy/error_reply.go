@@ -19,6 +19,7 @@ func (j *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
 				Id:      make([]byte, 0),
 				Jsonrpc: "2.0",
 				Error: &types.JSONRPCResponseError{
+					// Using conventional error code indicating internal server error.
 					Code:    -32000,
 					Message: err.Error(),
 					Data:    nil,
