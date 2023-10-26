@@ -33,7 +33,7 @@ type eventsQueryClient struct {
 	// cometWebsocketURL is the websocket URL for the cometbft node. It is assigned
 	// in NewEventsQueryClient.
 	cometWebsocketURL string
-	// dialer is resopnsible for createing the connection instance which
+	// dialer is responsible for creating the connection instance which
 	// facilitates communication with the cometbft node via message passing.
 	dialer client.Dialer
 	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
