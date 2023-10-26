@@ -2,8 +2,6 @@ package channel
 
 import (
 	"context"
-	"sync"
-
 	"pocket/pkg/observable"
 )
 
@@ -24,14 +22,11 @@ type option[V any] func(obs *channelObservable[V])
 // channelObservable implements the observable.Observable interface and can be notified
 // by sending on its corresponding publishCh channel.
 type channelObservable[V any] struct {
+	//observableInternals[V]
+	channelObservableInternals[V]
 	// publishCh is an observable-wide channel that is used to receive values
 	// which are subsequently fanned out to observers.
 	publishCh chan V
-	// observersMu protects observers from concurrent access/updates
-	observersMu *sync.RWMutex
-	// observers is a list of channelObservers that will be notified when publishCh
-	// receives a new value.
-	observers []*channelObserver[V]
 }
 
 // NewObservable creates a new observable which is notified when the publishCh
@@ -39,8 +34,7 @@ type channelObservable[V any] struct {
 func NewObservable[V any](opts ...option[V]) (observable.Observable[V], chan<- V) {
 	// initialize an observable that publishes messages from 1 publishCh to N observers
 	obs := &channelObservable[V]{
-		observersMu: &sync.RWMutex{},
-		observers:   []*channelObserver[V]{},
+		channelObservableInternals: newObservableInternals[V](),
 	}
 
 	for _, opt := range opts {
@@ -85,44 +79,9 @@ func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Ob
 	return observer
 }
 
-// addObserver implements the respective member of observableInternals. It is used
-// by the channelObservable implementation as well as embedders of observableInternals
-// (e.g. replayObservable).
-// It panics if toAdd is not a channelObserver.
-func (obsvbl *channelObservable[V]) addObserver(toAdd observable.Observer[V]) {
-	// must (write) lock observersMu so that we can safely append to the observers list
-	obsvbl.observersMu.Lock()
-	defer obsvbl.observersMu.Unlock()
-
-	obsvbl.observers = append(obsvbl.observers, toAdd.(*channelObserver[V]))
-}
-
 // UnsubscribeAll unsubscribes and removes all observers from the observable.
 func (obsvbl *channelObservable[V]) UnsubscribeAll() {
 	obsvbl.unsubscribeAll()
-}
-
-// unsubscribeAll unsubscribes and removes all observers from the observable.
-// It implements the respective member of observableInternals and is used by
-// the channelObservable implementation as well as embedders of observableInternals
-// (e.g. replayObservable).
-func (obsvbl *channelObservable[V]) unsubscribeAll() {
-	// Copy currentObservers to avoid holding the lock while unsubscribing them.
-	// The observers at the time of locking, prior to copying, are the canonical
-	// set of observers which are unsubscribed.
-	// New or existing Observers may (un)subscribe while the observable is closing.
-	// Any such observers won't be isClosed but will also stop receiving notifications
-	// immediately (if they receive any at all).
-	currentObservers := obsvbl.copyObservers()
-	for _, observer := range currentObservers {
-		observer.Unsubscribe()
-	}
-
-	// Reset observers to an empty list. This purges any observers which might have
-	// subscribed while the observable was closing.
-	obsvbl.observersMu.Lock()
-	obsvbl.observers = []*channelObserver[V]{}
-	obsvbl.observersMu.Unlock()
 }
 
 // goPublish to the publishCh and notify observers when values are received.
@@ -148,27 +107,6 @@ func (obsvbl *channelObservable[V]) goPublish() {
 	obsvbl.unsubscribeAll()
 }
 
-// copyObservers returns a copy of the current observers list. It is safe to
-// call concurrently.
-func (obsvbl *channelObservable[V]) copyObservers() (observers []*channelObserver[V]) {
-	defer obsvbl.observersMu.RUnlock()
-
-	// This loop blocks on acquiring a read lock on observersMu. If TryRLock
-	// fails, the loop continues until it succeeds. This is intended to give
-	// callers a guarantee that this copy operation won't contribute to a deadlock.
-	for {
-		// block until a read lock can be acquired
-		if obsvbl.observersMu.TryRLock() {
-			break
-		}
-	}
-
-	observers = make([]*channelObserver[V], len(obsvbl.observers))
-	copy(observers, obsvbl.observers)
-
-	return observers
-}
-
 // goUnsubscribeOnDone unsubscribes from the subscription when the context is done.
 // It is a blocking function and intended to be called in a goroutine.
 func goUnsubscribeOnDone[V any](ctx context.Context, observer observable.Observer[V]) {
@@ -177,22 +115,4 @@ func goUnsubscribeOnDone[V any](ctx context.Context, observer observable.Observe
 		return
 	}
 	observer.Unsubscribe()
-}
-
-// onUnsubscribe returns a function that removes a given observer from the
-// observable's list of observers.
-// It implements the respective member of observableInternals and is used by
-// the channelObservable implementation as well as embedders of observableInternals
-// (e.g. replayObservable).
-func (obsvbl *channelObservable[V]) onUnsubscribe(toRemove observable.Observer[V]) {
-	// must (write) lock to iterate over and modify the observers list
-	obsvbl.observersMu.Lock()
-	defer obsvbl.observersMu.Unlock()
-
-	for i, observer := range obsvbl.observers {
-		if observer == toRemove {
-			obsvbl.observers = append((obsvbl.observers)[:i], (obsvbl.observers)[i+1:]...)
-			break
-		}
-	}
 }
