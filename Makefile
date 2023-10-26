@@ -116,6 +116,15 @@ test_e2e: ## Run all E2E tests
 go_test: go_version_check ## Run all go tests
 	go test -v ./...
 
+.PHONY: itest
+itest: go_version_check ## Run tests iteratively (see usage for more)
+	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
+# catch-all target for itest
+%:
+	# no-op
+	@:
+
+
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
