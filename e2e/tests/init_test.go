@@ -103,6 +103,7 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amoun
 	if !ok {
 		s.Fatalf("no previous balance found for %s", accName)
 	}
+
 	bal := s.getAccBalance(accName)
 	switch condition {
 	case "more":
