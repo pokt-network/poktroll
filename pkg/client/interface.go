@@ -9,23 +9,22 @@ import (
 	"pocket/pkg/observable"
 )
 
-type BlockClient interface {
-	// Blocks returns an observable which emits newly committed blocks.
-	CommittedBlocksSequence(context.Context) BlocksObservable
-	//CommittedBlocksSequence() observable.Observable[Block]
-	// LatestBlock returns the latest block that has been committed.
-	LatestBlock(context.Context) Block
-	// Close unsubscribes all observers of the committed blocks sequence observable
-	// and closes the events query client.
-	Close()
-}
-
 // BlocksObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
 type BlocksObservable observable.ReplayObservable[Block]
+
+type BlockClient interface {
+	// Blocks returns an observable which emits newly committed blocks.
+	CommittedBlocksSequence(context.Context) BlocksObservable
+	// LatestBlock returns the latest block that has been committed.
+	LatestBlock(context.Context) Block
+	// Close unsubscribes all observers of the committed blocks sequence observable
+	// and closes the events query client.
+	Close()
+}
 
 type Block interface {
 	Height() int64
