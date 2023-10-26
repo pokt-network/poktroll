@@ -17,6 +17,7 @@ import (
 	"pocket/internal/testclient/testeventsquery"
 	"pocket/internal/testerrors"
 	eventsquery "pocket/pkg/client/events_query"
+	"pocket/pkg/client/events_query/websocket"
 	"pocket/pkg/either"
 	"pocket/pkg/observable"
 )
@@ -235,7 +236,7 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			if readEventCounter >= handleEventLimit {
-				return nil, eventsquery.ErrReceive
+				return nil, websocket.ErrReceive
 			}
 
 			event := testEvent(int32(readEventCounter))
@@ -258,7 +259,7 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventLimit,
-		eventsquery.ErrReceive,
+		websocket.ErrReceive,
 		readAllEventsTimeout,
 		nil,
 	)

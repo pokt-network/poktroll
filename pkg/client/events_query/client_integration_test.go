@@ -12,6 +12,8 @@ import (
 	"pocket/internal/testclient/testeventsquery"
 )
 
+const committedBlockEventsQuery = "tm.event='NewBlock'"
+
 func TestQueryClient_EventsObservable_Integration(t *testing.T) {
 	const (
 		eventReceiveTimeout = 5 * time.Second
@@ -22,7 +24,9 @@ func TestQueryClient_EventsObservable_Integration(t *testing.T) {
 	queryClient := testeventsquery.NewLocalnetClient(t)
 	require.NotNil(t, queryClient)
 
-	eventsObservable, err := queryClient.EventsBytes(ctx, "tm.event='NewBlock'")
+	// Start a subscription to the committed block events query. This begins
+	// publishing events to the returned observable.
+	eventsObservable, err := queryClient.EventsBytes(ctx, committedBlockEventsQuery)
 	require.NoError(t, err)
 
 	eventsObserver := eventsObservable.Subscribe(ctx)

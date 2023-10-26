@@ -1,7 +1,7 @@
-package eventsquery
+package websocket
 
 import (
-	"github.com/gorilla/websocket"
+	gorillaws "github.com/gorilla/websocket"
 
 	"pocket/pkg/client"
 )
@@ -11,7 +11,7 @@ var _ client.Connection = (*websocketConn)(nil)
 // websocketConn implements the Connection interface using the gorilla websocket
 // transport implementation.
 type websocketConn struct {
-	conn *websocket.Conn
+	conn *gorillaws.Conn
 }
 
 // Receive implements the respective interface method using the underlying websocket.
@@ -25,7 +25,8 @@ func (wsConn *websocketConn) Receive() ([]byte, error) {
 
 // Send implements the respective interface method using the underlying websocket.
 func (wsConn *websocketConn) Send(msg []byte) error {
-	return wsConn.conn.WriteMessage(websocket.TextMessage, msg)
+	// Using the TextMessage message to indicate that msg is UTF-8 encoded.
+	return wsConn.conn.WriteMessage(gorillaws.TextMessage, msg)
 }
 
 // Close implements the respective interface method using the underlying websocket.

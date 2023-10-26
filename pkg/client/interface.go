@@ -40,6 +40,13 @@ type Block interface {
 // NOTE: a branch which attempts this is available at:
 // https://github.com/pokt-network/poktroll/pull/74
 
+// EventsBytesObservable is an observable which is notified with an either
+// value which contains either an error or the event message bytes.
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
+type EventsBytesObservable observable.Observable[either.Either[[]byte]]
+
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
 type EventsQueryClient interface {
 	// EventsBytes returns an observable which is notified about chain event messages
@@ -53,13 +60,6 @@ type EventsQueryClient interface {
 	// observable and closes the connection.
 	Close()
 }
-
-// EventsBytesObservable is an observable which is notified with an either
-// value which contains either an error or the event message bytes.
-// TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
-type EventsBytesObservable observable.Observable[either.Either[[]byte]]
 
 // Connection is a transport agnostic, bi-directional, message-passing interface.
 type Connection interface {
