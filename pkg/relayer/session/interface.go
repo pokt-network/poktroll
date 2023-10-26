@@ -15,13 +15,13 @@ type RelayerSessions interface {
 	// ClosingSessions returns an observable that notifies of sessions ready to be claimed.
 	ClosingSessions() observable.Observable[SessionTree]
 
+	// TODO: Add `ExpiringSessions` to notify of session whose proof submission window is closing.
+
 	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session. It is used to retrieve
 	// the SMST and update it when a Relay has been successfully served. If the session is seen for the first time,
 	// it creates a new SMST for it before returning it.
 	// An error is returned if the corresponding KVStore for SMST fails to be created.
 	EnsureSessionTree(session *sessiontypes.Session) (SessionTree, error)
-
-	// TODO: Add `ExpiringSessions` to notify of session whose proof submission window is closing.
 }
 
 // SessionTree is an interface that wraps an SMST (Sparse Merkle State Tree) and its corresponding session.
