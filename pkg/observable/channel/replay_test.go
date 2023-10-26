@@ -25,10 +25,10 @@ func TestReplayObservable(t *testing.T) {
 	)
 	t.Cleanup(cancel)
 
-	// NB: intentionally not using NewReplayObservable() to test Replay() directly
+	// NB: intentionally not using NewReplayObservable() to test ToReplayObservable() directly
 	// and to retain a reference to the wrapped observable for testing.
 	obsvbl, publishCh := channel.NewObservable[int]()
-	replayObsvbl := channel.Replay[int](ctx, replayBufferSize, obsvbl)
+	replayObsvbl := channel.ToReplayObservable[int](ctx, replayBufferSize, obsvbl)
 
 	// vanilla observer, should be able to receive all values published after subscribing
 	observer := obsvbl.Subscribe(ctx)
@@ -69,7 +69,7 @@ func TestReplayObservable(t *testing.T) {
 	}
 
 	// second replay observer, should receive the same values as the first
-	// event though it subscribed after all values were published and the
+	// even though it subscribed after all values were published and the
 	// values were already replayed by the first.
 	replayObserver2 := replayObsvbl.Subscribe(ctx)
 	for _, expected := range expectedValues {
@@ -133,55 +133,93 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 	}
 }
 
-func TestReplayObservable_Last_Blocks_Goroutine(t *testing.T) {
+func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	var (
-		lastN    = 5
+		replayBufferSize = 5
+		lastN            = 5
+		// splitIdx is the index at which this test splits the set of values.
+		// The two groups of values are published at different points in the
+		// test to test the behavior of Last under different conditions.
 		splitIdx = 3
 		values   = []int{1, 2, 3, 4, 5}
 		ctx      = context.Background()
 	)
 
-	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, lastN)
+	replayObsvbl, publishCh := channel.NewReplayObservable[int](ctx, replayBufferSize)
 
-	// Publish values up to splitIdx.
+	// getLastValues is a helper function which returns a channel that will
+	// receive the result of a call to Last, the method under test.
+	getLastValues := func() chan []int {
+		lastValuesCh := make(chan []int, 1)
+		go func() {
+			// Last should block until lastN values have been published.
+			// NOTE: this will produce a warning log which can safely be ignored:
+			// > WARN: requested replay buffer size 3 is greater than replay buffer
+			// > 	   capacity 3; returning entire replay buffer
+			lastValuesCh <- replayObsvbl.Last(ctx, lastN)
+		}()
+		return lastValuesCh
+	}
+
+	// Ensure that last blocks when the replay buffer is empty
+	select {
+	case actualValues := <-getLastValues():
+		t.Fatalf(
+			"Last should block until at lest 1 value has been published; actualValues: %v",
+			actualValues,
+		)
+	case <-time.After(200 * time.Millisecond):
+	}
+
+	// Publish some values (up to splitIdx).
 	for _, value := range values[:splitIdx] {
 		publishCh <- value
 		time.Sleep(time.Millisecond)
 	}
 
+	// Ensure Last works as expected when n <= len(published_values).
 	require.ElementsMatch(t, []int{1}, replayObsvbl.Last(ctx, 1))
 	require.ElementsMatch(t, []int{1, 2}, replayObsvbl.Last(ctx, 2))
 	require.ElementsMatch(t, []int{1, 2, 3}, replayObsvbl.Last(ctx, 3))
 
-	// Concurrently call Last with a value greater than the replay buffer size.
-	lastValues := make(chan []int, 1)
-	go func() {
-		// Last should block until lastN values have been published.
-		lastValues <- replayObsvbl.Last(ctx, lastN)
-	}()
-
+	// Ensure that Last blocks when n > len(published_values) and the replay
+	// buffer is not full.
 	select {
-	case actualValues := <-lastValues:
+	case actualValues := <-getLastValues():
 		t.Fatalf(
-			"Last should block until the replay buffer is full. Actual values: %v",
+			"Last should block until replayPartialBufferTimeout has elapsed; received values: %v",
 			actualValues,
 		)
-	case <-time.After(10 * time.Millisecond):
+	default:
+		t.Log("OK: Last is blocking, as expected")
 	}
 
-	// Publish values after splitIdx.
+	// Ensure that Last returns the correct values when n > len(published_values)
+	// and the replay buffer is not full.
+	select {
+	case actualValues := <-getLastValues():
+		require.ElementsMatch(t, values[:splitIdx], actualValues)
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("timed out waiting for Last to return")
+	}
+
+	// Publish the rest of the values (from splitIdx on).
 	for _, value := range values[splitIdx:] {
 		publishCh <- value
 		time.Sleep(time.Millisecond)
 	}
 
+	// Ensure that Last doesn't block when n = len(published_values) and the
+	// replay buffer is full.
 	select {
-	case actualValues := <-lastValues:
+	case actualValues := <-getLastValues():
+		require.Len(t, actualValues, lastN)
 		require.ElementsMatch(t, values, actualValues)
 	case <-time.After(10 * time.Millisecond):
 		t.Fatal("timed out waiting for Last to return")
 	}
 
+	// Ensure that Last still works as expected when n <= len(published_values).
 	require.ElementsMatch(t, []int{1}, replayObsvbl.Last(ctx, 1))
 	require.ElementsMatch(t, []int{1, 2}, replayObsvbl.Last(ctx, 2))
 	require.ElementsMatch(t, []int{1, 2, 3}, replayObsvbl.Last(ctx, 3))

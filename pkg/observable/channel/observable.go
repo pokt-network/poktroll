@@ -13,7 +13,10 @@ import (
 // defaultSubscribeBufferSize is the buffer size of a observable's publish channel.
 const defaultPublishBufferSize = 50
 
-var _ observable.Observable[any] = (*channelObservable[any])(nil)
+var (
+	_ observable.Observable[any] = (*channelObservable[any])(nil)
+	_ observableInternals[any]   = (*channelObservable[any])(nil)
+)
 
 // option is a function which receives and can modify the channelObservable state.
 type option[V any] func(obs *channelObservable[V])
@@ -67,12 +70,10 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	// must (write) lock observersMu so that we can safely append to the observers list
-	obsvbl.observersMu.Lock()
-	defer obsvbl.observersMu.Unlock()
-
+	// Create a new observer and add it to the list of observers to be notified
+	// when publishCh receives a new value.
 	observer := NewObserver[V](ctx, obsvbl.onUnsubscribe)
-	obsvbl.observers = append(obsvbl.observers, observer)
+	obsvbl.addObserver(observer)
 
 	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
 	// active observers
@@ -84,12 +85,27 @@ func (obsvbl *channelObservable[V]) Subscribe(ctx context.Context) observable.Ob
 	return observer
 }
 
+// addObserver implements the respective member of observableInternals. It is used
+// by the channelObservable implementation as well as embedders of observableInternals
+// (e.g. replayObservable).
+// It panics if toAdd is not a channelObserver.
+func (obsvbl *channelObservable[V]) addObserver(toAdd observable.Observer[V]) {
+	// must (write) lock observersMu so that we can safely append to the observers list
+	obsvbl.observersMu.Lock()
+	defer obsvbl.observersMu.Unlock()
+
+	obsvbl.observers = append(obsvbl.observers, toAdd.(*channelObserver[V]))
+}
+
 // UnsubscribeAll unsubscribes and removes all observers from the observable.
 func (obsvbl *channelObservable[V]) UnsubscribeAll() {
 	obsvbl.unsubscribeAll()
 }
 
 // unsubscribeAll unsubscribes and removes all observers from the observable.
+// It implements the respective member of observableInternals and is used by
+// the channelObservable implementation as well as embedders of observableInternals
+// (e.g. replayObservable).
 func (obsvbl *channelObservable[V]) unsubscribeAll() {
 	// Copy currentObservers to avoid holding the lock while unsubscribing them.
 	// The observers at the time of locking, prior to copying, are the canonical
@@ -165,7 +181,10 @@ func goUnsubscribeOnDone[V any](ctx context.Context, observer observable.Observe
 
 // onUnsubscribe returns a function that removes a given observer from the
 // observable's list of observers.
-func (obsvbl *channelObservable[V]) onUnsubscribe(toRemove *channelObserver[V]) {
+// It implements the respective member of observableInternals and is used by
+// the channelObservable implementation as well as embedders of observableInternals
+// (e.g. replayObservable).
+func (obsvbl *channelObservable[V]) onUnsubscribe(toRemove observable.Observer[V]) {
 	// must (write) lock to iterate over and modify the observers list
 	obsvbl.observersMu.Lock()
 	defer obsvbl.observersMu.Unlock()

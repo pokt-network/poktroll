@@ -31,7 +31,7 @@ type channelObserver[V any] struct {
 	ctx context.Context
 	// onUnsubscribe is called in Observer#Unsubscribe, removing the respective
 	// observer from observers in a concurrency-safe manner.
-	onUnsubscribe func(toRemove *channelObserver[V])
+	onUnsubscribe func(toRemove observable.Observer[V])
 	// observerMu protects the observerCh and isClosed fields.
 	observerMu *sync.RWMutex
 	// observerCh is the channel that is used to emit values to the observer.
@@ -43,7 +43,7 @@ type channelObserver[V any] struct {
 	isClosed bool
 }
 
-type UnsubscribeFunc[V any] func(toRemove *channelObserver[V])
+type UnsubscribeFunc[V any] func(toRemove observable.Observer[V])
 
 func NewObserver[V any](
 	ctx context.Context,
