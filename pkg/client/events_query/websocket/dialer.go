@@ -1,4 +1,4 @@
-package eventsquery
+package websocket
 
 import (
 	"context"
