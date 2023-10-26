@@ -34,19 +34,17 @@ func (j *jsonRPCServer) newRelayResponse(
 		Meta: &types.RelayResponseMetadata{SessionHeader: sessionHeader},
 	}
 
-	if response.Body != nil {
-		responseBz, err := io.ReadAll(response.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		jsonRPCResponse := &types.JSONRPCResponsePayload{}
-		if err := jsonRPCResponse.Unmarshal(responseBz); err != nil {
-			return nil, err
-		}
-
-		relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonRPCResponse}
+	responseBz, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
 	}
+
+	jsonRPCResponse := &types.JSONRPCResponsePayload{}
+	if err := jsonRPCResponse.Unmarshal(responseBz); err != nil {
+		return nil, err
+	}
+
+	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonRPCResponse}
 
 	// Sign the relay response and add the signature to the relay response metadata
 	signature, err := j.relayerProxy.SignRelayResponse(relayResponse)

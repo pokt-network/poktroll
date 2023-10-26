@@ -75,8 +75,7 @@ func NewRelayerProxy(
 	keyName string,
 	keyring keyring.Keyring,
 	proxiedServicesEndpoints servicesEndpointsMap,
-	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-	// blockClient blocktypes.BlockClient,
+	blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
@@ -84,8 +83,7 @@ func NewRelayerProxy(
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
-		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-		// blockClient:       blockClient,
+		blockClient:              blockClient,
 		keyName:                  keyName,
 		keyring:                  keyring,
 		accountsQuerier:          accountQuerier,

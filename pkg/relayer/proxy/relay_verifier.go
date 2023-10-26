@@ -8,18 +8,19 @@ import (
 	"context"
 	"pocket/x/service/types"
 	sessiontypes "pocket/x/session/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
 func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
-	serviceId serviceId,
+	serviceId *sharedtypes.ServiceId,
 ) error {
 	// Query for the application account to get the application's public key to verify the relay request signature.
 	applicationAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
-	accountQuery := &accounttypes.QueryAccountRequest{Address: applicationAddress}
-	accountResponse, err := rp.accountsQuerier.Account(ctx, accountQuery)
+	accQueryReq := &accounttypes.QueryAccountRequest{Address: applicationAddress}
+	accQueryRes, err := rp.accountsQuerier.Account(ctx, accQueryReq)
 	if err != nil {
 		return err
 	}
@@ -34,12 +35,12 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// accountResponse.Account.Value is a protobuf Any type that should be unmarshaled into an AccountI interface.
 	// TODO_DISCUSS: Make sure this is the correct way to unmarshal an AccountI from an Any type.
 	var account accounttypes.AccountI
-	if err := rp.clientCtx.Codec.UnmarshalJSON(accountResponse.Account.Value, account); err != nil {
+	if err := rp.clientCtx.Codec.UnmarshalJSON(accQueryRes.Account.Value, account); err != nil {
 		return err
 	}
 
 	if !account.GetPubKey().VerifySignature(hash, relayRequest.Meta.Signature) {
-		return ErrInvalidSignature
+		return ErrInvalidRelayRequestSignature
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
@@ -58,6 +59,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// - applicationAddress (which is used to to verify the relayRequest signature)
 	// we can reduce the session validity check to checking if the retrieved session's sessionId
 	// matches the relayRequest sessionId.
+	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
 		return ErrInvalidSession
 	}

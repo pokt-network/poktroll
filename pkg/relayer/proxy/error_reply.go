@@ -8,9 +8,9 @@ import (
 )
 
 // replyWithError builds a JSONRPCResponseError from the passed in error and writes it to the writer.
-// TODO_IMPROVE: This method should be aware of the request id and use it in the response by having
+// TODO_TECHDEBT: This method should be aware of the request id and use it in the response by having
 // the caller pass it along with the error if available.
-// TODO_IMPROVE: This method should be aware of the nature of the error to use the appropriate JSONRPC
+// TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
 // Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
 func (j *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
 	relayResponse := &types.RelayResponse{
@@ -33,8 +33,7 @@ func (j *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
 		return
 	}
 
-	_, err = writer.Write(relayResponseBz)
-	if err != nil {
+	if _, err = writer.Write(relayResponseBz); err != nil {
 		log.Printf("ERROR: failed writing relay response: %s", err)
 		return
 	}
