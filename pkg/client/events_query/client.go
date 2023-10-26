@@ -19,8 +19,8 @@ const requestIdFmt = "request_%d"
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#EventsBytes()` method for a similar purpose. Perhaps we could
+// TODO_TECHDEBT: the cosmos-sdk CLI code seems to use a cometbft RPC client
+// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
 // replace this custom websocket client with that.
 // (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
@@ -41,7 +41,7 @@ type eventsQueryClient struct {
 	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
 	eventsBytesAndConnsMu sync.RWMutex
 	// eventsBytesAndConns maps event subscription queries to their respective
-	// eventsBytes observable, connection, and closed status.
+	// eventsBytes observable, connection, and isClosed status.
 	eventsBytesAndConns map[string]*eventsBytesAndConn
 }
 
@@ -53,7 +53,7 @@ type eventsBytesAndConn struct {
 	// either an error or the event message bytes.
 	eventsBytes observable.Observable[either.Either[[]byte]]
 	conn        client.Connection
-	closed      bool
+	isClosed    bool
 }
 
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
@@ -128,7 +128,7 @@ func (eqc *eventsQueryClient) close() {
 		_ = obsvblConn.conn.Close()
 		obsvblConn.eventsBytes.UnsubscribeAll()
 
-		// remove closed eventsBytesAndConns
+		// remove isClosed eventsBytesAndConns
 		delete(eqc.eventsBytesAndConns, query)
 	}
 }
@@ -200,7 +200,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 	eventsBzPublishCh chan<- either.Either[[]byte],
 ) {
 	// Read and handle messages from the websocket. This loop will exit when the
-	// websocket connection is closed and/or returns an error.
+	// websocket connection is isClosed and/or returns an error.
 	for {
 		event, err := conn.Receive()
 		if err != nil {
