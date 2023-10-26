@@ -61,10 +61,12 @@ func Replay[V any](
 	return replayObsvbl
 }
 
-// Last synchronously returns the last n values from the replay buffer. If n is
-// greater than the replay buffer size, the entire replay buffer is returned.
-// It blocks until at least n or replayBufferSize (whichever is smaller)
-// notifications have accumulated in the replay buffer.
+// Last synchronously returns the last n values from the replay buffer. It blocks
+// until at least 1 notification has been accumulated, then waits replayPartialBufferTimeout
+//
+//	duration before returning the accumulated notifications.
+//
+// If n is greater than the replay buffer size, the entire replay buffer is returned.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	tempObserver := ro.Subscribe(ctx)
 	defer tempObserver.Unsubscribe()
@@ -78,14 +80,21 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 		)
 	}
 
-	// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
-	values := make([]V, n)
-	for i, _ := range values {
-		// Receiving from the observer channel blocks if replayBuffer is empty.
-		value := <-tempObserver.Ch()
-		values[i] = value
+	// Accumulate replay values in a new slice to avoid (read)
+	// locking replayBufferMu.
+	var values []V
+	gotNValues := accumulateNValues(ctx, tempObserver, n, &values)
+
+	for {
+		select {
+		case <-gotNValues:
+			return values
+		case <-time.After(replayPartialBufferTimeout):
+			if len(values) > 1 {
+				return values
+			}
+		}
 	}
-	return values
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
