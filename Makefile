@@ -158,6 +158,7 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 # TODO                        - General Purpose catch-all.
 # TODO_DECIDE                 - A TODO indicating we need to make a decision and document it using an ADR in the future; https://github.com/pokt-network/pocket-network-protocol/tree/main/ADRs
 # TODO_TECHDEBT               - Not a great implementation, but we need to fix it later.
+# TODO_BLOCKER                - Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
 # TODO_IMPROVE                - A nice to have, but not a priority. It's okay if we never get to this.
 # TODO_OPTIMIZE               - An opportunity for performance improvement if/when it's necessary
 # TODO_DISCUSS                - Probably requires a lengthy offline discussion to understand next steps.

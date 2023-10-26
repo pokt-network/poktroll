@@ -91,15 +91,18 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = int64(sh.blockHeight/NumBlocksPerSession) + 1
+	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession)
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
 	return nil
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
 func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
-	// TODO_TECHDEBT: Need to retrieve the block hash at SessionStartBlockHeight, NOT THE CURRENT ONE
-	prevHashBz := ctx.HeaderHash()
+	// TODO_BLOCKER: Need to retrieve the block hash at SessionStartBlockHeight, but this requires
+	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
+	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
+	// prevHashBz := ctx.HeaderHash()
+	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the ServiceId is a valid service depending on whether
@@ -130,10 +133,11 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
 	logger := k.Logger(ctx).With("method", "hydrateSessionSuppliers")
 
-	// TODO_TECHDEBT(@Olshansk): Need to retrieve the suppliers at SessionStartBlockHeight,
+	// TODO_TECHDEBT(@Olshansk, @bryanchriswhite): Need to retrieve the suppliers at SessionStartBlockHeight,
 	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
 	// only retrieving the suppliers at the current block height which could create a discrepancy
 	// if new suppliers were staked mid session.
+	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
 	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
