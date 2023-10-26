@@ -55,6 +55,13 @@ type eventsBytesAndConn struct {
 	isClosed    bool
 }
 
+// Close unsubscribes all observers of eventsBytesAndConn's observable and also
+// closes its connection.
+func (ebc *eventsBytesAndConn) Close() {
+	ebc.eventsBytes.UnsubscribeAll()
+	_ = ebc.conn.Close()
+}
+
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	evtClient := &eventsQueryClient{
 		cometWebsocketURL:   cometWebsocketURL,
@@ -123,10 +130,10 @@ func (eqc *eventsQueryClient) close() {
 	eqc.eventsBytesAndConnsMu.Lock()
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
-	for query, obsvblConn := range eqc.eventsBytesAndConns {
-		_ = obsvblConn.conn.Close()
-		obsvblConn.eventsBytes.UnsubscribeAll()
-
+	for query, eventsBzConn := range eqc.eventsBytesAndConns {
+		// Unsubscribe all observers of the eventsBzConn observable and close the
+		// connection for the given query.
+		eventsBzConn.Close()
 		// remove isClosed eventsBytesAndConns
 		delete(eqc.eventsBytesAndConns, query)
 	}
@@ -232,10 +239,10 @@ func (eqc *eventsQueryClient) goUnsubscribeOnDone(
 	eqc.eventsBytesAndConnsMu.RLock()
 	defer eqc.eventsBytesAndConnsMu.RUnlock()
 
-	if toClose, ok := eqc.eventsBytesAndConns[query]; ok {
-		// Unsubscribe all observers of the eventsBytesAndConn observable for
-		// the given query.
-		toClose.eventsBytes.UnsubscribeAll()
+	if eventsBzConn, ok := eqc.eventsBytesAndConns[query]; ok {
+		// Unsubscribe all observers of the given query's eventsBzConn's observable
+		// and close its connection.
+		eventsBzConn.Close()
 		// Remove the eventsBytesAndConn for the given query.
 		delete(eqc.eventsBytesAndConns, query)
 	}
