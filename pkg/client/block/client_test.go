@@ -3,7 +3,6 @@ package block_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -19,11 +18,7 @@ import (
 	eventsquery "pocket/pkg/client/events_query"
 )
 
-const blockAssertionLoopTimeout = 100 * time.Millisecond
-
-func main() {
-	fmt.Println("HELLOO!!!")
-}
+const blockAssertionLoopTimeout = 500 * time.Millisecond
 
 func TestBlockClient(t *testing.T) {
 	var (
@@ -44,7 +39,7 @@ func TestBlockClient(t *testing.T) {
 	)
 
 	// Set up a mock connection and dialer which are expected to be used once.
-	connMock, dialerMock := testeventsquery.OneTimeMockConnAndDialer(t)
+	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
 	connMock.EXPECT().Send(gomock.Any()).Return(nil).Times(1)
 	// Mock the Receive method to return the expected block event.
 	connMock.EXPECT().Receive().DoAndReturn(func() ([]byte, error) {
@@ -59,7 +54,7 @@ func TestBlockClient(t *testing.T) {
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up block client.
-	blockClient, err := block.NewBlockClient(ctx, deps, testclient.CometWebsocketURL)
+	blockClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 

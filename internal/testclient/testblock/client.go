@@ -20,7 +20,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	require.NotNil(t, queryClient)
 
 	deps := depinject.Supply(queryClient)
-	bClient, err := block.NewBlockClient(ctx, deps, testclient.CometWebsocketURL)
+	bClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
 	require.NoError(t, err)
 	return bClient
 }
