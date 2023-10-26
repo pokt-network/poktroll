@@ -27,7 +27,8 @@ func init() {
 
 func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
 	apps := make([]types.Application, n)
-	for i, app := range apps {
+	for i := range apps {
+		app := &apps[i]
 		app.Address = sample.AccAddress()
 		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
 		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
@@ -35,7 +36,7 @@ func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.A
 				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
 			},
 		}
-		keeper.SetApplication(ctx, app)
+		keeper.SetApplication(ctx, *app)
 	}
 	return apps
 }
