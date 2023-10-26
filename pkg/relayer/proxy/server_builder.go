@@ -9,7 +9,7 @@ import (
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
-// is responsible for listening for incoming relay requests and relaying them to the supported native service.
+// is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// Get the supplier address from the keyring
 	supplierAddress, err := rp.keyring.Key(rp.keyName)
@@ -27,10 +27,10 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	services := supplierQueryResponse.Supplier.Services
 
 	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
-	providedServices := make(RelayServersMap)
+	providedServices := make(relayServersMap)
 	for _, serviceConfig := range services {
-		serviceId := serviceConfig.Id.Id
-		nativeServiceListenAddress := rp.nativeServicesListenAddress[serviceId]
+		serviceId := serviceConfig.Id
+		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[serviceId.Id]
 		serviceEndpoints := make([]RelayServer, len(serviceConfig.Endpoints))
 
 		for _, endpoint := range serviceConfig.Endpoints {
@@ -41,8 +41,8 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewJSONRPCServer(
 					serviceId,
-					endpoint.Url,
-					nativeServiceListenAddress,
+					endpoint,
+					proxiedServicesEndpoints,
 					rp.servedRelaysProducer,
 					rp,
 				)
@@ -53,7 +53,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			serviceEndpoints = append(serviceEndpoints, server)
 		}
 
-		providedServices[serviceId] = serviceEndpoints
+		providedServices[serviceId.Id] = serviceEndpoints
 	}
 
 	rp.advertisedRelayServers = providedServices
