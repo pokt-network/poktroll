@@ -1,6 +1,23 @@
-# Package `pocket/pkg/client/events_query`
+# Package `pocket/pkg/client/events_query` <!-- omit in toc -->
 
-> An event query package for interfacing with cometbft and the Cosmos SDK, facilitating subscriptions to chain event messages.
+> An event query package for interfacing with [CometBFT](https://cometbft.com/) and the [Cosmos SDK](https://v1.cosmos.network/sdk), facilitating subscriptions to chain event messages.
+
+- [Overview](#overview)
+- [Architecture Diagrams](#architecture-diagrams)
+- [Installation](#installation)
+- [Features](#features)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+  - [Advanced Usage](#advanced-usage)
+  - [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [Best Practices](#best-practices)
+- [FAQ](#faq)
+    - [Why use `events_query` over directly using Gorilla WebSockets?](#why-use-events_query-over-directly-using-gorilla-websockets)
+    - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
+- [Contributing](#contributing)
+- [Changelog](#changelog)
+- [License](#license)
 
 ## Overview
 
@@ -13,7 +30,7 @@ The `events_query` package provides a client interface to subscribe to chain eve
 
 ## Architecture Diagrams
 
-[Add diagrams here if needed. For the purpose of this mockup, we'll assume none are provided.]
+_TODO(@bryanchriswhite): Add architecture diagrams for the package._
 
 ## Installation
 
@@ -23,7 +40,7 @@ go get github.com/pokt-network/poktroll/pkg/client/events_query
 
 ## Features
 
-- **Websocket Connection**: Uses the Gorilla WebSockets for implementing the connection interface.
+- **Websocket Connection**: Uses the [Gorilla WebSockets](https://github.com/gorilla/websocket) for implementing the connection interface.
 - **Events Subscription**: Subscribe to chain event messages using a simple query mechanism.
 - **Dialer Interface**: Offers a `Dialer` interface for constructing connections, which can be easily mocked for tests.
 - **Observable Pattern**: Integrates the observable pattern, making it easier to react to chain events.
@@ -43,7 +60,7 @@ observable, errCh := evtClient.EventsBytes(context.Background(), "your-query-str
 
 ### Advanced Usage
 
-[Further advanced examples can be added based on more sophisticated use cases, including setting custom dialers and handling observable outputs.]
+_TODO(@bryanchriswhite): Add examples of advanced usage_
 
 ### Configuration
 
@@ -52,12 +69,12 @@ observable, errCh := evtClient.EventsBytes(context.Background(), "your-query-str
 ## API Reference
 
 - `EventsQueryClient`: Main interface to query events. Methods include:
-    - `EventsBytes(ctx, query)`: Returns an observable for chain events.
-    - `Close()`: Close any existing connections and unsubscribe all observers.
+  - `EventsBytes(ctx, query)`: Returns an observable for chain events.
+  - `Close()`: Close any existing connections and unsubscribe all observers.
 - `Connection`: Interface representing a bidirectional message-passing connection.
 - `Dialer`: Interface encapsulating the creation of connections.
 
-For the complete API details, see the [godoc](https://pkg.go.dev/github.com/yourusername/pocket/pkg/client/events_query).
+For the complete API details, see the [godoc](https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events_query).
 
 ## Best Practices
 

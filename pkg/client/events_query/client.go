@@ -2,6 +2,8 @@ package eventsquery
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,33 +17,29 @@ import (
 	"pocket/pkg/observable/channel"
 )
 
-const requestIdFmt = "request_%d"
-
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#EventsBytes()` method for a similar purpose. Perhaps we could
+// TODO_TECHDEBT: the cosmos-sdk CLI code seems to use a cometbft RPC client
+// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
 // replace this custom websocket client with that.
-// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
-// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
+// See:
+// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110
+// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L656
+// - https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114
+// - https://github.com/pokt-network/poktroll/pull/64#discussion_r1372378241
 
 // eventsQueryClient implements the EventsQueryClient interface.
 type eventsQueryClient struct {
 	// cometWebsocketURL is the websocket URL for the cometbft node. It is assigned
 	// in NewEventsQueryClient.
 	cometWebsocketURL string
-	// nextRequestId is a *unique* ID intended to be monotonically incremented
-	// and used to uniquely identify distinct RPC requests.
-	// TODO_CONSIDERATION: Consider changing `nextRequestId` to a random entropy field
-	nextRequestId uint64
-
 	// dialer is resopnsible for createing the connection instance which
 	// facilitates communication with the cometbft node via message passing.
 	dialer client.Dialer
 	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
 	eventsBytesAndConnsMu sync.RWMutex
 	// eventsBytesAndConns maps event subscription queries to their respective
-	// eventsBytes observable, connection, and closed status.
+	// eventsBytes observable, connection, and isClosed status.
 	eventsBytesAndConns map[string]*eventsBytesAndConn
 }
 
@@ -53,7 +51,7 @@ type eventsBytesAndConn struct {
 	// either an error or the event message bytes.
 	eventsBytes observable.Observable[either.Either[[]byte]]
 	conn        client.Connection
-	closed      bool
+	isClosed    bool
 }
 
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
@@ -128,16 +126,9 @@ func (eqc *eventsQueryClient) close() {
 		_ = obsvblConn.conn.Close()
 		obsvblConn.eventsBytes.UnsubscribeAll()
 
-		// remove closed eventsBytesAndConns
+		// remove isClosed eventsBytesAndConns
 		delete(eqc.eventsBytesAndConns, query)
 	}
-}
-
-// getNextRequestId increments and returns the JSON-RPC request ID which should
-// be used for the next request. These IDs are expected to be unique (per request).
-func (eqc *eventsQueryClient) getNextRequestId() string {
-	eqc.nextRequestId++
-	return fmt.Sprintf(requestIdFmt, eqc.nextRequestId)
 }
 
 // newEventwsBzAndConn creates a new eventsBytes and connection for the given query.
@@ -170,8 +161,7 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 ) (client.Connection, error) {
 	// If no event subscription exists for the given query, create a new one.
 	// Generate a new unique request ID.
-	requestId := eqc.getNextRequestId()
-	req, err := eventSubscriptionRequest(requestId, query)
+	req, err := eqc.eventSubscriptionRequest(query)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +190,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 	eventsBzPublishCh chan<- either.Either[[]byte],
 ) {
 	// Read and handle messages from the websocket. This loop will exit when the
-	// websocket connection is closed and/or returns an error.
+	// websocket connection is isClosed and/or returns an error.
 	for {
 		event, err := conn.Receive()
 		if err != nil {
@@ -256,7 +246,10 @@ func (eqc *eventsQueryClient) goUnsubscribeOnDone(
 // matching the given query.
 // (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
-func eventSubscriptionRequest(requestId, query string) ([]byte, error) {
+func (eqc *eventsQueryClient) eventSubscriptionRequest(query string) ([]byte, error) {
+	// Generate a new unique request ID, size and keyspace space are arbitrary.
+	requestId := randRequestId()
+
 	requestJson := map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "subscribe",
@@ -270,4 +263,17 @@ func eventSubscriptionRequest(requestId, query string) ([]byte, error) {
 		return nil, err
 	}
 	return requestBz, nil
+}
+
+// randRequestId returns a random 8 byte, base64 request ID which is intended
+// for in JSON-RPC requests to uniquely identify distinct RPC requests. These IDs
+// are expected to be unique (per request). Its size and keyspace are arbitrary.
+func randRequestId() string {
+	requestIdBz := make([]byte, 8) // 8 bytes = 64 bits = uint64
+	if _, err := rand.Read(requestIdBz); err != nil {
+		panic(fmt.Sprintf(
+			"failed to generate random request ID: %s", err,
+		))
+	}
+	return base64.StdEncoding.EncodeToString(requestIdBz)
 }
