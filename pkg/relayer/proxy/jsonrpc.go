@@ -8,19 +8,21 @@ import (
 	"net/url"
 
 	"pocket/x/service/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// serviceId is the identifier of the service that the server is responsible for.
-	serviceId string
+	// serviceId is the id of the service that the server is responsible for.
+	serviceId *sharedtypes.ServiceId
 
-	// endpointUrl is the URL that the server listens to for incoming relay requests.
-	endpointUrl string
+	// serverEndpoint is the advertised endpoint configuration that the server uses to
+	// listen for incoming relay requests.
+	serverEndpoint *sharedtypes.SupplierEndpoint
 
-	// nativeServiceListenAddress is the address of the native service to which the server relays requests.
-	nativeServiceListenAddress string
+	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
+	proxiedServiceEndpoint url.URL
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -34,28 +36,28 @@ type jsonRPCServer struct {
 }
 
 // NewJSONRPCServer creates a new HTTP server that listens for incoming relay requests
-// and relays them to the supported native service.
+// and forwards them to the supported proxied service endpoint.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
 // a RelayServer that listens to incoming RelayRequests.
 func NewJSONRPCServer(
-	serviceId string,
-	endpointUrl string,
-	nativeServiceListenAddress string,
+	serviceId *sharedtypes.ServiceId,
+	supplierEndpoint *sharedtypes.SupplierEndpoint,
+	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy RelayerProxy,
 ) RelayServer {
 	return &jsonRPCServer{
-		serviceId:                  serviceId,
-		endpointUrl:                endpointUrl,
-		server:                     &http.Server{Addr: endpointUrl},
-		relayerProxy:               proxy,
-		nativeServiceListenAddress: nativeServiceListenAddress,
-		servedRelaysProducer:       servedRelaysProducer,
+		serviceId:              serviceId,
+		serverEndpoint:         supplierEndpoint,
+		server:                 &http.Server{Addr: supplierEndpoint.Url},
+		relayerProxy:           proxy,
+		proxiedServiceEndpoint: proxiedServiceEndpoint,
+		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
 
 // Start starts the service server and returns an error if it fails.
-// It also waits for the passed-in context to be done in order to shut down.
+// It also waits for the passed in context to end before shutting down.
 // This method is blocking and should be called in a goroutine.
 func (j *jsonRPCServer) Start(ctx context.Context) error {
 	go func() {
@@ -71,8 +73,8 @@ func (j *jsonRPCServer) Stop(ctx context.Context) error {
 	return j.server.Shutdown(ctx)
 }
 
-// ServiceId returns the serviceId of the service.
-func (j *jsonRPCServer) ServiceId() string {
+// ServiceId returns the serviceId of the JSON-RPC service.
+func (j *jsonRPCServer) ServiceId() *sharedtypes.ServiceId {
 	return j.serviceId
 }
 

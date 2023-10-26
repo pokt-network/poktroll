@@ -5,6 +5,7 @@ import (
 
 	"pocket/pkg/observable"
 	"pocket/x/service/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 // RelayerProxy is the interface for the proxy that serves relays to the application.
@@ -41,5 +42,5 @@ type RelayServer interface {
 	Stop(ctx context.Context) error
 
 	// ServiceId returns the serviceId of the service.
-	ServiceId() string
+	ServiceId() *sharedtypes.ServiceId
 }

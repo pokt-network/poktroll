@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"net/url"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -19,8 +20,9 @@ import (
 var _ RelayerProxy = (*relayerProxy)(nil)
 
 type (
-	serviceId       = string
-	RelayServersMap = map[serviceId][]RelayServer
+	serviceId            = string
+	relayServersMap      = map[serviceId][]RelayServer
+	servicesEndpointsMap = map[serviceId]url.URL
 )
 
 type relayerProxy struct {
@@ -47,12 +49,11 @@ type relayerProxy struct {
 
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
-	// the client that relays the request to the supported native service.
-	advertisedRelayServers RelayServersMap
+	// the client that relays the request to the supported proxied service.
+	advertisedRelayServers relayServersMap
 
-	// nativeServiceListenAddresses is a map of the native services server's listen addresses
-	// that are supported by the relayer proxy.
-	nativeServicesListenAddress map[serviceId]string
+	// proxiedServicesEndpoints is a map of the proxied services endpoints that the relayer proxy supports.
+	proxiedServicesEndpoints servicesEndpointsMap
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -73,8 +74,9 @@ func NewRelayerProxy(
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,
-	nativeServicesListenAddress map[serviceId]string,
-	blockClient blocktypes.BlockClient,
+	proxiedServicesEndpoints servicesEndpointsMap,
+	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
+	// blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
@@ -82,36 +84,37 @@ func NewRelayerProxy(
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
-		blockClient:                 blockClient,
-		keyName:                     keyName,
-		keyring:                     keyring,
-		accountsQuerier:             accountQuerier,
-		supplierQuerier:             supplierQuerier,
-		sessionQuerier:              sessionQuerier,
-		nativeServicesListenAddress: nativeServicesListenAddress,
-		servedRelays:                servedRelays,
-		servedRelaysProducer:        servedRelaysProducer,
-		clientCtx:                   clientCtx,
+		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
+		// blockClient:       blockClient,
+		keyName:                  keyName,
+		keyring:                  keyring,
+		accountsQuerier:          accountQuerier,
+		supplierQuerier:          supplierQuerier,
+		sessionQuerier:           sessionQuerier,
+		proxiedServicesEndpoints: proxiedServicesEndpoints,
+		servedRelays:             servedRelays,
+		servedRelaysProducer:     servedRelaysProducer,
+		clientCtx:                clientCtx,
 	}
 }
 
 // Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
+// This method is blocking until all RelayServers are started.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
-	// Build the provided services map at Start instead of NewRelayerProxy to avoid having to
+	// NOTE: We build the provided services map at Start instead of NewRelayerProxy to avoid having to
 	// return an error from the constructor.
-	err := rp.BuildProvidedServices(ctx)
-	if err != nil {
+	if err := rp.BuildProvidedServices(ctx); err != nil {
 		return err
 	}
 
-	startGroup, gctx := errgroup.WithContext(ctx)
+	startGroup, ctx := errgroup.WithContext(ctx)
 
 	for _, relayServer := range rp.advertisedRelayServers {
 		for _, svr := range relayServer {
 			server := svr // create a new variable scoped to the anonymous function
-			startGroup.Go(func() error { return server.Start(gctx) })
+			startGroup.Go(func() error { return server.Start(ctx) })
 		}
 	}
 
@@ -119,13 +122,14 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 }
 
 // Stop concurrently stops all advertised relay servers and returns an error if any of them fails.
+// This method is blocking until all RelayServers are stopped.
 func (rp *relayerProxy) Stop(ctx context.Context) error {
-	stopGroup, gctx := errgroup.WithContext(ctx)
+	stopGroup, ctx := errgroup.WithContext(ctx)
 
 	for _, providedService := range rp.advertisedRelayServers {
 		for _, svr := range providedService {
 			server := svr // create a new variable scoped to the anonymous function
-			stopGroup.Go(func() error { return server.Stop(gctx) })
+			stopGroup.Go(func() error { return server.Stop(ctx) })
 		}
 	}
 
