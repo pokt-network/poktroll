@@ -226,20 +226,18 @@ func (eqc *eventsQueryClient) goUnsubscribeOnDone(
 	ctx context.Context,
 	query string,
 ) {
-	// wait for the context to be done
+	// Wait for the context to be done.
 	<-ctx.Done()
-	// only close the eventsBytes for the give query
+	// Only close the eventsBytes for the given query.
 	eqc.eventsBytesAndConnsMu.RLock()
 	defer eqc.eventsBytesAndConnsMu.RUnlock()
 
 	if toClose, ok := eqc.eventsBytesAndConns[query]; ok {
+		// Unsubscribe all observers of the eventsBytesAndConn observable for
+		// the given query.
 		toClose.eventsBytes.UnsubscribeAll()
-	}
-	for compareQuery, eventsBzConn := range eqc.eventsBytesAndConns {
-		if query == compareQuery {
-			eventsBzConn.eventsBytes.UnsubscribeAll()
-			return
-		}
+		// Remove the eventsBytesAndConn for the given query.
+		delete(eqc.eventsBytesAndConns, query)
 	}
 }
 
