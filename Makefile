@@ -131,10 +131,11 @@ itest: go_version_check ## Run tests iteratively (see usage for more)
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	find . -name "*_mock.go" | xargs --no-run-if-empty rm
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
-	go generate ./pkg/...
+	go generate ./x/session/types/
 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen ## Generate protos and mocks

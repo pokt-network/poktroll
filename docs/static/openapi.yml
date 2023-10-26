@@ -46455,9 +46455,7 @@ paths:
                       type: string
                       title: >-
                         The Bech32 address of the application using cosmos'
-                        ScalarDescriptor to ensure deterministic deterministic
-                        encoding using cosmos' ScalarDescriptor to ensure
-                        deterministic deterministic encoding
+                        ScalarDescriptor to ensure deterministic encoding
                     stake:
                       title: The total amount of uPOKT the application has staked
                       type: object
@@ -46474,6 +46472,21 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
+                    service_ids:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            title: Unique identifier for the service
+                          name:
+                            type: string
+                            title: Semantic name for the service
+                        title: >-
+                          ServiceId message to encapsulate unique and semantic
+                          identifiers for a service on the network
+                      title: The ID of the service this session is servicing
                   title: >-
                     Application defines the type used to store an on-chain
                     definition and state for an application
@@ -46599,9 +46612,7 @@ paths:
                     type: string
                     title: >-
                       The Bech32 address of the application using cosmos'
-                      ScalarDescriptor to ensure deterministic deterministic
-                      encoding using cosmos' ScalarDescriptor to ensure
-                      deterministic deterministic encoding
+                      ScalarDescriptor to ensure deterministic encoding
                   stake:
                     title: The total amount of uPOKT the application has staked
                     type: object
@@ -46618,6 +46629,21 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
+                  service_ids:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          title: Unique identifier for the service
+                        name:
+                          type: string
+                          title: Semantic name for the service
+                      title: >-
+                        ServiceId message to encapsulate unique and semantic
+                        identifiers for a service on the network
+                    title: The ID of the service this session is servicing
                 title: >-
                   Application defines the type used to store an on-chain
                   definition and state for an application
@@ -46994,6 +47020,218 @@ paths:
           description: A successful response.
           schema:
             type: object
+            properties:
+              session:
+                type: object
+                properties:
+                  header:
+                    title: The header of the session containing lightweight data
+                    type: object
+                    properties:
+                      application_address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      service_id:
+                        title: The ID of the service this session is servicing
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            title: Unique identifier for the service
+                          name:
+                            type: string
+                            title: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                      session_start_block_height:
+                        type: string
+                        format: int64
+                        title: The height at which this session started
+                      session_id:
+                        type: string
+                        description: A unique pseudoranom ID for this session/
+                        title: >-
+                          NOTE: session_id can be derived from the above values
+                          using on-chain but is included in the header for
+                          convenience
+                    description: >-
+                      SessionHeader is a lightweight header for a session that
+                      can be passed around.
+
+                      It is the minimal amount of data required to hydrate &
+                      retrieve all data relevant to the session.
+                  session_id:
+                    type: string
+                    title: A unique pseudoranom ID for this session
+                  session_number:
+                    type: string
+                    format: int64
+                    title: The session number since genesis
+                  num_blocks_per_session:
+                    type: string
+                    format: int64
+                    title: The number of blocks per session when this session started
+                  application:
+                    title: A fully hydrated application object this session is for
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      stake:
+                        title: The total amount of uPOKT the application has staked
+                        type: object
+                        properties:
+                          denom:
+                            type: string
+                          amount:
+                            type: string
+                        description: >-
+                          Coin defines a token with a denomination and an
+                          amount.
+
+
+                          NOTE: The amount field is an Int which implements the
+                          custom method
+
+                          signatures required by gogoproto.
+                      service_ids:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              title: Unique identifier for the service
+                            name:
+                              type: string
+                              title: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                          title: >-
+                            ServiceId message to encapsulate unique and semantic
+                            identifiers for a service on the network
+                        title: The ID of the service this session is servicing
+                  suppliers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        address:
+                          type: string
+                          title: >-
+                            The Bech32 address of the supplier using cosmos'
+                            ScalarDescriptor to ensure deterministic encoding
+                        stake:
+                          title: The total amount of uPOKT the supplier has staked
+                          type: object
+                          properties:
+                            denom:
+                              type: string
+                            amount:
+                              type: string
+                          description: >-
+                            Coin defines a token with a denomination and an
+                            amount.
+
+
+                            NOTE: The amount field is an Int which implements
+                            the custom method
+
+                            signatures required by gogoproto.
+                        services:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              service_id:
+                                title: Unique and semantic identifier for the service
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    title: Unique identifier for the service
+                                  name:
+                                    type: string
+                                    title: >-
+                                      (Optional) Semantic human readable name
+                                      for the service
+                              endpoints:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    url:
+                                      type: string
+                                      title: URL of the endpoint
+                                    rpc_type:
+                                      title: Type of RPC exposed on the url above
+                                      type: string
+                                      enum:
+                                        - UNKNOWN_RPC
+                                        - GRPC
+                                        - WEBSOCKET
+                                        - JSON_RPC
+                                      default: UNKNOWN_RPC
+                                      description: |-
+                                        - UNKNOWN_RPC: Undefined RPC type
+                                         - GRPC: gRPC
+                                         - WEBSOCKET: WebSocket
+                                         - JSON_RPC: JSON-RPC
+                                    configs:
+                                      type: array
+                                      items:
+                                        type: object
+                                        properties:
+                                          key:
+                                            title: Config option key
+                                            type: string
+                                            enum:
+                                              - UNKNOWN_CONFIG
+                                              - TIMEOUT
+                                            default: UNKNOWN_CONFIG
+                                            description: >-
+                                              Enum to define configuration options
+
+                                              TODO_RESEARCH: Should these be configs,
+                                              SLAs or something else? There will be
+                                              more discussion once we get closer to
+                                              implementing on-chain QoS.
+
+                                               - UNKNOWN_CONFIG: Undefined config option
+                                               - TIMEOUT: Timeout setting
+                                          value:
+                                            type: string
+                                            title: Config option value
+                                        title: >-
+                                          Key-value wrapper for config options, as
+                                          proto maps can't be keyed by enums
+                                      title: >-
+                                        Additional configuration options for the
+                                        endpoint
+                                  title: >-
+                                    Endpoint message to hold service
+                                    configuration details
+                                title: List of endpoints for the service
+                            title: >-
+                              SupplierServiceConfig holds the service
+                              configuration the supplier stakes for
+                          title: The service configs this supplier can support
+                      description: >-
+                        Supplier is the type defining the actor in Pocket
+                        Network that provides RPC services.
+                    title: >-
+                      A fully hydrated set of servicers that are serving the
+                      application
+                description: >-
+                  Session is a fully hydrated session object that contains all
+                  the information for the Session
+
+                  and its parcipants.
         default:
           description: An unexpected error response.
           schema:
@@ -47012,6 +47250,30 @@ paths:
                     '@type':
                       type: string
                   additionalProperties: {}
+      parameters:
+        - name: application_address
+          description: >-
+            The Bech32 address of the application using cosmos' ScalarDescriptor
+            to ensure deterministic encoding
+          in: query
+          required: false
+          type: string
+        - name: service_id.id
+          description: Unique identifier for the service
+          in: query
+          required: false
+          type: string
+        - name: service_id.name
+          description: (Optional) Semantic human readable name for the service
+          in: query
+          required: false
+          type: string
+        - name: block_height
+          description: The block height to query the session for
+          in: query
+          required: false
+          type: string
+          format: int64
       tags:
         - Query
   /pocket/session/params:
@@ -47104,9 +47366,7 @@ paths:
                       type: string
                       title: >-
                         The Bech32 address of the supplier using cosmos'
-                        ScalarDescriptor to ensure deterministic deterministic
-                        encoding using cosmos' ScalarDescriptor to ensure
-                        deterministic deterministic encoding
+                        ScalarDescriptor to ensure deterministic encoding
                     stake:
                       title: The total amount of uPOKT the supplier has staked
                       type: object
@@ -47123,6 +47383,82 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
+                    services:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          service_id:
+                            title: Unique and semantic identifier for the service
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                title: Unique identifier for the service
+                              name:
+                                type: string
+                                title: Semantic name for the service
+                          endpoints:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                url:
+                                  type: string
+                                  title: URL of the endpoint
+                                rpc_type:
+                                  title: Type of RPC exposed on the url above
+                                  type: string
+                                  enum:
+                                    - UNKNOWN_RPC
+                                    - GRPC
+                                    - WEBSOCKET
+                                    - JSON_RPC
+                                  default: UNKNOWN_RPC
+                                  description: |-
+                                    - UNKNOWN_RPC: Undefined RPC type
+                                     - GRPC: gRPC
+                                     - WEBSOCKET: WebSocket
+                                     - JSON_RPC: JSON-RPC
+                                configs:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key:
+                                        title: Config option key
+                                        type: string
+                                        enum:
+                                          - UNKNOWN_CONFIG
+                                          - TIMEOUT
+                                        default: UNKNOWN_CONFIG
+                                        description: >-
+                                          Enum to define configuration options
+
+                                          TODO_RESEARCH: Should these be configs,
+                                          SLAs or something else? There will be
+                                          more discussion once we get closer to
+                                          implementing on-chain QoS.
+
+                                           - UNKNOWN_CONFIG: Undefined config option
+                                           - TIMEOUT: Timeout setting
+                                      value:
+                                        type: string
+                                        title: Config option value
+                                    title: >-
+                                      Key-value wrapper for config options, as
+                                      proto maps can't be keyed by enums
+                                  title: >-
+                                    Additional configuration options for the
+                                    endpoint
+                              title: >-
+                                Endpoint message to hold service configuration
+                                details
+                            title: List of endpoints for the service
+                        title: >-
+                          SupplierServiceConfig holds the service configuration
+                          the supplier stakes for
+                      title: The service configs this supplier can support
                   description: >-
                     Supplier is the type defining the actor in Pocket Network
                     that provides RPC services.
@@ -47248,9 +47584,7 @@ paths:
                     type: string
                     title: >-
                       The Bech32 address of the supplier using cosmos'
-                      ScalarDescriptor to ensure deterministic deterministic
-                      encoding using cosmos' ScalarDescriptor to ensure
-                      deterministic deterministic encoding
+                      ScalarDescriptor to ensure deterministic encoding
                   stake:
                     title: The total amount of uPOKT the supplier has staked
                     type: object
@@ -47267,6 +47601,82 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        service_id:
+                          title: Unique and semantic identifier for the service
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              title: Unique identifier for the service
+                            name:
+                              type: string
+                              title: Semantic name for the service
+                        endpoints:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              url:
+                                type: string
+                                title: URL of the endpoint
+                              rpc_type:
+                                title: Type of RPC exposed on the url above
+                                type: string
+                                enum:
+                                  - UNKNOWN_RPC
+                                  - GRPC
+                                  - WEBSOCKET
+                                  - JSON_RPC
+                                default: UNKNOWN_RPC
+                                description: |-
+                                  - UNKNOWN_RPC: Undefined RPC type
+                                   - GRPC: gRPC
+                                   - WEBSOCKET: WebSocket
+                                   - JSON_RPC: JSON-RPC
+                              configs:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      title: Config option key
+                                      type: string
+                                      enum:
+                                        - UNKNOWN_CONFIG
+                                        - TIMEOUT
+                                      default: UNKNOWN_CONFIG
+                                      description: >-
+                                        Enum to define configuration options
+
+                                        TODO_RESEARCH: Should these be configs,
+                                        SLAs or something else? There will be
+                                        more discussion once we get closer to
+                                        implementing on-chain QoS.
+
+                                         - UNKNOWN_CONFIG: Undefined config option
+                                         - TIMEOUT: Timeout setting
+                                    value:
+                                      type: string
+                                      title: Config option value
+                                  title: >-
+                                    Key-value wrapper for config options, as
+                                    proto maps can't be keyed by enums
+                                title: >-
+                                  Additional configuration options for the
+                                  endpoint
+                            title: >-
+                              Endpoint message to hold service configuration
+                              details
+                          title: List of endpoints for the service
+                      title: >-
+                        SupplierServiceConfig holds the service configuration
+                        the supplier stakes for
+                    title: The service configs this supplier can support
                 description: >-
                   Supplier is the type defining the actor in Pocket Network that
                   provides RPC services.
@@ -76041,8 +76451,7 @@ definitions:
         type: string
         title: >-
           The Bech32 address of the application using cosmos' ScalarDescriptor
-          to ensure deterministic deterministic encoding using cosmos'
-          ScalarDescriptor to ensure deterministic deterministic encoding
+          to ensure deterministic encoding
       stake:
         title: The total amount of uPOKT the application has staked
         type: object
@@ -76056,6 +76465,21 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
+      service_ids:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              title: Unique identifier for the service
+            name:
+              type: string
+              title: Semantic name for the service
+          title: >-
+            ServiceId message to encapsulate unique and semantic identifiers for
+            a service on the network
+        title: The ID of the service this session is servicing
     title: >-
       Application defines the type used to store an on-chain definition and
       state for an application
@@ -76082,9 +76506,7 @@ definitions:
               type: string
               title: >-
                 The Bech32 address of the application using cosmos'
-                ScalarDescriptor to ensure deterministic deterministic encoding
-                using cosmos' ScalarDescriptor to ensure deterministic
-                deterministic encoding
+                ScalarDescriptor to ensure deterministic encoding
             stake:
               title: The total amount of uPOKT the application has staked
               type: object
@@ -76101,6 +76523,21 @@ definitions:
                 method
 
                 signatures required by gogoproto.
+            service_ids:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    title: Unique identifier for the service
+                  name:
+                    type: string
+                    title: Semantic name for the service
+                title: >-
+                  ServiceId message to encapsulate unique and semantic
+                  identifiers for a service on the network
+              title: The ID of the service this session is servicing
           title: >-
             Application defines the type used to store an on-chain definition
             and state for an application
@@ -76140,9 +76577,7 @@ definitions:
             type: string
             title: >-
               The Bech32 address of the application using cosmos'
-              ScalarDescriptor to ensure deterministic deterministic encoding
-              using cosmos' ScalarDescriptor to ensure deterministic
-              deterministic encoding
+              ScalarDescriptor to ensure deterministic encoding
           stake:
             title: The total amount of uPOKT the application has staked
             type: object
@@ -76159,6 +76594,21 @@ definitions:
               method
 
               signatures required by gogoproto.
+          service_ids:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  title: Unique identifier for the service
+                name:
+                  type: string
+                  title: Semantic name for the service
+              title: >-
+                ServiceId message to encapsulate unique and semantic identifiers
+                for a service on the network
+            title: The ID of the service this session is servicing
         title: >-
           Application defines the type used to store an on-chain definition and
           state for an application
@@ -76169,6 +76619,18 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.shared.ServiceId:
+    type: object
+    properties:
+      id:
+        type: string
+        title: Unique identifier for the service
+      name:
+        type: string
+        title: Semantic name for the service
+    title: >-
+      ServiceId message to encapsulate unique and semantic identifiers for a
+      service on the network
   pocket.gateway.Gateway:
     type: object
     properties:
@@ -76305,6 +76767,209 @@ definitions:
     description: Params defines the parameters for the module.
   pocket.session.QueryGetSessionResponse:
     type: object
+    properties:
+      session:
+        type: object
+        properties:
+          header:
+            title: The header of the session containing lightweight data
+            type: object
+            properties:
+              application_address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              service_id:
+                title: The ID of the service this session is servicing
+                type: object
+                properties:
+                  id:
+                    type: string
+                    title: Unique identifier for the service
+                  name:
+                    type: string
+                    title: (Optional) Semantic human readable name for the service
+              session_start_block_height:
+                type: string
+                format: int64
+                title: The height at which this session started
+              session_id:
+                type: string
+                description: A unique pseudoranom ID for this session/
+                title: >-
+                  NOTE: session_id can be derived from the above values using
+                  on-chain but is included in the header for convenience
+            description: >-
+              SessionHeader is a lightweight header for a session that can be
+              passed around.
+
+              It is the minimal amount of data required to hydrate & retrieve
+              all data relevant to the session.
+          session_id:
+            type: string
+            title: A unique pseudoranom ID for this session
+          session_number:
+            type: string
+            format: int64
+            title: The session number since genesis
+          num_blocks_per_session:
+            type: string
+            format: int64
+            title: The number of blocks per session when this session started
+          application:
+            title: A fully hydrated application object this session is for
+            type: object
+            properties:
+              address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              stake:
+                title: The total amount of uPOKT the application has staked
+                type: object
+                properties:
+                  denom:
+                    type: string
+                  amount:
+                    type: string
+                description: >-
+                  Coin defines a token with a denomination and an amount.
+
+
+                  NOTE: The amount field is an Int which implements the custom
+                  method
+
+                  signatures required by gogoproto.
+              service_ids:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      title: Unique identifier for the service
+                    name:
+                      type: string
+                      title: (Optional) Semantic human readable name for the service
+                  title: >-
+                    ServiceId message to encapsulate unique and semantic
+                    identifiers for a service on the network
+                title: The ID of the service this session is servicing
+          suppliers:
+            type: array
+            items:
+              type: object
+              properties:
+                address:
+                  type: string
+                  title: >-
+                    The Bech32 address of the supplier using cosmos'
+                    ScalarDescriptor to ensure deterministic encoding
+                stake:
+                  title: The total amount of uPOKT the supplier has staked
+                  type: object
+                  properties:
+                    denom:
+                      type: string
+                    amount:
+                      type: string
+                  description: >-
+                    Coin defines a token with a denomination and an amount.
+
+
+                    NOTE: The amount field is an Int which implements the custom
+                    method
+
+                    signatures required by gogoproto.
+                services:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      service_id:
+                        title: Unique and semantic identifier for the service
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            title: Unique identifier for the service
+                          name:
+                            type: string
+                            title: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                      endpoints:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type: string
+                              title: URL of the endpoint
+                            rpc_type:
+                              title: Type of RPC exposed on the url above
+                              type: string
+                              enum:
+                                - UNKNOWN_RPC
+                                - GRPC
+                                - WEBSOCKET
+                                - JSON_RPC
+                              default: UNKNOWN_RPC
+                              description: |-
+                                - UNKNOWN_RPC: Undefined RPC type
+                                 - GRPC: gRPC
+                                 - WEBSOCKET: WebSocket
+                                 - JSON_RPC: JSON-RPC
+                            configs:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    title: Config option key
+                                    type: string
+                                    enum:
+                                      - UNKNOWN_CONFIG
+                                      - TIMEOUT
+                                    default: UNKNOWN_CONFIG
+                                    description: >-
+                                      Enum to define configuration options
+
+                                      TODO_RESEARCH: Should these be configs,
+                                      SLAs or something else? There will be more
+                                      discussion once we get closer to
+                                      implementing on-chain QoS.
+
+                                       - UNKNOWN_CONFIG: Undefined config option
+                                       - TIMEOUT: Timeout setting
+                                  value:
+                                    type: string
+                                    title: Config option value
+                                title: >-
+                                  Key-value wrapper for config options, as proto
+                                  maps can't be keyed by enums
+                              title: >-
+                                Additional configuration options for the
+                                endpoint
+                          title: >-
+                            Endpoint message to hold service configuration
+                            details
+                        title: List of endpoints for the service
+                    title: >-
+                      SupplierServiceConfig holds the service configuration the
+                      supplier stakes for
+                  title: The service configs this supplier can support
+              description: >-
+                Supplier is the type defining the actor in Pocket Network that
+                provides RPC services.
+            title: A fully hydrated set of servicers that are serving the application
+        description: >-
+          Session is a fully hydrated session object that contains all the
+          information for the Session
+
+          and its parcipants.
   pocket.session.QueryParamsResponse:
     type: object
     properties:
@@ -76312,6 +76977,204 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.session.Session:
+    type: object
+    properties:
+      header:
+        title: The header of the session containing lightweight data
+        type: object
+        properties:
+          application_address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          service_id:
+            title: The ID of the service this session is servicing
+            type: object
+            properties:
+              id:
+                type: string
+                title: Unique identifier for the service
+              name:
+                type: string
+                title: (Optional) Semantic human readable name for the service
+          session_start_block_height:
+            type: string
+            format: int64
+            title: The height at which this session started
+          session_id:
+            type: string
+            description: A unique pseudoranom ID for this session/
+            title: >-
+              NOTE: session_id can be derived from the above values using
+              on-chain but is included in the header for convenience
+        description: >-
+          SessionHeader is a lightweight header for a session that can be passed
+          around.
+
+          It is the minimal amount of data required to hydrate & retrieve all
+          data relevant to the session.
+      session_id:
+        type: string
+        title: A unique pseudoranom ID for this session
+      session_number:
+        type: string
+        format: int64
+        title: The session number since genesis
+      num_blocks_per_session:
+        type: string
+        format: int64
+        title: The number of blocks per session when this session started
+      application:
+        title: A fully hydrated application object this session is for
+        type: object
+        properties:
+          address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          stake:
+            title: The total amount of uPOKT the application has staked
+            type: object
+            properties:
+              denom:
+                type: string
+              amount:
+                type: string
+            description: >-
+              Coin defines a token with a denomination and an amount.
+
+
+              NOTE: The amount field is an Int which implements the custom
+              method
+
+              signatures required by gogoproto.
+          service_ids:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                  title: Unique identifier for the service
+                name:
+                  type: string
+                  title: (Optional) Semantic human readable name for the service
+              title: >-
+                ServiceId message to encapsulate unique and semantic identifiers
+                for a service on the network
+            title: The ID of the service this session is servicing
+      suppliers:
+        type: array
+        items:
+          type: object
+          properties:
+            address:
+              type: string
+              title: >-
+                The Bech32 address of the supplier using cosmos'
+                ScalarDescriptor to ensure deterministic encoding
+            stake:
+              title: The total amount of uPOKT the supplier has staked
+              type: object
+              properties:
+                denom:
+                  type: string
+                amount:
+                  type: string
+              description: >-
+                Coin defines a token with a denomination and an amount.
+
+
+                NOTE: The amount field is an Int which implements the custom
+                method
+
+                signatures required by gogoproto.
+            services:
+              type: array
+              items:
+                type: object
+                properties:
+                  service_id:
+                    title: Unique and semantic identifier for the service
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        title: Unique identifier for the service
+                      name:
+                        type: string
+                        title: >-
+                          (Optional) Semantic human readable name for the
+                          service
+                  endpoints:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                          title: URL of the endpoint
+                        rpc_type:
+                          title: Type of RPC exposed on the url above
+                          type: string
+                          enum:
+                            - UNKNOWN_RPC
+                            - GRPC
+                            - WEBSOCKET
+                            - JSON_RPC
+                          default: UNKNOWN_RPC
+                          description: |-
+                            - UNKNOWN_RPC: Undefined RPC type
+                             - GRPC: gRPC
+                             - WEBSOCKET: WebSocket
+                             - JSON_RPC: JSON-RPC
+                        configs:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                title: Config option key
+                                type: string
+                                enum:
+                                  - UNKNOWN_CONFIG
+                                  - TIMEOUT
+                                default: UNKNOWN_CONFIG
+                                description: >-
+                                  Enum to define configuration options
+
+                                  TODO_RESEARCH: Should these be configs, SLAs
+                                  or something else? There will be more
+                                  discussion once we get closer to implementing
+                                  on-chain QoS.
+
+                                   - UNKNOWN_CONFIG: Undefined config option
+                                   - TIMEOUT: Timeout setting
+                              value:
+                                type: string
+                                title: Config option value
+                            title: >-
+                              Key-value wrapper for config options, as proto
+                              maps can't be keyed by enums
+                          title: Additional configuration options for the endpoint
+                      title: Endpoint message to hold service configuration details
+                    title: List of endpoints for the service
+                title: >-
+                  SupplierServiceConfig holds the service configuration the
+                  supplier stakes for
+              title: The service configs this supplier can support
+          description: >-
+            Supplier is the type defining the actor in Pocket Network that
+            provides RPC services.
+        title: A fully hydrated set of servicers that are serving the application
+    description: >-
+      Session is a fully hydrated session object that contains all the
+      information for the Session
+
+      and its parcipants.
   pocket.session.SessionHeader:
     type: object
     properties:
@@ -76320,19 +77183,23 @@ definitions:
         title: >-
           The Bech32 address of the application using cosmos' ScalarDescriptor
           to ensure deterministic encoding
+      service_id:
+        title: The ID of the service this session is servicing
+        type: object
+        properties:
+          id:
+            type: string
+            title: Unique identifier for the service
+          name:
+            type: string
+            title: (Optional) Semantic human readable name for the service
       session_start_block_height:
         type: string
         format: int64
-        description: The height at which this session started
-        title: >-
-          TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto
-          is defined
-
-          service.ServiceId service_id = 2; // The ID of the service this
-          session is servicing
+        title: The height at which this session started
       session_id:
         type: string
-        description: A unique pseudoranom ID for this session
+        description: A unique pseudoranom ID for this session/
         title: >-
           NOTE: session_id can be derived from the above values using on-chain
           but is included in the header for convenience
@@ -76342,6 +77209,59 @@ definitions:
 
       It is the minimal amount of data required to hydrate & retrieve all data
       relevant to the session.
+  pocket.shared.ConfigOption:
+    type: object
+    properties:
+      key:
+        title: Config option key
+        type: string
+        enum:
+          - UNKNOWN_CONFIG
+          - TIMEOUT
+        default: UNKNOWN_CONFIG
+        description: >-
+          Enum to define configuration options
+
+          TODO_RESEARCH: Should these be configs, SLAs or something else? There
+          will be more discussion once we get closer to implementing on-chain
+          QoS.
+
+           - UNKNOWN_CONFIG: Undefined config option
+           - TIMEOUT: Timeout setting
+      value:
+        type: string
+        title: Config option value
+    title: >-
+      Key-value wrapper for config options, as proto maps can't be keyed by
+      enums
+  pocket.shared.ConfigOptions:
+    type: string
+    enum:
+      - UNKNOWN_CONFIG
+      - TIMEOUT
+    default: UNKNOWN_CONFIG
+    description: >-
+      Enum to define configuration options
+
+      TODO_RESEARCH: Should these be configs, SLAs or something else? There will
+      be more discussion once we get closer to implementing on-chain QoS.
+
+       - UNKNOWN_CONFIG: Undefined config option
+       - TIMEOUT: Timeout setting
+  pocket.shared.RPCType:
+    type: string
+    enum:
+      - UNKNOWN_RPC
+      - GRPC
+      - WEBSOCKET
+      - JSON_RPC
+    default: UNKNOWN_RPC
+    description: |-
+      - UNKNOWN_RPC: Undefined RPC type
+       - GRPC: gRPC
+       - WEBSOCKET: WebSocket
+       - JSON_RPC: JSON-RPC
+    title: Enum to define RPC types
   pocket.shared.Supplier:
     type: object
     properties:
@@ -76349,8 +77269,7 @@ definitions:
         type: string
         title: >-
           The Bech32 address of the supplier using cosmos' ScalarDescriptor to
-          ensure deterministic deterministic encoding using cosmos'
-          ScalarDescriptor to ensure deterministic deterministic encoding
+          ensure deterministic encoding
       stake:
         title: The total amount of uPOKT the supplier has staked
         type: object
@@ -76364,9 +77283,197 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
+      services:
+        type: array
+        items:
+          type: object
+          properties:
+            service_id:
+              title: Unique and semantic identifier for the service
+              type: object
+              properties:
+                id:
+                  type: string
+                  title: Unique identifier for the service
+                name:
+                  type: string
+                  title: (Optional) Semantic human readable name for the service
+            endpoints:
+              type: array
+              items:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    title: URL of the endpoint
+                  rpc_type:
+                    title: Type of RPC exposed on the url above
+                    type: string
+                    enum:
+                      - UNKNOWN_RPC
+                      - GRPC
+                      - WEBSOCKET
+                      - JSON_RPC
+                    default: UNKNOWN_RPC
+                    description: |-
+                      - UNKNOWN_RPC: Undefined RPC type
+                       - GRPC: gRPC
+                       - WEBSOCKET: WebSocket
+                       - JSON_RPC: JSON-RPC
+                  configs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          title: Config option key
+                          type: string
+                          enum:
+                            - UNKNOWN_CONFIG
+                            - TIMEOUT
+                          default: UNKNOWN_CONFIG
+                          description: >-
+                            Enum to define configuration options
+
+                            TODO_RESEARCH: Should these be configs, SLAs or
+                            something else? There will be more discussion once
+                            we get closer to implementing on-chain QoS.
+
+                             - UNKNOWN_CONFIG: Undefined config option
+                             - TIMEOUT: Timeout setting
+                        value:
+                          type: string
+                          title: Config option value
+                      title: >-
+                        Key-value wrapper for config options, as proto maps
+                        can't be keyed by enums
+                    title: Additional configuration options for the endpoint
+                title: Endpoint message to hold service configuration details
+              title: List of endpoints for the service
+          title: >-
+            SupplierServiceConfig holds the service configuration the supplier
+            stakes for
+        title: The service configs this supplier can support
     description: >-
       Supplier is the type defining the actor in Pocket Network that provides
       RPC services.
+  pocket.shared.SupplierEndpoint:
+    type: object
+    properties:
+      url:
+        type: string
+        title: URL of the endpoint
+      rpc_type:
+        title: Type of RPC exposed on the url above
+        type: string
+        enum:
+          - UNKNOWN_RPC
+          - GRPC
+          - WEBSOCKET
+          - JSON_RPC
+        default: UNKNOWN_RPC
+        description: |-
+          - UNKNOWN_RPC: Undefined RPC type
+           - GRPC: gRPC
+           - WEBSOCKET: WebSocket
+           - JSON_RPC: JSON-RPC
+      configs:
+        type: array
+        items:
+          type: object
+          properties:
+            key:
+              title: Config option key
+              type: string
+              enum:
+                - UNKNOWN_CONFIG
+                - TIMEOUT
+              default: UNKNOWN_CONFIG
+              description: >-
+                Enum to define configuration options
+
+                TODO_RESEARCH: Should these be configs, SLAs or something else?
+                There will be more discussion once we get closer to implementing
+                on-chain QoS.
+
+                 - UNKNOWN_CONFIG: Undefined config option
+                 - TIMEOUT: Timeout setting
+            value:
+              type: string
+              title: Config option value
+          title: >-
+            Key-value wrapper for config options, as proto maps can't be keyed
+            by enums
+        title: Additional configuration options for the endpoint
+    title: Endpoint message to hold service configuration details
+  pocket.shared.SupplierServiceConfig:
+    type: object
+    properties:
+      service_id:
+        title: Unique and semantic identifier for the service
+        type: object
+        properties:
+          id:
+            type: string
+            title: Unique identifier for the service
+          name:
+            type: string
+            title: (Optional) Semantic human readable name for the service
+      endpoints:
+        type: array
+        items:
+          type: object
+          properties:
+            url:
+              type: string
+              title: URL of the endpoint
+            rpc_type:
+              title: Type of RPC exposed on the url above
+              type: string
+              enum:
+                - UNKNOWN_RPC
+                - GRPC
+                - WEBSOCKET
+                - JSON_RPC
+              default: UNKNOWN_RPC
+              description: |-
+                - UNKNOWN_RPC: Undefined RPC type
+                 - GRPC: gRPC
+                 - WEBSOCKET: WebSocket
+                 - JSON_RPC: JSON-RPC
+            configs:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    title: Config option key
+                    type: string
+                    enum:
+                      - UNKNOWN_CONFIG
+                      - TIMEOUT
+                    default: UNKNOWN_CONFIG
+                    description: >-
+                      Enum to define configuration options
+
+                      TODO_RESEARCH: Should these be configs, SLAs or something
+                      else? There will be more discussion once we get closer to
+                      implementing on-chain QoS.
+
+                       - UNKNOWN_CONFIG: Undefined config option
+                       - TIMEOUT: Timeout setting
+                  value:
+                    type: string
+                    title: Config option value
+                title: >-
+                  Key-value wrapper for config options, as proto maps can't be
+                  keyed by enums
+              title: Additional configuration options for the endpoint
+          title: Endpoint message to hold service configuration details
+        title: List of endpoints for the service
+    title: >-
+      SupplierServiceConfig holds the service configuration the supplier stakes
+      for
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -76390,9 +77497,7 @@ definitions:
               type: string
               title: >-
                 The Bech32 address of the supplier using cosmos'
-                ScalarDescriptor to ensure deterministic deterministic encoding
-                using cosmos' ScalarDescriptor to ensure deterministic
-                deterministic encoding
+                ScalarDescriptor to ensure deterministic encoding
             stake:
               title: The total amount of uPOKT the supplier has staked
               type: object
@@ -76409,6 +77514,78 @@ definitions:
                 method
 
                 signatures required by gogoproto.
+            services:
+              type: array
+              items:
+                type: object
+                properties:
+                  service_id:
+                    title: Unique and semantic identifier for the service
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        title: Unique identifier for the service
+                      name:
+                        type: string
+                        title: Semantic name for the service
+                  endpoints:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                          title: URL of the endpoint
+                        rpc_type:
+                          title: Type of RPC exposed on the url above
+                          type: string
+                          enum:
+                            - UNKNOWN_RPC
+                            - GRPC
+                            - WEBSOCKET
+                            - JSON_RPC
+                          default: UNKNOWN_RPC
+                          description: |-
+                            - UNKNOWN_RPC: Undefined RPC type
+                             - GRPC: gRPC
+                             - WEBSOCKET: WebSocket
+                             - JSON_RPC: JSON-RPC
+                        configs:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                title: Config option key
+                                type: string
+                                enum:
+                                  - UNKNOWN_CONFIG
+                                  - TIMEOUT
+                                default: UNKNOWN_CONFIG
+                                description: >-
+                                  Enum to define configuration options
+
+                                  TODO_RESEARCH: Should these be configs, SLAs
+                                  or something else? There will be more
+                                  discussion once we get closer to implementing
+                                  on-chain QoS.
+
+                                   - UNKNOWN_CONFIG: Undefined config option
+                                   - TIMEOUT: Timeout setting
+                              value:
+                                type: string
+                                title: Config option value
+                            title: >-
+                              Key-value wrapper for config options, as proto
+                              maps can't be keyed by enums
+                          title: Additional configuration options for the endpoint
+                      title: Endpoint message to hold service configuration details
+                    title: List of endpoints for the service
+                title: >-
+                  SupplierServiceConfig holds the service configuration the
+                  supplier stakes for
+              title: The service configs this supplier can support
           description: >-
             Supplier is the type defining the actor in Pocket Network that
             provides RPC services.
@@ -76448,8 +77625,7 @@ definitions:
             type: string
             title: >-
               The Bech32 address of the supplier using cosmos' ScalarDescriptor
-              to ensure deterministic deterministic encoding using cosmos'
-              ScalarDescriptor to ensure deterministic deterministic encoding
+              to ensure deterministic encoding
           stake:
             title: The total amount of uPOKT the supplier has staked
             type: object
@@ -76466,6 +77642,77 @@ definitions:
               method
 
               signatures required by gogoproto.
+          services:
+            type: array
+            items:
+              type: object
+              properties:
+                service_id:
+                  title: Unique and semantic identifier for the service
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      title: Unique identifier for the service
+                    name:
+                      type: string
+                      title: Semantic name for the service
+                endpoints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        title: URL of the endpoint
+                      rpc_type:
+                        title: Type of RPC exposed on the url above
+                        type: string
+                        enum:
+                          - UNKNOWN_RPC
+                          - GRPC
+                          - WEBSOCKET
+                          - JSON_RPC
+                        default: UNKNOWN_RPC
+                        description: |-
+                          - UNKNOWN_RPC: Undefined RPC type
+                           - GRPC: gRPC
+                           - WEBSOCKET: WebSocket
+                           - JSON_RPC: JSON-RPC
+                      configs:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              title: Config option key
+                              type: string
+                              enum:
+                                - UNKNOWN_CONFIG
+                                - TIMEOUT
+                              default: UNKNOWN_CONFIG
+                              description: >-
+                                Enum to define configuration options
+
+                                TODO_RESEARCH: Should these be configs, SLAs or
+                                something else? There will be more discussion
+                                once we get closer to implementing on-chain QoS.
+
+                                 - UNKNOWN_CONFIG: Undefined config option
+                                 - TIMEOUT: Timeout setting
+                            value:
+                              type: string
+                              title: Config option value
+                          title: >-
+                            Key-value wrapper for config options, as proto maps
+                            can't be keyed by enums
+                        title: Additional configuration options for the endpoint
+                    title: Endpoint message to hold service configuration details
+                  title: List of endpoints for the service
+              title: >-
+                SupplierServiceConfig holds the service configuration the
+                supplier stakes for
+            title: The service configs this supplier can support
         description: >-
           Supplier is the type defining the actor in Pocket Network that
           provides RPC services.

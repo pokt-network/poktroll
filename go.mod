@@ -23,6 +23,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/multierr v1.11.0
+	golang.org/x/crypto v0.12.0
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.56.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -252,7 +253,6 @@ require (
 	go.uber.org/dig v1.16.1 // indirect
 	go.uber.org/fx v1.19.2 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
 	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
