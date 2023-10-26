@@ -81,26 +81,9 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application: %v", msg.Stake)
 	}
 
-	// Validate the Services
-	if len(msg.Services) == 0 {
-		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "no services configs provided for application: %v", msg.Services)
-	}
-	for _, serviceConfig := range msg.Services {
-		if serviceConfig == nil {
-			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceConfig cannot be nil: %v", msg.Services)
-		}
-		if serviceConfig.ServiceId == nil {
-			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceId cannot be nil: %v", serviceConfig)
-		}
-		if serviceConfig.ServiceId.Id == "" {
-			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "serviceId.Id cannot be empty: %v", serviceConfig)
-		}
-		if !servicehelpers.IsValidServiceId(serviceConfig.ServiceId.Id) {
-			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "invalid serviceId.Id: %v", serviceConfig)
-		}
-		if !servicehelpers.IsValidServiceName(serviceConfig.ServiceId.Name) {
-			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, "invalid serviceId.Name: %v", serviceConfig)
-		}
+	// Validate the application service configs
+	if reason, ok := servicehelpers.AreValidAppServiceConfigs(msg.Services); !ok {
+		return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
 	}
 
 	return nil

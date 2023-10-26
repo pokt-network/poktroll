@@ -25,10 +25,10 @@ import (
 	"pocket/app"
 	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
-	app_types "pocket/x/application/types"
-	gateway_types "pocket/x/gateway/types"
-	shared_types "pocket/x/shared/types"
-	supplier_types "pocket/x/supplier/types"
+	apptypes "pocket/x/application/types"
+	gatewaytypes "pocket/x/gateway/types"
+	sharedtypes "pocket/x/shared/types"
+	suppliertypes "pocket/x/supplier/types"
 )
 
 type (
@@ -103,14 +103,19 @@ func DefaultConfig() network.Config {
 
 // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
-func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
 	t.Helper()
-	state := app_types.DefaultGenesis()
+	state := apptypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
-		application := app_types.Application{
+		application := apptypes.Application{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+				},
+			},
 		}
 		nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
@@ -120,12 +125,12 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.Genesi
 
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
 // It returns the populated GenesisState object.
-func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.GenesisState {
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
 	t.Helper()
-	state := gateway_types.DefaultGenesis()
+	state := gatewaytypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := gateway_types.Gateway{
+		gateway := gatewaytypes.Gateway{
 			Address: strconv.Itoa(i),
 			Stake:   &stake,
 		}
@@ -137,12 +142,12 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.Genesi
 
 // DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
 // It returns the populated GenesisState object.
-func DefaultSupplierModuleGenesisState(t *testing.T, n int) *supplier_types.GenesisState {
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
 	t.Helper()
-	state := supplier_types.DefaultGenesis()
+	state := suppliertypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := shared_types.Supplier{
+		gateway := sharedtypes.Supplier{
 			Address: strconv.Itoa(i),
 			Stake:   &stake,
 		}

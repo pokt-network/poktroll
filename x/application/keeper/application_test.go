@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -11,8 +12,10 @@ import (
 	"pocket/cmd/pocketd/cmd"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -23,13 +26,18 @@ func init() {
 }
 
 func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
-	items := make([]types.Application, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
-
-		keeper.SetApplication(ctx, items[i])
+	apps := make([]types.Application, n)
+	for i, app := range apps {
+		app.Address = sample.AccAddress()
+		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
+		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+			},
+		}
+		keeper.SetApplication(ctx, app)
 	}
-	return items
+	return apps
 }
 
 func TestApplicationGet(t *testing.T) {
