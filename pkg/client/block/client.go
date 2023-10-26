@@ -40,6 +40,12 @@ type blockClient struct {
 	latestBlockObsvblsReplayPublishCh chan<- client.BlocksObservable
 }
 
+// eventsBytesToBlockMapFn is a convenience type to represent the type of a
+// function which maps event subscription message bytes into block event objects.
+// This is used as a transformFn in a channel.Map() call and is the type returned
+// by the newEventsBytesToBlockMapFn factory function.
+type eventBytesToBlockMapFn func(either.Either[[]byte]) (client.Block, bool)
+
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -106,6 +112,7 @@ func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 		// client.BlocksObservable is only used to workaround gomock's lack of
 		// support for generic types.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObsvbl)
+		blockEventFromEventBz := newEventsBytesToBlockMapFn(errCh)
 		blocksObsvbl := channel.MapReplay(ctx, 1, eventsBz, blockEventFromEventBz)
 
 		// Initially set latestBlockObsvblsReplay and update if after retrying on error.
@@ -135,35 +142,42 @@ func retryOnError(
 	}
 }
 
-// blockEventFromEventBz is intended to be used as a transformFn in a channel.Map()
-// call. It attempts to deserialize the given byte slice as a committed block event.
-// If the events bytes observable contained an error, this value is not emitted
+// newEventsBytesToBlockMapFn is a factory for a function which is intended
+// to be used as a transformFn in a channel.Map() call. Since the map function
+// is called asynchronously, this factory creates a closure around an error channel
+// which can be used for asynchronous error signaling from withing the map function,
+// and handling from the Map call context.
+//
+// The map function itself attempts to deserialize the given byte slice as a
+// committed block event. If the events bytes observable contained an error, this value is not emitted
 // (skipped) on the destination observable of the map operation.
 // If deserialization failed because the event bytes were for a different event type,
 // this value is also skipped.
 // If deserialization failed for some other reason, this function panics.
-func blockEventFromEventBz(eitherEventBz either.Either[[]byte]) (_ client.Block, skip bool) {
-	eventBz, err := eitherEventBz.ValueOrError()
-	if err != nil {
-		log.Printf("WARN: EventsBytes observable returned an unexpected error: %s", err)
-		// Don't publish (skip) if eitherEventBz contained an error.
-		// eitherEventBz should automatically close itself in this case.
-		// (i.e. no more values should be mapped to this transformFn's respective
-		// dstObservable).
-		return nil, true
-	}
-
-	block, err := newCometBlockEvent(eventBz)
-	if err != nil {
-		if ErrUnmarshalBlockEvent.Is(err) {
-			// Don't publish (skip) if the message was not a block event.
+func newEventsBytesToBlockMapFn(errCh chan<- error) eventBytesToBlockMapFn {
+	return func(eitherEventBz either.Either[[]byte]) (_ client.Block, skip bool) {
+		eventBz, err := eitherEventBz.ValueOrError()
+		if err != nil {
+			errCh <- err
+			// Don't publish (skip) if eitherEventBz contained an error.
+			// eitherEventBz should automatically close itself in this case.
+			// (i.e. no more values should be mapped to this transformFn's respective
+			// dstObservable).
 			return nil, true
 		}
 
-		panic(fmt.Sprintf(
-			"unexpected error deserializing block event: %s; eventBz: %s",
-			err, string(eventBz),
-		))
+		block, err := newCometBlockEvent(eventBz)
+		if err != nil {
+			if ErrUnmarshalBlockEvent.Is(err) {
+				// Don't publish (skip) if the message was not a block event.
+				return nil, true
+			}
+
+			panic(fmt.Sprintf(
+				"unexpected error deserializing block event: %s; eventBz: %s",
+				err, string(eventBz),
+			))
+		}
+		return block, false
 	}
-	return block, false
 }
