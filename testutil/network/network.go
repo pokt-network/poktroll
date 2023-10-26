@@ -117,7 +117,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				},
 			},
 		}
-		nullify.Fill(&application)
+		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
 	return state

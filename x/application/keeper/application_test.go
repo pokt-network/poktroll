@@ -42,27 +42,27 @@ func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.A
 
 func TestApplicationGet(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetApplication(ctx,
-			item.Address,
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
+		appFound, isAppFound := keeper.GetApplication(ctx,
+			app.Address,
 		)
-		require.True(t, found)
+		require.True(t, isAppFound)
 		require.Equal(t,
-			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&app),
+			nullify.Fill(&appFound),
 		)
 	}
 }
 func TestApplicationRemove(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
 		keeper.RemoveApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		_, found := keeper.GetApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		require.False(t, found)
 	}
@@ -70,9 +70,9 @@ func TestApplicationRemove(t *testing.T) {
 
 func TestApplicationGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
+	apps := createNApplication(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(apps),
 		nullify.Fill(keeper.GetAllApplication(ctx)),
 	)
 }
