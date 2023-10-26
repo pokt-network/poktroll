@@ -180,6 +180,81 @@ func TestGenesisState_Validate(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			desc: "invalid - service config not present",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+						// ServiceConfigs: omitted
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - empty service config",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address:        addr1,
+						Stake:          &stake1,
+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - service ID too long",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,		
+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+							{ServiceId: &sharedtypes.ServiceId{Id: "12345678901"}},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - service name too long",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+							{ServiceId: &sharedtypes.ServiceId{
+								Id:   "123",
+								Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
+							}},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - service ID with invalid characters",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address: addr1,
+						Stake:   &stake1,
+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+							{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
 	for _, tc := range tests {
