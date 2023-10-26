@@ -15,7 +15,8 @@ type RelayerSessions interface {
 	// ClosingSessions returns an observable that notifies of sessions ready to be claimed.
 	ClosingSessions() observable.Observable[SessionTree]
 
-	// TODO: Add `ExpiringSessions` to notify of session whose proof submission window is closing.
+	// ExpiringSessions returns an observable that notifies of sessions for which proofs could be submitted on-chain.
+	ExpiringSessions() observable.Observable[SessionTree]
 
 	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session. It is used to retrieve
 	// the SMST and update it when a Relay has been successfully served. If the session is seen for the first time,
