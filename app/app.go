@@ -579,6 +579,9 @@ func New(
 		keys[sessionmoduletypes.StoreKey],
 		keys[sessionmoduletypes.MemStoreKey],
 		app.GetSubspace(sessionmoduletypes.ModuleName),
+
+		app.ApplicationKeeper,
+		app.SupplierKeeper,
 	)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
