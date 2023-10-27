@@ -19,6 +19,10 @@ func (k msgServer) UnstakeGateway(
 	logger := k.Logger(ctx).With("method", "UnstakeGateway")
 	logger.Info("About to unstake gateway with msg: %v", msg)
 
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	// Check if the gateway already exists or not
 	var err error
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)

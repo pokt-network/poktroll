@@ -18,8 +18,11 @@ func (k msgServer) UnstakeSupplier(
 	logger := k.Logger(ctx).With("method", "UnstakeSupplier")
 	logger.Info("About to unstake supplier with msg: %v", msg)
 
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	// Check if the supplier already exists or not
-	var err error
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 	if !isSupplierFound {
 		logger.Info("Supplier not found. Cannot unstake address %s", msg.Address)

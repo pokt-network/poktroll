@@ -6,28 +6,27 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
+
 	"pocket/x/session/types"
 )
 
 var _ = strconv.Itoa(0)
 
+// TODO(@Olshansk): Implement the CLI component of `GetSession`.
 func CmdGetSession() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-session",
 		Short: "Query get-session",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
-
 			queryClient := types.NewQueryClient(clientCtx)
+			req := &types.QueryGetSessionRequest{}
 
-			params := &types.QueryGetSessionRequest{}
-
-			res, err := queryClient.GetSession(cmd.Context(), params)
+			res, err := queryClient.GetSession(cmd.Context(), req)
 			if err != nil {
 				return err
 			}

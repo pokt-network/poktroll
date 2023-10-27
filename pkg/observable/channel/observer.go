@@ -92,7 +92,7 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 		//   1. this is library code; prefer fewer external dependencies, esp. I/O
 		//   2. the stdlib log pkg is pretty good, idiomatic, and globally
 		//      configurable; perhaps it is sufficient
-		log.Printf("%s", observable.ErrObserverClosed.Wrap("redundant unsubscribe"))
+		log.Printf("%s", observable.ErrObserverClosed.Wrap("WARN: redundant unsubscribe"))
 		return
 	}
 
