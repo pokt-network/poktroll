@@ -12,6 +12,7 @@ import (
 	"pocket/internal/testclient/testeventsquery"
 )
 
+// The query use to subscribe for new block events on the websocket endpoint exposed by CometBFT nodes
 const committedBlockEventsQuery = "tm.event='NewBlock'"
 
 func TestQueryClient_EventsObservable_Integration(t *testing.T) {
