@@ -529,7 +529,7 @@ index 1b5f302..dcd44a5 100644
 --- a/testutil/network/network.go
 +++ b/testutil/network/network.go
 @@ -25,10 +25,10 @@ import (
- 	"pocket/app"
+ 	"pocket/supplier"
  	"pocket/testutil/nullify"
  	"pocket/testutil/sample"
 -	app_types "pocket/x/application/types"
@@ -799,7 +799,7 @@ index 2563287..64025ff 100644
 +	appAddr string,
  
 -) (val types.Application, found bool) {
-+) (app types.Application, found bool) {
++) (supplier types.Application, found bool) {
  	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
  
  	b := store.Get(types.ApplicationKey(
@@ -808,13 +808,13 @@ index 2563287..64025ff 100644
  	))
  	if b == nil {
 -		return val, false
-+		return app, false
++		return supplier, false
  	}
  
 -	k.cdc.MustUnmarshal(b, &val)
 -	return val, true
-+	k.cdc.MustUnmarshal(b, &app)
-+	return app, true
++	k.cdc.MustUnmarshal(b, &supplier)
++	return supplier, true
  }
  
  // RemoveApplication removes a application from the store
@@ -880,15 +880,15 @@ index 76f5ad1..38c16c0 100644
 -		keeper.SetApplication(ctx, items[i])
 +	suppliers := make([]types.Application, n)
 +	for i := range suppliers {
-+		app := &suppliers[i]
-+		app.Address = sample.AccAddress()
-+		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
-+		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
++		supplier := &suppliers[i]
++		supplier.Address = sample.AccAddress()
++		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
++		supplier.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
 +			},
 +		}
-+		keeper.SetApplication(ctx, *app)
++		keeper.SetApplication(ctx, *supplier)
  	}
 -	return items
 +	return suppliers
@@ -901,16 +901,16 @@ index 76f5ad1..38c16c0 100644
 -		rst, found := keeper.GetApplication(ctx,
 -			item.Address,
 +	suppliers := createNApplication(keeper, ctx, 10)
-+	for _, app := range suppliers {
++	for _, supplier := range suppliers {
 +		appFound, isAppFound := keeper.GetApplication(ctx,
-+			app.Address,
++			supplier.Address,
  		)
 -		require.True(t, found)
 +		require.True(t, isAppFound)
  		require.Equal(t,
 -			nullify.Fill(&item),
 -			nullify.Fill(&rst),
-+			nullify.Fill(&app),
++			nullify.Fill(&supplier),
 +			nullify.Fill(&appFound),
  		)
  	}
@@ -920,14 +920,14 @@ index 76f5ad1..38c16c0 100644
 -	items := createNApplication(keeper, ctx, 10)
 -	for _, item := range items {
 +	suppliers := createNApplication(keeper, ctx, 10)
-+	for _, app := range suppliers {
++	for _, supplier := range suppliers {
  		keeper.RemoveApplication(ctx,
 -			item.Address,
-+			app.Address,
++			supplier.Address,
  		)
  		_, found := keeper.GetApplication(ctx,
 -			item.Address,
-+			app.Address,
++			supplier.Address,
  		)
  		require.False(t, found)
  	}
@@ -976,7 +976,7 @@ index 7fd06a5..6aa824e 100644
  }
  
 @@ -80,16 +83,21 @@ func (k msgServer) updateApplication(
- 		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
+ 		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, supplier.Address)
  	}
  
 +	// Validate that the stake is not being lowered
@@ -984,19 +984,19 @@ index 7fd06a5..6aa824e 100644
  		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
  	}
 -
- 	if msg.Stake.IsLTE(*app.Stake) {
+ 	if msg.Stake.IsLTE(*supplier.Stake) {
 -
- 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+ 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
  	}
 -
- 	app.Stake = msg.Stake
+ 	supplier.Stake = msg.Stake
  
 +	// Validate that the service configs maintain at least one service. Additional validation is done in
 +	// `msg.ValidateBasic` above.
 +	if len(msg.Services) == 0 {
 +		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
 +	}
-+	app.ServiceConfigs = msg.Services
++	supplier.ServiceConfigs = msg.Services
 +
  	return nil
  }
@@ -1089,12 +1089,12 @@ index 0a47479..98d3069 100644
 +	_, err = srv.StakeApplication(wctx, updateStakeMsg)
 +	require.Error(t, err)
 +
-+	// Verify the app still exists and is staked for svc1
-+	app, isAppFound := k.GetApplication(ctx, appAddr)
++	// Verify the supplier still exists and is staked for svc1
++	supplier, isAppFound := k.GetApplication(ctx, appAddr)
 +	require.True(t, isAppFound)
-+	require.Equal(t, appAddr, app.Address)
-+	require.Len(t, app.ServiceConfigs, 1)
-+	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
++	require.Equal(t, appAddr, supplier.Address)
++	require.Len(t, supplier.ServiceConfigs, 1)
++	require.Equal(t, "svc1", supplier.ServiceConfigs[0].ServiceId.Id)
 +
 +	// Prepare the application stake message with an invalid service ID
 +	updateStakeMsg = &types.MsgStakeApplication{
@@ -1111,12 +1111,12 @@ index 0a47479..98d3069 100644
 +	_, err = srv.StakeApplication(wctx, updateStakeMsg)
 +	require.Error(t, err)
 +
-+	// Verify the app still exists and is staked for svc1
-+	app, isAppFound = k.GetApplication(ctx, appAddr)
++	// Verify the supplier still exists and is staked for svc1
++	supplier, isAppFound = k.GetApplication(ctx, appAddr)
 +	require.True(t, isAppFound)
-+	require.Equal(t, appAddr, app.Address)
-+	require.Len(t, app.ServiceConfigs, 1)
-+	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
++	require.Equal(t, appAddr, supplier.Address)
++	require.Len(t, supplier.ServiceConfigs, 1)
++	require.Equal(t, "svc1", supplier.ServiceConfigs[0].ServiceId.Id)
  }
  
  func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
@@ -1210,20 +1210,20 @@ index b42c407..1d8d5f8 100644
 @@ -34,6 +36,8 @@ func (gs GenesisState) Validate() error {
  
  	// Check that the stake value for the suppliers is valid
- 	for _, app := range gs.ApplicationList {
+ 	for _, supplier := range gs.ApplicationList {
 +		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 +		// similar to how we have `AreValidAppServiceConfigs` below
- 		if app.Stake == nil {
+ 		if supplier.Stake == nil {
  			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
  		}
 @@ -50,6 +54,12 @@ func (gs GenesisState) Validate() error {
  		if stake.Denom != "upokt" {
- 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
+ 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", supplier.Stake)
  		}
 +
 +		// Valid the application service configs
 +		// Validate the application service configs
-+		if reason, ok := servicehelpers.AreValidAppServiceConfigs(app.ServiceConfigs); !ok {
++		if reason, ok := servicehelpers.AreValidAppServiceConfigs(supplier.ServiceConfigs); !ok {
 +			return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
 +		}
  	}
@@ -1372,7 +1372,7 @@ index 69bc318..f1eed28 100644
 @@ -127,36 +146,115 @@ func TestGenesisState_Validate(t *testing.T) {
  		},
  		{
- 			desc: "invalid - due to nil app stake",
+ 			desc: "invalid - due to nil supplier stake",
 +			genState: &types.GenesisState{
 +				ApplicationList: []types.Application{
 +					{
@@ -1390,7 +1390,7 @@ index 69bc318..f1eed28 100644
 +			valid: false,
 +		},
 +		{
-+			desc: "invalid - due to missing app stake",
++			desc: "invalid - due to missing supplier stake",
 +			genState: &types.GenesisState{
 +				ApplicationList: []types.Application{
 +					{
@@ -1436,7 +1436,7 @@ index 69bc318..f1eed28 100644
  			valid: false,
  		},
  		{
--			desc: "invalid - due to missing app stake",
+-			desc: "invalid - due to missing supplier stake",
 +			desc: "invalid - service ID too long",
 +			genState: &types.GenesisState{
 +				ApplicationList: []types.Application{
@@ -1719,10 +1719,10 @@ index 83d8a38..7a1c10a 100644
 +++ b/x/session/keeper/session_hydrator_test.go
 @@ -35,7 +35,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
  	// Check the application
- 	app := session.Application
- 	require.Equal(t, keepertest.TestApp1Address, app.Address)
--	require.Len(t, app.ServiceIds, 2)
-+	require.Len(t, app.ServiceConfigs, 2)
+ 	supplier := session.Application
+ 	require.Equal(t, keepertest.TestApp1Address, supplier.Address)
+-	require.Len(t, supplier.ServiceIds, 2)
++	require.Len(t, supplier.ServiceConfigs, 2)
  
  	// Check the suppliers
  	suppliers := session.Suppliers
