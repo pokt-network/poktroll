@@ -21,7 +21,7 @@ vendor/
 go.work
 
 # Don't commit binaries
-bin
+bin/*
 !bin/.keep
 
 # Before we provision the localnet, `ignite` creates the accounts, genesis, etc. for us
@@ -60,4 +60,4 @@ ts-client/
 localnet_config.yaml
 
 # Relase artifacts produced by `ignite chain build --release`
-release/
+release
