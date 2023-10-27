@@ -58,3 +58,6 @@ ts-client/
 
 # Localnet config
 localnet_config.yaml
+
+# Relase artifacts produced by `ignite chain build --release`
+release/

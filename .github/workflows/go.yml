@@ -36,7 +36,10 @@ jobs:
         run: make go_mockgen
 
       - name: Build
-        run: ignite chain build --debug --skip-proto
+        run: ignite chain build -v --debug --skip-proto
 
       - name: Test
         run: make go_test
+
+      - name: show available paths
+        run: echo $PATH
