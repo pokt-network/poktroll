@@ -2,7 +2,7 @@ commit 96f5252e61634fe428947008b108f7064f8d91cc
 Author: Daniel Olshansky <olshansky.daniel@gmail.com>
 Date:   Fri Oct 27 13:10:02 2023 -0700
 
-    [Application] Add `ServiceConfigs` to `AppStaking` (#95)
+    [Supplier] Add `ServiceConfigs` to `AppStaking` (#95)
     
     Update all related components (CLI, Tx, Message, etc...) so applications can stake for a service
     
@@ -94,12 +94,12 @@ index 26b83a9..461aaed 100644
 -                      description: The ID of the service this session is servicing
 -                      title: >-
 -                        TODO(@olshansk): Change this to
--                        `shared.ApplicationServiceConfig` in #95
-+                          ApplicationServiceConfig holds the service
+-                        `shared.SupplierServiceConfig` in #95
++                          SupplierServiceConfig holds the service
 +                          configuration the application stakes for
 +                      title: The ID of the service this session is servicing
                    title: >-
-                     Application defines the type used to store an on-chain
+                     Supplier defines the type used to store an on-chain
                      definition and state for an application
 @@ -46634,26 +46645,37 @@ paths:
                        custom method
@@ -147,12 +147,12 @@ index 26b83a9..461aaed 100644
 -                    description: The ID of the service this session is servicing
 -                    title: >-
 -                      TODO(@olshansk): Change this to
--                      `shared.ApplicationServiceConfig` in #95
-+                        ApplicationServiceConfig holds the service configuration
+-                      `shared.SupplierServiceConfig` in #95
++                        SupplierServiceConfig holds the service configuration
 +                        the application stakes for
 +                    title: The ID of the service this session is servicing
                  title: >-
-                   Application defines the type used to store an on-chain
+                   Supplier defines the type used to store an on-chain
                    definition and state for an application
 @@ -76529,24 +76551,6 @@ definitions:
  
@@ -174,7 +174,7 @@ index 26b83a9..461aaed 100644
 -            a service on the network
 -        description: The ID of the service this session is servicing
 -        title: >-
--          TODO(@olshansk): Change this to `shared.ApplicationServiceConfig` in
+-          TODO(@olshansk): Change this to `shared.SupplierServiceConfig` in
 -          #95
        service_configs:
          type: array
@@ -234,12 +234,12 @@ index 26b83a9..461aaed 100644
 -              description: The ID of the service this session is servicing
 -              title: >-
 -                TODO(@olshansk): Change this to
--                `shared.ApplicationServiceConfig` in #95
-+                  ApplicationServiceConfig holds the service configuration the
+-                `shared.SupplierServiceConfig` in #95
++                  SupplierServiceConfig holds the service configuration the
 +                  application stakes for
 +              title: The ID of the service this session is servicing
            title: >-
-             Application defines the type used to store an on-chain definition
+             Supplier defines the type used to store an on-chain definition
              and state for an application
 @@ -76694,24 +76709,35 @@ definitions:
                method
@@ -282,19 +282,19 @@ index 26b83a9..461aaed 100644
 -                for a service on the network
 -            description: The ID of the service this session is servicing
 -            title: >-
--              TODO(@olshansk): Change this to `shared.ApplicationServiceConfig`
+-              TODO(@olshansk): Change this to `shared.SupplierServiceConfig`
 -              in #95
-+                ApplicationServiceConfig holds the service configuration the
++                SupplierServiceConfig holds the service configuration the
 +                application stakes for
 +            title: The ID of the service this session is servicing
          title: >-
-           Application defines the type used to store an on-chain definition and
+           Supplier defines the type used to store an on-chain definition and
            state for an application
 @@ -76722,17 +76748,48 @@ definitions:
          description: params holds all the parameters of this module.
          type: object
      description: QueryParamsResponse is response type for the Query/Params RPC method.
-+  pocket.shared.ApplicationServiceConfig:
++  pocket.shared.SupplierServiceConfig:
 +    type: object
 +    properties:
 +      service_id:
@@ -317,7 +317,7 @@ index 26b83a9..461aaed 100644
 +              than an optional onchain representation of the service is
 +              necessary
 +    title: >-
-+      ApplicationServiceConfig holds the service configuration the application
++      SupplierServiceConfig holds the service configuration the application
 +      stakes for
    pocket.shared.ServiceId:
      type: object
@@ -345,7 +345,7 @@ index 26b83a9..461aaed 100644
  
        It is the minimal amount of data required to hydrate & retrieve all data
        relevant to the session.
--  pocket.shared.ApplicationServiceConfig:
+-  pocket.shared.SupplierServiceConfig:
 -    type: object
 -    properties:
 -      service_id:
@@ -369,7 +369,7 @@ index 26b83a9..461aaed 100644
 -              than an optional onchain representation of the service is
 -              necessary
 -    title: >-
--      ApplicationServiceConfig holds the service configuration the application
+-      SupplierServiceConfig holds the service configuration the application
 -      stakes for
    pocket.shared.ConfigOption:
      type: object
@@ -415,12 +415,12 @@ index 4ccb194..c7b0ae8 100644
 --- a/proto/pocket/application/application.proto
 +++ b/proto/pocket/application/application.proto
 @@ -11,7 +11,6 @@ import "pocket/shared/service.proto";
- message Application {
+ message Supplier {
    string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
    cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
--  // TODO(@olshansk): Change this to `shared.ApplicationServiceConfig` in #95
+-  // TODO(@olshansk): Change this to `shared.SupplierServiceConfig` in #95
 -  repeated shared.ServiceId service_ids = 3; // The ID of the service this session is servicing
-+  repeated shared.ApplicationServiceConfig service_configs = 3; // The ID of the service this session is servicing
++  repeated shared.SupplierServiceConfig service_configs = 3; // The ID of the service this session is servicing
  }
  
 diff --git a/proto/pocket/application/tx.proto b/proto/pocket/application/tx.proto
@@ -435,18 +435,18 @@ index 4bf9eb7..971d47b 100644
  
  option go_package = "pocket/x/application/types";
  
-@@ -19,9 +20,8 @@ message MsgStakeApplication {
+@@ -19,9 +20,8 @@ message MsgStakeSupplier {
    option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
  
    string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
 -  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
 -  // TODO(@Olshansk): Update the tx flow to add support for `services`
--  // repeated service.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
+-  // repeated service.SupplierServiceConfig services = 3; // The list of services this application is staked to request service for
 +  cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
-+  repeated shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
++  repeated shared.SupplierServiceConfig services = 3; // The list of services this application is staked to request service for
  }
  
- message MsgStakeApplicationResponse {}
+ message MsgStakeSupplierResponse {}
 diff --git a/proto/pocket/shared/service.proto b/proto/pocket/shared/service.proto
 index cff126d..42827ce 100644
 --- a/proto/pocket/shared/service.proto
@@ -467,8 +467,8 @@ index cff126d..42827ce 100644
  }
  
 -// SupplierServiceConfig holds the service configuration the application stakes for
-+// ApplicationServiceConfig holds the service configuration the application stakes for
- message ApplicationServiceConfig {
++// SupplierServiceConfig holds the service configuration the application stakes for
+ message SupplierServiceConfig {
 -    repeated ServiceId service_id = 1; // Unique and semantic identifier for the service
 +    ServiceId service_id = 1; // Unique and semantic identifier for the service
 +
@@ -493,11 +493,11 @@ index cd3ea86..ef18152 100644
 --- a/testutil/keeper/session.go
 +++ b/testutil/keeper/session.go
 @@ -34,12 +34,12 @@ var (
- 	TestApp1        = apptypes.Application{
+ 	TestApp1        = apptypes.Supplier{
  		Address: TestApp1Address,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 -		ServiceIds: []*sharedtypes.ServiceId{
-+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++		ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
  			{
 -				Id: TestServiceId1,
 +				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
@@ -509,11 +509,11 @@ index cd3ea86..ef18152 100644
  		},
  	}
 @@ -48,12 +48,12 @@ var (
- 	TestApp2        = apptypes.Application{
+ 	TestApp2        = apptypes.Supplier{
  		Address: TestApp1Address,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 -		ServiceIds: []*sharedtypes.ServiceId{
-+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++		ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
  			{
 -				Id: TestServiceId1,
 +				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
@@ -545,20 +545,20 @@ index 1b5f302..dcd44a5 100644
  type (
 @@ -103,16 +103,21 @@ func DefaultConfig() network.Config {
  
- // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
+ // DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of applications.
  // It returns the populated GenesisState object.
--func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
-+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
+-func DefaultSupplierModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
++func DefaultSupplierModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
  	t.Helper()
 -	state := app_types.DefaultGenesis()
 +	state := apptypes.DefaultGenesis()
  	for i := 0; i < n; i++ {
  		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
--		application := app_types.Application{
-+		application := apptypes.Application{
+-		application := app_types.Supplier{
++		application := apptypes.Supplier{
  			Address: sample.AccAddress(),
  			Stake:   &stake,
-+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++			ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
 +				{
 +					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
 +				},
@@ -566,10 +566,10 @@ index 1b5f302..dcd44a5 100644
  		}
 -		nullify.Fill(&application)
 +		// nullify.Fill(&application)
- 		state.ApplicationList = append(state.ApplicationList, application)
+ 		state.SupplierList = append(state.SupplierList, application)
  	}
  	return state
-@@ -120,12 +125,12 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.Genesi
+@@ -120,12 +125,12 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *app_types.Genesi
  
  // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
  // It returns the populated GenesisState object.
@@ -614,13 +614,13 @@ index 8a20f53..b486bc6 100644
  	"github.com/cosmos/cosmos-sdk/client"
  	"github.com/cosmos/cosmos-sdk/client/flags"
 @@ -17,16 +18,20 @@ var _ = strconv.Itoa(0)
- func CmdStakeApplication() *cobra.Command {
+ func CmdStakeSupplier() *cobra.Command {
  	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
  	cmd := &cobra.Command{
 -		Use:   "stake-application [amount]",
 +		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
-+		// This needs to be expand to specify the full ApplicationServiceConfig. Furthermore, providing a flag to
-+		// a file where ApplicationServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
++		// This needs to be expand to specify the full SupplierServiceConfig. Furthermore, providing a flag to
++		// a file where SupplierServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
 +		Use:   "stake-application [amount] [svcId1,svcId2,...,svcIdN]",
  		Short: "Stake an application",
  		Long: `Stake an application with the provided parameters. This is a broadcast operation that
@@ -644,7 +644,7 @@ index 8a20f53..b486bc6 100644
  
 +			serviceIds := strings.Split(serviceIdsString, ",")
 +
- 			msg := types.NewMsgStakeApplication(
+ 			msg := types.NewMsgStakeSupplier(
  				clientCtx.GetFromAddress().String(),
  				stake,
 +				serviceIds,
@@ -655,7 +655,7 @@ diff --git a/x/application/client/cli/tx_stake_application_test.go b/x/applicati
 index 8a0dac4..3721e8e 100644
 --- a/x/application/client/cli/tx_stake_application_test.go
 +++ b/x/application/client/cli/tx_stake_application_test.go
-@@ -39,51 +39,95 @@ func TestCLI_StakeApplication(t *testing.T) {
+@@ -39,51 +39,95 @@ func TestCLI_StakeSupplier(t *testing.T) {
  	}
  
  	tests := []struct {
@@ -779,7 +779,7 @@ index 8a0dac4..3721e8e 100644
  		},
  	}
  
-@@ -99,6 +143,7 @@ func TestCLI_StakeApplication(t *testing.T) {
+@@ -99,6 +143,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
  			// Prepare the arguments for the CLI command
  			args := []string{
  				tt.stakeString,
@@ -791,18 +791,18 @@ diff --git a/x/application/keeper/application.go b/x/application/keeper/applicat
 index 2563287..64025ff 100644
 --- a/x/application/keeper/application.go
 +++ b/x/application/keeper/application.go
-@@ -19,36 +19,36 @@ func (k Keeper) SetApplication(ctx sdk.Context, application types.Application) {
- // GetApplication returns a application from its index
- func (k Keeper) GetApplication(
+@@ -19,36 +19,36 @@ func (k Keeper) SetSupplier(ctx sdk.Context, application types.Supplier) {
+ // GetSupplier returns a application from its index
+ func (k Keeper) GetSupplier(
  	ctx sdk.Context,
 -	address string,
 +	appAddr string,
  
--) (val types.Application, found bool) {
-+) (supplier types.Application, found bool) {
- 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+-) (val types.Supplier, found bool) {
++) (supplier types.Supplier, found bool) {
+ 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
  
- 	b := store.Get(types.ApplicationKey(
+ 	b := store.Get(types.SupplierKey(
 -		address,
 +		appAddr,
  	))
@@ -817,29 +817,29 @@ index 2563287..64025ff 100644
 +	return supplier, true
  }
  
- // RemoveApplication removes a application from the store
- func (k Keeper) RemoveApplication(
+ // RemoveSupplier removes a application from the store
+ func (k Keeper) RemoveSupplier(
  	ctx sdk.Context,
 -	address string,
 +	appAddr string,
  
  ) {
- 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
- 	store.Delete(types.ApplicationKey(
+ 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
+ 	store.Delete(types.SupplierKey(
 -		address,
 +		appAddr,
  	))
  }
  
- // GetAllApplication returns all application
--func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
-+func (k Keeper) GetAllApplication(ctx sdk.Context) (suppliers []types.Application) {
- 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+ // GetAllSupplier returns all application
+-func (k Keeper) GetAllSupplier(ctx sdk.Context) (list []types.Supplier) {
++func (k Keeper) GetAllSupplier(ctx sdk.Context) (suppliers []types.Supplier) {
+ 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
  	iterator := sdk.KVStorePrefixIterator(store, []byte{})
  
-@@ -57,7 +57,7 @@ func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
+@@ -57,7 +57,7 @@ func (k Keeper) GetAllSupplier(ctx sdk.Context) (list []types.Supplier) {
  	for ; iterator.Valid(); iterator.Next() {
- 		var val types.Application
+ 		var val types.Supplier
  		k.cdc.MustUnmarshal(iterator.Value(), &val)
 -		list = append(list, val)
 +		suppliers = append(suppliers, val)
@@ -872,37 +872,37 @@ index 76f5ad1..38c16c0 100644
 @@ -23,38 +26,44 @@ func init() {
  }
  
- func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
--	items := make([]types.Application, n)
+ func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Supplier {
+-	items := make([]types.Supplier, n)
 -	for i := range items {
 -		items[i].Address = strconv.Itoa(i)
 -
--		keeper.SetApplication(ctx, items[i])
-+	suppliers := make([]types.Application, n)
+-		keeper.SetSupplier(ctx, items[i])
++	suppliers := make([]types.Supplier, n)
 +	for i := range suppliers {
 +		supplier := &suppliers[i]
 +		supplier.Address = sample.AccAddress()
 +		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
-+		supplier.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
++		supplier.ServiceConfigs = []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
 +			},
 +		}
-+		keeper.SetApplication(ctx, *supplier)
++		keeper.SetSupplier(ctx, *supplier)
  	}
 -	return items
 +	return suppliers
  }
  
- func TestApplicationGet(t *testing.T) {
- 	keeper, ctx := keepertest.ApplicationKeeper(t)
--	items := createNApplication(keeper, ctx, 10)
+ func TestSupplierGet(t *testing.T) {
+ 	keeper, ctx := keepertest.SupplierKeeper(t)
+-	items := createNSupplier(keeper, ctx, 10)
 -	for _, item := range items {
--		rst, found := keeper.GetApplication(ctx,
+-		rst, found := keeper.GetSupplier(ctx,
 -			item.Address,
-+	suppliers := createNApplication(keeper, ctx, 10)
++	suppliers := createNSupplier(keeper, ctx, 10)
 +	for _, supplier := range suppliers {
-+		appFound, isAppFound := keeper.GetApplication(ctx,
++		appFound, isAppFound := keeper.GetSupplier(ctx,
 +			supplier.Address,
  		)
 -		require.True(t, found)
@@ -915,47 +915,47 @@ index 76f5ad1..38c16c0 100644
  		)
  	}
  }
- func TestApplicationRemove(t *testing.T) {
- 	keeper, ctx := keepertest.ApplicationKeeper(t)
--	items := createNApplication(keeper, ctx, 10)
+ func TestSupplierRemove(t *testing.T) {
+ 	keeper, ctx := keepertest.SupplierKeeper(t)
+-	items := createNSupplier(keeper, ctx, 10)
 -	for _, item := range items {
-+	suppliers := createNApplication(keeper, ctx, 10)
++	suppliers := createNSupplier(keeper, ctx, 10)
 +	for _, supplier := range suppliers {
- 		keeper.RemoveApplication(ctx,
+ 		keeper.RemoveSupplier(ctx,
 -			item.Address,
 +			supplier.Address,
  		)
- 		_, found := keeper.GetApplication(ctx,
+ 		_, found := keeper.GetSupplier(ctx,
 -			item.Address,
 +			supplier.Address,
  		)
  		require.False(t, found)
  	}
-@@ -62,9 +71,9 @@ func TestApplicationRemove(t *testing.T) {
+@@ -62,9 +71,9 @@ func TestSupplierRemove(t *testing.T) {
  
- func TestApplicationGetAll(t *testing.T) {
- 	keeper, ctx := keepertest.ApplicationKeeper(t)
--	items := createNApplication(keeper, ctx, 10)
-+	suppliers := createNApplication(keeper, ctx, 10)
+ func TestSupplierGetAll(t *testing.T) {
+ 	keeper, ctx := keepertest.SupplierKeeper(t)
+-	items := createNSupplier(keeper, ctx, 10)
++	suppliers := createNSupplier(keeper, ctx, 10)
  	require.ElementsMatch(t,
 -		nullify.Fill(items),
 +		nullify.Fill(suppliers),
- 		nullify.Fill(keeper.GetAllApplication(ctx)),
+ 		nullify.Fill(keeper.GetAllSupplier(ctx)),
  	)
  }
 diff --git a/x/application/keeper/msg_server_stake_application.go b/x/application/keeper/msg_server_stake_application.go
 index 7fd06a5..6aa824e 100644
 --- a/x/application/keeper/msg_server_stake_application.go
 +++ b/x/application/keeper/msg_server_stake_application.go
-@@ -19,6 +19,7 @@ func (k msgServer) StakeApplication(
+@@ -19,6 +19,7 @@ func (k msgServer) StakeSupplier(
  	logger.Info("About to stake application with msg: %v", msg)
  
  	if err := msg.ValidateBasic(); err != nil {
-+		logger.Error("invalid MsgStakeApplication: %v", err)
++		logger.Error("invalid MsgStakeSupplier: %v", err)
  		return nil, err
  	}
  
-@@ -46,6 +47,7 @@ func (k msgServer) StakeApplication(
+@@ -46,6 +47,7 @@ func (k msgServer) StakeSupplier(
  		return nil, err
  	}
  
@@ -963,10 +963,10 @@ index 7fd06a5..6aa824e 100644
  	// Send the coins from the application to the staked application pool
  	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
  	if err != nil {
-@@ -65,8 +67,9 @@ func (k msgServer) createApplication(
- 	msg *types.MsgStakeApplication,
- ) types.Application {
- 	return types.Application{
+@@ -65,8 +67,9 @@ func (k msgServer) createSupplier(
+ 	msg *types.MsgStakeSupplier,
+ ) types.Supplier {
+ 	return types.Supplier{
 -		Address: msg.Address,
 -		Stake:   msg.Stake,
 +		Address:        msg.Address,
@@ -975,7 +975,7 @@ index 7fd06a5..6aa824e 100644
  	}
  }
  
-@@ -80,16 +83,21 @@ func (k msgServer) updateApplication(
+@@ -80,16 +83,21 @@ func (k msgServer) updateSupplier(
  		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, supplier.Address)
  	}
  
@@ -1011,12 +1011,12 @@ index 0a47479..98d3069 100644
 +	sharedtypes "pocket/x/shared/types"
  )
  
- func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
-@@ -28,6 +29,11 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
- 	stakeMsg := &types.MsgStakeApplication{
+ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
+@@ -28,6 +29,11 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
+ 	stakeMsg := &types.MsgStakeSupplier{
  		Address: addr,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1024,7 +1024,7 @@ index 0a47479..98d3069 100644
  	}
  
  	// Stake the application
-@@ -39,11 +45,21 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
+@@ -39,11 +45,21 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
  	require.True(t, isAppFound)
  	require.Equal(t, addr, foundApp.Address)
  	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
@@ -1033,10 +1033,10 @@ index 0a47479..98d3069 100644
  
 -	// Prepare an updated application with a higher stake
 +	// Prepare an updated application with a higher stake and another service
- 	updateStakeMsg := &types.MsgStakeApplication{
+ 	updateStakeMsg := &types.MsgStakeSupplier{
  		Address: addr,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1047,8 +1047,8 @@ index 0a47479..98d3069 100644
  	}
  
  	// Update the staked application
-@@ -52,6 +68,72 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
- 	foundApp, isAppFound = k.GetApplication(ctx, addr)
+@@ -52,6 +68,72 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
+ 	foundApp, isAppFound = k.GetSupplier(ctx, addr)
  	require.True(t, isAppFound)
  	require.Equal(t, int64(200), foundApp.Stake.Amount.Int64())
 +	require.Len(t, foundApp.ServiceConfigs, 2)
@@ -1056,18 +1056,18 @@ index 0a47479..98d3069 100644
 +	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId.Id)
 +}
 +
-+func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
-+	k, ctx := keepertest.ApplicationKeeper(t)
++func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
++	k, ctx := keepertest.SupplierKeeper(t)
 +	srv := keeper.NewMsgServerImpl(*k)
 +	wctx := sdk.WrapSDKContext(ctx)
 +
 +	appAddr := sample.AccAddress()
 +
 +	// Prepare the application stake message
-+	stakeMsg := &types.MsgStakeApplication{
++	stakeMsg := &types.MsgStakeSupplier{
 +		Address: appAddr,
 +		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1075,32 +1075,32 @@ index 0a47479..98d3069 100644
 +	}
 +
 +	// Stake the application
-+	_, err := srv.StakeApplication(wctx, stakeMsg)
++	_, err := srv.StakeSupplier(wctx, stakeMsg)
 +	require.NoError(t, err)
 +
 +	// Prepare the application stake message without any services
-+	updateStakeMsg := &types.MsgStakeApplication{
++	updateStakeMsg := &types.MsgStakeSupplier{
 +		Address:  appAddr,
 +		Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{},
++		Services: []*sharedtypes.SupplierServiceConfig{},
 +	}
 +
 +	// Fail updating the application when the list of services is empty
-+	_, err = srv.StakeApplication(wctx, updateStakeMsg)
++	_, err = srv.StakeSupplier(wctx, updateStakeMsg)
 +	require.Error(t, err)
 +
 +	// Verify the supplier still exists and is staked for svc1
-+	supplier, isAppFound := k.GetApplication(ctx, appAddr)
++	supplier, isAppFound := k.GetSupplier(ctx, appAddr)
 +	require.True(t, isAppFound)
 +	require.Equal(t, appAddr, supplier.Address)
 +	require.Len(t, supplier.ServiceConfigs, 1)
 +	require.Equal(t, "svc1", supplier.ServiceConfigs[0].ServiceId.Id)
 +
 +	// Prepare the application stake message with an invalid service ID
-+	updateStakeMsg = &types.MsgStakeApplication{
++	updateStakeMsg = &types.MsgStakeSupplier{
 +		Address: appAddr,
 +		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1 INVALID ! & *"},
 +			},
@@ -1108,23 +1108,23 @@ index 0a47479..98d3069 100644
 +	}
 +
 +	// Fail updating the application when the list of services is empty
-+	_, err = srv.StakeApplication(wctx, updateStakeMsg)
++	_, err = srv.StakeSupplier(wctx, updateStakeMsg)
 +	require.Error(t, err)
 +
 +	// Verify the supplier still exists and is staked for svc1
-+	supplier, isAppFound = k.GetApplication(ctx, appAddr)
++	supplier, isAppFound = k.GetSupplier(ctx, appAddr)
 +	require.True(t, isAppFound)
 +	require.Equal(t, appAddr, supplier.Address)
 +	require.Len(t, supplier.ServiceConfigs, 1)
 +	require.Equal(t, "svc1", supplier.ServiceConfigs[0].ServiceId.Id)
  }
  
- func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
-@@ -64,6 +146,11 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
- 	stakeMsg := &types.MsgStakeApplication{
+ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
+@@ -64,6 +146,11 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
+ 	stakeMsg := &types.MsgStakeSupplier{
  		Address: addr,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1132,11 +1132,11 @@ index 0a47479..98d3069 100644
  	}
  
  	// Stake the application & verify that the application exists
-@@ -76,6 +163,11 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
- 	updateMsg := &types.MsgStakeApplication{
+@@ -76,6 +163,11 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
+ 	updateMsg := &types.MsgStakeSupplier{
  		Address: addr,
  		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1155,12 +1155,12 @@ index 7d2a279..9f45647 100644
 +	sharedtypes "pocket/x/shared/types"
  )
  
- func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
-@@ -29,6 +30,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
- 	stakeMsg := &types.MsgStakeApplication{
+ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
+@@ -29,6 +30,11 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
+ 	stakeMsg := &types.MsgStakeSupplier{
  		Address: addr,
  		Stake:   &initialStake,
-+		Services: []*sharedtypes.ApplicationServiceConfig{
++		Services: []*sharedtypes.SupplierServiceConfig{
 +			{
 +				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +			},
@@ -1168,14 +1168,14 @@ index 7d2a279..9f45647 100644
  	}
  
  	// Stake the application
-@@ -40,6 +46,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
+@@ -40,6 +46,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
  	require.True(t, isAppFound)
  	require.Equal(t, addr, foundApp.Address)
  	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
 +	require.Len(t, foundApp.ServiceConfigs, 1)
  
  	// Unstake the application
- 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
+ 	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}
 diff --git a/x/application/types/errors.go b/x/application/types/errors.go
 index 94d76cc..0a84948 100644
 --- a/x/application/types/errors.go
@@ -1210,7 +1210,7 @@ index b42c407..1d8d5f8 100644
 @@ -34,6 +36,8 @@ func (gs GenesisState) Validate() error {
  
  	// Check that the stake value for the suppliers is valid
- 	for _, supplier := range gs.ApplicationList {
+ 	for _, supplier := range gs.SupplierList {
 +		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 +		// similar to how we have `AreValidAppServiceConfigs` below
  		if supplier.Stake == nil {
@@ -1243,13 +1243,13 @@ index 69bc318..f1eed28 100644
  func TestGenesisState_Validate(t *testing.T) {
  	addr1 := sample.AccAddress()
  	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
-+	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{
++	svc1AppConfig := &sharedtypes.SupplierServiceConfig{
 +		ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +	}
  
  	addr2 := sample.AccAddress()
  	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
-+	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{
++	svc2AppConfig := &sharedtypes.SupplierServiceConfig{
 +		ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
 +	}
  
@@ -1257,115 +1257,115 @@ index 69bc318..f1eed28 100644
  		desc     string
 @@ -33,12 +40,14 @@ func TestGenesisState_Validate(t *testing.T) {
  
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr2,
 -						Stake:   &stake2,
 +						Address:        addr2,
 +						Stake:          &stake2,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  				// this line is used by starport scaffolding # types/genesis/validField
 @@ -50,12 +59,14 @@ func TestGenesisState_Validate(t *testing.T) {
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr2,
 -						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
 +						Address:        addr2,
 +						Stake:          &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  			},
 @@ -66,12 +77,14 @@ func TestGenesisState_Validate(t *testing.T) {
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr2,
 -						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
 +						Address:        addr2,
 +						Stake:          &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  			},
 @@ -82,12 +95,14 @@ func TestGenesisState_Validate(t *testing.T) {
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr2,
 -						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
 +						Address:        addr2,
 +						Stake:          &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  			},
 @@ -98,12 +113,14 @@ func TestGenesisState_Validate(t *testing.T) {
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr2,
 -						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
 +						Address:        addr2,
 +						Stake:          &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  			},
 @@ -114,12 +131,14 @@ func TestGenesisState_Validate(t *testing.T) {
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
 -						Address: addr1,
 -						Stake:   &stake1,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
  					},
  					{
 -						Address: addr1,
 -						Stake:   &stake2,
 +						Address:        addr1,
 +						Stake:          &stake2,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
  					},
  				},
  			},
@@ -1374,16 +1374,16 @@ index 69bc318..f1eed28 100644
  		{
  			desc: "invalid - due to nil supplier stake",
 +			genState: &types.GenesisState{
-+				ApplicationList: []types.Application{
++				SupplierList: []types.Supplier{
 +					{
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
 +					},
 +					{
 +						Address:        addr2,
 +						Stake:          nil,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
 +					},
 +				},
 +			},
@@ -1392,16 +1392,16 @@ index 69bc318..f1eed28 100644
 +		{
 +			desc: "invalid - due to missing supplier stake",
 +			genState: &types.GenesisState{
-+				ApplicationList: []types.Application{
++				SupplierList: []types.Supplier{
 +					{
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc1AppConfig},
 +					},
 +					{
 +						Address: addr2,
 +						// Explicitly missing stake
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{svc2AppConfig},
 +					},
 +				},
 +			},
@@ -1410,7 +1410,7 @@ index 69bc318..f1eed28 100644
 +		{
 +			desc: "invalid - service config not present",
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
  						Address: addr1,
  						Stake:   &stake1,
@@ -1423,13 +1423,13 @@ index 69bc318..f1eed28 100644
 +		{
 +			desc: "invalid - empty service config",
 +			genState: &types.GenesisState{
-+				ApplicationList: []types.Application{
++				SupplierList: []types.Supplier{
  					{
 -						Address: addr2,
 -						Stake:   nil,
 +						Address:        addr1,
 +						Stake:          &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{},
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{},
  					},
  				},
  			},
@@ -1439,11 +1439,11 @@ index 69bc318..f1eed28 100644
 -			desc: "invalid - due to missing supplier stake",
 +			desc: "invalid - service ID too long",
 +			genState: &types.GenesisState{
-+				ApplicationList: []types.Application{
++				SupplierList: []types.Supplier{
 +					{
 +						Address: addr1,
 +						Stake:   &stake1,		
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
 +							{ServiceId: &sharedtypes.ServiceId{Id: "12345678901"}},
 +						},
 +					},
@@ -1454,11 +1454,11 @@ index 69bc318..f1eed28 100644
 +		{
 +			desc: "invalid - service name too long",
  			genState: &types.GenesisState{
- 				ApplicationList: []types.Application{
+ 				SupplierList: []types.Supplier{
  					{
  						Address: addr1,
  						Stake:   &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
 +							{ServiceId: &sharedtypes.ServiceId{
 +								Id:   "123",
 +								Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
@@ -1472,13 +1472,13 @@ index 69bc318..f1eed28 100644
 +		{
 +			desc: "invalid - service ID with invalid characters",
 +			genState: &types.GenesisState{
-+				ApplicationList: []types.Application{
++				SupplierList: []types.Supplier{
  					{
 -						Address: addr2,
 -						// Explicitly missing stake
 +						Address: addr1,
 +						Stake:   &stake1,
-+						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
++						ServiceConfigs: []*sharedtypes.SupplierServiceConfig{
 +							{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
 +						},
  					},
@@ -1503,25 +1503,25 @@ index 219a657..f813cb8 100644
 +	sharedtypes "pocket/x/shared/types"
  )
  
- const TypeMsgStakeApplication = "stake_application"
-@@ -13,11 +16,22 @@ var _ sdk.Msg = (*MsgStakeApplication)(nil)
- func NewMsgStakeApplication(
+ const TypeMsgStakeSupplier = "stake_application"
+@@ -13,11 +16,22 @@ var _ sdk.Msg = (*MsgStakeSupplier)(nil)
+ func NewMsgStakeSupplier(
  	address string,
  	stake types.Coin,
 -
 +	serviceIds []string,
- ) *MsgStakeApplication {
-+	// Convert the serviceIds to the proper ApplicationServiceConfig type (enables future expansion)
-+	appServiceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(serviceIds))
+ ) *MsgStakeSupplier {
++	// Convert the serviceIds to the proper SupplierServiceConfig type (enables future expansion)
++	appServiceConfigs := make([]*sharedtypes.SupplierServiceConfig, len(serviceIds))
 +	for idx, serviceId := range serviceIds {
-+		appServiceConfigs[idx] = &sharedtypes.ApplicationServiceConfig{
++		appServiceConfigs[idx] = &sharedtypes.SupplierServiceConfig{
 +			ServiceId: &sharedtypes.ServiceId{
 +				Id: serviceId,
 +			},
 +		}
 +	}
 +
- 	return &MsgStakeApplication{
+ 	return &MsgStakeSupplier{
 -		Address: address,
 -		Stake:   &stake,
 +		Address:  address,
@@ -1530,7 +1530,7 @@ index 219a657..f813cb8 100644
  	}
  }
  
-@@ -64,7 +78,12 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
+@@ -64,7 +78,12 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
  		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
  	}
  	if stake.Denom != "upokt" {
@@ -1555,18 +1555,18 @@ index 3e36098..6b5ceec 100644
 +	sharedtypes "pocket/x/shared/types"
  )
  
- func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
-@@ -15,18 +16,28 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
- 		msg  MsgStakeApplication
+ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+@@ -15,18 +16,28 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+ 		msg  MsgStakeSupplier
  		err  error
  	}{
 +		// address tests
  		{
  			name: "invalid address - nil stake",
- 			msg: MsgStakeApplication{
+ 			msg: MsgStakeSupplier{
  				Address: "invalid_address",
  				// Stake explicitly nil
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
@@ -1577,59 +1577,59 @@ index 3e36098..6b5ceec 100644
 +		// stake related tests
 +		{
  			name: "valid address - nil stake",
- 			msg: MsgStakeApplication{
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				// Stake explicitly nil
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
  			err: ErrAppInvalidStake,
  		}, {
-@@ -34,12 +45,18 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
- 			msg: MsgStakeApplication{
+@@ -34,12 +45,18 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
  		}, {
  			name: "valid address - zero stake",
- 			msg: MsgStakeApplication{
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
  			err: ErrAppInvalidStake,
  		}, {
-@@ -47,6 +64,9 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
- 			msg: MsgStakeApplication{
+@@ -47,6 +64,9 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
  			err: ErrAppInvalidStake,
  		}, {
-@@ -54,6 +74,9 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
- 			msg: MsgStakeApplication{
+@@ -54,6 +74,9 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
  			err: ErrAppInvalidStake,
  		}, {
-@@ -61,16 +84,86 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
- 			msg: MsgStakeApplication{
+@@ -61,16 +84,86 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+ 			msg: MsgStakeSupplier{
  				Address: sample.AccAddress(),
  				Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +				},
  			},
@@ -1639,7 +1639,7 @@ index 3e36098..6b5ceec 100644
 +		// service related tests
 +		{
 +			name: "invalid service configs - not present",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address: sample.AccAddress(),
 +				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 +				// Services: omitted
@@ -1648,19 +1648,19 @@ index 3e36098..6b5ceec 100644
 +		},
 +		{
 +			name: "invalid service configs - empty",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address:  sample.AccAddress(),
 +				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{},
++				Services: []*sharedtypes.SupplierServiceConfig{},
 +			},
 +			err: ErrAppInvalidServiceConfigs,
 +		},
 +		{
 +			name: "invalid service configs - invalid service ID that's too long",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address: sample.AccAddress(),
 +				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "123456790"}},
 +				},
 +			},
@@ -1668,10 +1668,10 @@ index 3e36098..6b5ceec 100644
 +		},
 +		{
 +			name: "invalid service configs - invalid service Name that's too long",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address: sample.AccAddress(),
 +				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{
 +						Id:   "123",
 +						Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
@@ -1682,10 +1682,10 @@ index 3e36098..6b5ceec 100644
 +		},
 +		{
 +			name: "invalid service configs - invalid service ID that contains invalid characters",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address: sample.AccAddress(),
 +				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
 +				},
 +			},
@@ -1693,10 +1693,10 @@ index 3e36098..6b5ceec 100644
 +		},
 +		{
 +			name: "valid service configs - multiple services",
-+			msg: MsgStakeApplication{
++			msg: MsgStakeSupplier{
 +				Address: sample.AccAddress(),
 +				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-+				Services: []*sharedtypes.ApplicationServiceConfig{
++				Services: []*sharedtypes.SupplierServiceConfig{
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
 +					{ServiceId: &sharedtypes.ServiceId{Id: "svc2"}},
 +				},
@@ -1719,7 +1719,7 @@ index 83d8a38..7a1c10a 100644
 +++ b/x/session/keeper/session_hydrator_test.go
 @@ -35,7 +35,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
  	// Check the application
- 	supplier := session.Application
+ 	supplier := session.Supplier
  	require.Equal(t, keepertest.TestApp1Address, supplier.Address)
 -	require.Len(t, supplier.ServiceIds, 2)
 +	require.Len(t, supplier.ServiceConfigs, 2)
@@ -1801,7 +1801,7 @@ index 0000000..7a7baaf
 +
 +// AreValidAppServiceConfigs returns an error if the provided service configs are invalid
 +// by wrapping the provided around with additional details
-+func AreValidAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) (string, bool) {
++func AreValidAppServiceConfigs(services []*sharedtypes.SupplierServiceConfig) (string, bool) {
 +	if len(services) == 0 {
 +		return fmt.Sprintf("no services configs provided for application: %v", services), false
 +	}
