@@ -153,7 +153,10 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	// Construct an eventsBytes for the given query.
 	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Either[[]byte]]()
 
-	// TODO_INVESTIGATE: does this require retry on error?
+	// Publish either events bytes or an error received from the connection to
+	// the eventsBz observable.
+	// NB: intentionally not retrying on error, leaving that to the caller.
+	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
 	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
 
 	return &eventsBytesAndConn{
