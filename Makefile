@@ -135,6 +135,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
+	go generate ./x/session/types/
 	go generate ./pkg/...
 
 .PHONY: go_develop
