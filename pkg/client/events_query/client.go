@@ -274,9 +274,8 @@ func (eqc *eventsQueryClient) eventSubscriptionRequest(query string) ([]byte, er
 // randRequestId returns a random 8 byte, base64 request ID which is intended
 // for in JSON-RPC requests to uniquely identify distinct RPC requests.
 // These request IDs only need to be unique to the extent that they are useful
-// to this client for identifying distinct RPC requests.
-// These IDs
-// are expected to be unique (per request). Its size and keyspace are arbitrary.
+// to this client for identifying distinct RPC requests. Their size and keyspace
+// are arbitrary.
 func randRequestId() string {
 	requestIdBz := make([]byte, 8) // 8 bytes = 64 bits = uint64
 	if _, err := rand.Read(requestIdBz); err != nil {
