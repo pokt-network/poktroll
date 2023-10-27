@@ -97,7 +97,6 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	// accumulateReplayValues works concurrently and returns a context and cancellation
 	// function for signaling completion.
 	return accumulateReplayValues(tempObserver, n)
-
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
@@ -163,27 +162,34 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 		// accValuesMu protects accValues from concurrent access.
 		accValuesMu sync.Mutex
 		// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
-		accValues   = new([]V)
+		accValues = new([]V)
+		// Cancelling the context will cause the loop in the goroutine to exit.
 		ctx, cancel = context.WithCancel(context.Background())
 	)
-	defer accValuesMu.Unlock()
 
 	// Concurrently accumulate n values from the observer channel.
 	go func() {
+		// Defer cancelling the context and unlocking accValuesMu. The function
+		// assumes that the mutex is locked when it gets execution control back
+		// from the loop.
+		defer func() {
+			cancel()
+			accValuesMu.Unlock()
+		}()
 		for {
+			// Lock the mutex to read accValues here and potentially write in
+			// the first case branch in the select below.
+			accValuesMu.Lock()
 
 			// The context was cancelled since the last iteration.
 			if ctx.Err() != nil {
-				break
+				return
 			}
 
-			accValuesMu.Lock()
 			// We've accumulated n values.
 			if len(*accValues) >= n {
-				accValuesMu.Unlock()
-				break
+				return
 			}
-			accValuesMu.Unlock()
 
 			// Receive from the observer's channel if we can, otherwise let
 			// the loop run.
@@ -192,20 +198,24 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 			case value, ok := <-observer.Ch():
 				// tempObserver was closed concurrently.
 				if !ok {
-					cancel()
 					return
 				}
 
-				accValuesMu.Lock()
 				// Update the accumulated values pointed to by accValues.
 				*accValues = append(*accValues, value)
-				accValuesMu.Unlock()
 			default:
-				// Wait a tick before continuing the loop.
-				time.Sleep(time.Millisecond)
+				// If we can't receive from the observer channel immediately,
+				// let the loop run.
 			}
+
+			// Unlock accValuesMu so that the select below gets a chance to check
+			// the length of *accValues to decide whether to cancel, and it can
+			// be relocked at the top of the loop as it must be locked when the
+			// loop exits.
+			accValuesMu.Unlock()
+			// Wait a tick before continuing the loop.
+			time.Sleep(time.Millisecond)
 		}
-		cancel()
 	}()
 
 	// Wait for N values to be accumulated or timeout. When timing out, if we
@@ -214,7 +224,6 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 	for {
 		select {
 		case <-ctx.Done():
-			accValuesMu.Lock()
 			return *accValues
 		case <-time.After(replayPartialBufferTimeout):
 			accValuesMu.Lock()
@@ -222,6 +231,7 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 				cancel()
 				return *accValues
 			}
+			accValuesMu.Unlock()
 		}
 	}
 }
