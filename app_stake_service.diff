@@ -833,7 +833,7 @@ index 2563287..64025ff 100644
  
  // GetAllApplication returns all application
 -func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
-+func (k Keeper) GetAllApplication(ctx sdk.Context) (apps []types.Application) {
++func (k Keeper) GetAllApplication(ctx sdk.Context) (suppliers []types.Application) {
  	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
  	iterator := sdk.KVStorePrefixIterator(store, []byte{})
  
@@ -842,7 +842,7 @@ index 2563287..64025ff 100644
  		var val types.Application
  		k.cdc.MustUnmarshal(iterator.Value(), &val)
 -		list = append(list, val)
-+		apps = append(apps, val)
++		suppliers = append(suppliers, val)
  	}
  
  	return
@@ -878,9 +878,9 @@ index 76f5ad1..38c16c0 100644
 -		items[i].Address = strconv.Itoa(i)
 -
 -		keeper.SetApplication(ctx, items[i])
-+	apps := make([]types.Application, n)
-+	for i := range apps {
-+		app := &apps[i]
++	suppliers := make([]types.Application, n)
++	for i := range suppliers {
++		app := &suppliers[i]
 +		app.Address = sample.AccAddress()
 +		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
 +		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
@@ -891,7 +891,7 @@ index 76f5ad1..38c16c0 100644
 +		keeper.SetApplication(ctx, *app)
  	}
 -	return items
-+	return apps
++	return suppliers
  }
  
  func TestApplicationGet(t *testing.T) {
@@ -900,8 +900,8 @@ index 76f5ad1..38c16c0 100644
 -	for _, item := range items {
 -		rst, found := keeper.GetApplication(ctx,
 -			item.Address,
-+	apps := createNApplication(keeper, ctx, 10)
-+	for _, app := range apps {
++	suppliers := createNApplication(keeper, ctx, 10)
++	for _, app := range suppliers {
 +		appFound, isAppFound := keeper.GetApplication(ctx,
 +			app.Address,
  		)
@@ -919,8 +919,8 @@ index 76f5ad1..38c16c0 100644
  	keeper, ctx := keepertest.ApplicationKeeper(t)
 -	items := createNApplication(keeper, ctx, 10)
 -	for _, item := range items {
-+	apps := createNApplication(keeper, ctx, 10)
-+	for _, app := range apps {
++	suppliers := createNApplication(keeper, ctx, 10)
++	for _, app := range suppliers {
  		keeper.RemoveApplication(ctx,
 -			item.Address,
 +			app.Address,
@@ -936,10 +936,10 @@ index 76f5ad1..38c16c0 100644
  func TestApplicationGetAll(t *testing.T) {
  	keeper, ctx := keepertest.ApplicationKeeper(t)
 -	items := createNApplication(keeper, ctx, 10)
-+	apps := createNApplication(keeper, ctx, 10)
++	suppliers := createNApplication(keeper, ctx, 10)
  	require.ElementsMatch(t,
 -		nullify.Fill(items),
-+		nullify.Fill(apps),
++		nullify.Fill(suppliers),
  		nullify.Fill(keeper.GetAllApplication(ctx)),
  	)
  }
@@ -1209,7 +1209,7 @@ index b42c407..1d8d5f8 100644
  // DefaultIndex is the default global index
 @@ -34,6 +36,8 @@ func (gs GenesisState) Validate() error {
  
- 	// Check that the stake value for the apps is valid
+ 	// Check that the stake value for the suppliers is valid
  	for _, app := range gs.ApplicationList {
 +		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 +		// similar to how we have `AreValidAppServiceConfigs` below
