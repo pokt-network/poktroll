@@ -9,14 +9,19 @@ import (
 	"pocket/pkg/observable"
 )
 
+// replayPartialBufferTimeout is the duration to wait for the replay buffer to
+// accumulate at least 1 value before returning the accumulated values.
 // TODO_CONSIDERATION: perhaps this should be parameterized.
 const replayPartialBufferTimeout = 100 * time.Millisecond
 
 var _ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
 
 type replayObservable[V any] struct {
-	//*channelObservable[V]
-	observableInternals[V]
+	// embed observerManager to encapsulate concurrent-safe read/write access to
+	// observers. This also allows higher-level objects to wrap this observable
+	// without knowing its specific type by asserting that it implements the
+	// observerManager interface.
+	observerManager[V]
 	// replayBufferSize is the number of notifications to buffer so that they
 	// can be replayed to new observers.
 	replayBufferSize int
@@ -41,20 +46,22 @@ func NewReplayObservable[V any](
 // ToReplayObservable returns an observable which replays the last replayBufferSize
 // number of values published to the source observable to new observers, before
 // publishing new values.
-// It panics if srcObservable does not implement the observableInternals interface.
+// It panics if srcObservable does not implement the observerManager interface.
+// It should only be used with a srcObservable which contains channelObservers
+// (i.e. channelObservable or similar).
 func ToReplayObservable[V any](
 	ctx context.Context,
 	replayBufferSize int,
 	srcObsvbl observable.Observable[V],
 ) observable.ReplayObservable[V] {
-	// Assert that the source observable implements the internals required to
-	// embed and wrap it.
-	internals := srcObsvbl.(observableInternals[V])
+	// Assert that the source observable implements the observerMngr required
+	// to embed and wrap it.
+	observerMngr := srcObsvbl.(observerManager[V])
 
 	replayObsvbl := &replayObservable[V]{
-		observableInternals: internals,
-		replayBufferSize:    replayBufferSize,
-		replayBuffer:        make([]V, 0, replayBufferSize),
+		observerManager:  observerMngr,
+		replayBufferSize: replayBufferSize,
+		replayBuffer:     make([]V, 0, replayBufferSize),
 	}
 
 	srcObserver := srcObsvbl.Subscribe(ctx)
@@ -65,7 +72,9 @@ func ToReplayObservable[V any](
 
 // Last synchronously returns the last n values from the replay buffer. It blocks
 // until at least 1 notification has been accumulated, then waits replayPartialBufferTimeout
-// duration before returning the accumulated notifications.
+// duration before returning all notifications accumulated notifications by that time.
+// If the replay buffer contains at least n notifications, this function will only
+// block as long as it takes to accumulate and return them.
 // If n is greater than the replay buffer size, the entire replay buffer is returned.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	// Use a temporary observer to accumulate replay values.
@@ -85,24 +94,10 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 		)
 	}
 
-	// Accumulate replay values in a new slice to avoid (read)
-	// locking replayBufferMu.
-	var values []V
-	gotNValues := accumulateNValues(ctx, tempObserver, n, &values)
+	// accumulateReplayValues works concurrently and returns a context and cancellation
+	// function for signaling completion.
+	return accumulateReplayValues(tempObserver, n)
 
-	// Wait for N values to be accumulated or timeout. When timing out, if we
-	// have at least 1 value, we can return it. Otherwise, we need to wait for
-	// the next value to be published (i.e. continue the loop).
-	for {
-		select {
-		case <-gotNValues:
-			return values
-		case <-time.After(replayPartialBufferTimeout):
-			if len(values) > 1 {
-				return values
-			}
-		}
-	}
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
@@ -111,29 +106,37 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 	ro.replayBufferMu.RLock()
 	defer ro.replayBufferMu.RUnlock()
 
-	observer := NewObserver[V](ctx, ro.onUnsubscribe)
+	observer := NewObserver[V](ctx, ro.observerManager.remove)
 
-	// ToReplayObservable all buffered replayBuffer to the observer channel buffer before
+	// Replay all buffered replayBuffer to the observer channel buffer before
 	// any new values have an opportunity to send on observerCh (i.e. appending
 	// observer to ro.observers).
 	//
 	// TODO_IMPROVE: this assumes that the observer channel buffer is large enough
-	// to hold all replay (buffered) replayBuffer.
+	// to hold all replay (buffered) notifications.
 	for _, notification := range ro.replayBuffer {
 		observer.notify(notification)
 	}
 
-	ro.addObserver(observer)
+	ro.observerManager.add(observer)
+
+	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
+	// active observers
+	if ctx != nil {
+		// asynchronously wait for the context to be done and then unsubscribe
+		// this observer.
+		go ro.observerManager.goUnsubscribeOnDone(ctx, observer)
+	}
 
 	return observer
 }
 
 // UnsubscribeAll unsubscribes and removes all observers from the observable.
 func (ro *replayObservable[V]) UnsubscribeAll() {
-	ro.unsubscribeAll()
+	ro.observerManager.removeAll()
 }
 
-// goBufferReplayNotifications buffers the last n replayBuffer from a source
+// goBufferReplayNotifications buffers the last n notifications from a source
 // observer. It is intended to be run in a goroutine.
 func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observable.Observer[V]) {
 	for notification := range srcObserver.Ch() {
@@ -150,37 +153,75 @@ func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observabl
 	}
 }
 
-func accumulateNValues[V any](
-	ctx context.Context,
-	observer observable.Observer[V],
-	n int, accValues *[]V,
-) (done chan struct{}) {
-	done = make(chan struct{}, 1)
+// accumulateReplayValues synchronously (but concurrently) accumulates n values
+// from the observer channel into the slice pointed to by accValues and then returns
+// said slice. It cancels the context either when n values have been accumulated
+// or when at least 1 value has been accumulated and replayPartialBufferTimeout
+// has elapsed.
+func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
+	var (
+		// accValuesMu protects accValues from concurrent access.
+		accValuesMu sync.Mutex
+		// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
+		accValues   = new([]V)
+		ctx, cancel = context.WithCancel(context.Background())
+	)
+	defer accValuesMu.Unlock()
+
+	// Concurrently accumulate n values from the observer channel.
 	go func() {
 		for {
+
+			// The context was cancelled since the last iteration.
 			if ctx.Err() != nil {
-				return
+				break
 			}
 
+			accValuesMu.Lock()
+			// We've accumulated n values.
 			if len(*accValues) >= n {
-				done <- struct{}{}
-				return
+				accValuesMu.Unlock()
+				break
 			}
+			accValuesMu.Unlock()
 
+			// Receive from the observer's channel if we can, otherwise let
+			// the loop run.
 			select {
 			// Receiving from the observer channel blocks if replayBuffer is empty.
 			case value, ok := <-observer.Ch():
 				// tempObserver was closed concurrently.
 				if !ok {
+					cancel()
 					return
 				}
 
+				accValuesMu.Lock()
+				// Update the accumulated values pointed to by accValues.
 				*accValues = append(*accValues, value)
+				accValuesMu.Unlock()
 			default:
+				// Wait a tick before continuing the loop.
+				time.Sleep(time.Millisecond)
 			}
-
-			time.Sleep(time.Millisecond)
 		}
+		cancel()
 	}()
-	return done
+
+	// Wait for N values to be accumulated or timeout. When timing out, if we
+	// have at least 1 value, we can return it. Otherwise, we need to wait for
+	// the next value to be published (i.e. continue the loop).
+	for {
+		select {
+		case <-ctx.Done():
+			accValuesMu.Lock()
+			return *accValues
+		case <-time.After(replayPartialBufferTimeout):
+			accValuesMu.Lock()
+			if len(*accValues) > 1 {
+				cancel()
+				return *accValues
+			}
+		}
+	}
 }

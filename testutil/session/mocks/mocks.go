@@ -1,0 +1,6 @@
+package mocks
+
+// This file is in place to declare the package for dynamically generated structs.
+// Note that this does not follow the Cosmos SDK pattern of committing Mocks to main.
+// For example, they commit auto-generate code to main: https://github.com/cosmos/cosmos-sdk/blob/main/x/gov/testutil/expected_keepers_mocks.go
+// Documentation on how Cosmos uses mockgen can be found here: https://docs.cosmos.network/main/build/building-modules/testing#unit-tests

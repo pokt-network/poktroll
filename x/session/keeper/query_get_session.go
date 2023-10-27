@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
 	"pocket/x/session/types"
 )
 
@@ -16,8 +17,14 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// TODO: Process the query
-	_ = ctx
+	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId.Id, req.BlockHeight)
+	session, err := k.HydrateSession(ctx, sessionHydrator)
+	if err != nil {
+		return nil, err
+	}
 
-	return &types.QueryGetSessionResponse{}, nil
+	res := &types.QueryGetSessionResponse{
+		Session: session,
+	}
+	return res, nil
 }
