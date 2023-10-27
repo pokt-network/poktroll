@@ -19,7 +19,7 @@ type (
 
 // relayerSessions is an implementation of the RelayerSessions interface.
 type relayerSessions struct {
-	// closingSessions notifies of sessions ready to be claimed.
+	// closingSessions notifies about sessions that are ready to be claimed.
 	closingSessions observable.Observable[SessionTree]
 
 	// closingSessionsPublisher is the channel used to publish closing sessions.
@@ -32,7 +32,7 @@ type relayerSessions struct {
 	// blockClient is the block client used to get the committed blocks notifications.
 	blockClient blockclient.BlockClient
 
-	// storesDirectory is the directory where the KVStores are stored.
+	// storesDirectory is the directory where the KVStore data files are created.
 	storesDirectory string
 }
 
@@ -54,28 +54,29 @@ func NewRelayerSessions(
 	return rs
 }
 
-// ClosingSessions returns an observable that notifies of sessions ready to be claimed.
+// ClosingSessions returns an observable that notifies when sessions are ready to be claimed.
 func (rs *relayerSessions) ClosingSessions() observable.Observable[SessionTree] {
 	return rs.closingSessions
 }
 
 // EnsureSessionTree returns the SessionTree for a given session.
-// If the session is seen for the first time, it creates a SessionTree for it before returning it.
+// If the session is encountered for the first time, a SessionTree is created for it before returning.
 func (rs *relayerSessions) EnsureSessionTree(session *sessiontypes.Session) (SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	// Get the sessionsTrees map for the session end height.
+	// Calculate the session end height based on the session start block height
+	// and the number of blocks per session.
 	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
 	sessionsTrees := rs.sessionsTrees[sessionEndHeight]
 
-	// If the sessionsTrees map does not exist for the sessionEndHeight, create it.
+	// If there is no map for sessions at the sessionEndHeight, create one.
 	if sessionsTrees == nil {
 		sessionsTrees = make(map[sessionId]SessionTree)
 		rs.sessionsTrees[sessionEndHeight] = sessionsTrees
 	}
 
-	// Get the sessionTree for the session.
+	// Get the sessionTree for the given session.
 	sessionTree := sessionsTrees[session.SessionId]
 
 	// If the sessionTree does not exist, create it.
@@ -92,14 +93,14 @@ func (rs *relayerSessions) EnsureSessionTree(session *sessiontypes.Session) (Ses
 }
 
 // goListenToCommittedBlocks listens to committed blocks so that rs.closingSessionsPublisher can notify
-// about closing sessions. It is a goroutine that runs in the background.
+// when sessions are ready to be claimed. It is a background goroutine.
 func (rs *relayerSessions) goListenToCommittedBlocks(ctx context.Context) {
 	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	for block := range committedBlocks {
 		// Check if there are sessions to be closed at this block height.
 		if sessionsTrees, ok := rs.sessionsTrees[block.Height()]; ok {
-			// Range over the sessionsTrees that end at this block height and publish them.
+			// Iterate over the sessionsTrees that end at this block height and publish them.
 			for _, sessionTree := range sessionsTrees {
 				rs.closingSessionsPublisher <- sessionTree
 			}
