@@ -161,14 +161,14 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	found, _ := s.getStakedAmount(actorType, accName)
 	if found {
-		s.Fatalf("account %s is staked", accName)
+		s.Fatalf("account %s should not be staked", accName)
 	}
 }
 
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if !found {
-		s.Fatalf("account %s is not staked", accName)
+		s.Fatalf("account %s should be staked", accName)
 	}
 	if int64(stakeAmount) != amount {
 		s.Fatalf("account %s stake amount is not %d", accName, amount)
