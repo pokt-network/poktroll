@@ -46474,7 +46474,7 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
-                    delegateePubKeys:
+                    delegatee_gateway_pub_keys:
                       type: array
                       items:
                         type: object
@@ -46652,9 +46652,9 @@ paths:
                                 "value": "1.212s"
                               }
                       description: >-
-                        The Gateway's corresponding cosmos.crypto.PubKey
-                        (interface) encoded into an cosmos.codec.Any for use in
-                        the non nullable slice of delegatees the application is
+                        The corresponding cosmos.crypto.PubKey (interface)
+                        encoded into an cosmos.codec.Any for use in the non
+                        nullable slice of delegatee Gateways the application is
                         delegated to.
                       title: >-
                         TODO(@Olshansk): Uncomment the line below once the
@@ -46973,7 +46973,7 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
-                  delegateePubKeys:
+                  delegatee_gateway_pub_keys:
                     type: array
                     items:
                       type: object
@@ -47151,10 +47151,9 @@ paths:
                               "value": "1.212s"
                             }
                     description: >-
-                      The Gateway's corresponding cosmos.crypto.PubKey
-                      (interface) encoded into an cosmos.codec.Any for use in
-                      the non nullable slice of delegatees the application is
-                      delegated to.
+                      The corresponding cosmos.crypto.PubKey (interface) encoded
+                      into an cosmos.codec.Any for use in the non nullable slice
+                      of delegatee Gateways the application is delegated to.
                     title: >-
                       TODO(@Olshansk): Uncomment the line below once the
                       `ServiceId` proto is defined
@@ -76933,7 +76932,7 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-      delegateePubKeys:
+      delegatee_gateway_pub_keys:
         type: array
         items:
           type: object
@@ -77096,9 +77095,9 @@ definitions:
                   "value": "1.212s"
                 }
         description: >-
-          The Gateway's corresponding cosmos.crypto.PubKey (interface) encoded
-          into an cosmos.codec.Any for use in the non nullable slice of
-          delegatees the application is delegated to.
+          The corresponding cosmos.crypto.PubKey (interface) encoded into an
+          cosmos.codec.Any for use in the non nullable slice of delegatee
+          Gateways the application is delegated to.
         title: >-
           TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto
           is defined
@@ -77150,7 +77149,7 @@ definitions:
                 method
 
                 signatures required by gogoproto.
-            delegateePubKeys:
+            delegatee_gateway_pub_keys:
               type: array
               items:
                 type: object
@@ -77322,9 +77321,9 @@ definitions:
                         "value": "1.212s"
                       }
               description: >-
-                The Gateway's corresponding cosmos.crypto.PubKey (interface)
-                encoded into an cosmos.codec.Any for use in the non nullable
-                slice of delegatees the application is delegated to.
+                The corresponding cosmos.crypto.PubKey (interface) encoded into
+                an cosmos.codec.Any for use in the non nullable slice of
+                delegatee Gateways the application is delegated to.
               title: >-
                 TODO(@Olshansk): Uncomment the line below once the `ServiceId`
                 proto is defined
@@ -77389,7 +77388,7 @@ definitions:
               method
 
               signatures required by gogoproto.
-          delegateePubKeys:
+          delegatee_gateway_pub_keys:
             type: array
             items:
               type: object
@@ -77559,9 +77558,9 @@ definitions:
                       "value": "1.212s"
                     }
             description: >-
-              The Gateway's corresponding cosmos.crypto.PubKey (interface)
-              encoded into an cosmos.codec.Any for use in the non nullable slice
-              of delegatees the application is delegated to.
+              The corresponding cosmos.crypto.PubKey (interface) encoded into an
+              cosmos.codec.Any for use in the non nullable slice of delegatee
+              Gateways the application is delegated to.
             title: >-
               TODO(@Olshansk): Uncomment the line below once the `ServiceId`
               proto is defined
