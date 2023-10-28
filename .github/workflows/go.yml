@@ -44,7 +44,7 @@ jobs:
       - name: Copy binary to inside of the Docker context
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
-          $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
+          cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
