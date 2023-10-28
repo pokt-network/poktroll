@@ -17,6 +17,11 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	logger := k.Logger(ctx).With("method", "DelegateToGateway")
 	logger.Info("About to delegate application to gateway with msg: %v", msg)
 
+	if err := msg.ValidateBasic(); err != nil {
+		logger.Error("Delegation Message failed basic validation: %v", err)
+		return nil, err
+	}
+
 	// Retrieve the application from the store
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
@@ -32,16 +37,16 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	}
 
 	// Check if the application is already delegated to the gateway
-	for _, delegateePubKey := range app.DelegateeGatewayPubKeys {
+	for _, gatewayPubKey := range app.DelegateeGatewayPubKeys {
 		// Convert the any type to a public key
-		delegateePubKey, err := types.AnyToPubKey(delegateePubKey)
+		gatewayPubKey, err := types.AnyToPubKey(gatewayPubKey)
 		if err != nil {
 			logger.Error("unable to convert any type to public key: %v", err)
 			return nil, sdkerrors.Wrapf(types.ErrAppAnyConversion, "unable to convert any type to public key: %v", err)
 		}
 		// Convert the public key to an address
-		delegateeAddress := types.PublicKeyToAddress(delegateePubKey)
-		if delegateeAddress == msg.GatewayAddress {
+		gatewayAddress := types.PublicKeyToAddress(gatewayPubKey)
+		if gatewayAddress == msg.GatewayAddress {
 			logger.Info("Application already delegated to gateway with address: %s", msg.GatewayAddress)
 			return nil, sdkerrors.Wrapf(types.ErrAppAlreadyDelegated, "application already delegated to gateway with address: %s", msg.GatewayAddress)
 		}

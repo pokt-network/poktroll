@@ -30,6 +30,7 @@ $ pocketd --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_AD
 			if err != nil {
 				return err
 			}
+
 			msg := types.NewMsgDelegateToGateway(
 				clientCtx.GetFromAddress().String(),
 				gatewayAddress,
@@ -37,6 +38,7 @@ $ pocketd --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_AD
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

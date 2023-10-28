@@ -50,9 +50,9 @@ func (gs GenesisState) Validate() error {
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
 		}
-		for _, delegatee := range app.DelegateeGatewayPubKeys {
-			if _, err := AnyToPubKey(delegatee); err != nil {
-				return sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "invalid delegatee pubkey for application %v", delegatee)
+		for _, gatewayPubKey := range app.DelegateeGatewayPubKeys {
+			if _, err := AnyToPubKey(gatewayPubKey); err != nil {
+				return sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "invalid delegatee pubkey for application %v", gatewayPubKey)
 			}
 		}
 	}

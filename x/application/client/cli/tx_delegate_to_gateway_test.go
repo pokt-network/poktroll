@@ -95,7 +95,7 @@ func TestCLI_DelegateToGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outDel, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdDelegateToGateway(), args)
+			delegateOutput, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdDelegateToGateway(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {
@@ -108,7 +108,7 @@ func TestCLI_DelegateToGateway(t *testing.T) {
 
 			// Check the response
 			var resp sdk.TxResponse
-			require.NoError(t, net.Config.Codec.UnmarshalJSON(outDel.Bytes(), &resp))
+			require.NoError(t, net.Config.Codec.UnmarshalJSON(delegateOutput.Bytes(), &resp))
 			require.NotNil(t, resp)
 			require.NotNil(t, resp.TxHash)
 			require.Equal(t, uint32(0), resp.Code)

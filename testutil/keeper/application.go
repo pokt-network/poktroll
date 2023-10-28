@@ -51,23 +51,27 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 	// because the gateways are not staked this is needed to mock the GetPubKey method which
 	// returns nil if the actor cannot be found on chain (ie. not staked)
-	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).DoAndReturn(func(_ sdk.Context, address sdk.AccAddress) (cryptotypes.PubKey, error) {
-		addr := address.String()
-		found, ok := AddrToPubKeyMap[addr]
-		if !ok {
-			return nil, fmt.Errorf("public key not found for address: %s", addr)
-		}
-		return found, nil
-	}).AnyTimes()
+	mockAccountKeeper.EXPECT().GetPubKey(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ sdk.Context, address sdk.AccAddress) (cryptotypes.PubKey, error) {
+			addr := address.String()
+			found, ok := AddrToPubKeyMap[addr]
+			if !ok {
+				return nil, fmt.Errorf("public key not found for address: %s", addr)
+			}
+			return found, nil
+		},
+	).AnyTimes()
 
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
-	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
-		stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
-		return gatewaytypes.Gateway{
-			Address: addr,
-			Stake:   &stake,
-		}, true
-	}).AnyTimes()
+	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
+			stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
+			return gatewaytypes.Gateway{
+				Address: addr,
+				Stake:   &stake,
+			}, true
+		},
+	).AnyTimes()
 
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
