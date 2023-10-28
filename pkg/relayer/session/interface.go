@@ -7,11 +7,11 @@ import (
 	sessiontypes "pocket/x/session/types"
 )
 
-// RelayerSessions is an interface for managing the relayer's sessions and Sparse Merkle Sum Trees (SMSTs).
+// RelayerSessionsManager is an interface for managing the relayer's sessions and Sparse Merkle Sum Trees (SMSTs).
 // It provides notifications about closing sessions that are ready to be claimed, and handles the creation
 // and retrieval of SMSTs for a given session. It can also be thought of as a SessionManager but dedicated
 // to the Relayer behavior.
-type RelayerSessions interface {
+type RelayerSessionsManager interface {
 	// ClosingSessions returns an observable that notifies of sessions ready to be claimed.
 	ClosingSessions() observable.Observable[SessionTree]
 

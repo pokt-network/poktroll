@@ -14,6 +14,9 @@ var _ SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
 type sessionTree struct {
+	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
+	sessionMu *sync.Mutex
+
 	// session is the Session corresponding to the SMST (Sparse Merkle State Tree).
 	session *sessiontypes.Session
 
@@ -41,18 +44,15 @@ type sessionTree struct {
 	// to delete the KVStore when it is no longer needed.
 	storePath string
 
-	// removeFromRelayerSessions is a function that removes the sessionTree from the sessionManager.
-	// Since the sessionTree has no knowledge of the sessionManager, we pass this function
-	// from the session manager to the sessionTree so it can remove itself from the sessionManager
+	// removeFromRelayerSessions is a function that removes the sessionTree from the RelayerSessionsManager.
+	// Since the sessionTree has no knowledge of the RelayerSessionsManager, we pass this callback
+	// from the session manager to the sessionTree so it can remove itself from the RelayerSessionsManager
 	// when it is no longer needed.
 	removeFromRelayerSessions func(session *sessiontypes.Session)
-
-	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
-	sessionMu *sync.Mutex
 }
 
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
-// removeFromRelayerSessions that removes the sessionTree from the sessionManager.
+// removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
 	session *sessiontypes.Session,
@@ -103,7 +103,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 }
 
 // ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.
-// This function should be called when a session has been claimed and needs to be proven.
+// This function is intended to be called after a session has been claimed and needs to be proven.
 // If the proof has already been generated, it returns the cached proof.
 // It returns an error if the SMST has not been flushed yet (the claim has not been generated)
 func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error) {
@@ -137,7 +137,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 
 // Flush gets the root hash of the SMST needed for submitting the claim; then commits the entire tree to disk
 // and stops the KVStore.
-// It should be called before submitting the claim on-chain. This function frees up the in-memory resources.
+// It should be called before submitting the claim on-chain. This function frees up the KVStore resources.
 // If the SMST has already been flushed to disk, it returns the cached root hash.
 func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	st.sessionMu.Lock()
@@ -166,7 +166,9 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	return st.claimedRoot, nil
 }
 
-// Delete deletes the SMST from the KVStore and removes the sessionTree from the sessionManager.
+// Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
+// WARNING: This function deletes the KVStore associated to the session and should be called only after
+// the proof has been successfully submitted on-chain and the servicer has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()

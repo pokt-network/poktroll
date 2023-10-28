@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"log"
 	blockclient "pocket/pkg/client"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
@@ -9,7 +10,7 @@ import (
 	"sync"
 )
 
-var _ RelayerSessions = (*relayerSessions)(nil)
+var _ RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
 type (
 	sessionId        = string
@@ -17,22 +18,22 @@ type (
 	sessionsTreesMap = map[blockHeight]map[sessionId]SessionTree
 )
 
-// relayerSessions is an implementation of the RelayerSessions interface.
-type relayerSessions struct {
+// relayerSessionsManager is an implementation of the RelayerSessions interface.
+type relayerSessionsManager struct {
 	// closingSessions notifies about sessions that are ready to be claimed.
 	closingSessions observable.Observable[SessionTree]
 
 	// closingSessionsPublisher is the channel used to publish closing sessions.
 	closingSessionsPublisher chan<- SessionTree
 
-	// sessionTrees is a map of block heights containing an other map of SessionTrees indexed by their sessionId.
+	// sessionTrees is a map of block heights containing another map of SessionTrees indexed by their sessionId.
 	sessionsTrees   sessionsTreesMap
 	sessionsTreesMu *sync.Mutex
 
-	// blockClient is the block client used to get the committed blocks notifications.
+	// blockClient is used to get the notifications of committed blocks.
 	blockClient blockclient.BlockClient
 
-	// storesDirectory is the directory where the KVStore data files are created.
+	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
 }
 
@@ -41,8 +42,8 @@ func NewRelayerSessions(
 	ctx context.Context,
 	storesDirectory string,
 	blockClient blockclient.BlockClient,
-) RelayerSessions {
-	rs := &relayerSessions{
+) RelayerSessionsManager {
+	rs := &relayerSessionsManager{
 		sessionsTrees:   make(sessionsTreesMap),
 		storesDirectory: storesDirectory,
 		blockClient:     blockClient,
@@ -55,32 +56,32 @@ func NewRelayerSessions(
 }
 
 // ClosingSessions returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessions) ClosingSessions() observable.Observable[SessionTree] {
+func (rs *relayerSessionsManager) ClosingSessions() observable.Observable[SessionTree] {
 	return rs.closingSessions
 }
 
 // EnsureSessionTree returns the SessionTree for a given session.
-// If the session is encountered for the first time, a SessionTree is created for it before returning.
-func (rs *relayerSessions) EnsureSessionTree(session *sessiontypes.Session) (SessionTree, error) {
+// If no tree for the session exists, a new SessionTree is created before returning.
+func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Session) (SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
 	// Calculate the session end height based on the session start block height
 	// and the number of blocks per session.
 	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees := rs.sessionsTrees[sessionEndHeight]
+	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
-	if sessionsTrees == nil {
+	if !ok {
 		sessionsTrees = make(map[sessionId]SessionTree)
 		rs.sessionsTrees[sessionEndHeight] = sessionsTrees
 	}
 
 	// Get the sessionTree for the given session.
-	sessionTree := sessionsTrees[session.SessionId]
+	sessionTree, ok := sessionsTrees[session.SessionId]
 
 	// If the sessionTree does not exist, create it.
-	if sessionTree == nil {
+	if !ok {
 		sessionTree, err := NewSessionTree(session, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
@@ -93,8 +94,9 @@ func (rs *relayerSessions) EnsureSessionTree(session *sessiontypes.Session) (Ses
 }
 
 // goListenToCommittedBlocks listens to committed blocks so that rs.closingSessionsPublisher can notify
-// when sessions are ready to be claimed. It is a background goroutine.
-func (rs *relayerSessions) goListenToCommittedBlocks(ctx context.Context) {
+// when sessions are ready to be claimed.
+// It is a background goroutine.
+func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context) {
 	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	for block := range committedBlocks {
@@ -109,13 +111,14 @@ func (rs *relayerSessions) goListenToCommittedBlocks(ctx context.Context) {
 }
 
 // removeFromRelayerSessions removes the session from the relayerSessions.
-func (rs *relayerSessions) removeFromRelayerSessions(session *sessiontypes.Session) {
+func (rs *relayerSessionsManager) removeFromRelayerSessions(session *sessiontypes.Session) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
 	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees := rs.sessionsTrees[sessionEndHeight]
-	if sessionsTrees == nil {
+	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
+	if !ok {
+		log.Print("session not found in relayerSessionsManager")
 		return
 	}
 
