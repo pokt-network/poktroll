@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"pocket/cmd/pocketd/cmd"
 	"pocket/testutil/network"
 	"pocket/x/application/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 // Dummy variable to avoid unused import error.

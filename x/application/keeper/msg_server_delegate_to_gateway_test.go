@@ -10,6 +10,7 @@ import (
 	"pocket/testutil/sample"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
@@ -30,6 +31,11 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
 	}
 
 	// Stake the application & verify that the application exists
@@ -95,6 +101,11 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
 	}
 
 	// Stake the application & verify that the application exists
@@ -154,6 +165,11 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
 	}
 
 	// Stake the application & verify that the application exists

@@ -18,6 +18,10 @@ func (k msgServer) StakeGateway(
 	logger := k.Logger(ctx).With("method", "StakeGateway")
 	logger.Info("About to stake gateway with msg: %v", msg)
 
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	// Check if the gateway already exists or not
 	var err error
 	var coinsToDelegate sdk.Coin

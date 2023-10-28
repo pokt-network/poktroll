@@ -114,13 +114,29 @@ test_e2e: ## Run all E2E tests
 
 .PHONY: go_test
 go_test: go_version_check ## Run all go tests
-	go test -v ./...
+	go test -v -race -tags test ./...
+
+.PHONY: go_test_integration
+go_test_integration: go_version_check ## Run all go tests, including integration
+	go test -v -race -tags test,integration ./...
+
+.PHONY: itest
+itest: go_version_check ## Run tests iteratively (see usage for more)
+	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
+# catch-all target for itest
+%:
+	# no-op
+	@:
+
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
+	find . -name "*_mock.go" | xargs --no-run-if-empty rm
 	go generate ./x/application/types/
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
+	go generate ./x/session/types/
+	go generate ./pkg/...
 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen ## Generate protos and mocks
@@ -147,6 +163,7 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 # TODO                        - General Purpose catch-all.
 # TODO_DECIDE                 - A TODO indicating we need to make a decision and document it using an ADR in the future; https://github.com/pokt-network/pocket-network-protocol/tree/main/ADRs
 # TODO_TECHDEBT               - Not a great implementation, but we need to fix it later.
+# TODO_BLOCKER                - Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
 # TODO_IMPROVE                - A nice to have, but not a priority. It's okay if we never get to this.
 # TODO_OPTIMIZE               - An opportunity for performance improvement if/when it's necessary
 # TODO_DISCUSS                - Probably requires a lengthy offline discussion to understand next steps.
@@ -234,20 +251,20 @@ app_list: ## List all the staked applications
 	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
 
 .PHONY: app_stake
-app_stake: ## Stake tokens for the application specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1
-	APP=app1 make app_stake
+	SERVICES=svc1,svc2 APP=app1 make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	APP=app2 make app_stake
+	SERVICES=svc2,svc3 APP=app2 make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	APP=app3 make app_stake
+	SERVICES=svc3,svc4 APP=app3 make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
