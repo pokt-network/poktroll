@@ -12,11 +12,7 @@ import (
 
 var _ RelayerSessionsManager = (*relayerSessionsManager)(nil)
 
-type (
-	sessionId        = string
-	blockHeight      = int64
-	sessionsTreesMap = map[blockHeight]map[sessionId]SessionTree
-)
+type sessionsTreesMap = map[int64]map[string]SessionTree
 
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 type relayerSessionsManager struct {
@@ -73,7 +69,7 @@ func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Sessio
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
-		sessionsTrees = make(map[sessionId]SessionTree)
+		sessionsTrees = make(map[string]SessionTree)
 		rs.sessionsTrees[sessionEndHeight] = sessionsTrees
 	}
 
