@@ -36,6 +36,13 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 		return nil, sdkerrors.Wrapf(types.ErrAppGatewayNotFound, "gateway not found with address: %s", msg.GatewayAddress)
 	}
 
+	// Ensure the application is not already delegated to the maximum number of gateways
+	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
+	if int64(len(app.DelegateeGatewayPubKeys)) >= maxDelegatedParam {
+		logger.Info("Application already delegated to maximum number of gateways: %d", maxDelegatedParam)
+		return nil, sdkerrors.Wrapf(types.ErrAppMaxDelegatedGateways, "application already delegated to maximum number of gateways: %d", maxDelegatedParam)
+	}
+
 	// Check if the application is already delegated to the gateway
 	for _, gatewayPubKey := range app.DelegateeGatewayPubKeys {
 		// Convert the any type to a public key

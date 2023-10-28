@@ -191,3 +191,61 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayPubKeys))
 }
+
+func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(*k)
+	wctx := sdk.WrapSDKContext(ctx)
+
+	// Generate an address for the application and gateway
+	appAddr := sample.AccAddress()
+	gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
+	keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
+	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr)
+
+	// Prepare the application
+	stakeMsg := &types.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
+	}
+
+	// Stake the application & verify that the application exists
+	_, err := srv.StakeApplication(wctx, stakeMsg)
+	require.NoError(t, err)
+	_, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+
+	// Prepare the delegation message
+	delegateMsg := &types.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: gatewayAddr,
+	}
+
+	// Delegate the application to the max number of gateways
+	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
+	for i := int64(0); i < k.GetParams(ctx).MaxDelegatedGateways; i++ {
+		// Prepare the delegation message
+		gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
+		keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
+		defer delete(keepertest.AddrToPubKeyMap, gatewayAddr)
+		delegateMsg := &types.MsgDelegateToGateway{
+			AppAddress:     appAddr,
+			GatewayAddress: gatewayAddr,
+		}
+		// Delegate the application to the gateway
+		_, err = srv.DelegateToGateway(wctx, delegateMsg)
+		require.NoError(t, err)
+	}
+
+	// Attempt to delegate the application when the max is already reached
+	_, err = srv.DelegateToGateway(wctx, delegateMsg)
+	require.Error(t, err)
+	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+	require.True(t, isAppFound)
+	require.Equal(t, maxDelegatedParam, int64(len(foundApp.DelegateeGatewayPubKeys)))
+}

@@ -7,6 +7,10 @@ import (
 
 var _ paramtypes.ParamSet = (*Params)(nil)
 
+const (
+	DefaultMaxDelegatedGateways int64 = 7
+)
+
 // ParamKeyTable the param key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
 	return paramtypes.NewKeyTable().RegisterParamSet(&Params{})
@@ -14,7 +18,9 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams() Params {
-	return Params{}
+	return Params{
+		MaxDelegatedGateways: DefaultMaxDelegatedGateways,
+	}
 }
 
 // DefaultParams returns a default set of parameters

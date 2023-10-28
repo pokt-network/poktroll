@@ -18,4 +18,5 @@ var (
 	ErrAppAnyIsNotPubKey        = sdkerrors.Register(ModuleName, 9, "any type is not cryptotypes.PubKey")
 	ErrAppAnyConversion         = sdkerrors.Register(ModuleName, 10, "unable to convert to any type")
 	ErrAppAlreadyDelegated      = sdkerrors.Register(ModuleName, 11, "application already delegated to gateway")
+	ErrAppMaxDelegatedGateways  = sdkerrors.Register(ModuleName, 12, "maximum number of delegated gateways reached")
 )
