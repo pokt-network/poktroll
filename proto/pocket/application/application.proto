@@ -14,5 +14,5 @@ message Application {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   // TODO(@Olshansk): Uncomment the line below once the `ServiceId` proto is defined
   // repeated service.ServiceId service_ids = 3; // The ID of the service this session is servicing
-  repeated google.protobuf.Any delegateePubKeys = 4 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey", (gogoproto.nullable) = false]; // The Gateway's corresponding cosmos.crypto.PubKey (interface) encoded into an cosmos.codec.Any for use in the non nullable slice of delegatees the application is delegated to.
+  repeated google.protobuf.Any delegatee_gateway_pub_keys = 4 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey", (gogoproto.nullable) = false]; // The corresponding cosmos.crypto.PubKey (interface) encoded into an cosmos.codec.Any for use in the non nullable slice of delegatee Gateways the application is delegated to.
 }

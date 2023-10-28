@@ -43,14 +43,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: []codectypes.Any{*anyPubKey1, *anyPubKey2},
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey1, *anyPubKey2},
 					},
 					{
-						Address:          addr2,
-						Stake:            &stake2,
-						DelegateePubKeys: []codectypes.Any{*anyPubKey2, *anyPubKey1},
+						Address:                 addr2,
+						Stake:                   &stake2,
+						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey2, *anyPubKey1},
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -62,14 +62,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr2,
+						Stake:                   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -80,14 +80,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr2,
+						Stake:                   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -98,14 +98,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr2,
+						Stake:                   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -116,14 +116,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr2,
+						Stake:                   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -134,14 +134,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr1,
-						Stake:            &stake2,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake2,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -152,14 +152,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            nil,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr2,
+						Stake:                   nil,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -170,14 +170,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
 						Address: addr2,
 						// Explicitly missing stake
-						DelegateePubKeys: emptyDelegatees,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 				},
 			},
@@ -188,14 +188,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: emptyDelegatees,
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: emptyDelegatees,
 					},
 					{
-						Address:          addr2,
-						Stake:            &stake2,
-						DelegateePubKeys: []codectypes.Any{*invalidPubKey},
+						Address:                 addr2,
+						Stake:                   &stake2,
+						DelegateeGatewayPubKeys: []codectypes.Any{*invalidPubKey},
 					},
 				},
 			},
@@ -206,14 +206,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:          addr1,
-						Stake:            &stake1,
-						DelegateePubKeys: []codectypes.Any{*anyPubKey1},
+						Address:                 addr1,
+						Stake:                   &stake1,
+						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey1},
 					},
 					{
-						Address:          addr2,
-						Stake:            &stake2,
-						DelegateePubKeys: []codectypes.Any{*invalidPubKey, *anyPubKey2},
+						Address:                 addr2,
+						Stake:                   &stake2,
+						DelegateeGatewayPubKeys: []codectypes.Any{*invalidPubKey, *anyPubKey2},
 					},
 				},
 			},

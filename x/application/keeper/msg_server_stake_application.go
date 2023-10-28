@@ -62,9 +62,9 @@ func (k msgServer) createApplication(
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
-		Address:          msg.Address,
-		Stake:            msg.Stake,
-		DelegateePubKeys: make([]codectypes.Any, 0),
+		Address:                 msg.Address,
+		Stake:                   msg.Stake,
+		DelegateeGatewayPubKeys: make([]codectypes.Any, 0),
 	}
 }
 

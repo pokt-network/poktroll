@@ -32,7 +32,7 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	}
 
 	// Check if the application is already delegated to the gateway
-	for _, delegateePubKey := range app.DelegateePubKeys {
+	for _, delegateePubKey := range app.DelegateeGatewayPubKeys {
 		// Convert the any type to a public key
 		delegateePubKey, err := types.AnyToPubKey(delegateePubKey)
 		if err != nil {
@@ -60,7 +60,7 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	}
 
 	// Update the application with the new delegatee public key
-	app.DelegateePubKeys = append(app.DelegateePubKeys, *anyPubKey)
+	app.DelegateeGatewayPubKeys = append(app.DelegateeGatewayPubKeys, *anyPubKey)
 	logger.Info("Successfully added delegatee public key to application")
 
 	// Update the application store with the new delegation
