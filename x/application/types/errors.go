@@ -19,4 +19,5 @@ var (
 	ErrAppAnyConversion         = sdkerrors.Register(ModuleName, 10, "unable to convert to any type")
 	ErrAppAlreadyDelegated      = sdkerrors.Register(ModuleName, 11, "application already delegated to gateway")
 	ErrAppMaxDelegatedGateways  = sdkerrors.Register(ModuleName, 12, "maximum number of delegated gateways reached")
+	ErrAppNotDelegated          = sdkerrors.Register(ModuleName, 13, "application not delegated to gateway")
 )
