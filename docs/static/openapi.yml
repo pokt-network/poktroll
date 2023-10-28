@@ -47420,7 +47420,7 @@ paths:
                 type: object
                 properties:
                   max_delegated_gateways:
-                    type: integer
+                    type: string
                     format: int64
                     title: >-
                       The maximum number of gateways an application can delegate
@@ -78683,7 +78683,7 @@ definitions:
     type: object
     properties:
       max_delegated_gateways:
-        type: integer
+        type: string
         format: int64
         title: The maximum number of gateways an application can delegate trust to
     description: Params defines the parameters for the module.
@@ -79195,7 +79195,7 @@ definitions:
         type: object
         properties:
           max_delegated_gateways:
-            type: integer
+            type: string
             format: int64
             title: >-
               The maximum number of gateways an application can delegate trust
