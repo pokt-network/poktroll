@@ -46472,26 +46472,37 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
-                    service_ids:
+                    service_configs:
                       type: array
                       items:
                         type: object
                         properties:
-                          id:
-                            type: string
-                            title: Unique identifier for the service
-                          name:
-                            type: string
-                            title: >-
-                              (Optional) Semantic human readable name for the
-                              service
+                          service_id:
+                            title: Unique and semantic identifier for the service
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: Unique identifier for the service
+                                title: >-
+                                  NOTE: `ServiceId.Id` may seem redundant but
+                                  was desigtned created to enable more complex
+                                  service identification
+
+                                  gener
+                              name:
+                                type: string
+                                description: >-
+                                  (Optional) Semantic human readable name for
+                                  the service
+                                title: >-
+                                  TODO_TECHDEBT: Name is currently unused but
+                                  acts as a reminder than an optional onchain
+                                  representation of the service is necessary
                         title: >-
-                          ServiceId message to encapsulate unique and semantic
-                          identifiers for a service on the network
-                      description: The ID of the service this session is servicing
-                      title: >-
-                        TODO(@olshansk): Change this to
-                        `shared.ApplicationServiceConfig` in #95
+                          ApplicationServiceConfig holds the service
+                          configuration the application stakes for
+                      title: The ID of the service this session is servicing
                   title: >-
                     Application defines the type used to store an on-chain
                     definition and state for an application
@@ -46634,26 +46645,37 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
-                  service_ids:
+                  service_configs:
                     type: array
                     items:
                       type: object
                       properties:
-                        id:
-                          type: string
-                          title: Unique identifier for the service
-                        name:
-                          type: string
-                          title: >-
-                            (Optional) Semantic human readable name for the
-                            service
+                        service_id:
+                          title: Unique and semantic identifier for the service
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                NOTE: `ServiceId.Id` may seem redundant but was
+                                desigtned created to enable more complex service
+                                identification
+
+                                gener
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
                       title: >-
-                        ServiceId message to encapsulate unique and semantic
-                        identifiers for a service on the network
-                    description: The ID of the service this session is servicing
-                    title: >-
-                      TODO(@olshansk): Change this to
-                      `shared.ApplicationServiceConfig` in #95
+                        ApplicationServiceConfig holds the service configuration
+                        the application stakes for
+                    title: The ID of the service this session is servicing
                 title: >-
                   Application defines the type used to store an on-chain
                   definition and state for an application
@@ -76529,24 +76551,6 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-      service_ids:
-        type: array
-        items:
-          type: object
-          properties:
-            id:
-              type: string
-              title: Unique identifier for the service
-            name:
-              type: string
-              title: (Optional) Semantic human readable name for the service
-          title: >-
-            ServiceId message to encapsulate unique and semantic identifiers for
-            a service on the network
-        description: The ID of the service this session is servicing
-        title: >-
-          TODO(@olshansk): Change this to `shared.ApplicationServiceConfig` in
-          #95
       service_configs:
         type: array
         items:
@@ -76563,9 +76567,7 @@ definitions:
                     NOTE: `ServiceId.Id` may seem redundant but was desigtned
                     created to enable more complex service identification
 
-                    For example, what if we want to request a session for a
-                    certain service but with some additional configs that
-                    identify it?
+                    gener
                 name:
                   type: string
                   description: (Optional) Semantic human readable name for the service
@@ -76620,24 +76622,37 @@ definitions:
                 method
 
                 signatures required by gogoproto.
-            service_ids:
+            service_configs:
               type: array
               items:
                 type: object
                 properties:
-                  id:
-                    type: string
-                    title: Unique identifier for the service
-                  name:
-                    type: string
-                    title: (Optional) Semantic human readable name for the service
+                  service_id:
+                    title: Unique and semantic identifier for the service
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Unique identifier for the service
+                        title: >-
+                          NOTE: `ServiceId.Id` may seem redundant but was
+                          desigtned created to enable more complex service
+                          identification
+
+                          gener
+                      name:
+                        type: string
+                        description: >-
+                          (Optional) Semantic human readable name for the
+                          service
+                        title: >-
+                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          reminder than an optional onchain representation of
+                          the service is necessary
                 title: >-
-                  ServiceId message to encapsulate unique and semantic
-                  identifiers for a service on the network
-              description: The ID of the service this session is servicing
-              title: >-
-                TODO(@olshansk): Change this to
-                `shared.ApplicationServiceConfig` in #95
+                  ApplicationServiceConfig holds the service configuration the
+                  application stakes for
+              title: The ID of the service this session is servicing
           title: >-
             Application defines the type used to store an on-chain definition
             and state for an application
@@ -76694,24 +76709,35 @@ definitions:
               method
 
               signatures required by gogoproto.
-          service_ids:
+          service_configs:
             type: array
             items:
               type: object
               properties:
-                id:
-                  type: string
-                  title: Unique identifier for the service
-                name:
-                  type: string
-                  title: (Optional) Semantic human readable name for the service
+                service_id:
+                  title: Unique and semantic identifier for the service
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        NOTE: `ServiceId.Id` may seem redundant but was
+                        desigtned created to enable more complex service
+                        identification
+
+                        gener
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
               title: >-
-                ServiceId message to encapsulate unique and semantic identifiers
-                for a service on the network
-            description: The ID of the service this session is servicing
-            title: >-
-              TODO(@olshansk): Change this to `shared.ApplicationServiceConfig`
-              in #95
+                ApplicationServiceConfig holds the service configuration the
+                application stakes for
+            title: The ID of the service this session is servicing
         title: >-
           Application defines the type used to store an on-chain definition and
           state for an application
@@ -76722,17 +76748,48 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.shared.ApplicationServiceConfig:
+    type: object
+    properties:
+      service_id:
+        title: Unique and semantic identifier for the service
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              gener
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
+    title: >-
+      ApplicationServiceConfig holds the service configuration the application
+      stakes for
   pocket.shared.ServiceId:
     type: object
     properties:
       id:
         type: string
-        title: Unique identifier for the service
         description: Unique identifier for the service
+        title: >-
+          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
+          enable more complex service identification
+
+          gener
       name:
         type: string
-        title: (Optional) Semantic human readable name for the service
         description: (Optional) Semantic human readable name for the service
+        title: >-
+          TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
+          optional onchain representation of the service is necessary
     title: >-
       ServiceId message to encapsulate unique and semantic identifiers for a
       service on the network
@@ -77406,32 +77463,6 @@ definitions:
 
       It is the minimal amount of data required to hydrate & retrieve all data
       relevant to the session.
-  pocket.shared.ApplicationServiceConfig:
-    type: object
-    properties:
-      service_id:
-        title: Unique and semantic identifier for the service
-        type: object
-        properties:
-          id:
-            type: string
-            description: Unique identifier for the service
-            title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
-              For example, what if we want to request a session for a certain
-              service but with some additional configs that identify it?
-          name:
-            type: string
-            description: (Optional) Semantic human readable name for the service
-            title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              than an optional onchain representation of the service is
-              necessary
-    title: >-
-      ApplicationServiceConfig holds the service configuration the application
-      stakes for
   pocket.shared.ConfigOption:
     type: object
     properties:

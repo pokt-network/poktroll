@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -11,8 +12,10 @@ import (
 	"pocket/cmd/pocketd/cmd"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 // Prevent strconv unused error
@@ -23,38 +26,44 @@ func init() {
 }
 
 func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
-	items := make([]types.Application, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
-
-		keeper.SetApplication(ctx, items[i])
+	apps := make([]types.Application, n)
+	for i := range apps {
+		app := &apps[i]
+		app.Address = sample.AccAddress()
+		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
+		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+			},
+		}
+		keeper.SetApplication(ctx, *app)
 	}
-	return items
+	return apps
 }
 
 func TestApplicationGet(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetApplication(ctx,
-			item.Address,
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
+		appFound, isAppFound := keeper.GetApplication(ctx,
+			app.Address,
 		)
-		require.True(t, found)
+		require.True(t, isAppFound)
 		require.Equal(t,
-			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&app),
+			nullify.Fill(&appFound),
 		)
 	}
 }
 func TestApplicationRemove(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
 		keeper.RemoveApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		_, found := keeper.GetApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		require.False(t, found)
 	}
@@ -62,9 +71,9 @@ func TestApplicationRemove(t *testing.T) {
 
 func TestApplicationGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
+	apps := createNApplication(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(apps),
 		nullify.Fill(keeper.GetAllApplication(ctx)),
 	)
 }
