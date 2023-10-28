@@ -4,11 +4,16 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"pocket/x/supplier/types"
 )
 
 func (k msgServer) SubmitProof(goCtx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
 
 	/*
 		INCOMPLETE: Handling the message
