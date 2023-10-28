@@ -46,6 +46,9 @@ jobs:
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
 
+      - name: Make sure the pocketd binary is present
+        run: ls -la ./bin
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
