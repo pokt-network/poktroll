@@ -9,18 +9,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var CryptoCodec *codec.ProtoCodec
+var cryptoCodec *codec.ProtoCodec
 
 func init() {
 	reg := codectypes.NewInterfaceRegistry()
 	cryptocdc.RegisterInterfaces(reg)
-	CryptoCodec = codec.NewProtoCodec(reg)
+	cryptoCodec = codec.NewProtoCodec(reg)
 }
 
 // AnyToPubKey converts an Any type to a cryptotypes.PubKey
 func AnyToPubKey(anyPk codectypes.Any) (cryptotypes.PubKey, error) {
 	var pub cryptotypes.PubKey
-	if err := CryptoCodec.UnpackAny(&anyPk, &pub); err != nil {
+	if err := cryptoCodec.UnpackAny(&anyPk, &pub); err != nil {
 		return nil, sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "any is not cosmos.crypto.PubKey: got %s", anyPk.TypeUrl)
 	}
 	return pub, nil
