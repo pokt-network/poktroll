@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/depinject"
 	tmdb "github.com/cometbft/cometbft-db"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -73,6 +74,8 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		},
 	).AnyTimes()
 
+	applicationDeps := depinject.Supply(mockGatewayKeeper)
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -86,7 +89,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		paramsSubspace,
 		mockBankKeeper,
 		mockAccountKeeper,
-		mockGatewayKeeper,
+		applicationDeps,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

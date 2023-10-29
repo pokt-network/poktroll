@@ -8,6 +8,7 @@ import (
 
 	mocks "pocket/testutil/gateway/mocks"
 
+	"cosmossdk.io/depinject"
 	tmdb "github.com/cometbft/cometbft-db"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -39,6 +40,11 @@ func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockApplicationKeeper := mocks.NewMockApplicationKeeper(ctrl)
+	mockApplicationKeeper.EXPECT().UndelegateGateway(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	gatewayDeps := depinject.Supply(mockApplicationKeeper)
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -51,6 +57,7 @@ func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		memStoreKey,
 		paramsSubspace,
 		mockBankKeeper,
+		gatewayDeps,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

@@ -11,6 +11,7 @@ import (
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
+	"cosmossdk.io/depinject"
 	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/log"
@@ -596,17 +597,24 @@ func New(
 	)
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.GatewayKeeper = *gatewaymodulekeeper.NewKeeper(
+	var appKeeper applicationmodulekeeper.Keeper
+	var gatewayKeeper gatewaymodulekeeper.Keeper
+	gatewayDeps := depinject.Supply(&appKeeper)
+	applicationDeps := depinject.Supply(&gatewayKeeper)
+
+	gatewayKeeper = *gatewaymodulekeeper.NewKeeper(
 		appCodec,
 		keys[gatewaymoduletypes.StoreKey],
 		keys[gatewaymoduletypes.MemStoreKey],
 		app.GetSubspace(gatewaymoduletypes.ModuleName),
 
 		app.BankKeeper,
+		gatewayDeps,
 	)
+	app.GatewayKeeper = gatewayKeeper
 	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
+	appKeeper = *applicationmodulekeeper.NewKeeper(
 		appCodec,
 		keys[applicationmoduletypes.StoreKey],
 		keys[applicationmoduletypes.MemStoreKey],
@@ -614,8 +622,9 @@ func New(
 
 		app.BankKeeper,
 		app.AccountKeeper,
-		app.GatewayKeeper,
+		applicationDeps,
 	)
+	app.ApplicationKeeper = appKeeper
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition

@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/depinject"
 	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -19,7 +20,8 @@ type (
 		memKey     storetypes.StoreKey
 		paramstore paramtypes.Subspace
 
-		bankKeeper types.BankKeeper
+		bankKeeper        types.BankKeeper
+		applicationKeeper types.ApplicationKeeper
 	}
 )
 
@@ -30,13 +32,14 @@ func NewKeeper(
 	ps paramtypes.Subspace,
 
 	bankKeeper types.BankKeeper,
+	gatewayDeps depinject.Config,
 ) *Keeper {
 	// set KeyTable if it has not already been set
 	if !ps.HasKeyTable() {
 		ps = ps.WithKeyTable(types.ParamKeyTable())
 	}
 
-	return &Keeper{
+	gatewayKeeper := &Keeper{
 		cdc:        cdc,
 		storeKey:   storeKey,
 		memKey:     memKey,
@@ -44,6 +47,13 @@ func NewKeeper(
 
 		bankKeeper: bankKeeper,
 	}
+
+	// Inject the dependencies into the gatewayKeeper struct
+	if err := depinject.Inject(gatewayDeps, &gatewayKeeper.applicationKeeper); err != nil {
+		panic(err)
+	}
+
+	return gatewayKeeper
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {

@@ -20,7 +20,8 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
-	gatewayAddresses := make([]string, int(k.GetParams(ctx).MaxDelegatedGateways))
+	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
+	gatewayAddresses := make([]string, int(maxDelegatedGateways))
 	for i := 0; i < len(gatewayAddresses); i++ {
 		gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
 		keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
@@ -57,7 +58,6 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	}
 
 	// Verify that the application exists
-	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
