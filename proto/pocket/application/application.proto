@@ -6,7 +6,6 @@ option go_package = "pocket/x/application/types";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "gogoproto/gogo.proto";
-import "google/protobuf/any.proto";
 import "pocket/shared/service.proto";
 
 // Application defines the type used to store an on-chain definition and state for an application
@@ -14,5 +13,5 @@ message Application {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   repeated shared.ApplicationServiceConfig service_configs = 3; // The ID of the service this session is servicing
-  repeated google.protobuf.Any delegatee_gateway_pub_keys = 4 [(cosmos_proto.accepts_interface) = "cosmos.crypto.PubKey", (gogoproto.nullable) = false]; // The corresponding cosmos.crypto.PubKey (interface) encoded into an cosmos.codec.Any for use in the non nullable slice of delegatee Gateways the application is delegated to.
+  repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The corresponding Bech32 addresses of the Gateways the application is delegated to in a non nullable slice
 }

@@ -34,7 +34,7 @@ func (gs GenesisState) Validate() error {
 		applicationIndexMap[index] = struct{}{}
 	}
 
-	// Check that the stake value for the apps is valid and that the delegatee pubkeys are valid
+	// Check that the stake value for the apps is valid and that the delegatee addresses are valid
 	for _, app := range gs.ApplicationList {
 		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
 		// similar to how we have `AreValidAppServiceConfigs` below
@@ -55,10 +55,10 @@ func (gs GenesisState) Validate() error {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
 		}
 
-		// Check that the application's delegated gateway pubkeys are valid
-		for _, gatewayPubKey := range app.DelegateeGatewayPubKeys {
-			if _, err := AnyToPubKey(gatewayPubKey); err != nil {
-				return sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "invalid delegatee pubkey for application %v", gatewayPubKey)
+		// Check that the application's delegated gateway addresses are valid
+		for _, gatewayAddr := range app.DelegateeGatewayAddresses {
+			if _, err := sdk.AccAddressFromBech32(gatewayAddr); err != nil {
+				return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", gatewayAddr, err)
 			}
 		}
 

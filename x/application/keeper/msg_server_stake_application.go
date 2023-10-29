@@ -4,7 +4,6 @@ import (
 	"context"
 
 	sdkerrors "cosmossdk.io/errors"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"pocket/x/application/types"
@@ -68,10 +67,10 @@ func (k msgServer) createApplication(
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
-		Address:                 msg.Address,
-		Stake:                   msg.Stake,
-		ServiceConfigs:          msg.Services,
-		DelegateeGatewayPubKeys: make([]codectypes.Any, 0),
+		Address:                   msg.Address,
+		Stake:                     msg.Stake,
+		ServiceConfigs:            msg.Services,
+		DelegateeGatewayAddresses: make([]string, 0),
 	}
 }
 
