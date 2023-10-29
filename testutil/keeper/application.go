@@ -62,6 +62,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 			}, true
 		},
 	).AnyTimes()
+	mockGatewayKeeper.EXPECT().SetGateway(gomock.Any(), gomock.Any()).AnyTimes()
 
 	applicationDeps := depinject.Supply(mockGatewayKeeper)
 
