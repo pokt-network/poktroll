@@ -46,6 +46,13 @@ func (gs GenesisState) Validate() error {
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", gateway.Stake)
 		}
+
+		// Check that the gateway's delegating application addresses are valid
+		for _, appAddr := range gateway.DelegatorApplicationAddresses {
+			if _, err := sdk.AccAddressFromBech32(appAddr); err != nil {
+				return sdkerrors.Wrapf(ErrGatewayInvalidAppAddress, "invalid application address %s; (%v)", appAddr, err)
+			}
+		}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

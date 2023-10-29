@@ -20,7 +20,8 @@ type BankKeeper interface {
 	UndelegateCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
 
-// GatewayKeeper defines the expected interface needed to retrieve gateway information.
+// GatewayKeeper defines the expected interface needed to update and retrieve gateway information.
 type GatewayKeeper interface {
 	GetGateway(ctx sdk.Context, addr string) (gatewaytypes.Gateway, bool)
+	SetGateway(ctx sdk.Context, gateway gatewaytypes.Gateway)
 }

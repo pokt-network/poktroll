@@ -29,7 +29,8 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	logger.Info("Application found with address [%s]", msg.AppAddress)
 
 	// Check if the gateway is staked
-	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress); !found {
+	gateway, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress)
+	if !found {
 		logger.Info("Gateway not found with address [%s]", msg.GatewayAddress)
 		return nil, sdkerrors.Wrapf(types.ErrAppGatewayNotFound, "gateway not found with address: %s", msg.GatewayAddress)
 	}
@@ -56,6 +57,14 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info("Successfully delegated application to gateway for app: %+v", app)
+
+	// Update the gateway with the new delegator address
+	gateway.DelegatorApplicationAddresses = append(gateway.DelegatorApplicationAddresses, msg.AppAddress)
+	logger.Info("Successfully added delegator address to gateway")
+
+	// Update the gateway store with the new delegator address
+	k.gatewayKeeper.SetGateway(ctx, gateway)
+	logger.Info("Successfully added delegator address to gateway for gateway: %+v", gateway)
 
 	return &types.MsgDelegateToGatewayResponse{}, nil
 }

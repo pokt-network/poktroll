@@ -23,8 +23,6 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	if err := k.UndelegateGateway(ctx, msg.AppAddress, msg.GatewayAddress); err != nil {
 		return nil, err
 	}
-	app, _ := k.GetApplication(ctx, msg.AppAddress) // this should never fail
-	logger.Info("Successfully undelegated application from gateway for app: %+v", app)
 
 	return &types.MsgUndelegateFromGatewayResponse{}, nil
 }

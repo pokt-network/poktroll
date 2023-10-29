@@ -92,5 +92,26 @@ func (k Keeper) UndelegateGateway(ctx sdk.Context, appAddress, gatewayAddress st
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 
+	// Attempt to remove the application from the gateway's delegator application addresses
+	// this only fails if the gateway is already unstaked, in which case we don't care
+	gateway, found := k.gatewayKeeper.GetGateway(ctx, gatewayAddress)
+	if !found {
+		logger.Info("Gateway not found with address [%s], cannot remove application from delegator addresses", gatewayAddress)
+		return nil
+	}
+	gatewayFoundIdx := -1
+	for i, appAddr := range gateway.DelegatorApplicationAddresses {
+		if appAddr == appAddress {
+			gatewayFoundIdx = i
+		}
+	}
+	if gatewayFoundIdx != -1 {
+		gateway.DelegatorApplicationAddresses = append(gateway.DelegatorApplicationAddresses[:gatewayFoundIdx], gateway.DelegatorApplicationAddresses[gatewayFoundIdx+1:]...)
+	}
+
+	// Update the gateway store with the updated delegator addresses
+	k.gatewayKeeper.SetGateway(ctx, gateway)
+	logger.Info("Successfully removed application from delegator addresses for gateway: %+v", gateway)
+
 	return nil
 }

@@ -17,6 +17,9 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
 
+	appAddr1 := sample.AccAddress()
+	appAddr2 := sample.AccAddress()
+
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
@@ -32,12 +35,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{appAddr1},
 					},
 					{
-						Address: addr2,
-						Stake:   &stake2,
+						Address:                       addr2,
+						Stake:                         &stake2,
+						DelegatorApplicationAddresses: []string{appAddr2},
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -49,12 +54,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr1,
-						Stake:   &stake2,
+						Address:                       addr1,
+						Stake:                         &stake2,
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -65,12 +72,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr2,
-						Stake:   nil,
+						Address:                       addr2,
+						Stake:                         nil,
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -81,12 +90,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
 						Address: addr2,
 						// Stake:   stake2,
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -97,12 +108,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						Address:                       addr2,
+						Stake:                         &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -113,12 +126,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						Address:                       addr2,
+						Stake:                         &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -129,12 +144,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						Address:                       addr2,
+						Stake:                         &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						DelegatorApplicationAddresses: []string{},
 					},
 				},
 			},
@@ -145,12 +162,32 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				GatewayList: []types.Gateway{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{},
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						Address:                       addr2,
+						Stake:                         &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						DelegatorApplicationAddresses: []string{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - invalid delegator application address",
+			genState: &types.GenesisState{
+				GatewayList: []types.Gateway{
+					{
+						Address:                       addr1,
+						Stake:                         &stake1,
+						DelegatorApplicationAddresses: []string{appAddr1},
+					},
+					{
+						Address:                       addr2,
+						Stake:                         &stake2,
+						DelegatorApplicationAddresses: []string{"invalid app address"},
 					},
 				},
 			},

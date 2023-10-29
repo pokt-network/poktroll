@@ -46,6 +46,13 @@ func (k msgServer) UnstakeGateway(
 		return nil, err
 	}
 
+	// Undelegate all delegator applications
+	logger.Info("Undelegating all delegator applications for gateway %s", msg.Address)
+	for _, appAddr := range gateway.DelegatorApplicationAddresses {
+		k.applicationKeeper.UndelegateGateway(ctx, appAddr, msg.Address)
+		logger.Info("Undelegated application %s from gateway %s", appAddr, msg.Address)
+	}
+
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info("Successfully removed the gateway: %+v", gateway)

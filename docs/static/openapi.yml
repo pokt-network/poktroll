@@ -46511,7 +46511,7 @@ paths:
                         type: string
                       title: >-
                         The corresponding Bech32 addresses of the Gateways the
-                        application is delegated to in a non nullable slice
+                        application is delegated to, in a non nullable slice
                   title: >-
                     Application defines the type used to store an on-chain
                     definition and state for an application
@@ -46693,7 +46693,7 @@ paths:
                       type: string
                     title: >-
                       The corresponding Bech32 addresses of the Gateways the
-                      application is delegated to in a non nullable slice
+                      application is delegated to, in a non nullable slice
                 title: >-
                   Application defines the type used to store an on-chain
                   definition and state for an application
@@ -46798,6 +46798,17 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
+                    delegator_application_addresses:
+                      type: array
+                      items:
+                        type: string
+                      description: >-
+                        The corresponding Bech32 addresses of the Applications
+                        the gateway has been delegated to, in a non nullable
+                        slice
+                      title: >-
+                        TODO_RESEARCH(@h5law): Look into a param that controls
+                        the max number of delegations a gateway can have
               pagination:
                 type: object
                 properties:
@@ -46935,6 +46946,16 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
+                  delegator_application_addresses:
+                    type: array
+                    items:
+                      type: string
+                    description: >-
+                      The corresponding Bech32 addresses of the Applications the
+                      gateway has been delegated to, in a non nullable slice
+                    title: >-
+                      TODO_RESEARCH(@h5law): Look into a param that controls the
+                      max number of delegations a gateway can have
         default:
           description: An unexpected error response.
           schema:
@@ -77658,7 +77679,7 @@ definitions:
           type: string
         title: >-
           The corresponding Bech32 addresses of the Gateways the application is
-          delegated to in a non nullable slice
+          delegated to, in a non nullable slice
       delegatee_gateway_pub_keys:
         type: array
         items:
@@ -77912,7 +77933,7 @@ definitions:
                 type: string
               title: >-
                 The corresponding Bech32 addresses of the Gateways the
-                application is delegated to in a non nullable slice
+                application is delegated to, in a non nullable slice
           title: >-
             Application defines the type used to store an on-chain definition
             and state for an application
@@ -78006,7 +78027,7 @@ definitions:
               type: string
             title: >-
               The corresponding Bech32 addresses of the Gateways the application
-              is delegated to in a non nullable slice
+              is delegated to, in a non nullable slice
         title: >-
           Application defines the type used to store an on-chain definition and
           state for an application
@@ -78090,6 +78111,16 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
+      delegator_application_addresses:
+        type: array
+        items:
+          type: string
+        description: >-
+          The corresponding Bech32 addresses of the Applications the gateway has
+          been delegated to, in a non nullable slice
+        title: >-
+          TODO_RESEARCH(@h5law): Look into a param that controls the max number
+          of delegations a gateway can have
   pocket.gateway.MsgStakeGatewayResponse:
     type: object
   pocket.gateway.MsgUnstakeGatewayResponse:
@@ -78124,6 +78155,16 @@ definitions:
                 method
 
                 signatures required by gogoproto.
+            delegator_application_addresses:
+              type: array
+              items:
+                type: string
+              description: >-
+                The corresponding Bech32 addresses of the Applications the
+                gateway has been delegated to, in a non nullable slice
+              title: >-
+                TODO_RESEARCH(@h5law): Look into a param that controls the max
+                number of delegations a gateway can have
       pagination:
         type: object
         properties:
@@ -78175,6 +78216,16 @@ definitions:
               method
 
               signatures required by gogoproto.
+          delegator_application_addresses:
+            type: array
+            items:
+              type: string
+            description: >-
+              The corresponding Bech32 addresses of the Applications the gateway
+              has been delegated to, in a non nullable slice
+            title: >-
+              TODO_RESEARCH(@h5law): Look into a param that controls the max
+              number of delegations a gateway can have
   pocket.gateway.QueryParamsResponse:
     type: object
     properties:

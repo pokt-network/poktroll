@@ -8,8 +8,9 @@ import (
 
 // x/gateway module sentinel errors
 var (
-	ErrGatewayInvalidAddress = sdkerrors.Register(ModuleName, 1, "invalid gateway address")
-	ErrGatewayInvalidStake   = sdkerrors.Register(ModuleName, 2, "invalid gateway stake")
-	ErrGatewayUnauthorized   = sdkerrors.Register(ModuleName, 3, "unauthorized signer")
-	ErrGatewayNotFound       = sdkerrors.Register(ModuleName, 4, "gateway not found")
+	ErrGatewayInvalidAddress    = sdkerrors.Register(ModuleName, 1, "invalid gateway address")
+	ErrGatewayInvalidStake      = sdkerrors.Register(ModuleName, 2, "invalid gateway stake")
+	ErrGatewayUnauthorized      = sdkerrors.Register(ModuleName, 3, "unauthorized signer")
+	ErrGatewayNotFound          = sdkerrors.Register(ModuleName, 4, "gateway not found")
+	ErrGatewayInvalidAppAddress = sdkerrors.Register(ModuleName, 5, "invalid application address")
 )
