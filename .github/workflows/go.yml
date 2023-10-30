@@ -14,7 +14,11 @@ jobs:
     steps:
       - name: install ignite
         run: |
-          curl https://get.ignite.com/cli! | bash
+          # curl https://get.ignite.com/cli! | bash
+
+          curl https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz -o ignite.tar.gz
+          tar -xzf ignite.tar.gz
+          sudo mv ignite /usr/local/bin/ignite
           ignite version
 
       - uses: actions/checkout@v3
