@@ -4,6 +4,18 @@
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 
+// Package client defines interfaces and types that facilitate interactions
+// with blockchain functionalities, both transactional and observational. It is
+// built to provide an abstraction layer for sending, receiving, and querying
+// blockchain data, thereby offering a standardized way of integrating with
+// various blockchain platforms.
+//
+// The client package leverages external libraries like cosmos-sdk and cometbft,
+// but there is a preference to minimize direct dependencies on these external
+// libraries, when defining interfaces, aiming for a cleaner decoupling.
+// It seeks to provide a flexible and comprehensive interface layer, adaptable to
+// different blockchain configurations and requirements.
+
 package client
 
 import (
@@ -18,8 +30,21 @@ import (
 	"pocket/pkg/observable"
 )
 
+// TxClient provides an interface for initiating transactions on a blockchain.
+// It offers a singular, streamlined method to sign and broadcast multiple messages
+// as part of a transaction. This interface abstracts the actual sending of a
+// transaction, while more intricate functionalities like building, encoding,
+// or querying transactions are likely to be handled by other components,
+// such as the TxContext.
+type TxClient interface {
+	SignAndBroadcast(
+		ctx context.Context,
+		msgs ...cosmostypes.Msg,
+	) either.AsyncError
+}
+
 // TxContext provides an interface which consolidates the operational dependencies
-// required to facilitate the sender side of the tx lifecycle: build, sign, encode,
+// required to facilitate the sender side of the transaction lifecycle: build, sign, encode,
 // broadcast, query (optional).
 //
 // TODO_IMPROVE: Avoid depending on cosmos-sdk structs or interfaces; add Pocket
@@ -29,13 +54,13 @@ import (
 //   - Keyring
 //   - TxBuilder
 type TxContext interface {
-	// GetKeyring returns the associated key management mechanism for the tx context.
+	// GetKeyring returns the associated key management mechanism for the transaction context.
 	GetKeyring() cosmoskeyring.Keyring
 
-	// NewTxBuilder creates and returns a new tx builder instance.
+	// NewTxBuilder creates and returns a new transaction builder instance.
 	NewTxBuilder() cosmosclient.TxBuilder
 
-	// SignTx signs a tx using the specified key name. It can operate in offline mode,
+	// SignTx signs a transaction using the specified key name. It can operate in offline mode,
 	// and can overwrite any existing signatures based on the provided flags.
 	SignTx(
 		keyName string,
@@ -43,14 +68,14 @@ type TxContext interface {
 		offline, overwriteSig bool,
 	) error
 
-	// EncodeTx takes a tx builder and encodes it, returning its byte representation.
+	// EncodeTx takes a transaction builder and encodes it, returning its byte representation.
 	EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte, error)
 
-	// BroadcastTx broadcasts the given tx to the network.
+	// BroadcastTx broadcasts the given transaction to the network.
 	BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error)
 
-	// QueryTx retrieves a tx status based on its hash and optionally provides
-	// proof of the tx.
+	// QueryTx retrieves a transaction status based on its hash and optionally provides
+	// proof of the transaction.
 	QueryTx(
 		ctx context.Context,
 		txHash []byte,
@@ -136,3 +161,9 @@ type Dialer interface {
 // implementation-specific way; e.g. using a type assertion to assign to an
 // implementation struct field(s).
 type EventsQueryClientOption func(EventsQueryClient)
+
+// TxClientOption defines a function type that modifies the TxClient. This pattern
+// allows for flexible and optional configurations to be applied to a TxClient instance.
+// Such options can be used to customize properties, behaviors, or any other attributes
+// of the TxClient without altering its core construction logic.
+type TxClientOption func(TxClient)
