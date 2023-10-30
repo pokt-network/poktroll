@@ -15,8 +15,14 @@ import (
 )
 
 const (
+	// eventsBytesRetryDelay is the delay between retry attempts when the events
+	// bytes observable returns an error.
 	eventsBytesRetryDelay = time.Second
-	eventsBytesRetryLimit = 10
+	// eventsBytesRetryLimit is the maximum number of times to attempt to
+	// re-establish the events query bytes subscription when the events bytes
+	// observable returns an error.
+	eventsBytesRetryLimit        = 10
+	eventsBytesRetryResetTimeout = 10 * time.Second
 	// NB: cometbft event subscription query for newly committed blocks.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
 	committedBlocksQuery = "tm.event='NewBlock'"
@@ -65,6 +71,7 @@ type blockClient struct {
 // by the newEventsBytesToBlockMapFn factory function.
 type eventBytesToBlockMapFn func(either.Either[[]byte]) (client.Block, bool)
 
+// NewBlockClient creates a new block client from the given dependencies and cometWebsocketURL.
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -112,23 +119,33 @@ func (bClient *blockClient) Close() {
 	bClient.eventsClient.Close()
 }
 
-// goPublishBlocks receives event bytes from the events query client, maps them
-// to block events, and publishes them to the latestBlockObsvbls replay observable.
+// goPublishBlocks runs the work function returned by retryPublishBlocksFactory,
+// Re-invoking it according to the arguments to retry.OnError when the events bytes
+// observable returns an asynchronous error.
+// This function is intended to be called in a goroutine.
 func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to latestBlockObsvblsReplayPublishCh such that
 	// latestBlockObsvbls.Last(ctx, 1) will return it.
 	publishErr := retry.OnError(
 		ctx,
-		eventsBytesRetryDelay,
 		eventsBytesRetryLimit,
+		eventsBytesRetryDelay,
+		eventsBytesRetryResetTimeout,
 		"goPublishBlocks",
 		bClient.retryPublishBlocksFactory(ctx),
 	)
 
+	// If we get here, the retry limit was reached and the retry loop exited.
+	// Since this function runs in a goroutine, we can't return the error to the
+	// caller. Instead, we panic.
 	panic(publishErr)
 }
 
+// retryPublishBlocksFactory returns a function which is intended to be passed to
+// retry.OnError. The returned function pipes event bytes from the events query
+// client, maps them to block events, and publishes them to the latestBlockObsvbls
+// replay observable.
 func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func() chan error {
 	return func() chan error {
 		errCh := make(chan error, 1)

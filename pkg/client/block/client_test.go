@@ -90,6 +90,13 @@ func TestBlockClient(t *testing.T) {
 		done <- struct{}{}
 	}()
 
+	// blockAssertionLoop ensures that the blocks retrieved from both LatestBlock
+	// method and CommittedBlocksSequence method match the expected block height
+	// and hash. This loop waits for blocks to be sent on the actualBlockCh channel
+	// by the methods being tested. Once the methods are done, they send a signal on
+	// the "done" channel. If the blockAssertionLoop doesn't receive any block or
+	// the done signal within a specific timeout, it assumes something has gone wrong
+	// and fails the test.
 blockAssertionLoop:
 	for {
 		select {
@@ -109,12 +116,23 @@ blockAssertionLoop:
 	blockClient.Close()
 }
 
-// TODO_TECHDEBT/TODO_CONSIDERATION:
-// * we should prefer tests being in their own pkgs (e.g. block_test)
-// * we should prefer to not export types which don't require exporting for API consumption
-// * the cometBlockEvent isn't and doesn't need to be exported (except for this test)
-// * TODO_DISCUSS: we could use the //go:build test constraint on a new file which exports it for testing purposes
-//   - This would imply that we also add -tags=test to all applicable tooling and add a test which fails if the tag is absent
+/*
+TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
+
+type from pkg/client/block/block.go. We seem to have some conflicting preferences
+which result in the need for this duplication until a preferred direction is
+identified:
+
+  - We should prefer tests being in their own pkgs (e.g. block_test)
+  - this would resolve if this test were in the block package instead.
+  - We should prefer to not export types which don't require exporting for API
+    consumption.
+  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
+  - We could use the //go:build test constraint on a new file which exports it
+    for testing purposes.
+  - This would imply that we also add -tags=test to all applicable tooling
+    and add a test which fails if the tag is absent.
+*/
 type testBlockEvent struct {
 	Block comettypes.Block `json:"block"`
 }
