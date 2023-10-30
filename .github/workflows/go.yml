@@ -77,9 +77,6 @@ jobs:
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
-          pwd
-          ls -la
-          ls -la bin/
 
       - name: Build and push Docker image
         if: contains(github.event.pull_request.labels.*.name, 'push-image')
@@ -93,3 +90,4 @@ jobs:
           file: Dockerfile.dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          context: .
