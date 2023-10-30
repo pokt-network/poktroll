@@ -14,6 +14,8 @@ var _ observerManager[any] = (*channelObserverManager[any])(nil)
 // Embedding this interface rather than a channelObservable directly allows for
 // more transparency and flexibility in higher-level code.
 // NOTE: this interface MUST be used with a common concrete Observer type.
+// TODO_CONSIDERATION: Consider whether `observerManager` and `Observable` should remain as separate
+// types after some more time and experience using both.
 type observerManager[V any] interface {
 	notifyAll(notification V)
 	add(toAdd observable.Observer[V])
@@ -72,9 +74,7 @@ func (com *channelObserverManager[V]) notifyAll(notification V) {
 // by the channelObservable implementation as well as embedders of observerManager
 // (e.g. replayObservable).
 // It panics if toAdd is not a channelObserver.
-func (com *channelObserverManager[V]) add(
-	toAdd observable.Observer[V],
-) {
+func (com *channelObserverManager[V]) add(toAdd observable.Observer[V]) {
 	// must (write) lock observersMu so that we can safely append to the observers list
 	com.observersMu.Lock()
 	defer com.observersMu.Unlock()
@@ -86,9 +86,7 @@ func (com *channelObserverManager[V]) add(
 // It implements the respective member of observerManager and is used by
 // the channelObservable implementation as well as embedders of observerManager
 // (e.g. replayObservable).
-func (com *channelObserverManager[V]) remove(
-	toRemove observable.Observer[V],
-) {
+func (com *channelObserverManager[V]) remove(toRemove observable.Observer[V]) {
 	// must (write) lock to iterate over and modify the observers list
 	com.observersMu.Lock()
 	defer com.observersMu.Unlock()

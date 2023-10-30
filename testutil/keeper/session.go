@@ -34,12 +34,12 @@ var (
 	TestApp1        = apptypes.Application{
 		Address: TestApp1Address,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-		ServiceIds: []*sharedtypes.ServiceId{
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Id: TestServiceId1,
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
 			},
 			{
-				Id: TestServiceId2,
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
 			},
 		},
 	}
@@ -48,12 +48,12 @@ var (
 	TestApp2        = apptypes.Application{
 		Address: TestApp1Address,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-		ServiceIds: []*sharedtypes.ServiceId{
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				Id: TestServiceId1,
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
 			},
 			{
-				Id: TestServiceId2,
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
 			},
 		},
 	}

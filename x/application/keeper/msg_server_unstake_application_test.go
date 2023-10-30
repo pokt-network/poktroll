@@ -10,6 +10,7 @@ import (
 	"pocket/testutil/sample"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
@@ -29,6 +30,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
 	}
 
 	// Stake the application
@@ -40,6 +46,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, addr, foundApp.Address)
 	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
+	require.Len(t, foundApp.ServiceConfigs, 1)
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}

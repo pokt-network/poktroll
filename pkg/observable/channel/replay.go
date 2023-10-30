@@ -94,7 +94,7 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 		)
 	}
 
-	// accumulateReplayValues works concurrently and returns a context and cancellation
+	// accumulateReplayValues works concurrently and returns a context and cancelation
 	// function for signaling completion.
 	return accumulateReplayValues(tempObserver, n)
 }
@@ -119,7 +119,7 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 
 	ro.observerManager.add(observer)
 
-	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
+	// caller can rely on context cancelation or call UnsubscribeAll() to unsubscribe
 	// active observers
 	if ctx != nil {
 		// asynchronously wait for the context to be done and then unsubscribe
@@ -163,13 +163,13 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 		accValuesMu sync.Mutex
 		// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
 		accValues = new([]V)
-		// Cancelling the context will cause the loop in the goroutine to exit.
+		// canceling the context will cause the loop in the goroutine to exit.
 		ctx, cancel = context.WithCancel(context.Background())
 	)
 
 	// Concurrently accumulate n values from the observer channel.
 	go func() {
-		// Defer cancelling the context and unlocking accValuesMu. The function
+		// Defer canceling the context and unlocking accValuesMu. The function
 		// assumes that the mutex is locked when it gets execution control back
 		// from the loop.
 		defer func() {
@@ -181,7 +181,7 @@ func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
 			// the first case branch in the select below.
 			accValuesMu.Lock()
 
-			// The context was cancelled since the last iteration.
+			// The context was canceled since the last iteration.
 			if ctx.Err() != nil {
 				return
 			}

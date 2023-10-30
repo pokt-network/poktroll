@@ -5,6 +5,8 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	servicehelpers "pocket/x/shared/helpers"
 )
 
 // DefaultIndex is the default global index
@@ -34,6 +36,8 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the apps is valid
 	for _, app := range gs.ApplicationList {
+		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
+		// similar to how we have `AreValidAppServiceConfigs` below
 		if app.Stake == nil {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
 		}
@@ -49,6 +53,12 @@ func (gs GenesisState) Validate() error {
 		}
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
+		}
+
+		// Valid the application service configs
+		// Validate the application service configs
+		if reason, ok := servicehelpers.AreValidAppServiceConfigs(app.ServiceConfigs); !ok {
+			return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
 		}
 	}
 
