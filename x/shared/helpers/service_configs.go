@@ -34,7 +34,7 @@ func AreValidAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 // AreValidSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
 func AreValidSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
 	if len(services) == 0 {
-		return fmt.Errorf("no services configs provided for supplier: %v", services)
+		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
 	for _, serviceConfig := range services {
 		if serviceConfig == nil {
@@ -68,13 +68,30 @@ func AreValidSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			if endpoint == nil {
 				return fmt.Errorf("endpoint cannot be nil: %v", serviceConfig)
 			}
+
+			// Validate the URL
 			if endpoint.Url == "" {
 				return fmt.Errorf("endpoint.Url cannot be empty: %v", serviceConfig)
 			}
 			if !IsValidEndpointUrl(endpoint.Url) {
 				return fmt.Errorf("invalid endpoint.Url: %v", serviceConfig)
 			}
-			// TODO_TECHDEBT: Verify endpoint.ConfigOptions and endpoint.RpcType
+
+			// Validate the RPC type
+			if endpoint.RpcType == sharedtypes.RPCType_UNKNOWN_RPC {
+				return fmt.Errorf("endpoint.RpcType cannot be UNKNOWN_RPC: %v", serviceConfig)
+			}
+			if _, ok := sharedtypes.RPCType_name[int32(endpoint.RpcType)]; !ok {
+				return fmt.Errorf("endpoint.RpcType is not a valid RPCType: %v", serviceConfig)
+			}
+
+			// TODO: Validate configs once they are being used
+			// if endpoint.Configs == nil {
+			// 	return fmt.Errorf("endpoint.Configs cannot be nil: %v", serviceConfig)
+			// }
+			// if len(endpoint.Configs) == 0 {
+			// 	return fmt.Errorf("endpoint.Configs must have at least one entry: %v", serviceConfig)
+			// }
 		}
 	}
 	return nil

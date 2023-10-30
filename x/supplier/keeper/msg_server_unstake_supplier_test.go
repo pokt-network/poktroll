@@ -55,6 +55,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, addr, foundSupplier.Address)
 	require.Equal(t, initialStake.Amount, foundSupplier.Stake.Amount)
+	require.Len(t, foundSupplier.Services, 1)
 
 	// Unstake the supplier
 	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}

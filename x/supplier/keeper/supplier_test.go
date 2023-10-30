@@ -6,17 +6,24 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
+	"pocket/cmd/pocketd/cmd"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
 	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/keeper"
+	"pocket/x/supplier/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Supplier {
 	suppliers := make([]sharedtypes.Supplier, n)
@@ -77,4 +84,11 @@ func TestSupplierGetAll(t *testing.T) {
 		nullify.Fill(suppliers),
 		nullify.Fill(keeper.GetAllSupplier(ctx)),
 	)
+}
+
+// The application module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
+func TestApplicationModuleAddress(t *testing.T) {
+	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
+	require.Equal(t, "pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa", moduleAddress.String())
 }

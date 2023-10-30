@@ -14,6 +14,21 @@ import (
 // It can be simplified by splitting it into smaller tests where the common
 // fields don't need to be explicitly specified from test to test.
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
+
+	defaultServicesList := []*sharedtypes.SupplierServiceConfig{
+		{
+			ServiceId: &sharedtypes.ServiceId{
+				Id: "svcId1",
+			},
+			Endpoints: []*sharedtypes.SupplierEndpoint{
+				{
+					Url:     "http://localhost:8081",
+					RpcType: sharedtypes.RPCType_JSON_RPC,
+					Configs: make([]*sharedtypes.ConfigOption, 0),
+				},
+			},
+		}}
+
 	tests := []struct {
 		name string
 		msg  MsgStakeSupplier
@@ -25,6 +40,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: "invalid_address",
 				// Stake explicitly nil
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidAddress,
 		},
@@ -35,40 +51,46 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				// Stake explicitly nil
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
 		}, {
 			name: "valid address - valid stake",
 			msg: MsgStakeSupplier{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				Address:  sample.AccAddress(),
+				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				Services: defaultServicesList,
 			},
 		}, {
 			name: "valid address - zero stake",
 			msg: MsgStakeSupplier{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+				Address:  sample.AccAddress(),
+				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
 		}, {
 			name: "valid address - negative stake",
 			msg: MsgStakeSupplier{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+				Address:  sample.AccAddress(),
+				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
 		}, {
 			name: "valid address - invalid stake denom",
 			msg: MsgStakeSupplier{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+				Address:  sample.AccAddress(),
+				Stake:    &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
 		}, {
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeSupplier{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+				Address:  sample.AccAddress(),
+				Stake:    &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
 		},
@@ -108,11 +130,11 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid service configs - not present",
+			name: "invalid service configs - omitted",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-				// Services: omitted
+				// Services: intentionally omitted
 			},
 			err: ErrSupplierInvalidServiceConfig,
 		},
@@ -205,7 +227,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
-								// Url:     omitted
+								// Url: intentionally omitted
 								RpcType: sharedtypes.RPCType_JSON_RPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
@@ -252,7 +274,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",
-								// RpcType: omitted,
+								// RpcType: intentionally omitted,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
@@ -262,7 +284,6 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			err: ErrSupplierInvalidServiceConfig,
 		},
 		// TODO_TEST: Need to add more tests around config types
-
 	}
 
 	for _, tt := range tests {

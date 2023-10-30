@@ -13,6 +13,7 @@ const TypeMsgStakeApplication = "stake_application"
 
 var _ sdk.Msg = (*MsgStakeApplication)(nil)
 
+// TODO_TECHDEBT: See `NewMsgStakeSupplier` and follow the same pattern for the `Services` parameter
 func NewMsgStakeApplication(
 	address string,
 	stake types.Coin,

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -43,7 +44,10 @@ $ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt svc1,svc2,
 				return err
 			}
 
-			services := hackStringToServices(servicesArg)
+			services, err := hackStringToServices(servicesArg)
+			if err != nil {
+				return err
+			}
 
 			msg := types.NewMsgStakeSupplier(
 				clientCtx.GetFromAddress().String(),
@@ -67,11 +71,14 @@ $ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt svc1,svc2,
 // TODO_BLOCKER, TODO_HACK: The supplier stake command should take an argument
 // or flag that points to a file containing all the services configurations & specifications.
 // As a quick workaround, we just need the service & url to get things working for now.
-func hackStringToServices(servicesArg string) []*sharedtypes.SupplierServiceConfig {
+func hackStringToServices(servicesArg string) ([]*sharedtypes.SupplierServiceConfig, error) {
 	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0)
 	serviceStrings := strings.Split(servicesArg, ",")
 	for _, serviceString := range serviceStrings {
 		serviceParts := strings.Split(serviceString, ";")
+		if len(serviceParts) != 2 {
+			return nil, fmt.Errorf("invalid service string: %s. Expected it to be of the form 'service;url'", serviceString)
+		}
 		service := &sharedtypes.SupplierServiceConfig{
 			ServiceId: &sharedtypes.ServiceId{
 				Id: serviceParts[0],
@@ -86,5 +93,5 @@ func hackStringToServices(servicesArg string) []*sharedtypes.SupplierServiceConf
 		}
 		supplierServiceConfig = append(supplierServiceConfig, service)
 	}
-	return supplierServiceConfig
+	return supplierServiceConfig, nil
 }

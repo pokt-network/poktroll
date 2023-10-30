@@ -200,6 +200,104 @@ func TestGenesisState_Validate(t *testing.T) {
 			},
 			valid: false,
 		},
+		{
+			desc: "invalid - missing services list",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						// Services: intentionally omitted
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - empty services list",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address:  addr2,
+						Stake:    &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - invalid URL",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{
+							{
+								ServiceId: &sharedtypes.ServiceId{
+									Id: "svcId1",
+								},
+								Endpoints: []*sharedtypes.SupplierEndpoint{
+									{
+										Url:     "invalid URL",
+										RpcType: sharedtypes.RPCType_JSON_RPC,
+										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - invalid RPC Type",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{
+							{
+								ServiceId: &sharedtypes.ServiceId{
+									Id: "svcId1",
+								},
+								Endpoints: []*sharedtypes.SupplierEndpoint{
+									{
+										Url:     "http://localhost:8081",
+										RpcType: sharedtypes.RPCType_UNKNOWN_RPC,
+										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
 	for _, tc := range tests {

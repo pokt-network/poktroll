@@ -334,9 +334,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 	@echo "Querying spendable balance for $(ACC)"
 	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_app_module
-acc_balance_query_app_module: ## Query the balance of the network level "application" module
+.PHONY: acc_balance_query_module_app
+acc_balance_query_module_app: ## Query the balance of the network level "application" module
 	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+
+.PHONY: acc_balance_query_module_supplier
+acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
+	make acc_balance_query ACC=pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
