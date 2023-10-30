@@ -5,9 +5,33 @@ package client
 import (
 	"context"
 
+	comettypes "github.com/cometbft/cometbft/rpc/core/types"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"pocket/pkg/either"
 	"pocket/pkg/observable"
 )
+
+type TxContext interface {
+	GetKeyring() cosmoskeyring.Keyring
+	NewTxBuilder() cosmosclient.TxBuilder
+	SignTx(
+		keyName string,
+		txBuilder cosmosclient.TxBuilder,
+		offline, overwriteSig bool,
+	) error
+	EncodeTx(cosmosclient.TxBuilder) ([]byte, error)
+	// TODO_CONSIDERATION: perhaps TxResponse should be an interface type that we own
+	BroadcastTxSync([]byte) (*cosmostypes.TxResponse, error)
+	QueryTx(
+		ctx context.Context,
+		txHash []byte,
+		prove bool,
+		// TODO_CONSIDERATION: perhaps ResultTx should be an interface type that we own
+	) (*comettypes.ResultTx, error)
+}
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
 // which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
