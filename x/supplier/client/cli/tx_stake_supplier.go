@@ -28,7 +28,7 @@ func CmdStakeSupplier() *cobra.Command {
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 Example:
-$ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt anvil;http://anvil:8547 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeString := args[0]
@@ -74,6 +74,7 @@ $ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt svc1,svc2,
 func hackStringToServices(servicesArg string) ([]*sharedtypes.SupplierServiceConfig, error) {
 	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0)
 	serviceStrings := strings.Split(servicesArg, ",")
+	fmt.Println("OLSH", serviceStrings, servicesArg)
 	for _, serviceString := range serviceStrings {
 		serviceParts := strings.Split(serviceString, ";")
 		if len(serviceParts) != 2 {

@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -23,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"pocket/app"
-	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
 	apptypes "pocket/x/application/types"
 	gatewaytypes "pocket/x/gateway/types"
@@ -117,7 +115,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				},
 			},
 		}
-		// TODO_IN_THIS_COMMIT: Can we remove this?
+		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
 		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
@@ -132,11 +130,11 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
 		gateway := gatewaytypes.Gateway{
-			Address: strconv.Itoa(i), // TODO_IN_THIS_COMMIT: Can we have a real address here?
+			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
-		// TODO_IN_THIS_COMMIT: Can we remove this?
-		nullify.Fill(&gateway)
+		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
+		// nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
 	return state
@@ -164,6 +162,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 				},
 			},
 		}
+		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
 		// nullify.Fill(&supplier)
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

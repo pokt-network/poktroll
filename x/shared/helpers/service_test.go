@@ -45,6 +45,16 @@ func TestIsValidEndpointUrl(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "valid localhost URL with scheme",
+			input:    "https://localhost:8081",
+			expected: true,
+		},
+		{
+			name:     "valid loopback URL with scheme",
+			input:    "http://127.0.0.1:8081",
+			expected: true,
+		},
+		{
 			name:     "invalid scheme",
 			input:    "ftp://example.com",
 			expected: false,
