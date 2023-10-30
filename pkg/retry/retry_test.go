@@ -88,11 +88,23 @@ func TestOnError(t *testing.T) {
 	require.Equal(t, expectedRetryLimit, int(testFnCallCount), "Test function was not called the expected number of times")
 
 	// Verify the delay between retries of the test function.
-	requireRetryDelay(
-		t, expectedRetryLimit,
-		expectedRetryDelay,
-		testFnCallTimeCh,
-	)
+	var prevCallTime time.Time
+	for i := 0; i < expectedRetryLimit; i++ {
+		// Retrieve the next function call time from the channel.
+		nextCallTime, ok := <-testFnCallTimeCh
+		if !ok {
+			t.Fatalf("expected %d calls to testFn, but channel closed after %d", expectedRetryLimit, i)
+		}
+
+		// For all calls after the first, check that the delay since the previous call meets expectations.
+		if i != 0 {
+			actualRetryDelay := nextCallTime.Sub(prevCallTime)
+			require.GreaterOrEqual(t, actualRetryDelay, expectedRetryDelay, "Retry delay was less than expected")
+		}
+
+		// Update prevCallTime for the next iteration.
+		prevCallTime = nextCallTime
+	}
 
 	// Verify that the OnError function returned the expected error.
 	select {
@@ -104,11 +116,12 @@ func TestOnError(t *testing.T) {
 
 	// Verify the error messages logged during the retries.
 	expectedErrorLine := "ERROR: retrying TestOnError after error: test error"
-	requireLogOutputLinesContain(
-		t, logOutput.String(),
-		expectedErrorLine,
-		expectedRetryLimit,
-	)
+	trimmedLogOutput := strings.Trim(logOutput.String(), "\n")
+	logOutputLines := strings.Split(trimmedLogOutput, "\n")
+	require.Lenf(t, logOutputLines, expectedRetryLimit, "unexpected number of log lines")
+	for _, line := range logOutputLines {
+		require.Contains(t, line, expectedErrorLine, "log line does not contain the expected prefix")
+	}
 }
 
 // TODO_TECHDEBT: assert that the retry loop exits when the context is closed.
@@ -313,46 +326,5 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	)
 	for _, line := range logOutputLines {
 		require.Contains(t, line, expectedPrefix)
-	}
-}
-
-// TODO_THIS_COMMIT: move
-func requireRetryDelay(
-	t *testing.T,
-	expectedRetryLimit int,
-	expectedRetryDelay time.Duration,
-	testFnCallTimeCh chan time.Time,
-) {
-	var prevCallTime time.Time
-	for i := 0; i < expectedRetryLimit; i++ {
-		// Retrieve the next function call time from the channel.
-		nextCallTime, ok := <-testFnCallTimeCh
-		if !ok {
-			t.Fatalf("expected %d calls to testFn, but channel closed after %d", expectedRetryLimit, i)
-		}
-
-		// For all calls after the first, check that the delay since the previous call meets expectations.
-		if i != 0 {
-			actualRetryDelay := nextCallTime.Sub(prevCallTime)
-			require.GreaterOrEqual(t, actualRetryDelay, expectedRetryDelay, "Retry delay was less than expected")
-		}
-
-		// Update prevCallTime for the next iteration.
-		prevCallTime = nextCallTime
-	}
-}
-
-// TODO_THIS_COMMIT: move
-func requireLogOutputLinesContain(
-	t *testing.T,
-	logOutput string,
-	expectedErrorLine string,
-	expectedRetryLimit int,
-) {
-	trimmedLogOutput := strings.Trim(logOutput, "\n")
-	logOutputLines := strings.Split(trimmedLogOutput, "\n")
-	require.Lenf(t, logOutputLines, expectedRetryLimit, "unexpected number of log lines")
-	for _, line := range logOutputLines {
-		require.Contains(t, line, expectedErrorLine, "log line does not contain the expected prefix")
 	}
 }
