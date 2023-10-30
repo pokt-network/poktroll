@@ -45,16 +45,6 @@ jobs:
       # - name: Test
       #   run: make go_test
 
-      - name: Copy binary to inside of the Docker context
-        if: contains(github.event.pull_request.labels.*.name, 'push-image')
-        run: |
-          mkdir -p ./bin # Make sure the bin directory exists
-          cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
-
-      - name: Make sure the pocketd binary is present
-        if: contains(github.event.pull_request.labels.*.name, 'push-image')
-        run: ls -la ./bin
-
       - name: Set up Docker Buildx
         if: contains(github.event.pull_request.labels.*.name, 'push-image')
         uses: docker/setup-buildx-action@v3
@@ -81,6 +71,15 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy binary to inside of the Docker context
+        if: contains(github.event.pull_request.labels.*.name, 'push-image')
+        run: |
+          mkdir -p ./bin # Make sure the bin directory exists
+          cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
+          pwd
+          ls -la
+          ls -la bin/
 
       - name: Build and push Docker image
         if: contains(github.event.pull_request.labels.*.name, 'push-image')
