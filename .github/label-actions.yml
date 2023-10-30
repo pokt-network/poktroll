@@ -1,12 +1,16 @@
 # When `devnet-e2e-test` is present, also assign `devnet` to the PR.
 devnet-e2e-test:
-  comment: >
-    The e2e test on DevNet will only run after the next commit is pushed.
   prs:
-    label: 'devnet'
+    label:
+      - 'devnet'
+      - 'push-image'
 
-# When `devnet` is removed, also delete other devnet related labels.
+# Let the developer know that they need to push another commit after attaching the label to PR.
+push-image:
+  comment: The image is going to be pushed after the next commit. If you want to run an e2e test, it is necessary to push another commit.
+
+# When `devnet` is removed, also delete other devnet-related labels.
 -devnet:
   prs:
     unlabel:
-    - 'devnet-e2e-test'
+      - 'devnet-e2e-test'
