@@ -21,6 +21,7 @@ func SimulateMsgStakeSupplier(
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		stakeMsg := &types.MsgStakeSupplier{
 			Address: simAccount.Address.String(),
+			// TODO: Update all stake message fields
 		}
 
 		// TODO: Handling the StakeSupplier simulation

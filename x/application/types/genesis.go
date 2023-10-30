@@ -56,9 +56,8 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Valid the application service configs
-		// Validate the application service configs
-		if reason, ok := servicehelpers.AreValidAppServiceConfigs(app.ServiceConfigs); !ok {
-			return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
+		if err := servicehelpers.AreValidAppServiceConfigs(app.ServiceConfigs); err != nil {
+			return sdkerrors.Wrapf(ErrAppInvalidStake, err.Error())
 		}
 	}
 

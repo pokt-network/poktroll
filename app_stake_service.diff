@@ -1,655 +1,5 @@
-commit 96f5252e61634fe428947008b108f7064f8d91cc
-Author: Daniel Olshansky <olshansky.daniel@gmail.com>
-Date:   Fri Oct 27 13:10:02 2023 -0700
 
-    [Application] Add `ServiceConfigs` to `AppStaking` (#95)
-    
-    Update all related components (CLI, Tx, Message, etc...) so applications can stake for a service
-    
-    ---
-    
-    Co-authored-by: Bryan White <bryanchriswhite@gmail.com>
-    Co-authored-by: Redouane Lakrache <r3d0ne@gmail.com>
-    Co-authored-by: red-0ne <r3d0ne@gmail.com>
-    Co-authored-by: Daniel Olshansky <olshansky.daniel@gmail.com>
-    Co-authored-by: harry <53987565+h5law@users.noreply.github.com>
 
-diff --git a/Makefile b/Makefile
-index 722b193..28b58e1 100644
---- a/Makefile
-+++ b/Makefile
-@@ -251,20 +251,20 @@ app_list: ## List all the staked applications
- 	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
- 
- .PHONY: app_stake
--app_stake: ## Stake tokens for the application specified (must specify the APP env var)
--	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
-+app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
- 
- .PHONY: app1_stake
- app1_stake: ## Stake app1
--	APP=app1 make app_stake
-+	SERVICES=svc1,svc2 APP=app1 make app_stake
- 
- .PHONY: app2_stake
- app2_stake: ## Stake app2
--	APP=app2 make app_stake
-+	SERVICES=svc2,svc3 APP=app2 make app_stake
- 
- .PHONY: app3_stake
- app3_stake: ## Stake app3
--	APP=app3 make app_stake
-+	SERVICES=svc3,svc4 APP=app3 make app_stake
- 
- .PHONY: app_unstake
- app_unstake: ## Unstake an application (must specify the APP env var)
-diff --git a/docs/static/openapi.yml b/docs/static/openapi.yml
-index 26b83a9..461aaed 100644
---- a/docs/static/openapi.yml
-+++ b/docs/static/openapi.yml
-@@ -46472,26 +46472,37 @@ paths:
-                         custom method
- 
-                         signatures required by gogoproto.
--                    service_ids:
-+                    service_configs:
-                       type: array
-                       items:
-                         type: object
-                         properties:
--                          id:
--                            type: string
--                            title: Unique identifier for the service
--                          name:
--                            type: string
--                            title: >-
--                              (Optional) Semantic human readable name for the
--                              service
-+                          service_id:
-+                            title: Unique and semantic identifier for the service
-+                            type: object
-+                            properties:
-+                              id:
-+                                type: string
-+                                description: Unique identifier for the service
-+                                title: >-
-+                                  NOTE: `ServiceId.Id` may seem redundant but
-+                                  was desigtned created to enable more complex
-+                                  service identification
-+
-+                                  gener
-+                              name:
-+                                type: string
-+                                description: >-
-+                                  (Optional) Semantic human readable name for
-+                                  the service
-+                                title: >-
-+                                  TODO_TECHDEBT: Name is currently unused but
-+                                  acts as a reminder than an optional onchain
-+                                  representation of the service is necessary
-                         title: >-
--                          ServiceId message to encapsulate unique and semantic
--                          identifiers for a service on the network
--                      description: The ID of the service this session is servicing
--                      title: >-
--                        TODO(@olshansk): Change this to
--                        `shared.ApplicationServiceConfig` in #95
-+                          ApplicationServiceConfig holds the service
-+                          configuration the application stakes for
-+                      title: The ID of the service this session is servicing
-                   title: >-
-                     Application defines the type used to store an on-chain
-                     definition and state for an application
-@@ -46634,26 +46645,37 @@ paths:
-                       custom method
- 
-                       signatures required by gogoproto.
--                  service_ids:
-+                  service_configs:
-                     type: array
-                     items:
-                       type: object
-                       properties:
--                        id:
--                          type: string
--                          title: Unique identifier for the service
--                        name:
--                          type: string
--                          title: >-
--                            (Optional) Semantic human readable name for the
--                            service
-+                        service_id:
-+                          title: Unique and semantic identifier for the service
-+                          type: object
-+                          properties:
-+                            id:
-+                              type: string
-+                              description: Unique identifier for the service
-+                              title: >-
-+                                NOTE: `ServiceId.Id` may seem redundant but was
-+                                desigtned created to enable more complex service
-+                                identification
-+
-+                                gener
-+                            name:
-+                              type: string
-+                              description: >-
-+                                (Optional) Semantic human readable name for the
-+                                service
-+                              title: >-
-+                                TODO_TECHDEBT: Name is currently unused but acts
-+                                as a reminder than an optional onchain
-+                                representation of the service is necessary
-                       title: >-
--                        ServiceId message to encapsulate unique and semantic
--                        identifiers for a service on the network
--                    description: The ID of the service this session is servicing
--                    title: >-
--                      TODO(@olshansk): Change this to
--                      `shared.ApplicationServiceConfig` in #95
-+                        ApplicationServiceConfig holds the service configuration
-+                        the application stakes for
-+                    title: The ID of the service this session is servicing
-                 title: >-
-                   Application defines the type used to store an on-chain
-                   definition and state for an application
-@@ -76529,24 +76551,6 @@ definitions:
- 
-           NOTE: The amount field is an Int which implements the custom method
-           signatures required by gogoproto.
--      service_ids:
--        type: array
--        items:
--          type: object
--          properties:
--            id:
--              type: string
--              title: Unique identifier for the service
--            name:
--              type: string
--              title: (Optional) Semantic human readable name for the service
--          title: >-
--            ServiceId message to encapsulate unique and semantic identifiers for
--            a service on the network
--        description: The ID of the service this session is servicing
--        title: >-
--          TODO(@olshansk): Change this to `shared.ApplicationServiceConfig` in
--          #95
-       service_configs:
-         type: array
-         items:
-@@ -76563,9 +76567,7 @@ definitions:
-                     NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                     created to enable more complex service identification
- 
--                    For example, what if we want to request a session for a
--                    certain service but with some additional configs that
--                    identify it?
-+                    gener
-                 name:
-                   type: string
-                   description: (Optional) Semantic human readable name for the service
-@@ -76620,24 +76622,37 @@ definitions:
-                 method
- 
-                 signatures required by gogoproto.
--            service_ids:
-+            service_configs:
-               type: array
-               items:
-                 type: object
-                 properties:
--                  id:
--                    type: string
--                    title: Unique identifier for the service
--                  name:
--                    type: string
--                    title: (Optional) Semantic human readable name for the service
-+                  service_id:
-+                    title: Unique and semantic identifier for the service
-+                    type: object
-+                    properties:
-+                      id:
-+                        type: string
-+                        description: Unique identifier for the service
-+                        title: >-
-+                          NOTE: `ServiceId.Id` may seem redundant but was
-+                          desigtned created to enable more complex service
-+                          identification
-+
-+                          gener
-+                      name:
-+                        type: string
-+                        description: >-
-+                          (Optional) Semantic human readable name for the
-+                          service
-+                        title: >-
-+                          TODO_TECHDEBT: Name is currently unused but acts as a
-+                          reminder than an optional onchain representation of
-+                          the service is necessary
-                 title: >-
--                  ServiceId message to encapsulate unique and semantic
--                  identifiers for a service on the network
--              description: The ID of the service this session is servicing
--              title: >-
--                TODO(@olshansk): Change this to
--                `shared.ApplicationServiceConfig` in #95
-+                  ApplicationServiceConfig holds the service configuration the
-+                  application stakes for
-+              title: The ID of the service this session is servicing
-           title: >-
-             Application defines the type used to store an on-chain definition
-             and state for an application
-@@ -76694,24 +76709,35 @@ definitions:
-               method
- 
-               signatures required by gogoproto.
--          service_ids:
-+          service_configs:
-             type: array
-             items:
-               type: object
-               properties:
--                id:
--                  type: string
--                  title: Unique identifier for the service
--                name:
--                  type: string
--                  title: (Optional) Semantic human readable name for the service
-+                service_id:
-+                  title: Unique and semantic identifier for the service
-+                  type: object
-+                  properties:
-+                    id:
-+                      type: string
-+                      description: Unique identifier for the service
-+                      title: >-
-+                        NOTE: `ServiceId.Id` may seem redundant but was
-+                        desigtned created to enable more complex service
-+                        identification
-+
-+                        gener
-+                    name:
-+                      type: string
-+                      description: (Optional) Semantic human readable name for the service
-+                      title: >-
-+                        TODO_TECHDEBT: Name is currently unused but acts as a
-+                        reminder than an optional onchain representation of the
-+                        service is necessary
-               title: >-
--                ServiceId message to encapsulate unique and semantic identifiers
--                for a service on the network
--            description: The ID of the service this session is servicing
--            title: >-
--              TODO(@olshansk): Change this to `shared.ApplicationServiceConfig`
--              in #95
-+                ApplicationServiceConfig holds the service configuration the
-+                application stakes for
-+            title: The ID of the service this session is servicing
-         title: >-
-           Application defines the type used to store an on-chain definition and
-           state for an application
-@@ -76722,17 +76748,48 @@ definitions:
-         description: params holds all the parameters of this module.
-         type: object
-     description: QueryParamsResponse is response type for the Query/Params RPC method.
-+  pocket.shared.ApplicationServiceConfig:
-+    type: object
-+    properties:
-+      service_id:
-+        title: Unique and semantic identifier for the service
-+        type: object
-+        properties:
-+          id:
-+            type: string
-+            description: Unique identifier for the service
-+            title: >-
-+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-+              to enable more complex service identification
-+
-+              gener
-+          name:
-+            type: string
-+            description: (Optional) Semantic human readable name for the service
-+            title: >-
-+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-+              than an optional onchain representation of the service is
-+              necessary
-+    title: >-
-+      ApplicationServiceConfig holds the service configuration the application
-+      stakes for
-   pocket.shared.ServiceId:
-     type: object
-     properties:
-       id:
-         type: string
--        title: Unique identifier for the service
-         description: Unique identifier for the service
-+        title: >-
-+          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
-+          enable more complex service identification
-+
-+          gener
-       name:
-         type: string
--        title: (Optional) Semantic human readable name for the service
-         description: (Optional) Semantic human readable name for the service
-+        title: >-
-+          TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
-+          optional onchain representation of the service is necessary
-     title: >-
-       ServiceId message to encapsulate unique and semantic identifiers for a
-       service on the network
-@@ -77406,32 +77463,6 @@ definitions:
- 
-       It is the minimal amount of data required to hydrate & retrieve all data
-       relevant to the session.
--  pocket.shared.ApplicationServiceConfig:
--    type: object
--    properties:
--      service_id:
--        title: Unique and semantic identifier for the service
--        type: object
--        properties:
--          id:
--            type: string
--            description: Unique identifier for the service
--            title: >-
--              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
--              to enable more complex service identification
--
--              For example, what if we want to request a session for a certain
--              service but with some additional configs that identify it?
--          name:
--            type: string
--            description: (Optional) Semantic human readable name for the service
--            title: >-
--              TODO_TECHDEBT: Name is currently unused but acts as a reminder
--              than an optional onchain representation of the service is
--              necessary
--    title: >-
--      ApplicationServiceConfig holds the service configuration the application
--      stakes for
-   pocket.shared.ConfigOption:
-     type: object
-     properties:
-diff --git a/go.mod b/go.mod
-index d2fd398..cb8df31 100644
---- a/go.mod
-+++ b/go.mod
-@@ -8,7 +8,6 @@ require (
- 	cosmossdk.io/math v1.0.1
- 	github.com/cometbft/cometbft v0.37.2
- 	github.com/cometbft/cometbft-db v0.8.0
--	github.com/cosmos/cosmos-proto v1.0.0-beta.2
- 	github.com/cosmos/cosmos-sdk v0.47.3
- 	github.com/cosmos/gogoproto v1.4.10
- 	github.com/cosmos/ibc-go/v7 v7.1.0
-@@ -26,7 +25,6 @@ require (
- 	go.uber.org/multierr v1.11.0
- 	golang.org/x/crypto v0.12.0
- 	golang.org/x/sync v0.3.0
--	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
- 	google.golang.org/grpc v1.56.1
- 	gopkg.in/yaml.v2 v2.4.0
- )
-@@ -71,6 +69,7 @@ require (
- 	github.com/containerd/cgroups v1.1.0 // indirect
- 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
- 	github.com/cosmos/btcutil v1.0.5 // indirect
-+	github.com/cosmos/cosmos-proto v1.0.0-beta.2 // indirect
- 	github.com/cosmos/go-bip39 v1.0.0 // indirect
- 	github.com/cosmos/gogogateway v1.2.0 // indirect
- 	github.com/cosmos/iavl v0.20.0 // indirect
-@@ -266,6 +265,7 @@ require (
- 	gonum.org/v1/gonum v0.11.0 // indirect
- 	google.golang.org/api v0.122.0 // indirect
- 	google.golang.org/appengine v1.6.7 // indirect
-+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
- 	google.golang.org/protobuf v1.31.0 // indirect
- 	gopkg.in/ini.v1 v1.67.0 // indirect
- 	gopkg.in/yaml.v3 v3.0.1 // indirect
-diff --git a/proto/pocket/application/application.proto b/proto/pocket/application/application.proto
-index 4ccb194..c7b0ae8 100644
---- a/proto/pocket/application/application.proto
-+++ b/proto/pocket/application/application.proto
-@@ -11,7 +11,6 @@ import "pocket/shared/service.proto";
- message Application {
-   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
-   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
--  // TODO(@olshansk): Change this to `shared.ApplicationServiceConfig` in #95
--  repeated shared.ServiceId service_ids = 3; // The ID of the service this session is servicing
-+  repeated shared.ApplicationServiceConfig service_configs = 3; // The ID of the service this session is servicing
- }
- 
-diff --git a/proto/pocket/application/tx.proto b/proto/pocket/application/tx.proto
-index 4bf9eb7..971d47b 100644
---- a/proto/pocket/application/tx.proto
-+++ b/proto/pocket/application/tx.proto
-@@ -5,6 +5,7 @@ package pocket.application;
- import "cosmos_proto/cosmos.proto";
- import "cosmos/base/v1beta1/coin.proto";
- import "cosmos/msg/v1/msg.proto";
-+import "pocket/shared/service.proto";
- 
- option go_package = "pocket/x/application/types";
- 
-@@ -19,9 +20,8 @@ message MsgStakeApplication {
-   option (cosmos.msg.v1.signer) = "address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
- 
-   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
--  cosmos.base.v1beta1.Coin stake = 2;  // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
--  // TODO(@Olshansk): Update the tx flow to add support for `services`
--  // repeated service.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
-+  cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked. Must be ≥ to the current amount that the application has staked (if any)
-+  repeated shared.ApplicationServiceConfig services = 3; // The list of services this application is staked to request service for
- }
- 
- message MsgStakeApplicationResponse {}
-diff --git a/proto/pocket/shared/service.proto b/proto/pocket/shared/service.proto
-index cff126d..42827ce 100644
---- a/proto/pocket/shared/service.proto
-+++ b/proto/pocket/shared/service.proto
-@@ -10,18 +10,24 @@ option go_package = "pocket/x/shared/types";
- 
- // ServiceId message to encapsulate unique and semantic identifiers for a service on the network
- message ServiceId {
-+    // NOTE: `ServiceId.Id` may seem redundant but was desigtned created to enable more complex service identification
-+    // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
-     string id = 1; // Unique identifier for the service
-+
-+    // TODO_TECHDEBT: Name is currently unused but acts as a reminder than an optional onchain representation of the service is necessary
-     string name = 2; // (Optional) Semantic human readable name for the service
-+
-     // NOTE: `ServiceId.Id` may seem redundant but was designed to enable more complex service identification.
-     // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
- }
- 
--// SupplierServiceConfig holds the service configuration the application stakes for
-+// ApplicationServiceConfig holds the service configuration the application stakes for
- message ApplicationServiceConfig {
--    repeated ServiceId service_id = 1; // Unique and semantic identifier for the service
-+    ServiceId service_id = 1; // Unique and semantic identifier for the service
-+
-     // TODO_RESEARCH: There is an opportunity for applications to advertise the max
-     // they're willing to pay for a certain configuration/price, but this is outside of scope.
--    // repeated RPCConfig rpc_configs = 2; // List of endpoints for the service
-+    // RPCConfig rpc_configs = 2; // List of endpoints for the service
- }
- 
- // SupplierServiceConfig holds the service configuration the supplier stakes for
-@@ -32,7 +38,7 @@ message SupplierServiceConfig {
-     // they're willing to earn for a certain configuration/price, but this is outside of scope.
- }
- 
--// Endpoint message to hold service configuration details
-+// SupplierEndpoint message to hold service configuration details
- message SupplierEndpoint {
-     string url = 1; // URL of the endpoint
-     RPCType rpc_type = 2; // Type of RPC exposed on the url above
-diff --git a/testutil/keeper/session.go b/testutil/keeper/session.go
-index cd3ea86..ef18152 100644
---- a/testutil/keeper/session.go
-+++ b/testutil/keeper/session.go
-@@ -34,12 +34,12 @@ var (
- 	TestApp1        = apptypes.Application{
- 		Address: TestApp1Address,
- 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
--		ServiceIds: []*sharedtypes.ServiceId{
-+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
- 			{
--				Id: TestServiceId1,
-+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
- 			},
- 			{
--				Id: TestServiceId2,
-+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
- 			},
- 		},
- 	}
-@@ -48,12 +48,12 @@ var (
- 	TestApp2        = apptypes.Application{
- 		Address: TestApp1Address,
- 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
--		ServiceIds: []*sharedtypes.ServiceId{
-+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
- 			{
--				Id: TestServiceId1,
-+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
- 			},
- 			{
--				Id: TestServiceId2,
-+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
- 			},
- 		},
- 	}
-diff --git a/testutil/network/network.go b/testutil/network/network.go
-index 1b5f302..dcd44a5 100644
---- a/testutil/network/network.go
-+++ b/testutil/network/network.go
-@@ -25,10 +25,10 @@ import (
- 	"pocket/app"
- 	"pocket/testutil/nullify"
- 	"pocket/testutil/sample"
--	app_types "pocket/x/application/types"
--	gateway_types "pocket/x/gateway/types"
--	shared_types "pocket/x/shared/types"
--	supplier_types "pocket/x/supplier/types"
-+	apptypes "pocket/x/application/types"
-+	gatewaytypes "pocket/x/gateway/types"
-+	sharedtypes "pocket/x/shared/types"
-+	suppliertypes "pocket/x/supplier/types"
- )
- 
- type (
-@@ -103,16 +103,21 @@ func DefaultConfig() network.Config {
- 
- // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
- // It returns the populated GenesisState object.
--func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
-+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
- 	t.Helper()
--	state := app_types.DefaultGenesis()
-+	state := apptypes.DefaultGenesis()
- 	for i := 0; i < n; i++ {
- 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
--		application := app_types.Application{
-+		application := apptypes.Application{
- 			Address: sample.AccAddress(),
- 			Stake:   &stake,
-+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-+				{
-+					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
-+				},
-+			},
- 		}
--		nullify.Fill(&application)
-+		// nullify.Fill(&application)
- 		state.ApplicationList = append(state.ApplicationList, application)
- 	}
- 	return state
-@@ -120,12 +125,12 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.Genesi
- 
- // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
- // It returns the populated GenesisState object.
--func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.GenesisState {
-+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
- 	t.Helper()
--	state := gateway_types.DefaultGenesis()
-+	state := gatewaytypes.DefaultGenesis()
- 	for i := 0; i < n; i++ {
- 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
--		gateway := gateway_types.Gateway{
-+		gateway := gatewaytypes.Gateway{
- 			Address: strconv.Itoa(i),
- 			Stake:   &stake,
- 		}
-@@ -137,12 +142,12 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.Genesi
- 
- // DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
- // It returns the populated GenesisState object.
--func DefaultSupplierModuleGenesisState(t *testing.T, n int) *supplier_types.GenesisState {
-+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
- 	t.Helper()
--	state := supplier_types.DefaultGenesis()
-+	state := suppliertypes.DefaultGenesis()
- 	for i := 0; i < n; i++ {
- 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
--		gateway := shared_types.Supplier{
-+		gateway := sharedtypes.Supplier{
- 			Address: strconv.Itoa(i),
- 			Stake:   &stake,
- 		}
-diff --git a/x/application/client/cli/tx_stake_application.go b/x/application/client/cli/tx_stake_application.go
-index 8a20f53..b486bc6 100644
---- a/x/application/client/cli/tx_stake_application.go
-+++ b/x/application/client/cli/tx_stake_application.go
-@@ -2,6 +2,7 @@ package cli
- 
- import (
- 	"strconv"
-+	"strings"
- 
- 	"github.com/cosmos/cosmos-sdk/client"
- 	"github.com/cosmos/cosmos-sdk/client/flags"
-@@ -17,16 +18,20 @@ var _ = strconv.Itoa(0)
- func CmdStakeApplication() *cobra.Command {
- 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
- 	cmd := &cobra.Command{
--		Use:   "stake-application [amount]",
-+		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
-+		// This needs to be expand to specify the full ApplicationServiceConfig. Furthermore, providing a flag to
-+		// a file where ApplicationServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
-+		Use:   "stake-application [amount] [svcId1,svcId2,...,svcIdN]",
- 		Short: "Stake an application",
- 		Long: `Stake an application with the provided parameters. This is a broadcast operation that
--will stake the tokens and associate them with the application specified by the 'from' address.
-+will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
- 
- Example:
--$ pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
--		Args: cobra.ExactArgs(1),
-+$ pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
-+		Args: cobra.ExactArgs(2),
- 		RunE: func(cmd *cobra.Command, args []string) (err error) {
- 			stakeString := args[0]
-+			serviceIdsString := args[1]
- 
- 			clientCtx, err := client.GetClientTxContext(cmd)
- 			if err != nil {
-@@ -38,9 +43,12 @@ $ pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --ke
- 				return err
- 			}
- 
-+			serviceIds := strings.Split(serviceIdsString, ",")
-+
- 			msg := types.NewMsgStakeApplication(
- 				clientCtx.GetFromAddress().String(),
- 				stake,
-+				serviceIds,
- 			)
- 
  			if err := msg.ValidateBasic(); err != nil {
 diff --git a/x/application/client/cli/tx_stake_application_test.go b/x/application/client/cli/tx_stake_application_test.go
 index 8a0dac4..3721e8e 100644
@@ -657,7 +7,7 @@ index 8a0dac4..3721e8e 100644
 +++ b/x/application/client/cli/tx_stake_application_test.go
 @@ -39,51 +39,95 @@ func TestCLI_StakeApplication(t *testing.T) {
  	}
- 
+
  	tests := []struct {
 -		desc        string
 -		address     string
@@ -778,7 +128,7 @@ index 8a0dac4..3721e8e 100644
 +			err:              types.ErrAppInvalidStake,
  		},
  	}
- 
+
 @@ -99,6 +143,7 @@ func TestCLI_StakeApplication(t *testing.T) {
  			// Prepare the arguments for the CLI command
  			args := []string{
@@ -797,11 +147,11 @@ index 2563287..64025ff 100644
  	ctx sdk.Context,
 -	address string,
 +	appAddr string,
- 
+
 -) (val types.Application, found bool) {
 +) (app types.Application, found bool) {
  	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
- 
+
  	b := store.Get(types.ApplicationKey(
 -		address,
 +		appAddr,
@@ -810,19 +160,19 @@ index 2563287..64025ff 100644
 -		return val, false
 +		return app, false
  	}
- 
+
 -	k.cdc.MustUnmarshal(b, &val)
 -	return val, true
 +	k.cdc.MustUnmarshal(b, &app)
 +	return app, true
  }
- 
+
  // RemoveApplication removes a application from the store
  func (k Keeper) RemoveApplication(
  	ctx sdk.Context,
 -	address string,
 +	appAddr string,
- 
+
  ) {
  	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
  	store.Delete(types.ApplicationKey(
@@ -830,13 +180,13 @@ index 2563287..64025ff 100644
 +		appAddr,
  	))
  }
- 
+
  // GetAllApplication returns all application
 -func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
 +func (k Keeper) GetAllApplication(ctx sdk.Context) (apps []types.Application) {
  	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
  	iterator := sdk.KVStorePrefixIterator(store, []byte{})
- 
+
 @@ -57,7 +57,7 @@ func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
  	for ; iterator.Valid(); iterator.Next() {
  		var val types.Application
@@ -844,7 +194,7 @@ index 2563287..64025ff 100644
 -		list = append(list, val)
 +		apps = append(apps, val)
  	}
- 
+
  	return
 diff --git a/x/application/keeper/application_test.go b/x/application/keeper/application_test.go
 index 76f5ad1..38c16c0 100644
@@ -852,12 +202,12 @@ index 76f5ad1..38c16c0 100644
 +++ b/x/application/keeper/application_test.go
 @@ -1,6 +1,7 @@
  package keeper_test
- 
+
  import (
 +	"fmt"
  	"strconv"
  	"testing"
- 
+
 @@ -11,8 +12,10 @@ import (
  	"pocket/cmd/pocketd/cmd"
  	keepertest "pocket/testutil/keeper"
@@ -867,11 +217,11 @@ index 76f5ad1..38c16c0 100644
  	"pocket/x/application/types"
 +	sharedtypes "pocket/x/shared/types"
  )
- 
+
  // Prevent strconv unused error
 @@ -23,38 +26,44 @@ func init() {
  }
- 
+
  func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {
 -	items := make([]types.Application, n)
 -	for i := range items {
@@ -893,7 +243,7 @@ index 76f5ad1..38c16c0 100644
 -	return items
 +	return apps
  }
- 
+
  func TestApplicationGet(t *testing.T) {
  	keeper, ctx := keepertest.ApplicationKeeper(t)
 -	items := createNApplication(keeper, ctx, 10)
@@ -913,104 +263,7 @@ index 76f5ad1..38c16c0 100644
 +			nullify.Fill(&app),
 +			nullify.Fill(&appFound),
  		)
- 	}
  }
- func TestApplicationRemove(t *testing.T) {
- 	keeper, ctx := keepertest.ApplicationKeeper(t)
--	items := createNApplication(keeper, ctx, 10)
--	for _, item := range items {
-+	apps := createNApplication(keeper, ctx, 10)
-+	for _, app := range apps {
- 		keeper.RemoveApplication(ctx,
--			item.Address,
-+			app.Address,
- 		)
- 		_, found := keeper.GetApplication(ctx,
--			item.Address,
-+			app.Address,
- 		)
- 		require.False(t, found)
- 	}
-@@ -62,9 +71,9 @@ func TestApplicationRemove(t *testing.T) {
- 
- func TestApplicationGetAll(t *testing.T) {
- 	keeper, ctx := keepertest.ApplicationKeeper(t)
--	items := createNApplication(keeper, ctx, 10)
-+	apps := createNApplication(keeper, ctx, 10)
- 	require.ElementsMatch(t,
--		nullify.Fill(items),
-+		nullify.Fill(apps),
- 		nullify.Fill(keeper.GetAllApplication(ctx)),
- 	)
- }
-diff --git a/x/application/keeper/msg_server_stake_application.go b/x/application/keeper/msg_server_stake_application.go
-index 7fd06a5..6aa824e 100644
---- a/x/application/keeper/msg_server_stake_application.go
-+++ b/x/application/keeper/msg_server_stake_application.go
-@@ -19,6 +19,7 @@ func (k msgServer) StakeApplication(
- 	logger.Info("About to stake application with msg: %v", msg)
- 
- 	if err := msg.ValidateBasic(); err != nil {
-+		logger.Error("invalid MsgStakeApplication: %v", err)
- 		return nil, err
- 	}
- 
-@@ -46,6 +47,7 @@ func (k msgServer) StakeApplication(
- 		return nil, err
- 	}
- 
-+	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
- 	// Send the coins from the application to the staked application pool
- 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
- 	if err != nil {
-@@ -65,8 +67,9 @@ func (k msgServer) createApplication(
- 	msg *types.MsgStakeApplication,
- ) types.Application {
- 	return types.Application{
--		Address: msg.Address,
--		Stake:   msg.Stake,
-+		Address:        msg.Address,
-+		Stake:          msg.Stake,
-+		ServiceConfigs: msg.Services,
- 	}
- }
- 
-@@ -80,16 +83,21 @@ func (k msgServer) updateApplication(
- 		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
- 	}
- 
-+	// Validate that the stake is not being lowered
- 	if msg.Stake == nil {
- 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
- 	}
--
- 	if msg.Stake.IsLTE(*app.Stake) {
--
- 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
- 	}
--
- 	app.Stake = msg.Stake
- 
-+	// Validate that the service configs maintain at least one service. Additional validation is done in
-+	// `msg.ValidateBasic` above.
-+	if len(msg.Services) == 0 {
-+		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
-+	}
-+	app.ServiceConfigs = msg.Services
-+
- 	return nil
- }
-diff --git a/x/application/keeper/msg_server_stake_application_test.go b/x/application/keeper/msg_server_stake_application_test.go
-index 0a47479..98d3069 100644
---- a/x/application/keeper/msg_server_stake_application_test.go
-+++ b/x/application/keeper/msg_server_stake_application_test.go
-@@ -10,6 +10,7 @@ import (
- 	"pocket/testutil/sample"
- 	"pocket/x/application/keeper"
- 	"pocket/x/application/types"
-+	sharedtypes "pocket/x/shared/types"
- )
- 
  func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 @@ -28,6 +29,11 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
  	stakeMsg := &types.MsgStakeApplication{
@@ -1022,7 +275,7 @@ index 0a47479..98d3069 100644
 +			},
 +		},
  	}
- 
+
  	// Stake the application
 @@ -39,11 +45,21 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
  	require.True(t, isAppFound)
@@ -1030,7 +283,7 @@ index 0a47479..98d3069 100644
  	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
 +	require.Len(t, foundApp.ServiceConfigs, 1)
 +	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId.Id)
- 
+
 -	// Prepare an updated application with a higher stake
 +	// Prepare an updated application with a higher stake and another service
  	updateStakeMsg := &types.MsgStakeApplication{
@@ -1045,7 +298,7 @@ index 0a47479..98d3069 100644
 +			},
 +		},
  	}
- 
+
  	// Update the staked application
 @@ -52,6 +68,72 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
  	foundApp, isAppFound = k.GetApplication(ctx, addr)
@@ -1118,7 +371,7 @@ index 0a47479..98d3069 100644
 +	require.Len(t, app.ServiceConfigs, 1)
 +	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
  }
- 
+
  func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 @@ -64,6 +146,11 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
  	stakeMsg := &types.MsgStakeApplication{
@@ -1130,7 +383,7 @@ index 0a47479..98d3069 100644
 +			},
 +		},
  	}
- 
+
  	// Stake the application & verify that the application exists
 @@ -76,6 +163,11 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
  	updateMsg := &types.MsgStakeApplication{
@@ -1142,7 +395,7 @@ index 0a47479..98d3069 100644
 +			},
 +		},
  	}
- 
+
  	// Verify that it fails
 diff --git a/x/application/keeper/msg_server_unstake_application_test.go b/x/application/keeper/msg_server_unstake_application_test.go
 index 7d2a279..9f45647 100644
@@ -1154,7 +407,7 @@ index 7d2a279..9f45647 100644
  	"pocket/x/application/types"
 +	sharedtypes "pocket/x/shared/types"
  )
- 
+
  func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 @@ -29,6 +30,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
  	stakeMsg := &types.MsgStakeApplication{
@@ -1166,14 +419,14 @@ index 7d2a279..9f45647 100644
 +			},
 +		},
  	}
- 
+
  	// Stake the application
 @@ -40,6 +46,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
  	require.True(t, isAppFound)
  	require.Equal(t, addr, foundApp.Address)
  	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
 +	require.Len(t, foundApp.ServiceConfigs, 1)
- 
+
  	// Unstake the application
  	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
 diff --git a/x/application/types/errors.go b/x/application/types/errors.go
@@ -1181,7 +434,7 @@ index 94d76cc..0a84948 100644
 --- a/x/application/types/errors.go
 +++ b/x/application/types/errors.go
 @@ -8,8 +8,9 @@ import (
- 
+
  // x/application module sentinel errors
  var (
 -	ErrAppInvalidStake   = sdkerrors.Register(ModuleName, 1, "invalid application stake")
@@ -1199,16 +452,16 @@ index b42c407..1d8d5f8 100644
 --- a/x/application/types/genesis.go
 +++ b/x/application/types/genesis.go
 @@ -5,6 +5,8 @@ import (
- 
+
  	sdkerrors "cosmossdk.io/errors"
  	sdk "github.com/cosmos/cosmos-sdk/types"
 +
 +	servicehelpers "pocket/x/shared/helpers"
  )
- 
+
  // DefaultIndex is the default global index
 @@ -34,6 +36,8 @@ func (gs GenesisState) Validate() error {
- 
+
  	// Check that the stake value for the apps is valid
  	for _, app := range gs.ApplicationList {
 +		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
@@ -1227,36 +480,36 @@ index b42c407..1d8d5f8 100644
 +			return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
 +		}
  	}
- 
+
  	// this line is used by starport scaffolding # genesis/types/validate
 diff --git a/x/application/types/genesis_test.go b/x/application/types/genesis_test.go
 index 69bc318..f1eed28 100644
 --- a/x/application/types/genesis_test.go
 +++ b/x/application/types/genesis_test.go
 @@ -8,14 +8,21 @@ import (
- 
+
  	"pocket/testutil/sample"
  	"pocket/x/application/types"
 +	sharedtypes "pocket/x/shared/types"
  )
- 
+
  func TestGenesisState_Validate(t *testing.T) {
  	addr1 := sample.AccAddress()
  	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
 +	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{
 +		ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
 +	}
- 
+
  	addr2 := sample.AccAddress()
  	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
 +	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{
 +		ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
 +	}
- 
+
  	tests := []struct {
  		desc     string
 @@ -33,12 +40,14 @@ func TestGenesisState_Validate(t *testing.T) {
- 
+
  				ApplicationList: []types.Application{
  					{
 -						Address: addr1,
@@ -1442,7 +695,7 @@ index 69bc318..f1eed28 100644
 +				ApplicationList: []types.Application{
 +					{
 +						Address: addr1,
-+						Stake:   &stake1,		
++						Stake:   &stake1,
 +						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 +							{ServiceId: &sharedtypes.ServiceId{Id: "12345678901"}},
 +						},
@@ -1502,7 +755,7 @@ index 219a657..f813cb8 100644
 +	servicehelpers "pocket/x/shared/helpers"
 +	sharedtypes "pocket/x/shared/types"
  )
- 
+
  const TypeMsgStakeApplication = "stake_application"
 @@ -13,11 +16,22 @@ var _ sdk.Msg = (*MsgStakeApplication)(nil)
  func NewMsgStakeApplication(
@@ -1529,7 +782,7 @@ index 219a657..f813cb8 100644
 +		Services: appServiceConfigs,
  	}
  }
- 
+
 @@ -64,7 +78,12 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
  		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
  	}
@@ -1542,7 +795,7 @@ index 219a657..f813cb8 100644
 +	if reason, ok := servicehelpers.AreValidAppServiceConfigs(msg.Services); !ok {
 +		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, reason)
  	}
- 
+
  	return nil
 diff --git a/x/application/types/message_stake_application_test.go b/x/application/types/message_stake_application_test.go
 index 3e36098..6b5ceec 100644
@@ -1550,11 +803,11 @@ index 3e36098..6b5ceec 100644
 +++ b/x/application/types/message_stake_application_test.go
 @@ -7,6 +7,7 @@ import (
  	"github.com/stretchr/testify/require"
- 
+
  	"pocket/testutil/sample"
 +	sharedtypes "pocket/x/shared/types"
  )
- 
+
  func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 @@ -15,18 +16,28 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
  		msg  MsgStakeApplication
@@ -1703,7 +956,7 @@ index 3e36098..6b5ceec 100644
 +			},
 +		},
  	}
- 
+
  	for _, tt := range tests {
  		t.Run(tt.name, func(t *testing.T) {
  			err := tt.msg.ValidateBasic()
@@ -1711,151 +964,3 @@ index 3e36098..6b5ceec 100644
 -				require.ErrorIs(t, err, tt.err)
 +				require.ErrorContains(t, err, tt.err.Error())
  				return
- 			}
- 			require.NoError(t, err)
-diff --git a/x/session/keeper/session_hydrator_test.go b/x/session/keeper/session_hydrator_test.go
-index 83d8a38..7a1c10a 100644
---- a/x/session/keeper/session_hydrator_test.go
-+++ b/x/session/keeper/session_hydrator_test.go
-@@ -35,7 +35,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
- 	// Check the application
- 	app := session.Application
- 	require.Equal(t, keepertest.TestApp1Address, app.Address)
--	require.Len(t, app.ServiceIds, 2)
-+	require.Len(t, app.ServiceConfigs, 2)
- 
- 	// Check the suppliers
- 	suppliers := session.Suppliers
-diff --git a/x/shared/helpers/service.go b/x/shared/helpers/service.go
-new file mode 100644
-index 0000000..1eb3029
---- /dev/null
-+++ b/x/shared/helpers/service.go
-@@ -0,0 +1,53 @@
-+package helpers
-+
-+import "regexp"
-+
-+const (
-+	maxServiceIdLength = 8  // Limiting all serviceIds to 8 characters
-+	maxServiceIdName   = 42 // Limit the the name of the
-+
-+	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
-+	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)
-+)
-+
-+var (
-+	regexExprServiceId   *regexp.Regexp
-+	regexExprServiceName *regexp.Regexp
-+)
-+
-+func init() {
-+	// Compile the regex pattern
-+	regexExprServiceId = regexp.MustCompile(regexServiceId)
-+	regexExprServiceName = regexp.MustCompile(regexServiceName)
-+
-+}
-+
-+// IsValidServiceId checks if the input string is a valid serviceId
-+func IsValidServiceId(serviceId string) bool {
-+	// ServiceId CANNOT be empty
-+	if len(serviceId) == 0 {
-+		return false
-+	}
-+
-+	if len(serviceId) > maxServiceIdLength {
-+		return false
-+	}
-+
-+	// Use the regex to match against the input string
-+	return regexExprServiceId.MatchString(serviceId)
-+}
-+
-+// IsValidServiceName checks if the input string is a valid serviceName
-+func IsValidServiceName(serviceName string) bool {
-+	// ServiceName CAN be empty
-+	if len(serviceName) == 0 {
-+		return true
-+	}
-+
-+	if len(serviceName) > maxServiceIdName {
-+		return false
-+	}
-+
-+	// Use the regex to match against the input string
-+	return regexExprServiceName.MatchString(serviceName)
-+}
-diff --git a/x/shared/helpers/service_configs.go b/x/shared/helpers/service_configs.go
-new file mode 100644
-index 0000000..7a7baaf
---- /dev/null
-+++ b/x/shared/helpers/service_configs.go
-@@ -0,0 +1,33 @@
-+package helpers
-+
-+import (
-+	"fmt"
-+
-+	sharedtypes "pocket/x/shared/types"
-+)
-+
-+// AreValidAppServiceConfigs returns an error if the provided service configs are invalid
-+// by wrapping the provided around with additional details
-+func AreValidAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) (string, bool) {
-+	if len(services) == 0 {
-+		return fmt.Sprintf("no services configs provided for application: %v", services), false
-+	}
-+	for _, serviceConfig := range services {
-+		if serviceConfig == nil {
-+			return fmt.Sprintf("serviceConfig cannot be nil: %v", services), false
-+		}
-+		if serviceConfig.ServiceId == nil {
-+			return fmt.Sprintf("serviceId cannot be nil: %v", serviceConfig), false
-+		}
-+		if serviceConfig.ServiceId.Id == "" {
-+			return fmt.Sprintf("serviceId.Id cannot be empty: %v", serviceConfig), false
-+		}
-+		if !IsValidServiceId(serviceConfig.ServiceId.Id) {
-+			return fmt.Sprintf("invalid serviceId.Id: %v", serviceConfig), false
-+		}
-+		if !IsValidServiceName(serviceConfig.ServiceId.Name) {
-+			return fmt.Sprintf("invalid serviceId.Name: %v", serviceConfig), false
-+		}
-+	}
-+	return "", true
-+}
-diff --git a/x/shared/helpers/service_test.go b/x/shared/helpers/service_test.go
-new file mode 100644
-index 0000000..1d344b0
---- /dev/null
-+++ b/x/shared/helpers/service_test.go
-@@ -0,0 +1,29 @@
-+package helpers
-+
-+import "testing"
-+
-+func TestIsValidServiceId(t *testing.T) {
-+	tests := []struct {
-+		input    string
-+		expected bool
-+	}{
-+		{"Hello-1", true},
-+		{"Hello_2", true},
-+		{"hello-world", false}, // exceeds maxServiceIdLength
-+		{"Hello@", false},      // contains invalid character '@'
-+		{"HELLO", true},
-+		{"12345678", true},     // exactly maxServiceIdLength
-+		{"123456789", false},   // exceeds maxServiceIdLength
-+		{"Hello.World", false}, // contains invalid character '.'
-+		{"", false},            // empty string
-+	}
-+
-+	for _, test := range tests {
-+		t.Run(test.input, func(t *testing.T) {
-+			result := IsValidServiceId(test.input)
-+			if result != test.expected {
-+				t.Errorf("For input %s, expected %v but got %v", test.input, test.expected, result)
-+			}
-+		})
-+	}
-+}

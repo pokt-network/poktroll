@@ -292,19 +292,19 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt $(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1
-	SUPPLIER=supplier1 make supplier_stake
+	SERVICES=svc1,svc2 SUPPLIER=supplier1 make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	SUPPLIER=supplier2 make supplier_stake
+	SERVICES=svc2,svc3 SUPPLIER=supplier2 make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	SUPPLIER=supplier3 make supplier_stake
+	SERVICES=svc3,svc4 SUPPLIER=supplier3 make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)

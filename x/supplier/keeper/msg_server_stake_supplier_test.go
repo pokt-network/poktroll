@@ -8,6 +8,7 @@ import (
 
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/sample"
+	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/keeper"
 	"pocket/x/supplier/types"
 )
@@ -28,6 +29,20 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{
+					Id: "svcId",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
 	}
 
 	// Stake the supplier
@@ -35,23 +50,39 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, addr)
+	supplierFound, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, addr, foundSupplier.Address)
-	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
+	require.Equal(t, addr, supplierFound.Address)
+	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
+	require.Len(t, supplierFound.Services, 1)
 
 	// Prepare an updated supplier with a higher stake
 	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{
+					Id: "svcId",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
 	}
 
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(wctx, updateMsg)
 	require.NoError(t, err)
-	foundSupplier, isSupplierFound = k.GetSupplier(ctx, addr)
+	supplierFound, isSupplierFound = k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(200), foundSupplier.Stake.Amount.Int64())
+	require.Equal(t, int64(200), supplierFound.Stake.Amount.Int64())
+	require.Len(t, supplierFound.Services, 1)
 }
 
 func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
@@ -64,6 +95,20 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{
+					Id: "svcId",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
 	}
 
 	// Stake the supplier & verify that the supplier exists
@@ -76,6 +121,20 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{
+					Id: "svcId",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
 	}
 
 	// Verify that it fails
@@ -86,4 +145,5 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	supplierFound, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
+	require.Len(t, supplierFound.Services, 1)
 }

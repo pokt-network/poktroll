@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+	"pocket/testutil/sample"
 	sharedtypes "pocket/x/shared/types"
 	"pocket/x/supplier/keeper"
 )
@@ -17,48 +19,62 @@ import (
 var _ = strconv.IntSize
 
 func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Supplier {
-	items := make([]sharedtypes.Supplier, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
-
-		keeper.SetSupplier(ctx, items[i])
+	suppliers := make([]sharedtypes.Supplier, n)
+	for i := range suppliers {
+		supplier := &suppliers[i]
+		supplier.Address = sample.AccAddress()
+		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
+		supplier.Services = []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     fmt.Sprintf("http://localhost:%d", i),
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		}
+		keeper.SetSupplier(ctx, *supplier)
 	}
-	return items
+
+	return suppliers
 }
 
 func TestSupplierGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNSupplier(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetSupplier(ctx,
-			item.Address,
+	suppliers := createNSupplier(keeper, ctx, 10)
+	for _, supplier := range suppliers {
+		supplierFound, isSupplierFound := keeper.GetSupplier(ctx,
+			supplier.Address,
 		)
-		require.True(t, found)
+		require.True(t, isSupplierFound)
 		require.Equal(t,
-			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&supplier),
+			nullify.Fill(&supplierFound),
 		)
 	}
 }
 func TestSupplierRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNSupplier(keeper, ctx, 10)
-	for _, item := range items {
+	suppliers := createNSupplier(keeper, ctx, 10)
+	for _, supplier := range suppliers {
 		keeper.RemoveSupplier(ctx,
-			item.Address,
+			supplier.Address,
 		)
-		_, found := keeper.GetSupplier(ctx,
-			item.Address,
+		_, isSupplierFound := keeper.GetSupplier(ctx,
+			supplier.Address,
 		)
-		require.False(t, found)
+		require.False(t, isSupplierFound)
 	}
 }
 
 func TestSupplierGetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNSupplier(keeper, ctx, 10)
+	suppliers := createNSupplier(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(suppliers),
 		nullify.Fill(keeper.GetAllSupplier(ctx)),
 	)
 }

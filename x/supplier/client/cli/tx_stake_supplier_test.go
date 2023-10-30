@@ -39,51 +39,94 @@ func TestCLI_StakeSupplier(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc        string
-		address     string
-		stakeString string
-		err         *sdkerrors.Error
+		desc             string
+		address          string
+		stakeString      string
+		serviceIdsString string
+		err              *sdkerrors.Error
 	}{
+		// Happy Paths
 		{
-			desc:        "stake supplier: valid",
-			address:     supplierAccount.Address.String(),
-			stakeString: "1000upokt",
+			desc:             "stake supplier: valid",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1,svc2,svc3",
 		},
+
+		// Error Paths - Address Related
 		{
 			desc: "stake supplier: missing address",
 			// address:     "explicitly missing",
-			stakeString: "1000upokt",
-			err:         types.ErrSupplierInvalidAddress,
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidAddress,
 		},
 		{
-			desc:        "stake supplier: invalid address",
-			address:     "invalid",
-			stakeString: "1000upokt",
-			err:         types.ErrSupplierInvalidAddress,
+			desc:             "stake supplier: invalid address",
+			address:          "invalid",
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidAddress,
 		},
+
+		// Error Paths - Stake Related
 		{
 			desc:    "stake supplier: missing stake",
 			address: supplierAccount.Address.String(),
 			// stakeString: "explicitly missing",
-			err: types.ErrSupplierInvalidStake,
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake denom",
-			address:     supplierAccount.Address.String(),
-			stakeString: "1000invalid",
-			err:         types.ErrSupplierInvalidStake,
+			desc:             "stake supplier: invalid stake denom",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000invalid",
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake amount (zero)",
-			address:     supplierAccount.Address.String(),
-			stakeString: "0upokt",
-			err:         types.ErrSupplierInvalidStake,
+			desc:             "stake supplier: invalid stake amount (zero)",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "0upokt",
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake amount (negative)",
-			address:     supplierAccount.Address.String(),
-			stakeString: "-1000upokt",
-			err:         types.ErrSupplierInvalidStake,
+			desc:             "stake supplier: invalid stake amount (negative)",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "-1000upokt",
+			serviceIdsString: "svc1,svc2,svc3",
+			err:              types.ErrSupplierInvalidStake,
+		},
+
+		// Error Paths - Service Related
+		{
+			desc:             "services_test: invalid services (empty string)",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000upokt",
+			serviceIdsString: "",
+			err:              types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:             "services_test: single invalid service contains spaces",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1 svc1_part2 svc1_part3",
+			err:              types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:             "services_test: one of two services is invalid because it contains spaces",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1 svc1_part2,svc2",
+			err:              types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:             "services_test: service ID is too long (8 chars is the max)",
+			address:          supplierAccount.Address.String(),
+			stakeString:      "1000upokt",
+			serviceIdsString: "svc1,abcdefghi",
+			err:              types.ErrSupplierInvalidServiceConfig,
 		},
 	}
 
