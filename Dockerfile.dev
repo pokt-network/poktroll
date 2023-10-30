@@ -12,4 +12,8 @@ COPY . /poktroll
 
 WORKDIR /poktroll
 
+# TODO_IN_THIS_PR: remove, this is me trying to find the issue
+RUN ls -la /poktroll
+RUN ls -la /poktroll/bin
+
 RUN mv /poktroll/bin/pocketd /usr/bin/pocketd

@@ -1,0 +1,125 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load .dockerignore
+#1 transferring context: 2B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile.dev
+#2 transferring dockerfile: 429B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.20
+#3 DONE 0.6s
+
+#4 [1/7] FROM docker.io/library/golang:1.20@sha256:098d628490c97d4419ed44a23d893f37b764f3bea06e0827183e8af4120e19be
+#4 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 145.81kB 0.1s done
+#5 DONE 0.1s
+
+#6 [2/7] RUN apt update &&     apt-get install -y         ca-certificates         curl jq make
+#6 0.128 
+#6 0.128 WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+#6 0.128 
+#6 0.182 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#6 0.208 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [52.1 kB]
+#6 0.274 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+#6 0.288 Get:4 http://deb.debian.org/debian bookworm/main arm64 Packages [8681 kB]
+#6 7.657 Get:5 http://deb.debian.org/debian bookworm-updates/main arm64 Packages [6408 B]
+#6 7.659 Get:6 http://deb.debian.org/debian-security bookworm-security/main arm64 Packages [88.9 kB]
+#6 8.394 Fetched 9027 kB in 8s (1093 kB/s)
+#6 8.394 Reading package lists...
+#6 8.735 Building dependency tree...
+#6 8.810 Reading state information...
+#6 8.821 2 packages can be upgraded. Run 'apt list --upgradable' to see them.
+#6 8.826 Reading package lists...
+#6 9.136 Building dependency tree...
+#6 9.212 Reading state information...
+#6 9.317 ca-certificates is already the newest version (20230311).
+#6 9.317 curl is already the newest version (7.88.1-10+deb12u4).
+#6 9.317 make is already the newest version (4.3-4.1).
+#6 9.317 The following additional packages will be installed:
+#6 9.317   libjq1 libonig5
+#6 9.351 The following NEW packages will be installed:
+#6 9.352   jq libjq1 libonig5
+#6 9.454 0 upgraded, 3 newly installed, 0 to remove and 2 not upgraded.
+#6 9.454 Need to get 364 kB of archives.
+#6 9.454 After this operation, 1132 kB of additional disk space will be used.
+#6 9.454 Get:1 http://deb.debian.org/debian bookworm/main arm64 libonig5 arm64 6.9.8-1 [179 kB]
+#6 9.630 Get:2 http://deb.debian.org/debian bookworm/main arm64 libjq1 arm64 1.6-2.1 [121 kB]
+#6 9.725 Get:3 http://deb.debian.org/debian bookworm/main arm64 jq arm64 1.6-2.1 [64.5 kB]
+#6 9.844 debconf: delaying package configuration, since apt-utils is not installed
+#6 9.861 Fetched 364 kB in 0s (951 kB/s)
+#6 9.872 Selecting previously unselected package libonig5:arm64.
+#6 9.872 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 15633 files and directories currently installed.)
+#6 9.880 Preparing to unpack .../libonig5_6.9.8-1_arm64.deb ...
+#6 9.884 Unpacking libonig5:arm64 (6.9.8-1) ...
+#6 9.908 Selecting previously unselected package libjq1:arm64.
+#6 9.909 Preparing to unpack .../libjq1_1.6-2.1_arm64.deb ...
+#6 9.910 Unpacking libjq1:arm64 (1.6-2.1) ...
+#6 9.927 Selecting previously unselected package jq.
+#6 9.928 Preparing to unpack .../archives/jq_1.6-2.1_arm64.deb ...
+#6 9.929 Unpacking jq (1.6-2.1) ...
+#6 9.947 Setting up libonig5:arm64 (6.9.8-1) ...
+#6 9.950 Setting up libjq1:arm64 (1.6-2.1) ...
+#6 9.954 Setting up jq (1.6-2.1) ...
+#6 9.959 Processing triggers for libc-bin (2.36-9+deb12u3) ...
+#6 DONE 10.0s
+
+#7 [3/7] COPY . /poktroll
+#7 DONE 0.6s
+
+#8 [4/7] WORKDIR /poktroll
+#8 DONE 0.0s
+
+#9 [5/7] RUN ls -la /poktroll
+#9 0.119 total 416
+#9 0.119 drwxr-xr-x 17 root root   4096 Oct 30 22:53 .
+#9 0.119 drwxr-xr-x  1 root root   4096 Oct 30 22:53 ..
+#9 0.119 drwxr-xr-x  7 root root   4096 Oct 30 22:52 .git
+#9 0.119 drwxr-xr-x  4 root root   4096 Oct 30 22:52 .github
+#9 0.119 -rw-r--r--  1 root root   1123 Oct 27 22:50 .gitignore
+#9 0.119 -rw-r--r--  1 root root    386 Oct 30 22:51 Dockerfile.dev
+#9 0.119 -rw-r--r--  1 root root   1071 Oct  4 18:56 LICENSE
+#9 0.119 -rw-r--r--  1 root root  14464 Oct 27 21:40 Makefile
+#9 0.119 -rw-r--r--  1 root root    719 Oct 27 21:18 README.md
+#9 0.119 -rw-r--r--  1 root root   5051 Oct 27 21:18 Tiltfile
+#9 0.119 drwxr-xr-x  3 root root   4096 Oct 27 21:18 app
+#9 0.119 drwxr-xr-x  2 root root   4096 Oct 17 01:33 bin
+#9 0.119 -rw-r--r--  1 root root    313 Oct 30 22:53 build.log
+#9 0.119 drwxr-xr-x  3 root root   4096 Oct  4 18:56 cmd
+#9 0.119 -rw-r--r--  1 root root   4602 Oct 27 21:18 config.yml
+#9 0.119 drwxr-xr-x  5 root root   4096 Oct 27 21:18 docs
+#9 0.119 drwxr-xr-x  3 root root   4096 Oct 19 16:59 e2e
+#9 0.119 -rw-r--r--  1 root root  13965 Oct 27 21:46 go.mod
+#9 0.119 -rw-r--r--  1 root root 282639 Oct 19 16:59 go.sum
+#9 0.119 drwxr-xr-x  6 root root   4096 Oct 27 21:18 internal
+#9 0.119 drwxr-xr-x  4 root root   4096 Oct 27 21:18 localnet
+#9 0.119 drwxr-xr-x  6 root root   4096 Oct 27 21:18 pkg
+#9 0.119 drwxr-xr-x  3 root root   4096 Oct  4 18:56 proto
+#9 0.119 drwxr-xr-x  2 root root   4096 Oct 27 22:00 release
+#9 0.119 drwxr-xr-x 10 root root   4096 Oct 27 21:18 testutil
+#9 0.119 drwxr-xr-x  3 root root   4096 Oct 27 21:18 tools
+#9 0.119 drwxr-xr-x  9 root root   4096 Oct 17 01:32 x
+#9 DONE 0.1s
+
+#10 [6/7] RUN ls -la /poktroll/bin
+#10 0.132 total 118336
+#10 0.132 drwxr-xr-x  2 root root      4096 Oct 17 01:33 .
+#10 0.132 drwxr-xr-x 17 root root      4096 Oct 30 22:53 ..
+#10 0.132 -rw-r--r--  1 root root         0 Oct  4 19:32 .keep
+#10 0.132 -rwxr-xr-x  1 root root 121164885 Oct 17 01:33 pocketd
+#10 DONE 0.1s
+
+#11 [7/7] RUN mv /poktroll/bin/pocketd /usr/bin/pocketd
+#11 DONE 0.3s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 0.5s done
+#12 writing image sha256:6dc11b536e841d719ab51426e17c0c9846c74d68da336bfb8bcface7a9a7eb21 done
+#12 DONE 0.5s
+
+What's Next?
+  View a summary of image vulnerabilities and recommendations → docker scout quickview
