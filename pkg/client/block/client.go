@@ -3,7 +3,7 @@ package block
 import (
 	"context"
 	"fmt"
-	"log"
+	"time"
 
 	"cosmossdk.io/depinject"
 
@@ -11,6 +11,25 @@ import (
 	"pocket/pkg/either"
 	"pocket/pkg/observable"
 	"pocket/pkg/observable/channel"
+	"pocket/pkg/retry"
+)
+
+const (
+	eventsBytesRetryDelay = time.Second
+	eventsBytesRetryLimit = 10
+	// NB: cometbft event subscription query for newly committed blocks.
+	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
+	committedBlocksQuery = "tm.event='NewBlock'"
+	// latestBlockObsvblsReplayBufferSize is the replay buffer size of the
+	// latestBlockObsvbls replay observable which is used to cache the latest block observable.
+	// replay observable. It is updated with a new "active" observable when a new
+	// events query subscription is created, for example, after a non-persistent
+	// connection error.
+	latestBlockObsvblsReplayBufferSize = 1
+	// latestBlockReplayBufferSize is the replay buffer size of the latest block
+	// replay observable which is notified when block commit events are received
+	// by the events query client subscription created in goPublishBlocks.
+	latestBlockReplayBufferSize = 1
 )
 
 var (
@@ -27,14 +46,14 @@ type blockClient struct {
 	// newly committed block events. It emits an either value which may contain
 	// an error, at most, once and closes immediately after if it does.
 	eventsClient client.EventsQueryClient
-	// latestBlockObsvblsReplay is a replay observable with replay buffer size 1,
+	// latestBlockObsvbls is a replay observable with replay buffer size 1,
 	// which holds the "active latest block observable" which is notified when
 	// block commit events are received by the events query client subscription
 	// created in goPublishBlocks. This observable (and the one it emits) closes
 	// when the events bytes observable returns an error and is updated with a
 	// new "active" observable after a new events query subscription is created.
-	latestBlockObsvblsReplay observable.ReplayObservable[client.BlocksObservable]
-	// latestBlockObsvblsReplayPublishCh is the publish channel for latestBlockObsvblsReplay.
+	latestBlockObsvbls observable.ReplayObservable[client.BlocksObservable]
+	// latestBlockObsvblsReplayPublishCh is the publish channel for latestBlockObsvbls.
 	// It's used to set blockObsvbl initially and subsequently update it, for
 	// example, when the connection is re-established after erroring.
 	latestBlockObsvblsReplayPublishCh chan<- client.BlocksObservable
@@ -53,15 +72,15 @@ func NewBlockClient(
 ) (client.BlockClient, error) {
 	// Initialize block client
 	bClient := &blockClient{endpointURL: cometWebsocketURL}
-	bClient.latestBlockObsvblsReplay, bClient.latestBlockObsvblsReplayPublishCh =
-		channel.NewReplayObservable[client.BlocksObservable](ctx, 1)
+	bClient.latestBlockObsvbls, bClient.latestBlockObsvblsReplayPublishCh =
+		channel.NewReplayObservable[client.BlocksObservable](ctx, latestBlockObsvblsReplayBufferSize)
 
 	// Inject dependencies
 	if err := depinject.Inject(deps, &bClient.eventsClient); err != nil {
 		return nil, err
 	}
 
-	// Concurrently publish blocks to the observable emitted by latestBlockObsvblsReplay.
+	// Concurrently publish blocks to the observable emitted by latestBlockObsvbls.
 	go bClient.goPublishBlocks(ctx)
 
 	return bClient, nil
@@ -71,16 +90,19 @@ func NewBlockClient(
 // of 1, which is notified when block commit events are received by the events
 // query subscription.
 func (bClient *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlocksObservable {
-	replayedBlocksObservable := bClient.latestBlockObsvblsReplay.Last(ctx, 1)[0]
-	return replayedBlocksObservable
+	// Get the latest block observable from the replay observable. We only ever
+	// want the last 1 as any prior latest block observable values are closed.
+	// Directly accessing the zeroth index here is safe because the call to Last
+	// is guaranteed to return a slice with at least 1 element.
+	return bClient.latestBlockObsvbls.Last(ctx, 1)[0]
 }
 
 // LatestBlock returns the latest committed block that's been received by the
 // corresponding events query subscription.
 // It blocks until at least one block event has been received.
 func (bClient *blockClient) LatestBlock(ctx context.Context) (latestBlock client.Block) {
-	v := bClient.CommittedBlocksSequence(ctx).Last(ctx, 1)[0]
-	return v
+	block := bClient.CommittedBlocksSequence(ctx).Last(ctx, 1)[0]
+	return block
 }
 
 // Close unsubscribes all observers of the committed blocks sequence observable
@@ -91,18 +113,26 @@ func (bClient *blockClient) Close() {
 }
 
 // goPublishBlocks receives event bytes from the events query client, maps them
-// to block events, and publishes them to the latestBlockObsvblsReplay replay observable.
+// to block events, and publishes them to the latestBlockObsvbls replay observable.
 func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
-	// NB: cometbft event subscription query
-	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
-	query := "tm.event='NewBlock'"
-
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to latestBlockObsvblsReplayPublishCh such that
-	// latestBlockObsvblsReplay.Last(ctx, 1) will return it.
-	retryOnError(ctx, "goPublishBlocks", func() chan error {
+	// latestBlockObsvbls.Last(ctx, 1) will return it.
+	publishErr := retry.OnError(
+		ctx,
+		eventsBytesRetryDelay,
+		eventsBytesRetryLimit,
+		"goPublishBlocks",
+		bClient.retryPublishBlocksFactory(ctx),
+	)
+
+	panic(publishErr)
+}
+
+func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func() chan error {
+	return func() chan error {
 		errCh := make(chan error, 1)
-		eventsBzObsvbl, err := bClient.eventsClient.EventsBytes(ctx, query)
+		eventsBzObsvbl, err := bClient.eventsClient.EventsBytes(ctx, committedBlocksQuery)
 		if err != nil {
 			errCh <- err
 			return errCh
@@ -113,32 +143,12 @@ func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 		// support for generic types.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObsvbl)
 		blockEventFromEventBz := newEventsBytesToBlockMapFn(errCh)
-		blocksObsvbl := channel.MapReplay(ctx, 1, eventsBz, blockEventFromEventBz)
+		blocksObsvbl := channel.MapReplay(ctx, latestBlockReplayBufferSize, eventsBz, blockEventFromEventBz)
 
-		// Initially set latestBlockObsvblsReplay and update if after retrying on error.
+		// Initially set latestBlockObsvbls and update if after retrying on error.
 		bClient.latestBlockObsvblsReplayPublishCh <- blocksObsvbl
 
 		return errCh
-	})
-}
-
-// retryOnError runs the given function, which is expected to return an error
-// channel, and re-runs the function when an error is received.
-// TODO_CONSIDERATION: promote to some shared package (perhaps /internal/concurrency)
-func retryOnError(
-	ctx context.Context,
-	workName string,
-	workFn func() chan error,
-) {
-	errCh := workFn()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case err := <-errCh:
-			errCh = workFn()
-			log.Printf("WARN: retrying %s after error: %s", workName, err)
-		}
 	}
 }
 
