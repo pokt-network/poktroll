@@ -4,6 +4,9 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
+
+	servicehelpers "pocket/x/shared/helpers"
+	sharedtypes "pocket/x/shared/types"
 )
 
 const TypeMsgStakeApplication = "stake_application"
@@ -13,11 +16,22 @@ var _ sdk.Msg = (*MsgStakeApplication)(nil)
 func NewMsgStakeApplication(
 	address string,
 	stake types.Coin,
-
+	serviceIds []string,
 ) *MsgStakeApplication {
+	// Convert the serviceIds to the proper ApplicationServiceConfig type (enables future expansion)
+	appServiceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(serviceIds))
+	for idx, serviceId := range serviceIds {
+		appServiceConfigs[idx] = &sharedtypes.ApplicationServiceConfig{
+			ServiceId: &sharedtypes.ServiceId{
+				Id: serviceId,
+			},
+		}
+	}
+
 	return &MsgStakeApplication{
-		Address: address,
-		Stake:   &stake,
+		Address:  address,
+		Stake:    &stake,
+		Services: appServiceConfigs,
 	}
 }
 
@@ -64,7 +78,12 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", msg.Stake)
 	}
 	if stake.Denom != "upokt" {
-		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", msg.Stake)
+		return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application: %v", msg.Stake)
+	}
+
+	// Validate the application service configs
+	if reason, ok := servicehelpers.AreValidAppServiceConfigs(msg.Services); !ok {
+		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, reason)
 	}
 
 	return nil

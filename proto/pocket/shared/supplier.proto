@@ -16,4 +16,3 @@ message Supplier {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the supplier has staked
   repeated SupplierServiceConfig services = 3; // The service configs this supplier can support
 }
-
