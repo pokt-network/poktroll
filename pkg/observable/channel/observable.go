@@ -72,7 +72,7 @@ func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Obser
 	observer := NewObserver[V](ctx, obs.observerManager.remove)
 	obs.observerManager.add(observer)
 
-	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
+	// caller can rely on context cancelation or call UnsubscribeAll() to unsubscribe
 	// active observers
 	if ctx != nil {
 		// asynchronously wait for the context to be done and then unsubscribe
