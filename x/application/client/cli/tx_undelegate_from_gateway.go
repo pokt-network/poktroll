@@ -17,10 +17,9 @@ func CmdUndelegateFromGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "undelegate-from-gateway [gateway address]",
 		Short: "Undelegate an application from a gateway",
-		Long: `Undelegate an application from the gateway whose address is provided. This is a broadcast operation
-that will remove the gateway from those which the application
-has delegated its trust to. This gateway will no longer have
-the ability to sign relays from the application.
+		Long: `Undelegate an application from the gateway with the provided address. This is a broadcast operation
+that removes the authority from the gateway specified to sign relays requests for the application, disallowing the gateway
+act on the behalf of the application during a session.
 
 Example:
 $ pocketd --home=$(POCKETD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
