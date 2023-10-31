@@ -73,7 +73,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	}
 
 	// Validate the application service configs
-	if err := servicehelpers.AreValidSupplierServiceConfigs(msg.Services); err != nil {
+	if err := servicehelpers.ValidateSupplierService(msg.Services); err != nil {
 		return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 	}
 

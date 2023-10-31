@@ -84,7 +84,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 	}
 
 	// Validate the application service configs
-	if err := servicehelpers.AreValidAppServiceConfigs(msg.Services); err != nil {
+	if err := servicehelpers.ValidateAppServiceConfigs(msg.Services); err != nil {
 		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, err.Error())
 	}
 

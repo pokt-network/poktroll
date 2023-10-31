@@ -115,7 +115,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				},
 			},
 		}
-		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
@@ -133,7 +133,7 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
-		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
@@ -162,7 +162,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 				},
 			},
 		}
-		// NB: Might be useful for development but commented to cause bugs if empty fields cause business logic issues
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
 		state.SupplierList = append(state.SupplierList, supplier)
 	}

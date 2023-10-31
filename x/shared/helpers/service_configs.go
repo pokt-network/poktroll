@@ -6,8 +6,8 @@ import (
 	sharedtypes "pocket/x/shared/types"
 )
 
-// AreValidAppServiceConfigs returns an error if any of the application service configs are invalid
-func AreValidAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
+// ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
+func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services configs provided for application: %v", services)
 	}
@@ -31,8 +31,8 @@ func AreValidAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 	return nil
 }
 
-// AreValidSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
-func AreValidSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
+// ValidateSupplierService returns an error if any of the supplier service configs are invalid
+func ValidateSupplierService(services []*sharedtypes.SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}
