@@ -31,8 +31,8 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 	return nil
 }
 
-// ValidateSupplierService returns an error if any of the supplier service configs are invalid
-func ValidateSupplierService(services []*sharedtypes.SupplierServiceConfig) error {
+// ValidateSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
+func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
 	if len(services) == 0 {
 		return fmt.Errorf("no services provided for supplier: %v", services)
 	}

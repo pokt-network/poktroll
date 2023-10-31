@@ -38,7 +38,7 @@ func (gs GenesisState) Validate() error {
 	// Check that the stake value for the suppliers is valid
 	for _, supplier := range gs.SupplierList {
 		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
-		// similar to how we have `AreValidAppServiceConfigs` below
+		// similar to how we have `ValidateAppServiceConfigs` below
 		if supplier.Stake == nil {
 			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "nil stake amount for supplier")
 		}
@@ -58,7 +58,7 @@ func (gs GenesisState) Validate() error {
 
 		// Valid the application service configs
 		// Validate the application service configs
-		if err := servicehelpers.ValidateSupplierService(supplier.Services); err != nil {
+		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
 			return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 		}
 	}
