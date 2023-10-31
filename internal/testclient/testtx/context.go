@@ -1,10 +1,14 @@
 package testtx
 
 import (
+	"context"
+	"fmt"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"testing"
 
 	"cosmossdk.io/depinject"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
+	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
@@ -19,10 +23,156 @@ import (
 	"pocket/pkg/client/tx"
 )
 
+func NewOneTimeErrTxTimeoutTxContext(
+	t *testing.T,
+	keyring cosmoskeyring.Keyring,
+	signingKeyName string,
+	expectedTx *cometbytes.HexBytes,
+	expectedTxHash *cometbytes.HexBytes,
+	expectedErrMsg *string,
+) *mockclient.MockTxContext {
+	t.Helper()
+
+	signerKey, err := keyring.Key(signingKeyName)
+	require.NoError(t, err)
+
+	signerAddr, err := signerKey.GetAddress()
+	require.NoError(t, err)
+
+	*expectedErrMsg = fmt.Sprintf(
+		"fee payer address: %s does not exist: unknown address",
+		signerAddr.String(),
+	)
+
+	txCtxMock := NewBaseTxContext(
+		t, signingKeyName,
+		keyring,
+		expectedTx,
+		expectedTxHash,
+	)
+
+	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
+		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+			return &cosmostypes.TxResponse{
+				Height:    1,
+				TxHash:    expectedTxHash.String(),
+				RawLog:    "",
+				Logs:      nil,
+				Tx:        nil,
+				Timestamp: "",
+				Events:    nil,
+			}, nil
+		}).Times(1)
+
+	txCtxMock.EXPECT().QueryTx(
+		gomock.AssignableToTypeOf(context.Background()),
+		gomock.AssignableToTypeOf([]byte{}),
+		gomock.AssignableToTypeOf(false),
+	).DoAndReturn(func(
+		ctx context.Context,
+		txHash []byte,
+		_ bool,
+	) (*cometrpctypes.ResultTx, error) {
+		return &cometrpctypes.ResultTx{
+			Hash:   txHash,
+			Height: 1,
+			TxResult: abci.ResponseDeliverTx{
+				Code:      1,
+				Log:       *expectedErrMsg,
+				Codespace: "test_codespace",
+			},
+			Tx: expectedTx.Bytes(),
+		}, nil
+	})
+
+	return txCtxMock
+}
+
+func NewOneTimeErrCheckTxTxContext(
+	t *testing.T,
+	keyring cosmoskeyring.Keyring,
+	signingKeyName string,
+	expectedTx *cometbytes.HexBytes,
+	expectedTxHash *cometbytes.HexBytes,
+	expectedErrMsg *string,
+) *mockclient.MockTxContext {
+	t.Helper()
+
+	signerKey, err := keyring.Key(signingKeyName)
+	require.NoError(t, err)
+
+	signerAddr, err := signerKey.GetAddress()
+	require.NoError(t, err)
+
+	*expectedErrMsg = fmt.Sprintf(
+		"fee payer address: %s does not exist: unknown address",
+		signerAddr.String(),
+	)
+
+	txCtxMock := NewBaseTxContext(
+		t, signingKeyName,
+		keyring,
+		expectedTx,
+		expectedTxHash,
+	)
+
+	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
+		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+			return &cosmostypes.TxResponse{
+				Height:    1,
+				TxHash:    expectedTxHash.String(),
+				RawLog:    *expectedErrMsg,
+				Code:      1,
+				Codespace: "test_codespace",
+				Logs:      nil,
+				Tx:        nil,
+				Timestamp: "",
+				Events:    nil,
+			}, nil
+		}).Times(1)
+
+	return txCtxMock
+}
+
 func NewOneTimeTxTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
+	expectedTx *cometbytes.HexBytes,
+	expectedTxHash *cometbytes.HexBytes,
+) *mockclient.MockTxContext {
+	t.Helper()
+
+	txCtxMock := NewBaseTxContext(
+		t, signingKeyName,
+		keyring,
+		expectedTx,
+		expectedTxHash,
+	)
+
+	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
+		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+			return &cosmostypes.TxResponse{
+				Height:    1,
+				TxHash:    expectedTxHash.String(),
+				RawLog:    "",
+				Logs:      nil,
+				Tx:        nil,
+				Timestamp: "",
+				Events:    nil,
+			}, nil
+		}).Times(1)
+
+	return txCtxMock
+}
+
+func NewBaseTxContext(
+	t *testing.T,
+	signingKeyName string,
+	keyring cosmoskeyring.Keyring,
 	expectedTx *cometbytes.HexBytes,
 	expectedTxHash *cometbytes.HexBytes,
 ) *mockclient.MockTxContext {
@@ -45,19 +195,6 @@ func NewOneTimeTxTxContext(
 			require.NoError(t, err)
 			return expectedTx.Bytes(), nil
 		}).Times(1)
-	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
-	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
-		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
-			return &cosmostypes.TxResponse{
-				Height:    1,
-				TxHash:    expectedTxHash.String(),
-				RawLog:    "",
-				Logs:      nil,
-				Tx:        nil,
-				Timestamp: "",
-				Events:    nil,
-			}, nil
-		}).Times(1)
 
 	return txCtxMock
 }
@@ -67,6 +204,7 @@ func NewAnyTimesTxTxContext(
 	keyring cosmoskeyring.Keyring,
 ) (*mockclient.MockTxContext, client.TxContext) {
 	t.Helper()
+
 	var (
 		ctrl    = gomock.NewController(t)
 		flagSet = testclient.NewLocalnetFlagSet(t)

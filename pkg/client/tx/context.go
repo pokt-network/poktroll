@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	comettypes "github.com/cometbft/cometbft/rpc/core/types"
+	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -14,7 +14,7 @@ import (
 	"pocket/pkg/client"
 )
 
-var _ client.TxContext = &cosmosTxContext{}
+var _ client.TxContext = (*cosmosTxContext)(nil)
 
 type cosmosTxContext struct {
 	clientCtx cosmosclient.Context
@@ -69,6 +69,6 @@ func (txCtx cosmosTxContext) QueryTx(
 	ctx context.Context,
 	txHash []byte,
 	prove bool,
-) (*comettypes.ResultTx, error) {
+) (*cometrpctypes.ResultTx, error) {
 	return txCtx.clientCtx.Client.Tx(ctx, txHash, prove)
 }
