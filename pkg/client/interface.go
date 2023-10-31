@@ -1,13 +1,41 @@
 //go:generate mockgen -destination=../../internal/mocks/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
+//go:generate mockgen -destination=../../internal/mocks/mockclient/tx_client_mock.go -package=mockclient . TxContext
+//go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
+//go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
+//go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
 
 package client
 
 import (
 	"context"
 
+	comettypes "github.com/cometbft/cometbft/rpc/core/types"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+
 	"pocket/pkg/either"
 	"pocket/pkg/observable"
 )
+
+type TxContext interface {
+	GetKeyring() cosmoskeyring.Keyring
+	NewTxBuilder() cosmosclient.TxBuilder
+	SignTx(
+		keyName string,
+		txBuilder cosmosclient.TxBuilder,
+		offline, overwriteSig bool,
+	) error
+	EncodeTx(cosmosclient.TxBuilder) ([]byte, error)
+	// TODO_CONSIDERATION: perhaps TxResponse should be an interface type that we own
+	BroadcastTxSync([]byte) (*cosmostypes.TxResponse, error)
+	QueryTx(
+		ctx context.Context,
+		txHash []byte,
+		prove bool,
+		// TODO_CONSIDERATION: perhaps ResultTx should be an interface type that we own
+	) (*comettypes.ResultTx, error)
+}
 
 // BlocksObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
