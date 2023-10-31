@@ -3,7 +3,6 @@ package types_test
 import (
 	"testing"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -25,15 +24,9 @@ func TestGenesisState_Validate(t *testing.T) {
 		ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
 	}
 
-	emptyDelegatees := make([]codectypes.Any, 0)
-	pubKey1 := sample.AccPubKey()
-	pubKey2 := sample.AccPubKey()
-	anyPubKey1, err := codectypes.NewAnyWithValue(pubKey1)
-	require.NoError(t, err)
-	anyPubKey2, err := codectypes.NewAnyWithValue(pubKey2)
-	require.NoError(t, err)
-	invalidPubKey, err := codectypes.NewAnyWithValue(&types.Application{})
-	require.NoError(t, err)
+	emptyDelegatees := make([]string, 0)
+	gatewayAddr1 := sample.AccAddress()
+	gatewayAddr2 := sample.AccAddress()
 
 	tests := []struct {
 		desc     string
@@ -50,16 +43,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey1, *anyPubKey2},
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: []string{gatewayAddr1, gatewayAddr2},
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &stake2,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey2, *anyPubKey1},
+						Address:                   addr2,
+						Stake:                     &stake2,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: []string{gatewayAddr2, gatewayAddr1},
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -71,16 +64,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr2,
+						Stake:                     &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -91,16 +84,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr2,
+						Stake:                     &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -111,16 +104,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr2,
+						Stake:                     &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -131,16 +124,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr2,
+						Stake:                     &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -151,16 +144,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr1,
-						Stake:                   &stake2,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake2,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -171,16 +164,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   nil,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr2,
+						Stake:                     nil,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -191,16 +184,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
 						Address: addr2,
 						// Explicitly missing stake
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -211,16 +204,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &stake2,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: []codectypes.Any{*invalidPubKey},
+						Address:                   addr2,
+						Stake:                     &stake2,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: []string{"invalid address"},
 					},
 				},
 			},
@@ -231,16 +224,16 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
-						DelegateeGatewayPubKeys: []codectypes.Any{*anyPubKey1},
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: []string{gatewayAddr1},
 					},
 					{
-						Address:                 addr2,
-						Stake:                   &stake2,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
-						DelegateeGatewayPubKeys: []codectypes.Any{*invalidPubKey, *anyPubKey2},
+						Address:                   addr2,
+						Stake:                     &stake2,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: []string{"invalid address", gatewayAddr2},
 					},
 				},
 			},
@@ -254,7 +247,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						// ServiceConfigs: omitted
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -265,10 +258,10 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ApplicationList: []types.Application{
 					{
-						Address:                 addr1,
-						Stake:                   &stake1,
-						ServiceConfigs:          []*sharedtypes.ApplicationServiceConfig{},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{},
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -284,7 +277,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 							{ServiceId: &sharedtypes.ServiceId{Id: "12345678901"}},
 						},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -303,7 +296,7 @@ func TestGenesisState_Validate(t *testing.T) {
 								Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
 							}},
 						},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
@@ -319,7 +312,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 							{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
 						},
-						DelegateeGatewayPubKeys: emptyDelegatees,
+						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},

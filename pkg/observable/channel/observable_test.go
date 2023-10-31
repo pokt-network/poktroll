@@ -337,7 +337,7 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 
 // TODO_TECHDEBT/TODO_INCOMPLETE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
-	t.Skip("add coverage: all observers should unsubscribeAll when publishCh closes")
+	t.Skip("add coverage: all observers should unsubscribe when publishCh closes")
 }
 
 func delayedPublishFactory[V any](publishCh chan<- V, delay time.Duration) func(value V) {
