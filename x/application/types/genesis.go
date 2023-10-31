@@ -34,10 +34,10 @@ func (gs GenesisState) Validate() error {
 		applicationIndexMap[index] = struct{}{}
 	}
 
-	// Check that the stake value for the apps is valid and that the delegatee pubkeys are valid
+	// Check that the stake value for the apps is valid and that the delegatee addresses are valid
 	for _, app := range gs.ApplicationList {
 		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
-		// similar to how we have `AreValidAppServiceConfigs` below
+		// similar to how we have `ValidateAppServiceConfigs` below
 		if app.Stake == nil {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
 		}
@@ -63,8 +63,8 @@ func (gs GenesisState) Validate() error {
 		}
 
 		// Validate the application service configs
-		if reason, ok := servicehelpers.AreValidAppServiceConfigs(app.ServiceConfigs); !ok {
-			return sdkerrors.Wrapf(ErrAppInvalidStake, reason)
+		if err := servicehelpers.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, err.Error())
 		}
 	}
 

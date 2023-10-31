@@ -256,15 +256,15 @@ app_stake: ## Stake tokens for the application specified (must specify the APP a
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1
-	SERVICES=svc1,svc2 APP=app1 make app_stake
+	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	SERVICES=svc2,svc3 APP=app2 make app_stake
+	APP=app2 SERVICES=anvil,svc2,svc3 make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	SERVICES=svc3,svc4 APP=app3 make app_stake
+	APP=app3 SERVICES=anvil,svc3,svc4 make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
@@ -306,21 +306,23 @@ app3_delegate_gateway3: ## Delegate trust to gateway3
 supplier_list: ## List all the staked supplier
 	pocketd --home=$(POCKETD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
+# TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
+# TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1
-	SUPPLIER=supplier1 make supplier_stake
+	SUPPLIER=supplier1 SERVICES="anvil;http://anvil:8547,svc1;http://localhost:8081" make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	SUPPLIER=supplier2 make supplier_stake
+	SUPPLIER=supplier2 SERVICES="anvil;http://anvil:8547,svc2;http://localhost:8082" make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	SUPPLIER=supplier3 make supplier_stake
+	SUPPLIER=supplier3 SERVICES="anvil;http://anvil:8547,svc3;http://localhost:8083" make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
@@ -350,9 +352,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 	@echo "Querying spendable balance for $(ACC)"
 	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_app_module
-acc_balance_query_app_module: ## Query the balance of the network level "application" module
+.PHONY: acc_balance_query_module_app
+acc_balance_query_module_app: ## Query the balance of the network level "application" module
 	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+
+.PHONY: acc_balance_query_module_supplier
+acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
+	make acc_balance_query ACC=pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1

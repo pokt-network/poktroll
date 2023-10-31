@@ -20,49 +20,49 @@ func (k Keeper) SetSupplier(ctx sdk.Context, supplier sharedtypes.Supplier) {
 // GetSupplier returns a supplier from its index
 func (k Keeper) GetSupplier(
 	ctx sdk.Context,
-	address string,
+	supplierAddr string,
 
-) (val sharedtypes.Supplier, found bool) {
+) (supplier sharedtypes.Supplier, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
 
 	b := store.Get(types.SupplierKey(
-		address,
+		supplierAddr,
 	))
 	if b == nil {
-		return val, false
+		return supplier, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(b, &supplier)
+	return supplier, true
 }
 
 // RemoveSupplier removes a supplier from the store
 func (k Keeper) RemoveSupplier(
 	ctx sdk.Context,
-	address string,
+	supplierAddr string,
 
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
 	store.Delete(types.SupplierKey(
-		address,
+		supplierAddr,
 	))
 }
 
 // GetAllSupplier returns all supplier
-func (k Keeper) GetAllSupplier(ctx sdk.Context) (list []sharedtypes.Supplier) {
+func (k Keeper) GetAllSupplier(ctx sdk.Context) (suppliers []sharedtypes.Supplier) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var val sharedtypes.Supplier
-		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		var supplier sharedtypes.Supplier
+		k.cdc.MustUnmarshal(iterator.Value(), &supplier)
+		suppliers = append(suppliers, supplier)
 	}
 
 	return
 }
 
 // TODO_OPTIMIZE: Index suppliers by serviceId so we can easily query `k.GetAllSupplier(ctx, ServiceId)`
-// func (k Keeper) GetAllSupplier(ctx, sdkContext, serviceId string) (list []sharedtypes.Supplier) {}
+// func (k Keeper) GetAllSupplier(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

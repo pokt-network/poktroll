@@ -16,7 +16,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		msg  MsgStakeApplication
 		err  error
 	}{
-		// address tests
+		// address related tests
 		{
 			name: "invalid address - nil stake",
 			msg: MsgStakeApplication{
@@ -93,6 +93,17 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 
 		// service related tests
 		{
+			name: "valid service configs - multiple services",
+			msg: MsgStakeApplication{
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				Services: []*sharedtypes.ApplicationServiceConfig{
+					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{ServiceId: &sharedtypes.ServiceId{Id: "svc2"}},
+				},
+			},
+		},
+		{
 			name: "invalid service configs - not present",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
@@ -145,17 +156,6 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 			},
 			err: ErrAppInvalidServiceConfigs,
-		},
-		{
-			name: "valid service configs - multiple services",
-			msg: MsgStakeApplication{
-				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc2"}},
-				},
-			},
 		},
 	}
 

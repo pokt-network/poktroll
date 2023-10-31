@@ -11,6 +11,7 @@ import (
 	"pocket/testutil/sample"
 	"pocket/x/application"
 	"pocket/x/application/types"
+	sharedtypes "pocket/x/shared/types"
 )
 
 // Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.
@@ -21,10 +22,20 @@ func TestGenesis(t *testing.T) {
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+					},
+				},
 			},
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
+					},
+				},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

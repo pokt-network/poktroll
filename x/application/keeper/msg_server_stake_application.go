@@ -93,8 +93,8 @@ func (k msgServer) updateApplication(
 	}
 	app.Stake = msg.Stake
 
-	// Validate that the service configs maintain at least one service. Additional validation is done in
-	// `msg.ValidateBasic` above.
+	// Validate that the service configs maintain at least one service.
+	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
 		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
 	}

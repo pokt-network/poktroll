@@ -20,6 +20,7 @@ func (k msgServer) StakeSupplier(
 	logger.Info("About to stake supplier with msg: %v", msg)
 
 	if err := msg.ValidateBasic(); err != nil {
+		logger.Error("invalid MsgStakeSupplier: %v", msg)
 		return nil, err
 	}
 
@@ -47,6 +48,7 @@ func (k msgServer) StakeSupplier(
 		return nil, err
 	}
 
+	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the supplier to the staked supplier pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
@@ -66,8 +68,9 @@ func (k msgServer) createSupplier(
 	msg *types.MsgStakeSupplier,
 ) sharedtypes.Supplier {
 	return sharedtypes.Supplier{
-		Address: msg.Address,
-		Stake:   msg.Stake,
+		Address:  msg.Address,
+		Stake:    msg.Stake,
+		Services: msg.Services,
 	}
 }
 
@@ -81,16 +84,22 @@ func (k msgServer) updateSupplier(
 		return sdkerrors.Wrapf(types.ErrSupplierUnauthorized, "msg Address (%s) != supplier address (%s)", msg.Address, supplier.Address)
 	}
 
+	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount cannot be nil")
 	}
-
 	if msg.Stake.IsLTE(*supplier.Stake) {
 
 		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
 	}
-
 	supplier.Stake = msg.Stake
+
+	// Validate that the service configs maintain at least one service.
+	// Additional validation is done in `msg.ValidateBasic` above.
+	if len(msg.Services) == 0 {
+		return sdkerrors.Wrapf(types.ErrSupplierInvalidServiceConfig, "must have at least one service")
+	}
+	supplier.Services = msg.Services
 
 	return nil
 }
