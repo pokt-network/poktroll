@@ -21,6 +21,9 @@ import (
 	gatewaytypes "pocket/x/gateway/types"
 )
 
+// StakedGatewayMap is used to mock whether a gateway is staked or not for use
+// in the application's mocked gateway keeper. This enables the tester to
+// control whether a gateway is "staked" or not and whether it can be delegated to
 var StakedGatewayMap = make(map[string]struct{})
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {

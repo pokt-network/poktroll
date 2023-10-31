@@ -22,6 +22,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	appAddr := sample.AccAddress()
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
+	// Mock the gateway being staked via the staked gateway map
 	keepertest.StakedGatewayMap[gatewayAddr1] = struct{}{}
 	keepertest.StakedGatewayMap[gatewayAddr2] = struct{}{}
 	t.Cleanup(func() {
@@ -87,6 +88,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
+	// Mock the gateway being staked via the staked gateway map
 	keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
 	t.Cleanup(func() {
 		delete(keepertest.StakedGatewayMap, gatewayAddr)
