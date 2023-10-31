@@ -18,7 +18,13 @@ import (
 	mocks "pocket/testutil/application/mocks"
 	"pocket/x/application/keeper"
 	"pocket/x/application/types"
+	gatewaytypes "pocket/x/gateway/types"
 )
+
+// StakedGatewayMap is used to mock whether a gateway is staked or not for use
+// in the application's mocked gateway keeper. This enables the tester to
+// control whether a gateway is "staked" or not and whether it can be delegated to
+var StakedGatewayMap = make(map[string]struct{})
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -38,6 +44,23 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+
+	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
+	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
+			if _, ok := StakedGatewayMap[addr]; !ok {
+				return gatewaytypes.Gateway{}, false
+			}
+			stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
+			return gatewaytypes.Gateway{
+				Address: addr,
+				Stake:   &stake,
+			}, true
+		},
+	).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -50,6 +73,8 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		memStoreKey,
 		paramsSubspace,
 		mockBankKeeper,
+		mockAccountKeeper,
+		mockGatewayKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

@@ -67,9 +67,10 @@ func (k msgServer) createApplication(
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
-		Address:        msg.Address,
-		Stake:          msg.Stake,
-		ServiceConfigs: msg.Services,
+		Address:                   msg.Address,
+		Stake:                     msg.Stake,
+		ServiceConfigs:            msg.Services,
+		DelegateeGatewayAddresses: make([]string, 0),
 	}
 }
 
