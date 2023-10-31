@@ -136,7 +136,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 
 	// Attempt to delegate the application to the gateway again
 	_, err = srv.DelegateToGateway(wctx, delegateMsg2)
-	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrAppAlreadyDelegated)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, 1, len(foundApp.DelegateeGatewayAddresses))
@@ -177,7 +177,7 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 
 	// Attempt to delegate the application to the unstaked gateway
 	_, err = srv.DelegateToGateway(wctx, delegateMsg)
-	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrAppGatewayNotFound)
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
@@ -241,7 +241,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// Attempt to delegate the application when the max is already reached
 	_, err = srv.DelegateToGateway(wctx, delegateMsg)
-	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrAppMaxDelegatedGateways)
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, maxDelegatedParam, int64(len(foundApp.DelegateeGatewayAddresses)))
