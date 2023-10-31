@@ -353,3 +353,16 @@ acc_balance_total_supply: ## Query the total supply of the network
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+
+
+#######################################
+### Fern (github.com/fern-api/fern) ###
+#######################################
+
+.PHONY: fern_init
+fern_init: ## Fern init new project
+	fern init --openapi ./docs/static/openapi.yml
+
+.PHONY: fern_gen
+fern_gen: ## Fern generate existing configs
+	fern generate
