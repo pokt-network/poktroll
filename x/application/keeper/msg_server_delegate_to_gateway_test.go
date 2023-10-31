@@ -237,6 +237,10 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 		// Delegate the application to the gateway
 		_, err = srv.DelegateToGateway(wctx, delegateMsg)
 		require.NoError(t, err)
+		// Check number of gateways delegated to is correct
+		foundApp, isAppFound := k.GetApplication(ctx, appAddr)
+		require.True(t, isAppFound)
+		require.Equal(t, int(i+1), len(foundApp.DelegateeGatewayAddresses))
 	}
 
 	// Attempt to delegate the application when the max is already reached
