@@ -72,7 +72,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", msg.Stake)
 	}
 
-	// Validate the application service configs
+	// Validate the supplier service configs
 	if err := servicehelpers.ValidateSupplierService(msg.Services); err != nil {
 		return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 	}
