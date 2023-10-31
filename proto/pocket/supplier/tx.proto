@@ -5,6 +5,7 @@ package pocket.supplier;
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "cosmos/msg/v1/msg.proto";
+
 import "pocket/session/session.proto";
 import "pocket/shared/service.proto";
 
