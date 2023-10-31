@@ -22,7 +22,6 @@ var (
 )
 
 func init() {
-	// NB: ensure to run tests with --build test flag
 	cmd.InitSDKConfig()
 }
 
