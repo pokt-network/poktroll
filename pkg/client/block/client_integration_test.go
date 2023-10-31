@@ -27,6 +27,7 @@ func TestBlockClient_LatestBlock(t *testing.T) {
 	block := blockClient.LatestBlock(ctx)
 	require.NotEmpty(t, block)
 }
+
 func TestBlockClient_BlocksObservable(t *testing.T) {
 	ctx := context.Background()
 

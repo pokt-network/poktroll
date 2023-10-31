@@ -28,7 +28,7 @@ const (
 	committedBlocksQuery = "tm.event='NewBlock'"
 	// latestBlockObsvblsReplayBufferSize is the replay buffer size of the
 	// latestBlockObsvbls replay observable which is used to cache the latest block observable.
-	// replay observable. It is updated with a new "active" observable when a new
+	// It is updated with a new "active" observable when a new
 	// events query subscription is created, for example, after a non-persistent
 	// connection error.
 	latestBlockObsvblsReplayBufferSize = 1
@@ -107,9 +107,8 @@ func (bClient *blockClient) CommittedBlocksSequence(ctx context.Context) client.
 // LatestBlock returns the latest committed block that's been received by the
 // corresponding events query subscription.
 // It blocks until at least one block event has been received.
-func (bClient *blockClient) LatestBlock(ctx context.Context) (latestBlock client.Block) {
-	block := bClient.CommittedBlocksSequence(ctx).Last(ctx, 1)[0]
-	return block
+func (bClient *blockClient) LatestBlock(ctx context.Context) client.Block {
+	return bClient.CommittedBlocksSequence(ctx).Last(ctx, 1)[0]
 }
 
 // Close unsubscribes all observers of the committed blocks sequence observable
@@ -120,7 +119,7 @@ func (bClient *blockClient) Close() {
 }
 
 // goPublishBlocks runs the work function returned by retryPublishBlocksFactory,
-// Re-invoking it according to the arguments to retry.OnError when the events bytes
+// re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
 // This function is intended to be called in a goroutine.
 func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
@@ -139,7 +138,7 @@ func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 	// If we get here, the retry limit was reached and the retry loop exited.
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
-	panic(publishErr)
+	panic(fmt.Sprintf("BlockClient.goPublishBlocks shold never reach this spot: %w", publishErr))
 }
 
 // retryPublishBlocksFactory returns a function which is intended to be passed to
@@ -172,7 +171,7 @@ func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func(
 // newEventsBytesToBlockMapFn is a factory for a function which is intended
 // to be used as a transformFn in a channel.Map() call. Since the map function
 // is called asynchronously, this factory creates a closure around an error channel
-// which can be used for asynchronous error signaling from withing the map function,
+// which can be used for asynchronous error signaling from within the map function,
 // and handling from the Map call context.
 //
 // The map function itself attempts to deserialize the given byte slice as a
