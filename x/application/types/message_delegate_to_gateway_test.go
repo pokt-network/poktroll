@@ -18,14 +18,14 @@ func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 			name: "invalid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: "invalid_address",
-				// GatewayAddress: sample.AccAddress(),
+				// GatewayAddress: intentionally omitted,
 			},
 			err: ErrAppInvalidAddress,
 		}, {
 			name: "valid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: sample.AccAddress(),
-				// GatewayAddress: sample.AccAddress(),
+				// GatewayAddress: intentionally omitted,
 			},
 			err: ErrAppInvalidGatewayAddress,
 		}, {
