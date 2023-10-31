@@ -21,11 +21,7 @@ import (
 	gatewaytypes "pocket/x/gateway/types"
 )
 
-var StakedGatewayMap map[string]struct{}
-
-func init() {
-	StakedGatewayMap = make(map[string]struct{})
-}
+var StakedGatewayMap = make(map[string]struct{})
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)

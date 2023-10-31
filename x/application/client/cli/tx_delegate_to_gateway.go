@@ -17,9 +17,9 @@ func CmdDelegateToGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegate-to-gateway [gateway address]",
 		Short: "Delegate an application to a gateway",
-		Long: `Delegate an application to the gateway whose address is provided. This is a broadcast operation
-that will delegate trust over signing relays from the application to the gateway specified, allowing the gateway
-to sign relay requests on behalf of the application during a session.
+		Long: `Delegate an application to the gateway with the provided address. This is a broadcast operation
+that delegates authority to the gateway specified to sign relays requests for the application, allowing the gateway
+act on the behalf of the application during a session.
 
 Example:
 $ pocketd --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
