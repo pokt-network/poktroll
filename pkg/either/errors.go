@@ -1,7 +1,7 @@
 package either
 
 // SyncErr creates an AsyncError either from a synchronous error.
-// It wraps the Error into the left field (conventionally associated with  the
+// It wraps the Error into the left field (conventionally associated with the
 // error value in the Either pattern) of the Either type. It casts the result
 // to the AsyncError type.
 func SyncErr(err error) AsyncError {
