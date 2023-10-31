@@ -191,6 +191,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
+	// Mock the gateway being staked via the staked gateway map
 	keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
 	t.Cleanup(func() {
 		delete(keepertest.StakedGatewayMap, gatewayAddr)
@@ -224,6 +225,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	for i := int64(0); i < k.GetParams(ctx).MaxDelegatedGateways; i++ {
 		// Prepare the delegation message
 		gatewayAddr := sample.AccAddress()
+		// Mock the gateway being staked via the staked gateway map
 		keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
 		t.Cleanup(func() {
 			delete(keepertest.StakedGatewayMap, gatewayAddr)
