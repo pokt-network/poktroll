@@ -38,8 +38,9 @@ type replayObservable[V any] struct {
 func NewReplayObservable[V any](
 	ctx context.Context,
 	replayBufferSize int,
+	opts ...option[V],
 ) (observable.ReplayObservable[V], chan<- V) {
-	obsvbl, publishCh := NewObservable[V]()
+	obsvbl, publishCh := NewObservable[V](opts...)
 	return ToReplayObservable[V](ctx, replayBufferSize, obsvbl), publishCh
 }
 
