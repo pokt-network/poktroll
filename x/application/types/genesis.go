@@ -55,10 +55,10 @@ func (gs GenesisState) Validate() error {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
 		}
 
-		// Check that the application's delegated gateway pubkeys are valid
-		for _, gatewayPubKey := range app.DelegateeGatewayPubKeys {
-			if _, err := AnyToPubKey(gatewayPubKey); err != nil {
-				return sdkerrors.Wrapf(ErrAppAnyIsNotPubKey, "invalid delegatee pubkey for application %v", gatewayPubKey)
+		// Check that the application's delegated gateway addresses are valid
+		for _, gatewayAddr := range app.DelegateeGatewayAddresses {
+			if _, err := sdk.AccAddressFromBech32(gatewayAddr); err != nil {
+				return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", gatewayAddr, err)
 			}
 		}
 

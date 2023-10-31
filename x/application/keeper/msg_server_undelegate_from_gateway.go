@@ -28,25 +28,10 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	}
 	logger.Info("Application found with address [%s]", msg.AppAddress)
 
-	// Check if the gateway is staked
-	// TODO(@h5law): Look into using addresses instead of public keys
-	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress); !found {
-		logger.Info("Gateway not found with address [%s]", msg.GatewayAddress)
-		return nil, sdkerrors.Wrapf(types.ErrAppGatewayNotFound, "gateway not found with address: %s", msg.GatewayAddress)
-	}
-
 	// Check if the application is already delegated to the gateway
 	foundIdx := -1
-	for i, gatewayPubKey := range app.DelegateeGatewayPubKeys {
-		// Convert the any type to a public key
-		gatewayPubKey, err := types.AnyToPubKey(gatewayPubKey)
-		if err != nil {
-			logger.Error("unable to convert any type to public key: %v", err)
-			return nil, sdkerrors.Wrapf(types.ErrAppAnyConversion, "unable to convert any type to public key: %v", err)
-		}
-		// Convert the public key to an address
-		gatewayAddress := types.PublicKeyToAddress(gatewayPubKey)
-		if gatewayAddress == msg.GatewayAddress {
+	for i, gatewayAddr := range app.DelegateeGatewayAddresses {
+		if gatewayAddr == msg.GatewayAddress {
 			foundIdx = i
 		}
 	}
@@ -56,7 +41,7 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	}
 
 	// Remove the gateway from the application's delegatee gateway public keys
-	app.DelegateeGatewayPubKeys = append(app.DelegateeGatewayPubKeys[:foundIdx], app.DelegateeGatewayPubKeys[foundIdx+1:]...)
+	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses[:foundIdx], app.DelegateeGatewayAddresses[foundIdx+1:]...)
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)

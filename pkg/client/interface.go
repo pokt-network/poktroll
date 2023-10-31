@@ -22,8 +22,8 @@ import (
 // value which contains either an error or the event message bytes.
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
-type EventsBytesObservable observable.Observable[either.Either[[]byte]]
+// alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
+type EventsBytesObservable observable.Observable[either.Bytes]
 
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
 type EventsQueryClient interface {

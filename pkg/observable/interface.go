@@ -7,12 +7,18 @@ import "context"
 // grow, other packages (e.g. https://github.com/ReactiveX/RxGo) can be considered.
 // (see: https://github.com/ReactiveX/RxGo/pull/377)
 
+// ReplayObservable is an observable which replays the last n values published
+// to new observers, before publishing new values to observers.
+type ReplayObservable[V any] interface {
+	Observable[V]
+	// Last synchronously returns the last n values from the replay buffer.
+	Last(ctx context.Context, n int) []V
+}
+
 // Observable is a generic interface that allows multiple subscribers to be
 // notified of new values asynchronously.
 // It is analogous to a publisher in a "Fan-Out" system design.
 type Observable[V any] interface {
-	// Next synchronously returns the next value from the observable.
-	Next(context.Context) V
 	// Subscribe returns an observer which is notified when the publishCh channel
 	// receives a value.
 	Subscribe(context.Context) Observer[V]

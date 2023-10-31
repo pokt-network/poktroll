@@ -1,15 +1,14 @@
 package types
 
 import (
+	"cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"gopkg.in/yaml.v2"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
+const DefaultMaxDelegatedGateways int64 = 7
 
-const (
-	DefaultMaxDelegatedGateways int64 = 7
-)
+var _ paramtypes.ParamSet = (*Params)(nil)
 
 // ParamKeyTable the param key table for launch module
 func ParamKeyTable() paramtypes.KeyTable {
@@ -18,9 +17,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams() Params {
-	return Params{
-		MaxDelegatedGateways: DefaultMaxDelegatedGateways,
-	}
+	return Params{MaxDelegatedGateways: DefaultMaxDelegatedGateways}
 }
 
 // DefaultParams returns a default set of parameters
@@ -35,6 +32,9 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
+	if p.MaxDelegatedGateways < 1 {
+		return errors.Wrapf(ErrAppInvalidMaxDelegatedGateways, "MaxDelegatedGateways param < 1: got %d", p.MaxDelegatedGateways)
+	}
 	return nil
 }
 
