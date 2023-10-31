@@ -3,10 +3,10 @@ package testtx
 import (
 	"context"
 	"fmt"
-	abci "github.com/cometbft/cometbft/abci/types"
 	"testing"
 
 	"cosmossdk.io/depinject"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	comettypes "github.com/cometbft/cometbft/types"
