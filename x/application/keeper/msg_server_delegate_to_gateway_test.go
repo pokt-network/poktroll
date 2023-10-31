@@ -188,9 +188,11 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
-	gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
-	keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
-	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr)
+	gatewayAddr := sample.AccAddress()
+	keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
+	t.Cleanup(func() {
+		delete(keepertest.StakedGatewayMap, gatewayAddr)
+	})
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -219,9 +221,11 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
 	for i := int64(0); i < k.GetParams(ctx).MaxDelegatedGateways; i++ {
 		// Prepare the delegation message
-		gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
-		keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
-		defer delete(keepertest.AddrToPubKeyMap, gatewayAddr)
+		gatewayAddr := sample.AccAddress()
+		keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
+		t.Cleanup(func() {
+			delete(keepertest.StakedGatewayMap, gatewayAddr)
+		})
 		delegateMsg := &types.MsgDelegateToGateway{
 			AppAddress:     appAddr,
 			GatewayAddress: gatewayAddr,
@@ -236,5 +240,5 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	require.Error(t, err)
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Equal(t, maxDelegatedParam, int64(len(foundApp.DelegateeGatewayPubKeys)))
+	require.Equal(t, maxDelegatedParam, int64(len(foundApp.DelegateeGatewayAddresses)))
 }
