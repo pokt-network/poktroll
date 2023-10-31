@@ -22,11 +22,16 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	appAddr := sample.AccAddress()
 	gatewayAddresses := make([]string, int(k.GetParams(ctx).MaxDelegatedGateways))
 	for i := 0; i < len(gatewayAddresses); i++ {
-		gatewayAddr, gatewayPubKey := sample.AddrAndPubKey()
-		keepertest.AddrToPubKeyMap[gatewayAddr] = gatewayPubKey
-		defer delete(keepertest.AddrToPubKeyMap, gatewayAddr)
+		gatewayAddr := sample.AccAddress()
+		// Mock the gateway being staked via the staked gateway map
+		keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
 		gatewayAddresses[i] = gatewayAddr
 	}
+	t.Cleanup(func() {
+		for _, gatewayAddr := range gatewayAddresses {
+			delete(keepertest.StakedGatewayMap, gatewayAddr)
+		}
+	})
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -61,12 +66,9 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
-	require.Equal(t, maxDelegatedGateways, int64(len(foundApp.DelegateeGatewayPubKeys)))
+	require.Equal(t, maxDelegatedGateways, int64(len(foundApp.DelegateeGatewayAddresses)))
 	for i, gatewayAddr := range gatewayAddresses {
-		foundPubKey, err := types.AnyToPubKey(foundApp.DelegateeGatewayPubKeys[i])
-		require.NoError(t, err)
-		foundGatewayAddr := types.PublicKeyToAddress(foundPubKey)
-		require.Equal(t, gatewayAddr, foundGatewayAddr)
+		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 
 	// Prepare an undelegation message
@@ -81,13 +83,10 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
-	require.Equal(t, maxDelegatedGateways-1, int64(len(foundApp.DelegateeGatewayPubKeys)))
+	require.Equal(t, maxDelegatedGateways-1, int64(len(foundApp.DelegateeGatewayAddresses)))
 	gatewayAddresses = append(gatewayAddresses[:3], gatewayAddresses[4:]...)
 	for i, gatewayAddr := range gatewayAddresses {
-		foundPubKey, err := types.AnyToPubKey(foundApp.DelegateeGatewayPubKeys[i])
-		require.NoError(t, err)
-		foundGatewayAddr := types.PublicKeyToAddress(foundPubKey)
-		require.Equal(t, gatewayAddr, foundGatewayAddr)
+		require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[i])
 	}
 }
 
@@ -98,12 +97,15 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 
 	// Generate an address for the application and gateway
 	appAddr := sample.AccAddress()
-	gatewayAddr1, gatewayPubKey1 := sample.AddrAndPubKey()
-	gatewayAddr2, gatewayPubKey2 := sample.AddrAndPubKey()
-	keepertest.AddrToPubKeyMap[gatewayAddr1] = gatewayPubKey1
-	keepertest.AddrToPubKeyMap[gatewayAddr2] = gatewayPubKey2
-	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr1)
-	defer delete(keepertest.AddrToPubKeyMap, gatewayAddr2)
+	gatewayAddr1 := sample.AccAddress()
+	gatewayAddr2 := sample.AccAddress()
+	// Mock the gateway being staked via the staked gateway map
+	keepertest.StakedGatewayMap[gatewayAddr1] = struct{}{}
+	keepertest.StakedGatewayMap[gatewayAddr2] = struct{}{}
+	t.Cleanup(func() {
+		delete(keepertest.StakedGatewayMap, gatewayAddr1)
+		delete(keepertest.StakedGatewayMap, gatewayAddr2)
+	})
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -134,7 +136,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
-	require.Equal(t, 0, len(foundApp.DelegateeGatewayPubKeys))
+	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
 
 	// Prepare a delegation message
 	delegateMsg := &types.MsgDelegateToGateway{
@@ -151,50 +153,6 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.Error(t, err)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Equal(t, 1, len(foundApp.DelegateeGatewayPubKeys))
-	foundPubKey, err := types.AnyToPubKey(foundApp.DelegateeGatewayPubKeys[0])
-	require.NoError(t, err)
-	foundGatewayAddr := types.PublicKeyToAddress(foundPubKey)
-	require.Equal(t, gatewayAddr2, foundGatewayAddr)
-}
-
-// TODO_TECHDEBT(@h5law): This should not be a cause of failure for unstaking
-func TestMsgServer_UndelegateFromGateway_FailGatewayNotStaked(t *testing.T) {
-	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
-
-	// Generate an address for the application and gateway
-	appAddr := sample.AccAddress()
-	gatewayAddr := sample.AccAddress()
-
-	// Prepare the application
-	stakeMsg := &types.MsgStakeApplication{
-		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
-			},
-		},
-	}
-
-	// Stake the application & verify that the application exists
-	_, err := srv.StakeApplication(wctx, stakeMsg)
-	require.NoError(t, err)
-	_, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
-
-	// Prepare the delegation message
-	undelegateMsg := &types.MsgUndelegateFromGateway{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
-	}
-
-	// Attempt to delegate the application to the unstaked gateway
-	_, err = srv.UndelegateFromGateway(wctx, undelegateMsg)
-	require.Error(t, err)
-	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
-	require.True(t, isAppFound)
-	require.Equal(t, 0, len(foundApp.DelegateeGatewayPubKeys))
+	require.Equal(t, 1, len(foundApp.DelegateeGatewayAddresses))
+	require.Equal(t, gatewayAddr2, foundApp.DelegateeGatewayAddresses[0])
 }
