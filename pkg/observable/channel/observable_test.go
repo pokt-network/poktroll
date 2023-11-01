@@ -155,13 +155,17 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				// simulating IO delay in sequential message publishing
 				publish(input)
 			}
-			cancel()
+
+			// Finished sending values, close publishCh to unsubscribe all observers
+			// and close all fan-out channels.
+			close(publishCh)
 
 			// wait for obsvbl to be notified or timeout
 			err := group.Wait()
 			require.NoError(t, err)
 
-			// unsubscribing should close observer channel(s)
+			// closing publishCh should unsubscribe all observers, causing them
+			// to close their channels.
 			for _, observer := range observers {
 				// must drain the channel first to ensure it is isClosed
 				err := testchannel.DrainChannel(observer.Ch())
