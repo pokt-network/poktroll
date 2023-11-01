@@ -39,8 +39,6 @@ import (
 // - signingKeyName: The name of the key within the keyring to use for signing.
 // - expectedTx: A pointer whose value will be set to the expected transaction
 // bytes (in hexadecimal format).
-// - expectedTxHash: A pointer whose value will be set to the expected
-// transaction hash.
 // - expectedErrMsg: A pointer whose value will be set to the expected error
 // message string.
 //
@@ -125,8 +123,6 @@ func NewOneTimeErrTxTimeoutTxContext(
 // - signingKeyName: The name of the key within the keyring to be used for signing.
 // - expectedTx: A pointer whose value will be set to the expected transaction
 // bytes (in hexadecimal format).
-// - expectedTxHash: A pointer whose value will be set to the expected
-// transaction hash.
 // - expectedErrMsg: A pointer whose value will be set to the expected error
 // message string.
 //
@@ -194,8 +190,6 @@ func NewOneTimeErrCheckTxTxContext(
 // - signingKeyName: The name of the key within the keyring used for transaction signing.
 // - expectedTx: A pointer whose value will be set to the expected transaction
 // bytes (in hexadecimal format).
-// - expectedTxHash: A pointer whose value will be set to the expected
-// transaction hash.
 //
 // The function operates as follows:
 //  1. Constructs a base mock transaction context using the NewBaseTxContext function.
@@ -243,8 +237,6 @@ func NewOneTimeTxTxContext(
 // - keyring: The Cosmos SDK keyring containing the available cryptographic keys.
 // - expectedTx: A pointer whose value will be set to the expected transaction
 // bytes (in hexadecimal format).
-// - expectedTxHash: A pointer whose value will be set to the expected
-// transaction hash.
 // - expectedErrMsg: A pointer whose value will be set to the expected error
 // message string.
 //
