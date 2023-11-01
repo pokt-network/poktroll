@@ -106,6 +106,33 @@ func TestSession_GetSession_Failure(t *testing.T) {
 
 			expectedErrContains: types.ErrSuppliersNotFound.Error(),
 		},
+		{
+			name: "application address is invalid format",
+
+			appAddr:     "invalid_app_address",
+			serviceId:   keepertest.TestServiceId1,
+			blockHeight: 1,
+
+			expectedErrContains: "invalid app address for session being retrieved",
+		},
+		{
+			name: "service ID is invalid",
+
+			appAddr:     keepertest.TestApp1Address,
+			serviceId:   "invalid_serviceId",
+			blockHeight: 1,
+
+			expectedErrContains: "invalid serviceID for session being retrieved",
+		},
+		{
+			name: "negative block height",
+
+			appAddr:     keepertest.TestApp1Address,
+			serviceId:   keepertest.TestServiceId1,
+			blockHeight: -1,
+
+			expectedErrContains: "invalid block height for session being retrieved",
+		},
 	}
 
 	expectedRes := (*types.QueryGetSessionResponse)(nil)

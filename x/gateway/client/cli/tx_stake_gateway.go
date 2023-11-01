@@ -3,20 +3,20 @@ package cli
 import (
 	"strconv"
 
-	"pocket/x/gateway/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
+
+	"pocket/x/gateway/types"
 )
 
 var _ = strconv.Itoa(0)
 
 func CmdStakeGateway() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "stake-gateway [amount]",
+		Use:   "stake-gateway <upokt_amount>",
 		Short: "Stake a gateway",
 		Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the gateway specified by the 'from' address.

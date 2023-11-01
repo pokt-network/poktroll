@@ -32,7 +32,7 @@ func (query *QueryGetSessionRequest) ValidateBasic() error {
 	}
 
 	// Validate the height for which a session is being retrieved
-	if query.BlockHeight < 0 {
+	if query.BlockHeight < -1 { // Note that `-1` defaults to the latest height
 		return sdkerrors.Wrapf(ErrSessionInvalidBlockHeight, "invalid block height for session being retrieved %d;", query.BlockHeight)
 	}
 	return nil

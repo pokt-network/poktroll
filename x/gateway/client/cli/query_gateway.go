@@ -46,7 +46,7 @@ func CmdListGateway() *cobra.Command {
 
 func CmdShowGateway() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-gateway [address]",
+		Use:   "show-gateway <gateway_address>",
 		Short: "shows a gateway",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {

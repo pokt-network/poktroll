@@ -46,7 +46,7 @@ func CmdListSupplier() *cobra.Command {
 
 func CmdShowSupplier() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-supplier [address]",
+		Use:   "show-supplier <supplier_address>",
 		Short: "shows a supplier",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {

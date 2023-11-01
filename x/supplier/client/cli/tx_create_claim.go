@@ -2,9 +2,9 @@ package cli
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"strconv"
 
-	"encoding/json"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -20,7 +20,7 @@ var _ = strconv.Itoa(0)
 
 func CmdCreateClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create-claim [session-header] [root-hash-base64]",
+		Use:   "create-claim <session_header> <root_hash_base64>",
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {

@@ -16,7 +16,7 @@ var _ = strconv.Itoa(0)
 func CmdUnstakeApplication() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "unstake-application [amount]",
+		Use:   "unstake-application",
 		Short: "Unstake an application",
 		Long: `Unstake an application. This is a broadcast operation that will unstake
 the application specified by the 'from' address.
