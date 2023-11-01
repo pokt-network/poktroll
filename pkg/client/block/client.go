@@ -138,7 +138,7 @@ func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 	// If we get here, the retry limit was reached and the retry loop exited.
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
-	panic(fmt.Sprintf("BlockClient.goPublishBlocks shold never reach this spot: %w", publishErr))
+	panic(fmt.Errorf("BlockClient.goPublishBlocks shold never reach this spot: %w", publishErr))
 }
 
 // retryPublishBlocksFactory returns a function which is intended to be passed to
