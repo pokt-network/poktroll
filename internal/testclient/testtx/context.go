@@ -53,7 +53,6 @@ func NewOneTimeErrTxTimeoutTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
-	expectedTx *cometbytes.HexBytes,
 	expectedErrMsg *string,
 ) *mockclient.MockTxContext {
 	t.Helper()
@@ -69,10 +68,11 @@ func NewOneTimeErrTxTimeoutTxContext(
 		signerAddr.String(),
 	)
 
+	var expectedTx cometbytes.HexBytes
 	txCtxMock := NewBaseTxContext(
 		t, signingKeyName,
 		keyring,
-		expectedTx,
+		&expectedTx,
 	)
 
 	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
@@ -138,7 +138,6 @@ func NewOneTimeErrCheckTxTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
-	expectedTx *cometbytes.HexBytes,
 	expectedErrMsg *string,
 ) *mockclient.MockTxContext {
 	t.Helper()
@@ -154,10 +153,11 @@ func NewOneTimeErrCheckTxTxContext(
 		signerAddr.String(),
 	)
 
+	var expectedTx cometbytes.HexBytes
 	txCtxMock := NewBaseTxContext(
 		t, signingKeyName,
 		keyring,
-		expectedTx,
+		&expectedTx,
 	)
 
 	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
