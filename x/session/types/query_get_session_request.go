@@ -9,7 +9,8 @@ import (
 )
 
 // NOTE: Please note that `QueryGetSessionRequest` is not a `sdk.Msg`, and is therefore not a message/request
-// that will be signable or invoke a state transition. However,  Note that sdk.Msg
+// that will be signable or invoke a state transition. However, following a similar `ValidateBasic` pattern
+// allows us to localize & reuse validation logic.
 func NewQueryGetSessionRequest(appAddress, serviceId string, blockHeight int64) *QueryGetSessionRequest {
 	return &QueryGetSessionRequest{
 		ApplicationAddress: appAddress,

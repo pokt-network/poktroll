@@ -21,7 +21,7 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// If block height is not specified, use the current (context) block height
+	// If block height is not specified, use the current (context's latest) block height
 	blockHeight := req.BlockHeight
 	if blockHeight == 0 {
 		blockHeight = ctx.BlockHeight()

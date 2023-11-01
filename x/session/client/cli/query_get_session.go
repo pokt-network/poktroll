@@ -19,7 +19,7 @@ func CmdGetSession() *cobra.Command {
 		Short: "Query get-session",
 		Long: `Query the session data for a specific (app, service, height) tuple.
 
-[block_height] is optional. If unspecified, or set to 0, it defaults to the latest height of the node being quired.
+[block_height] is optional. If unspecified, or set to 0, it defaults to the latest height of the node being queried.
 
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 

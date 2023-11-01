@@ -98,7 +98,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 		},
 		{
 			name:        "blockHeight > contextHeight",
-			blockHeight: 9001, // over 9000! (context height is 100)
+			blockHeight: 9001, // block height over 9000 is too height given that the context height is 100
 
 			errExpected: true,
 		},

@@ -29,14 +29,14 @@ func TestCLI_GetSession(t *testing.T) {
 	require.Len(t, appSvc0.ServiceConfigs, 2)
 	require.Len(t, appSvc1.ServiceConfigs, 2)
 
-	require.Equal(t, appSvc0.ServiceConfigs[0].ServiceId.Id, "svc0")
-	require.Equal(t, appSvc0.ServiceConfigs[1].ServiceId.Id, "svc00")
-	require.Equal(t, appSvc1.ServiceConfigs[0].ServiceId.Id, "svc1")
-	require.Equal(t, appSvc1.ServiceConfigs[1].ServiceId.Id, "svc11")
+	require.Equal(t, appSvc0.ServiceConfigs[0].ServiceId.Id, "svc0")  // svc0 has a supplier
+	require.Equal(t, appSvc0.ServiceConfigs[1].ServiceId.Id, "svc00") // svc00 doesn't have a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[0].ServiceId.Id, "svc1")  // svc1 has a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[1].ServiceId.Id, "svc11") // svc11 doesn't have a supplier
 
 	// Sanity check the supplier configs are what we expect them to be
-	supplierSvc0 := suppliers[0]
-	supplierSvc1 := suppliers[1]
+	supplierSvc0 := suppliers[0] // supplier for svc0
+	supplierSvc1 := suppliers[1] // supplier for svc1
 
 	require.Len(t, supplierSvc0.Services, 1)
 	require.Len(t, supplierSvc1.Services, 1)
@@ -52,7 +52,8 @@ func TestCLI_GetSession(t *testing.T) {
 		serviceId   string
 		blockHeight int64
 
-		expectedErr *sdkerrors.Error
+		expectedErr          *sdkerrors.Error
+		expectedNumSuppliers int
 	}{
 		// Valid requests
 		{
@@ -62,16 +63,18 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 0,
 
-			expectedErr: nil,
+			expectedErr:          nil,
+			expectedNumSuppliers: 1,
 		},
 		{
 			desc: "valid - block height specified and is greater than zero",
 
 			appAddress:  appSvc1.Address,
 			serviceId:   "svc1",
-			blockHeight: 10, // example value; adjust as needed
+			blockHeight: 10,
 
-			expectedErr: nil,
+			expectedErr:          nil,
+			expectedNumSuppliers: 1,
 		},
 		{
 			desc: "valid - block height unspecified and defaults to 0",
@@ -80,7 +83,8 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:  "svc0",
 			// blockHeight: intentionally omitted,
 
-			expectedErr: nil,
+			expectedErr:          nil,
+			expectedNumSuppliers: 1,
 		},
 
 		// Invalid requests - incompatible state
@@ -88,7 +92,7 @@ func TestCLI_GetSession(t *testing.T) {
 			desc: "invalid - app not staked for service",
 
 			appAddress:  appSvc0.Address,
-			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
+			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier) and is not staked for service over 9000
 			blockHeight: 0,
 
 			expectedErr: sessiontypes.ErrAppNotStakedForService,
@@ -96,7 +100,7 @@ func TestCLI_GetSession(t *testing.T) {
 		{
 			desc: "invalid - no suppliers staked for service",
 
-			appAddress:  appSvc1.Address, // dynamically getting address from applications
+			appAddress:  appSvc0.Address, // dynamically getting address from applications
 			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
@@ -107,7 +111,7 @@ func TestCLI_GetSession(t *testing.T) {
 
 			appAddress:  appSvc0.Address, // dynamically getting address from applications
 			serviceId:   "svc0",
-			blockHeight: 100000, // example future value; adjust as needed
+			blockHeight: 9001, // block height over 9000 is greater than the context height of 10
 
 			expectedErr: sessiontypes.ErrSessionInvalidBlockHeight,
 		},
@@ -150,6 +154,7 @@ func TestCLI_GetSession(t *testing.T) {
 		},
 	}
 
+	// We want to use the `--output=json` flag for all tests so it's easy to unmarshal below
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
@@ -183,8 +188,10 @@ func TestCLI_GetSession(t *testing.T) {
 			session := getSessionRes.Session
 			require.NotNil(t, session)
 
-			// TODO_IN_THIS_PR: Add more assertions on `session`
-			// fmt.Println("TODO sessionRes", session)
+			// Verify some data about the session
+			require.Equal(t, tt.appAddress, session.Application.Address)
+			require.Equal(t, tt.serviceId, session.Header.ServiceId.Id)
+			require.Len(t, session.Suppliers, tt.expectedNumSuppliers)
 		})
 	}
 }
