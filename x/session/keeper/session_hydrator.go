@@ -125,8 +125,15 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 	if !appIsFound {
 		return sdkerrors.Wrapf(types.ErrAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
 	}
-	sh.session.Application = &app
-	return nil
+
+	for _, appServiceConfig := range app.ServiceConfigs {
+		if appServiceConfig.ServiceId.Id == sh.sessionHeader.ServiceId.Id {
+			sh.session.Application = &app
+			return nil
+		}
+	}
+
+	return sdkerrors.Wrapf(types.ErrAppNotFound, "application %s not stake for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId.Id)
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them

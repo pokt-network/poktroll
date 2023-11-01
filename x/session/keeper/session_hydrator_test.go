@@ -198,28 +198,39 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 // TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	type test struct {
-		name    string
-		appAddr string
+		name      string
+		appAddr   string
+		serviceId string
 
 		expectedErr error
 	}
 
 	tests := []test{
 		{
-			name:    "app is found",
-			appAddr: keepertest.TestApp1Address,
+			name:      "app is found",
+			appAddr:   keepertest.TestApp1Address,
+			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: nil,
 		},
 		{
-			name:    "app is not found",
-			appAddr: sample.AccAddress(), // Generating a random address on the fly
+			name:      "app is not found",
+			appAddr:   sample.AccAddress(), // Generating a random address on the fly
+			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: types.ErrHydratingSession,
 		},
 		{
-			name:    "invalid app address",
-			appAddr: "invalid",
+			name:      "invalid app address",
+			appAddr:   "invalid",
+			serviceId: keepertest.TestServiceId1,
+
+			expectedErr: types.ErrHydratingSession,
+		},
+		{
+			name:      "invalid - app not staked for service",
+			appAddr:   keepertest.TestApp1Address, // app1
+			serviceId: "svc9001",
 
 			expectedErr: types.ErrHydratingSession,
 		},
@@ -229,13 +240,12 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 		// - Application increases stakes mid-session
 	}
 
-	serviceId := keepertest.TestServiceId1
 	blockHeight := int64(10)
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, serviceId, blockHeight)
+			sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
 			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 			if tt.expectedErr != nil {
 				require.Error(t, err)

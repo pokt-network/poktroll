@@ -1,13 +1,23 @@
 package cli_test
 
 import (
+	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"pocket/cmd/pocketd/cmd"
 	"pocket/testutil/network"
 	"pocket/x/gateway/types"
-
-	"github.com/stretchr/testify/require"
 )
+
+// Dummy variable to avoid unused import error.
+var _ = strconv.IntSize
+
+// init initializes the SDK configuration.
+func init() {
+	cmd.InitSDKConfig()
+}
 
 // networkWithGatewayObjects creates a network with a populated gateway state of n gateway objects
 func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {

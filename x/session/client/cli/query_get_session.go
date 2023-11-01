@@ -34,21 +34,21 @@ $ pocketd --home=$(POCKETD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t
 				blockHeightString = args[2]
 			}
 
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
 			blockHeight, err := strconv.ParseInt(blockHeightString, 10, 64)
 			if err != nil {
 				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, err)
 			}
 
-			queryClient := types.NewQueryClient(clientCtx)
 			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
 			if err := getSessionReq.ValidateBasic(); err != nil {
 				return err
 			}
+
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
 
 			getSessionRes, err := queryClient.GetSession(cmd.Context(), getSessionReq)
 			if err != nil {
