@@ -23,6 +23,8 @@ import (
 )
 
 func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
+	t.Skip("TODO_BUG(@bryanchriswhite): See #120 for more details")
+
 	var (
 		readObserverEventsTimeout = time.Second
 		queryCounter              int

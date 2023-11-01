@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -585,16 +586,6 @@ func New(
 	)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
-		appCodec,
-		keys[applicationmoduletypes.StoreKey],
-		keys[applicationmoduletypes.MemStoreKey],
-		app.GetSubspace(applicationmoduletypes.ModuleName),
-
-		app.BankKeeper,
-	)
-	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
-
 	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
 		appCodec,
 		keys[suppliermoduletypes.StoreKey],
@@ -612,9 +603,20 @@ func New(
 		app.GetSubspace(gatewaymoduletypes.ModuleName),
 
 		app.BankKeeper,
-		app.AccountKeeper,
 	)
 	gatewayModule := gatewaymodule.NewAppModule(appCodec, app.GatewayKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.ApplicationKeeper = *applicationmodulekeeper.NewKeeper(
+		appCodec,
+		keys[applicationmoduletypes.StoreKey],
+		keys[applicationmoduletypes.MemStoreKey],
+		app.GetSubspace(applicationmoduletypes.ModuleName),
+
+		app.BankKeeper,
+		app.AccountKeeper,
+		app.GatewayKeeper,
+	)
+	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 

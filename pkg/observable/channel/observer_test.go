@@ -7,20 +7,23 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"pocket/pkg/observable"
 )
 
 func TestObserver_Unsubscribe(t *testing.T) {
 	var (
-		onUnsubscribeCalled = false
 		publishCh           = make(chan int, 1)
+		onUnsubscribeCalled = false
+		onUnsubscribe       = func(toRemove observable.Observer[int]) {
+			onUnsubscribeCalled = true
+		}
 	)
 	obsvr := &channelObserver[int]{
 		observerMu: &sync.RWMutex{},
 		// using a buffered channel to keep the test synchronous
-		observerCh: publishCh,
-		onUnsubscribe: func(toRemove *channelObserver[int]) {
-			onUnsubscribeCalled = true
-		},
+		observerCh:    publishCh,
+		onUnsubscribe: onUnsubscribe,
 	}
 
 	// should initially be open
@@ -37,17 +40,19 @@ func TestObserver_Unsubscribe(t *testing.T) {
 
 func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 	var (
-		onUnsubscribeCalled = false
 		publishCh           = make(chan int, 1)
+		onUnsubscribeCalled = false
+		onUnsubscribe       = func(toRemove observable.Observer[int]) {
+			onUnsubscribeCalled = true
+		}
 	)
+
 	obsvr := &channelObserver[int]{
 		ctx:        context.Background(),
 		observerMu: &sync.RWMutex{},
 		// using a buffered channel to keep the test synchronous
-		observerCh: publishCh,
-		onUnsubscribe: func(toRemove *channelObserver[int]) {
-			onUnsubscribeCalled = true
-		},
+		observerCh:    publishCh,
+		onUnsubscribe: onUnsubscribe,
 	}
 
 	require.Equal(t, false, obsvr.isClosed, "observer channel should initially be open")

@@ -1,4 +1,4 @@
-//go:generate mockgen -destination=../../internal/mocks/mockclient/query_client_mock.go -package=mockclient . Dialer,Connection
+//go:generate mockgen -destination=../../internal/mocks/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 
 package client
 
@@ -8,6 +8,28 @@ import (
 	"pocket/pkg/either"
 	"pocket/pkg/observable"
 )
+
+// BlocksObservable is an observable which is notified with an either
+// value which contains either an error or the event message bytes.
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
+type BlocksObservable observable.ReplayObservable[Block]
+
+type BlockClient interface {
+	// Blocks returns an observable which emits newly committed blocks.
+	CommittedBlocksSequence(context.Context) BlocksObservable
+	// LatestBlock returns the latest block that has been committed.
+	LatestBlock(context.Context) Block
+	// Close unsubscribes all observers of the committed blocks sequence observable
+	// and closes the events query client.
+	Close()
+}
+
+type Block interface {
+	Height() int64
+	Hash() []byte
+}
 
 // TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
 // which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
@@ -22,8 +44,8 @@ import (
 // value which contains either an error or the event message bytes.
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
-type EventsBytesObservable observable.Observable[either.Either[[]byte]]
+// alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
+type EventsBytesObservable observable.Observable[either.Bytes]
 
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
 type EventsQueryClient interface {

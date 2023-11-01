@@ -34,13 +34,17 @@ message MsgUnstakeApplication {
 message MsgUnstakeApplicationResponse {}
 
 message MsgDelegateToGateway {
-  string address = 1;
+  option (cosmos.msg.v1.signer) = "app_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to delegate to using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
 }
 
 message MsgDelegateToGatewayResponse {}
 
 message MsgUndelegateFromGateway {
-  string address = 1;
+  option (cosmos.msg.v1.signer) = "appAddress"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string appAddress = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  string gatewayAddress = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application wants to undelegate from using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
 }
 
 message MsgUndelegateFromGatewayResponse {}

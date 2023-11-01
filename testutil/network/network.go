@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -23,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"pocket/app"
-	"pocket/testutil/nullify"
 	"pocket/testutil/sample"
 	apptypes "pocket/x/application/types"
 	gatewaytypes "pocket/x/gateway/types"
@@ -117,6 +115,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				},
 			},
 		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
@@ -131,10 +130,11 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
 		gateway := gatewaytypes.Gateway{
-			Address: strconv.Itoa(i),
+			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
-		nullify.Fill(&gateway)
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
 	return state
@@ -147,12 +147,24 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	state := suppliertypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := sharedtypes.Supplier{
-			Address: strconv.Itoa(i),
+		supplier := sharedtypes.Supplier{
+			Address: sample.AccAddress(),
 			Stake:   &stake,
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     fmt.Sprintf("http://localhost:%d", i),
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
 		}
-		nullify.Fill(&gateway)
-		state.SupplierList = append(state.SupplierList, gateway)
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&supplier)
+		state.SupplierList = append(state.SupplierList, supplier)
 	}
 	return state
 }

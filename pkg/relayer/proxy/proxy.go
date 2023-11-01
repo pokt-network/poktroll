@@ -2,10 +2,12 @@ package proxy
 
 import (
 	"context"
+	"net/url"
 
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"golang.org/x/sync/errgroup"
 
 	// TODO_INCOMPLETE(@red-0ne): Import the appropriate block client interface once available.
 	// blocktypes "pocket/pkg/client"
@@ -17,6 +19,12 @@ import (
 )
 
 var _ RelayerProxy = (*relayerProxy)(nil)
+
+type (
+	serviceId            = string
+	relayServersMap      = map[serviceId][]RelayServer
+	servicesEndpointsMap = map[serviceId]url.URL
+)
 
 type relayerProxy struct {
 	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
@@ -41,10 +49,13 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier sessiontypes.QueryClient
 
-	// providedServices is a map of the services provided by the relayer proxy. Each provided service
+	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
-	// the client that proxies the request to the supported native service.
-	providedServices map[string][]*ProvidedService
+	// the client that relays the request to the supported proxied service.
+	advertisedRelayServers relayServersMap
+
+	// proxiedServicesEndpoints is a map of the proxied services endpoints that the relayer proxy supports.
+	proxiedServicesEndpoints servicesEndpointsMap
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -59,60 +70,80 @@ func NewRelayerProxy(
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,
-
+	proxiedServicesEndpoints servicesEndpointsMap,
 	// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
 	// blockClient blocktypes.BlockClient,
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
-	providedServices := buildProvidedServices(ctx, supplierQuerier)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	return &relayerProxy{
 		// TODO_INCOMPLETE(@red-0ne): Uncomment once the BlockClient interface is available.
-		// blockClient:          blockClient,
-		keyName:              keyName,
-		keyring:              keyring,
-		accountsQuerier:      accountQuerier,
-		supplierQuerier:      supplierQuerier,
-		sessionQuerier:       sessionQuerier,
-		providedServices:     providedServices,
-		servedRelays:         servedRelays,
-		servedRelaysProducer: servedRelaysProducer,
+		// blockClient:       blockClient,
+		keyName:                  keyName,
+		keyring:                  keyring,
+		accountsQuerier:          accountQuerier,
+		supplierQuerier:          supplierQuerier,
+		sessionQuerier:           sessionQuerier,
+		proxiedServicesEndpoints: proxiedServicesEndpoints,
+		servedRelays:             servedRelays,
+		servedRelaysProducer:     servedRelaysProducer,
 	}
 }
 
-// Start starts all supported proxies and returns an error if any of them fail to start.
+// Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
+// This method is blocking until all RelayServers are started.
 func (rp *relayerProxy) Start(ctx context.Context) error {
-	panic("TODO: implement relayerProxy.Start")
+	// The provided services map is built from the supplier's on-chain advertised information,
+	// which is a runtime parameter that can be changed by the supplier.
+	// NOTE: We build the provided services map at Start instead of NewRelayerProxy to avoid having to
+	// return an error from the constructor.
+	if err := rp.BuildProvidedServices(ctx); err != nil {
+		return err
+	}
+
+	startGroup, ctx := errgroup.WithContext(ctx)
+
+	for _, relayServer := range rp.advertisedRelayServers {
+		for _, svr := range relayServer {
+			server := svr // create a new variable scoped to the anonymous function
+			startGroup.Go(func() error { return server.Start(ctx) })
+		}
+	}
+
+	return startGroup.Wait()
 }
 
-// Stop stops all supported proxies and returns an error if any of them fail.
+// Stop concurrently stops all advertised relay servers and returns an error if any of them fails.
+// This method is blocking until all RelayServers are stopped.
 func (rp *relayerProxy) Stop(ctx context.Context) error {
-	panic("TODO: implement relayerProxy.Stop")
+	stopGroup, ctx := errgroup.WithContext(ctx)
+
+	for _, providedService := range rp.advertisedRelayServers {
+		for _, svr := range providedService {
+			server := svr // create a new variable scoped to the anonymous function
+			stopGroup.Go(func() error { return server.Stop(ctx) })
+		}
+	}
+
+	return stopGroup.Wait()
 }
 
 // ServedRelays returns an observable that notifies the miner about the relays that have been served.
 // A served relay is one whose RelayRequest's signature and session have been verified,
 // and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
-	panic("TODO: implement relayerProxy.ServedRelays")
+	return rp.servedRelays
 }
 
-// buildProvidedServices builds the provided services map from the supplier's advertised information.
-// It loops over the retrieved `SupplierServiceConfig` and, for each `SupplierEndpoint`, it creates the necessary
-// server and client to populate the corresponding `ProvidedService` struct in the map.
-func buildProvidedServices(
-	ctx context.Context,
-	supplierQuerier suppliertypes.QueryClient,
-) map[string][]*ProvidedService {
-	panic("TODO: implement buildProvidedServices")
+// VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
+func (rp *relayerProxy) VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error) {
+	panic("TODO: implement relayerProxy.VerifyRelayRequest")
 }
 
-// TODO_INCOMPLETE(@red-0ne): Add the appropriate server and client interfaces to be implemented by each RPC type.
-type ProvidedService struct {
-	serviceId string
-	server    struct{}
-	client    struct{}
+// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
+func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error) {
+	panic("TODO: implement relayerProxy.SignRelayResponse")
 }
