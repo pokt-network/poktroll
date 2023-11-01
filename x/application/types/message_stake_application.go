@@ -13,6 +13,7 @@ const TypeMsgStakeApplication = "stake_application"
 
 var _ sdk.Msg = (*MsgStakeApplication)(nil)
 
+// TODO_TECHDEBT: See `NewMsgStakeSupplier` and follow the same pattern for the `Services` parameter
 func NewMsgStakeApplication(
 	address string,
 	stake types.Coin,
@@ -63,6 +64,7 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.Address, err)
 	}
 
+	// TODO_TECHDEBT: Centralize stake related verification and share across different parts of the source code
 	// Validate the stake amount
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(ErrAppInvalidStake, "nil application stake; (%v)", err)
@@ -82,8 +84,8 @@ func (msg *MsgStakeApplication) ValidateBasic() error {
 	}
 
 	// Validate the application service configs
-	if reason, ok := servicehelpers.AreValidAppServiceConfigs(msg.Services); !ok {
-		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, reason)
+	if err := servicehelpers.ValidateAppServiceConfigs(msg.Services); err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, err.Error())
 	}
 
 	return nil

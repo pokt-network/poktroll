@@ -106,28 +106,28 @@ func TestCLI_StakeApplication(t *testing.T) {
 			address:          appAccount.Address.String(),
 			stakeString:      "1000upokt",
 			serviceIdsString: "",
-			err:              types.ErrAppInvalidStake,
+			err:              types.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc:             "services_test: single invalid service contains spaces",
 			address:          appAccount.Address.String(),
 			stakeString:      "1000upokt",
 			serviceIdsString: "svc1 svc1_part2 svc1_part3",
-			err:              types.ErrAppInvalidStake,
+			err:              types.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc:             "services_test: one of two services is invalid because it contains spaces",
 			address:          appAccount.Address.String(),
 			stakeString:      "1000upokt",
 			serviceIdsString: "svc1 svc1_part2,svc2",
-			err:              types.ErrAppInvalidStake,
+			err:              types.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc:             "services_test: service ID is too long (8 chars is the max)",
 			address:          appAccount.Address.String(),
 			stakeString:      "1000upokt",
 			serviceIdsString: "svc1,abcdefghi",
-			err:              types.ErrAppInvalidStake,
+			err:              types.ErrAppInvalidServiceConfigs,
 		},
 	}
 

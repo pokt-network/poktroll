@@ -42,11 +42,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists
-	foundApp, isAppFound := k.GetApplication(ctx, addr)
+	appFound, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, addr, foundApp.Address)
-	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
-	require.Len(t, foundApp.ServiceConfigs, 1)
+	require.Equal(t, addr, appFound.Address)
+	require.Equal(t, initialStake.Amount, appFound.Stake.Amount)
+	require.Len(t, appFound.ServiceConfigs, 1)
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
