@@ -41,12 +41,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists
-	foundApp, isAppFound := k.GetApplication(ctx, addr)
+	appFound, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, addr, foundApp.Address)
-	require.Equal(t, int64(100), foundApp.Stake.Amount.Int64())
-	require.Len(t, foundApp.ServiceConfigs, 1)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId.Id)
+	require.Equal(t, addr, appFound.Address)
+	require.Equal(t, int64(100), appFound.Stake.Amount.Int64())
+	require.Len(t, appFound.ServiceConfigs, 1)
+	require.Equal(t, "svc1", appFound.ServiceConfigs[0].ServiceId.Id)
 
 	// Prepare an updated application with a higher stake and another service
 	updateStakeMsg := &types.MsgStakeApplication{
@@ -65,12 +65,12 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Update the staked application
 	_, err = srv.StakeApplication(wctx, updateStakeMsg)
 	require.NoError(t, err)
-	foundApp, isAppFound = k.GetApplication(ctx, addr)
+	appFound, isAppFound = k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, int64(200), foundApp.Stake.Amount.Int64())
-	require.Len(t, foundApp.ServiceConfigs, 2)
-	require.Equal(t, "svc1", foundApp.ServiceConfigs[0].ServiceId.Id)
-	require.Equal(t, "svc2", foundApp.ServiceConfigs[1].ServiceId.Id)
+	require.Equal(t, int64(200), appFound.Stake.Amount.Int64())
+	require.Len(t, appFound.ServiceConfigs, 2)
+	require.Equal(t, "svc1", appFound.ServiceConfigs[0].ServiceId.Id)
+	require.Equal(t, "svc2", appFound.ServiceConfigs[1].ServiceId.Id)
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {

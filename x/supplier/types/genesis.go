@@ -6,6 +6,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	servicehelpers "pocket/x/shared/helpers"
 	sharedtypes "pocket/x/shared/types"
 )
 
@@ -36,6 +37,8 @@ func (gs GenesisState) Validate() error {
 
 	// Check that the stake value for the suppliers is valid
 	for _, supplier := range gs.SupplierList {
+		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
+		// similar to how we have `ValidateAppServiceConfigs` below
 		if supplier.Stake == nil {
 			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "nil stake amount for supplier")
 		}
@@ -51,6 +54,12 @@ func (gs GenesisState) Validate() error {
 		}
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", supplier.Stake)
+		}
+
+		// Valid the application service configs
+		// Validate the application service configs
+		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
+			return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 		}
 	}
 

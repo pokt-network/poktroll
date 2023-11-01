@@ -1,6 +1,9 @@
 package helpers
 
-import "regexp"
+import (
+	"net/url"
+	"regexp"
+)
 
 const (
 	maxServiceIdLength = 8  // Limiting all serviceIds to 8 characters
@@ -50,4 +53,24 @@ func IsValidServiceName(serviceName string) bool {
 
 	// Use the regex to match against the input string
 	return regexExprServiceName.MatchString(serviceName)
+}
+
+// IsValidEndpointUrl checks if the provided string is a valid URL.
+func IsValidEndpointUrl(endpoint string) bool {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+
+	// Check if scheme is http or https
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return false
+	}
+
+	// Ensure the URL has a host
+	if u.Host == "" {
+		return false
+	}
+
+	return true
 }
