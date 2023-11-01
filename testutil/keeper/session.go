@@ -70,6 +70,7 @@ var (
 					{
 						Url:     TestSupplierUrl,
 						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
 					},
 				},
 			},
@@ -79,6 +80,7 @@ var (
 					{
 						Url:     TestSupplierUrl,
 						RpcType: sharedtypes.RPCType_GRPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
 					},
 				},
 			},
