@@ -8,6 +8,8 @@ option go_package = "pocket/x/shared/types";
 
 // TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
 
+// TODO_CONSIDERATION: Consider renaming `ServiceId` to `Service` to avoid the confusion of `ServiceId.Id`. This will
+//                     require renaming associated fields, types, etc...
 // ServiceId message to encapsulate unique and semantic identifiers for a service on the network
 message ServiceId {
     // NOTE: `ServiceId.Id` may seem redundant but was desigtned created to enable more complex service identification

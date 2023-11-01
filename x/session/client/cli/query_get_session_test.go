@@ -74,7 +74,7 @@ func TestCLI_GetSession(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			desc: "valid - block height unspecified and defaults to -1",
+			desc: "valid - block height unspecified and defaults to 0",
 
 			appAddress: appSvc0.Address,
 			serviceId:  "svc0",

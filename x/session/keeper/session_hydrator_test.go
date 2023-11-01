@@ -26,11 +26,11 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId.Id)
 	require.Equal(t, "", sessionHeader.ServiceId.Name)
 	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
-	require.Equal(t, "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0", sessionHeader.SessionId)
+	require.Equal(t, "5481d5ca2ddb15dc5edb792b8e20ba9c7d516a74475fc5feba6b6aeb95a26f58", sessionHeader.SessionId)
 
 	// Check the session
 	require.Equal(t, int64(4), session.NumBlocksPerSession)
-	require.Equal(t, "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0", session.SessionId)
+	require.Equal(t, "5481d5ca2ddb15dc5edb792b8e20ba9c7d516a74475fc5feba6b6aeb95a26f58", session.SessionId)
 	require.Equal(t, int64(2), session.SessionNumber)
 
 	// Check the application
@@ -159,8 +159,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId1, // svc1
 
-			expectedSessionId1: "aabaa25668538f80395170be95ce1d1536d9228353ced71cc3b763171316fe39",
-			expectedSessionId2: "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0",
+			expectedSessionId1: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
+			expectedSessionId2: "5481d5ca2ddb15dc5edb792b8e20ba9c7d516a74475fc5feba6b6aeb95a26f58",
 		},
 		{
 			name: "app1: sessionId for svc1 != sessionId for svc12",
@@ -174,8 +174,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1,  // svc1
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "aabaa25668538f80395170be95ce1d1536d9228353ced71cc3b763171316fe39",
-			expectedSessionId2: "920c5f2916d933407b364d62625b7ff8eb259d711c21205cc70d0c475d19a160",
+			expectedSessionId1: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
+			expectedSessionId2: "44fce80205bece269429a5dc8b55f9d96e5bf7acdb9838f2ac9aa7216905a1cf",
 		},
 		{
 			name: "svc12: sessionId for app1 != sessionId for app2",
@@ -189,8 +189,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId12, // svc12
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "920c5f2916d933407b364d62625b7ff8eb259d711c21205cc70d0c475d19a160",
-			expectedSessionId2: "d0ccdedeab3a2935d68c729ec1f8d6b63b314ec70e5fd9d96ca3f41d730aaeb0",
+			expectedSessionId1: "44fce80205bece269429a5dc8b55f9d96e5bf7acdb9838f2ac9aa7216905a1cf",
+			expectedSessionId2: "22328e12562532047c9d4200beaedc9be694cd99b38938ba64cf4cdca0a8ecba",
 		},
 	}
 
