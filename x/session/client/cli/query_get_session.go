@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -12,26 +13,43 @@ import (
 
 var _ = strconv.Itoa(0)
 
-// TODO(@Olshansk): Implement the CLI component of `GetSession`.
 func CmdGetSession() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get-session",
+		Use:   "get-session [application address] [service ID] [block height]",
 		Short: "Query get-session",
-		Args:  cobra.ExactArgs(0),
+		Long: `Query the session data for a specific (app, service, height) tuple. This is a query operation
+that will not result in a state transition but simply gives a view into the chain state.
+
+Example:
+$ pocketd --home=$(POCKETD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`,
+		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			appAddressString := args[0]
+			serviceIdString := args[1]
+			blockHeightString := args[2]
+
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
 			}
-			queryClient := types.NewQueryClient(clientCtx)
-			req := &types.QueryGetSessionRequest{}
 
-			res, err := queryClient.GetSession(cmd.Context(), req)
+			blockHeight, err := strconv.ParseInt(blockHeightString, 10, 64)
+			if err != nil {
+				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, err)
+			}
+
+			queryClient := types.NewQueryClient(clientCtx)
+			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
+			if err := getSessionReq.ValidateBasic(); err != nil {
+				return err
+			}
+
+			getSessionRes, err := queryClient.GetSession(cmd.Context(), getSessionReq)
 			if err != nil {
 				return err
 			}
 
-			return clientCtx.PrintProto(res)
+			return clientCtx.PrintProto(getSessionRes)
 		},
 	}
 

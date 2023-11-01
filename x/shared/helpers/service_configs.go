@@ -15,17 +15,8 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 		if serviceConfig == nil {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
-		if serviceConfig.ServiceId == nil {
-			return fmt.Errorf("serviceId cannot be nil: %v", serviceConfig)
-		}
-		if serviceConfig.ServiceId.Id == "" {
-			return fmt.Errorf("serviceId.Id cannot be empty: %v", serviceConfig)
-		}
-		if !IsValidServiceId(serviceConfig.ServiceId.Id) {
-			return fmt.Errorf("invalid serviceId.Id: %v", serviceConfig)
-		}
-		if !IsValidServiceName(serviceConfig.ServiceId.Name) {
-			return fmt.Errorf("invalid serviceId.Name: %v", serviceConfig)
+		if !IsValidService(serviceConfig.ServiceId) {
+			return fmt.Errorf("serviceId is invalid: %v", serviceConfig)
 		}
 	}
 	return nil
@@ -42,17 +33,8 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 		}
 
 		// Check the ServiceId
-		if serviceConfig.ServiceId == nil {
-			return fmt.Errorf("serviceId cannot be nil: %v", serviceConfig)
-		}
-		if serviceConfig.ServiceId.Id == "" {
-			return fmt.Errorf("serviceId.Id cannot be empty: %v", serviceConfig)
-		}
-		if !IsValidServiceId(serviceConfig.ServiceId.Id) {
-			return fmt.Errorf("invalid serviceId.Id: %v", serviceConfig)
-		}
-		if !IsValidServiceName(serviceConfig.ServiceId.Name) {
-			return fmt.Errorf("invalid serviceId.Name: %v", serviceConfig)
+		if !IsValidService(serviceConfig.ServiceId) {
+			return fmt.Errorf("serviceId is invalid: %v", serviceConfig)
 		}
 
 		// Check the Endpoints
