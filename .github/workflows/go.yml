@@ -17,13 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install ignite
+        # If this step fails due to ignite.com not working, check this PR: https://github.com/pokt-network/poktroll/pull/116
         run: |
-          # curl https://get.ignite.com/cli! | bash
-
-          wget https://github.com/ignite/cli/releases/download/v0.27.1/ignite_0.27.1_linux_amd64.tar.gz
-          tar -xzf ignite_0.27.1_linux_amd64.tar.gz
-          sudo mv ignite /usr/local/bin/ignite
-          ignite version
+          curl https://get.ignite.com/cli! | bash
 
       - uses: actions/checkout@v3
         with:
