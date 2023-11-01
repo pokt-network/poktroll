@@ -59,27 +59,37 @@ func TestReplayObservable(t *testing.T) {
 	// replay observer, should receive the last lastN values published prior to
 	// subscribing followed by subsequently published values
 	replayObserver := replayObsvbl.Subscribe(ctx)
+
+	// Collect values from replayObserver.
+	var actualValues []int
 	for _, expected := range expectedValues {
 		select {
 		case v := <-replayObserver.Ch():
-			require.Equal(t, expected, v)
+			actualValues = append(actualValues, v)
 		case <-time.After(1 * time.Second):
 			t.Fatalf("Did not receive expected value %d in time", expected)
 		}
 	}
 
-	// second replay observer, should receive the same values as the first
+	require.EqualValues(t, expectedValues, actualValues)
+
+	// Second replay observer, should receive the same values as the first
 	// even though it subscribed after all values were published and the
 	// values were already replayed by the first.
 	replayObserver2 := replayObsvbl.Subscribe(ctx)
+
+	// Collect values from replayObserver2.
+	var actualValues2 []int
 	for _, expected := range expectedValues {
 		select {
 		case v := <-replayObserver2.Ch():
-			require.Equal(t, expected, v)
+			actualValues2 = append(actualValues2, v)
 		case <-time.After(1 * time.Second):
 			t.Fatalf("Did not receive expected value %d in time", expected)
 		}
 	}
+
+	require.EqualValues(t, expectedValues, actualValues)
 }
 
 func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {

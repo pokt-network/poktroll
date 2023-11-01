@@ -132,9 +132,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 				// onDone is called when the observer channel closes
 				onDone := func(outputs []int) error {
-					if !assert.Equalf(
-						t, len(tt.expectedOutputs),
-						len(outputs),
+					if !assert.ElementsMatch(
+						t, tt.expectedOutputs, outputs,
 						"obsvr addr: %p", obsvr,
 					) {
 						return testerrors.ErrAsync
@@ -317,20 +316,10 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 			obsrvn.Lock()
 			defer obsrvn.Unlock()
 
-			require.Equalf(
-				t, len(expectedNotifications[obsnIdx]),
-				len(obsrvn.Notifications),
-				"observation index: %d, expected: %+v, actual: %+v",
-				obsnIdx, expectedNotifications[obsnIdx], obsrvn.Notifications,
+			require.EqualValuesf(
+				t, expectedNotifications[obsnIdx], obsrvn.Notifications,
+				"observation index: %d", obsnIdx,
 			)
-			for notificationIdx, expected := range expectedNotifications[obsnIdx] {
-				require.Equalf(
-					t, expected,
-					(obsrvn.Notifications)[notificationIdx],
-					"allExpected: %+v, allActual: %+v",
-					expectedNotifications[obsnIdx], obsrvn.Notifications,
-				)
-			}
 		})
 	}
 }
