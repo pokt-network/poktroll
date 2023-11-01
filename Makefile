@@ -346,19 +346,19 @@ supplier3_unstake: ## Unstake supplier3
 
 .PHONY: get_session
 get_session: ## Retrieve the session for (APP_ADDR, SVC, HEIGHT) tuple specific as env vars
-	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) "$(HEIGHT)" --node $(POCKET_NODE)
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)
-	APP=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 SVC=anvil HEIGHT=-1 make get_session
+	APP=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 SVC=anvil HEIGHT=0 make get_session
 
 .PHONY: get_session_app2_anvil
 get_session_app2_anvil: ## Retrieve the session for (app2, anvil, latest_height)
-	APP=pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm SVC=anvil HEIGHT=-1 make get_session
+	APP=pokt184zvylazwu4queyzpl0gyz9yf5yxm2kdhh9hpm SVC=anvil HEIGHT=0 make get_session
 
 .PHONY: get_session_app3_anvil
 get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
-	APP=pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex SVC=anvil HEIGHT=-1 make get_session
+	APP=pokt1lqyu4v88vp8tzc86eaqr4lq8rwhssyn6rfwzex SVC=anvil HEIGHT=0 make get_session
 
 ################
 ### Accounts ###

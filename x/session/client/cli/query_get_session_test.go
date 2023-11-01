@@ -24,11 +24,13 @@ func TestCLI_GetSession(t *testing.T) {
 	appSvc0 := applications[0]
 	appSvc1 := applications[1]
 
-	require.Len(t, appSvc0.ServiceConfigs, 1)
-	require.Len(t, appSvc1.ServiceConfigs, 1)
+	require.Len(t, appSvc0.ServiceConfigs, 2)
+	require.Len(t, appSvc1.ServiceConfigs, 2)
 
 	require.Equal(t, appSvc0.ServiceConfigs[0].ServiceId.Id, "svc0")
+	require.Equal(t, appSvc0.ServiceConfigs[1].ServiceId.Id, "svc00")
 	require.Equal(t, appSvc1.ServiceConfigs[0].ServiceId.Id, "svc1")
+	require.Equal(t, appSvc1.ServiceConfigs[1].ServiceId.Id, "svc11")
 
 	// Sanity check the supplier configs are what we expect them to be
 	supplierSvc0 := suppliers[0]
@@ -40,8 +42,6 @@ func TestCLI_GetSession(t *testing.T) {
 	require.Equal(t, supplierSvc0.Services[0].ServiceId.Id, "svc0")
 	require.Equal(t, supplierSvc1.Services[0].ServiceId.Id, "svc1")
 
-	fmt.Println(appSvc0.Address, appSvc1)
-
 	// Prepare the test cases
 	tests := []struct {
 		desc string
@@ -50,9 +50,8 @@ func TestCLI_GetSession(t *testing.T) {
 		serviceId   string
 		blockHeight int64
 
-		expectedErr           *sdkerrors.Error
-		expectedNumSuppliers  int
-		expectedSessionNumber int64
+		expectedNumSuppliers int
+		expectedErr          *sdkerrors.Error
 	}{
 		// Valid requests
 		{
@@ -62,7 +61,8 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 0,
 
-			expectedErr: nil,
+			expectedNumSuppliers: 1,
+			expectedErr:          nil,
 		},
 		{
 			desc: "valid - block height specified and is greater than zero",
@@ -71,7 +71,8 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc1",
 			blockHeight: 10, // example value; adjust as needed
 
-			expectedErr: nil,
+			expectedNumSuppliers: 1,
+			expectedErr:          nil,
 		},
 		{
 			desc: "valid - block height unspecified and defaults to -1",
@@ -80,7 +81,8 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:  "svc0",
 			// blockHeight: intentionally omitted,
 
-			expectedErr: nil,
+			expectedNumSuppliers: 1,
+			expectedErr:          nil,
 		},
 
 		// Invalid requests - incompatible state
@@ -88,20 +90,21 @@ func TestCLI_GetSession(t *testing.T) {
 			desc: "invalid - app not staked for service",
 
 			appAddress:  appSvc0.Address,
-			serviceId:   "svc9001", // appSvc0 is only staked for svc0
+			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			// expectedErr: sessiontypes.ErrSessionInvalidAppAddress,
+			// expectedNumSuppliers:
+			expectedErr: sessiontypes.ErrAppNotStakedForService,
 		},
 		{
 			desc: "invalid - no suppliers staked for service",
 
 			appAddress:  appSvc1.Address, // dynamically getting address from applications
-			serviceId:   "svc3",
+			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			// TODO
-			// err: sessiontypes.ErrSessionInvalidAppAddress,
+			// expectedNumSuppliers:
+			expectedErr: sessiontypes.ErrSuppliersNotFound,
 		},
 		{
 			desc: "invalid - block height is in the future",
@@ -110,8 +113,8 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 100000, // example future value; adjust as needed
 
-			// TODO
-			// err: sessiontypes.ErrSessionInvalidAppAddress,
+			// expectedNumSuppliers:
+			err: sessiontypes.ErrSessionInvalidAppAddress,
 		},
 
 		// Invalid requests - bad app address input
@@ -196,7 +199,7 @@ func TestCLI_GetSession(t *testing.T) {
 			session := getSessionRes.Session
 			require.NotNil(t, session)
 
-			fmt.Println("sessionRes", session)
+			fmt.Println("TODO sessionRes", session)
 
 		})
 	}

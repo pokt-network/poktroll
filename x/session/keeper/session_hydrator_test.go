@@ -13,6 +13,7 @@ import (
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	blockHeight := int64(10)
 
 	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestApp1Address, keepertest.TestServiceId1, blockHeight)
@@ -53,6 +54,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 		expectedNumBlocksPerSession int64
 		expectedSessionNumber       int64
 		expectedSessionStartBlock   int64
+		errExpected                 bool
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
@@ -62,6 +64,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			name:        "blockHeight = 0",
 			blockHeight: 0,
 
+			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
@@ -70,6 +73,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			name:        "blockHeight = 1",
 			blockHeight: 1,
 
+			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
@@ -78,6 +82,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			name:        "blockHeight = sessionHeight",
 			blockHeight: 4,
 
+			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
@@ -86,20 +91,33 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			name:        "blockHeight != sessionHeight",
 			blockHeight: 5,
 
+			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
+		},
+		{
+			name:        "blockHeight > contextHeight",
+			blockHeight: 9001, // over 9000! (context height is 100)
+
+			errExpected: true,
 		},
 	}
 
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, tt.blockHeight)
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
+
+			if tt.errExpected {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 
 			require.Equal(t, tt.expectedNumBlocksPerSession, session.NumBlocksPerSession)
@@ -177,6 +195,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -230,7 +249,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 		{
 			name:      "invalid - app not staked for service",
 			appAddr:   keepertest.TestApp1Address, // app1
-			serviceId: "svc9001",
+			serviceId: "svc9001",                  // app1 is only stake for svc1 and svc11
 
 			expectedErr: types.ErrHydratingSession,
 		},
@@ -242,6 +261,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 	blockHeight := int64(10)
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -298,6 +318,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 
 	blockHeight := int64(10)
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {})
