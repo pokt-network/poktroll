@@ -21,7 +21,7 @@ vendor/
 go.work
 
 # Don't commit binaries
-bin/*
+bin
 
 # Before we provision the localnet, `ignite` creates the accounts, genesis, etc. for us
 # As many of the files are dynamic, we only preserve the config files in git history.

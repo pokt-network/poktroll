@@ -20,6 +20,7 @@ jobs:
         # If this step fails due to ignite.com not working, check this PR: https://github.com/pokt-network/poktroll/pull/116
         run: |
           curl https://get.ignite.com/cli! | bash
+          ignite version
 
       - uses: actions/checkout@v3
         with:
