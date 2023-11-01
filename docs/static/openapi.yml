@@ -76885,6 +76885,9 @@ definitions:
           TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
           optional onchain representation of the service is necessary
     title: >-
+      TODO_CONSIDERATION: Consider renaming `ServiceId` to `Service` to avoid
+      the confusion of `ServiceId.Id`. This will
+                          require renaming associated fields, types, etc...
       ServiceId message to encapsulate unique and semantic identifiers for a
       service on the network
   pocket.gateway.Gateway:
