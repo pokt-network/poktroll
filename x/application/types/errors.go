@@ -18,4 +18,5 @@ var (
 	ErrAppAlreadyDelegated            = sdkerrors.Register(ModuleName, 9, "application already delegated to gateway")
 	ErrAppMaxDelegatedGateways        = sdkerrors.Register(ModuleName, 10, "maximum number of delegated gateways reached")
 	ErrAppInvalidMaxDelegatedGateways = sdkerrors.Register(ModuleName, 11, "invalid MaxDelegatedGateways parameter")
+	ErrAppNotDelegated                = sdkerrors.Register(ModuleName, 12, "application not delegated to gateway")
 )

@@ -298,6 +298,22 @@ app2_delegate_gateway2: ## Delegate trust to gateway2
 app3_delegate_gateway3: ## Delegate trust to gateway3
 	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_delegate
 
+.PHONY: app_undelegate
+app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
+	pocketd --home=$(POCKETD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_undelegate_gateway1
+app1_undelegate_gateway1: ## Undelegate trust to gateway1
+	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_undelegate
+
+.PHONY: app2_undelegate_gateway2
+app2_undelegate_gateway2: ## Undelegate trust to gateway2
+	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_undelegate
+
+.PHONY: app3_undelegate_gateway3
+app3_undelegate_gateway3: ## Undelegate trust to gateway3
+	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_undelegate
+
 #################
 ### Suppliers ###
 #################
