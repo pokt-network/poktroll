@@ -8,7 +8,8 @@ import (
 )
 
 func NewKey(
-	t *testing.T, name string,
+	t *testing.T,
+	name string,
 	keyring cosmoskeyring.Keyring,
 ) (key *cosmoskeyring.Record, mnemonic string) {
 	t.Helper()

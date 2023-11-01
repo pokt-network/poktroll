@@ -19,21 +19,32 @@ import (
 )
 
 type TxContext interface {
+	// GetKeyring returns the associated key management mechanism for the tx context.
 	GetKeyring() cosmoskeyring.Keyring
+
+	// NewTxBuilder creates and returns a new tx builder instance.
 	NewTxBuilder() cosmosclient.TxBuilder
+
+	// SignTx signs a tx using the specified key name. It can operate in offline mode,
+	// and can overwrite any existing signatures based on the provided flags.
 	SignTx(
 		keyName string,
 		txBuilder cosmosclient.TxBuilder,
 		offline, overwriteSig bool,
 	) error
-	EncodeTx(cosmosclient.TxBuilder) ([]byte, error)
-	// TODO_CONSIDERATION: perhaps TxResponse should be an interface type that we own
-	BroadcastTxSync([]byte) (*cosmostypes.TxResponse, error)
+
+	// EncodeTx takes a tx builder and encodes it, returning its byte representation.
+	EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte, error)
+
+	// BroadcastTx broadcasts the given tx to the network.
+	BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error)
+
+	// QueryTx retrieves a tx status based on its hash and optionally provides
+	// proof of the tx.
 	QueryTx(
 		ctx context.Context,
 		txHash []byte,
 		prove bool,
-		// TODO_CONSIDERATION: perhaps ResultTx should be an interface type that we own
 	) (*comettypes.ResultTx, error)
 }
 

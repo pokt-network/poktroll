@@ -23,6 +23,13 @@ import (
 	"pocket/pkg/client/tx"
 )
 
+// TODO_IMPROVE: these mock constructor helpers could include parameters for the
+// "times" (e.g. exact, min, max) values which are passed to their respective
+// gomock.EXPECT() method calls (i.e. Times(), MinTimes(), MaxTimes()).
+// When implementing such a pattern, be careful about making assumptions about
+// correlations between these "times" values and the contexts in which the expected
+// methods may be called.
+
 // NewOneTimeErrTxTimeoutTxContext creates a mock transaction context designed to simulate a specific
 // timeout error scenario during transaction broadcasting.
 //
@@ -49,7 +56,6 @@ func NewOneTimeErrTxTimeoutTxContext(
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
 	expectedTx *cometbytes.HexBytes,
-	expectedTxHash *cometbytes.HexBytes,
 	expectedErrMsg *string,
 ) *mockclient.MockTxContext {
 	t.Helper()
@@ -69,43 +75,42 @@ func NewOneTimeErrTxTimeoutTxContext(
 		t, signingKeyName,
 		keyring,
 		expectedTx,
-		expectedTxHash,
 	)
 
-	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
-	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
-		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
-			return &cosmostypes.TxResponse{
-				Height:    1,
-				TxHash:    expectedTxHash.String(),
-				RawLog:    "",
-				Logs:      nil,
-				Tx:        nil,
-				Timestamp: "",
-				Events:    nil,
-			}, nil
-		}).Times(1)
+	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
+		DoAndReturn(
+			func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+				var expectedTxHash cometbytes.HexBytes = comettypes.Tx(txBytes).Hash()
+				return &cosmostypes.TxResponse{
+					Height: 1,
+					TxHash: expectedTxHash.String(),
+				}, nil
+			},
+		).Times(1)
 
 	txCtxMock.EXPECT().QueryTx(
 		gomock.AssignableToTypeOf(context.Background()),
 		gomock.AssignableToTypeOf([]byte{}),
 		gomock.AssignableToTypeOf(false),
-	).DoAndReturn(func(
-		ctx context.Context,
-		txHash []byte,
-		_ bool,
-	) (*cometrpctypes.ResultTx, error) {
-		return &cometrpctypes.ResultTx{
-			Hash:   txHash,
-			Height: 1,
-			TxResult: abci.ResponseDeliverTx{
-				Code:      1,
-				Log:       *expectedErrMsg,
-				Codespace: "test_codespace",
-			},
-			Tx: expectedTx.Bytes(),
-		}, nil
-	})
+	).DoAndReturn(
+		func(
+			ctx context.Context,
+			txHash []byte,
+			_ bool,
+		) (*cometrpctypes.ResultTx, error) {
+			return &cometrpctypes.ResultTx{
+				Hash:   txHash,
+				Height: 1,
+				TxResult: abci.ResponseDeliverTx{
+					Code:      1,
+					Log:       *expectedErrMsg,
+					Codespace: "test_codespace",
+				},
+				Tx: expectedTx.Bytes(),
+			}, nil
+		},
+	)
 
 	return txCtxMock
 }
@@ -138,7 +143,6 @@ func NewOneTimeErrCheckTxTxContext(
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
 	expectedTx *cometbytes.HexBytes,
-	expectedTxHash *cometbytes.HexBytes,
 	expectedErrMsg *string,
 ) *mockclient.MockTxContext {
 	t.Helper()
@@ -158,24 +162,22 @@ func NewOneTimeErrCheckTxTxContext(
 		t, signingKeyName,
 		keyring,
 		expectedTx,
-		expectedTxHash,
 	)
 
-	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
-	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
-		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
-			return &cosmostypes.TxResponse{
-				Height:    1,
-				TxHash:    expectedTxHash.String(),
-				RawLog:    *expectedErrMsg,
-				Code:      1,
-				Codespace: "test_codespace",
-				Logs:      nil,
-				Tx:        nil,
-				Timestamp: "",
-				Events:    nil,
-			}, nil
-		}).Times(1)
+	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
+		DoAndReturn(
+			func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+				var expectedTxHash cometbytes.HexBytes = comettypes.Tx(txBytes).Hash()
+				return &cosmostypes.TxResponse{
+					Height:    1,
+					TxHash:    expectedTxHash.String(),
+					RawLog:    *expectedErrMsg,
+					Code:      1,
+					Codespace: "test_codespace",
+				}, nil
+			},
+		).Times(1)
 
 	return txCtxMock
 }
@@ -204,7 +206,6 @@ func NewOneTimeTxTxContext(
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
 	expectedTx *cometbytes.HexBytes,
-	expectedTxHash *cometbytes.HexBytes,
 ) *mockclient.MockTxContext {
 	t.Helper()
 
@@ -212,22 +213,19 @@ func NewOneTimeTxTxContext(
 		t, signingKeyName,
 		keyring,
 		expectedTx,
-		expectedTxHash,
 	)
 
-	// intercept #BroadcastTxSync() call to mock response and prevent actual broadcast
-	txCtxMock.EXPECT().BroadcastTxSync(gomock.Any()).
-		DoAndReturn(func(txBytes []byte) (*cosmostypes.TxResponse, error) {
-			return &cosmostypes.TxResponse{
-				Height:    1,
-				TxHash:    expectedTxHash.String(),
-				RawLog:    "",
-				Logs:      nil,
-				Tx:        nil,
-				Timestamp: "",
-				Events:    nil,
-			}, nil
-		}).Times(1)
+	// intercept #BroadcastTx() call to mock response and prevent actual broadcast
+	txCtxMock.EXPECT().BroadcastTx(gomock.Any()).
+		DoAndReturn(
+			func(txBytes []byte) (*cosmostypes.TxResponse, error) {
+				var expectedTxHash cometbytes.HexBytes = comettypes.Tx(txBytes).Hash()
+				return &cosmostypes.TxResponse{
+					Height: 1,
+					TxHash: expectedTxHash.String(),
+				}, nil
+			},
+		).Times(1)
 
 	return txCtxMock
 }
@@ -263,27 +261,27 @@ func NewBaseTxContext(
 	signingKeyName string,
 	keyring cosmoskeyring.Keyring,
 	expectedTx *cometbytes.HexBytes,
-	expectedTxHash *cometbytes.HexBytes,
 ) *mockclient.MockTxContext {
 	t.Helper()
 
 	txCtxMock, txCtx := NewAnyTimesTxTxContext(t, keyring)
 	txCtxMock.EXPECT().NewTxBuilder().
 		DoAndReturn(txCtx.NewTxBuilder).
-		Times(1)
+		AnyTimes()
 	txCtxMock.EXPECT().SignTx(
 		gomock.Eq(signingKeyName),
 		gomock.AssignableToTypeOf(txCtx.NewTxBuilder()),
 		gomock.Eq(false), gomock.Eq(false),
-	).DoAndReturn(txCtx.SignTx).Times(1)
+	).DoAndReturn(txCtx.SignTx).AnyTimes()
 	txCtxMock.EXPECT().EncodeTx(gomock.Any()).
-		DoAndReturn(func(txBuilder cosmosclient.TxBuilder) (_ []byte, err error) {
-			// intercept cosmosTxContext#EncodeTx to get the encoded tx cometbytes
-			*expectedTx, err = txCtx.EncodeTx(txBuilder)
-			*expectedTxHash = comettypes.Tx(expectedTx.Bytes()).Hash()
-			require.NoError(t, err)
-			return expectedTx.Bytes(), nil
-		}).Times(1)
+		DoAndReturn(
+			func(txBuilder cosmosclient.TxBuilder) (_ []byte, err error) {
+				// intercept cosmosTxContext#EncodeTx to get the encoded tx cometbytes
+				*expectedTx, err = txCtx.EncodeTx(txBuilder)
+				require.NoError(t, err)
+				return expectedTx.Bytes(), nil
+			},
+		).AnyTimes()
 
 	return txCtxMock
 }

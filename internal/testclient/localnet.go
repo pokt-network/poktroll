@@ -1,8 +1,6 @@
 package testclient
 
 import (
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -19,7 +17,6 @@ import (
 const CometLocalWebsocketURL = "ws://localhost:36657/websocket"
 
 // EncodingConfig encapsulates encoding configurations for the Pocket application.
-
 var EncodingConfig = app.MakeEncodingConfig()
 
 // init initializes the SDK configuration upon package import.
@@ -39,7 +36,7 @@ func init() {
 // Returns:
 // - A pointer to a populated client.Context instance suitable for localnet usage.
 func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context {
-	homedir := DefaultHomeDir()
+	homedir := app.DefaultNodeHome
 	clientCtx := client.Context{}.
 		WithCodec(EncodingConfig.Marshaler).
 		WithTxConfig(EncodingConfig.TxConfig).
@@ -69,18 +66,4 @@ func NewLocalnetFlagSet(t *testing.T) *pflag.FlagSet {
 	require.NoError(t, err)
 
 	return mockFlagSet
-}
-
-// DefaultHomeDir computes the default home directory for the Pocket application
-// by appending the application name to the current user's home directory.
-//
-// Returns:
-// - A string representation of the default home directory path.
-func DefaultHomeDir() string {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
-	}
-
-	return filepath.Join(userHomeDir, "."+app.Name)
 }
