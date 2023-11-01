@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	publishDelay           = 1000 * time.Microsecond
+	publishDelay           = time.Millisecond
 	notifyTimeout          = 50 * time.Millisecond
 	cancelUnsubscribeDelay = publishDelay * 2
 )
@@ -149,9 +149,6 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			// notify with test input
 			publish := delayedPublishFactory(publishCh, publishDelay)
 			for _, input := range tt.inputs {
-				inputPtr := new(int)
-				*inputPtr = input
-
 				// simulating IO delay in sequential message publishing
 				publish(input)
 			}
