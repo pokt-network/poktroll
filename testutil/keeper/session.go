@@ -27,8 +27,13 @@ import (
 type option[V any] func(k *keeper.Keeper)
 
 var (
-	TestServiceId1 = "svc1"
-	TestServiceId2 = "svc2"
+	TestServiceId1  = "svc1"  // staked for by app1 & supplier1
+	TestServiceId11 = "svc11" // staked for by app1
+
+	TestServiceId2  = "svc2"  // staked for by app2 & supplier1
+	TestServiceId22 = "svc22" // staked for by app2
+
+	TestServiceId12 = "svc12" // staked for by app1, app2 & supplier1
 
 	TestApp1Address = "pokt106grzmkmep67pdfrm6ccl9snynryjqus6l3vct" // Generated via sample.AccAddress()
 	TestApp1        = apptypes.Application{
@@ -39,7 +44,10 @@ var (
 				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId11},
+			},
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
 			},
 		},
 	}
@@ -50,10 +58,13 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId22},
+			},
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
 			},
 		},
 	}
@@ -76,6 +87,16 @@ var (
 			},
 			{
 				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     TestSupplierUrl,
+						RpcType: sharedtypes.RPCType_GRPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,

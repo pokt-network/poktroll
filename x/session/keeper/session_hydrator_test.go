@@ -35,14 +35,14 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the application
 	app := session.Application
 	require.Equal(t, keepertest.TestApp1Address, app.Address)
-	require.Len(t, app.ServiceConfigs, 2)
+	require.Len(t, app.ServiceConfigs, 3)
 
 	// Check the suppliers
 	suppliers := session.Suppliers
 	require.Len(t, suppliers, 1)
 	supplier := suppliers[0]
 	require.Equal(t, keepertest.TestSupplierAddress, supplier.Address)
-	require.Len(t, supplier.Services, 2)
+	require.Len(t, supplier.Services, 3)
 }
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
@@ -145,7 +145,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			expectedSessionId2: "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0",
 		},
 		{
-			name: "app1: sessionId for svc1 != sessionId for svc2",
+			name: "app1: sessionId for svc1 != sessionId for svc12",
 
 			blockHeight1: 4,
 			blockHeight2: 4,
@@ -153,14 +153,14 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			appAddr1: keepertest.TestApp1Address, // app1
 			appAddr2: keepertest.TestApp1Address, // app1
 
-			serviceId1: keepertest.TestServiceId1, // svc1
-			serviceId2: keepertest.TestServiceId2, // svc2
+			serviceId1: keepertest.TestServiceId1,  // svc1
+			serviceId2: keepertest.TestServiceId12, // svc12
 
 			expectedSessionId1: "aabaa25668538f80395170be95ce1d1536d9228353ced71cc3b763171316fe39",
-			expectedSessionId2: "478d005769e5edf38d9bf2d8828a56d78b17348bb2c4796dd6d85b5d736a908a",
+			expectedSessionId2: "920c5f2916d933407b364d62625b7ff8eb259d711c21205cc70d0c475d19a160",
 		},
 		{
-			name: "svc1: sessionId for app1 != sessionId for app2",
+			name: "svc12: sessionId for app1 != sessionId for app2",
 
 			blockHeight1: 4,
 			blockHeight2: 4,
@@ -168,11 +168,11 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			appAddr1: keepertest.TestApp1Address, // app1
 			appAddr2: keepertest.TestApp2Address, // app2
 
-			serviceId1: keepertest.TestServiceId1, // svc1
-			serviceId2: keepertest.TestServiceId1, // svc1
+			serviceId1: keepertest.TestServiceId12, // svc12
+			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "aabaa25668538f80395170be95ce1d1536d9228353ced71cc3b763171316fe39",
-			expectedSessionId2: "b4b0d8747b1cf67050a7bfefd7e93ebbad80c534fa14fb3c69339886f2ed7061",
+			expectedSessionId1: "920c5f2916d933407b364d62625b7ff8eb259d711c21205cc70d0c475d19a160",
+			expectedSessionId2: "d0ccdedeab3a2935d68c729ec1f8d6b63b314ec70e5fd9d96ca3f41d730aaeb0",
 		},
 	}
 
@@ -273,7 +273,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 		{
 			name:      "num_suppliers_available = 0",
 			appAddr:   keepertest.TestApp1Address, // app1
-			serviceId: "svc_unknown",
+			serviceId: keepertest.TestServiceId11,
 
 			numExpectedSuppliers: 0,
 			expectedErr:          types.ErrSuppliersNotFound,

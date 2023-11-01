@@ -133,7 +133,7 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 		}
 	}
 
-	return sdkerrors.Wrapf(types.ErrAppNotFound, "application %s not stake for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId.Id)
+	return sdkerrors.Wrapf(types.ErrAppNotStakedForService, "application %s not stake for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId.Id)
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
