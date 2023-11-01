@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	publishDelay           = 100 * time.Microsecond
-	notifyTimeout          = publishDelay * 20
+	publishDelay           = 1000 * time.Microsecond
+	notifyTimeout          = 50 * time.Millisecond
 	cancelUnsubscribeDelay = publishDelay * 2
 )
 

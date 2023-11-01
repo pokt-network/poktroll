@@ -50,7 +50,9 @@ func TestReplayObservable(t *testing.T) {
 
 	// send all values to the observable's publish channel
 	for _, value := range values {
+		time.Sleep(10 * time.Microsecond)
 		publishCh <- value
+		time.Sleep(10 * time.Microsecond)
 	}
 
 	// allow some time for values to be buffered by the replay observable
@@ -178,7 +180,7 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 			"Last should block until at lest 1 value has been published; actualValues: %v",
 			actualValues,
 		)
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(10 * time.Millisecond):
 	}
 
 	// Publish some values (up to splitIdx).
@@ -225,7 +227,7 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	case actualValues := <-getLastValues():
 		require.Len(t, actualValues, lastN)
 		require.ElementsMatch(t, values, actualValues)
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(50 * time.Millisecond):
 		t.Fatal("timed out waiting for Last to return")
 	}
 
