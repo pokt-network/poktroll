@@ -15,6 +15,10 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// If block height is not specified, use the current (context) block height

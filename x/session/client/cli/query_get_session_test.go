@@ -148,17 +148,6 @@ func TestCLI_GetSession(t *testing.T) {
 
 			expectedErr: sessiontypes.ErrSessionInvalidServiceId,
 		},
-
-		// Invalid requests - bad blockHeight input
-		// {
-		// 	desc: "invalid - blockHeight < -1",
-
-		// 	appAddress:  appSvc0.Address, // dynamically getting address from applications
-		// 	serviceId:   "svc0",
-		// 	blockHeight: -2,
-
-		// 	err: nil,
-		// },
 	}
 
 	common := []string{
