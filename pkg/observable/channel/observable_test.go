@@ -101,11 +101,11 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
-			obsvbl, publisher := channel.NewObservable[int](
+			obsvbl, publishCh := channel.NewObservable[int](
 				channel.WithPublisher(tt.publishCh),
 			)
 			require.NotNil(t, obsvbl)
-			require.NotNil(t, publisher)
+			require.NotNil(t, publishCh)
 
 			// construct 3 distinct observers, each with its own channel
 			observers := make([]observable.Observer[int], 1)
@@ -147,7 +147,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			}
 
 			// notify with test input
-			publish := delayedPublishFactory(publisher, publishDelay)
+			publish := delayedPublishFactory(publishCh, publishDelay)
 			for _, input := range tt.inputs {
 				inputPtr := new(int)
 				*inputPtr = input
