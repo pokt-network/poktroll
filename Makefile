@@ -346,7 +346,7 @@ supplier3_unstake: ## Unstake supplier3
 
 .PHONY: get_session
 get_session: ## Retrieve the session for (APP_ADDR, SVC, HEIGHT) tuple specific as env vars
-	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) "$(HEIGHT)" --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)

@@ -17,6 +17,8 @@ import (
 func TestCLI_GetSession(t *testing.T) {
 	// Prepare the network
 	net, suppliers, applications := networkWithApplicationsAndSupplier(t, 2)
+	_, err := net.WaitForHeight(10) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
+	require.NoError(t, err)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
@@ -50,8 +52,7 @@ func TestCLI_GetSession(t *testing.T) {
 		serviceId   string
 		blockHeight int64
 
-		expectedNumSuppliers int
-		expectedErr          *sdkerrors.Error
+		expectedErr *sdkerrors.Error
 	}{
 		// Valid requests
 		{
@@ -61,8 +62,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 0,
 
-			expectedNumSuppliers: 1,
-			expectedErr:          nil,
+			expectedErr: nil,
 		},
 		{
 			desc: "valid - block height specified and is greater than zero",
@@ -71,8 +71,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc1",
 			blockHeight: 10, // example value; adjust as needed
 
-			expectedNumSuppliers: 1,
-			expectedErr:          nil,
+			expectedErr: nil,
 		},
 		{
 			desc: "valid - block height unspecified and defaults to -1",
@@ -81,8 +80,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:  "svc0",
 			// blockHeight: intentionally omitted,
 
-			expectedNumSuppliers: 1,
-			expectedErr:          nil,
+			expectedErr: nil,
 		},
 
 		// Invalid requests - incompatible state
@@ -93,7 +91,6 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			// expectedNumSuppliers:
 			expectedErr: sessiontypes.ErrAppNotStakedForService,
 		},
 		{
@@ -103,7 +100,6 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			// expectedNumSuppliers:
 			expectedErr: sessiontypes.ErrSuppliersNotFound,
 		},
 		{
@@ -113,8 +109,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc0",
 			blockHeight: 100000, // example future value; adjust as needed
 
-			// expectedNumSuppliers:
-			err: sessiontypes.ErrSessionInvalidAppAddress,
+			expectedErr: sessiontypes.ErrSessionInvalidBlockHeight,
 		},
 
 		// Invalid requests - bad app address input
@@ -199,8 +194,8 @@ func TestCLI_GetSession(t *testing.T) {
 			session := getSessionRes.Session
 			require.NotNil(t, session)
 
-			fmt.Println("TODO sessionRes", session)
-
+			// TODO_IN_THIS_PR: Add more assertions on `session`
+			// fmt.Println("TODO sessionRes", session)
 		})
 	}
 }
