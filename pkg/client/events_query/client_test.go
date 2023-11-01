@@ -129,7 +129,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 				t, eventObserver,
 				handleEventsLimit,
 				eventsquery.ErrConnClosed,
-				readObserverEventsTimeout+(50*time.Millisecond),
+				readObserverEventsTimeout,
 				onLimit,
 			)
 		})
@@ -138,7 +138,8 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	var (
-		readAllEventsTimeout = 50 * time.Millisecond
+		firstEventDelay      = 50 * time.Millisecond
+		readAllEventsTimeout = 50*time.Millisecond + firstEventDelay
 		handleEventsLimit    = 10
 		readEventCounter     int
 		// delayFirstEvent runs once (per test case) to delay the first event
@@ -155,7 +156,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 		Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
-			delayFirstEvent.Do(func() { time.Sleep(50 * time.Millisecond) })
+			delayFirstEvent.Do(func() { time.Sleep(firstEventDelay) })
 
 			if connClosed.Load() {
 				return nil, eventsquery.ErrConnClosed
@@ -193,7 +194,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 		t, eventsObserver,
 		handleEventsLimit,
 		eventsquery.ErrConnClosed,
-		readAllEventsTimeout+(50*time.Millisecond),
+		readAllEventsTimeout,
 		onLimit,
 	)
 }
