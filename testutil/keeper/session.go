@@ -17,7 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
-	mocks "github.com/pokt-network/poktroll/testutil/session/mocks"
+	"github.com/pokt-network/poktroll/testutil/session/mocks"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
