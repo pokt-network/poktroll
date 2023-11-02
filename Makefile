@@ -126,7 +126,7 @@ go_lint: ## Run all go linters
 	golangci-lint run --timeout 5m
 
 go_imports: check_go_version ## Run goimports on all go files
-	go run ./tools/scripts/goimports/main.go
+	go run ./tools/scripts/goimports
 
 #############
 ### Tests ###
