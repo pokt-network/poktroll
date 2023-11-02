@@ -70,13 +70,16 @@ func TestObserver_ConcurrentUnsubscribe(t *testing.T) {
 
 			// publish a value
 			obsvr.notify(idx)
+
+			// Slow this loop to prevent bogging the test down.
+			time.Sleep(10 * time.Microsecond)
 		}
 	}()
 	// send on done when the test cleans up
 	t.Cleanup(func() { done <- struct{}{} })
 
 	// it should still be open after a bit of inactivity
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(time.Millisecond)
 	require.Equal(t, false, obsvr.isClosed)
 
 	obsvr.Unsubscribe()
