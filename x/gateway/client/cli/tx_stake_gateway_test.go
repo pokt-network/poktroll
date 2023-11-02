@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"pocket/testutil/network"
-	"pocket/x/gateway/client/cli"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/x/gateway/client/cli"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {

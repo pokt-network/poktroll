@@ -12,14 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/mocks/mockclient"
-	"pocket/internal/testchannel"
-	"pocket/internal/testclient/testeventsquery"
-	"pocket/internal/testerrors"
-	eventsquery "pocket/pkg/client/events_query"
-	"pocket/pkg/client/events_query/websocket"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/testchannel"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/internal/testerrors"
+	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {

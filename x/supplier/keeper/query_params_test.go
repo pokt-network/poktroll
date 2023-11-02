@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
-	testkeeper "pocket/testutil/keeper"
-	"pocket/x/supplier/types"
 )
 
 func TestParamsQuery(t *testing.T) {

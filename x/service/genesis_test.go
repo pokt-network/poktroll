@@ -3,11 +3,11 @@ package service_test
 import (
 	"testing"
 
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/service"
+	"github.com/pokt-network/poktroll/x/service/types"
 	"github.com/stretchr/testify/require"
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-	"pocket/x/service"
-	"pocket/x/service/types"
 )
 
 func TestGenesis(t *testing.T) {

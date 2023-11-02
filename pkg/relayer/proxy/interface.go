@@ -3,9 +3,9 @@ package proxy
 import (
 	"context"
 
-	"pocket/pkg/observable"
-	"pocket/x/service/types"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // RelayerProxy is the interface for the proxy that serves relays to the application.

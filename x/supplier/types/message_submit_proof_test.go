@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
-	"pocket/testutil/sample"
 )
 
 // TODO(@bryanchriswhite): Add unit tests for message validation when adding the business logic.

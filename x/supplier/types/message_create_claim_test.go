@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 // TODO(@bryanchriswhite): Add unit tests for message validation when adding the business logic.

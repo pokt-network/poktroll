@@ -5,8 +5,8 @@ package client
 import (
 	"context"
 
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 // BlocksObservable is an observable which is notified with an either

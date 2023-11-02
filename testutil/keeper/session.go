@@ -16,12 +16,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
-	mocks "pocket/testutil/session/mocks"
-	apptypes "pocket/x/application/types"
-	"pocket/x/session/keeper"
-	"pocket/x/session/types"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	mocks "github.com/pokt-network/poktroll/testutil/session/mocks"
+	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type option[V any] func(k *keeper.Keeper)

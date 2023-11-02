@@ -7,11 +7,11 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"pocket/pkg/client"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
-	"pocket/pkg/retry"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 const (
