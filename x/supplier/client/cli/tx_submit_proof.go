@@ -5,13 +5,14 @@ import (
 	"strconv"
 
 	"encoding/json"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	sessiontypes "pocket/x/session/types"
-	"pocket/x/supplier/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ = strconv.Itoa(0)

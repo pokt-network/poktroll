@@ -15,9 +15,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "pocket/testutil/supplier/mocks"
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
+	mocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
@@ -49,6 +49,7 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		storeKey,
 		memStoreKey,
 		paramsSubspace,
+
 		mockBankKeeper,
 	)
 

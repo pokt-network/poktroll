@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 // replayPartialBufferTimeout is the duration to wait for the replay buffer to

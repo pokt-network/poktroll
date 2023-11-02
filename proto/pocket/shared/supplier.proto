@@ -4,7 +4,7 @@ package pocket.shared;
 // NOTE that the `shared` package is not a Cosmos module,
 // but rather a manually created package to resolve circular dependencies.
 
-option go_package = "pocket/x/shared/types";
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
