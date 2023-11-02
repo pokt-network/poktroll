@@ -8,8 +8,6 @@ package client
 
 import (
 	"context"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
 
 	comettypes "github.com/cometbft/cometbft/rpc/core/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"

@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
-	"pocket/app"
-	"pocket/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 )
 
 // CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
