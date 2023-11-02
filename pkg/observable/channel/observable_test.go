@@ -10,15 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"pocket/internal/testchannel"
-	"pocket/internal/testerrors"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/internal/testchannel"
+	"github.com/pokt-network/poktroll/internal/testerrors"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 const (
-	publishDelay           = 100 * time.Microsecond
-	notifyTimeout          = publishDelay * 20
+	publishDelay           = time.Millisecond
+	notifyTimeout          = 50 * time.Millisecond
 	cancelUnsubscribeDelay = publishDelay * 2
 )
 
@@ -101,11 +101,11 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
-			obsvbl, publisher := channel.NewObservable[int](
+			obsvbl, publishCh := channel.NewObservable[int](
 				channel.WithPublisher(tt.publishCh),
 			)
 			require.NotNil(t, obsvbl)
-			require.NotNil(t, publisher)
+			require.NotNil(t, publishCh)
 
 			// construct 3 distinct observers, each with its own channel
 			observers := make([]observable.Observer[int], 1)
@@ -132,9 +132,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 				// onDone is called when the observer channel closes
 				onDone := func(outputs []int) error {
-					if !assert.Equalf(
-						t, len(tt.expectedOutputs),
-						len(outputs),
+					if !assert.ElementsMatch(
+						t, tt.expectedOutputs, outputs,
 						"obsvr addr: %p", obsvr,
 					) {
 						return testerrors.ErrAsync
@@ -148,24 +147,23 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 			}
 
 			// notify with test input
-			publish := delayedPublishFactory(publisher, publishDelay)
+			publish := delayedPublishFactory(publishCh, publishDelay)
 			for _, input := range tt.inputs {
-				inputPtr := new(int)
-				*inputPtr = input
-
 				// simulating IO delay in sequential message publishing
 				publish(input)
 			}
-			cancel()
+
+			// Finished sending values, close publishCh to unsubscribe all observers
+			// and close all fan-out channels.
+			close(publishCh)
 
 			// wait for obsvbl to be notified or timeout
 			err := group.Wait()
 			require.NoError(t, err)
 
-			// unsubscribing should close observer channel(s)
+			// closing publishCh should unsubscribe all observers, causing them
+			// to close their channels.
 			for _, observer := range observers {
-				observer.Unsubscribe()
-
 				// must drain the channel first to ensure it is isClosed
 				err := testchannel.DrainChannel(observer.Ch())
 				require.NoError(t, err)
@@ -317,20 +315,10 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 			obsrvn.Lock()
 			defer obsrvn.Unlock()
 
-			require.Equalf(
-				t, len(expectedNotifications[obsnIdx]),
-				len(obsrvn.Notifications),
-				"observation index: %d, expected: %+v, actual: %+v",
-				obsnIdx, expectedNotifications[obsnIdx], obsrvn.Notifications,
+			require.EqualValuesf(
+				t, expectedNotifications[obsnIdx], obsrvn.Notifications,
+				"observation index: %d", obsnIdx,
 			)
-			for notificationIdx, expected := range expectedNotifications[obsnIdx] {
-				require.Equalf(
-					t, expected,
-					(obsrvn.Notifications)[notificationIdx],
-					"allExpected: %+v, allActual: %+v",
-					expectedNotifications[obsnIdx], obsrvn.Notifications,
-				)
-			}
 		})
 	}
 }

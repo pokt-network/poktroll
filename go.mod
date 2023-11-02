@@ -1,4 +1,4 @@
-module pocket
+module github.com/pokt-network/poktroll
 
 go 1.19
 

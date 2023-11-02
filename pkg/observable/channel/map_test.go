@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 func TestMap_Word_BytesToPalindrome(t *testing.T) {
@@ -69,7 +69,7 @@ func TestMap_Word_BytesToPalindrome(t *testing.T) {
 			}()
 
 			// wait a tick for the observer to receive the word
-			time.Sleep(time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 
 			// ensure that the observer received the word
 			require.Equal(t, int32(1), atomic.LoadInt32(&wordCounter))

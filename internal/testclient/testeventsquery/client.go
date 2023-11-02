@@ -3,9 +3,9 @@ package testeventsquery
 import (
 	"testing"
 
-	"pocket/internal/testclient"
-	"pocket/pkg/client"
-	eventsquery "pocket/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/pkg/client"
+	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 )
 
 // NewLocalnetClient returns a new events query client which is configured to

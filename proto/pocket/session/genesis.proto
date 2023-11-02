@@ -4,7 +4,7 @@ package pocket.session;
 import "gogoproto/gogo.proto";
 import "pocket/session/params.proto";
 
-option go_package = "pocket/x/session/types";
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
 
 // GenesisState defines the session module's genesis state.
 message GenesisState {

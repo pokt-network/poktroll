@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
 
-option go_package = "pocket/x/supplier/types";
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
 // GenesisState defines the supplier module's genesis state.
 message GenesisState {

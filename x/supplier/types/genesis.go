@@ -6,8 +6,8 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "pocket/x/shared/helpers"
-	sharedtypes "pocket/x/shared/types"
+	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // DefaultIndex is the default global index

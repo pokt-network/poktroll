@@ -5,8 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
 
-	servicehelpers "pocket/x/shared/helpers"
-	sharedtypes "pocket/x/shared/types"
+	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const TypeMsgStakeSupplier = "stake_supplier"

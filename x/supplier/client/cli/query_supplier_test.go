@@ -12,10 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/testutil/nullify"
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/client/cli"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/client/cli"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestShowSupplier(t *testing.T) {
