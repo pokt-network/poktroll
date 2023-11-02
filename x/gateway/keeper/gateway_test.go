@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"testing"
 
-	"pocket/cmd/pocketd/cmd"
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-	"pocket/x/gateway/keeper"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/gateway/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"

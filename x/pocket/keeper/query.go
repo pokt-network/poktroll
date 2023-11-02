@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"pocket/x/pocket/types"
+	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
 var _ types.QueryServer = Keeper{}

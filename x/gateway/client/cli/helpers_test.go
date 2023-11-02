@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/cmd/pocketd/cmd"
-	"pocket/testutil/network"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // Dummy variable to avoid unused import error.

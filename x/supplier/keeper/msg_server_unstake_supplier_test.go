@@ -6,11 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {

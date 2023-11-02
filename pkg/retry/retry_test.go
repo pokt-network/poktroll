@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/pkg/retry"
+	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
 var testErr = fmt.Errorf("test error")

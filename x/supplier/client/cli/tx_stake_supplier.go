@@ -11,8 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ = strconv.Itoa(0)

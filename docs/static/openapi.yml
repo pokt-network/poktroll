@@ -47201,6 +47201,13 @@ paths:
                             ApplicationServiceConfig holds the service
                             configuration the application stakes for
                         title: The ID of the service this session is servicing
+                      delegatee_gateway_addresses:
+                        type: array
+                        items:
+                          type: string
+                        title: >-
+                          The Bech32 encoded addresses for all delegatee
+                          Gateways, in a non-nullable slice
                   suppliers:
                     type: array
                     items:
@@ -76885,9 +76892,6 @@ definitions:
           TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
           optional onchain representation of the service is necessary
     title: >-
-      TODO_CONSIDERATION: Consider renaming `ServiceId` to `Service` to avoid
-      the confusion of `ServiceId.Id`. This will
-                          require renaming associated fields, types, etc...
       ServiceId message to encapsulate unique and semantic identifiers for a
       service on the network
   pocket.gateway.Gateway:
@@ -77145,6 +77149,13 @@ definitions:
                     ApplicationServiceConfig holds the service configuration the
                     application stakes for
                 title: The ID of the service this session is servicing
+              delegatee_gateway_addresses:
+                type: array
+                items:
+                  type: string
+                title: >-
+                  The Bech32 encoded addresses for all delegatee Gateways, in a
+                  non-nullable slice
           suppliers:
             type: array
             items:
@@ -77393,6 +77404,13 @@ definitions:
                 ApplicationServiceConfig holds the service configuration the
                 application stakes for
             title: The ID of the service this session is servicing
+          delegatee_gateway_addresses:
+            type: array
+            items:
+              type: string
+            title: >-
+              The Bech32 encoded addresses for all delegatee Gateways, in a
+              non-nullable slice
       suppliers:
         type: array
         items:

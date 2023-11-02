@@ -3,7 +3,7 @@ package helpers
 import (
 	"fmt"
 
-	sharedtypes "pocket/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // ValidateAppServiceConfigs returns an error if any of the application service configs are invalid

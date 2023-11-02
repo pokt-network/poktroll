@@ -3,8 +3,8 @@ package proxy
 import (
 	"context"
 
-	sharedtypes "pocket/x/shared/types"
-	suppliertypes "pocket/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.

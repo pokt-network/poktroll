@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"pocket/x/session/types"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 var _ = strconv.Itoa(0)

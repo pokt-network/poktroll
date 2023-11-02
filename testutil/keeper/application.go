@@ -15,10 +15,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "pocket/testutil/application/mocks"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
-	gatewaytypes "pocket/x/gateway/types"
+	mocks "github.com/pokt-network/poktroll/testutil/application/mocks"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // StakedGatewayMap is used to mock whether a gateway is staked or not for use

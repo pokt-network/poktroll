@@ -21,12 +21,12 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/app"
-	"pocket/testutil/sample"
-	apptypes "pocket/x/application/types"
-	gatewaytypes "pocket/x/gateway/types"
-	sharedtypes "pocket/x/shared/types"
-	suppliertypes "pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 type (

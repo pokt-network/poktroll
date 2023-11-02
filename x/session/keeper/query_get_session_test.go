@@ -1,16 +1,20 @@
 package keeper_test
 
 import (
-	"testing"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
 	"pocket/cmd/pocketd/cmd"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/sample"
 	"pocket/x/session/types"
 	sharedtypes "pocket/x/shared/types"
+	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
