@@ -63,7 +63,7 @@ check_docker:
 check_godoc:
 	{ \
 	if ( ! ( command -v godoc >/dev/null )); then \
-		echo "Seems like you don't have godocinstalled. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
+		echo "Seems like you don't have godoc installed. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
 		exit 1; \
 	fi; \
 	}
