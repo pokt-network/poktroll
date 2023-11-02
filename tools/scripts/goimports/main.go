@@ -1,63 +1,44 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/pokt-network/poktroll/tools/scripts/goimports/filters"
 )
 
 // defaultArgs are always passed to goimports.
 // -w: write result to (source) file instead of stdout
 // -local: put imports beginning with this string after 3rd-party packages (comma-separated list)
-// (see: goimports -h)
-var defaultArgs = []string{"-w", "-local", "github.com/pokt-network/poktroll"}
+// (see: goimports -h for more info)
+var (
+	defaultArgs           = []string{"-w", "-local", "github.com/pokt-network/poktroll"}
+	defaultIncludeFilters = []filters.FilterFn{
+		filters.PathMatchesGoExtension,
+	}
+	defaultExcludeFilters = []filters.FilterFn{
+		filters.PathMatchesProtobufGo,
+		filters.PathMatchesProtobufGatewayGo,
+		filters.PathMatchesMockGo,
+		filters.PathMatchesTestGo,
+		filters.ContentMatchesEmptyImportScaffold,
+	}
+)
 
 func main() {
 	root := "."
 	var filesToProcess []string
 
 	// Walk the file system and accumulate matching files
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.Name() == root {
-			return nil
-		}
-
-		// Skip directories that start with a period
-		if info.IsDir() && strings.HasPrefix(info.Name(), ".") {
-			return filepath.SkipDir
-		}
-
-		// Skip directories
-		if info.IsDir() {
-			return nil
-		}
-
-		// Add eligible Go files to the list
-		if filepath.Ext(path) == ".go" &&
-			// Ignore generated protobuf & protobuf gateway files.
-			!(strings.HasSuffix(path, ".pb.go") || strings.HasSuffix(path, ".pb.gw.go")) {
-
-			// Ignore files that can't be goimport'd due to ignite compatibility.
-			isEmptyImport, err := containsEmptyImportScaffold(path)
-			if err != nil {
-				panic(err)
-			}
-			if !isEmptyImport {
-				filesToProcess = append(filesToProcess, path)
-			}
-		}
-
-		return nil
-	})
-
+	err := filepath.Walk(root, walkRepoRootFn(
+		root,
+		defaultIncludeFilters,
+		defaultExcludeFilters,
+		&filesToProcess,
+	))
 	if err != nil {
 		fmt.Printf("Error processing files: %s\n", err)
 		return
@@ -72,53 +53,68 @@ func main() {
 	}
 }
 
-/*
-	containsEmptyImportScaffold checks if the go file at goSrcPath contains an
-	import statement like the following:
-
-import (
-// this line is used by starport scaffolding # genesis/types/import
-)
-*/
-func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error) {
-	file, err := os.Open(goSrcPath)
-	if err != nil {
-		return false, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(importBlockSplit)
-
-	for scanner.Scan() {
-		block := scanner.Text()
-		if strings.Contains(block, "// this line is used by starport scaffolding # genesis/types/import") {
-			return true, nil
+func walkRepoRootFn(
+	rootPath string,
+	includeFilters []filters.FilterFn,
+	excludeFilters []filters.FilterFn,
+	filesToProcess *[]string,
+) filepath.WalkFunc {
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
+
+		// Don't process the root directory but don't skip it either; that would
+		// exclude everything.
+		if info.Name() == rootPath {
+			return nil
+		}
+
+		// No need to process directories
+		if info.IsDir() {
+			// Skip directories that start with a period
+			if strings.HasPrefix(info.Name(), ".") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Don't process paths which don't match any include filter.
+		var shouldIncludePath bool
+		for _, includeFilter := range includeFilters {
+			pathMatches, err := includeFilter(path)
+			if err != nil {
+				panic(err)
+			}
+
+			if pathMatches {
+				shouldIncludePath = true
+				break
+			}
+		}
+		if !shouldIncludePath {
+			return nil
+		}
+
+		// Don't process paths which match any exclude filter.
+		var shouldExcludePath bool
+		for _, excludeFilter := range excludeFilters {
+			pathMatches, err := excludeFilter(path)
+			if err != nil {
+				panic(err)
+			}
+
+			if pathMatches {
+				shouldExcludePath = true
+				break
+			}
+		}
+		if shouldExcludePath {
+			return nil
+		}
+
+		*filesToProcess = append(*filesToProcess, path)
+
+		return nil
 	}
-
-	if scanner.Err() != nil {
-		return false, scanner.Err()
-	}
-
-	return false, nil
-}
-
-// importBlockSplit is a split function intended to be used with bufio.Scanner
-// to extract the contents of a multi-line go import block.
-func importBlockSplit(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	// Search for the beginning of the import block
-	startIdx := bytes.Index(data, []byte("import ("))
-	if startIdx == -1 {
-		return 0, nil, nil
-	}
-
-	// Search for the end of the import block from the start index
-	endIdx := bytes.Index(data[startIdx:], []byte(")"))
-	if endIdx == -1 {
-		return 0, nil, nil
-	}
-
-	// Return the entire import block, including "import (" and ")"
-	return startIdx + endIdx + 1, data[startIdx : startIdx+endIdx+1], nil
 }
