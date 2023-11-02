@@ -12,6 +12,8 @@ POCKET_ADDR_PREFIX = pokt
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
+	go install golang.org/x/tools/cmd/goimports@latest
 
 ########################
 ### Makefile Helpers ###
@@ -114,6 +116,17 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
+
+###############
+### Linting ###
+###############
+
+.PHONY: go_lint
+go_lint: ## Run all go linters
+	golangci-lint run --timeout 5m
+
+go_imports: check_go_version ## Run goimports on all go files
+	go run ./tools/scripts/goimports/main.go
 
 #############
 ### Tests ###
