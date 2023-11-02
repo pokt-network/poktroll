@@ -22,7 +22,7 @@ type cosmosTxContext struct {
 	// Holds cosmos-sdk client context.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client#Context)
 	clientCtx cosmosclient.Context
-	// Holds the cosmos-sdk tx factory.
+	// Holds the cosmos-sdk transaction factory.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory
 }
@@ -67,7 +67,7 @@ func (txCtx cosmosTxContext) SignTx(
 	)
 }
 
-// NewTxBuilder returns a new tx builder instance using the cosmos-sdk client tx config.
+// NewTxBuilder returns a new transaction builder instance using the cosmos-sdk client transaction config.
 func (txCtx cosmosTxContext) NewTxBuilder() cosmosclient.TxBuilder {
 	return txCtx.clientCtx.TxConfig.NewTxBuilder()
 }
@@ -77,14 +77,15 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 	return txCtx.clientCtx.TxConfig.TxEncoder()(txBuilder.GetTx())
 }
 
-// BroadcastTx broadcasts the given tx to the network, blocking until the check-tx
-// ABCI operation completes and returns a TxResponse of the tx status at that point in time.
+// BroadcastTx broadcasts the given transaction to the network, blocking until the check-tx
+// ABCI operation completes and returns a TxResponse of the transaction status at that point in time.
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
-	return txCtx.clientCtx.BroadcastTxSync(txBytes)
+	return txCtx.clientCtx.BroadcastTxAsync(txBytes)
+	//return txCtx.clientCtx.BroadcastTxSync(txBytes)
 }
 
 // QueryTx queries the transaction based on its hash and optionally provides proof
-// of the transaction. It returns the tx query result.
+// of the transaction. It returns the transaction query result.
 func (txCtx cosmosTxContext) QueryTx(
 	ctx context.Context,
 	txHash []byte,
