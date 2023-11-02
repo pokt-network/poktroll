@@ -402,6 +402,15 @@ acc_balance_total_supply: ## Query the total supply of the network
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
+##################
+### CI Helpers ###
+##################
+
+.PHONY: trigger_ci
+trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
+	git commit --allow-empty -m "Empty commit"
+	git push
+
 #####################
 ### Documentation ###
 #####################
