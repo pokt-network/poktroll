@@ -57,7 +57,7 @@ func ContentMatchesEmptyImportScaffold(path string) (bool, error) {
 // import statement like the following:
 //
 // import (
-// // this line is used by starport scaffolding # genesis/types/import
+// // this line is used by starport scaffolding ...
 // )
 func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error) {
 	file, err := os.Open(goSrcPath)
