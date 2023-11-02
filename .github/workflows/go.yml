@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install ignite
-        # If this step fails due to ignite.com not working, check this PR: https://github.com/pokt-network/poktroll/pull/116
+        # If this step fails due to ignite.com failing, see #116 for a temporary workaround
         run: |
           curl https://get.ignite.com/cli! | bash
           ignite version
