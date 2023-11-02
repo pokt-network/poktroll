@@ -3,7 +3,7 @@ package helpers
 import (
 	"testing"
 
-	sharedtypes "pocket/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestIsValidServiceId(t *testing.T) {

@@ -1,11 +1,6 @@
 package keeper_test
 
 import (
-	"pocket/cmd/pocketd/cmd"
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/session/types"
-	sharedtypes "pocket/x/shared/types"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )

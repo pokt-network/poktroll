@@ -5,13 +5,12 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/testutil/network"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
-
-	"pocket/cmd/pocketd/cmd"
-	"pocket/testutil/network"
-	apptypes "pocket/x/application/types"
-	sharedtypes "pocket/x/shared/types"
-	suppliertypes "pocket/x/supplier/types"
 )
 
 // Dummy variable to avoid unused import error.

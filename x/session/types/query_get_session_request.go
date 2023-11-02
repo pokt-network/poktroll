@@ -3,9 +3,8 @@ package types
 import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	sharedhelpers "pocket/x/shared/helpers"
-	sharedtypes "pocket/x/shared/types"
+	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // NOTE: Please note that `QueryGetSessionRequest` is not a `sdk.Msg`, and is therefore not a message/request

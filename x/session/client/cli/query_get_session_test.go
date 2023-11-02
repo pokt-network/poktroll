@@ -10,8 +10,8 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
-	"pocket/x/session/client/cli"
-	sessiontypes "pocket/x/session/types"
+	"github.com/pokt-network/poktroll/x/session/client/cli"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestCLI_GetSession(t *testing.T) {
