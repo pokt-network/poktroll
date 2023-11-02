@@ -18,6 +18,16 @@ import (
 	"pocket/pkg/observable"
 )
 
+// TxContext provides an interface which consolidates the operational dependencies
+// required to facilitate the sender side of the tx lifecycle: build, sign, encode,
+// broadcast, query (optional).
+//
+// TODO_IMPROVE: Avoid depending on cosmos-sdk structs or interfaces; add Pocket
+// interface types to substitute:
+//   - ResultTx
+//   - TxResponse
+//   - Keyring
+//   - TxBuilder
 type TxContext interface {
 	// GetKeyring returns the associated key management mechanism for the tx context.
 	GetKeyring() cosmoskeyring.Keyring
@@ -55,6 +65,8 @@ type TxContext interface {
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
 type BlocksObservable observable.ReplayObservable[Block]
 
+// BlockClient is an interface which provides notifications about newly committed
+// blocks as well as direct access to the latest block via some blockchain API.
 type BlockClient interface {
 	// Blocks returns an observable which emits newly committed blocks.
 	CommittedBlocksSequence(context.Context) BlocksObservable
@@ -65,6 +77,8 @@ type BlockClient interface {
 	Close()
 }
 
+// Block is an interface which abstracts the details of a block to its minimal
+// necessary components.
 type Block interface {
 	Height() int64
 	Hash() []byte
