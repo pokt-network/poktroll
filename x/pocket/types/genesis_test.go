@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/pocket/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

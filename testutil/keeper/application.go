@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mocks "github.com/pokt-network/poktroll/testutil/application/mocks"
-
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"

@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	mocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
-
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -50,6 +49,7 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		storeKey,
 		memStoreKey,
 		paramsSubspace,
+
 		mockBankKeeper,
 	)
 
