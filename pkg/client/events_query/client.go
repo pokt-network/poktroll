@@ -203,7 +203,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
 	for {
-		event, err := conn.Receive()
+		eventBz, err := conn.Receive()
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 
@@ -226,7 +226,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 		}
 
 		// Populate the []byte side (right) of the either and publish it.
-		eventsBzPublishCh <- either.Success(event)
+		eventsBzPublishCh <- either.Success(eventBz)
 	}
 }
 

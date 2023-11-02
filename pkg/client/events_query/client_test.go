@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -23,8 +24,6 @@ import (
 )
 
 func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
-	t.Skip("TODO_BUG(@bryanchriswhite): See #120 for more details")
-
 	var (
 		readObserverEventsTimeout = time.Second
 		queryCounter              int
@@ -60,7 +59,12 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 				readEventCounter int
 				// HandleEventsLimit is the total number of eventsBytesAndConns to send and
 				// receive through the query client's eventsBytes for this subtest.
-				handleEventsLimit     = 250
+				handleEventsLimit = 250
+				// delayFirstEvent runs once (per test case) to delay the first event
+				// published by the mocked connection's Receive method to give the test
+				// ample time to subscribe to the events bytes observable before it
+				// starts receiving events, otherwise they will be dropped.
+				delayFirstEvent       sync.Once
 				connClosed            atomic.Bool
 				queryCtx, cancelQuery = context.WithCancel(rootCtx)
 			)
@@ -84,6 +88,8 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 			// last message.
 			connMock.EXPECT().Receive().
 				DoAndReturn(func() (any, error) {
+					delayFirstEvent.Do(func() { time.Sleep(50 * time.Millisecond) })
+
 					// Simulate ErrConnClosed if connection is isClosed.
 					if connClosed.Load() {
 						return nil, eventsquery.ErrConnClosed
@@ -132,11 +138,17 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	var (
-		readAllEventsTimeout = 50 * time.Millisecond
+		firstEventDelay      = 50 * time.Millisecond
+		readAllEventsTimeout = 50*time.Millisecond + firstEventDelay
 		handleEventsLimit    = 10
 		readEventCounter     int
-		connClosed           atomic.Bool
-		ctx                  = context.Background()
+		// delayFirstEvent runs once (per test case) to delay the first event
+		// published by the mocked connection's Receive method to give the test
+		// ample time to subscribe to the events bytes observable before it
+		// starts receiving events, otherwise they will be dropped.
+		delayFirstEvent sync.Once
+		connClosed      atomic.Bool
+		ctx             = context.Background()
 	)
 
 	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
@@ -144,6 +156,8 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 		Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
+			delayFirstEvent.Do(func() { time.Sleep(firstEventDelay) })
+
 			if connClosed.Load() {
 				return nil, eventsquery.ErrConnClosed
 			}
@@ -289,6 +303,8 @@ func behavesLikeEitherObserver[V any](
 	timeout time.Duration,
 	onLimit func(),
 ) {
+	t.Helper()
+
 	var (
 		// eventsCounter is the number of events which have been received from the
 		// eventsBytes since this function was called.
