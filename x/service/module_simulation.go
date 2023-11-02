@@ -8,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
-
 	"github.com/pokt-network/poktroll/testutil/sample"
 	servicesimulation "github.com/pokt-network/poktroll/x/service/simulation"
 	"github.com/pokt-network/poktroll/x/service/types"

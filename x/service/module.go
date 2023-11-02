@@ -17,7 +17,6 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-
 	"github.com/pokt-network/poktroll/x/service/client/cli"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"

@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )

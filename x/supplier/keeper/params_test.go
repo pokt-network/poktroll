@@ -3,10 +3,9 @@ package keeper_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetParams(t *testing.T) {
