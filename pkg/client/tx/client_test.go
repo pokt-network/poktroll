@@ -19,6 +19,7 @@ import (
 	"pocket/internal/testclient/testeventsquery"
 	"pocket/internal/testclient/testtx"
 	"pocket/pkg/client"
+	"pocket/pkg/client/keyring"
 	"pocket/pkg/client/tx"
 	"pocket/pkg/either"
 	apptypes "pocket/x/application/types"
@@ -128,12 +129,12 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 		{
 			name:           "empty signing key name",
 			signingKeyName: "",
-			expectedErr:    tx.ErrEmptySigningKeyName,
+			expectedErr:    keyring.ErrEmptySigningKeyName,
 		},
 		{
 			name:           "signing key does not exist",
 			signingKeyName: "nonexistent",
-			expectedErr:    tx.ErrNoSuchSigningKey,
+			expectedErr:    keyring.ErrNoSuchSigningKey,
 		},
 		// TODO_TECHDEBT: add coverage for this error case
 		// {
