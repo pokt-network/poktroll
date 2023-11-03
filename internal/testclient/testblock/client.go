@@ -25,19 +25,8 @@ import (
 	"pocket/pkg/observable/channel"
 )
 
-// NewLocalnetClient creates and returns a new BlockClient for localnet testing
-// environments.
-//
-// Parameters:
-// - ctx: The context for creating the client.
-// - t: The testing.T instance for assertions.
-//
-// The function initializes a localnet query client, ensures its successful creation, and then
-// proceeds to set up the dependencies required to instantiate a new BlockClient.
-// The final BlockClient instance connects to the CometLocalWebsocketURL endpoint.
-//
-// Returns:
-// - A new instance of client.BlockClient configured for localnet interactions.
+// NewLocalnetClient creates and returns a new BlockClient that's configured for
+// use with the localnet sequencer.
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
@@ -55,13 +44,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 // This mock BlockClient will expect a call to CommittedBlocksSequence, and
 // when that call is made, it returns a new BlocksObservable that is notified of
 // blocks sent on the given blocksPublishCh.
-//
-// Parameters:
-// - t: *testing.T - The test instance.
-// - blocksPublishCh: chan client.Block - The channel from which blocks are published to the observable.
-//
-// Returns:
-// - *mockclient.MockBlockClient: The mock block client.
+// blocksPublishCh is the channel the caller can use to publish blocks the observable.
 func NewOneTimeCommittedBlocksSequenceBlockClient(
 	t *testing.T,
 	blocksPublishCh chan client.Block,
@@ -92,14 +75,6 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 // NewAnyTimeLatestBlockBlockClient creates a mock BlockClient that expects
 // calls to the LatestBlock method any number of times. When the LatestBlock
 // method is called, it returns a mock Block with the provided hash and height.
-//
-// Parameters:
-// - t: *testing.T - The test instance.
-// - hash: []byte - The expected hash value that the mock Block should return.
-// - height: int64 - The expected block height that the mock Block should return.
-//
-// Returns:
-// - *mockclient.MockBlockClient: The mock block client.
 func NewAnyTimeLatestBlockBlockClient(
 	t *testing.T,
 	hash []byte,
@@ -121,14 +96,6 @@ func NewAnyTimeLatestBlockBlockClient(
 // NewAnyTimesBlock creates a mock Block that expects calls to Height and Hash
 // methods any number of times. When the methods are called, they return the
 // provided height and hash respectively.
-//
-// Parameters:
-// - t: *testing.T - The test instance.
-// - hash: []byte - The expected hash value that the mock Block should return.
-// - height: int64 - The expected block height that the mock Block should return.
-//
-// Returns:
-// - *mockclient.MockBlock: The mock block.
 func NewAnyTimesBlock(t *testing.T, hash []byte, height int64) *mockclient.MockBlock {
 	t.Helper()
 	ctrl := gomock.NewController(t)

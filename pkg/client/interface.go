@@ -145,14 +145,8 @@ type Dialer interface {
 	DialContext(ctx context.Context, urlStr string) (Connection, error)
 }
 
-// EventsQueryClientOption is an interface-wide type which can be implemented to use or modify the
-// query client during construction. This would likely be done in an
-// implementation-specific way; e.g. using a type assertion to assign to an
-// implementation struct field(s).
+// EventsQueryClientOption defines a function type that modifies the EventsQueryClient.
 type EventsQueryClientOption func(EventsQueryClient)
 
-// TxClientOption defines a function type that modifies the TxClient. This pattern
-// allows for flexible and optional configurations to be applied to a TxClient instance.
-// Such options can be used to customize properties, behaviors, or any other attributes
-// of the TxClient without altering its core construction logic.
+// TxClientOption defines a function type that modifies the TxClient.
 type TxClientOption func(TxClient)
