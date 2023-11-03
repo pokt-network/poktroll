@@ -18,30 +18,21 @@ import (
 	"pocket/pkg/observable/channel"
 )
 
-// NewLocalnetClient creates and returns a new events query client that connects to the
-// localnet sequencer. It leverages the NewEventsQueryClient from the eventsquery package.
-//
-// Parameters:
-// t: Testing object which is passed for marking helper.
-// opts: Any additional options to configure the events query client.
-//
-// Returns: An instance of EventsQueryClient which connects to the localnet sequencer.
+// NewLocalnetClient creates and returns a new events query client that configured
+// for use with the localnet sequencer. Any options provided are applied to the client.
 func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
 	return eventsquery.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
 }
 
-// NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects a single call to the
-// EventsBytes method. It returns a mock client that emits event bytes to the provided publish channel.
-//
-// Parameters:
-// ctx: Context object to define the context for the operation.
-// t: Testing object.
-// query: The query string for which event bytes are fetched.
-// publishCh: Channel to which the event bytes are published.
-//
-// Returns: A mock instance of EventsQueryClient which behaves as described.
+// NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects
+// a single call to the EventsBytes method. It returns a mock client whose event
+// bytes method always  constructs a new observable. query is the query string
+// for which event bytes subscription is expected to be for.
+// The caller can simulate blockchain events by sending on publishCh, the value
+// of which is set to the publish channel of the events bytes observable publish
+// channel.
 func NewOneTimeEventsQuery(
 	ctx context.Context,
 	t *testing.T,
@@ -63,18 +54,12 @@ func NewOneTimeEventsQuery(
 	return eventsQueryClient
 }
 
-// NewOneTimeTxEventsQueryClient initializes a new MockEventsQueryClient that is set up to
-// query for transaction events for a specific message sender. This is useful for tests where
-// you want to listen for a one-time event related to a specific sender.
-//
-// Parameters:
-// - ctx: The context to pass to the client.
-// - t: The testing.T instance for assertions.
-// - key: The keyring record from which the signing address is derived.
-// - publishCh: A channel where the events are published.
-//
-// Returns:
-// - A new instance of mockclient.MockEventsQueryClient set up for the specific query.
+// NewOneTimeTxEventsQueryClient creates a mock of the Events that expects to to
+// a single call to the EventsBytes method where the query is for transaction
+// events for sender address matching that of the given key.
+// The caller can simulate blockchain events by sending on publishCh, the value
+// of which is set to the publish channel of the events bytes observable publish
+// channel.
 func NewOneTimeTxEventsQueryClient(
 	ctx context.Context,
 	t *testing.T,
