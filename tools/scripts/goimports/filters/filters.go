@@ -17,7 +17,7 @@ var (
 	importEnd   = []byte(")")
 )
 
-// FilterFn  is a function that returns true if the given path matches the
+// FilterFn is a function that returns true if the given path matches the
 // filter's criteria.
 type FilterFn func(path string) (bool, error)
 
@@ -39,7 +39,6 @@ func PathMatchesProtobufGatewayGo(path string) (bool, error) {
 // PathMatchesMockGo matches generated mock go source files.
 func PathMatchesMockGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_mock.go"), nil
-
 }
 
 // PathMatchesTestGo matches go test files.
