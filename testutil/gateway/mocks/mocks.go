@@ -7,4 +7,5 @@ package mocks
 // Documentation on how Cosmos uses mockgen can be found here: https://docs.cosmos.network/main/build/building-modules/testing#unit-tests
 //
 // IMPORTANT: We have attempted to use `.gitkeep` files instead, but it causes a circular dependency issue with protobuf and mock generation
-// since we are leveraging `ignite` to compile `.proto` files which requires `.go` files to compile.
+// since we are leveraging `ignite` to compile `.proto` files which runs `go mod tidy` before generating, requiring the entire dependency tree
+// to be valid before mock implementations have been generated.
