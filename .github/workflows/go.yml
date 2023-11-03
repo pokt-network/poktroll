@@ -77,7 +77,7 @@ jobs:
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
-          cp $(go env GOPATH)/bin/pocketd ./bin # Copy the binary to the repo's bin directory
+          cp $(go env GOPATH)/bin/poktrolld ./bin # Copy the binary to the repo's bin directory
 
       - name: Build and push Docker image
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
