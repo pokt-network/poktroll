@@ -28,7 +28,6 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
 	"pocket/pkg/either"
-	"pocket/pkg/observable"
 )
 
 // TxClient provides an interface for initiating transactions on a blockchain.
@@ -84,13 +83,6 @@ type TxContext interface {
 	) (*comettypes.ResultTx, error)
 }
 
-// BlocksObservable is an observable which is notified with an either
-// value which contains either an error or the event message bytes.
-// TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
-type BlocksObservable observable.ReplayObservable[Block]
-
 // BlockClient is an interface which provides notifications about newly committed
 // blocks as well as direct access to the latest block via some blockchain API.
 type BlockClient interface {
@@ -118,13 +110,6 @@ type Block interface {
 //
 // NOTE: a branch which attempts this is available at:
 // https://github.com/pokt-network/poktroll/pull/74
-
-// EventsBytesObservable is an observable which is notified with an either
-// value which contains either an error or the event message bytes.
-// TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
-type EventsBytesObservable observable.Observable[either.Bytes]
 
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
 type EventsQueryClient interface {
@@ -156,15 +141,3 @@ type Dialer interface {
 	// potentially a synchronous error.
 	DialContext(ctx context.Context, urlStr string) (Connection, error)
 }
-
-// EventsQueryClientOption is an interface-wide type which can be implemented to use or modify the
-// query client during construction. This would likely be done in an
-// implementation-specific way; e.g. using a type assertion to assign to an
-// implementation struct field(s).
-type EventsQueryClientOption func(EventsQueryClient)
-
-// TxClientOption defines a function type that modifies the TxClient. This pattern
-// allows for flexible and optional configurations to be applied to a TxClient instance.
-// Such options can be used to customize properties, behaviors, or any other attributes
-// of the TxClient without altering its core construction logic.
-type TxClientOption func(TxClient)
