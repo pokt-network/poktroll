@@ -77,36 +77,36 @@ local_resource(
     deps=["proto"],
     labels=["hot-reloading"],
 )
-# Hot reload the poktrolld binary used by the k8s cluster
+# Hot reload the pocketd binary used by the k8s cluster
 local_resource(
-    "hot-reload: poktrolld",
+    "hot-reload: pocketd",
     "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
     deps=hot_reload_dirs,
     labels=["hot-reloading"],
     resource_deps=["hot-reload: generate protobufs"],
 )
-# Hot reload the local poktrolld binary used by the CLI
+# Hot reload the local pocketd binary used by the CLI
 local_resource(
-    "hot-reload: poktrolld - local cli",
+    "hot-reload: pocketd - local cli",
     "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
     deps=hot_reload_dirs,
     labels=["hot-reloading"],
     resource_deps=["hot-reload: generate protobufs"],
 )
 
-# Build an image with a poktrolld binary
+# Build an image with a pocketd binary
 docker_build_with_restart(
-    "poktrolld",
+    "pocketd",
     ".",
     dockerfile_contents="""FROM golang:1.20.8
 RUN apt-get -q update && apt-get install -qyy curl jq
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
-COPY bin/poktrolld /usr/local/bin/poktrolld
+COPY bin/poktrolld /usr/local/bin/pocketd
 WORKDIR /
 """,
     only=["./bin/poktrolld"],
     entrypoint=["/bin/sh", "/scripts/pocket.sh"],
-    live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
+    live_update=[sync("bin/poktrolld", "/usr/local/bin/pocketd")],
 )
 
 # Run celestia and anvil nodes
