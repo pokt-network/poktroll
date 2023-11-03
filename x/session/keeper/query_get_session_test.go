@@ -130,7 +130,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			name: "service ID is invalid",
 
 			appAddr:     keepertest.TestApp1Address,
-			serviceId:   "invalid_serviceId",
+			serviceId:   "service_id_is_too_long_to_be_valid",
 			blockHeight: 1,
 
 			expectedErrContains: "invalid serviceID for session being retrieved",

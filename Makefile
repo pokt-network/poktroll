@@ -449,13 +449,14 @@ ignite_acc_list: ## List all the accounts in LocalNet
 #####################
 ### Documentation ###
 #####################
+
 .PHONY: go_docs
 go_docs: check_godoc ## Generate documentation for the project
 	echo "Visit http://localhost:6060/pkg/pocket/"
 	godoc -http=:6060
 
-.PHONY: ignite_openapi_gen
-ignite_openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+.PHONY: openapi_gen
+openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 	ignite generate openapi --yes
 
 ######################
