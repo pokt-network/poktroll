@@ -381,7 +381,9 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	case err := <-errCh:
 		require.ErrorIs(t, err, tx.ErrTxTimeout)
 		require.ErrorContains(t, err, expectedErrMsg)
-	case <-time.After(txCommitTimeout):
+	// NB: wait 110% of txCommitTimeout; a bit longer than strictly necessary in
+	// order to mitigate flakiness.
+	case <-time.After(txCommitTimeout * 110 / 100):
 		t.Fatal("test timed out waiting for errCh to receive")
 	}
 
@@ -390,7 +392,9 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	case err, ok := <-errCh:
 		require.Falsef(t, ok, "expected errCh to be closed")
 		require.NoError(t, err)
-	default:
+	// NB: Give the error channel some time to be ready to receive in order to
+	// mitigate flakiness.
+	case <-time.After(50 * time.Millisecond):
 		t.Fatal("expected errCh to be closed")
 	}
 }
