@@ -1,12 +1,15 @@
 package testclient
 
 import (
+	"testing"
+
 	cosmoshd "github.com/cosmos/cosmos-sdk/crypto/hd"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
+// NewKey creates a new Secp256k1 key and mnemonic for the given name within
+// the provided keyring.
 func NewKey(
 	t *testing.T,
 	name string,
