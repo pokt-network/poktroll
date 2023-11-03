@@ -40,6 +40,9 @@ jobs:
       - name: Generate mocks
         run: make go_mockgen
 
+      - name: Run golangci-lint
+        run: make go_lint
+
       - name: Build
         run: ignite chain build -v --debug --skip-proto
 
