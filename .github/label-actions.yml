@@ -1,7 +1,7 @@
 # When `devnet-e2e-test` is added, also assign `devnet` to the PR.
 devnet-e2e-test:
   prs:
-    comment: The CI will now also run the e2e tests on the devnet, which increases the time it takes to complete all CI checks.
+    comment: The CI will now also run the e2e tests on devnet, which increases the time it takes to complete all CI checks.
     label:
       - devnet
 
