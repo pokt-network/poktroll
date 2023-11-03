@@ -175,3 +175,6 @@ type EventsQueryClientOption func(EventsQueryClient)
 
 // TxClientOption defines a function type that modifies the TxClient.
 type TxClientOption func(TxClient)
+
+// SupplierClientOption defines a function type that modifies the SupplierClient.
+type SupplierClientOption func(SupplierClient)
