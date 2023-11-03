@@ -17,6 +17,7 @@ import (
 	"pocket/internal/testclient"
 	"pocket/internal/testclient/testblock"
 	"pocket/internal/testclient/testeventsquery"
+	"pocket/internal/testclient/testkeyring"
 	"pocket/internal/testclient/testtx"
 	"pocket/pkg/client"
 	"pocket/pkg/client/keyring"
@@ -50,7 +51,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 		ctx               = context.Background()
 	)
 
-	keyring, signingKey := newTestKeyringWithKey(t)
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
 		ctx, t, signingKey, &eventsBzPublishCh,
@@ -119,7 +120,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 func TestTxClient_NewTxClient_Error(t *testing.T) {
 	// Construct an empty in-memory keyring.
-	keyring := cosmoskeyring.NewInMemory(testclient.EncodingConfig.Marshaler)
+	memKeyring := cosmoskeyring.NewInMemory(testclient.EncodingConfig.Marshaler)
 
 	tests := []struct {
 		name           string
@@ -157,7 +158,7 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 			eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
 
 			// Construct a new mock transactions context.
-			txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
+			txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, memKeyring)
 
 			// Construct a new mock block client. Since we expect the NewTxClient
 			// call to fail, we don't need to set any expectations on this mock.
@@ -196,7 +197,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		ctx             = context.Background()
 	)
 
-	keyring, signingKey := newTestKeyringWithKey(t)
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	// Construct a new mock events query client. Since we expect the
 	// NewTxClient call to fail, we don't need to set any expectations
@@ -261,7 +262,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx               = context.Background()
 	)
 
-	keyring, signingKey := newTestKeyringWithKey(t)
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
 		ctx, t, signingKey, &eventsBzPublishCh,
@@ -324,7 +325,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		ctx               = context.Background()
 	)
 
-	keyring, signingKey := newTestKeyringWithKey(t)
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
 		ctx, t, signingKey, &eventsBzPublishCh,
@@ -399,12 +400,4 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
-}
-
-// newTestKeyringWithKey creates a new in-memory keyring with a test key
-// with testSigningKeyName as its name.
-func newTestKeyringWithKey(t *testing.T) (cosmoskeyring.Keyring, *cosmoskeyring.Record) {
-	keyring := cosmoskeyring.NewInMemory(testclient.EncodingConfig.Marshaler)
-	key, _ := testclient.NewKey(t, testSigningKeyName, keyring)
-	return keyring, key
 }

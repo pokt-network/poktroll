@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"pocket/internal/testclient/testkeyring"
 	"pocket/pkg/client/tx"
 
 	"pocket/internal/testclient/testblock"
@@ -24,7 +25,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 
 	var ctx = context.Background()
 
-	keyring, signingKey := newTestKeyringWithKey(t)
+	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewLocalnetClient(t)
 
