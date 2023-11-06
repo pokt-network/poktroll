@@ -1,6 +1,22 @@
 # Package `client`
 
-> Standardized interfaces facilitating interactions with blockchain functionalities.
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Architecture Overview](#architecture-overview)
+  - [Component Diagram Legend](#component-diagram-legend)
+  - [Clients Dependency Tree](#clients-dependency-tree)
+  - [Network Interaction](#network-interaction)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+  - [Advanced Usage](#advanced-usage)
+  - [Configuration](#configuration)
+- [API Reference](#api-reference)
+- [Best Practices](#best-practices)
+- [FAQ](#faq)
+
 
 ## Overview
 
