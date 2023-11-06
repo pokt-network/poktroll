@@ -4,15 +4,40 @@
 
 ## Overview
 
-The `client` package serves as a foundational layer for applications aiming to integrate with various blockchain platforms. It abstracts the complexities of sending, receiving, and querying blockchain data, ensuring a consistent experience irrespective of the underlying blockchain:
+The `client` package exposes go APIs to facilitate interactions with the Pocket network.
+It includes lower-level interfaces for working with transactions and subscribing to events generally, as well as higher-level interfaces for tracking blocks and broadcasting protocol-specific transactions.
 
-- **Simplifies Blockchain Interactions**: Provides a clear interface for initiating transactions and querying blockchain events without dealing with platform-specific quirks.
-- **Modular and Extendable**: Designed with separation of concerns in mind, allowing developers to customize or replace components as necessary.
-- **Unified Communication**: Regardless of the blockchain in use, the interfaces offer a standard way to communicate, streamlining the development process.
+## Features
 
-## Architecture Diagrams
+| Interface               | Description                                                                                        |
+|-------------------------|----------------------------------------------------------------------------------------------------|
+| **`SupplierClient`**    | A high-level client for use by the "supplier" actor.                                               |
+| **`TxClient`**          | A high-level client used to build, sign, and broadcast transaction from cosmos-sdk messages.       |
+| **`TxContext`**         | Abstracts and encapsulates the transaction building, signing, encoding, and broadcasting concerns. |
+| **`BlockClient`**       | Exposes methods for receiving notifications about newly committed blocks.                          |
+| **`EventsQueryClient`** | Encapsulates blockchain event subscriptions in .                                                   |
+| **`Connection`**        | A transport agnostic communication channel for sending and receiving messages.                     |
+| **`Dialer`**            | Abstracts the establishment of connections.                                                        |
 
-Visual representations often make it easier to understand the design and flow of a package. Diagrams specific to this package can be added here.
+## Architecture Overview
+
+```mermaid
+---
+title: Component Diagram Legend
+---
+flowchart
+    
+c[Component]
+d[Dependency Component]
+s[[Subcomponent]]
+r[Remote Component]
+
+c --"direct usage via #DependencyMethod()"--> d
+c -."usage via network I/O".-> r
+c --> s
+```
+
+> **Figure 1**: A legend for the component diagrams in this document.
 
 ```mermaid
 ---
@@ -20,53 +45,45 @@ title: Clients Dependency Tree
 ---
 flowchart
 
-    sup[SupplierClient]
-    tx[TxClient]
-    bl[BlockClient]
-    evt[EventsQueryClient]
+sup[SupplierClient]
+tx[TxClient]
+txctx[[TxContext]]
+bl[BlockClient]
+evt[EventsQueryClient]
+conn[[Connection]]
+dial[[Dialer]]
 
-    sup --"#SignAndBroadcast()"--> tx
-    
+sup --"#SignAndBroadcast()"--> tx
+
 tx --"#CommittedBlocksSequence()"--> bl
+tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
 bl --"#EventsBytes()"--> evt
+evt --> conn
+evt --"#DialContext()"--> dial
+dial --(returns)--> conn
 ```
 
-> **Figure 1**: An overview diagram showing the interaction between the various interfaces and the blockchain.
+> **Figure 2**: An overview which articulates the dependency relationships between the various client interfaces and their subcompnents.
 
 ```mermaid
 ---
-title: TxClient Dependency Graph
+title: Network Interaction
 ---
-
-
 flowchart
 
-    subgraph tclient[TxClient]
-        tctx[TxContext]
-        builder[TxBuilder]
-        keyring[Keyring]
+txctx[[TxContext]]
+conn[[Connection]]
+dial[[Dialer]]
 
-        bclient[BlockClient]
-        eclient[EventsQueryClient]
+chain[Blockchain]
 
-        tclient_internal((_))
-    end
-
-    chain[Blockchain]
-
-    tctx --"#GetKeyring()"--> keyring
-tctx --"#SignTx()"--> builder
-tctx --"#EncodeTx()"--> builder
-tctx -."#BroadcastTx()".-> chain
-tctx -."#QueryTx()".-> chain
-
-eclient -."websocket connection".-> chain
-bclient --"committed  block subscription"--> eclient
-tclient_internal --"own tx subscription"--> eclient
+conn <-."subscribed events".-> chain
+dial -."RPC subscribe".-> chain
+txctx -."tx broadcast".-> chain
 ```
 
-> **Figure 2**: A focused look at how `TxClient` functions and interacts with the underlying blockchain.
+> **Figure 3**: An overview of how client subcomponents interact with the network.
 
 ## Installation
 
@@ -74,26 +91,18 @@ tclient_internal --"own tx subscription"--> eclient
 go get github.com/pokt-network/poktroll/pkg/client
 ```
 
-## Features
-
-- **TxClient Interface**: A streamlined way to sign and broadcast multiple messages as part of a blockchain transaction.
-- **BlockClient Interface**: Notifications about newly committed blocks and access to the latest block.
-- **EventsQueryClient**: Enables subscription to chain event messages.
-- **Connection Interface**: A transport agnostic communication channel for sending and receiving messages.
-- **Dialer**: Simplifies the establishment of connections.
-
 ## Usage
 
 ### Basic Example
 
 ```go
-// Code example showcasing the use of TxClient or any other primary interface.
+// TODO: Code example showcasing the use of TxClient or any other primary interface.
 ```
 
 ### Advanced Usage
 
 ```go
-// Example illustrating advanced features or edge cases of the package.
+// TODO: Example illustrating advanced features or edge cases of the package.
 ```
 
 ### Configuration
