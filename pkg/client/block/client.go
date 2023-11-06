@@ -155,7 +155,7 @@ func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func(
 		}
 
 		// NB: must cast back to generic observable type to use with Map.
-		// client.BlocksObservable is only used to workaround gomock's lack of
+		// client.BlocksObservable cannot be an alias due to gomock's lack of
 		// support for generic types.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObsvbl)
 		blockEventFromEventBz := newEventsBytesToBlockMapFn(errCh)
