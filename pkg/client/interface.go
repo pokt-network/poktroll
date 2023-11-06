@@ -20,7 +20,7 @@ import (
 )
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
-// in a cosmos-sdk based blockchain network, derived from cosmos-sdk messages.
+// derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
@@ -29,8 +29,8 @@ type TxClient interface {
 }
 
 // TxContext provides an interface which consolidates the operational dependencies
-// required to facilitate the sender side of the transaction lifecycle: build, sign, encode,
-// broadcast, query (optional).
+// required to facilitate the sender side of the transaction lifecycle: build, sign,
+// encode, broadcast, and query (optional).
 //
 // TODO_IMPROVE: Avoid depending on cosmos-sdk structs or interfaces; add Pocket
 // interface types to substitute:
