@@ -16,7 +16,7 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 		// Check the Service
-		if IsValidService(serviceConfig.Service) {
+		if !IsValidService(serviceConfig.Service) {
 			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
 		}
 	}
@@ -34,7 +34,7 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 		}
 
 		// Check the Service
-		if IsValidService(serviceConfig.Service) {
+		if !IsValidService(serviceConfig.Service) {
 			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
 		}
 

@@ -45,7 +45,7 @@ func NewSessionHydrator(
 ) *sessionHydrator {
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
-		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
+		Service:            &sharedtypes.Service{Id: serviceId},
 	}
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
@@ -153,7 +153,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
-		return sdkerrors.Wrapf(types.ErrSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.ServiceId, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(types.ErrSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
