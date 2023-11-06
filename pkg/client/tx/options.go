@@ -13,6 +13,8 @@ func WithCommitTimeoutBlocks(timeout int64) client.TxClientOption {
 	}
 }
 
+// WithSigningKeyName sets the name of the key which should be retrieved from the
+// keyring and used for signing transactions.
 func WithSigningKeyName(keyName string) client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).signingKeyName = keyName
