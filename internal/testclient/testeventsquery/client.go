@@ -24,6 +24,9 @@ func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) cli
 	return eventsquery.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
 }
 
+// NewAnyTimesEventsBytesEventsQueryClient returns a new events query client which
+// is configured to return the expected event bytes when queried with the expected
+// query, any number of times. The returned client also expects to be closed once.
 func NewAnyTimesEventsBytesEventsQueryClient(
 	ctx context.Context,
 	t *testing.T,
