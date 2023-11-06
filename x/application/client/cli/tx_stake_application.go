@@ -27,7 +27,7 @@ func CmdStakeApplication() *cobra.Command {
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
-$ pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POCKETD_HOME) tx application stake-application 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeString := args[0]
