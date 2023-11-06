@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
 	"github.com/pokt-network/poktroll/internal/testclient"
@@ -39,11 +38,9 @@ func NewAnyTimesEventsBytesEventsQueryClient(
 	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
 	eventsQueryClient.EXPECT().Close().Times(1)
 	eventsQueryClient.EXPECT().
-		EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.AssignableToTypeOf("")).
+		EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.Eq(expectedQuery)).
 		DoAndReturn(
 			func(ctx context.Context, query string) (client.EventsBytesObservable, error) {
-				require.Equal(t, expectedQuery, query)
-
 				bytesObsvbl, bytesPublishCh := channel.NewReplayObservable[either.Bytes](ctx, 1)
 
 				// Now that the observable is set up, publish the expected event bytes.
