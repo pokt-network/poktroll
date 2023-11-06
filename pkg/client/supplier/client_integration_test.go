@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/testclient/testsupplier"
-	sessiontypes "pocket/x/session/types"
+	"github.com/pokt-network/poktroll/internal/testclient/testsupplier"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestNewSupplierClient_Localnet(t *testing.T) {

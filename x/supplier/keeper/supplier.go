@@ -4,8 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // SetSupplier set a specific supplier in the store from its index

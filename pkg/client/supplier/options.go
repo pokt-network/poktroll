@@ -1,7 +1,7 @@
 package supplier
 
 import (
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 func WithSigningKeyName(keyName string) client.SupplierClientOption {

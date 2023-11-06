@@ -12,6 +12,8 @@ POCKET_ADDR_PREFIX = pokt
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
+	go install golang.org/x/tools/cmd/goimports@latest
 
 ########################
 ### Makefile Helpers ###
@@ -35,9 +37,9 @@ help: ## Prints all the targets in all the Makefiles
 ### Checks ###
 ##############
 
-.PHONY: go_version_check
+.PHONY: check_go_version
 # Internal helper target - check go version
-go_version_check:
+check_go_version:
 	@# Extract the version number from the `go version` command.
 	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
@@ -48,15 +50,26 @@ go_version_check:
 		exit 1; \
 	fi
 
-.PHONY: docker_check
+.PHONY: check_docker
 # Internal helper target - check if docker is installed
-docker_check:
+check_docker:
 	{ \
 	if ( ! ( command -v docker >/dev/null && (docker compose version >/dev/null || command -v docker-compose >/dev/null) )); then \
 		echo "Seems like you don't have Docker or docker-compose installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_godoc
+# Internal helper target - check if godoc is installed
+check_godoc:
+	{ \
+	if ( ! ( command -v godoc >/dev/null )); then \
+		echo "Seems like you don't have godoc installed. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
@@ -76,7 +89,7 @@ proto_regen: ## Delete existing protobuf artifacts and regenerate them
 #######################
 
 .PHONY: docker_wipe
-docker_wipe: docker_check warn_destructive prompt_user ## [WARNING] Remove all the docker containers, images and volumes.
+docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all the docker containers, images and volumes.
 	docker ps -a -q | xargs -r -I {} docker stop {}
 	docker ps -a -q | xargs -r -I {} docker rm {}
 	docker images -q | xargs -r -I {} docker rmi {}
@@ -104,6 +117,17 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
 
+###############
+### Linting ###
+###############
+
+.PHONY: go_lint
+go_lint: ## Run all go linters
+	golangci-lint run --timeout 5m
+
+go_imports: check_go_version ## Run goimports on all go files
+	go run ./tools/scripts/goimports
+
 #############
 ### Tests ###
 #############
@@ -113,21 +137,20 @@ test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) POCKETD_HOME=../../$(POCKETD_HOME) && go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
-go_test: go_version_check ## Run all go tests
+go_test: check_go_version ## Run all go tests
 	go test -v -race -tags test ./...
 
 .PHONY: go_test_integration
-go_test_integration: go_version_check ## Run all go tests, including integration
+go_test_integration: check_go_version ## Run all go tests, including integration
 	go test -v -race -tags test,integration ./...
 
 .PHONY: itest
-itest: go_version_check ## Run tests iteratively (see usage for more)
+itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
 # catch-all target for itest
 %:
 	# no-op
 	@:
-
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -391,3 +414,12 @@ acc_balance_total_supply: ## Query the total supply of the network
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+
+#####################
+### Documentation ###
+#####################
+.PHONY: go_docs
+go_docs: check_godoc ## Generate documentation for the project
+	echo "Visit http://localhost:6060/pkg/pocket/"
+	godoc -http=:6060
+

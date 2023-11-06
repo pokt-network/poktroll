@@ -5,7 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"pocket/x/pocket/types"
+	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
 func CmdQueryParams() *cobra.Command {

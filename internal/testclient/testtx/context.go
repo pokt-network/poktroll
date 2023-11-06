@@ -17,10 +17,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/mocks/mockclient"
-	"pocket/internal/testclient"
-	"pocket/pkg/client"
-	"pocket/pkg/client/tx"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
 // NewLocalnetContext creates and returns a new transaction context configured

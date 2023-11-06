@@ -7,10 +7,10 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
-	"pocket/pkg/client"
-	"pocket/pkg/client/keyring"
-	sessiontypes "pocket/x/session/types"
-	suppliertypes "pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)

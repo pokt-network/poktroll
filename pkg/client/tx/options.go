@@ -1,7 +1,7 @@
 package tx
 
 import (
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 // WithCommitTimeoutBlocks sets the timeout duration in terms of number of blocks
@@ -13,6 +13,8 @@ func WithCommitTimeoutBlocks(timeout int64) client.TxClientOption {
 	}
 }
 
+// WithSigningKeyName sets the name of the key which should be retrieved from the
+// keyring and used for signing transactions.
 func WithSigningKeyName(keyName string) client.TxClientOption {
 	return func(client client.TxClient) {
 		client.(*txClient).signingKeyName = keyName

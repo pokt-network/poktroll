@@ -8,7 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"pocket/x/gateway/types"
+
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func (k Keeper) GatewayAll(goCtx context.Context, req *types.QueryAllGatewayRequest) (*types.QueryAllGatewayResponse, error) {

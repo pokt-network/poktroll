@@ -13,8 +13,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
-	"pocket/x/pocket/keeper"
-	"pocket/x/pocket/types"
+
+	"github.com/pokt-network/poktroll/x/pocket/keeper"
+	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
 func PocketKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {

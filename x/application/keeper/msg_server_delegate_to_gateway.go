@@ -3,7 +3,7 @@ package keeper
 import (
 	"context"
 
-	"pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"

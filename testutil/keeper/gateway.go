@@ -3,11 +3,6 @@ package keeper
 import (
 	"testing"
 
-	"pocket/x/gateway/keeper"
-	"pocket/x/gateway/types"
-
-	mocks "pocket/testutil/gateway/mocks"
-
 	tmdb "github.com/cometbft/cometbft-db"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
@@ -19,6 +14,10 @@ import (
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+
+	mocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
+	"github.com/pokt-network/poktroll/x/gateway/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {

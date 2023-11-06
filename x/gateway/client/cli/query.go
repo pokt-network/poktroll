@@ -10,7 +10,7 @@ import (
 	// "github.com/cosmos/cosmos-sdk/client/flags"
 	// sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module

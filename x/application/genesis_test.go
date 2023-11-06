@@ -6,12 +6,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-	"pocket/testutil/sample"
-	"pocket/x/application"
-	"pocket/x/application/types"
-	sharedtypes "pocket/x/shared/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/application"
+	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"pocket/x/service/types"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ RelayServer = (*jsonRPCServer)(nil)

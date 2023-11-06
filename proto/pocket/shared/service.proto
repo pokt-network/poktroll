@@ -4,7 +4,7 @@ syntax = "proto3";
 // but rather a manually created package to resolve circular dependencies.
 package pocket.shared;
 
-option go_package = "pocket/x/shared/types";
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
 // TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
 

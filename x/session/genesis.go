@@ -2,8 +2,9 @@ package session
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"pocket/x/session/keeper"
-	"pocket/x/session/types"
+
+	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

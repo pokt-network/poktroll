@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 
-	"pocket/internal/testclient"
+	"github.com/pokt-network/poktroll/internal/testclient"
 )
 
 // NewTestKeyringWithKey creates a new in-memory keyring with a test key

@@ -11,12 +11,12 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/mocks/mockclient"
-	"pocket/internal/testclient/testkeyring"
-	"pocket/internal/testclient/testtx"
-	"pocket/pkg/client/keyring"
-	"pocket/pkg/client/supplier"
-	sessiontypes "pocket/x/session/types"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/internal/testclient/testtx"
+	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 var testSigningKeyName = "test_signer"

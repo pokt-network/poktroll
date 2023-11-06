@@ -41,8 +41,8 @@ import (
 
 	// this line is used by starport scaffolding # root/moduleImport
 
-	"pocket/app"
-	appparams "pocket/app/params"
+	"github.com/pokt-network/poktroll/app"
+	appparams "github.com/pokt-network/poktroll/app/params"
 )
 
 // NewRootCmd creates a new root command for a Cosmos SDK application

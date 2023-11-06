@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k Keeper) ApplicationAll(goCtx context.Context, req *types.QueryAllApplicationRequest) (*types.QueryAllApplicationResponse, error) {

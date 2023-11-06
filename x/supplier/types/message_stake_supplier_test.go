@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TODO_CLEANUP: This test has a lot of copy-pasted code from test to test.

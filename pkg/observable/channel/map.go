@@ -3,7 +3,7 @@ package channel
 import (
 	"context"
 
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 type MapFn[S, D any] func(src S) (dst D, skip bool)

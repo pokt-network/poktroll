@@ -15,10 +15,11 @@ import (
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/multierr"
 
-	"pocket/pkg/client"
-	"pocket/pkg/client/keyring"
-	"pocket/pkg/either"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 const (
@@ -34,35 +35,16 @@ const (
 
 var _ client.TxClient = (*txClient)(nil)
 
-// txClient is an implementation of the client.TxClient interface responsible for
-// transaction operations on Cosmos-based blockchains. It orchestrates building,
-// signing, broadcasting, and querying of transactions. The client maintains a
-// single events query subscription to its own transactions (via the
-// EventsQueryClient) in order to receive notifications regarding their status.
+// txClient orchestrates building, signing, broadcasting, and querying of
+// transactions. It maintains a single events query subscription to its own
+// transactions (via the EventsQueryClient) in order to receive notifications
+// regarding their status.
 // It also depends on the BlockClient as a timer, synchronized to block height,
-// to facilitate transaction timeout logic.
-//
-// Key Features:
-//   - Configurable commit timeout logic: Transactions that are not committed
-//     within a specified number of blocks from the latest block are considered
-//     errored.
-//   - Signing integration: Transactions are signed using a specific key from the
-//     keyring identified by its name.
-//   - Single event subscription: Subscribes to transaction events that are
-//     specifically initiated by the client's address.
-//   - Thread safety: Uses a mutex to ensure safe concurrent access to its
-//     transaction maps.
-//   - Block Monitoring for Transaction Timeout: Through the blockClient, the
-//     client monitors committed blocks. If a transaction doesn't appear within
-//     the specified number of blocks (controlled by commitTimeoutHeightOffset),
-//     it is considered as timed out and an error is delivered.
-//
-// Internals:
-//   - txErrorChans: Maintains a map of transaction hashes to channels which will
-//     receive the outcome of the transaction (success or async error).
-//   - txTimeoutPool: Used to track transactions that have not yet been committed
-//     by a certain block height, enabling the client to implement timeout logic
-//     for transactions.
+// to facilitate transaction timeout logic. If a transaction doesn't appear to
+// have been committed by commitTimeoutHeightOffset number of blocks have elapsed,
+// it is considered as timed out. Upon timeout, the client queries the network for
+// the last status of the transaction, which is used to derive the asynchronous
+// error that's populated in the either.AsyncError.
 type txClient struct {
 	// INCOMPLETE: this should be configurable & integrated w/ viper, flags, etc.
 	// commitTimeoutHeightOffset is the number of blocks after the latest block
@@ -111,28 +93,18 @@ type TxEvent struct {
 	Events []abciTypes.Event `json:"events"`
 }
 
-// NewTxClient initializes and returns a new instance of TxClient. The function
-// sets up the default configurations and applies any provided options to
-// customize the client.
+// NewTxClient attempts to construct a new TxClient using the given dependencies
+// and options.
 //
-// Parameters:
-// - ctx: The context used for transaction subscriptions.
-// - deps: Dependencies injected via depinject.
-// - opts: A variadic list of TxClientOption to customize the client's behavior.
-//
-// The function performs the following steps:
+// It performs the following steps:
 //  1. Initializes a default txClient with the default commit timeout height
-//     offset, an empty error channel map, and a transaction timeout pool.
+//     offset, an empty error channel map, and an empty transaction timeout pool.
 //  2. Injects the necessary dependencies using depinject.
 //  3. Applies any provided options to customize the client.
 //  4. Validates and sets any missing default configurations using the
 //     validateConfigAndSetDefaults method.
 //  5. Subscribes the client to its own transactions. This step might be
 //     reconsidered for relocation to a potential Start() method in the future.
-//
-// Returns:
-// - An instance of the TxClient if initialization is successful.
-// - An error if any of the initialization steps fail.
 func NewTxClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -161,10 +133,17 @@ func NewTxClient(
 		return nil, err
 	}
 
+	// Start an events query subscription for transactions originating from this
+	// client's signing address.
 	// TODO_CONSIDERATION: move this into a #Start() method
 	if err := tClient.subscribeToOwnTxs(ctx); err != nil {
 		return nil, err
 	}
+
+	// Launch a separate goroutine to handle transaction timeouts.
+	// TODO_CONSIDERATION: move this into a #Start() method
+	go tClient.goTimeoutPendingTransactions(ctx)
+
 	return tClient, nil
 }
 
@@ -183,17 +162,10 @@ func NewTxClient(
 //  9. If all the above steps are successful, the function registers the
 //     transaction as pending.
 //
-// If any step encounters an error, it returns an AsyncError populated with the
-// synchronous error. If the function completes successfully, it returns an
-// AsyncError populated with the result of the addPendingTransactions call.
-//
-// Parameters:
-// - ctx: The context used for this operation.
-// - msgs: A variadic list of Cosmos SDK messages to be signed and broadcast.
-//
-// Returns:
-//   - An AsyncError which can be either a synchronous error or the result of
-//     the addPendingTransactions call.
+// If any step encounters an error, it returns an either.AsyncError populated with
+// the synchronous error. If the function completes successfully, it returns an
+// either.AsyncError populated with the error channel which will receive if the
+// transaction results in an asynchronous error or times out.
 func (tClient *txClient) SignAndBroadcast(
 	ctx context.Context,
 	msgs ...cosmostypes.Msg,
@@ -264,7 +236,7 @@ func (tClient *txClient) SignAndBroadcast(
 //  1. It checks if the signing key name is set and returns an error if it's empty.
 //  2. It then retrieves the key record from the keyring using the signing key name
 //     and checks its existence.
-//  3. The signing address for the key record is determined and set to the txClient.
+//  3. The address of the signing key is computed and assigned to txClient#signgingAddr.
 //  4. Lastly, it ensures that commitTimeoutHeightOffset has a valid value, setting
 //     it to DefaultCommitTimeoutHeightOffset if it's zero or negative.
 //
@@ -301,18 +273,15 @@ func (tClient *txClient) validateConfigAndSetDefaults() error {
 //     is also associated with the transaction hash in this map.
 //
 // Both txErrorChans and txTimeoutPool store references to the same error notification
-// channel for a given transaction hash. This design allows for efficient error handling
-// both in terms of transaction-specific errors and transaction timeout logic.
+// channel for a given transaction hash. This ensures idempotency of error handling
+// for any given transaction between asynchronous, transaction-specific errors and
+// transaction timeout logic.
 //
 // Note: The error channels are buffered to prevent blocking on send operations and
 // are intended to convey a single error event.
 //
-// Parameters:
-// - txHash: The unique hash of the pending transaction.
-// - timeoutHeight: The block height at which the transaction is considered timed out.
-//
 // Returns:
-//   - An AsyncError containing a reference to the error notification channel for the
+//   - An either.AsyncError populated with the error notification channel for the
 //     provided transaction hash.
 func (tClient *txClient) addPendingTransactions(
 	txHash string,
@@ -348,18 +317,13 @@ func (tClient *txClient) addPendingTransactions(
 }
 
 // subscribeToOwnTxs establishes an event query subscription to monitor transactions
-// originating from this client's signing address. It efficiently listens for and
-// handles transaction events to facilitate real-time feedback and error management.
+// originating from this client's signing address.
 //
-// The function performs the following primary operations:
+// It performs the following steps:
 //
 //  1. Forms a query to fetch transaction events specific to the client's signing address.
-//  2. Transforms raw events into a stream of transaction events using the txEventFromEventBz function.
-//  3. Processes each transaction event:
-//     a. Converts the transaction hash to its normalized hexadecimal representation.
-//     b. Retrieves and manages the associated error notification channel from txErrorChans.
-//     c. Closes and removes the notification channel after processing.
-//     d. Cleans up the txTimeoutPool, removing transaction entries that are no longer relevant.
+//  2. Maps raw event bytes observable notifications to a new transaction event objects observable.
+//  3. Handle each transaction event.
 //
 // Important considerations:
 // There's uncertainty surrounding the potential for asynchronous errors post transaction broadcast.
@@ -389,91 +353,84 @@ func (tClient *txClient) subscribeToOwnTxs(ctx context.Context) error {
 	](ctx, eventsBz, tClient.txEventFromEventBz)
 	txEventsObserver := txEventsObservable.Subscribe(ctx)
 
-	// Goroutine to handle each incoming transaction event.
-	go func() {
-		for eitherTxEvent := range txEventsObserver.Ch() {
-			txEvent, err := eitherTxEvent.ValueOrError()
-			if err != nil {
-				return
-			}
-
-			// Convert transaction hash into its normalized hex form.
-			txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txEvent.Tx).Hash())
-
-			tClient.txsMutex.Lock()
-
-			// Check for a corresponding error channel in the map.
-			txErrCh, ok := tClient.txErrorChans[txHashHex]
-			if !ok {
-				panic("Received tx event without an associated error channel.")
-			}
-
-			// TODO_INVESTIGATE: it seems like it may not be possible for the
-			// txEvent to represent an error. Cosmos' #BroadcastTxSync() is being
-			// called internally, which will return an error if the transaction
-			// is not accepted by the mempool.
-			//
-			// It's unclear if a cosmos chain is capable of returning an async
-			// error for a transaction at this point; even when substituting
-			// #BroadcastTxAsync(), the error is returned synchronously:
-			//
-			// > error in json rpc client, with http response metadata: (Status:
-			// > 200 OK, Protocol HTTP/1.1). RPC error -32000 - tx added to local
-			// > mempool but failed to gossip: validation failed
-			//
-			// Potential parse and send transaction error on txErrCh here.
-
-			close(txErrCh)
-			delete(tClient.txErrorChans, txHashHex)
-
-			// Clean up error channels in the timeout pool post processing.
-			for timeoutHeight, txErrorChans := range tClient.txTimeoutPool {
-				for txHash := range txErrorChans {
-					if txHash == txHash {
-						delete(txErrorChans, txHash)
-					}
-				}
-				if len(txErrorChans) == 0 {
-					delete(tClient.txTimeoutPool, timeoutHeight)
-				}
-			}
-
-			tClient.txsMutex.Unlock()
-		}
-	}()
-
-	// Launch a separate goroutine to handle transaction timeouts.
-	go tClient.goTimeoutPendingTransactions(ctx)
+	// Handle transaction events asynchronously.
+	go tClient.goHandleTxEvents(txEventsObserver)
 
 	return nil
+}
+
+// goHandleTxEvents ranges over the transaction events observable, performing
+// the following steps on each:
+//
+//  1. Normalize hexadeimal transaction hash.
+//  2. Retrieves the transaction's error channel from txErrorChans.
+//  3. Closes and removes it from txErrorChans.
+//  4. Removes the transaction error channel from txTimeoutPool.
+//
+// It is intended to be called in a goroutine.
+func (tClient *txClient) goHandleTxEvents(
+	txEventsObserver observable.Observer[either.Either[*TxEvent]],
+) {
+	for eitherTxEvent := range txEventsObserver.Ch() {
+		txEvent, err := eitherTxEvent.ValueOrError()
+		if err != nil {
+			return
+		}
+
+		// Convert transaction hash into its normalized hex form.
+		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txEvent.Tx).Hash())
+
+		tClient.txsMutex.Lock()
+
+		// Check for a corresponding error channel in the map.
+		txErrCh, ok := tClient.txErrorChans[txHashHex]
+		if !ok {
+			panic("Received tx event without an associated error channel.")
+		}
+
+		// TODO_INVESTIGATE: it seems like it may not be possible for the
+		// txEvent to represent an error. Cosmos' #BroadcastTxSync() is being
+		// called internally, which will return an error if the transaction
+		// is not accepted by the mempool.
+		//
+		// It's unclear if a cosmos chain is capable of returning an async
+		// error for a transaction at this point; even when substituting
+		// #BroadcastTxAsync(), the error is returned synchronously:
+		//
+		// > error in json rpc client, with http response metadata: (Status:
+		// > 200 OK, Protocol HTTP/1.1). RPC error -32000 - tx added to local
+		// > mempool but failed to gossip: validation failed
+		//
+		// Potential parse and send transaction error on txErrCh here.
+
+		// Close and remove from txErrChans
+		close(txErrCh)
+		delete(tClient.txErrorChans, txHashHex)
+
+		// Remove from the txTimeoutPool.
+		for timeoutHeight, txErrorChans := range tClient.txTimeoutPool {
+			// Handled transaction isn't in this timeout height.
+			if _, ok := txErrorChans[txHashHex]; !ok {
+				continue
+			}
+
+			delete(txErrorChans, txHashHex)
+			if len(txErrorChans) == 0 {
+				delete(tClient.txTimeoutPool, timeoutHeight)
+			}
+		}
+
+		tClient.txsMutex.Unlock()
+	}
 }
 
 // goTimeoutPendingTransactions monitors blocks and handles transaction timeouts.
 // For each block observed, it checks if there are transactions associated with that
 // block's height in the txTimeoutPool. If transactions are found, the function
-// evaluates whether they have been processed by the subscription:
-//   - If processed, the error channel associated with the transaction (txErrCh) should
-//     be closed by the websocket message handler.
-//   - If not processed, a timeout error is sent on the error channel, and it is then
-//     closed and removed.
-//
-// The function performs efficient cleanup operations, removing processed transactions
-// and ensuring the txTimeoutPool remains up-to-date.
-//
-// Important:
-// This function is designed to run as a dedicated goroutine, continuously monitoring
-// for new blocks and managing transaction timeouts until the provided context is done.
-//
-// Parameters:
-// - ctx: Context for managing the function's lifecycle and child operations.
-// goTimeoutPendingTransactions monitors incoming blocks to manage the timeout of
-// pending transactions. If a transaction associated with a block's height hasn't
-// been processed by its associated subscription, a timeout error is sent through its
-// respective error channel. This function is designed to run as a dedicated
-// goroutine.
-//
-// Parameters:
-// - ctx: Context for managing the function's lifecycle and child operations.
+// evaluates whether they have already been processed by the transaction events
+// query subscription logic. If not, a timeout error is generated and sent on the
+// transaction's error channel. Finally, the error channel is closed and removed
+// from the txTimeoutPool.
 func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	// Subscribe to a sequence of committed blocks.
 	blockCh := tClient.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
@@ -526,15 +483,7 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 }
 
 // txEventFromEventBz deserializes a binary representation of a transaction event
-// into a TxEvent structure. This function is primarily designed as a websocket
-// message handler to transform raw byte data into structured transaction events.
-// It also manages error channels (txErrCh), ensuring their proper closure and
-// sending errors when applicable.
-//
-// The function proceeds in the following manner:
-// 1. Extracts valid byte data, returning an error if extraction fails.
-// 2. Unmarshals the byte data into a TxEvent structure.
-// 3. Manages the error channels contingent on the result of unmarshalling.
+// into a TxEvent structure.
 //
 // Parameters:
 //   - eitherEventBz: Binary data of the event, potentially encapsulating an error.

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 const (
