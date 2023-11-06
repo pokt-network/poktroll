@@ -81,6 +81,7 @@ chain[Blockchain]
 conn <-."subscribed events".-> chain
 dial -."RPC subscribe".-> chain
 txctx -."tx broadcast".-> chain
+txctx -."tx query".-> chain
 ```
 
 > **Figure 3**: An overview of how client subcomponents interact with the network.
