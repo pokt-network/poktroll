@@ -1,0 +1,13 @@
+syntax = "proto3";
+package pocket.supplier;
+
+option go_package = "pocket/x/supplier/types";
+
+message Claim {
+  string index = 1; 
+  string supplierAddress = 2; 
+  string sessionId = 3; 
+  string rootHash = 4; 
+  
+}
+
