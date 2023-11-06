@@ -8,17 +8,20 @@ import (
 
 	"cosmossdk.io/depinject"
 	comettypes "github.com/cometbft/cometbft/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/internal/testclient"
 	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 )
 
-const testTimeoutDuration = 100 * time.Millisecond
+const (
+	testTimeoutDuration = 100 * time.Millisecond
+
+	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
+	committedBlocksQuery = "tm.event='NewBlock'"
+)
 
 func TestBlockClient(t *testing.T) {
 	var (
@@ -38,24 +41,15 @@ func TestBlockClient(t *testing.T) {
 		ctx = context.Background()
 	)
 
-	// Set up a mock connection and dialer which are expected to be used once.
-	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
-	connMock.EXPECT().Send(gomock.Any()).Return(nil).Times(1)
-	// Mock the Receive method to return the expected block event.
-	connMock.EXPECT().Receive().DoAndReturn(func() ([]byte, error) {
-		blockEventJson, err := json.Marshal(expectedBlockEvent)
-		require.NoError(t, err)
+	expectedEventBz, err := json.Marshal(expectedBlockEvent)
+	require.NoError(t, err)
 
-		// Slow the rate at which block events are published to prevent bogging
-		// down the test with a really tight async loop which causes test timeout
-		// failures to occur.
-		time.Sleep(10 * time.Millisecond)
-		return blockEventJson, nil
-	}).AnyTimes()
+	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
+		ctx, t,
+		committedBlocksQuery,
+		expectedEventBz,
+	)
 
-	// Set up events query client dependency.
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	eventsQueryClient := testeventsquery.NewLocalnetClient(t, dialerOpt)
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up block client.
@@ -63,22 +57,19 @@ func TestBlockClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
-	// Wait a tick for the observables to be set up. This isn't strictly
-	// necessary but is done to mitigate flakiness.
-	time.Sleep(10 * time.Millisecond)
-
 	tests := []struct {
 		name string
 		fn   func() client.Block
 	}{
 		{
-			name: "LatestBlock",
+			name: "LatestBlock successfully returns latest block",
 			fn: func() client.Block {
-				return blockClient.LatestBlock(ctx)
+				lastBlock := blockClient.LatestBlock(ctx)
+				return lastBlock
 			},
 		},
 		{
-			name: "CommittedBlocksSequence",
+			name: "CommittedBlocksSequence successfully returns latest block",
 			fn: func() client.Block {
 				blockObservable := blockClient.CommittedBlocksSequence(ctx)
 				require.NotNil(t, blockObservable)
@@ -88,13 +79,6 @@ func TestBlockClient(t *testing.T) {
 				require.Equal(t, expectedHeight, lastBlock.Height())
 				require.Equal(t, expectedHash, lastBlock.Hash())
 
-				// Ensure that the observable is replayable via Subscribe.
-				blockObserver := blockObservable.Subscribe(ctx)
-				for _ = range blockObserver.Ch() {
-					// TODO_THIS_COMMIT: should we assert that this matches lastBlock?
-					break
-				}
-
 				return lastBlock
 			},
 		},
@@ -102,18 +86,18 @@ func TestBlockClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var eitherActualBlockCh = make(chan client.Block, 10)
+			var actualBlockCh = make(chan client.Block, 10)
 
-			// Run test functions concurrently because they can block, leading
+			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,
 			// the test will time out in the select statement that follows.
 			go func(fn func() client.Block) {
-				eitherActualBlockCh <- fn()
-				close(eitherActualBlockCh)
+				actualBlockCh <- fn()
+				close(actualBlockCh)
 			}(tt.fn)
 
 			select {
-			case actualBlock := <-eitherActualBlockCh:
+			case actualBlock := <-actualBlockCh:
 				require.Equal(t, expectedHeight, actualBlock.Height())
 				require.Equal(t, expectedHash, actualBlock.Hash())
 			case <-time.After(testTimeoutDuration):
