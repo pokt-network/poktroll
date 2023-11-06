@@ -6,11 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
-	sharedtypes "pocket/x/shared/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {

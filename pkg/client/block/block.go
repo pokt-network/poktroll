@@ -5,7 +5,7 @@ import (
 
 	"github.com/cometbft/cometbft/types"
 
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 // cometBlockEvent is used to deserialize incoming committed block event messages

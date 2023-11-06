@@ -3,7 +3,7 @@ package cmd
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/app"
+	"github.com/pokt-network/poktroll/app"
 )
 
 // InitSDKConfig initializes the SDK's config with the appropriate parameters

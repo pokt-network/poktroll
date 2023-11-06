@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	gatewaytypes "pocket/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)

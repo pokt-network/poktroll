@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "pocket/application/params.proto";
 import "pocket/application/application.proto";
 
-option go_package = "pocket/x/application/types";
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 // GenesisState defines the application module's genesis state.
 message GenesisState {

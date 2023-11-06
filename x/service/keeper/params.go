@@ -2,7 +2,8 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"pocket/x/service/types"
+
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // GetParams get all parameters as types.Params

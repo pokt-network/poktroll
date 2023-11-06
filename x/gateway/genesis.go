@@ -3,8 +3,8 @@ package gateway
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/x/gateway/keeper"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/gateway/keeper"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // InitGenesis initializes the module's state from a provided genesis state.

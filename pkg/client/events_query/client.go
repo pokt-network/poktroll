@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/multierr"
 
-	"pocket/pkg/client"
-	"pocket/pkg/client/events_query/websocket"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)

@@ -1,12 +1,3 @@
-// Package testblock provides utilities and mock clients to facilitate testing
-// interactions with blockchain-related functionality. It includes tools for creating mock
-// BlockClients, Block observables, and mock blocks tailored for specific testing scenarios.
-// The package is designed to help ensure that tests around blockchain functionality are
-// robust, using mock implementations to replicate expected behaviors in controlled environments.
-//
-// Given its role in testing, the testblock package leverages several other testing
-// packages and libraries, such as gomock, testify, and internal testing clients
-// from the pocket project.
 package testblock
 
 import (
@@ -17,12 +8,12 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/mocks/mockclient"
-	"pocket/internal/testclient"
-	"pocket/internal/testclient/testeventsquery"
-	"pocket/pkg/client"
-	"pocket/pkg/client/block"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for

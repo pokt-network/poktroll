@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
-	"pocket/x/pocket/types"
+	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
 type (

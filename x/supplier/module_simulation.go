@@ -3,9 +3,9 @@ package supplier
 import (
 	"math/rand"
 
-	"pocket/testutil/sample"
-	suppliersimulation "pocket/x/supplier/simulation"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	suppliersimulation "github.com/pokt-network/poktroll/x/supplier/simulation"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"

@@ -15,16 +15,12 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
-// TxClient provides an interface for initiating transactions on a blockchain.
-// It offers a singular, streamlined method to sign and broadcast multiple messages
-// as part of a transaction. This interface abstracts the actual sending of a
-// transaction, while more intricate functionalities like building, encoding,
-// or querying transactions are likely to be handled by other components,
-// such as the TxContext.
+// TxClient provides a synchronous interface initiating and waiting for transactions
+// in a cosmos-sdk based blockchain network, derived from cosmos-sdk messages.
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
