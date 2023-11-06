@@ -1,4 +1,3 @@
-// Package testeventsquery provides helper methods and mocks for testing events query functionality.
 package testeventsquery
 
 import (

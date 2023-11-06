@@ -1,12 +1,3 @@
-// Package testblock provides utilities and mock clients to facilitate testing
-// interactions with blockchain-related functionality. It includes tools for creating mock
-// BlockClients, Block observables, and mock blocks tailored for specific testing scenarios.
-// The package is designed to help ensure that tests around blockchain functionality are
-// robust, using mock implementations to replicate expected behaviors in controlled environments.
-//
-// Given its role in testing, the testblock package leverages several other testing
-// packages and libraries, such as gomock, testify, and internal testing clients
-// from the pocket project.
 package testblock
 
 import (
