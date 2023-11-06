@@ -5,17 +5,17 @@ import (
 	"strconv"
 	"testing"
 
+	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
-	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"pocket/testutil/network"
 	"pocket/testutil/nullify"
 	"pocket/x/supplier/client/cli"
-    "pocket/x/supplier/types"
+	"pocket/x/supplier/types"
 )
 
 // Prevent strconv unused error
@@ -26,12 +26,11 @@ func networkWithClaimObjects(t *testing.T, n int) (*network.Network, []types.Cla
 	cfg := network.DefaultConfig()
 	state := types.GenesisState{}
 	for i := 0; i < n; i++ {
-	claim := types.Claim{
+		claim := types.Claim{
 			Index: strconv.Itoa(i),
-			
 		}
 		nullify.Fill(&claim)
-		state.ClaimList = append(state.ClaimList, claim)
+		// state.ClaimList = append(state.ClaimList, claim)
 	}
 	buf, err := cfg.Codec.MarshalJSON(&state)
 	require.NoError(t, err)
@@ -47,24 +46,24 @@ func TestShowClaim(t *testing.T) {
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
 	tests := []struct {
-		desc string
+		desc    string
 		idIndex string
-        
+
 		args []string
 		err  error
 		obj  types.Claim
 	}{
 		{
-			desc: "found",
+			desc:    "found",
 			idIndex: objs[0].Index,
-            
+
 			args: common,
 			obj:  objs[0],
 		},
 		{
-			desc: "not found",
+			desc:    "not found",
 			idIndex: strconv.Itoa(100000),
-            
+
 			args: common,
 			err:  status.Error(codes.NotFound, "not found"),
 		},
@@ -72,8 +71,7 @@ func TestShowClaim(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := []string{
-			    tc.idIndex,
-                
+				tc.idIndex,
 			}
 			args = append(args, tc.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowClaim(), args)
@@ -124,9 +122,9 @@ func TestListClaim(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-            	nullify.Fill(objs),
-            	nullify.Fill(resp.Claim),
-            )
+				nullify.Fill(objs),
+				nullify.Fill(resp.Claim),
+			)
 		}
 	})
 	t.Run("ByKey", func(t *testing.T) {
@@ -140,9 +138,9 @@ func TestListClaim(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-            	nullify.Fill(objs),
-            	nullify.Fill(resp.Claim),
-            )
+				nullify.Fill(objs),
+				nullify.Fill(resp.Claim),
+			)
 			next = resp.Pagination.NextKey
 		}
 	})

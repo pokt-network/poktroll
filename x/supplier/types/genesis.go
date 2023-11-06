@@ -17,8 +17,7 @@ const DefaultIndex uint64 = 1
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
 		SupplierList: []sharedtypes.Supplier{},
-		ClaimList: []Claim{},
-// this line is used by starport scaffolding # genesis/types/default
+		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}
 }
@@ -64,17 +63,7 @@ func (gs GenesisState) Validate() error {
 		}
 	}
 
-	// Check for duplicated index in claim
-claimIndexMap := make(map[string]struct{})
-
-for _, elem := range gs.ClaimList {
-	index := string(ClaimKey(elem.Index))
-	if _, ok := claimIndexMap[index]; ok {
-		return fmt.Errorf("duplicated index for claim")
-	}
-	claimIndexMap[index] = struct{}{}
-}
-// this line is used by starport scaffolding # genesis/types/validate
+	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
 }

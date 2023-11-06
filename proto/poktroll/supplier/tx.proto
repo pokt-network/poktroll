@@ -1,7 +1,0 @@
-syntax = "proto3";
-package poktroll.supplier;
-
-option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
-
-// Msg defines the Msg service.
-service Msg {}
