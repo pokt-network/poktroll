@@ -3,6 +3,8 @@ package helpers
 import (
 	"net/url"
 	"regexp"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
@@ -23,6 +25,11 @@ func init() {
 	regexExprServiceId = regexp.MustCompile(regexServiceId)
 	regexExprServiceName = regexp.MustCompile(regexServiceName)
 
+}
+
+// IsValidService checks if the input service is valid
+func IsValidService(service *sharedtypes.Service) bool {
+	return service != nil && IsValidServiceId(service.Id) && IsValidServiceName(service.Name)
 }
 
 // IsValidServiceId checks if the input string is a valid serviceId

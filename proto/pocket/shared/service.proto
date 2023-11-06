@@ -8,8 +8,8 @@ option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
 // TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
 
-// ServiceId message to encapsulate unique and semantic identifiers for a service on the network
-message ServiceId {
+// Service message to encapsulate unique and semantic identifiers for a service on the network
+message Service {
     // NOTE: `ServiceId.Id` may seem redundant but was desigtned created to enable more complex service identification
     // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
     string id = 1; // Unique identifier for the service
@@ -23,7 +23,7 @@ message ServiceId {
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
 message ApplicationServiceConfig {
-    ServiceId service_id = 1; // Unique and semantic identifier for the service
+    Service service = 1; // Unique and semantic identifier for the service
 
     // TODO_RESEARCH: There is an opportunity for applications to advertise the max
     // they're willing to pay for a certain configuration/price, but this is outside of scope.
@@ -32,7 +32,7 @@ message ApplicationServiceConfig {
 
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 message SupplierServiceConfig {
-    ServiceId service_id = 1; // Unique and semantic identifier for the service
+    Service service = 1; // Unique and semantic identifier for the service
     repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
     // TODO_RESEARCH: There is an opportunity for supplier to advertise the min
     // they're willing to earn for a certain configuration/price, but this is outside of scope.

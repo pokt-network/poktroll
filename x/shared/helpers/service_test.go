@@ -1,28 +1,130 @@
 package helpers
 
-import "testing"
+import (
+	"testing"
 
-func TestIsValidServiceId(t *testing.T) {
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+)
+
+func TestIsValidService(t *testing.T) {
 	tests := []struct {
-		input    string
+		testCase string
+		id       string
+		name     string
 		expected bool
 	}{
-		{"Hello-1", true},
-		{"Hello_2", true},
-		{"hello-world", false}, // exceeds maxServiceIdLength
-		{"Hello@", false},      // contains invalid character '@'
-		{"HELLO", true},
-		{"12345678", true},     // exactly maxServiceIdLength
-		{"123456789", false},   // exceeds maxServiceIdLength
-		{"Hello.World", false}, // contains invalid character '.'
-		{"", false},            // empty string
+		{
+			testCase: "Valid ID and Name",
+			id:       "Service1",
+			name:     "Valid Service Name",
+			expected: true,
+		},
+		{
+			testCase: "Valid ID and empty Name",
+			id:       "Srv",
+			name:     "", // Valid because the service name can be empty
+			expected: true,
+		},
+		{
+			testCase: "ID exceeds max length",
+			id:       "TooLongId123", // Exceeds maxServiceIdLength
+			name:     "Valid Name",
+			expected: false,
+		},
+		{
+			testCase: "Name exceeds max length",
+			id:       "ValidID",
+			name:     "This service name is way too long to be considered valid since it exceeds the max length",
+			expected: false,
+		},
+		{
+			testCase: "Empty ID",
+			id:       "", // Invalid because the service ID cannot be empty
+			name:     "Valid Name",
+			expected: false,
+		},
+		{
+			testCase: "Invalid characters in ID",
+			id:       "ID@Invalid", // Invalid character '@'
+			name:     "Valid Name",
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
+		t.Run(test.testCase, func(t *testing.T) {
+			service := &sharedtypes.Service{
+				Id:   test.id,
+				Name: test.name,
+			}
+			result := IsValidService(service)
+			if result != test.expected {
+				t.Errorf("Test Case '%s' - IsValidService() with Id: '%s', Name: '%s', expected %v, got %v",
+					test.testCase, test.id, test.name, test.expected, result)
+			}
+		})
+	}
+}
+
+func TestIsValidServiceId(t *testing.T) {
+	tests := []struct {
+		testCase string
+		input    string
+		expected bool
+	}{
+		{
+			testCase: "Valid alphanumeric with hyphen",
+			input:    "Hello-1",
+			expected: true,
+		},
+		{
+			testCase: "Valid alphanumeric with underscore",
+			input:    "Hello_2",
+			expected: true,
+		},
+		{
+			testCase: "Exceeds maximum length",
+			input:    "hello-world",
+			expected: false, // exceeds maxServiceIdLength
+		},
+		{
+			testCase: "Contains invalid character '@'",
+			input:    "Hello@",
+			expected: false, // contains invalid character '@'
+		},
+		{
+			testCase: "All uppercase",
+			input:    "HELLO",
+			expected: true,
+		},
+		{
+			testCase: "Maximum length boundary",
+			input:    "12345678",
+			expected: true, // exactly maxServiceIdLength
+		},
+		{
+			testCase: "Above maximum length boundary",
+			input:    "123456789",
+			expected: false, // exceeds maxServiceIdLength
+		},
+		{
+			testCase: "Contains invalid character '.'",
+			input:    "Hello.World",
+			expected: false, // contains invalid character '.'
+		},
+		{
+			testCase: "Empty string",
+			input:    "",
+			expected: false, // empty string
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.testCase, func(t *testing.T) {
 			result := IsValidServiceId(test.input)
 			if result != test.expected {
-				t.Errorf("For input %s, expected %v but got %v", test.input, test.expected, result)
+				t.Errorf("Test Case '%s' - IsValidServiceId(%q) = %v, want %v",
+					test.testCase, test.input, result, test.expected)
 			}
 		})
 	}
@@ -30,49 +132,50 @@ func TestIsValidServiceId(t *testing.T) {
 
 func TestIsValidEndpointUrl(t *testing.T) {
 	tests := []struct {
-		name     string
+		testCase string
+
 		input    string
 		expected bool
 	}{
 		{
-			name:     "valid http URL",
+			testCase: "valid http URL",
 			input:    "http://example.com",
 			expected: true,
 		},
 		{
-			name:     "valid https URL",
+			testCase: "valid https URL",
 			input:    "https://example.com/path?query=value#fragment",
 			expected: true,
 		},
 		{
-			name:     "valid localhost URL with scheme",
+			testCase: "valid localhost URL with scheme",
 			input:    "https://localhost:8081",
 			expected: true,
 		},
 		{
-			name:     "valid loopback URL with scheme",
+			testCase: "valid loopback URL with scheme",
 			input:    "http://127.0.0.1:8081",
 			expected: true,
 		},
 		{
-			name:     "invalid scheme",
+			testCase: "invalid scheme",
 			input:    "ftp://example.com",
 			expected: false,
 		},
 		{
-			name:     "missing scheme",
+			testCase: "missing scheme",
 			input:    "example.com",
 			expected: false,
 		},
 		{
-			name:     "invalid URL",
+			testCase: "invalid URL",
 			input:    "not-a-valid-url",
 			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.testCase, func(t *testing.T) {
 			got := IsValidEndpointUrl(tt.input)
 			if got != tt.expected {
 				t.Errorf("IsValidEndpointUrl(%q) = %v, want %v", tt.input, got, tt.expected)

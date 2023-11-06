@@ -42,5 +42,5 @@ type RelayServer interface {
 	Stop(ctx context.Context) error
 
 	// ServiceId returns the serviceId of the service.
-	ServiceId() *sharedtypes.ServiceId
+	Service() *sharedtypes.Service
 }

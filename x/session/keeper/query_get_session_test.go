@@ -56,7 +56,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: tt.appAddr,
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: tt.serviceId,
 				},
 				BlockHeight: 1,
@@ -115,7 +115,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: tt.appAddr,
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: tt.serviceId,
 				},
 				BlockHeight: 1,

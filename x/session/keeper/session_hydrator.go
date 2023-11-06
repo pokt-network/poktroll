@@ -107,8 +107,8 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the ServiceId is a valid service depending on whether
 	// or not its permissioned  or permissionless
-	// TODO(@Olshansk): Add a check to make sure `IsValidServiceName(ServiceId.Id)` returns True
-	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
+	// TODO(@Olshansk): Add a check to make sure `IsValidServiceName(Service.Id)` returns True
+	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
 
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
@@ -144,7 +144,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	for _, supplier := range suppliers {
 		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.ServiceId.Id == sh.sessionHeader.ServiceId.Id {
+			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
 				candidateSuppliers = append(candidateSuppliers, &supplier)
 				break
 			}
