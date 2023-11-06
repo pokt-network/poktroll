@@ -67,7 +67,7 @@ func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}
 	args = append(base, args...)
-	cmd := exec.Command("pocketd", args...)
+	cmd := exec.Command("poktrolld", args...)
 	r := &commandResult{}
 	out, err := cmd.Output()
 	if err != nil {

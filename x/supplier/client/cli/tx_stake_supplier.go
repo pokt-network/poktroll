@@ -32,7 +32,7 @@ of comma separated values of the form 'service;url' where 'service' is the servi
 For example, an application that stakes for 'anvil' could be matched with a supplier staking for 'anvil;http://anvil:8547'.
 
 Example:
-$ pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt anvil;http://anvil:8547 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt anvil;http://anvil:8547 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeString := args[0]
