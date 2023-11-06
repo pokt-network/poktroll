@@ -46477,7 +46477,7 @@ paths:
                       items:
                         type: object
                         properties:
-                          service_id:
+                          service:
                             title: Unique and semantic identifier for the service
                             type: object
                             properties:
@@ -46504,7 +46504,9 @@ paths:
                         title: >-
                           ApplicationServiceConfig holds the service
                           configuration the application stakes for
-                      title: The ID of the service this session is servicing
+                      title: >-
+                        The list of services this appliccation is configured to
+                        request service for
                     delegatee_gateway_addresses:
                       type: array
                       items:
@@ -46659,7 +46661,7 @@ paths:
                     items:
                       type: object
                       properties:
-                        service_id:
+                        service:
                           title: Unique and semantic identifier for the service
                           type: object
                           properties:
@@ -46686,7 +46688,9 @@ paths:
                       title: >-
                         ApplicationServiceConfig holds the service configuration
                         the application stakes for
-                    title: The ID of the service this session is servicing
+                    title: >-
+                      The list of services this appliccation is configured to
+                      request service for
                   delegatee_gateway_addresses:
                     type: array
                     items:
@@ -47090,8 +47094,8 @@ paths:
                         title: >-
                           The Bech32 address of the application using cosmos'
                           ScalarDescriptor to ensure deterministic encoding
-                      service_id:
-                        title: The ID of the service this session is servicing
+                      service:
+                        title: The service this session is for
                         type: object
                         properties:
                           id:
@@ -47173,7 +47177,7 @@ paths:
                         items:
                           type: object
                           properties:
-                            service_id:
+                            service:
                               title: Unique and semantic identifier for the service
                               type: object
                               properties:
@@ -47200,7 +47204,9 @@ paths:
                           title: >-
                             ApplicationServiceConfig holds the service
                             configuration the application stakes for
-                        title: The ID of the service this session is servicing
+                        title: >-
+                          The list of services this appliccation is configured
+                          to request service for
                       delegatee_gateway_addresses:
                         type: array
                         items:
@@ -47240,7 +47246,7 @@ paths:
                           items:
                             type: object
                             properties:
-                              service_id:
+                              service:
                                 title: Unique and semantic identifier for the service
                                 type: object
                                 properties:
@@ -47363,7 +47369,7 @@ paths:
           in: query
           required: false
           type: string
-        - name: service_id.id
+        - name: service.id
           description: >-
             NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
             enable more complex service identification
@@ -47376,7 +47382,7 @@ paths:
           in: query
           required: false
           type: string
-        - name: service_id.name
+        - name: service.name
           description: >-
             TODO_TECHDEBT: Name is currently unused but acts as a reminder than
             an optional onchain representation of the service is necessary
@@ -76616,7 +76622,7 @@ definitions:
         items:
           type: object
           properties:
-            service_id:
+            service:
               title: Unique and semantic identifier for the service
               type: object
               properties:
@@ -76640,7 +76646,9 @@ definitions:
           title: >-
             ApplicationServiceConfig holds the service configuration the
             application stakes for
-        title: The ID of the service this session is servicing
+        title: >-
+          The list of services this appliccation is configured to request
+          service for
       delegatee_gateway_addresses:
         type: array
         items:
@@ -76701,7 +76709,7 @@ definitions:
               items:
                 type: object
                 properties:
-                  service_id:
+                  service:
                     title: Unique and semantic identifier for the service
                     type: object
                     properties:
@@ -76728,7 +76736,9 @@ definitions:
                 title: >-
                   ApplicationServiceConfig holds the service configuration the
                   application stakes for
-              title: The ID of the service this session is servicing
+              title: >-
+                The list of services this appliccation is configured to request
+                service for
             delegatee_gateway_addresses:
               type: array
               items:
@@ -76797,7 +76807,7 @@ definitions:
             items:
               type: object
               properties:
-                service_id:
+                service:
                   title: Unique and semantic identifier for the service
                   type: object
                   properties:
@@ -76822,7 +76832,9 @@ definitions:
               title: >-
                 ApplicationServiceConfig holds the service configuration the
                 application stakes for
-            title: The ID of the service this session is servicing
+            title: >-
+              The list of services this appliccation is configured to request
+              service for
           delegatee_gateway_addresses:
             type: array
             items:
@@ -76850,7 +76862,7 @@ definitions:
   pocket.shared.ApplicationServiceConfig:
     type: object
     properties:
-      service_id:
+      service:
         title: Unique and semantic identifier for the service
         type: object
         properties:
@@ -76873,7 +76885,7 @@ definitions:
     title: >-
       ApplicationServiceConfig holds the service configuration the application
       stakes for
-  pocket.shared.ServiceId:
+  pocket.shared.Service:
     type: object
     properties:
       id:
@@ -76892,7 +76904,7 @@ definitions:
           TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
           optional onchain representation of the service is necessary
     title: >-
-      ServiceId message to encapsulate unique and semantic identifiers for a
+      Service message to encapsulate unique and semantic identifiers for a
       service on the network
   pocket.gateway.Gateway:
     type: object
@@ -77043,8 +77055,8 @@ definitions:
                 title: >-
                   The Bech32 address of the application using cosmos'
                   ScalarDescriptor to ensure deterministic encoding
-              service_id:
-                title: The ID of the service this session is servicing
+              service:
+                title: The service this session is for
                 type: object
                 properties:
                   id:
@@ -77121,7 +77133,7 @@ definitions:
                 items:
                   type: object
                   properties:
-                    service_id:
+                    service:
                       title: Unique and semantic identifier for the service
                       type: object
                       properties:
@@ -77148,7 +77160,9 @@ definitions:
                   title: >-
                     ApplicationServiceConfig holds the service configuration the
                     application stakes for
-                title: The ID of the service this session is servicing
+                title: >-
+                  The list of services this appliccation is configured to
+                  request service for
               delegatee_gateway_addresses:
                 type: array
                 items:
@@ -77187,7 +77201,7 @@ definitions:
                   items:
                     type: object
                     properties:
-                      service_id:
+                      service:
                         title: Unique and semantic identifier for the service
                         type: object
                         properties:
@@ -77300,8 +77314,8 @@ definitions:
             title: >-
               The Bech32 address of the application using cosmos'
               ScalarDescriptor to ensure deterministic encoding
-          service_id:
-            title: The ID of the service this session is servicing
+          service:
+            title: The service this session is for
             type: object
             properties:
               id:
@@ -77378,7 +77392,7 @@ definitions:
             items:
               type: object
               properties:
-                service_id:
+                service:
                   title: Unique and semantic identifier for the service
                   type: object
                   properties:
@@ -77403,7 +77417,9 @@ definitions:
               title: >-
                 ApplicationServiceConfig holds the service configuration the
                 application stakes for
-            title: The ID of the service this session is servicing
+            title: >-
+              The list of services this appliccation is configured to request
+              service for
           delegatee_gateway_addresses:
             type: array
             items:
@@ -77442,7 +77458,7 @@ definitions:
               items:
                 type: object
                 properties:
-                  service_id:
+                  service:
                     title: Unique and semantic identifier for the service
                     type: object
                     properties:
@@ -77542,8 +77558,8 @@ definitions:
         title: >-
           The Bech32 address of the application using cosmos' ScalarDescriptor
           to ensure deterministic encoding
-      service_id:
-        title: The ID of the service this session is servicing
+      service:
+        title: The service this session is for
         type: object
         properties:
           id:
@@ -77572,6 +77588,26 @@ definitions:
         title: >-
           NOTE: session_id can be derived from the above values using on-chain
           but is included in the header for convenience
+      service_id:
+        title: The ID of the service this session is servicing
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
     description: >-
       SessionHeader is a lightweight header for a session that can be passed
       around.
@@ -77657,7 +77693,7 @@ definitions:
         items:
           type: object
           properties:
-            service_id:
+            service:
               title: Unique and semantic identifier for the service
               type: object
               properties:
@@ -77730,6 +77766,27 @@ definitions:
                     title: Additional configuration options for the endpoint
                 title: SupplierEndpoint message to hold service configuration details
               title: List of endpoints for the service
+            service_id:
+              title: Unique and semantic identifier for the service
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Unique identifier for the service
+                  title: >-
+                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
+                    created to enable more complex service identification
+
+                    For example, what if we want to request a session for a
+                    certain service but with some additional configs that
+                    identify it?
+                name:
+                  type: string
+                  description: (Optional) Semantic human readable name for the service
+                  title: >-
+                    TODO_TECHDEBT: Name is currently unused but acts as a
+                    reminder than an optional onchain representation of the
+                    service is necessary
           title: >-
             SupplierServiceConfig holds the service configuration the supplier
             stakes for
@@ -77789,7 +77846,7 @@ definitions:
   pocket.shared.SupplierServiceConfig:
     type: object
     properties:
-      service_id:
+      service:
         title: Unique and semantic identifier for the service
         type: object
         properties:
@@ -77861,9 +77918,50 @@ definitions:
               title: Additional configuration options for the endpoint
           title: SupplierEndpoint message to hold service configuration details
         title: List of endpoints for the service
+      service_id:
+        title: Unique and semantic identifier for the service
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
     title: >-
       SupplierServiceConfig holds the service configuration the supplier stakes
       for
+  pocket.shared.ServiceId:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Unique identifier for the service
+        title: >-
+          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
+          enable more complex service identification
+
+          For example, what if we want to request a session for a certain
+          service but with some additional configs that identify it?
+      name:
+        type: string
+        description: (Optional) Semantic human readable name for the service
+        title: >-
+          TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
+          optional onchain representation of the service is necessary
+    title: >-
+      ServiceId message to encapsulate unique and semantic identifiers for a
+      service on the network
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:

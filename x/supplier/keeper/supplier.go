@@ -64,5 +64,5 @@ func (k Keeper) GetAllSupplier(ctx sdk.Context) (suppliers []sharedtypes.Supplie
 	return
 }
 
-// TODO_OPTIMIZE: Index suppliers by serviceId so we can easily query `k.GetAllSupplier(ctx, ServiceId)`
+// TODO_OPTIMIZE: Index suppliers by serviceId so we can easily query `k.GetAllSupplier(ctx, Service)`
 // func (k Keeper) GetAllSupplier(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

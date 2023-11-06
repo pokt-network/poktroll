@@ -12,8 +12,8 @@ import (
 var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// serviceId is the id of the service that the server is responsible for.
-	serviceId *sharedtypes.ServiceId
+	// service is the id of the service that the server is responsible for.
+	service *sharedtypes.Service
 
 	// serverEndpoint is the advertised endpoint configuration that the server uses to
 	// listen for incoming relay requests.
@@ -38,14 +38,14 @@ type jsonRPCServer struct {
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
 // a RelayServer that listens to incoming RelayRequests
 func NewJSONRPCServer(
-	serviceId *sharedtypes.ServiceId,
+	service *sharedtypes.Service,
 	supplierEndpoint *sharedtypes.SupplierEndpoint,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy RelayerProxy,
 ) RelayServer {
 	return &jsonRPCServer{
-		serviceId:              serviceId,
+		service:                service,
 		serverEndpoint:         supplierEndpoint,
 		server:                 &http.Server{Addr: supplierEndpoint.Url},
 		relayerProxy:           proxy,
@@ -71,9 +71,9 @@ func (j *jsonRPCServer) Stop(ctx context.Context) error {
 	return j.server.Shutdown(ctx)
 }
 
-// ServiceId returns the serviceId of the JSON-RPC service.
-func (j *jsonRPCServer) ServiceId() *sharedtypes.ServiceId {
-	return j.serviceId
+// Service returns the serviceId of the JSON-RPC service.
+func (j *jsonRPCServer) Service() *sharedtypes.Service {
+	return j.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective

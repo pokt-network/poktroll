@@ -105,7 +105,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
-	// TODO_TECHDEBT: In the future, we will need to valid that the ServiceId is a valid service depending on whether
+	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned  or permissionless
 	// TODO(@Olshansk): Add a check to make sure `IsValidServiceName(Service.Id)` returns True
 	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
