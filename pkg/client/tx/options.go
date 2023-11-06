@@ -1,7 +1,7 @@
 package tx
 
 import (
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 // WithCommitTimeoutBlocks sets the timeout duration in terms of number of blocks

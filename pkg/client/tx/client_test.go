@@ -13,15 +13,15 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/mocks/mockclient"
-	"pocket/internal/testclient"
-	"pocket/internal/testclient/testblock"
-	"pocket/internal/testclient/testeventsquery"
-	"pocket/internal/testclient/testtx"
-	"pocket/pkg/client"
-	"pocket/pkg/client/tx"
-	"pocket/pkg/either"
-	apptypes "pocket/x/application/types"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/internal/testclient/testblock"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/internal/testclient/testtx"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/either"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 const (
