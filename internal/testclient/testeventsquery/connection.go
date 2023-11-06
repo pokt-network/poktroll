@@ -1,12 +1,12 @@
 package testeventsquery
 
 import (
-	"pocket/pkg/either"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
-	"pocket/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
+	"github.com/pokt-network/poktroll/pkg/either"
 )
 
 // NewOneTimeMockConnAndDialer returns a new mock connection and mock dialer that

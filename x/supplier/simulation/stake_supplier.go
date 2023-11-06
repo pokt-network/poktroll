@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func SimulateMsgStakeSupplier(
@@ -21,6 +21,7 @@ func SimulateMsgStakeSupplier(
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		stakeMsg := &types.MsgStakeSupplier{
 			Address: simAccount.Address.String(),
+			// TODO: Update all stake message fields
 		}
 
 		// TODO: Handling the StakeSupplier simulation

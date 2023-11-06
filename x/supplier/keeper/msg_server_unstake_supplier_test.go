@@ -6,10 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
@@ -29,6 +30,20 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &initialStake,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{
+					Id: "svcId",
+				},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:8080",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+		},
 	}
 
 	// Stake the supplier
@@ -40,6 +55,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, addr, foundSupplier.Address)
 	require.Equal(t, initialStake.Amount, foundSupplier.Stake.Amount)
+	require.Len(t, foundSupplier.Services, 1)
 
 	// Unstake the supplier
 	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}

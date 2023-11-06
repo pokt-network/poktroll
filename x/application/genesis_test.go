@@ -6,11 +6,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-	"pocket/testutil/sample"
-	"pocket/x/application"
-	"pocket/x/application/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/application"
+	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // Please see `x/application/types/genesis_test.go` for extensive tests related to the validity of the genesis state.
@@ -21,10 +22,20 @@ func TestGenesis(t *testing.T) {
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+					},
+				},
 			},
 			{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
+					},
+				},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

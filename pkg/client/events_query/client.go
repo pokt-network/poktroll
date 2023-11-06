@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/multierr"
 
-	"pocket/pkg/client"
-	"pocket/pkg/client/events_query/websocket"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
@@ -48,9 +48,9 @@ type eventsQueryClient struct {
 // corresponding connection which produces its inputs.
 type eventsBytesAndConn struct {
 	// eventsBytes is an observable which is notified about chain event messages
-	// matching the given query. It receives an either.Either[[]byte] which is
+	// matching the given query. It receives an either.Bytes which is
 	// either an error or the event message bytes.
-	eventsBytes observable.Observable[either.Either[[]byte]]
+	eventsBytes observable.Observable[either.Bytes]
 	conn        client.Connection
 	isClosed    bool
 }
@@ -81,7 +81,7 @@ func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryCl
 }
 
 // EventsBytes returns an eventsBytes observable which is notified about chain
-// event messages matching the given query. It receives an either.Either[[]byte]
+// event messages matching the given query. It receives an either.Bytes
 // which is either an error or the event message bytes.
 // (see: https://pkg.go.dev/github.com/cometbft/cometbft/types#pkg-constants)
 // (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
@@ -151,7 +151,7 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	}
 
 	// Construct an eventsBytes for the given query.
-	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Either[[]byte]]()
+	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Bytes]()
 
 	// Publish either events bytes or an error received from the connection to
 	// the eventsBz observable.
@@ -198,12 +198,12 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 func (eqc *eventsQueryClient) goPublishEventsBz(
 	ctx context.Context,
 	conn client.Connection,
-	eventsBzPublishCh chan<- either.Either[[]byte],
+	eventsBzPublishCh chan<- either.Bytes,
 ) {
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
 	for {
-		event, err := conn.Receive()
+		eventBz, err := conn.Receive()
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 
@@ -226,7 +226,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 		}
 
 		// Populate the []byte side (right) of the either and publish it.
-		eventsBzPublishCh <- either.Success(event)
+		eventsBzPublishCh <- either.Success(eventBz)
 	}
 }
 

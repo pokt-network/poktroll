@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgStakeGateway_ValidateBasic(t *testing.T) {

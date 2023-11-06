@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
@@ -22,13 +21,12 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/app"
-	"pocket/testutil/nullify"
-	"pocket/testutil/sample"
-	app_types "pocket/x/application/types"
-	gateway_types "pocket/x/gateway/types"
-	shared_types "pocket/x/shared/types"
-	supplier_types "pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 type (
@@ -103,16 +101,22 @@ func DefaultConfig() network.Config {
 
 // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
-func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.GenesisState {
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
 	t.Helper()
-	state := app_types.DefaultGenesis()
+	state := apptypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
-		application := app_types.Application{
+		application := apptypes.Application{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+				},
+			},
 		}
-		nullify.Fill(&application)
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
 	return state
@@ -120,16 +124,17 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *app_types.Genesi
 
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
 // It returns the populated GenesisState object.
-func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.GenesisState {
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
 	t.Helper()
-	state := gateway_types.DefaultGenesis()
+	state := gatewaytypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := gateway_types.Gateway{
-			Address: strconv.Itoa(i),
+		gateway := gatewaytypes.Gateway{
+			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
-		nullify.Fill(&gateway)
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
 	return state
@@ -137,17 +142,29 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gateway_types.Genesi
 
 // DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
 // It returns the populated GenesisState object.
-func DefaultSupplierModuleGenesisState(t *testing.T, n int) *supplier_types.GenesisState {
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
 	t.Helper()
-	state := supplier_types.DefaultGenesis()
+	state := suppliertypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := shared_types.Supplier{
-			Address: strconv.Itoa(i),
+		supplier := sharedtypes.Supplier{
+			Address: sample.AccAddress(),
 			Stake:   &stake,
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     fmt.Sprintf("http://localhost:%d", i),
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
 		}
-		nullify.Fill(&gateway)
-		state.SupplierList = append(state.SupplierList, gateway)
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&supplier)
+		state.SupplierList = append(state.SupplierList, supplier)
 	}
 	return state
 }

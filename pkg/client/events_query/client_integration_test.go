@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
 )
 
 // The query use to subscribe for new block events on the websocket endpoint exposed by CometBFT nodes

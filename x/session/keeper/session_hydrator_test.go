@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/session/keeper"
-	"pocket/x/session/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
@@ -35,7 +35,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	// Check the application
 	app := session.Application
 	require.Equal(t, keepertest.TestApp1Address, app.Address)
-	require.Len(t, app.ServiceIds, 2)
+	require.Len(t, app.ServiceConfigs, 2)
 
 	// Check the suppliers
 	suppliers := session.Suppliers

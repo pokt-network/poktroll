@@ -12,6 +12,8 @@ POCKET_ADDR_PREFIX = pokt
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
+	go install golang.org/x/tools/cmd/goimports@latest
 
 ########################
 ### Makefile Helpers ###
@@ -35,9 +37,9 @@ help: ## Prints all the targets in all the Makefiles
 ### Checks ###
 ##############
 
-.PHONY: go_version_check
+.PHONY: check_go_version
 # Internal helper target - check go version
-go_version_check:
+check_go_version:
 	@# Extract the version number from the `go version` command.
 	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
@@ -48,15 +50,26 @@ go_version_check:
 		exit 1; \
 	fi
 
-.PHONY: docker_check
+.PHONY: check_docker
 # Internal helper target - check if docker is installed
-docker_check:
+check_docker:
 	{ \
 	if ( ! ( command -v docker >/dev/null && (docker compose version >/dev/null || command -v docker-compose >/dev/null) )); then \
 		echo "Seems like you don't have Docker or docker-compose installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_godoc
+# Internal helper target - check if godoc is installed
+check_godoc:
+	{ \
+	if ( ! ( command -v godoc >/dev/null )); then \
+		echo "Seems like you don't have godoc installed. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
@@ -76,7 +89,7 @@ proto_regen: ## Delete existing protobuf artifacts and regenerate them
 #######################
 
 .PHONY: docker_wipe
-docker_wipe: docker_check warn_destructive prompt_user ## [WARNING] Remove all the docker containers, images and volumes.
+docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all the docker containers, images and volumes.
 	docker ps -a -q | xargs -r -I {} docker stop {}
 	docker ps -a -q | xargs -r -I {} docker rm {}
 	docker images -q | xargs -r -I {} docker rmi {}
@@ -104,6 +117,17 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
 
+###############
+### Linting ###
+###############
+
+.PHONY: go_lint
+go_lint: ## Run all go linters
+	golangci-lint run --timeout 5m
+
+go_imports: check_go_version ## Run goimports on all go files
+	go run ./tools/scripts/goimports
+
 #############
 ### Tests ###
 #############
@@ -113,21 +137,20 @@ test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) POCKETD_HOME=../../$(POCKETD_HOME) && go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
-go_test: go_version_check ## Run all go tests
+go_test: check_go_version ## Run all go tests
 	go test -v -race -tags test ./...
 
 .PHONY: go_test_integration
-go_test_integration: go_version_check ## Run all go tests, including integration
+go_test_integration: check_go_version ## Run all go tests, including integration
 	go test -v -race -tags test,integration ./...
 
 .PHONY: itest
-itest: go_version_check ## Run tests iteratively (see usage for more)
+itest: check_go_version ## Run tests iteratively (see usage for more)
 	./tools/scripts/itest.sh $(filter-out $@,$(MAKECMDGOALS))
 # catch-all target for itest
 %:
 	# no-op
 	@:
-
 
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
@@ -251,20 +274,20 @@ app_list: ## List all the staked applications
 	pocketd --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
 
 .PHONY: app_stake
-app_stake: ## Stake tokens for the application specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
+	pocketd --home=$(POCKETD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1
-	APP=app1 make app_stake
+	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	APP=app2 make app_stake
+	APP=app2 SERVICES=anvil,svc2,svc3 make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	APP=app3 make app_stake
+	APP=app3 SERVICES=anvil,svc3,svc4 make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
@@ -282,6 +305,38 @@ app2_unstake: ## Unstake app2
 app3_unstake: ## Unstake app3
 	APP=app3 make app_unstake
 
+.PHONY: app_delegate
+app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
+	pocketd --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_delegate_gateway1
+app1_delegate_gateway1: ## Delegate trust to gateway1
+	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_delegate
+
+.PHONY: app2_delegate_gateway2
+app2_delegate_gateway2: ## Delegate trust to gateway2
+	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_delegate
+
+.PHONY: app3_delegate_gateway3
+app3_delegate_gateway3: ## Delegate trust to gateway3
+	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_delegate
+
+.PHONY: app_undelegate
+app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
+	pocketd --home=$(POCKETD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+
+.PHONY: app1_undelegate_gateway1
+app1_undelegate_gateway1: ## Undelegate trust to gateway1
+	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_undelegate
+
+.PHONY: app2_undelegate_gateway2
+app2_undelegate_gateway2: ## Undelegate trust to gateway2
+	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_undelegate
+
+.PHONY: app3_undelegate_gateway3
+app3_undelegate_gateway3: ## Undelegate trust to gateway3
+	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_undelegate
+
 #################
 ### Suppliers ###
 #################
@@ -290,21 +345,23 @@ app3_unstake: ## Unstake app3
 supplier_list: ## List all the staked supplier
 	pocketd --home=$(POCKETD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
+# TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
+# TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	pocketd --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1
-	SUPPLIER=supplier1 make supplier_stake
+	SUPPLIER=supplier1 SERVICES="anvil;http://anvil:8547,svc1;http://localhost:8081" make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	SUPPLIER=supplier2 make supplier_stake
+	SUPPLIER=supplier2 SERVICES="anvil;http://anvil:8547,svc2;http://localhost:8082" make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	SUPPLIER=supplier3 make supplier_stake
+	SUPPLIER=supplier3 SERVICES="anvil;http://anvil:8547,svc3;http://localhost:8083" make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
@@ -334,9 +391,13 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 	@echo "Querying spendable balance for $(ACC)"
 	pocketd --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_app_module
-acc_balance_query_app_module: ## Query the balance of the network level "application" module
+.PHONY: acc_balance_query_module_app
+acc_balance_query_module_app: ## Query the balance of the network level "application" module
 	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+
+.PHONY: acc_balance_query_module_supplier
+acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
+	make acc_balance_query ACC=pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
@@ -353,3 +414,12 @@ acc_balance_total_supply: ## Query the total supply of the network
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+
+#####################
+### Documentation ###
+#####################
+.PHONY: go_docs
+go_docs: check_godoc ## Generate documentation for the project
+	echo "Visit http://localhost:6060/pkg/pocket/"
+	godoc -http=:6060
+

@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // SetApplication set a specific application in the store from its index
@@ -19,36 +19,36 @@ func (k Keeper) SetApplication(ctx sdk.Context, application types.Application) {
 // GetApplication returns a application from its index
 func (k Keeper) GetApplication(
 	ctx sdk.Context,
-	address string,
+	appAddr string,
 
-) (val types.Application, found bool) {
+) (app types.Application, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
 
 	b := store.Get(types.ApplicationKey(
-		address,
+		appAddr,
 	))
 	if b == nil {
-		return val, false
+		return app, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(b, &app)
+	return app, true
 }
 
 // RemoveApplication removes a application from the store
 func (k Keeper) RemoveApplication(
 	ctx sdk.Context,
-	address string,
+	appAddr string,
 
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
 	store.Delete(types.ApplicationKey(
-		address,
+		appAddr,
 	))
 }
 
 // GetAllApplication returns all application
-func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
+func (k Keeper) GetAllApplication(ctx sdk.Context) (apps []types.Application) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
@@ -57,7 +57,7 @@ func (k Keeper) GetAllApplication(ctx sdk.Context) (list []types.Application) {
 	for ; iterator.Valid(); iterator.Next() {
 		var val types.Application
 		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		apps = append(apps, val)
 	}
 
 	return
