@@ -2,7 +2,8 @@ package channel
 
 import (
 	"context"
-	"pocket/pkg/observable"
+
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 // TODO_DISCUSS: what should this be? should it be configurable? It seems to be most

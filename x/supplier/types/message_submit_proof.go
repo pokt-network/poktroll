@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
-	sessiontypes "pocket/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 const TypeMsgSubmitProof = "submit_proof"

@@ -14,9 +14,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	"pocket/x/session/client/cli"
-	"pocket/x/session/keeper"
-	"pocket/x/session/types"
+	"github.com/pokt-network/poktroll/x/session/client/cli"
+	"github.com/pokt-network/poktroll/x/session/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 var (

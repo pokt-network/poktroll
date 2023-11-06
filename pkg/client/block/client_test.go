@@ -11,11 +11,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/testclient"
-	"pocket/internal/testclient/testeventsquery"
-	"pocket/pkg/client"
-	"pocket/pkg/client/block"
-	eventsquery "pocket/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
+	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 )
 
 const blockAssertionLoopTimeout = 500 * time.Millisecond

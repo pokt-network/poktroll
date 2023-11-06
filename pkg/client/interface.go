@@ -15,8 +15,8 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
