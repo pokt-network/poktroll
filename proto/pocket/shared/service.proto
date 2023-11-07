@@ -6,6 +6,8 @@ package pocket.shared;
 
 option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
+// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
+
 // Service message to encapsulate unique and semantic identifiers for a service on the network
 message Service {
     // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
@@ -17,7 +19,7 @@ message Service {
 
 // ApplicationServiceConfig holds the service configuration the application stakes for
 message ApplicationServiceConfig {
-    Service service = 1; // Unique and semantic identifier for the service
+    Service service = 1; // The Service for which the application is configured for
 
     // TODO_RESEARCH: There is an opportunity for applications to advertise the max
     // they're willing to pay for a certain configuration/price, but this is outside of scope.
@@ -26,7 +28,7 @@ message ApplicationServiceConfig {
 
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 message SupplierServiceConfig {
-    Service service = 1; // Unique and semantic identifier for the service
+    Service service = 1; // The Service for which the supplier is configured for
     repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
     // TODO_RESEARCH: There is an opportunity for supplier to advertise the min
     // they're willing to earn for a certain configuration/price, but this is outside of scope.
