@@ -113,6 +113,7 @@ localnet_down: ## Delete resources created by localnet
 localnet_regenesis: ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init
+	mkdir -p $(POKTROLLD_HOME)/config/
 	cp -r ${HOME}/.pocket/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.pocket/config/*_key.json $(POKTROLLD_HOME)/config/
 	cp ${HOME}/.pocket/config/genesis.json $(POKTROLLD_HOME)/config/
