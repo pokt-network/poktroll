@@ -47444,14 +47444,16 @@ paths:
                 items:
                   type: object
                   properties:
-                    index:
+                    supplier_address:
                       type: string
-                    supplierAddress:
+                      title: the address of the supplier that submitted this claims
+                    session_id:
                       type: string
-                    sessionId:
+                      title: session id from the SessionHeader
+                    root_hash:
                       type: string
-                    rootHash:
-                      type: string
+                      format: byte
+                      title: smt.SMST#Root()
               pagination:
                 type: object
                 properties:
@@ -47570,14 +47572,16 @@ paths:
               claim:
                 type: object
                 properties:
-                  index:
+                  supplier_address:
                     type: string
-                  supplierAddress:
+                    title: the address of the supplier that submitted this claims
+                  session_id:
                     type: string
-                  sessionId:
+                    title: session id from the SessionHeader
+                  root_hash:
                     type: string
-                  rootHash:
-                    type: string
+                    format: byte
+                    title: smt.SMST#Root()
         default:
           description: An unexpected error response.
           schema:
@@ -78040,14 +78044,16 @@ definitions:
   pocket.supplier.Claim:
     type: object
     properties:
-      index:
+      supplier_address:
         type: string
-      supplierAddress:
+        title: the address of the supplier that submitted this claims
+      session_id:
         type: string
-      sessionId:
+        title: session id from the SessionHeader
+      root_hash:
         type: string
-      rootHash:
-        type: string
+        format: byte
+        title: smt.SMST#Root()
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -78067,14 +78073,16 @@ definitions:
         items:
           type: object
           properties:
-            index:
+            supplier_address:
               type: string
-            supplierAddress:
+              title: the address of the supplier that submitted this claims
+            session_id:
               type: string
-            sessionId:
+              title: session id from the SessionHeader
+            root_hash:
               type: string
-            rootHash:
-              type: string
+              format: byte
+              title: smt.SMST#Root()
       pagination:
         type: object
         properties:
@@ -78253,14 +78261,16 @@ definitions:
       claim:
         type: object
         properties:
-          index:
+          supplier_address:
             type: string
-          supplierAddress:
+            title: the address of the supplier that submitted this claims
+          session_id:
             type: string
-          sessionId:
+            title: session id from the SessionHeader
+          root_hash:
             type: string
-          rootHash:
-            type: string
+            format: byte
+            title: smt.SMST#Root()
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:

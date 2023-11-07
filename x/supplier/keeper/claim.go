@@ -3,6 +3,7 @@ package keeper
 import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -11,20 +12,21 @@ func (k Keeper) SetClaim(ctx sdk.Context, claim types.Claim) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimKeyPrefix))
 	b := k.cdc.MustMarshal(&claim)
 	store.Set(types.ClaimKey(
-		claim.Index,
+		claim.SessionId,
+		claim.SupplierAddress,
 	), b)
 }
 
 // GetClaim returns a claim from its index
 func (k Keeper) GetClaim(
 	ctx sdk.Context,
-	index string,
+	sessionId, supplierAddr string,
 
 ) (val types.Claim, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimKeyPrefix))
 
 	b := store.Get(types.ClaimKey(
-		index,
+		sessionId, supplierAddr,
 	))
 	if b == nil {
 		return val, false
@@ -37,12 +39,12 @@ func (k Keeper) GetClaim(
 // RemoveClaim removes a claim from the store
 func (k Keeper) RemoveClaim(
 	ctx sdk.Context,
-	index string,
+	sessionId, supplierAddr string,
 
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimKeyPrefix))
 	store.Delete(types.ClaimKey(
-		index,
+		sessionId, supplierAddr,
 	))
 }
 
