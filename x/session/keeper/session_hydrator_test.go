@@ -115,7 +115,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
 			if tt.errExpected {
-				require.Error(t, err)
+				require.ErrorIs(t, tt.errExpected, err)
 				return
 			}
 			require.NoError(t, err)
