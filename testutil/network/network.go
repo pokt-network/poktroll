@@ -111,7 +111,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 			Stake:   &stake,
 			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 				{
-					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
 				},
 				{
 					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d%d", i, i)},
@@ -155,7 +155,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 			Stake:   &stake,
 			Services: []*sharedtypes.SupplierServiceConfig{
 				{
-					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
 					Endpoints: []*sharedtypes.SupplierEndpoint{
 						{
 							Url:     fmt.Sprintf("http://localhost:%d", i),

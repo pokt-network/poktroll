@@ -29,8 +29,8 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
 	providedServices := make(relayServersMap)
 	for _, serviceConfig := range services {
-		serviceId := serviceConfig.ServiceId
-		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[serviceId.Id]
+		service := serviceConfig.Service
+		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
 		serviceEndpoints := make([]RelayServer, len(serviceConfig.Endpoints))
 
 		for _, endpoint := range serviceConfig.Endpoints {
@@ -40,7 +40,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewJSONRPCServer(
-					serviceId,
+					service,
 					endpoint,
 					proxiedServicesEndpoints,
 					rp.servedRelaysProducer,
@@ -53,7 +53,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			serviceEndpoints = append(serviceEndpoints, server)
 		}
 
-		providedServices[serviceId.Id] = serviceEndpoints
+		providedServices[service.Id] = serviceEndpoints
 	}
 
 	rp.advertisedRelayServers = providedServices

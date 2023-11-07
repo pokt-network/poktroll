@@ -27,7 +27,6 @@ func init() {
 
 }
 
-// TODO_TECHDEBT: See `service.proto` for note related to renaming the `ServiceId` struct to `Service`
 // IsValidService checks if the provided ServiceId struct has valid fields
 func IsValidService(service *sharedtypes.ServiceId) bool {
 	// Check if service Id and Name are valid using the provided helper functions

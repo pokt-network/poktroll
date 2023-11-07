@@ -33,7 +33,7 @@ func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.A
 		app.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
 		app.ServiceConfigs = []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d", i)},
+				Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
 			},
 		}
 		keeper.SetApplication(ctx, *app)

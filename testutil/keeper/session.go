@@ -41,13 +41,13 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				Service: &sharedtypes.Service{Id: TestServiceId1},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId11},
+				Service: &sharedtypes.Service{Id: TestServiceId11},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
+				Service: &sharedtypes.Service{Id: TestServiceId2},
 			},
 		},
 	}
@@ -58,13 +58,13 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId2},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId22},
+				Service: &sharedtypes.Service{Id: TestServiceId22},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 			},
 		},
 	}
@@ -76,7 +76,7 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				Service: &sharedtypes.Service{Id: TestServiceId1},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,
@@ -86,7 +86,7 @@ var (
 				},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId2},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,

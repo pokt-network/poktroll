@@ -15,8 +15,9 @@ func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig)
 		if serviceConfig == nil {
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
-		if !IsValidService(serviceConfig.ServiceId) {
-			return fmt.Errorf("serviceId is invalid: %v", serviceConfig)
+		// Check the Service
+		if !IsValidService(serviceConfig.Service) {
+			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
 		}
 	}
 	return nil
@@ -32,9 +33,9 @@ func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfi
 			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
 		}
 
-		// Check the ServiceId
-		if !IsValidService(serviceConfig.ServiceId) {
-			return fmt.Errorf("serviceId is invalid: %v", serviceConfig)
+		// Check the Service
+		if !IsValidService(serviceConfig.Service) {
+			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
 		}
 
 		// Check the Endpoints

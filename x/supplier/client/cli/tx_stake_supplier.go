@@ -84,7 +84,7 @@ func hackStringToServices(servicesArg string) ([]*sharedtypes.SupplierServiceCon
 			return nil, fmt.Errorf("invalid service string: %s. Expected it to be of the form 'service;url'", serviceString)
 		}
 		service := &sharedtypes.SupplierServiceConfig{
-			ServiceId: &sharedtypes.ServiceId{
+			Service: &sharedtypes.Service{
 				Id: serviceParts[0],
 			},
 			Endpoints: []*sharedtypes.SupplierEndpoint{

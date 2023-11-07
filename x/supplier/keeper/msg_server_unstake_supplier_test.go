@@ -32,7 +32,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 		Stake:   &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{

@@ -17,7 +17,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 
 	defaultServicesList := []*sharedtypes.SupplierServiceConfig{
 		{
-			ServiceId: &sharedtypes.ServiceId{
+			Service: &sharedtypes.Service{
 				Id: "svcId1",
 			},
 			Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -103,7 +103,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id: "svcId1",
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -115,7 +115,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 					},
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id: "svcId2",
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -154,7 +154,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id: "123456790",
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -176,7 +176,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id:   "123",
 							Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
 						},
@@ -199,7 +199,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id: "12 45 !",
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -221,7 +221,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id:   "svcId",
 							Name: "name",
 						},
@@ -244,7 +244,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id:   "svcId",
 							Name: "name",
 						},
@@ -267,7 +267,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{
+						Service: &sharedtypes.Service{
 							Id:   "svcId",
 							Name: "name",
 						},

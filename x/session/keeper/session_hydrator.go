@@ -45,7 +45,7 @@ func NewSessionHydrator(
 ) *sessionHydrator {
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
-		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
+		Service:            &sharedtypes.Service{Id: serviceId},
 	}
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
@@ -109,8 +109,9 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
-	// TODO_TECHDEBT: In the future, we will need to valid that the ServiceId is a valid service depending on whether
+	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned  or permissionless
+
 	// TODO_TECHDEBT(@Olshansk): Add a check to make sure `IsValidServiceName(ServiceId.Id)` returns True
 	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
 
@@ -155,7 +156,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	for _, supplier := range suppliers {
 		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
-			if supplierServiceConfig.ServiceId.Id == sh.sessionHeader.ServiceId.Id {
+			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
 				candidateSuppliers = append(candidateSuppliers, &supplier)
 				break
 			}
@@ -164,7 +165,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
-		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.ServiceId, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
