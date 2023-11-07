@@ -71,7 +71,7 @@ func (j *jsonRPCServer) Stop(ctx context.Context) error {
 	return j.server.Shutdown(ctx)
 }
 
-// Service returns the serviceId of the JSON-RPC service.
+// Service returns the JSON-RPC service.
 func (j *jsonRPCServer) Service() *sharedtypes.Service {
 	return j.service
 }
