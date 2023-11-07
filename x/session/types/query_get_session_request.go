@@ -3,6 +3,7 @@ package types
 import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -13,7 +14,7 @@ import (
 func NewQueryGetSessionRequest(appAddress, serviceId string, blockHeight int64) *QueryGetSessionRequest {
 	return &QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
-		ServiceId: &sharedtypes.ServiceId{
+		Service: &sharedtypes.Service{
 			Id: serviceId,
 		},
 		BlockHeight: blockHeight,
@@ -27,8 +28,8 @@ func (query *QueryGetSessionRequest) ValidateBasic() error {
 	}
 
 	// Validate the Service ID
-	if !sharedhelpers.IsValidService(query.ServiceId) {
-		return sdkerrors.Wrapf(ErrSessionInvalidServiceId, "invalid serviceID for session being retrieved %s;", query.ServiceId)
+	if !sharedhelpers.IsValidService(query.Service) {
+		return sdkerrors.Wrapf(ErrSessionInvalidService, "invalid service for session being retrieved %s;", query.Service)
 	}
 
 	// Validate the height for which a session is being retrieved

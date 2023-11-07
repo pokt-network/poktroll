@@ -114,7 +114,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
 				},
 				{
-					ServiceId: &sharedtypes.ServiceId{Id: fmt.Sprintf("svc%d%d", i, i)},
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
 				},
 			},
 		}

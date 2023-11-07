@@ -12,6 +12,7 @@ import (
 	_ "golang.org/x/crypto/sha3"
 
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -110,10 +111,12 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
-	// or not its permissioned  or permissionless
+	// or not its permissioned or permissionless
 
-	// TODO_TECHDEBT(@Olshansk): Add a check to make sure `IsValidServiceName(ServiceId.Id)` returns True
-	serviceIdBz := []byte(sh.sessionHeader.ServiceId.Id)
+	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
+		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
+	}
+	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
 
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
@@ -132,13 +135,13 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 	}
 
 	for _, appServiceConfig := range app.ServiceConfigs {
-		if appServiceConfig.ServiceId.Id == sh.sessionHeader.ServiceId.Id {
+		if appServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
 			sh.session.Application = &app
 			return nil
 		}
 	}
 
-	return sdkerrors.Wrapf(types.ErrSessionAppNotStakedForService, "application %s not stake for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.ServiceId.Id)
+	return sdkerrors.Wrapf(types.ErrSessionAppNotStakedForService, "application %s not staked for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.Service.Id)
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them

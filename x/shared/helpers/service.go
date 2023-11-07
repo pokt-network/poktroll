@@ -28,7 +28,7 @@ func init() {
 }
 
 // IsValidService checks if the provided ServiceId struct has valid fields
-func IsValidService(service *sharedtypes.ServiceId) bool {
+func IsValidService(service *sharedtypes.Service) bool {
 	// Check if service Id and Name are valid using the provided helper functions
 	return service != nil &&
 		IsValidServiceId(service.Id) &&

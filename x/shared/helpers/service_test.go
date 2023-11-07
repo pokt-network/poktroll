@@ -12,61 +12,69 @@ func TestIsValidService(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		id       string
-		name     string
-		expected bool
+		serviceId   string
+		serviceName string
+
+		expectedIsValid bool
 	}{
 		{
 			desc: "Valid ID and Name",
 
-			id:       "Service1",
-			name:     "Valid Service Name",
-			expected: true,
+			serviceId:   "Service1",
+			serviceName: "Valid Service Name",
+
+			expectedIsValid: true,
 		},
 		{
 			desc: "Valid ID and empty Name",
 
-			id:       "Srv",
-			name:     "", // Valid because the service name can be empty
-			expected: true,
+			serviceId:   "Srv",
+			serviceName: "", // Valid because the service name can be empty
+
+			expectedIsValid: true,
 		},
 		{
 			desc: "ID exceeds max length",
 
-			id:       "TooLongId123", // Exceeds maxServiceIdLength
-			name:     "Valid Name",
-			expected: false,
+			serviceId:   "TooLongId123", // Exceeds maxServiceIdLength
+			serviceName: "Valid Name",
+
+			expectedIsValid: false,
 		},
 		{
-			desc:     "Name exceeds max length",
-			id:       "ValidID",
-			name:     "This service name is way too long to be considered valid since it exceeds the max length",
-			expected: false,
+			desc: "Name exceeds max length",
+
+			serviceId:   "ValidID",
+			serviceName: "This service name is way too long to be considered valid since it exceeds the max length",
+
+			expectedIsValid: false,
 		},
 		{
 			desc: "Empty ID is invalid",
 
-			id:       "", // Invalid because the service ID cannot be empty
-			name:     "Valid Name",
-			expected: false,
+			serviceId:   "", // Invalid because the service ID cannot be empty
+			serviceName: "Valid Name",
+
+			expectedIsValid: false,
 		},
 		{
 			desc: "Invalid characters in ID",
 
-			id:       "ID@Invalid", // Invalid character '@'
-			name:     "Valid Name",
-			expected: false,
+			serviceId:   "ID@Invalid", // Invalid character '@'
+			serviceName: "Valid Name",
+
+			expectedIsValid: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			service := &sharedtypes.Service{
-				Id:   test.id,
-				Name: test.name,
+				Id:   test.serviceId,
+				Name: test.serviceName,
 			}
 			result := IsValidService(service)
-			require.Equal(t, test.expected, result)
+			require.Equal(t, test.expectedIsValid, result)
 		})
 	}
 }
@@ -144,70 +152,53 @@ func TestIsValidServiceId(t *testing.T) {
 
 func TestIsValidServiceName(t *testing.T) {
 	tests := []struct {
+		desc     string
 		input    string
 		expected bool
 	}{
-		{"ValidName-1", true},
-		{"Valid Name_1", true},
-		{"valid name with spaces", true},
-		{"invalid@name", false}, // contains invalid character '@'
-		{"Valid.Name", false},   // contains invalid character '.'
-		{"", true},              // empty string is valid for ServiceName
-		{"validnamebuttoolongvalidnamebuttoolongvalidnamebuttoolong", false}, // exceeds maxServiceIdName length
+		{
+			desc:     "Valid with hyphen and number",
+			input:    "ValidName-1",
+			expected: true,
+		},
+		{
+			desc:     "Valid with space and underscore",
+			input:    "Valid Name_1",
+			expected: true,
+		},
+		{
+			desc:     "Valid name with spaces",
+			input:    "valid name with spaces",
+			expected: true,
+		},
+		{
+			desc:     "Invalid character '@'",
+			input:    "invalid@name",
+			expected: false,
+		},
+		{
+			desc:     "Invalid character '.'",
+			input:    "Valid.Name",
+			expected: false,
+		},
+		{
+			desc:     "Empty string",
+			input:    "",
+			expected: true,
+		},
+		{
+			desc:     "Exceeds maximum length",
+			input:    "validnamebuttoolongvalidnamebuttoolongvalidnamebuttoolong",
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
+		t.Run(test.desc, func(t *testing.T) {
 			result := IsValidServiceName(test.input)
 			if result != test.expected {
-				t.Errorf("For input %s, expected %v but got %v", test.input, test.expected, result)
+				t.Errorf("%s: For input '%s', expected %v but got %v", test.desc, test.input, test.expected, result)
 			}
-		})
-	}
-}
-
-func TestIsValidService(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    sharedtypes.ServiceId
-		expected bool
-	}{
-		{
-			name:     "valid serviceId and empty serviceName",
-			input:    sharedtypes.ServiceId{Id: "Hello-1", Name: ""},
-			expected: true,
-		},
-		{
-			name:     "valid serviceId and valid serviceName",
-			input:    sharedtypes.ServiceId{Id: "SvcId", Name: "Valid Service Name"},
-			expected: true,
-		},
-		{
-			name:     "invalid serviceId and valid serviceName",
-			input:    sharedtypes.ServiceId{Id: "SvcId@", Name: "Valid Service Name"},
-			expected: false,
-		},
-		{
-			name:     "valid serviceId and invalid serviceName",
-			input:    sharedtypes.ServiceId{Id: "SvcId", Name: "Invalid Service Name@"},
-			expected: false,
-		},
-		{
-			name:     "empty serviceId and valid serviceName",
-			input:    sharedtypes.ServiceId{Id: "", Name: "Valid Name_1"},
-			expected: false,
-		},
-		{
-			name:     "valid serviceId and empty serviceName",
-			input:    sharedtypes.ServiceId{Id: "svcId", Name: ""},
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := IsValidService(&tt.input)
-			require.Equalf(t, tt.expected, got, "IsValidService(%v)", tt.input)
 		})
 	}
 }

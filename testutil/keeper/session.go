@@ -47,7 +47,7 @@ var (
 				Service: &sharedtypes.Service{Id: TestServiceId11},
 			},
 			{
-				Service: &sharedtypes.Service{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 			},
 		},
 	}
@@ -96,7 +96,7 @@ var (
 				},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId12},
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,

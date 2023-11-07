@@ -13,6 +13,6 @@ var (
 	ErrSessionAppNotStakedForService = sdkerrors.Register(ModuleName, 3, "application in session not staked for requested service")
 	ErrSessionSuppliersNotFound      = sdkerrors.Register(ModuleName, 4, "no suppliers not found for session")
 	ErrSessionInvalidAppAddress      = sdkerrors.Register(ModuleName, 5, "invalid application address for session")
-	ErrSessionInvalidServiceId       = sdkerrors.Register(ModuleName, 6, "invalid serviceID in session")
+	ErrSessionInvalidService         = sdkerrors.Register(ModuleName, 6, "invalid service in session")
 	ErrSessionInvalidBlockHeight     = sdkerrors.Register(ModuleName, 7, "invalid block height for session")
 )
