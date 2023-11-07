@@ -16,6 +16,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -245,18 +246,14 @@ func (tClient *txClient) SignAndBroadcast(
 // - ErrSigningKeyAddr if there's an issue retrieving the address for the signing key.
 // - nil if validation is successful and defaults are set appropriately.
 func (tClient *txClient) validateConfigAndSetDefaults() error {
-	if tClient.signingKeyName == "" {
-		return ErrEmptySigningKeyName
+	signingAddr, err := keyring.KeyNameToAddr(
+		tClient.signingKeyName,
+		tClient.txCtx.GetKeyring(),
+	)
+	if err != nil {
+		return err
 	}
 
-	keyRecord, err := tClient.txCtx.GetKeyring().Key(tClient.signingKeyName)
-	if err != nil {
-		return ErrNoSuchSigningKey.Wrapf("name %q: %s", tClient.signingKeyName, err)
-	}
-	signingAddr, err := keyRecord.GetAddress()
-	if err != nil {
-		return ErrSigningKeyAddr.Wrapf("name %q: %s", tClient.signingKeyName, err)
-	}
 	tClient.signingAddr = signingAddr
 
 	if tClient.commitTimeoutHeightOffset <= 0 {
