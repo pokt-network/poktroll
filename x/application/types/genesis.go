@@ -5,6 +5,8 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
 // DefaultIndex is the default global index
@@ -32,8 +34,10 @@ func (gs GenesisState) Validate() error {
 		applicationIndexMap[index] = struct{}{}
 	}
 
-	// Check that the stake value for the apps is valid
+	// Check that the stake value for the apps is valid and that the delegatee addresses are valid
 	for _, app := range gs.ApplicationList {
+		// TODO_TECHDEBT: Consider creating shared helpers across the board for stake validation,
+		// similar to how we have `ValidateAppServiceConfigs` below
 		if app.Stake == nil {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "nil stake amount for application")
 		}
@@ -49,6 +53,18 @@ func (gs GenesisState) Validate() error {
 		}
 		if stake.Denom != "upokt" {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount denom for application %v", app.Stake)
+		}
+
+		// Check that the application's delegated gateway addresses are valid
+		for _, gatewayAddr := range app.DelegateeGatewayAddresses {
+			if _, err := sdk.AccAddressFromBech32(gatewayAddr); err != nil {
+				return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", gatewayAddr, err)
+			}
+		}
+
+		// Validate the application service configs
+		if err := servicehelpers.ValidateAppServiceConfigs(app.ServiceConfigs); err != nil {
+			return sdkerrors.Wrapf(ErrAppInvalidServiceConfigs, err.Error())
 		}
 	}
 

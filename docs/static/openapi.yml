@@ -46472,21 +46472,46 @@ paths:
                         custom method
 
                         signatures required by gogoproto.
-                    service_ids:
+                    service_configs:
                       type: array
                       items:
                         type: object
                         properties:
-                          id:
-                            type: string
-                            title: Unique identifier for the service
-                          name:
-                            type: string
-                            title: Semantic name for the service
+                          service_id:
+                            title: Unique and semantic identifier for the service
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: Unique identifier for the service
+                                title: >-
+                                  NOTE: `ServiceId.Id` may seem redundant but
+                                  was desigtned created to enable more complex
+                                  service identification
+
+                                  For example, what if we want to request a
+                                  session for a certain service but with some
+                                  additional configs that identify it?
+                              name:
+                                type: string
+                                description: >-
+                                  (Optional) Semantic human readable name for
+                                  the service
+                                title: >-
+                                  TODO_TECHDEBT: Name is currently unused but
+                                  acts as a reminder than an optional onchain
+                                  representation of the service is necessary
                         title: >-
-                          ServiceId message to encapsulate unique and semantic
-                          identifiers for a service on the network
+                          ApplicationServiceConfig holds the service
+                          configuration the application stakes for
                       title: The ID of the service this session is servicing
+                    delegatee_gateway_addresses:
+                      type: array
+                      items:
+                        type: string
+                      title: >-
+                        The Bech32 encoded addresses for all delegatee Gateways,
+                        in a non-nullable slice
                   title: >-
                     Application defines the type used to store an on-chain
                     definition and state for an application
@@ -46629,21 +46654,46 @@ paths:
                       custom method
 
                       signatures required by gogoproto.
-                  service_ids:
+                  service_configs:
                     type: array
                     items:
                       type: object
                       properties:
-                        id:
-                          type: string
-                          title: Unique identifier for the service
-                        name:
-                          type: string
-                          title: Semantic name for the service
+                        service_id:
+                          title: Unique and semantic identifier for the service
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                NOTE: `ServiceId.Id` may seem redundant but was
+                                desigtned created to enable more complex service
+                                identification
+
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
                       title: >-
-                        ServiceId message to encapsulate unique and semantic
-                        identifiers for a service on the network
+                        ApplicationServiceConfig holds the service configuration
+                        the application stakes for
                     title: The ID of the service this session is servicing
+                  delegatee_gateway_addresses:
+                    type: array
+                    items:
+                      type: string
+                    title: >-
+                      The Bech32 encoded addresses for all delegatee Gateways,
+                      in a non-nullable slice
                 title: >-
                   Application defines the type used to store an on-chain
                   definition and state for an application
@@ -46685,6 +46735,13 @@ paths:
               params:
                 description: params holds all the parameters of this module.
                 type: object
+                properties:
+                  max_delegated_gateways:
+                    type: string
+                    format: int64
+                    title: >-
+                      The maximum number of gateways an application can delegate
+                      trust to
             description: >-
               QueryParamsResponse is response type for the Query/Params RPC
               method.
@@ -47039,19 +47096,31 @@ paths:
                         properties:
                           id:
                             type: string
-                            title: Unique identifier for the service
+                            description: Unique identifier for the service
+                            title: >-
+                              NOTE: `ServiceId.Id` may seem redundant but was
+                              desigtned created to enable more complex service
+                              identification
+
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
                           name:
                             type: string
-                            title: >-
+                            description: >-
                               (Optional) Semantic human readable name for the
                               service
+                            title: >-
+                              TODO_TECHDEBT: Name is currently unused but acts
+                              as a reminder than an optional onchain
+                              representation of the service is necessary
                       session_start_block_height:
                         type: string
                         format: int64
                         title: The height at which this session started
                       session_id:
                         type: string
-                        description: A unique pseudoranom ID for this session/
+                        description: A unique pseudoranom ID for this session
                         title: >-
                           NOTE: session_id can be derived from the above values
                           using on-chain but is included in the header for
@@ -47099,23 +47168,46 @@ paths:
                           custom method
 
                           signatures required by gogoproto.
-                      service_ids:
+                      service_configs:
                         type: array
                         items:
                           type: object
                           properties:
-                            id:
-                              type: string
-                              title: Unique identifier for the service
-                            name:
-                              type: string
-                              title: >-
-                                (Optional) Semantic human readable name for the
-                                service
+                            service_id:
+                              title: Unique and semantic identifier for the service
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  description: Unique identifier for the service
+                                  title: >-
+                                    NOTE: `ServiceId.Id` may seem redundant but
+                                    was desigtned created to enable more complex
+                                    service identification
+
+                                    For example, what if we want to request a
+                                    session for a certain service but with some
+                                    additional configs that identify it?
+                                name:
+                                  type: string
+                                  description: >-
+                                    (Optional) Semantic human readable name for
+                                    the service
+                                  title: >-
+                                    TODO_TECHDEBT: Name is currently unused but
+                                    acts as a reminder than an optional onchain
+                                    representation of the service is necessary
                           title: >-
-                            ServiceId message to encapsulate unique and semantic
-                            identifiers for a service on the network
+                            ApplicationServiceConfig holds the service
+                            configuration the application stakes for
                         title: The ID of the service this session is servicing
+                      delegatee_gateway_addresses:
+                        type: array
+                        items:
+                          type: string
+                        title: >-
+                          The Bech32 encoded addresses for all delegatee
+                          Gateways, in a non-nullable slice
                   suppliers:
                     type: array
                     items:
@@ -47154,12 +47246,25 @@ paths:
                                 properties:
                                   id:
                                     type: string
-                                    title: Unique identifier for the service
+                                    description: Unique identifier for the service
+                                    title: >-
+                                      NOTE: `ServiceId.Id` may seem redundant
+                                      but was desigtned created to enable more
+                                      complex service identification
+
+                                      For example, what if we want to request a
+                                      session for a certain service but with
+                                      some additional configs that identify it?
                                   name:
                                     type: string
-                                    title: >-
+                                    description: >-
                                       (Optional) Semantic human readable name
                                       for the service
+                                    title: >-
+                                      TODO_TECHDEBT: Name is currently unused
+                                      but acts as a reminder than an optional
+                                      onchain representation of the service is
+                                      necessary
                               endpoints:
                                 type: array
                                 items:
@@ -47214,7 +47319,7 @@ paths:
                                         Additional configuration options for the
                                         endpoint
                                   title: >-
-                                    Endpoint message to hold service
+                                    SupplierEndpoint message to hold service
                                     configuration details
                                 title: List of endpoints for the service
                             title: >-
@@ -47259,12 +47364,25 @@ paths:
           required: false
           type: string
         - name: service_id.id
-          description: Unique identifier for the service
+          description: >-
+            NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
+            enable more complex service identification
+
+            For example, what if we want to request a session for a certain
+            service but with some additional configs that identify it?
+
+
+            Unique identifier for the service
           in: query
           required: false
           type: string
         - name: service_id.name
-          description: (Optional) Semantic human readable name for the service
+          description: >-
+            TODO_TECHDEBT: Name is currently unused but acts as a reminder than
+            an optional onchain representation of the service is necessary
+
+
+            (Optional) Semantic human readable name for the service
           in: query
           required: false
           type: string
@@ -47394,10 +47512,24 @@ paths:
                             properties:
                               id:
                                 type: string
-                                title: Unique identifier for the service
+                                description: Unique identifier for the service
+                                title: >-
+                                  NOTE: `ServiceId.Id` may seem redundant but
+                                  was desigtned created to enable more complex
+                                  service identification
+
+                                  For example, what if we want to request a
+                                  session for a certain service but with some
+                                  additional configs that identify it?
                               name:
                                 type: string
-                                title: Semantic name for the service
+                                description: >-
+                                  (Optional) Semantic human readable name for
+                                  the service
+                                title: >-
+                                  TODO_TECHDEBT: Name is currently unused but
+                                  acts as a reminder than an optional onchain
+                                  representation of the service is necessary
                           endpoints:
                             type: array
                             items:
@@ -47452,8 +47584,8 @@ paths:
                                     Additional configuration options for the
                                     endpoint
                               title: >-
-                                Endpoint message to hold service configuration
-                                details
+                                SupplierEndpoint message to hold service
+                                configuration details
                             title: List of endpoints for the service
                         title: >-
                           SupplierServiceConfig holds the service configuration
@@ -47612,10 +47744,24 @@ paths:
                           properties:
                             id:
                               type: string
-                              title: Unique identifier for the service
+                              description: Unique identifier for the service
+                              title: >-
+                                NOTE: `ServiceId.Id` may seem redundant but was
+                                desigtned created to enable more complex service
+                                identification
+
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
                             name:
                               type: string
-                              title: Semantic name for the service
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
                         endpoints:
                           type: array
                           items:
@@ -47670,8 +47816,8 @@ paths:
                                   Additional configuration options for the
                                   endpoint
                             title: >-
-                              Endpoint message to hold service configuration
-                              details
+                              SupplierEndpoint message to hold service
+                              configuration details
                           title: List of endpoints for the service
                       title: >-
                         SupplierServiceConfig holds the service configuration
@@ -76465,21 +76611,43 @@ definitions:
 
           NOTE: The amount field is an Int which implements the custom method
           signatures required by gogoproto.
-      service_ids:
+      service_configs:
         type: array
         items:
           type: object
           properties:
-            id:
-              type: string
-              title: Unique identifier for the service
-            name:
-              type: string
-              title: Semantic name for the service
+            service_id:
+              title: Unique and semantic identifier for the service
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Unique identifier for the service
+                  title: >-
+                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
+                    created to enable more complex service identification
+
+                    For example, what if we want to request a session for a
+                    certain service but with some additional configs that
+                    identify it?
+                name:
+                  type: string
+                  description: (Optional) Semantic human readable name for the service
+                  title: >-
+                    TODO_TECHDEBT: Name is currently unused but acts as a
+                    reminder than an optional onchain representation of the
+                    service is necessary
           title: >-
-            ServiceId message to encapsulate unique and semantic identifiers for
-            a service on the network
+            ApplicationServiceConfig holds the service configuration the
+            application stakes for
         title: The ID of the service this session is servicing
+      delegatee_gateway_addresses:
+        type: array
+        items:
+          type: string
+        title: >-
+          The Bech32 encoded addresses for all delegatee Gateways, in a
+          non-nullable slice
     title: >-
       Application defines the type used to store an on-chain definition and
       state for an application
@@ -76493,6 +76661,11 @@ definitions:
     type: object
   pocket.application.Params:
     type: object
+    properties:
+      max_delegated_gateways:
+        type: string
+        format: int64
+        title: The maximum number of gateways an application can delegate trust to
     description: Params defines the parameters for the module.
   pocket.application.QueryAllApplicationResponse:
     type: object
@@ -76523,21 +76696,46 @@ definitions:
                 method
 
                 signatures required by gogoproto.
-            service_ids:
+            service_configs:
               type: array
               items:
                 type: object
                 properties:
-                  id:
-                    type: string
-                    title: Unique identifier for the service
-                  name:
-                    type: string
-                    title: Semantic name for the service
+                  service_id:
+                    title: Unique and semantic identifier for the service
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Unique identifier for the service
+                        title: >-
+                          NOTE: `ServiceId.Id` may seem redundant but was
+                          desigtned created to enable more complex service
+                          identification
+
+                          For example, what if we want to request a session for
+                          a certain service but with some additional configs
+                          that identify it?
+                      name:
+                        type: string
+                        description: >-
+                          (Optional) Semantic human readable name for the
+                          service
+                        title: >-
+                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          reminder than an optional onchain representation of
+                          the service is necessary
                 title: >-
-                  ServiceId message to encapsulate unique and semantic
-                  identifiers for a service on the network
+                  ApplicationServiceConfig holds the service configuration the
+                  application stakes for
               title: The ID of the service this session is servicing
+            delegatee_gateway_addresses:
+              type: array
+              items:
+                type: string
+              title: >-
+                The Bech32 encoded addresses for all delegatee Gateways, in a
+                non-nullable slice
           title: >-
             Application defines the type used to store an on-chain definition
             and state for an application
@@ -76594,21 +76792,44 @@ definitions:
               method
 
               signatures required by gogoproto.
-          service_ids:
+          service_configs:
             type: array
             items:
               type: object
               properties:
-                id:
-                  type: string
-                  title: Unique identifier for the service
-                name:
-                  type: string
-                  title: Semantic name for the service
+                service_id:
+                  title: Unique and semantic identifier for the service
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        NOTE: `ServiceId.Id` may seem redundant but was
+                        desigtned created to enable more complex service
+                        identification
+
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
               title: >-
-                ServiceId message to encapsulate unique and semantic identifiers
-                for a service on the network
+                ApplicationServiceConfig holds the service configuration the
+                application stakes for
             title: The ID of the service this session is servicing
+          delegatee_gateway_addresses:
+            type: array
+            items:
+              type: string
+            title: >-
+              The Bech32 encoded addresses for all delegatee Gateways, in a
+              non-nullable slice
         title: >-
           Application defines the type used to store an on-chain definition and
           state for an application
@@ -76618,16 +76839,58 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
+        properties:
+          max_delegated_gateways:
+            type: string
+            format: int64
+            title: >-
+              The maximum number of gateways an application can delegate trust
+              to
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.shared.ApplicationServiceConfig:
+    type: object
+    properties:
+      service_id:
+        title: Unique and semantic identifier for the service
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
+          name:
+            type: string
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
+    title: >-
+      ApplicationServiceConfig holds the service configuration the application
+      stakes for
   pocket.shared.ServiceId:
     type: object
     properties:
       id:
         type: string
-        title: Unique identifier for the service
+        description: Unique identifier for the service
+        title: >-
+          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
+          enable more complex service identification
+
+          For example, what if we want to request a session for a certain
+          service but with some additional configs that identify it?
       name:
         type: string
-        title: Semantic name for the service
+        description: (Optional) Semantic human readable name for the service
+        title: >-
+          TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
+          optional onchain representation of the service is necessary
     title: >-
       ServiceId message to encapsulate unique and semantic identifiers for a
       service on the network
@@ -76786,17 +77049,28 @@ definitions:
                 properties:
                   id:
                     type: string
-                    title: Unique identifier for the service
+                    description: Unique identifier for the service
+                    title: >-
+                      NOTE: `ServiceId.Id` may seem redundant but was desigtned
+                      created to enable more complex service identification
+
+                      For example, what if we want to request a session for a
+                      certain service but with some additional configs that
+                      identify it?
                   name:
                     type: string
-                    title: (Optional) Semantic human readable name for the service
+                    description: (Optional) Semantic human readable name for the service
+                    title: >-
+                      TODO_TECHDEBT: Name is currently unused but acts as a
+                      reminder than an optional onchain representation of the
+                      service is necessary
               session_start_block_height:
                 type: string
                 format: int64
                 title: The height at which this session started
               session_id:
                 type: string
-                description: A unique pseudoranom ID for this session/
+                description: A unique pseudoranom ID for this session
                 title: >-
                   NOTE: session_id can be derived from the above values using
                   on-chain but is included in the header for convenience
@@ -76842,21 +77116,46 @@ definitions:
                   method
 
                   signatures required by gogoproto.
-              service_ids:
+              service_configs:
                 type: array
                 items:
                   type: object
                   properties:
-                    id:
-                      type: string
-                      title: Unique identifier for the service
-                    name:
-                      type: string
-                      title: (Optional) Semantic human readable name for the service
+                    service_id:
+                      title: Unique and semantic identifier for the service
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Unique identifier for the service
+                          title: >-
+                            NOTE: `ServiceId.Id` may seem redundant but was
+                            desigtned created to enable more complex service
+                            identification
+
+                            For example, what if we want to request a session
+                            for a certain service but with some additional
+                            configs that identify it?
+                        name:
+                          type: string
+                          description: >-
+                            (Optional) Semantic human readable name for the
+                            service
+                          title: >-
+                            TODO_TECHDEBT: Name is currently unused but acts as
+                            a reminder than an optional onchain representation
+                            of the service is necessary
                   title: >-
-                    ServiceId message to encapsulate unique and semantic
-                    identifiers for a service on the network
+                    ApplicationServiceConfig holds the service configuration the
+                    application stakes for
                 title: The ID of the service this session is servicing
+              delegatee_gateway_addresses:
+                type: array
+                items:
+                  type: string
+                title: >-
+                  The Bech32 encoded addresses for all delegatee Gateways, in a
+                  non-nullable slice
           suppliers:
             type: array
             items:
@@ -76894,12 +77193,24 @@ definitions:
                         properties:
                           id:
                             type: string
-                            title: Unique identifier for the service
+                            description: Unique identifier for the service
+                            title: >-
+                              NOTE: `ServiceId.Id` may seem redundant but was
+                              desigtned created to enable more complex service
+                              identification
+
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
                           name:
                             type: string
-                            title: >-
+                            description: >-
                               (Optional) Semantic human readable name for the
                               service
+                            title: >-
+                              TODO_TECHDEBT: Name is currently unused but acts
+                              as a reminder than an optional onchain
+                              representation of the service is necessary
                       endpoints:
                         type: array
                         items:
@@ -76954,8 +77265,8 @@ definitions:
                                 Additional configuration options for the
                                 endpoint
                           title: >-
-                            Endpoint message to hold service configuration
-                            details
+                            SupplierEndpoint message to hold service
+                            configuration details
                         title: List of endpoints for the service
                     title: >-
                       SupplierServiceConfig holds the service configuration the
@@ -76995,17 +77306,28 @@ definitions:
             properties:
               id:
                 type: string
-                title: Unique identifier for the service
+                description: Unique identifier for the service
+                title: >-
+                  NOTE: `ServiceId.Id` may seem redundant but was desigtned
+                  created to enable more complex service identification
+
+                  For example, what if we want to request a session for a
+                  certain service but with some additional configs that identify
+                  it?
               name:
                 type: string
-                title: (Optional) Semantic human readable name for the service
+                description: (Optional) Semantic human readable name for the service
+                title: >-
+                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
+                  than an optional onchain representation of the service is
+                  necessary
           session_start_block_height:
             type: string
             format: int64
             title: The height at which this session started
           session_id:
             type: string
-            description: A unique pseudoranom ID for this session/
+            description: A unique pseudoranom ID for this session
             title: >-
               NOTE: session_id can be derived from the above values using
               on-chain but is included in the header for convenience
@@ -77051,21 +77373,44 @@ definitions:
               method
 
               signatures required by gogoproto.
-          service_ids:
+          service_configs:
             type: array
             items:
               type: object
               properties:
-                id:
-                  type: string
-                  title: Unique identifier for the service
-                name:
-                  type: string
-                  title: (Optional) Semantic human readable name for the service
+                service_id:
+                  title: Unique and semantic identifier for the service
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        NOTE: `ServiceId.Id` may seem redundant but was
+                        desigtned created to enable more complex service
+                        identification
+
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
               title: >-
-                ServiceId message to encapsulate unique and semantic identifiers
-                for a service on the network
+                ApplicationServiceConfig holds the service configuration the
+                application stakes for
             title: The ID of the service this session is servicing
+          delegatee_gateway_addresses:
+            type: array
+            items:
+              type: string
+            title: >-
+              The Bech32 encoded addresses for all delegatee Gateways, in a
+              non-nullable slice
       suppliers:
         type: array
         items:
@@ -77103,12 +77448,24 @@ definitions:
                     properties:
                       id:
                         type: string
-                        title: Unique identifier for the service
+                        description: Unique identifier for the service
+                        title: >-
+                          NOTE: `ServiceId.Id` may seem redundant but was
+                          desigtned created to enable more complex service
+                          identification
+
+                          For example, what if we want to request a session for
+                          a certain service but with some additional configs
+                          that identify it?
                       name:
                         type: string
-                        title: >-
+                        description: >-
                           (Optional) Semantic human readable name for the
                           service
+                        title: >-
+                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          reminder than an optional onchain representation of
+                          the service is necessary
                   endpoints:
                     type: array
                     items:
@@ -77160,7 +77517,9 @@ definitions:
                               Key-value wrapper for config options, as proto
                               maps can't be keyed by enums
                           title: Additional configuration options for the endpoint
-                      title: Endpoint message to hold service configuration details
+                      title: >-
+                        SupplierEndpoint message to hold service configuration
+                        details
                     title: List of endpoints for the service
                 title: >-
                   SupplierServiceConfig holds the service configuration the
@@ -77189,10 +77548,20 @@ definitions:
         properties:
           id:
             type: string
-            title: Unique identifier for the service
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
           name:
             type: string
-            title: (Optional) Semantic human readable name for the service
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
       session_start_block_height:
         type: string
         format: int64
@@ -77294,10 +77663,21 @@ definitions:
               properties:
                 id:
                   type: string
-                  title: Unique identifier for the service
+                  description: Unique identifier for the service
+                  title: >-
+                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
+                    created to enable more complex service identification
+
+                    For example, what if we want to request a session for a
+                    certain service but with some additional configs that
+                    identify it?
                 name:
                   type: string
-                  title: (Optional) Semantic human readable name for the service
+                  description: (Optional) Semantic human readable name for the service
+                  title: >-
+                    TODO_TECHDEBT: Name is currently unused but acts as a
+                    reminder than an optional onchain representation of the
+                    service is necessary
             endpoints:
               type: array
               items:
@@ -77348,7 +77728,7 @@ definitions:
                         Key-value wrapper for config options, as proto maps
                         can't be keyed by enums
                     title: Additional configuration options for the endpoint
-                title: Endpoint message to hold service configuration details
+                title: SupplierEndpoint message to hold service configuration details
               title: List of endpoints for the service
           title: >-
             SupplierServiceConfig holds the service configuration the supplier
@@ -77405,7 +77785,7 @@ definitions:
             Key-value wrapper for config options, as proto maps can't be keyed
             by enums
         title: Additional configuration options for the endpoint
-    title: Endpoint message to hold service configuration details
+    title: SupplierEndpoint message to hold service configuration details
   pocket.shared.SupplierServiceConfig:
     type: object
     properties:
@@ -77415,10 +77795,20 @@ definitions:
         properties:
           id:
             type: string
-            title: Unique identifier for the service
+            description: Unique identifier for the service
+            title: >-
+              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
+              to enable more complex service identification
+
+              For example, what if we want to request a session for a certain
+              service but with some additional configs that identify it?
           name:
             type: string
-            title: (Optional) Semantic human readable name for the service
+            description: (Optional) Semantic human readable name for the service
+            title: >-
+              TODO_TECHDEBT: Name is currently unused but acts as a reminder
+              than an optional onchain representation of the service is
+              necessary
       endpoints:
         type: array
         items:
@@ -77469,7 +77859,7 @@ definitions:
                   Key-value wrapper for config options, as proto maps can't be
                   keyed by enums
               title: Additional configuration options for the endpoint
-          title: Endpoint message to hold service configuration details
+          title: SupplierEndpoint message to hold service configuration details
         title: List of endpoints for the service
     title: >-
       SupplierServiceConfig holds the service configuration the supplier stakes
@@ -77525,10 +77915,24 @@ definitions:
                     properties:
                       id:
                         type: string
-                        title: Unique identifier for the service
+                        description: Unique identifier for the service
+                        title: >-
+                          NOTE: `ServiceId.Id` may seem redundant but was
+                          desigtned created to enable more complex service
+                          identification
+
+                          For example, what if we want to request a session for
+                          a certain service but with some additional configs
+                          that identify it?
                       name:
                         type: string
-                        title: Semantic name for the service
+                        description: >-
+                          (Optional) Semantic human readable name for the
+                          service
+                        title: >-
+                          TODO_TECHDEBT: Name is currently unused but acts as a
+                          reminder than an optional onchain representation of
+                          the service is necessary
                   endpoints:
                     type: array
                     items:
@@ -77580,7 +77984,9 @@ definitions:
                               Key-value wrapper for config options, as proto
                               maps can't be keyed by enums
                           title: Additional configuration options for the endpoint
-                      title: Endpoint message to hold service configuration details
+                      title: >-
+                        SupplierEndpoint message to hold service configuration
+                        details
                     title: List of endpoints for the service
                 title: >-
                   SupplierServiceConfig holds the service configuration the
@@ -77653,10 +78059,22 @@ definitions:
                   properties:
                     id:
                       type: string
-                      title: Unique identifier for the service
+                      description: Unique identifier for the service
+                      title: >-
+                        NOTE: `ServiceId.Id` may seem redundant but was
+                        desigtned created to enable more complex service
+                        identification
+
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
                     name:
                       type: string
-                      title: Semantic name for the service
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
                 endpoints:
                   type: array
                   items:
@@ -77707,7 +78125,9 @@ definitions:
                             Key-value wrapper for config options, as proto maps
                             can't be keyed by enums
                         title: Additional configuration options for the endpoint
-                    title: Endpoint message to hold service configuration details
+                    title: >-
+                      SupplierEndpoint message to hold service configuration
+                      details
                   title: List of endpoints for the service
               title: >-
                 SupplierServiceConfig holds the service configuration the

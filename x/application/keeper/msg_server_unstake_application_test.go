@@ -6,10 +6,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/sample"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
@@ -29,6 +30,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &initialStake,
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+			},
+		},
 	}
 
 	// Stake the application
@@ -36,10 +42,11 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists
-	foundApp, isAppFound := k.GetApplication(ctx, addr)
+	appFound, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
-	require.Equal(t, addr, foundApp.Address)
-	require.Equal(t, initialStake.Amount, foundApp.Stake.Amount)
+	require.Equal(t, addr, appFound.Address)
+	require.Equal(t, initialStake.Amount, appFound.Stake.Amount)
+	require.Len(t, appFound.ServiceConfigs, 1)
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}

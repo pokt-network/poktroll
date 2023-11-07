@@ -6,7 +6,7 @@ import "gogoproto/gogo.proto";
 import "pocket/gateway/params.proto";
 import "pocket/gateway/gateway.proto";
 
-option go_package = "pocket/x/gateway/types";
+option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
 
 // GenesisState defines the gateway module's genesis state.
 message GenesisState {

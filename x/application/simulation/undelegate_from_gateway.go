@@ -3,11 +3,12 @@ package simulation
 import (
 	"math/rand"
 
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
 )
 
 func SimulateMsgUndelegateFromGateway(
@@ -17,9 +18,11 @@ func SimulateMsgUndelegateFromGateway(
 ) simtypes.Operation {
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		simAccount, _ := simtypes.RandomAcc(r, accs)
+		simAppAccount, _ := simtypes.RandomAcc(r, accs)
+		simGatewayAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgUndelegateFromGateway{
-			Address: simAccount.Address.String(),
+			AppAddress:     simAppAccount.Address.String(),
+			GatewayAddress: simGatewayAccount.Address.String(),
 		}
 
 		// TODO: Handling the UndelegateFromGateway simulation

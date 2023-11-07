@@ -9,8 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
 )
+
+// The query use to subscribe for new block events on the websocket endpoint exposed by CometBFT nodes
+const committedBlockEventsQuery = "tm.event='NewBlock'"
 
 func TestQueryClient_EventsObservable_Integration(t *testing.T) {
 	const (
@@ -22,7 +25,9 @@ func TestQueryClient_EventsObservable_Integration(t *testing.T) {
 	queryClient := testeventsquery.NewLocalnetClient(t)
 	require.NotNil(t, queryClient)
 
-	eventsObservable, err := queryClient.EventsBytes(ctx, "tm.event='NewBlock'")
+	// Start a subscription to the committed block events query. This begins
+	// publishing events to the returned observable.
+	eventsObservable, err := queryClient.EventsBytes(ctx, committedBlockEventsQuery)
 	require.NoError(t, err)
 
 	eventsObserver := eventsObservable.Subscribe(ctx)

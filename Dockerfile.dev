@@ -1,0 +1,23 @@
+# This Dockerfile is used to build container image for development purposes.
+# It intentionally contains no security features, ships with code and troubleshooting tools.
+
+FROM golang:1.20 as base
+
+RUN apt update && \
+    apt-get install -y \
+        ca-certificates \
+        curl jq make
+
+# enable faster module downloading.
+ENV GOPROXY https://proxy.golang.org
+
+COPY . /poktroll
+
+WORKDIR /poktroll
+
+RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld
+
+EXPOSE 8545
+EXPOSE 8546
+
+ENTRYPOINT ["ignite"]

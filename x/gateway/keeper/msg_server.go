@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 type msgServer struct {

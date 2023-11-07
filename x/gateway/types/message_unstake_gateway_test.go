@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {

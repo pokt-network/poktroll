@@ -6,10 +6,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/cmd/pocketd/cmd"
-	keepertest "pocket/testutil/keeper"
-	"pocket/x/session/types"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func init() {
@@ -45,8 +45,8 @@ func TestSession_GetSession_Success(t *testing.T) {
 			blockHeight: 1,
 
 			// Intentionally only checking a subset of the session metadata returned
-			expectedSessionId:     "6420ac467b6470fd377357a815c960870518dd25e6df3ae50e97ec49c08dddfe",
-			expectedSessionNumber: 1,
+			expectedSessionId:     "e1e51d087e447525d7beb648711eb3deaf016a8089938a158e6a0f600979370c",
+			expectedSessionNumber: 0,
 			expectedNumSuppliers:  1,
 		},
 	}
