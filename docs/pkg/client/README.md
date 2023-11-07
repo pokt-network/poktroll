@@ -31,7 +31,7 @@ It includes lower-level interfaces for working with transactions and subscribing
 | **`TxClient`**          | A high-level client used to build, sign, and broadcast transaction from cosmos-sdk messages.       |
 | **`TxContext`**         | Abstracts and encapsulates the transaction building, signing, encoding, and broadcasting concerns. |
 | **`BlockClient`**       | Exposes methods for receiving notifications about newly committed blocks.                          |
-| **`EventsQueryClient`** | Encapsulates blockchain event subscriptions in .                                                   |
+| **`EventsQueryClient`** | Encapsulates blockchain event subscriptions.                                                       |
 | **`Connection`**        | A transport agnostic communication channel for sending and receiving messages.                     |
 | **`Dialer`**            | Abstracts the establishment of connections.                                                        |
 
@@ -77,7 +77,7 @@ tx --"#EventsBytes()"--> evt
 bl --"#EventsBytes()"--> evt
 evt --> conn
 evt --"#DialContext()"--> dial
-dial --(returns)--> conn
+dial --"(returns)"--> conn
 ```
 
 > **Figure 2**: An overview which articulates the dependency relationships between the various client interfaces and their subcompnents.

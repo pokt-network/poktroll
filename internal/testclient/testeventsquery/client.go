@@ -27,12 +27,11 @@ func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) cli
 }
 
 // NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects
-// a single call to the EventsBytes method. It returns a mock client whose event
-// bytes method always constructs a new observable. query is the query string
-// for which event bytes subscription is expected to be for.
-// The caller can simulate blockchain events by sending on publishCh, the value
-// of which is set to the publish channel of the events bytes observable publish
-// channel.
+// a single call to the EventsBytes method. query is the query string which is
+// expected to be received by that call.
+// It returns a mock client whose event bytes method constructs a new observable.
+// The caller can simulate blockchain events by sending on the value publishCh
+// points to, which is set by this helper function.
 func NewOneTimeEventsQuery(
 	ctx context.Context,
 	t *testing.T,
@@ -57,9 +56,8 @@ func NewOneTimeEventsQuery(
 // NewOneTimeTxEventsQueryClient creates a mock of the Events that expects
 // a single call to the EventsBytes method where the query is for transaction
 // events for sender address matching that of the given key.
-// The caller can simulate blockchain events by sending on publishCh, the value
-// of which is set to the publish channel of the events bytes observable publish
-// channel.
+// The caller can simulate blockchain events by sending on the value publishCh
+// points to, which is set by this helper function.
 func NewOneTimeTxEventsQueryClient(
 	ctx context.Context,
 	t *testing.T,
