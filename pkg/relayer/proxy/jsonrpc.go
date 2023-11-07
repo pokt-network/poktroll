@@ -98,7 +98,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 	// Send the relay response to the client.
 	if err := jsrv.sendRelayResponse(relay.Res, writer); err != nil {
 		jsrv.replyWithError(writer, err)
-		log.Print("WARN: failed sending relay response: %s", err)
+		log.Printf("WARN: failed sending relay response: %s", err)
 		return
 	}
 
@@ -117,6 +117,11 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	}
 
 	// Verify the relay request signature and session.
+	// TODO_TECHDEBT: Currently, the relayer proxy is responsible for verifying
+	// the relay request signature. This responsibility should be shifted to the relayer itself.
+	// Consider using a middleware pattern to handle non-proxy specific logic, such as
+	// request signature verification, session verification, and response signature.
+	// This would help in separating concerns and improving code maintainability.
 	if err := jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.serviceId); err != nil {
 		return nil, err
 	}

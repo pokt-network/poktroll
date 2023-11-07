@@ -26,6 +26,11 @@ type (
 	servicesEndpointsMap = map[serviceId]url.URL
 )
 
+// relayerProxy is the main relayer proxy that takes takes relay requests of supported services from the client
+// and proxies them to the supported proxied services.
+// It is responsible for notifying the miner about the relays that have been served so they can be counted
+// when the miner enters the claim/proof phase.
+// TODO_TEST: Have tests for the relayer proxy.
 type relayerProxy struct {
 	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
@@ -71,7 +76,6 @@ type relayerProxy struct {
 }
 
 func NewRelayerProxy(
-	ctx context.Context,
 	clientCtx sdkclient.Context,
 	keyName string,
 	keyring keyring.Keyring,

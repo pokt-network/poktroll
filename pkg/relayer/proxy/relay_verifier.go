@@ -5,7 +5,6 @@ import (
 
 	"github.com/cometbft/cometbft/crypto"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -33,10 +32,8 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 	hash := crypto.Sha256(payloadBz)
 
-	// accountResponse.Account.Value is a protobuf Any type that should be unmarshaled into an AccountI interface.
-	// TODO_TECHDEBT: Make sure our `AccountI`/`any` unmarshalling is correct. See https://github.com/pokt-network/poktroll/pull/101/files/edbd628e9146e232ef58c71cfa8f4be2135cdb50..fbba10626df79f6bf6e2218513dfdeb40a629790#r1372464439
-	var account accounttypes.AccountI
-	if err := rp.clientCtx.Codec.UnmarshalJSON(accQueryRes.Account.Value, account); err != nil {
+	account := new(accounttypes.BaseAccount)
+	if err := account.Unmarshal(accQueryRes.Account.Value); err != nil {
 		return err
 	}
 
@@ -48,10 +45,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	currentBlock := rp.blockClient.LatestBlock(ctx)
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: applicationAddress,
-		ServiceId:          &sessiontypes.ServiceId{Id: serviceId},
+		ServiceId:          serviceId,
 		BlockHeight:        currentBlock.Height(),
 	}
 	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
+	if err != nil {
+		return err
+	}
+
 	session := sessionResponse.Session
 
 	// Since the retrieved sessionId was in terms of:
@@ -66,9 +67,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
-	if !slices.Contains(session.Suppliers, rp.supplierAddress) {
-		return ErrInvalidSupplier
+	for _, supplier := range session.Suppliers {
+		if supplier.Address == rp.supplierAddress {
+			return nil
+		}
 	}
 
-	return nil
+	return ErrInvalidSupplier
 }
