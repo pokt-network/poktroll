@@ -38,7 +38,7 @@ func TestIsValidService(t *testing.T) {
 			expected: false,
 		},
 		{
-			testCase: "Empty ID",
+			testCase: "Empty ID is invalid",
 			id:       "", // Invalid because the service ID cannot be empty
 			name:     "Valid Name",
 			expected: false,
