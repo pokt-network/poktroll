@@ -2,10 +2,13 @@ package testeventsquery
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
 	"github.com/pokt-network/poktroll/internal/testclient"
@@ -15,12 +18,66 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
-// NewLocalnetClient returns a new events query client which is configured to
-// connect to the localnet sequencer.
+// NewLocalnetClient creates and returns a new events query client that's configured
+// for use with the localnet sequencer. Any options provided are applied to the client.
 func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
 	return eventsquery.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
+}
+
+// NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects
+// a single call to the EventsBytes method. query is the query string which is
+// expected to be received by that call.
+// It returns a mock client whose event bytes method constructs a new observable.
+// The caller can simulate blockchain events by sending on the value publishCh
+// points to, which is set by this helper function.
+func NewOneTimeEventsQuery(
+	ctx context.Context,
+	t *testing.T,
+	query string,
+	publishCh *chan<- either.Bytes,
+) *mockclient.MockEventsQueryClient {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
+	eventsQueryClient.EXPECT().EventsBytes(gomock.Eq(ctx), gomock.Eq(query)).
+		DoAndReturn(func(
+			ctx context.Context,
+			query string,
+		) (eventsBzObservable client.EventsBytesObservable, err error) {
+			eventsBzObservable, *publishCh = channel.NewObservable[either.Bytes]()
+			return eventsBzObservable, nil
+		}).Times(1)
+	return eventsQueryClient
+}
+
+// NewOneTimeTxEventsQueryClient creates a mock of the Events that expects
+// a single call to the EventsBytes method where the query is for transaction
+// events for sender address matching that of the given key.
+// The caller can simulate blockchain events by sending on the value publishCh
+// points to, which is set by this helper function.
+func NewOneTimeTxEventsQueryClient(
+	ctx context.Context,
+	t *testing.T,
+	key *cosmoskeyring.Record,
+	publishCh *chan<- either.Bytes,
+) *mockclient.MockEventsQueryClient {
+	t.Helper()
+
+	signingAddr, err := key.GetAddress()
+	require.NoError(t, err)
+
+	expectedEventsQuery := fmt.Sprintf(
+		"tm.event='Tx' AND message.sender='%s'",
+		signingAddr,
+	)
+	return NewOneTimeEventsQuery(
+		ctx, t,
+		expectedEventsQuery,
+		publishCh,
+	)
 }
 
 // NewAnyTimesEventsBytesEventsQueryClient returns a new events query client which

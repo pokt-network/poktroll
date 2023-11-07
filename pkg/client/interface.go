@@ -1,4 +1,5 @@
 //go:generate mockgen -destination=../../internal/mocks/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
+//go:generate mockgen -destination=../../internal/mocks/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../internal/mocks/mockclient/tx_client_mock.go -package=mockclient . TxContext
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
@@ -18,9 +19,18 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
+// TxClient provides a synchronous interface initiating and waiting for transactions
+// derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
+type TxClient interface {
+	SignAndBroadcast(
+		ctx context.Context,
+		msgs ...cosmostypes.Msg,
+	) either.AsyncError
+}
+
 // TxContext provides an interface which consolidates the operational dependencies
-// required to facilitate the sender side of the tx lifecycle: build, sign, encode,
-// broadcast, query (optional).
+// required to facilitate the sender side of the transaction lifecycle: build, sign,
+// encode, broadcast, and query (optional).
 //
 // TODO_IMPROVE: Avoid depending on cosmos-sdk structs or interfaces; add Pocket
 // interface types to substitute:
@@ -29,13 +39,13 @@ import (
 //   - Keyring
 //   - TxBuilder
 type TxContext interface {
-	// GetKeyring returns the associated key management mechanism for the tx context.
+	// GetKeyring returns the associated key management mechanism for the transaction context.
 	GetKeyring() cosmoskeyring.Keyring
 
-	// NewTxBuilder creates and returns a new tx builder instance.
+	// NewTxBuilder creates and returns a new transaction builder instance.
 	NewTxBuilder() cosmosclient.TxBuilder
 
-	// SignTx signs a tx using the specified key name. It can operate in offline mode,
+	// SignTx signs a transaction using the specified key name. It can operate in offline mode,
 	// and can overwrite any existing signatures based on the provided flags.
 	SignTx(
 		keyName string,
@@ -43,14 +53,14 @@ type TxContext interface {
 		offline, overwriteSig bool,
 	) error
 
-	// EncodeTx takes a tx builder and encodes it, returning its byte representation.
+	// EncodeTx takes a transaction builder and encodes it, returning its byte representation.
 	EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte, error)
 
-	// BroadcastTx broadcasts the given tx to the network.
+	// BroadcastTx broadcasts the given transaction to the network.
 	BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error)
 
-	// QueryTx retrieves a tx status based on its hash and optionally provides
-	// proof of the tx.
+	// QueryTx retrieves a transaction status based on its hash and optionally provides
+	// proof of the transaction.
 	QueryTx(
 		ctx context.Context,
 		txHash []byte,
@@ -60,6 +70,7 @@ type TxContext interface {
 
 // BlocksObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
+//
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
@@ -84,23 +95,24 @@ type Block interface {
 	Hash() []byte
 }
 
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
-// replace this custom websocket client with that.
-// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
-// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
-//
-// NOTE: a branch which attempts this is available at:
-// https://github.com/pokt-network/poktroll/pull/74
-
 // EventsBytesObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
+//
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
 type EventsBytesObservable observable.Observable[either.Bytes]
 
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
+//
+// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
+// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
+// replace our custom implementation with one which wraps that.
+// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
+// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
+//
+// NOTE: a branch which attempts this is available at:
+// https://github.com/pokt-network/poktroll/pull/74
 type EventsQueryClient interface {
 	// EventsBytes returns an observable which is notified about chain event messages
 	// matching the given query. It receives an either value which contains either an
@@ -131,8 +143,8 @@ type Dialer interface {
 	DialContext(ctx context.Context, urlStr string) (Connection, error)
 }
 
-// EventsQueryClientOption is an interface-wide type which can be implemented to use or modify the
-// query client during construction. This would likely be done in an
-// implementation-specific way; e.g. using a type assertion to assign to an
-// implementation struct field(s).
+// EventsQueryClientOption defines a function type that modifies the EventsQueryClient.
 type EventsQueryClientOption func(EventsQueryClient)
+
+// TxClientOption defines a function type that modifies the TxClient.
+type TxClientOption func(TxClient)
