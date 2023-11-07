@@ -17,7 +17,7 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
+func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
 	claims := make([]types.Claim, n)
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()
@@ -29,7 +29,7 @@ func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
 
 func TestClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	claims := createNClaim(keeper, ctx, 10)
+	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		rst, found := keeper.GetClaim(ctx,
 			claim.Index,
@@ -43,7 +43,7 @@ func TestClaimGet(t *testing.T) {
 }
 func TestClaimRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	claims := createNClaim(keeper, ctx, 10)
+	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		keeper.RemoveClaim(ctx,
 			claim.SessionId,

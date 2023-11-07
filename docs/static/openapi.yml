@@ -47432,7 +47432,7 @@ paths:
         - Query
   /pocket/supplier/claim:
     get:
-      operationId: PocketSupplierClaimAll
+      operationId: PocketSupplierAllClaims
       responses:
         '200':
           description: A successful response.

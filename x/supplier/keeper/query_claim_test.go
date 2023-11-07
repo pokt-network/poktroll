@@ -15,13 +15,10 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// Prevent strconv unused error
-var _ = strconv.IntSize
-
 func TestClaimQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNClaim(keeper, ctx, 2)
+	msgs := createNClaims(keeper, ctx, 2)
 	tests := []struct {
 		desc     string
 		request  *types.QueryGetClaimRequest
@@ -73,7 +70,7 @@ func TestClaimQuerySingle(t *testing.T) {
 func TestClaimQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNClaim(keeper, ctx, 5)
+	msgs := createNClaims(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimRequest {
 		return &types.QueryAllClaimRequest{
@@ -88,7 +85,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ClaimAll(wctx, request(nil, uint64(i), uint64(step), false))
+			resp, err := keeper.AllClaims(wctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
@@ -101,7 +98,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 		step := 2
 		var next []byte
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ClaimAll(wctx, request(next, 0, uint64(step), false))
+			resp, err := keeper.AllClaims(wctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
@@ -112,7 +109,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		resp, err := keeper.ClaimAll(wctx, request(nil, 0, 0, true))
+		resp, err := keeper.AllClaims(wctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
 		require.Equal(t, len(msgs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
@@ -121,7 +118,7 @@ func TestClaimQueryPaginated(t *testing.T) {
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
-		_, err := keeper.ClaimAll(wctx, nil)
+		_, err := keeper.AllClaims(wctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
 }

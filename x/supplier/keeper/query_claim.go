@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) ClaimAll(goCtx context.Context, req *types.QueryAllClaimRequest) (*types.QueryAllClaimResponse, error) {
+func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimRequest) (*types.QueryAllClaimResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}

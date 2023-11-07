@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
@@ -8,10 +10,14 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// Prevent strconv unused error
+var _ = strconv.IntSize
+
 func CmdListClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-claim",
-		Short: "list all claim",
+		Short: "list all claims",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -29,7 +35,7 @@ func CmdListClaim() *cobra.Command {
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.ClaimAll(cmd.Context(), params)
+			res, err := queryClient.AllClaims(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

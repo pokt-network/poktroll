@@ -16,17 +16,14 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pocket/application/params";
-
   }
 
   // Queries a list of Application items.
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
     option (google.api.http).get = "/pocket/application/application/{address}";
-
   }
   rpc ApplicationAll (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
     option (google.api.http).get = "/pocket/application/application";
-
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
