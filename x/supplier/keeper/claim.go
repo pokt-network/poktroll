@@ -131,3 +131,48 @@ func GetClaimByPrimaryKey(ctx sdk.Context, claimStoreKey sdk.StoreKey, primaryKe
 	claim.Unmarshal(byteClaim) // Unmarshal byte slice into Claim object
 	return claim
 }
+
+// GetOlshCount get the total number of olsh
+// func (k Keeper) GetOlshCount(ctx sdk.Context) uint64 {
+// 	store :=  prefix.NewStore(ctx.KVStore(k.storeKey), []byte{})
+// 	byteKey := types.KeyPrefix(types.OlshCountKey)
+// 	bz := store.Get(byteKey)
+
+// 	// Count doesn't exist: no element
+// 	if bz == nil {
+// 		return 0
+// 	}
+
+// 	// Parse bytes
+// 	return binary.BigEndian.Uint64(bz)
+// }
+
+// // SetOlshCount set the total number of olsh
+// func (k Keeper) SetOlshCount(ctx sdk.Context, count uint64)  {
+// 	store :=  prefix.NewStore(ctx.KVStore(k.storeKey), []byte{})
+// 	byteKey := types.KeyPrefix(types.OlshCountKey)
+// 	bz := make([]byte, 8)
+// 	binary.BigEndian.PutUint64(bz, count)
+// 	store.Set(byteKey, bz)
+// }
+
+// // AppendOlsh appends a olsh in the store with a new id and update the count
+// func (k Keeper) AppendOlsh(
+//     ctx sdk.Context,
+//     olsh types.Olsh,
+// ) uint64 {
+// 	// Create the olsh
+//     count := k.GetOlshCount(ctx)
+
+//     // Set the ID of the appended value
+//     olsh.Id = count
+
+//     store :=  prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.OlshKey))
+//     appendedValue := k.cdc.MustMarshal(&olsh)
+//     store.Set(GetOlshIDBytes(olsh.Id), appendedValue)
+
+//     // Update olsh count
+//     k.SetOlshCount(ctx, count+1)
+
+//     return count
+// }
