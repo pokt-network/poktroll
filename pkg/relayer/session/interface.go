@@ -3,8 +3,8 @@ package session
 import (
 	"github.com/pokt-network/smt"
 
-	"pocket/pkg/observable"
-	sessiontypes "pocket/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 // RelayerSessions is an interface for managing the relayer's sessions and Sparse Merkle Sum Trees (SMSTs).
