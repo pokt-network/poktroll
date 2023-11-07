@@ -13,16 +13,17 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
-	"github.com/pokt-network/poktroll/internal/testclient"
-	"github.com/pokt-network/poktroll/internal/testclient/testblock"
-	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
-	"github.com/pokt-network/poktroll/internal/testclient/testkeyring"
-	"github.com/pokt-network/poktroll/internal/testclient/testtx"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 

@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
 // NewOneTimeMockConnAndDialer returns a new mock connection and mock dialer that
