@@ -41,10 +41,10 @@ help: ## Prints all the targets in all the Makefiles
 # Internal helper target - check go version
 check_go_version:
 	@# Extract the version number from the `go version` command.
-	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) \
-	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) \
-	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) \
-	\
+	@GO_VERSION=$$(go version | cut -d " " -f 3 | cut -c 3-) && \
+	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
+	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
+	&& \
 	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
 		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
 		exit 1; \
@@ -311,17 +311,17 @@ app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_A
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
-	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) \
+	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) && \
 	APP=app1 GATEWAY_ADDR=$$GATEWAY1 make app_delegate
 
 .PHONY: app2_delegate_gateway2
 app2_delegate_gateway2: ## Delegate trust to gateway2
-	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) \
+	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) && \
 	APP=app2 GATEWAY_ADDR=$$GATEWAY2 make app_delegate
 
 .PHONY: app3_delegate_gateway3
 app3_delegate_gateway3: ## Delegate trust to gateway3
-	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) \
+	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) && \
 	APP=app3 GATEWAY_ADDR=$$GATEWAY3 make app_delegate
 
 .PHONY: app_undelegate
@@ -330,17 +330,17 @@ app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEW
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
-	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) \
+	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) && \
 	APP=app1 GATEWAY_ADDR=$$GATEWAY1 make app_undelegate
 
 .PHONY: app2_undelegate_gateway2
 app2_undelegate_gateway2: ## Undelegate trust to gateway2
-	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) \
+	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) && \
 	APP=app2 GATEWAY_ADDR=$$GATEWAY2 make app_undelegate
 
 .PHONY: app3_undelegate_gateway3
 app3_undelegate_gateway3: ## Undelegate trust to gateway3
-	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) \
+	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) && \
 	APP=app3 GATEWAY_ADDR=$$GATEWAY3 make app_undelegate
 
 #################
@@ -395,17 +395,17 @@ get_session: ## Retrieve the session given the following env vars: (APP_ADDR, SV
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)
-	APP1=$$(make poktrolld_addr ACC_NAME=app1) \
+	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
 	APP=$$APP1 SVC=anvil HEIGHT=0 make get_session
 
 .PHONY: get_session_app2_anvil
 get_session_app2_anvil: ## Retrieve the session for (app2, anvil, latest_height)
-	APP2=$$(make poktrolld_addr ACC_NAME=app2) \
+	APP2=$$(make poktrolld_addr ACC_NAME=app2) && \
 	APP=$$APP2 SVC=anvil HEIGHT=0 make get_session
 
 .PHONY: get_session_app3_anvil
 get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
-	APP3=$$(make poktrolld_addr ACC_NAME=app3) \
+	APP3=$$(make poktrolld_addr ACC_NAME=app3) && \
 	APP=$$APP3 SVC=anvil HEIGHT=0 make get_session
 
 ################
@@ -431,7 +431,7 @@ acc_balance_query_module_supplier: ## Query the balance of the network level "su
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	APP1=$$(make poktrolld_addr ACC_NAME=app1) \
+	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
 	make acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
