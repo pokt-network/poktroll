@@ -11,11 +11,12 @@ import (
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
-	"github.com/pokt-network/poktroll/internal/testclient/testkeyring"
-	"github.com/pokt-network/poktroll/internal/testclient/testtx"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 

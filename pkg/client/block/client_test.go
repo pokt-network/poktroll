@@ -10,10 +10,10 @@ import (
 	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/testclient"
-	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 const (

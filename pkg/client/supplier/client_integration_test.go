@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/testclient/testsupplier"
+	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
