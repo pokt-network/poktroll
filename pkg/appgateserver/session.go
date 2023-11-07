@@ -1,4 +1,4 @@
-package appserver
+package appgateserver
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 // getCurrentSession gets the current session for the given service
 // It returns the current session if it exists and is still valid, otherwise it
 // queries for the latest session, caches and returns it.
-func (app *appServer) getCurrentSession(
+func (app *appGateServer) getCurrentSession(
 	ctx context.Context,
-	serviceId string,
+	appAddress, serviceId string,
 ) (*sessiontypes.Session, error) {
 	app.sessionMu.RLock()
 	defer app.sessionMu.RUnlock()
@@ -29,7 +29,7 @@ func (app *appServer) getCurrentSession(
 
 	// Query for the current session.
 	sessionQueryReq := sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: app.appAddress,
+		ApplicationAddress: appAddress,
 		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
 		BlockHeight:        latestBlock.Height(),
 	}

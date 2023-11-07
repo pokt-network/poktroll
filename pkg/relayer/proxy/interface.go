@@ -13,7 +13,6 @@ import (
 // While handling requests and responding in a closed loop, it also notifies
 // the miner about the relays that have been served.
 type RelayerProxy interface {
-
 	// Start starts all advertised relay servers and returns an error if any of them fail to start.
 	Start(ctx context.Context) error
 
@@ -27,7 +26,7 @@ type RelayerProxy interface {
 
 	// VerifyRelayRequest is a shared method used by RelayServers to check the
 	// relay request signature and session validity.
-	VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error)
+	VerifyRelayRequest(ctx context.Context, relayRequest *types.RelayRequest) (isValid bool, err error)
 
 	// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
 	SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error)

@@ -1,4 +1,4 @@
-package appserver
+package appgateserver
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 // first available URL but future optimizations can be introduced.
 // TODO(@h5law): Look into different endpoint selection depending on their suitability.
 // getRelayerUrl gets the URL of the relayer for the given service.
-func (app *appServer) getRelayerUrl(
+func (app *appGateServer) getRelayerUrl(
 	ctx context.Context,
 	serviceId string,
 	rpcType sharedtypes.RPCType,

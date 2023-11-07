@@ -3,16 +3,23 @@ package proxy
 import (
 	"context"
 	"net/url"
+	"sync"
 
+	sdkerrors "cosmossdk.io/errors"
+	ringtypes "github.com/athanorlabs/go-dleq/types"
+	"github.com/cometbft/cometbft/crypto"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/noot/ring-go"
 	"golang.org/x/sync/errgroup"
 
 	// TODO_INCOMPLETE(@red-0ne): Import the appropriate block client interface once available.
 	// blocktypes "github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/signer"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -49,6 +56,10 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier sessiontypes.QueryClient
 
+	// applicationQuerier is the querier for the application module.
+	// It is used to get the ring for a given application address.
+	applicationQuerier apptypes.QueryClient
+
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
 	// the client that relays the request to the supported proxied service.
@@ -63,6 +74,12 @@ type relayerProxy struct {
 	// servedRelaysProducer is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
+
+	// ringCache is a cache of the public keys used to create the ring for a given application
+	// they are stored in a map of application address to a slice of points on the secp256k1 curve
+	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
+	ringCache      map[string][]ringtypes.Point
+	ringCacheMutex *sync.RWMutex
 }
 
 func NewRelayerProxy(
@@ -76,6 +93,7 @@ func NewRelayerProxy(
 ) RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
+	applicationQuerier := apptypes.NewQueryClient(clientCtx)
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
@@ -86,10 +104,13 @@ func NewRelayerProxy(
 		keyring:                  keyring,
 		accountsQuerier:          accountQuerier,
 		supplierQuerier:          supplierQuerier,
+		applicationQuerier:       applicationQuerier,
 		sessionQuerier:           sessionQuerier,
 		proxiedServicesEndpoints: proxiedServicesEndpoints,
 		servedRelays:             servedRelays,
 		servedRelaysProducer:     servedRelaysProducer,
+		ringCacheMutex:           &sync.RWMutex{},
+		ringCache:                make(map[string][]ringtypes.Point),
 	}
 }
 
@@ -139,11 +160,62 @@ func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 }
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
-func (rp *relayerProxy) VerifyRelayRequest(relayRequest *types.RelayRequest) (isValid bool, err error) {
-	panic("TODO: implement relayerProxy.VerifyRelayRequest")
+func (rp *relayerProxy) VerifyRelayRequest(ctx context.Context, relayRequest *types.RelayRequest) (isValid bool, err error) {
+	// extract the relay request's ring signature
+	signature := relayRequest.Meta.Signature
+	if signature == nil {
+		return false, sdkerrors.Wrapf(ErrInvalidRelayRequest, "missing signature from relay request: %v", relayRequest)
+	}
+	ringSig := new(ring.RingSig)
+	if err := ringSig.Deserialize(signature); err != nil {
+		return false, sdkerrors.Wrapf(ErrInvalidRequestSignature, "error deserializing signature: %v", err)
+	}
+
+	// get the ring for the application address of the relay request
+	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
+	if err != nil {
+		return false, sdkerrors.Wrapf(
+			ErrInvalidRelayRequest,
+			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
+
+	// verify the ring signature against the ring
+	if !ringSig.Ring().Equals(appRing) {
+		return false, sdkerrors.Wrapf(
+			ErrInvalidRequestSignature,
+			"ring signature does not match ring for application address %s", appAddress,
+		)
+	}
+
+	// get and hash the signable bytes of the relay request
+	signableBz, err := relayRequest.GetSignableBytes()
+	if err != nil {
+		return false, sdkerrors.Wrapf(ErrInvalidRelayRequest, "error getting signable bytes: %v", err)
+	}
+	hash := crypto.Sha256(signableBz)
+	var hash32 [32]byte
+	copy(hash32[:], hash)
+
+	// verify the relay request's signature
+	return ringSig.Verify(hash32), nil
 }
 
 // SignRelayResponse is a shared method used by RelayServers to sign the relay response.
 func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error) {
-	panic("TODO: implement relayerProxy.SignRelayResponse")
+	// create a simple signer for the request
+	signer := signer.NewSimpleSigner(rp.keyring, rp.keyName)
+
+	// extract and hash the relay response's signable bytes
+	signableBz, err := relayResponse.GetSignableBytes()
+	if err != nil {
+		return nil, sdkerrors.Wrapf(ErrInvalidRelayResponse, "error getting signable bytes: %v", err)
+	}
+	hash := crypto.Sha256(signableBz)
+	var hash32 [32]byte
+	copy(hash32[:], hash)
+
+	// sign the relay response
+	return signer.Sign(hash32)
 }

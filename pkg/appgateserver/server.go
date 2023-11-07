@@ -1,4 +1,4 @@
-package appserver
+package appgateserver
 
 import (
 	"context"
@@ -8,32 +8,43 @@ import (
 	"strings"
 	"sync"
 
+	sdkerrors "cosmossdk.io/errors"
+	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-// appServer is the server that listens for application requests and relays them to the supplier.
+// appGateServer is the server that listens for application requests and relays them to the supplier.
 // it is responsible for maintaining the current session for the application, signing the requests,
 // and verifying the response signatures.
-type appServer struct {
-	// TODO(@h5law): Replace with ring signature.
-	// keyName is the name of the key in the keyring that will be used to sign relay requests.
-	keyName string
-	keyring keyring.Keyring
+// The appGateServer is the basis for both applications and gateways, depending on whether the application
+// is running their own instance of the appGateServer or they are sending requests to a gateway running an
+// instance of the appGateServer, they will need to either include the application address in the request or not.
+type appGateServer struct {
+	// signingKey is the scalar point on the appropriate curve corresponding to the
+	// signer's private key, and is used to sign relay requests via a ring signature
+	signingKey ringtypes.Scalar
+
+	// ringCache is a cache of the public keys used to create the ring for a given application
+	// they are stored in a map of application address to a slice of points on the secp256k1 curve
+	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
+	ringCache      map[string][]ringtypes.Point
+	ringCacheMutex *sync.RWMutex
+
+	// appAddress is the address of the application that the server is serving if
+	// it is nil then the application address must be included in each request
+	appAddress string
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
 	// and get the public key to verify the relay response signature.
 	clientCtx sdkclient.Context
-
-	// appAddress is the address of the application that this app server is running for.
-	appAddress string
 
 	// sessionQuerier is the querier for the session module.
 	// It used to get the current session for the application given a requested service.
@@ -50,6 +61,10 @@ type appServer struct {
 	// It is used to get the the supplier's public key to verify the relay response signature.
 	accountQuerier accounttypes.QueryClient
 
+	// applicationQuerier is the querier for the application module.
+	// It is used to get the ring for a given application address.
+	applicationQuerier apptypes.QueryClient
+
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
 	blockClient blocktypes.BlockClient
@@ -65,20 +80,24 @@ type appServer struct {
 
 func NewAppServer(
 	clientCtx sdkclient.Context,
-	keyName string,
-	keyring keyring.Keyring,
+	signKey ringtypes.Scalar,
+	appAddress string,
 	applicationEndpoint *url.URL,
 	blockClient blocktypes.BlockClient,
-) *appServer {
+) *appGateServer {
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
+	applicationQuerier := apptypes.NewQueryClient(clientCtx)
 
-	return &appServer{
+	return &appGateServer{
+		signingKey:           signKey,
+		ringCacheMutex:       &sync.RWMutex{},
+		ringCache:            make(map[string][]ringtypes.Point),
+		appAddress:           appAddress,
 		clientCtx:            clientCtx,
-		keyName:              keyName,
-		keyring:              keyring,
 		sessionQuerier:       sessionQuerier,
 		accountQuerier:       accountQuerier,
+		applicationQuerier:   applicationQuerier,
 		blockClient:          blockClient,
 		server:               &http.Server{Addr: applicationEndpoint.Host},
 		supplierAccountCache: make(map[string]cryptotypes.PubKey),
@@ -87,20 +106,7 @@ func NewAppServer(
 
 // Start starts the application server and blocks until the context is done
 // or the server returns an error.
-func (app *appServer) Start(ctx context.Context) error {
-	// Get and populate the application address from the keyring.
-	keyRecord, err := app.keyring.Key(app.keyName)
-	if err != nil {
-		return err
-	}
-
-	accAddress, err := keyRecord.GetAddress()
-	if err != nil {
-		return err
-	}
-
-	app.appAddress = accAddress.String()
-
+func (app *appGateServer) Start(ctx context.Context) error {
 	// Shutdown the HTTP server when the context is done.
 	go func() {
 		<-ctx.Done()
@@ -112,7 +118,7 @@ func (app *appServer) Start(ctx context.Context) error {
 }
 
 // Stop stops the application server and returns any error that occurred.
-func (app *appServer) Stop(ctx context.Context) error {
+func (app *appGateServer) Stop(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
@@ -121,20 +127,47 @@ func (app *appServer) Stop(ctx context.Context) error {
 // After receiving the response from the supplier, it verifies the response signature
 // before returning the response to the application.
 // The serviceId is extracted from the request path.
-// The request's path should be of the form "/{serviceId}/[other/path/segments]",
+// The request's path should be of the form:
+//
+//	"<protocol>://host:port/serviceId[/other/path/segments]?senderAddr=<senderAddr>"
+//
 // where the serviceId is the id of the service that the application is requesting
 // and the other (possible) path segments are the JSON RPC request path.
-func (app *appServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	// Extract the serviceId from the request path.
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
+	appAddress := request.URL.Query().Get("senderAddr")
+
+	// ensure the app address is present
+	if appAddress == "" && app.appAddress == "" {
+		app.replyWithError(
+			writer,
+			sdkerrors.Wrapf(ErrInvalidRequestURL, "missing sender address query parameter: got %s", request.URL.String()),
+		)
+		log.Print("ERROR: no application address provided")
+		return
+	} else if appAddress != "" && appAddress != app.appAddress {
+		app.replyWithError(
+			writer,
+			sdkerrors.Wrapf(
+				ErrInvalidRequestURL,
+				"sender address query parameter does not match the application address: got %s, want %s",
+				appAddress, app.appAddress,
+			),
+		)
+		log.Print("ERROR: application address does not match sender address query parameter")
+		return
+	} else if appAddress == "" {
+		appAddress = app.appAddress
+	}
 
 	// TODO_TECHDEBT: Currently, there is no information about the RPC type requested. It should
 	// be extracted from the request and used to determine the RPC type to handle. handle*Relay()
 	// calls should be wrapped into a switch statement to handle different types of relays.
-	err := app.handleJSONRPCRelay(ctx, serviceId, request, writer)
+	err := app.handleJSONRPCRelay(ctx, appAddress, serviceId, request, writer)
 	if err != nil {
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(writer, err)
@@ -148,7 +181,7 @@ func (app *appServer) ServeHTTP(writer http.ResponseWriter, request *http.Reques
 // replyWithError replies to the application with an error response.
 // TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
 // Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
-func (app *appServer) replyWithError(writer http.ResponseWriter, err error) {
+func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) {
 	relayResponse := &types.RelayResponse{
 		Payload: &types.RelayResponse_JsonRpcPayload{
 			JsonRpcPayload: &types.JSONRPCResponsePayload{

@@ -1,4 +1,4 @@
-package appserver
+package appgateserver
 
 import (
 	"context"
@@ -11,25 +11,26 @@ import (
 )
 
 // verifyResponse verifies the relay response signature.
-func (app *appServer) verifyResponse(
+func (app *appGateServer) verifyResponse(
 	ctx context.Context,
 	supplierAddress string,
 	relayResponse *types.RelayResponse,
 ) error {
+	// Get the supplier's public key.
 	pubKey, err := app.getSupplierPubKeyFromAddress(ctx, supplierAddress)
 	if err != nil {
 		return err
 	}
 
+	// Extract the supplier's signature
 	signature := relayResponse.Meta.SupplierSignature
-	relayResponse.Meta.SupplierSignature = nil
 
-	// Marshal the relay response payload to bytes and get the hash.
-	var payloadBz []byte
-	if _, err = relayResponse.Payload.MarshalTo(payloadBz); err != nil {
+	// Get the relay response signable bytes and hash them.
+	responseBz, err := relayResponse.GetSignableBytes()
+	if err != nil {
 		return err
 	}
-	hash := crypto.Sha256(payloadBz)
+	hash := crypto.Sha256(responseBz)
 
 	// Verify the relay response signature.
 	if !pubKey.VerifySignature(hash, signature) {
@@ -42,7 +43,7 @@ func (app *appServer) verifyResponse(
 // getSupplierPubKeyFromAddress gets the supplier's public key from the cache or queries
 // if it is not found.
 // The public key is then cached before being returned.
-func (app *appServer) getSupplierPubKeyFromAddress(
+func (app *appGateServer) getSupplierPubKeyFromAddress(
 	ctx context.Context,
 	supplierAddress string,
 ) (cryptotypes.PubKey, error) {

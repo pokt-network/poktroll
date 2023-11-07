@@ -1,4 +1,4 @@
-package appserver
+package appgateserver
 
 import (
 	"bytes"
@@ -13,9 +13,9 @@ import (
 )
 
 // handleJSONRPCRelay handles JSON RPC relay requests.
-func (app *appServer) handleJSONRPCRelay(
+func (app *appGateServer) handleJSONRPCRelay(
 	ctx context.Context,
-	serviceId string,
+	appAddress, serviceId string,
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
@@ -25,18 +25,11 @@ func (app *appServer) handleJSONRPCRelay(
 		return err
 	}
 
-	// Hash and sign the request payload.
-	hash := crypto.Sha256(payloadBz)
-	signature, _, err := app.keyring.Sign(app.keyName, hash)
-	if err != nil {
-		return err
-	}
-
 	// Create the relay request payload.
 	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
 	relayRequestPayload.JsonRpcPayload.Unmarshal(payloadBz)
 
-	session, err := app.getCurrentSession(ctx, serviceId)
+	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
 		return err
 	}
@@ -50,11 +43,31 @@ func (app *appServer) handleJSONRPCRelay(
 	// Create the relay request.
 	relayRequest := &types.RelayRequest{
 		Meta: &types.RelayRequestMetadata{
-			SessionHeader: session.Header,
-			Signature:     signature,
+			// SessionHeader: session.Header,
+			Signature: nil,
 		},
 		Payload: relayRequestPayload,
 	}
+
+	// Get the application's signer.
+	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
+	if err != nil {
+		return err
+	}
+
+	// Hash and sign the request's signable bytes.
+	signableBz, err := relayRequest.GetSignableBytes()
+	if err != nil {
+		return err
+	}
+	hash := crypto.Sha256(signableBz)
+	var hash32 [32]byte
+	copy(hash32[:], hash)
+	signature, err := signer.Sign(hash32)
+	if err != nil {
+		return err
+	}
+	relayRequest.Meta.Signature = signature
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	relayRequestBz, err := relayRequest.Marshal()
