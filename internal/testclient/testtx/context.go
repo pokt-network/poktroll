@@ -23,6 +23,28 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
+// NewLocalnetContext creates and returns a new transaction context configured
+// for use with the localnet sequencer.
+func NewLocalnetContext(t *testing.T) client.TxContext {
+	t.Helper()
+
+	flagSet := testclient.NewLocalnetFlagSet(t)
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet)
+	txFactory, err := cosmostx.NewFactoryCLI(*clientCtx, flagSet)
+	require.NoError(t, err)
+	require.NotEmpty(t, txFactory)
+
+	deps := depinject.Supply(
+		*clientCtx,
+		txFactory,
+	)
+
+	txCtx, err := tx.NewTxContext(deps)
+	require.NoError(t, err)
+
+	return txCtx
+}
+
 // TODO_IMPROVE: these mock constructor helpers could include parameters for the
 // "times" (e.g. exact, min, max) values which are passed to their respective
 // gomock.EXPECT() method calls (i.e. Times(), MinTimes(), MaxTimes()).
