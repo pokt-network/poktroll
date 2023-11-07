@@ -27,7 +27,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.SupplierList = k.GetAllSupplier(ctx)
-	genesis.ClaimList = k.GetAllClaim(ctx)
+	genesis.ClaimList = k.GetAllClaims(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis

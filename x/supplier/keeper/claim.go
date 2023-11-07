@@ -47,8 +47,8 @@ func (k Keeper) RemoveClaim(
 	))
 }
 
-// GetAllClaim returns all claim
-func (k Keeper) GetAllClaim(ctx sdk.Context) (list []types.Claim) {
+// GetAllClaims returns all claim
+func (k Keeper) GetAllClaims(ctx sdk.Context) (list []types.Claim) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 

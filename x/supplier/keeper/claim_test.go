@@ -5,17 +5,18 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
+func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
 	items := make([]types.Claim, n)
 	for i := range items {
 		items[i].Index = strconv.Itoa(i)
@@ -27,7 +28,7 @@ func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
 
 func TestClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
+	items := createNClaims(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetClaim(ctx,
 			item.Index,
@@ -41,7 +42,7 @@ func TestClaimGet(t *testing.T) {
 }
 func TestClaimRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
+	items := createNClaims(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveClaim(ctx,
 			item.Index,
@@ -55,9 +56,9 @@ func TestClaimRemove(t *testing.T) {
 
 func TestClaimGetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
+	items := createNClaims(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllClaim(ctx)),
+		nullify.Fill(keeper.GetAllClaims(ctx)),
 	)
 }

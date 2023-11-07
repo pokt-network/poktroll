@@ -30,7 +30,7 @@ func CmdListClaim() *cobra.Command {
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.ClaimAll(cmd.Context(), params)
+			res, err := queryClient.AllClaims(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

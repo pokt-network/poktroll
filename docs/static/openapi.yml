@@ -47432,7 +47432,7 @@ paths:
         - Query
   /pocket/supplier/claim:
     get:
-      operationId: PocketSupplierClaimAll
+      operationId: PocketSupplierAllClaims
       responses:
         '200':
           description: A successful response.
@@ -47446,12 +47446,17 @@ paths:
                   properties:
                     index:
                       type: string
-                    supplierAddress:
+                    supplier_address:
                       type: string
-                    sessionId:
+                    session_id:
                       type: string
-                    rootHash:
+                    root_hash:
                       type: string
+                  description: >-
+                    TODO_UPNEXT(@Olshansk): The structure below is the default
+                    (untouched) scaffolded type. Update
+
+                    and productionize it for our use case.
               pagination:
                 type: object
                 properties:
@@ -47572,12 +47577,17 @@ paths:
                 properties:
                   index:
                     type: string
-                  supplierAddress:
+                  supplier_address:
                     type: string
-                  sessionId:
+                  session_id:
                     type: string
-                  rootHash:
+                  root_hash:
                     type: string
+                description: >-
+                  TODO_UPNEXT(@Olshansk): The structure below is the default
+                  (untouched) scaffolded type. Update
+
+                  and productionize it for our use case.
         default:
           description: An unexpected error response.
           schema:
@@ -78042,12 +78052,17 @@ definitions:
     properties:
       index:
         type: string
-      supplierAddress:
+      supplier_address:
         type: string
-      sessionId:
+      session_id:
         type: string
-      rootHash:
+      root_hash:
         type: string
+    description: >-
+      TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+      scaffolded type. Update
+
+      and productionize it for our use case.
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -78069,12 +78084,17 @@ definitions:
           properties:
             index:
               type: string
-            supplierAddress:
+            supplier_address:
               type: string
-            sessionId:
+            session_id:
               type: string
-            rootHash:
+            root_hash:
               type: string
+          description: >-
+            TODO_UPNEXT(@Olshansk): The structure below is the default
+            (untouched) scaffolded type. Update
+
+            and productionize it for our use case.
       pagination:
         type: object
         properties:
@@ -78255,12 +78275,17 @@ definitions:
         properties:
           index:
             type: string
-          supplierAddress:
+          supplier_address:
             type: string
-          sessionId:
+          session_id:
             type: string
-          rootHash:
+          root_hash:
             type: string
+        description: >-
+          TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+          scaffolded type. Update
+
+          and productionize it for our use case.
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
