@@ -1,6 +1,7 @@
 package session
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"os"
 	"path/filepath"
@@ -128,6 +129,11 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 
 	// If the proof has already been generated, return the cached proof.
 	if st.proof != nil {
+		// Make sure the path is the same as the one for which the proof was generated.
+		if !bytes.Equal(path, st.proofPath) {
+			return nil, ErrSessionTreeProofPathMismatch
+		}
+
 		return st.proof, nil
 	}
 

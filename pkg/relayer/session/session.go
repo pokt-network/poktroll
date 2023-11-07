@@ -19,13 +19,13 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
-	// claimableSessions notifies about sessions that are ready to be claimed.
-	claimableSessions observable.Observable[relayer.SessionTree]
+	// sessionsToClaim notifies about sessions that are ready to be claimed.
+	sessionsToClaim observable.Observable[relayer.SessionTree]
 
-	// claimableSessionsPublisher is the channel used to publish claimable sessions.
-	claimableSessionsPublisher chan<- relayer.SessionTree
+	// sessionsToClaimPublisher is the channel used to publish sessions to claim.
+	sessionsToClaimPublisher chan<- relayer.SessionTree
 
-	// sessionTrees is a map of block heights containing another map of SessionTrees
+	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
 	// The block height index is used to know when the sessions contained in the entry should be closed,
 	// this helps to avoid iterating over all sessionsTrees to check if they are ready to be closed.
@@ -50,16 +50,16 @@ func NewRelayerSessions(
 		storesDirectory: storesDirectory,
 		blockClient:     blockClient,
 	}
-	rs.claimableSessions, rs.claimableSessionsPublisher = channel.NewObservable[relayer.SessionTree]()
+	rs.sessionsToClaim, rs.sessionsToClaimPublisher = channel.NewObservable[relayer.SessionTree]()
 
 	go rs.goListenToCommittedBlocks(ctx)
 
 	return rs
 }
 
-// ClaimableSessions returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessionsManager) ClaimableSessions() observable.Observable[relayer.SessionTree] {
-	return rs.claimableSessions
+// SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
+func (rs *relayerSessionsManager) SessionsToClaim() observable.Observable[relayer.SessionTree] {
+	return rs.sessionsToClaim
 }
 
 // EnsureSessionTree returns the SessionTree for a given session.
@@ -95,7 +95,7 @@ func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Sessio
 	return sessionTree, nil
 }
 
-// goListenToCommittedBlocks listens to committed blocks so that rs.claimableSessionsPublisher
+// goListenToCommittedBlocks listens to committed blocks so that rs.sessionsToClaimPublisher
 // can notify when sessions are ready to be claimed.
 // It is intended to be called as a background goroutine.
 func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context) {
@@ -106,7 +106,7 @@ func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context)
 		if sessionsTrees, ok := rs.sessionsTrees[block.Height()]; ok {
 			// Iterate over the sessionsTrees that end at this block height and publish them.
 			for _, sessionTree := range sessionsTrees {
-				rs.claimableSessionsPublisher <- sessionTree
+				rs.sessionsToClaimPublisher <- sessionTree
 			}
 		}
 	}

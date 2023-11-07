@@ -12,8 +12,8 @@ import (
 // ready to be claimed, and handles the creation and retrieval of SMSTs for a given session.
 // It also handles the creation and retrieval of SMSTs for a given session.
 type RelayerSessionsManager interface {
-	// ClaimableSessions returns an observable that notifies of sessions ready to be claimed.
-	ClaimableSessions() observable.Observable[SessionTree]
+	// SessionsToClaim returns an observable that notifies of sessions ready to be claimed.
+	SessionsToClaim() observable.Observable[SessionTree]
 
 	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session.
 	// It is used to retrieve the SMST and update it when a Relay has been successfully served.
@@ -32,9 +32,9 @@ type SessionTree interface {
 	// This function should be called when a Relay has been successfully served.
 	Update(key, value []byte, weight uint64) error
 
-	// ProveClosest is a wrapper for the SMST's ProveClosest function.It returns the
+	// ProveClosest is a wrapper for the SMST's ProveClosest function. It returns the
 	// proof for the given path.
-	// This function should be called when a session has been claimed and needs to be proven.
+	// This function should be called several blocks after a session has been claimed and needs to be proven.
 	ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error)
 
 	// Flush gets the root hash of the SMST needed for submitting the claim;
