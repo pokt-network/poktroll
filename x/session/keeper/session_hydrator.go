@@ -61,22 +61,22 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 	logger := k.Logger(ctx).With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydrating, "failed to hydrate the session metadata: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session metadata: %v", err)
 	}
 	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydrating, "failed to hydrate the session ID: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session ID: %v", err)
 	}
 	logger.Info("Finished hydrating session ID: %s", sh.sessionHeader.SessionId)
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydrating, "failed to hydrate application for session: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate application for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydrating, "failed to hydrate suppliers for session: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate suppliers for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session suppliers: %+v")
 
@@ -91,7 +91,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	if sh.blockHeight > ctx.BlockHeight() {
-		return sdkerrors.Wrapf(types.ErrSessionHydrating, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
+		return sdkerrors.Wrapf(types.ErrSessionHydration, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession

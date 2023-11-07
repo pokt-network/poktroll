@@ -8,7 +8,7 @@ import (
 
 // x/session module sentinel errors
 var (
-	ErrSessionHydrating              = sdkerrors.Register(ModuleName, 1, "error during session hydration")
+	ErrSessionHydration              = sdkerrors.Register(ModuleName, 1, "error during session hydration")
 	ErrSessionAppNotFound            = sdkerrors.Register(ModuleName, 2, "application for session not found not found ")
 	ErrSessionAppNotStakedForService = sdkerrors.Register(ModuleName, 3, "application in session not staked for requested service")
 	ErrSessionSuppliersNotFound      = sdkerrors.Register(ModuleName, 4, "no suppliers not found for session")

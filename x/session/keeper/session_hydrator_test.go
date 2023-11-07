@@ -48,59 +48,59 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 
 func TestSession_HydrateSession_Metadata(t *testing.T) {
 	type test struct {
-		name        string
+		desc        string
 		blockHeight int64
 
 		expectedNumBlocksPerSession int64
 		expectedSessionNumber       int64
 		expectedSessionStartBlock   int64
-		errExpected                 bool
+		errExpected                 error
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
 	tests := []test{
 		{
-			name:        "blockHeight = 0",
+			desc:        "blockHeight = 0",
 			blockHeight: 0,
 
-			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
+			errExpected:                 nil,
 		},
 		{
-			name:        "blockHeight = 1",
+			desc:        "blockHeight = 1",
 			blockHeight: 1,
 
-			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
+			errExpected:                 nil,
 		},
 		{
-			name:        "blockHeight = sessionHeight",
+			desc:        "blockHeight = sessionHeight",
 			blockHeight: 4,
 
-			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
+			errExpected:                 nil,
 		},
 		{
-			name:        "blockHeight != sessionHeight",
+			desc:        "blockHeight != sessionHeight",
 			blockHeight: 5,
 
-			errExpected:                 false,
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
+			errExpected:                 nil,
 		},
 		{
-			name:        "blockHeight > contextHeight",
+			desc:        "blockHeight > contextHeight",
 			blockHeight: 9001, // block height over 9000 is too height given that the context height is 100
 
-			errExpected: true,
+			errExpected: types.ErrSessionHydration,
 		},
 	}
 
@@ -110,11 +110,11 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, tt.blockHeight)
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
-			if tt.errExpected {
+			if tt.errExpected != nil {
 				require.ErrorIs(t, tt.errExpected, err)
 				return
 			}
@@ -129,7 +129,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 func TestSession_HydrateSession_SessionId(t *testing.T) {
 	type test struct {
-		name string
+		desc string
 
 		blockHeight1 int64
 		blockHeight2 int64
@@ -148,7 +148,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	// Currently assumes NumBlocksPerSession=4
 	tests := []test{
 		{
-			name: "(app1, svc1): sessionId at first session block != sessionId at next session block",
+			desc: "(app1, svc1): sessionId at first session block != sessionId at next session block",
 
 			blockHeight1: 4,
 			blockHeight2: 8,
@@ -163,7 +163,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			expectedSessionId2: "5481d5ca2ddb15dc5edb792b8e20ba9c7d516a74475fc5feba6b6aeb95a26f58",
 		},
 		{
-			name: "app1: sessionId for svc1 != sessionId for svc12",
+			desc: "app1: sessionId for svc1 != sessionId for svc12",
 
 			blockHeight1: 4,
 			blockHeight2: 4,
@@ -178,7 +178,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			expectedSessionId2: "44fce80205bece269429a5dc8b55f9d96e5bf7acdb9838f2ac9aa7216905a1cf",
 		},
 		{
-			name: "svc12: sessionId for app1 != sessionId for app2",
+			desc: "svc12: sessionId for app1 != sessionId for app2",
 
 			blockHeight1: 4,
 			blockHeight2: 4,
@@ -198,7 +198,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			sessionHydrator1 := keeper.NewSessionHydrator(tt.appAddr1, tt.serviceId1, tt.blockHeight1)
 			session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
 			require.NoError(t, err)
@@ -242,7 +242,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   sample.AccAddress(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrSessionHydrating,
+			expectedErr: types.ErrSessionHydration,
 		},
 		{
 			desc: "invalid app address",
@@ -250,7 +250,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   "invalid",
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrSessionHydrating,
+			expectedErr: types.ErrSessionHydration,
 		},
 		{
 			desc: "invalid - app not staked for service",
@@ -258,7 +258,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc9001",                  // app1 is only stake for svc1 and svc11
 
-			expectedErr: types.ErrSessionHydrating,
+			expectedErr: types.ErrSessionHydration,
 		},
 		// TODO_TECHDEBT: Add tests for when:
 		// - Application join/leaves (stakes/unstakes) altogether
