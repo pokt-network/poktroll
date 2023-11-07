@@ -47,7 +47,7 @@ func CmdListClaim() *cobra.Command {
 
 func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-claim [index]",
+		Use:   "show-claim <index>",
 		Short: "shows a claim",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
