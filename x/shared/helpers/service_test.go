@@ -27,3 +27,56 @@ func TestIsValidServiceId(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValidEndpointUrl(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		{
+			name:     "valid http URL",
+			input:    "http://example.com",
+			expected: true,
+		},
+		{
+			name:     "valid https URL",
+			input:    "https://example.com/path?query=value#fragment",
+			expected: true,
+		},
+		{
+			name:     "valid localhost URL with scheme",
+			input:    "https://localhost:8081",
+			expected: true,
+		},
+		{
+			name:     "valid loopback URL with scheme",
+			input:    "http://127.0.0.1:8081",
+			expected: true,
+		},
+		{
+			name:     "invalid scheme",
+			input:    "ftp://example.com",
+			expected: false,
+		},
+		{
+			name:     "missing scheme",
+			input:    "example.com",
+			expected: false,
+		},
+		{
+			name:     "invalid URL",
+			input:    "not-a-valid-url",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsValidEndpointUrl(tt.input)
+			if got != tt.expected {
+				t.Errorf("IsValidEndpointUrl(%q) = %v, want %v", tt.input, got, tt.expected)
+			}
+		})
+	}
+}

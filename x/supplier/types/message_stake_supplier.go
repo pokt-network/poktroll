@@ -4,6 +4,9 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	types "github.com/cosmos/cosmos-sdk/types"
+
+	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const TypeMsgStakeSupplier = "stake_supplier"
@@ -13,11 +16,12 @@ var _ sdk.Msg = (*MsgStakeSupplier)(nil)
 func NewMsgStakeSupplier(
 	address string,
 	stake types.Coin,
-
+	services []*sharedtypes.SupplierServiceConfig,
 ) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
-		Address: address,
-		Stake:   &stake,
+		Address:  address,
+		Stake:    &stake,
+		Services: services,
 	}
 }
 
@@ -49,6 +53,7 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid supplier address %s; (%v)", msg.Address, err)
 	}
 
+	// TODO_TECHDEBT: Centralize stake related verification and share across different parts of the source code
 	// Validate the stake amount
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(ErrSupplierInvalidStake, "nil supplier stake; (%v)", err)
@@ -65,6 +70,11 @@ func (msg *MsgStakeSupplier) ValidateBasic() error {
 	}
 	if stake.Denom != "upokt" {
 		return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", msg.Stake)
+	}
+
+	// Validate the supplier service configs
+	if err := servicehelpers.ValidateSupplierServiceConfigs(msg.Services); err != nil {
+		return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 	}
 
 	return nil

@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"pocket/cmd/pocketd/cmd"
-	"pocket/testutil/network"
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/testutil/network"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // Dummy variable to avoid unused import error.

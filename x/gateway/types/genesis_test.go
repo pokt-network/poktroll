@@ -3,8 +3,8 @@ package types_test
 import (
 	"testing"
 
-	"pocket/testutil/sample"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"

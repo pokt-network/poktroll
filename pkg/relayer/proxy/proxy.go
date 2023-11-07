@@ -9,12 +9,12 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
 
-	blocktypes "pocket/pkg/client"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
-	"pocket/x/service/types"
-	sessiontypes "pocket/x/session/types"
-	suppliertypes "pocket/x/supplier/types"
+	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ RelayerProxy = (*relayerProxy)(nil)

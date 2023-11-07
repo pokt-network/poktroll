@@ -4,7 +4,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "pocket/x/session/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 const TypeMsgCreateClaim = "create_claim"
