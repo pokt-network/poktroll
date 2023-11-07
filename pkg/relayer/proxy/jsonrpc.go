@@ -12,7 +12,7 @@ import (
 var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// service is the id of the service that the server is responsible for.
+	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
 	// serverEndpoint is the advertised endpoint configuration that the server uses to
@@ -71,7 +71,7 @@ func (j *jsonRPCServer) Stop(ctx context.Context) error {
 	return j.server.Shutdown(ctx)
 }
 
-// Service returns the serviceId of the JSON-RPC service.
+// Service returns the JSON-RPC service.
 func (j *jsonRPCServer) Service() *sharedtypes.Service {
 	return j.service
 }
