@@ -1,0 +1,35 @@
+# When `devnet-e2e-test` is added, also assign `devnet` to the PR.
+devnet-e2e-test:
+  prs:
+    comment: The CI will now also run the e2e tests on devnet, which increases the time it takes to complete all CI checks.
+    label:
+      - devnet
+
+# When `devnet-e2e-test` is removed, also delete `devnet` from the PR.
+-devnet-e2e-test:
+  prs:
+    unlabel:
+      - devnet
+
+# When `devnet` is added, also assign `push-image` to the PR.
+devnet:
+  prs:
+    label:
+      - push-image
+
+# When `devnet` is removed, also delete `devnet-e2e-test` from the PR.
+-devnet:
+  prs:
+    unlabel:
+      - devnet-e2e-test
+
+# Let the developer know that they need to push another commit after attaching the label to PR.
+push-image:
+  prs:
+    comment: The image is going to be pushed after the next commit. If you want to run an e2e test, it is necessary to push another commit. You can use `make trigger_ci` to push an empty commit.
+
+# When `push-image` is removed, also delete `devnet` from the PR.
+-push-image:
+  prs:
+    unlabel:
+      - devnet

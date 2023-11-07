@@ -101,12 +101,12 @@ docker_build_with_restart(
     dockerfile_contents="""FROM golang:1.20.8
 RUN apt-get -q update && apt-get install -qyy curl jq
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
-COPY bin/pocketd /usr/local/bin/pocketd
+COPY bin/poktrolld /usr/local/bin/pocketd
 WORKDIR /
 """,
-    only=["./bin/pocketd"],
+    only=["./bin/poktrolld"],
     entrypoint=["/bin/sh", "/scripts/pocket.sh"],
-    live_update=[sync("bin/pocketd", "/usr/local/bin/pocketd")],
+    live_update=[sync("bin/poktrolld", "/usr/local/bin/pocketd")],
 )
 
 # Run celestia and anvil nodes

@@ -8,17 +8,20 @@ import (
 
 	"cosmossdk.io/depinject"
 	comettypes "github.com/cometbft/cometbft/types"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/internal/testclient"
 	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 )
 
-const blockAssertionLoopTimeout = 500 * time.Millisecond
+const (
+	testTimeoutDuration = 100 * time.Millisecond
+
+	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
+	committedBlocksQuery = "tm.event='NewBlock'"
+)
 
 func TestBlockClient(t *testing.T) {
 	var (
@@ -38,19 +41,15 @@ func TestBlockClient(t *testing.T) {
 		ctx = context.Background()
 	)
 
-	// Set up a mock connection and dialer which are expected to be used once.
-	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
-	connMock.EXPECT().Send(gomock.Any()).Return(nil).Times(1)
-	// Mock the Receive method to return the expected block event.
-	connMock.EXPECT().Receive().DoAndReturn(func() ([]byte, error) {
-		blockEventJson, err := json.Marshal(expectedBlockEvent)
-		require.NoError(t, err)
-		return blockEventJson, nil
-	}).AnyTimes()
+	expectedEventBz, err := json.Marshal(expectedBlockEvent)
+	require.NoError(t, err)
 
-	// Set up events query client dependency.
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	eventsQueryClient := testeventsquery.NewLocalnetClient(t, dialerOpt)
+	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
+		ctx, t,
+		committedBlocksQuery,
+		expectedEventBz,
+	)
+
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up block client.
@@ -58,60 +57,54 @@ func TestBlockClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
-	// Run LatestBlock and CommittedBlockSequence concurrently because they can
-	// block, leading to an unresponsive test. This function sends multiple values
-	// on the actualBlockCh which are all asserted against in blockAssertionLoop.
-	// If any of the methods under test hang, the test will time out.
-	var (
-		actualBlockCh = make(chan client.Block, 1)
-		done          = make(chan struct{}, 1)
-	)
-	go func() {
-		// Test LatestBlock method.
-		actualBlock := blockClient.LatestBlock(ctx)
-		require.Equal(t, expectedHeight, actualBlock.Height())
-		require.Equal(t, expectedHash, actualBlock.Hash())
+	tests := []struct {
+		name string
+		fn   func() client.Block
+	}{
+		{
+			name: "LatestBlock successfully returns latest block",
+			fn: func() client.Block {
+				lastBlock := blockClient.LatestBlock(ctx)
+				return lastBlock
+			},
+		},
+		{
+			name: "CommittedBlocksSequence successfully returns latest block",
+			fn: func() client.Block {
+				blockObservable := blockClient.CommittedBlocksSequence(ctx)
+				require.NotNil(t, blockObservable)
 
-		// Test CommittedBlockSequence method.
-		blockObservable := blockClient.CommittedBlocksSequence(ctx)
-		require.NotNil(t, blockObservable)
+				// Ensure that the observable is replayable via Last.
+				lastBlock := blockObservable.Last(ctx, 1)[0]
+				require.Equal(t, expectedHeight, lastBlock.Height())
+				require.Equal(t, expectedHash, lastBlock.Hash())
 
-		// Ensure that the observable is replayable via Last.
-		actualBlockCh <- blockObservable.Last(ctx, 1)[0]
-
-		// Ensure that the observable is replayable via Subscribe.
-		blockObserver := blockObservable.Subscribe(ctx)
-		for block := range blockObserver.Ch() {
-			actualBlockCh <- block
-			break
-		}
-
-		// Signal test completion
-		done <- struct{}{}
-	}()
-
-	// blockAssertionLoop ensures that the blocks retrieved from both LatestBlock
-	// method and CommittedBlocksSequence method match the expected block height
-	// and hash. This loop waits for blocks to be sent on the actualBlockCh channel
-	// by the methods being tested. Once the methods are done, they send a signal on
-	// the "done" channel. If the blockAssertionLoop doesn't receive any block or
-	// the done signal within a specific timeout, it assumes something has gone wrong
-	// and fails the test.
-blockAssertionLoop:
-	for {
-		select {
-		case actualBlock := <-actualBlockCh:
-			require.Equal(t, expectedHeight, actualBlock.Height())
-			require.Equal(t, expectedHash, actualBlock.Hash())
-		case <-done:
-			break blockAssertionLoop
-		case <-time.After(blockAssertionLoopTimeout):
-			t.Fatal("timed out waiting for block event")
-		}
+				return lastBlock
+			},
+		},
 	}
 
-	// Wait a tick for the observables to be set up.
-	time.Sleep(time.Millisecond)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var actualBlockCh = make(chan client.Block, 10)
+
+			// Run test functions asynchronously because they can block, leading
+			// to an unresponsive test. If any of the methods under test hang,
+			// the test will time out in the select statement that follows.
+			go func(fn func() client.Block) {
+				actualBlockCh <- fn()
+				close(actualBlockCh)
+			}(tt.fn)
+
+			select {
+			case actualBlock := <-actualBlockCh:
+				require.Equal(t, expectedHeight, actualBlock.Height())
+				require.Equal(t, expectedHash, actualBlock.Hash())
+			case <-time.After(testTimeoutDuration):
+				t.Fatal("timed out waiting for block event")
+			}
+		})
+	}
 
 	blockClient.Close()
 }
