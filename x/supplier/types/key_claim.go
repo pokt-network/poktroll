@@ -1,24 +1,43 @@
 package types
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 var _ binary.ByteOrder
 
 const (
-	// ClaimKeyPrefix is the prefix to retrieve all Claim
-	ClaimKeyPrefix = "Claim/value/"
+	// ClaimPrimaryKeyPrefix is the prefix to retrieve all Claim (the primary store)
+	ClaimPrimaryKeyPrefix = "Claim/value/"
+
+	// ClaimHeightPrefix is the key to retrieve a Claim's Primary Key from the Height index
+	ClaimHeightPrefix = "Claim/height/"
+
+	// ClaimAddressPrefix is the key to retrieve a Claim's Primary Key from the Address index
+	ClaimAddressPrefix = "Claim/address/"
+
+	// ClaimSessionIdPrefix is the key to retrieve a Claim's Primary Key from the SessionId index
+	ClaimSessionIdPrefix = "Claim/sessionId/"
 )
 
-// ClaimKey returns the store key to retrieve a Claim
-func ClaimKey(sessionId, supplierAddr string) []byte {
+// ClaimPrimaryKey returns the primary store key to retrieve a Claim
+func ClaimPrimaryKey(claim Claim) []byte {
 	var key []byte
 
-	sessionBz := []byte(sessionId)
-	key = append(key, sessionBz...)
+	// We are guaranteed uniqueness of the primary key if it's a composite of the (sessionId, supplierAddr)
+	key = append(key, []byte(claim.SessionId)...)
+	key = append(key, []byte("/")...)
+	key = append(key, []byte(claim.SupplierAddress)...)
 	key = append(key, []byte("/")...)
 
-	supplierAddrBz := []byte(supplierAddr)
-	key = append(key, supplierAddrBz...)
+	return key
+}
+
+// ClaimSupplierAddressKey returns the address key to iterate through claims given a supplier Address
+func ClaimSupplierAddressKey(supplierAddr string) []byte {
+	var key []byte
+
+	key = append(key, []byte(supplierAddr)...)
 	key = append(key, []byte("/")...)
 
 	return key

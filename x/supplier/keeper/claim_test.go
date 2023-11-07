@@ -5,49 +5,53 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
 func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
-	items := make([]types.Claim, n)
-	for i := range items {
-		items[i].Index = strconv.Itoa(i)
+	claims := make([]types.Claim, n)
+	for i := range claims {
+		claims[i].SupplierAddress = sample.AccAddress()
 
-		keeper.SetClaim(ctx, items[i])
+		keeper.InsertClaim(ctx, claims[i])
 	}
-	return items
+	return claims
 }
 
 func TestClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
-	for _, item := range items {
+	claims := createNClaim(keeper, ctx, 10)
+	for _, claim := range claims {
 		rst, found := keeper.GetClaim(ctx,
-			item.Index,
+			claim.Index,
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&claim),
 			nullify.Fill(&rst),
 		)
 	}
 }
 func TestClaimRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
-	for _, item := range items {
+	claims := createNClaim(keeper, ctx, 10)
+	for _, claim := range claims {
 		keeper.RemoveClaim(ctx,
-			item.Index,
+			claim.SessionId,
+			claim.SupplierAddress,
 		)
 		_, found := keeper.GetClaim(ctx,
-			item.Index,
+			claim.SessionId,
+			claim.SupplierAddress,
 		)
 		require.False(t, found)
 	}
@@ -55,9 +59,9 @@ func TestClaimRemove(t *testing.T) {
 
 func TestClaimGetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
+	claims := createNClaim(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllClaim(ctx)),
+		nullify.Fill(claims),
+		nullify.Fill(keeper.GetAllClaims(ctx)),
 	)
 }

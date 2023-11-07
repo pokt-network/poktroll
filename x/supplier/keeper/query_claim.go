@@ -21,7 +21,7 @@ func (k Keeper) ClaimAll(goCtx context.Context, req *types.QueryAllClaimRequest)
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	store := ctx.KVStore(k.storeKey)
-	claimStore := prefix.NewStore(store, types.KeyPrefix(types.ClaimKeyPrefix))
+	claimStore := prefix.NewStore(store, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
 		var claim types.Claim
