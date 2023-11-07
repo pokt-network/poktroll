@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// NewKey creates a new Secp256k1 key and mnemonic for the given name within
+// the provided keyring.
 func NewKey(
 	t *testing.T,
 	name string,

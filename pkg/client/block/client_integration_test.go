@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/testclient/testblock"
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 )
 
 const blockIntegrationSubTimeout = 5 * time.Second
