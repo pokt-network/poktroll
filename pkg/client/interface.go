@@ -1,6 +1,6 @@
 //go:generate mockgen -destination=../../internal/mocks/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
 //go:generate mockgen -destination=../../internal/mocks/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
-//go:generate mockgen -destination=../../internal/mocks/mockclient/tx_client_mock.go -package=mockclient . TxContext
+//go:generate mockgen -destination=../../internal/mocks/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../internal/mocks/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -14,10 +14,35 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
+
+// SupplierClient is an interface for sufficient for a supplier operator to be
+// able to construct blockchain transactions from pocket protocol-specific messages
+// related to its role.
+type SupplierClient interface {
+	// CreateClaim sends a claim message which creates an on-chain commitment by
+	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
+	// session's mined relays.
+	CreateClaim(
+		ctx context.Context,
+		sessionHeader sessiontypes.SessionHeader,
+		rootHash []byte,
+	) error
+	// SubmitProof sends a proof message which contains the
+	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
+	// for the same session. The proof is validated on-chain as part of the pocket
+	// protocol.
+	SubmitProof(
+		ctx context.Context,
+		sessionHeader sessiontypes.SessionHeader,
+		proof *smt.SparseMerkleClosestProof,
+	) error
+}
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
 // derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
@@ -79,7 +104,7 @@ type BlocksObservable observable.ReplayObservable[Block]
 // BlockClient is an interface which provides notifications about newly committed
 // blocks as well as direct access to the latest block via some blockchain API.
 type BlockClient interface {
-	// Blocks returns an observable which emits newly committed blocks.
+	// CommittedBlocksSequence returns an observable which emits newly committed blocks.
 	CommittedBlocksSequence(context.Context) BlocksObservable
 	// LatestBlock returns the latest block that has been committed.
 	LatestBlock(context.Context) Block
@@ -148,3 +173,6 @@ type EventsQueryClientOption func(EventsQueryClient)
 
 // TxClientOption defines a function type that modifies the TxClient.
 type TxClientOption func(TxClient)
+
+// SupplierClientOption defines a function type that modifies the SupplierClient.
+type SupplierClientOption func(SupplierClient)
