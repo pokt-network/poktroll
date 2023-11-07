@@ -14,10 +14,10 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 		k.SetSupplier(ctx, supplier)
 	}
 	// Set all the claim
-for _, elem := range genState.ClaimList {
-	k.SetClaim(ctx, elem)
-}
-// this line is used by starport scaffolding # genesis/module/init
+	for _, elem := range genState.ClaimList {
+		k.SetClaim(ctx, elem)
+	}
+	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
 }
 
@@ -28,7 +28,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 
 	genesis.SupplierList = k.GetAllSupplier(ctx)
 	genesis.ClaimList = k.GetAllClaim(ctx)
-// this line is used by starport scaffolding # genesis/module/export
+	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis
 }
