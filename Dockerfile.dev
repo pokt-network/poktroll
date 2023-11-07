@@ -15,7 +15,6 @@ COPY . /poktroll
 
 WORKDIR /poktroll
 
-# TODO_IN_THIS_PR: move to poktroll binary across the board including helm charts
 RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld
 
 EXPOSE 8545
