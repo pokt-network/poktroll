@@ -27,7 +27,9 @@ bin
 # As many of the files are dynamic, we only preserve the config files in git history.
 localnet/poktrolld/*
 localnet/*/config/
-!localnet/*/config/{app.toml,client.toml,config.toml}
+!localnet/**/config/app.toml
+!localnet/**/config/client.toml
+!localnet/**/config/config.toml
 
 # Macos
 .DS_Store
