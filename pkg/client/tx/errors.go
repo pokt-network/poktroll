@@ -3,18 +3,6 @@ package tx
 import errorsmod "cosmossdk.io/errors"
 
 var (
-	// ErrEmptySigningKeyName represents an error which indicates that the
-	// provided signing key name is empty or unspecified.
-	ErrEmptySigningKeyName = errorsmod.Register(codespace, 1, "empty signing key name")
-
-	// ErrNoSuchSigningKey represents an error signifying that the requested
-	// signing key does not exist or could not be located.
-	ErrNoSuchSigningKey = errorsmod.Register(codespace, 2, "signing key does not exist")
-
-	// ErrSigningKeyAddr is raised when there's a failure in retrieving the
-	// associated address for the provided signing key.
-	ErrSigningKeyAddr = errorsmod.Register(codespace, 3, "failed to get address for signing key")
-
 	// ErrInvalidMsg signifies that there was an issue in validating the
 	// transaction message. This could be due to format, content, or other
 	// constraints imposed on the message.
