@@ -6,10 +6,10 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/testclient/testtx"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 )
 
 // NewLocalnetClient creates and returns a new supplier client that connects to
