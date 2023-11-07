@@ -12,6 +12,7 @@ func CmdListClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-claim",
 		Short: "list all claim",
+		Args: cobra.NoArgs(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
