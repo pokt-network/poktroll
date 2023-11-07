@@ -18,9 +18,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// Prevent strconv unused error
-var _ = strconv.IntSize
-
 func networkWithClaimObjects(t *testing.T, n int) (*network.Network, []types.Claim) {
 	t.Helper()
 	cfg := network.DefaultConfig()

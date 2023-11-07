@@ -17,13 +17,11 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pocket/session/params";
-
   }
 
   // Queries a list of GetSession items.
   rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
     option (google.api.http).get = "/pocket/session/get_session";
-
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.

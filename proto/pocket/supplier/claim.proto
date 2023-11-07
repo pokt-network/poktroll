@@ -10,6 +10,5 @@ message Claim {
   string supplier_address = 2;
   string session_id = 3;
   string root_hash = 4;
-
 }
 

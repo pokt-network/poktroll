@@ -17,27 +17,22 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pocket/supplier/params";
-
   }
 
   // Queries a list of Supplier items.
   rpc Supplier (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
     option (google.api.http).get = "/pocket/supplier/supplier/{address}";
-
   }
   rpc SupplierAll (QueryAllSupplierRequest) returns (QueryAllSupplierResponse) {
     option (google.api.http).get = "/pocket/supplier/supplier";
-
   }
 
   // Queries a list of Claim items.
   rpc Claim (QueryGetClaimRequest) returns (QueryGetClaimResponse) {
     option (google.api.http).get = "/pocket/supplier/claim/{index}";
-
   }
   rpc AllClaims (QueryAllClaimRequest) returns (QueryAllClaimResponse) {
     option (google.api.http).get = "/pocket/supplier/claim";
-
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
