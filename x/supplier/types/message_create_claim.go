@@ -63,7 +63,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 	// Validate the root hash
 	// TODO_IMPROVE: Only checking to make sure a non-nil hash was provided for now, but we can validate the length as well.
 	if len(msg.RootHash) == 0 {
-		return sdkerrors.Wrapf(ErrSupplierInvalidRootHash, "invalid root hash (%v)", msg.RootHash)
+		return sdkerrors.Wrapf(ErrSupplierInvalidClaimRootHash, "invalid root hash (%v)", msg.RootHash)
 	}
 
 	return nil

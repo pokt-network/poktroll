@@ -16,5 +16,5 @@ var (
 	ErrSupplierInvalidSessionStartHeight = sdkerrors.Register(ModuleName, 6, "invalid session start height")
 	ErrSupplierInvalidSessionId          = sdkerrors.Register(ModuleName, 7, "invalid session ID")
 	ErrSupplierInvalidService            = sdkerrors.Register(ModuleName, 8, "invalid service")
-	ErrSupplierInvalidRootHash           = sdkerrors.Register(ModuleName, 9, "invalid root hash")
+	ErrSupplierInvalidClaimRootHash      = sdkerrors.Register(ModuleName, 9, "invalid root hash")
 )

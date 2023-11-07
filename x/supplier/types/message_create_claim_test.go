@@ -12,13 +12,13 @@ import (
 
 func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		testCase string
+		desc string
 
 		msg MsgCreateClaim
 		err error
 	}{
 		{
-			testCase: "invalid address",
+			desc: "invalid address",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
@@ -26,7 +26,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			err: ErrSupplierInvalidAddress,
 		},
 		{
-			testCase: "valid address but invalid session start height",
+			desc: "valid address but invalid session start height",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
@@ -37,7 +37,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			err: ErrSupplierInvalidSessionStartHeight,
 		},
 		{
-			testCase: "valid address and session start height but invalid session ID",
+			desc: "valid address and session start height but invalid session ID",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
@@ -49,7 +49,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			err: ErrSupplierInvalidSessionId,
 		},
 		{
-			testCase: "valid address, session start height, session ID but invalid service",
+			desc: "valid address, session start height, session ID but invalid service",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
@@ -64,7 +64,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			err: ErrSupplierInvalidService,
 		},
 		{
-			testCase: "valid address, session start height, session ID, service but invalid root hash",
+			desc: "valid address, session start height, session ID, service but invalid root hash",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
@@ -77,10 +77,10 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				},
 				RootHash: []byte(""), // Invalid root hash
 			},
-			err: ErrSupplierInvalidRootHash,
+			err: ErrSupplierInvalidClaimRootHash,
 		},
 		{
-			testCase: "all valid inputs",
+			desc: "all valid inputs",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
@@ -97,7 +97,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.testCase, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
