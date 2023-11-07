@@ -21,6 +21,9 @@ func (app *appServer) verifyResponse(
 		return err
 	}
 
+	signature := relayResponse.Meta.SupplierSignature
+	relayResponse.Meta.SupplierSignature = nil
+
 	// Marshal the relay response payload to bytes and get the hash.
 	var payloadBz []byte
 	if _, err = relayResponse.Payload.MarshalTo(payloadBz); err != nil {
@@ -29,7 +32,7 @@ func (app *appServer) verifyResponse(
 	hash := crypto.Sha256(payloadBz)
 
 	// Verify the relay response signature.
-	if !pubKey.VerifySignature(hash, relayResponse.Meta.SupplierSignature) {
+	if !pubKey.VerifySignature(hash, signature) {
 		return ErrInvalidRelayResponseSignature
 	}
 
