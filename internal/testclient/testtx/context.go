@@ -23,6 +23,28 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
+// NewLocalnetContext creates and returns a new transaction context configured
+// for use with the localnet sequencer.
+func NewLocalnetContext(t *testing.T) client.TxContext {
+	t.Helper()
+
+	flagSet := testclient.NewLocalnetFlagSet(t)
+	clientCtx := testclient.NewLocalnetClientCtx(t, flagSet)
+	txFactory, err := cosmostx.NewFactoryCLI(*clientCtx, flagSet)
+	require.NoError(t, err)
+	require.NotEmpty(t, txFactory)
+
+	deps := depinject.Supply(
+		*clientCtx,
+		txFactory,
+	)
+
+	txCtx, err := tx.NewTxContext(deps)
+	require.NoError(t, err)
+
+	return txCtx
+}
+
 // TODO_IMPROVE: these mock constructor helpers could include parameters for the
 // "times" (e.g. exact, min, max) values which are passed to their respective
 // gomock.EXPECT() method calls (i.e. Times(), MinTimes(), MaxTimes()).
@@ -30,25 +52,10 @@ import (
 // correlations between these "times" values and the contexts in which the expected
 // methods may be called.
 
-// NewOneTimeErrTxTimeoutTxContext creates a mock transaction context designed to simulate a specific
-// timeout error scenario during transaction broadcasting.
-//
-// Parameters:
-// - t: The testing.T instance for the current test.
-// - keyring: The Cosmos SDK keyring containing the signer's cryptographic keys.
-// - signingKeyName: The name of the key within the keyring to use for signing.
-// - expectedTx: A pointer whose value will be set to the expected transaction
-// bytes (in hexadecimal format).
-// - expectedErrMsg: A pointer whose value will be set to the expected error
-// message string.
-//
-// The function performs the following actions:
-// 1. It retrieves the signer's cryptographic key from the provided keyring using the signingKeyName.
-// 2. It computes the corresponding address of the signer's key.
-// 3. It then formats an error message indicating that the fee payer's address does not exist.
-// 4. It creates a base mock transaction context using NewBaseTxContext.
-// 5. It sets up the mock behavior for the BroadcastTxSync method to return a specific preset response.
-// 6. It also sets up the mock behavior for the QueryTx method to return a specific error response.
+// NewOneTimeErrTxTimeoutTxContext creates a mock transaction context designed to
+// simulate a specific timeout error scenario during transaction broadcasting.
+// expectedErrMsg is populated with the same error message which is presented in
+// the result from the QueryTx method so that it can be asserted against.
 func NewOneTimeErrTxTimeoutTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
@@ -116,24 +123,8 @@ func NewOneTimeErrTxTimeoutTxContext(
 // NewOneTimeErrCheckTxTxContext creates a mock transaction context to simulate
 // a specific error scenario during the ABCI check-tx phase (i.e., during initial
 // validation before the transaction is included in the block).
-//
-// Parameters:
-// - t: The testing.T instance for the current test.
-// - keyring: The Cosmos SDK keyring containing the signer's cryptographic keys.
-// - signingKeyName: The name of the key within the keyring to be used for signing.
-// - expectedTx: A pointer whose value will be set to the expected transaction
-// bytes (in hexadecimal format).
-// - expectedErrMsg: A pointer whose value will be set to the expected error
-// message string.
-//
-// The function operates as follows:
-//  1. Retrieves the signer's cryptographic key from the provided keyring based on
-//     the signingKeyName.
-//  2. Determines the corresponding address of the signer's key.
-//  3. Composes an error message suggesting that the fee payer's address is unrecognized.
-//  4. Creates a base mock transaction context using the NewBaseTxContext function.
-//  5. Sets up the mock behavior for the BroadcastTxSync method to return a specific
-//     error response related to the check phase of the transaction.
+// expectedErrMsg is populated with the same error message which is presented in
+// the result from the QueryTx method so that it can be asserted against.
 func NewOneTimeErrCheckTxTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
@@ -179,22 +170,7 @@ func NewOneTimeErrCheckTxTxContext(
 }
 
 // NewOneTimeTxTxContext creates a mock transaction context primed to respond with
-// a single successful transaction response. This function facilitates testing by
-// ensuring that the BroadcastTxSync method will return a specific, controlled response
-// without actually broadcasting the transaction to the network.
-//
-// Parameters:
-// - t: The testing.T instance used for the current test, typically passed from
-// the calling test function.
-// - keyring: The Cosmos SDK keyring containing the available cryptographic keys.
-// - signingKeyName: The name of the key within the keyring used for transaction signing.
-// - expectedTx: A pointer whose value will be set to the expected transaction
-// bytes (in hexadecimal format).
-//
-// The function operates as follows:
-//  1. Constructs a base mock transaction context using the NewBaseTxContext function.
-//  2. Configures the mock behavior for the BroadcastTxSync method to return a pre-defined
-//     successful transaction response, ensuring that this behavior will only be triggered once.
+// a single successful transaction response.
 func NewOneTimeTxTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
@@ -224,30 +200,11 @@ func NewOneTimeTxTxContext(
 	return txCtxMock
 }
 
-// NewBaseTxContext establishes a foundational mock transaction context with
-// predefined behaviors suitable for a broad range of testing scenarios. It ensures
-// that when interactions like transaction building, signing, and encoding occur
-// in the test environment, they produce predictable and controlled outcomes.
-//
-// Parameters:
-// - t: The testing.T instance used for the current test, typically passed from
-// the calling test function.
-// - signingKeyName: The name of the key within the keyring to be used for
-// transaction signing.
-// - keyring: The Cosmos SDK keyring containing the available cryptographic keys.
-// - expectedTx: A pointer whose value will be set to the expected transaction
-// bytes (in hexadecimal format).
-// - expectedErrMsg: A pointer whose value will be set to the expected error
-// message string.
-//
-// The function works as follows:
-//  1. Invokes the NewAnyTimesTxTxContext to create a base mock transaction context.
-//  2. Sets the expectation that NewTxBuilder method will be called exactly once.
-//  3. Configures the mock behavior for the SignTx method to utilize the context's
-//     signing logic.
-//  4. Overrides the EncodeTx method's behavior to intercept the encoding operation,
-//     capture the encoded transaction bytes, compute the transaction hash, and populate
-//     the expectedTx and expectedTxHash parameters accordingly.
+// NewBaseTxContext creates a mock transaction context that's configured to expect
+// calls to NewTxBuilder, SignTx, and EncodeTx methods, any number of times.
+// EncodeTx is used to intercept the encoded transaction bytes and store them in
+// the expectedTx output parameter. Each of these methods proxies to the corresponding
+// method on a real transaction context.
 func NewBaseTxContext(
 	t *testing.T,
 	signingKeyName string,
@@ -281,30 +238,6 @@ func NewBaseTxContext(
 // NewAnyTimesTxTxContext initializes a mock transaction context that's configured to allow
 // arbitrary calls to certain predefined interactions, primarily concerning the retrieval
 // of account numbers and sequences.
-//
-// Parameters:
-// - t: The testing.T instance used for the current test, typically passed from the calling test function.
-// - keyring: The Cosmos SDK keyring containing the available cryptographic keys.
-//
-// The function operates in the following manner:
-// 1. Establishes a new gomock controller for setting up mock expectations and behaviors.
-// 2. Prepares a set of flags suitable for localnet testing environments.
-// 3. Sets up a mock behavior to intercept the GetAccountNumberSequence method calls,
-//    ensuring that whenever this method is invoked, it consistently returns an account number
-//    and sequence of 1, without making real queries to the underlying infrastructure.
-// 4. Constructs a client context tailored for localnet testing with the provided keyring
-//    and the mocked account retriever.
-// 5. Initializes a transaction factory from the client context and validates its integrity.
-// 6. Injects the transaction factory and client context dependencies to create a new transaction context.
-// 7. Creates a mock transaction context that always returns the provided keyring when the GetKeyring method is called.
-//
-// This setup aids tests by facilitating the creation of mock transaction contexts that have predictable
-// and controlled outcomes for account number and sequence retrieval operations.
-//
-// Returns:
-// - A mock transaction context suitable for setting additional expectations in tests.
-// - A real transaction context initialized with the supplied dependencies.
-
 func NewAnyTimesTxTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
