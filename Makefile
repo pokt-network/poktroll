@@ -311,8 +311,8 @@ app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_A
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
-	GATEWAY1=$(make poktrolld_addr ACC_NAME=gateway1)
-	APP=app1 GATEWAY_ADDR=$(GATEWAY1) make app_delegate
+	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) \
+	APP=app1 GATEWAY_ADDR=$$GATEWAY1 make app_delegate
 
 .PHONY: app2_delegate_gateway2
 app2_delegate_gateway2: ## Delegate trust to gateway2
