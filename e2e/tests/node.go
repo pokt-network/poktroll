@@ -18,7 +18,7 @@ var (
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
-	defaultHome = os.Getenv("POCKETD_HOME")
+	defaultHome = os.Getenv("POKTROLLD_HOME")
 )
 
 func init() {
