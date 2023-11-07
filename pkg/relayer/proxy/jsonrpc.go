@@ -12,7 +12,7 @@ import (
 var _ RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// service is the id of the service that the server is responsible for.
+	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
 	// serverEndpoint is the advertised endpoint configuration that the server uses to
