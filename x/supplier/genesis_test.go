@@ -57,14 +57,14 @@ func TestGenesis(t *testing.T) {
 			},
 		},
 		ClaimList: []types.Claim{
-		{
-			Index: "0",
-},
-		{
-			Index: "1",
-},
-	},
-	// this line is used by starport scaffolding # genesis/test/state
+			{
+				Index: "0",
+			},
+			{
+				Index: "1",
+			},
+		},
+		// this line is used by starport scaffolding # genesis/test/state
 	}
 
 	k, ctx := keepertest.SupplierKeeper(t)
@@ -77,5 +77,5 @@ func TestGenesis(t *testing.T) {
 
 	require.ElementsMatch(t, genesisState.SupplierList, got.SupplierList)
 	require.ElementsMatch(t, genesisState.ClaimList, got.ClaimList)
-// this line is used by starport scaffolding # genesis/test/assert
+	// this line is used by starport scaffolding # genesis/test/assert
 }
