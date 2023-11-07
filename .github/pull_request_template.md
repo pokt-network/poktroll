@@ -44,7 +44,7 @@ Select one or more:
 
 ## Testing
 
-- [ ] **Run all unit tests**: `make go_test`
+- [ ] **Run all unit tests**: `make go_develop_and_test`
 - [ ] **Verify Localnet manually**: See the instructions [here](TODO: add link to instructions)
 
 ## Sanity Checklist

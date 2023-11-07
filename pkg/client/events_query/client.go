@@ -2,6 +2,8 @@ package eventsquery
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,39 +11,36 @@ import (
 
 	"go.uber.org/multierr"
 
-	"pocket/pkg/client"
-	"pocket/pkg/either"
-	"pocket/pkg/observable"
-	"pocket/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
-
-const requestIdFmt = "request_%d"
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
 
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#EventsBytes()` method for a similar purpose. Perhaps we could
+// TODO_TECHDEBT: the cosmos-sdk CLI code seems to use a cometbft RPC client
+// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
 // replace this custom websocket client with that.
-// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
-// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
+// See:
+// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110
+// - https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L656
+// - https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114
+// - https://github.com/pokt-network/poktroll/pull/64#discussion_r1372378241
 
 // eventsQueryClient implements the EventsQueryClient interface.
 type eventsQueryClient struct {
 	// cometWebsocketURL is the websocket URL for the cometbft node. It is assigned
 	// in NewEventsQueryClient.
 	cometWebsocketURL string
-	// nextRequestId is a *unique* ID intended to be monotonically incremented
-	// and used to uniquely identify distinct RPC requests.
-	// TODO_CONSIDERATION: Consider changing `nextRequestId` to a random entropy field
-	nextRequestId uint64
-
-	// dialer is resopnsible for createing the connection instance which
+	// dialer is responsible for creating the connection instance which
 	// facilitates communication with the cometbft node via message passing.
 	dialer client.Dialer
 	// eventsBytesAndConnsMu protects the eventsBytesAndConns map.
 	eventsBytesAndConnsMu sync.RWMutex
 	// eventsBytesAndConns maps event subscription queries to their respective
-	// eventsBytes observable, connection, and closed status.
+	// eventsBytes observable, connection, and isClosed status.
 	eventsBytesAndConns map[string]*eventsBytesAndConn
 }
 
@@ -49,11 +48,18 @@ type eventsQueryClient struct {
 // corresponding connection which produces its inputs.
 type eventsBytesAndConn struct {
 	// eventsBytes is an observable which is notified about chain event messages
-	// matching the given query. It receives an either.Either[[]byte] which is
+	// matching the given query. It receives an either.Bytes which is
 	// either an error or the event message bytes.
-	eventsBytes observable.Observable[either.Either[[]byte]]
+	eventsBytes observable.Observable[either.Bytes]
 	conn        client.Connection
-	closed      bool
+	isClosed    bool
+}
+
+// Close unsubscribes all observers of eventsBytesAndConn's observable and also
+// closes its connection.
+func (ebc *eventsBytesAndConn) Close() {
+	ebc.eventsBytes.UnsubscribeAll()
+	_ = ebc.conn.Close()
 }
 
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
@@ -68,14 +74,14 @@ func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryCl
 
 	if evtClient.dialer == nil {
 		// default to using the websocket dialer
-		evtClient.dialer = NewWebsocketDialer()
+		evtClient.dialer = websocket.NewWebsocketDialer()
 	}
 
 	return evtClient
 }
 
 // EventsBytes returns an eventsBytes observable which is notified about chain
-// event messages matching the given query. It receives an either.Either[[]byte]
+// event messages matching the given query. It receives an either.Bytes
 // which is either an error or the event message bytes.
 // (see: https://pkg.go.dev/github.com/cometbft/cometbft/types#pkg-constants)
 // (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
@@ -124,20 +130,13 @@ func (eqc *eventsQueryClient) close() {
 	eqc.eventsBytesAndConnsMu.Lock()
 	defer eqc.eventsBytesAndConnsMu.Unlock()
 
-	for query, obsvblConn := range eqc.eventsBytesAndConns {
-		_ = obsvblConn.conn.Close()
-		obsvblConn.eventsBytes.UnsubscribeAll()
-
-		// remove closed eventsBytesAndConns
+	for query, eventsBzConn := range eqc.eventsBytesAndConns {
+		// Unsubscribe all observers of the eventsBzConn observable and close the
+		// connection for the given query.
+		eventsBzConn.Close()
+		// remove isClosed eventsBytesAndConns
 		delete(eqc.eventsBytesAndConns, query)
 	}
-}
-
-// getNextRequestId increments and returns the JSON-RPC request ID which should
-// be used for the next request. These IDs are expected to be unique (per request).
-func (eqc *eventsQueryClient) getNextRequestId() string {
-	eqc.nextRequestId++
-	return fmt.Sprintf(requestIdFmt, eqc.nextRequestId)
 }
 
 // newEventwsBzAndConn creates a new eventsBytes and connection for the given query.
@@ -145,15 +144,19 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	ctx context.Context,
 	query string,
 ) (*eventsBytesAndConn, error) {
+	// Get a connection for the query.
 	conn, err := eqc.openEventsBytesAndConn(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	// Construct an eventsBytes for the given query.
-	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Either[[]byte]]()
+	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Bytes]()
 
-	// TODO_INVESTIGATE: does this require retry on error?
+	// Publish either events bytes or an error received from the connection to
+	// the eventsBz observable.
+	// NB: intentionally not retrying on error, leaving that to the caller.
+	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
 	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
 
 	return &eventsBytesAndConn{
@@ -168,10 +171,8 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 	ctx context.Context,
 	query string,
 ) (client.Connection, error) {
-	// If no event subscription exists for the given query, create a new one.
-	// Generate a new unique request ID.
-	requestId := eqc.getNextRequestId()
-	req, err := eventSubscriptionRequest(requestId, query)
+	// Get a request for subscribing to events matching the given query.
+	req, err := eqc.eventSubscriptionRequest(query)
 	if err != nil {
 		return nil, err
 	}
@@ -197,12 +198,12 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 func (eqc *eventsQueryClient) goPublishEventsBz(
 	ctx context.Context,
 	conn client.Connection,
-	eventsBzPublishCh chan<- either.Either[[]byte],
+	eventsBzPublishCh chan<- either.Bytes,
 ) {
 	// Read and handle messages from the websocket. This loop will exit when the
-	// websocket connection is closed and/or returns an error.
+	// websocket connection is isClosed and/or returns an error.
 	for {
-		event, err := conn.Receive()
+		eventBz, err := conn.Receive()
 		if err != nil {
 			// TODO_CONSIDERATION: should we close the publish channel here too?
 
@@ -225,7 +226,7 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 		}
 
 		// Populate the []byte side (right) of the either and publish it.
-		eventsBzPublishCh <- either.Success(event)
+		eventsBzPublishCh <- either.Success(eventBz)
 	}
 }
 
@@ -235,32 +236,30 @@ func (eqc *eventsQueryClient) goUnsubscribeOnDone(
 	ctx context.Context,
 	query string,
 ) {
-	// wait for the context to be done
+	// Wait for the context to be done.
 	<-ctx.Done()
-	// only close the eventsBytes for the give query
+	// Only close the eventsBytes for the given query.
 	eqc.eventsBytesAndConnsMu.RLock()
 	defer eqc.eventsBytesAndConnsMu.RUnlock()
 
-	if toClose, ok := eqc.eventsBytesAndConns[query]; ok {
-		toClose.eventsBytes.UnsubscribeAll()
-	}
-	for compareQuery, eventsBzConn := range eqc.eventsBytesAndConns {
-		if query == compareQuery {
-			eventsBzConn.eventsBytes.UnsubscribeAll()
-			return
-		}
+	if eventsBzConn, ok := eqc.eventsBytesAndConns[query]; ok {
+		// Unsubscribe all observers of the given query's eventsBzConn's observable
+		// and close its connection.
+		eventsBzConn.Close()
+		// Remove the eventsBytesAndConn for the given query.
+		delete(eqc.eventsBytesAndConns, query)
 	}
 }
 
 // eventSubscriptionRequest returns a JSON-RPC request for subscribing to events
-// matching the given query.
+// matching the given query. The request is serialized as JSON to a byte slice.
 // (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
 // (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
-func eventSubscriptionRequest(requestId, query string) ([]byte, error) {
+func (eqc *eventsQueryClient) eventSubscriptionRequest(query string) ([]byte, error) {
 	requestJson := map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "subscribe",
-		"id":      requestId,
+		"id":      randRequestId(),
 		"params": map[string]interface{}{
 			"query": query,
 		},
@@ -270,4 +269,19 @@ func eventSubscriptionRequest(requestId, query string) ([]byte, error) {
 		return nil, err
 	}
 	return requestBz, nil
+}
+
+// randRequestId returns a random 8 byte, base64 request ID which is intended
+// for in JSON-RPC requests to uniquely identify distinct RPC requests.
+// These request IDs only need to be unique to the extent that they are useful
+// to this client for identifying distinct RPC requests. Their size and keyspace
+// are arbitrary.
+func randRequestId() string {
+	requestIdBz := make([]byte, 8) // 8 bytes = 64 bits = uint64
+	if _, err := rand.Read(requestIdBz); err != nil {
+		panic(fmt.Sprintf(
+			"failed to generate random request ID: %s", err,
+		))
+	}
+	return base64.StdEncoding.EncodeToString(requestIdBz)
 }

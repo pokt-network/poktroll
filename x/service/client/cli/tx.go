@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	// "github.com/cosmos/cosmos-sdk/client/flags"
-	"pocket/x/service/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var (

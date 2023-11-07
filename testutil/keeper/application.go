@@ -15,10 +15,17 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "pocket/testutil/application/mocks"
-	"pocket/x/application/keeper"
-	"pocket/x/application/types"
+	mocks "github.com/pokt-network/poktroll/testutil/application/mocks"
+	"github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
+
+// StakedGatewayMap is used to mock whether a gateway is staked or not for use
+// in the application's mocked gateway keeper. This enables the tester to
+// control whether a gateway is "staked" or not and whether it can be delegated to
+// WARNING: Using this map may cause issues if running multiple tests in parallel
+var StakedGatewayMap = make(map[string]struct{})
 
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -38,6 +45,23 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
+
+	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
+	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
+			if _, ok := StakedGatewayMap[addr]; !ok {
+				return gatewaytypes.Gateway{}, false
+			}
+			stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
+			return gatewaytypes.Gateway{
+				Address: addr,
+				Stake:   &stake,
+			}, true
+		},
+	).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -50,6 +74,8 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		memStoreKey,
 		paramsSubspace,
 		mockBankKeeper,
+		mockAccountKeeper,
+		mockGatewayKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())

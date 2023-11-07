@@ -6,17 +6,43 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"pocket/testutil/sample"
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	serviceConfig1 := &sharedtypes.SupplierServiceConfig{
+		ServiceId: &sharedtypes.ServiceId{
+			Id: "svcId1",
+		},
+		Endpoints: []*sharedtypes.SupplierEndpoint{
+			{
+				Url:     "http://localhost:8081",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+				Configs: make([]*sharedtypes.ConfigOption, 0),
+			},
+		},
+	}
+	serviceList1 := []*sharedtypes.SupplierServiceConfig{serviceConfig1}
 
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	serviceConfig2 := &sharedtypes.SupplierServiceConfig{
+		ServiceId: &sharedtypes.ServiceId{
+			Id: "svcId2",
+		},
+		Endpoints: []*sharedtypes.SupplierEndpoint{
+			{
+				Url:     "http://localhost:8082",
+				RpcType: sharedtypes.RPCType_GRPC,
+				Configs: make([]*sharedtypes.ConfigOption, 0),
+			},
+		},
+	}
+	serviceList2 := []*sharedtypes.SupplierServiceConfig{serviceConfig2}
 
 	tests := []struct {
 		desc     string
@@ -34,12 +60,14 @@ func TestGenesisState_Validate(t *testing.T) {
 
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &stake2,
+						Address:  addr2,
+						Stake:    &stake2,
+						Services: serviceList2,
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -51,12 +79,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						Address:  addr2,
+						Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						Services: serviceList2,
 					},
 				},
 			},
@@ -67,12 +97,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						Address:  addr2,
+						Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						Services: serviceList2,
 					},
 				},
 			},
@@ -83,12 +115,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						Address:  addr2,
+						Stake:    &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						Services: serviceList2,
 					},
 				},
 			},
@@ -99,12 +133,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						Address:  addr2,
+						Stake:    &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						Services: serviceList2,
 					},
 				},
 			},
@@ -115,12 +151,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr1,
-						Stake:   &stake2,
+						Address:  addr1,
+						Stake:    &stake2,
+						Services: serviceList2,
 					},
 				},
 			},
@@ -131,12 +169,14 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
-						Address: addr2,
-						Stake:   nil,
+						Address:  addr2,
+						Stake:    nil,
+						Services: serviceList2,
 					},
 				},
 			},
@@ -147,12 +187,112 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				SupplierList: []sharedtypes.Supplier{
 					{
-						Address: addr1,
-						Stake:   &stake1,
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
 					},
 					{
 						Address: addr2,
 						// Explicitly missing stake
+						Services: serviceList2,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - missing services list",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						// Services: intentionally omitted
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - empty services list",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address:  addr2,
+						Stake:    &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - invalid URL",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{
+							{
+								ServiceId: &sharedtypes.ServiceId{
+									Id: "svcId1",
+								},
+								Endpoints: []*sharedtypes.SupplierEndpoint{
+									{
+										Url:     "invalid URL",
+										RpcType: sharedtypes.RPCType_JSON_RPC,
+										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "invalid - invalid RPC Type",
+			genState: &types.GenesisState{
+				SupplierList: []sharedtypes.Supplier{
+					{
+						Address:  addr1,
+						Stake:    &stake1,
+						Services: serviceList1,
+					},
+					{
+						Address: addr2,
+						Stake:   &stake2,
+						Services: []*sharedtypes.SupplierServiceConfig{
+							{
+								ServiceId: &sharedtypes.ServiceId{
+									Id: "svcId1",
+								},
+								Endpoints: []*sharedtypes.SupplierEndpoint{
+									{
+										Url:     "http://localhost:8081",
+										RpcType: sharedtypes.RPCType_UNKNOWN_RPC,
+										Configs: make([]*sharedtypes.ConfigOption, 0),
+									},
+								},
+							},
+						},
 					},
 				},
 			},

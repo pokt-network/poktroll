@@ -70,12 +70,7 @@ If the package can be configured in some way, describe it here:
 
 ## API Reference
 
-While `godoc` will provide the detailed API reference, you can highlight or briefly describe key functions, types, or methods here.
-
-- `FunctionOrType1()`: A short description of its purpose.
-- `FunctionOrType2(param Type)`: Another brief description.
-
-For the complete API details, see the [godoc](https://pkg.go.dev/github.com/yourusername/yourproject/[PackageName]).
+For the complete API details, see the [godoc](https://pkg.go.dev/github.com/pokt-network/poktroll/[PackageName]).
 
 ## Best Practices
 
@@ -91,15 +86,3 @@ Answer for question 1.
 #### Question 2?
 
 Answer for question 2.
-
-## Contributing
-
-Briefly describe how others can contribute to this package. Link to the main contributing guide if you have one.
-
-## Changelog
-
-For detailed release notes, see the [CHANGELOG](../CHANGELOG.md) at the root level or link to a separate CHANGELOG specific to this package.
-
-## License
-
-This package is released under the XYZ License. For more information, see the [LICENSE](../LICENSE) file at the root level.

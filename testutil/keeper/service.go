@@ -13,8 +13,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/stretchr/testify/require"
-	"pocket/x/service/keeper"
-	"pocket/x/service/types"
+
+	"github.com/pokt-network/poktroll/x/service/keeper"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 func ServiceKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {

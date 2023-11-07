@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"pocket/internal/testclient/testblock"
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/internal/testclient/testblock"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 const blockIntegrationSubTimeout = 5 * time.Second
@@ -27,6 +27,7 @@ func TestBlockClient_LatestBlock(t *testing.T) {
 	block := blockClient.LatestBlock(ctx)
 	require.NotEmpty(t, block)
 }
+
 func TestBlockClient_BlocksObservable(t *testing.T) {
 	ctx := context.Background()
 

@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	sharedtypes "pocket/x/shared/types"
-	"pocket/x/supplier/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k Keeper) SupplierAll(goCtx context.Context, req *types.QueryAllSupplierRequest) (*types.QueryAllSupplierResponse, error) {

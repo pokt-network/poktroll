@@ -9,7 +9,7 @@ import "pocket/session/params.proto";
 import "pocket/session/session.proto";
 import "pocket/shared/service.proto";
 
-option go_package = "pocket/x/session/types";
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
 
 // Query defines the gRPC querier service.
 service Query {

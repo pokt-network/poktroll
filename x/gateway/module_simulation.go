@@ -3,9 +3,9 @@ package gateway
 import (
 	"math/rand"
 
-	"pocket/testutil/sample"
-	gatewaysimulation "pocket/x/gateway/simulation"
-	"pocket/x/gateway/types"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	gatewaysimulation "github.com/pokt-network/poktroll/x/gateway/simulation"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
