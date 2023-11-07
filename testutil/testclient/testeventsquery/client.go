@@ -10,12 +10,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/mocks/mockclient"
-	"github.com/pokt-network/poktroll/internal/testclient"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
 // NewLocalnetClient creates and returns a new events query client that's configured

@@ -10,12 +10,12 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/internal/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
+	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 
-	"github.com/pokt-network/poktroll/internal/testclient/testblock"
-	"github.com/pokt-network/poktroll/internal/testclient/testeventsquery"
-	"github.com/pokt-network/poktroll/internal/testclient/testtx"
 	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
