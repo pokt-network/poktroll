@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"pocket/x/supplier/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func CmdListClaim() *cobra.Command {

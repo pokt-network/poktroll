@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-    "strconv"
+	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/x/supplier/types"
-	"pocket/testutil/nullify"
-	keepertest "pocket/testutil/keeper"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // Prevent strconv unused error
@@ -29,28 +29,25 @@ func TestClaimQuerySingle(t *testing.T) {
 		err      error
 	}{
 		{
-			desc:     "First",
-			request:  &types.QueryGetClaimRequest{
-			    Index: msgs[0].Index,
-                
+			desc: "First",
+			request: &types.QueryGetClaimRequest{
+				Index: msgs[0].Index,
 			},
 			response: &types.QueryGetClaimResponse{Claim: msgs[0]},
 		},
 		{
-			desc:     "Second",
-			request:  &types.QueryGetClaimRequest{
-			    Index: msgs[1].Index,
-                
+			desc: "Second",
+			request: &types.QueryGetClaimRequest{
+				Index: msgs[1].Index,
 			},
 			response: &types.QueryGetClaimResponse{Claim: msgs[1]},
 		},
 		{
-			desc:    "KeyNotFound",
+			desc: "KeyNotFound",
 			request: &types.QueryGetClaimRequest{
-			    Index:strconv.Itoa(100000),
-                
+				Index: strconv.Itoa(100000),
 			},
-			err:     status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "not found"),
 		},
 		{
 			desc: "InvalidRequest",
@@ -95,9 +92,9 @@ func TestClaimQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.Claim),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.Claim),
+			)
 		}
 	})
 	t.Run("ByKey", func(t *testing.T) {
@@ -108,9 +105,9 @@ func TestClaimQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.Claim),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.Claim),
+			)
 			next = resp.Pagination.NextKey
 		}
 	})
