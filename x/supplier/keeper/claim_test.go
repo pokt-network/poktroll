@@ -4,11 +4,11 @@ import (
 	"strconv"
 	"testing"
 
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +19,7 @@ func createNClaim(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim {
 	items := make([]types.Claim, n)
 	for i := range items {
 		items[i].Index = strconv.Itoa(i)
-        
+
 		keeper.SetClaim(ctx, items[i])
 	}
 	return items
@@ -30,8 +30,7 @@ func TestClaimGet(t *testing.T) {
 	items := createNClaim(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetClaim(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		require.True(t, found)
 		require.Equal(t,
@@ -45,12 +44,10 @@ func TestClaimRemove(t *testing.T) {
 	items := createNClaim(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveClaim(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		_, found := keeper.GetClaim(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		require.False(t, found)
 	}

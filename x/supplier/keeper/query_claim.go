@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -46,11 +46,11 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	val, found := k.GetClaim(
-	    ctx,
-	    req.Index,
-        )
+		ctx,
+		req.Index,
+	)
 	if !found {
-	    return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	return &types.QueryGetClaimResponse{Claim: val}, nil
