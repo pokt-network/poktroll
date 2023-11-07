@@ -4,15 +4,18 @@ import (
 	"crypto/sha256"
 	"os"
 	"path/filepath"
-	sessiontypes "pocket/x/session/types"
 	"sync"
 
 	"github.com/pokt-network/smt"
+
+	"github.com/pokt-network/poktroll/pkg/relayer"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-var _ SessionTree = (*sessionTree)(nil)
+var _ relayer.SessionTree = (*sessionTree)(nil)
 
 // sessionTree is an implementation of the SessionTree interface.
+// TODO_TEST: Add tests to the sessionTree.
 type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
@@ -25,7 +28,7 @@ type sessionTree struct {
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed, committed to disk
-	// and no more updates can be made to it. It also indicates that a proof could be generated
+	// and no more updates can be made to it. A non-nil value also indicates that a proof could be generated
 	// using ProveClosest function.
 	claimedRoot []byte
 
@@ -58,16 +61,21 @@ func NewSessionTree(
 	session *sessiontypes.Session,
 	storesDirectory string,
 	removeFromRelayerSessions func(session *sessiontypes.Session),
-) (SessionTree, error) {
-	// join the storePrefix and the session.sessionId to create a unique storePath
+) (relayer.SessionTree, error) {
+	// Join the storePrefix and the session.sessionId to create a unique storePath
 	storePath := filepath.Join(storesDirectory, session.SessionId)
+
+	// Make sure storePath does not exist when creating a new SessionTree
+	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
+		return nil, ErrSessionStorePathExists
+	}
 
 	treeStore, err := smt.NewKVStore(storePath)
 	if err != nil {
 		return nil, err
 	}
 
-	// create the SMST from the KVStore and a nil value hasher so the proof would contain a non-hashed Relay
+	// Create the SMST from the KVStore and a nil value hasher so the proof would contain a non-hashed Relay
 	// that could be used to validate the proof on-chain.
 	tree := smt.NewSparseMerkleSumTree(treeStore, sha256.New(), smt.WithValueHasher(nil))
 

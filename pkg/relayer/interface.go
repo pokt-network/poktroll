@@ -1,4 +1,4 @@
-package session
+package relayer
 
 import (
 	"github.com/pokt-network/smt"
@@ -9,11 +9,10 @@ import (
 
 // RelayerSessionsManager is an interface for managing the relayer's sessions and Sparse Merkle Sum Trees (SMSTs).
 // It provides notifications about closing sessions that are ready to be claimed, and handles the creation
-// and retrieval of SMSTs for a given session. It can also be thought of as a SessionManager but dedicated
-// to the Relayer behavior.
+// and retrieval of SMSTs for a given session. It also handles the creation and retrieval of SMSTs for a given session.
 type RelayerSessionsManager interface {
-	// ClosingSessions returns an observable that notifies of sessions ready to be claimed.
-	ClosingSessions() observable.Observable[SessionTree]
+	// ClaimableSessions returns an observable that notifies of sessions ready to be claimed.
+	ClaimableSessions() observable.Observable[SessionTree]
 
 	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session. It is used to retrieve
 	// the SMST and update it when a Relay has been successfully served. If the session is seen for the first time,
