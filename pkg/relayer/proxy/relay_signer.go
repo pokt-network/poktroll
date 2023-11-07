@@ -3,7 +3,7 @@ package proxy
 import (
 	"github.com/cometbft/cometbft/crypto"
 
-	"pocket/x/service/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // SignRelayResponse is a shared method used by the RelayServers to sign a RelayResponse.Payload.

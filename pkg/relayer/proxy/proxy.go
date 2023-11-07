@@ -12,16 +12,17 @@ import (
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var _ RelayerProxy = (*relayerProxy)(nil)
+var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 
 type (
 	serviceId            = string
-	relayServersMap      = map[serviceId][]RelayServer
+	relayServersMap      = map[serviceId][]relayer.RelayServer
 	servicesEndpointsMap = map[serviceId]url.URL
 )
 
@@ -76,7 +77,7 @@ func NewRelayerProxy(
 	keyring keyring.Keyring,
 	proxiedServicesEndpoints servicesEndpointsMap,
 	blockClient blocktypes.BlockClient,
-) RelayerProxy {
+) relayer.RelayerProxy {
 	accountQuerier := accounttypes.NewQueryClient(clientCtx)
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)

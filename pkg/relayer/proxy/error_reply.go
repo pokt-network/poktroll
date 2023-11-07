@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"pocket/x/service/types"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // replyWithError builds a JSONRPCResponseError from the passed in error and writes it to the writer.

@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ RelayServer = (*jsonRPCServer)(nil)
+var _ relayer.RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
 	// serviceId is the id of the service that the server is responsible for.
@@ -29,7 +30,7 @@ type jsonRPCServer struct {
 	server *http.Server
 
 	// relayerProxy is the main relayer proxy that the server uses to perform its operations.
-	relayerProxy RelayerProxy
+	relayerProxy relayer.RelayerProxy
 
 	// servedRelaysProducer is a channel that emits the relays that have been served, allowing
 	// the servedRelays observable to fan-out notifications to its subscribers.
@@ -45,8 +46,8 @@ func NewJSONRPCServer(
 	supplierEndpoint *sharedtypes.SupplierEndpoint,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
-	proxy RelayerProxy,
-) RelayServer {
+	proxy relayer.RelayerProxy,
+) relayer.RelayServer {
 	return &jsonRPCServer{
 		serviceId:              serviceId,
 		serverEndpoint:         supplierEndpoint,

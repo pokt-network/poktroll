@@ -1,14 +1,15 @@
 package proxy
 
 import (
+	"context"
+
 	"github.com/cometbft/cometbft/crypto"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/exp/slices"
 
-	"context"
-	"pocket/x/service/types"
-	sessiontypes "pocket/x/session/types"
-	sharedtypes "pocket/x/shared/types"
+	"github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // VerifyRelayRequest is a shared method used by RelayServers to check the relay request signature and session validity.
