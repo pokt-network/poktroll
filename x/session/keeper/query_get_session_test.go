@@ -97,7 +97,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: 1,
 
-			expectedErrContains: types.ErrAppNotFound.Error(),
+			expectedErrContains: types.ErrSessionAppNotFound.Error(),
 		},
 		{
 			name: "application staked for service that has no available suppliers",
@@ -106,7 +106,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   keepertest.TestServiceId11,
 			blockHeight: 1,
 
-			expectedErrContains: types.ErrSuppliersNotFound.Error(),
+			expectedErrContains: types.ErrSessionSuppliersNotFound.Error(),
 		},
 		{
 			name: "application is valid but not staked for the specified service",
@@ -115,7 +115,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   "svc9001", // App1 is not staked for service over 9000
 			blockHeight: 1,
 
-			expectedErrContains: types.ErrAppNotStakedForService.Error(),
+			expectedErrContains: types.ErrSessionAppNotStakedForService.Error(),
 		},
 		{
 			name: "application address is invalid format",

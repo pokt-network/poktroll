@@ -95,7 +95,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier) and is not staked for service over 9000
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrAppNotStakedForService,
+			expectedErr: sessiontypes.ErrSessionAppNotStakedForService,
 		},
 		{
 			desc: "invalid - no suppliers staked for service",
@@ -104,7 +104,7 @@ func TestCLI_GetSession(t *testing.T) {
 			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
 			blockHeight: 0,
 
-			expectedErr: sessiontypes.ErrSuppliersNotFound,
+			expectedErr: sessiontypes.ErrSessionSuppliersNotFound,
 		},
 		{
 			desc: "invalid - block height is in the future",

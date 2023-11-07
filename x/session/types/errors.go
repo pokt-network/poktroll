@@ -8,11 +8,11 @@ import (
 
 // x/session module sentinel errors
 var (
-	ErrHydratingSession          = sdkerrors.Register(ModuleName, 1, "error during session hydration")
-	ErrAppNotFound               = sdkerrors.Register(ModuleName, 2, "application not found")
-	ErrAppNotStakedForService    = sdkerrors.Register(ModuleName, 3, "application not staked for service")
-	ErrSuppliersNotFound         = sdkerrors.Register(ModuleName, 4, "suppliers not found")
-	ErrSessionInvalidAppAddress  = sdkerrors.Register(ModuleName, 5, "invalid application address")
-	ErrSessionInvalidServiceId   = sdkerrors.Register(ModuleName, 6, "invalid serviceID")
-	ErrSessionInvalidBlockHeight = sdkerrors.Register(ModuleName, 7, "invalid block height")
+	ErrSessionHydrating              = sdkerrors.Register(ModuleName, 1, "error during session hydration")
+	ErrSessionAppNotFound            = sdkerrors.Register(ModuleName, 2, "application for session not found not found ")
+	ErrSessionAppNotStakedForService = sdkerrors.Register(ModuleName, 3, "application in session not staked for requested service")
+	ErrSessionSuppliersNotFound      = sdkerrors.Register(ModuleName, 4, "no suppliers not found for session")
+	ErrSessionInvalidAppAddress      = sdkerrors.Register(ModuleName, 5, "invalid application address for session")
+	ErrSessionInvalidServiceId       = sdkerrors.Register(ModuleName, 6, "invalid serviceID in session")
+	ErrSessionInvalidBlockHeight     = sdkerrors.Register(ModuleName, 7, "invalid block height for session")
 )

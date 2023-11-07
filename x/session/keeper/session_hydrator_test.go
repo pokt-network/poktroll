@@ -242,7 +242,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   sample.AccAddress(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrHydratingSession,
+			expectedErr: types.ErrSessionHydrating,
 		},
 		{
 			desc: "invalid app address",
@@ -250,7 +250,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   "invalid",
 			serviceId: keepertest.TestServiceId1,
 
-			expectedErr: types.ErrHydratingSession,
+			expectedErr: types.ErrSessionHydrating,
 		},
 		{
 			desc: "invalid - app not staked for service",
@@ -258,7 +258,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc9001",                  // app1 is only stake for svc1 and svc11
 
-			expectedErr: types.ErrHydratingSession,
+			expectedErr: types.ErrSessionHydrating,
 		},
 		// TODO_TECHDEBT: Add tests for when:
 		// - Application join/leaves (stakes/unstakes) altogether
@@ -308,7 +308,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			serviceId: keepertest.TestServiceId11,
 
 			numExpectedSuppliers: 0,
-			expectedErr:          types.ErrSuppliersNotFound,
+			expectedErr:          types.ErrSessionSuppliersNotFound,
 		},
 		{
 			desc: "num_suppliers_available < num_suppliers_per_session_param",
