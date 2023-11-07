@@ -8,7 +8,6 @@ option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
 // Service message to encapsulate unique and semantic identifiers for a service on the network
 message Service {
-    // NOTE: `Service.Id` may seem redundant but was desigtned created to enable more complex service identification
     // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
     string id = 1; // Unique identifier for the service
 
