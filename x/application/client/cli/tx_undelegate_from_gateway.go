@@ -3,22 +3,29 @@ package cli
 import (
 	"strconv"
 
+	"github.com/pokt-network/poktroll/x/application/types"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
-	"pocket/x/application/types"
 )
 
 var _ = strconv.Itoa(0)
 
 func CmdUndelegateFromGateway() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "undelegate-from-gateway",
-		Short: "Broadcast message undelegate-from-gateway",
-		Args:  cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) (err error) {
+		Use:   "undelegate-from-gateway [gateway address]",
+		Short: "Undelegate an application from a gateway",
+		Long: `Undelegate an application from the gateway with the provided address. This is a broadcast operation
+that removes the authority from the gateway specified to sign relays requests for the application, disallowing the gateway
+act on the behalf of the application during a session.
 
+Example:
+$ poktrolld --home=$(POCKETD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			gatewayAddress := args[0]
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
@@ -26,10 +33,12 @@ func CmdUndelegateFromGateway() *cobra.Command {
 
 			msg := types.NewMsgUndelegateFromGateway(
 				clientCtx.GetFromAddress().String(),
+				gatewayAddress,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

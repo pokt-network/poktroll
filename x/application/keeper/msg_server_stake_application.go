@@ -6,7 +6,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k msgServer) StakeApplication(
@@ -19,6 +19,7 @@ func (k msgServer) StakeApplication(
 	logger.Info("About to stake application with msg: %v", msg)
 
 	if err := msg.ValidateBasic(); err != nil {
+		logger.Error("invalid MsgStakeApplication: %v", err)
 		return nil, err
 	}
 
@@ -46,6 +47,7 @@ func (k msgServer) StakeApplication(
 		return nil, err
 	}
 
+	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the application to the staked application pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
@@ -65,8 +67,10 @@ func (k msgServer) createApplication(
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
-		Address: msg.Address,
-		Stake:   msg.Stake,
+		Address:                   msg.Address,
+		Stake:                     msg.Stake,
+		ServiceConfigs:            msg.Services,
+		DelegateeGatewayAddresses: make([]string, 0),
 	}
 }
 
@@ -80,16 +84,21 @@ func (k msgServer) updateApplication(
 		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
 	}
 
+	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
 	}
-
 	if msg.Stake.IsLTE(*app.Stake) {
-
 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
-
 	app.Stake = msg.Stake
+
+	// Validate that the service configs maintain at least one service.
+	// Additional validation is done in `msg.ValidateBasic` above.
+	if len(msg.Services) == 0 {
+		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
+	}
+	app.ServiceConfigs = msg.Services
 
 	return nil
 }

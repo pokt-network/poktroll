@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"pocket/testutil/network"
-	"pocket/x/supplier/client/cli"
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/x/supplier/client/cli"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {
@@ -39,51 +39,134 @@ func TestCLI_StakeSupplier(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc        string
-		address     string
-		stakeString string
-		err         *sdkerrors.Error
+		desc           string
+		address        string
+		stakeString    string
+		servicesString string
+		err            *sdkerrors.Error
 	}{
+		// Happy Paths
 		{
-			desc:        "stake supplier: valid",
-			address:     supplierAccount.Address.String(),
-			stakeString: "1000upokt",
+			desc:           "stake supplier: valid",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "svc1;http://pokt.network:8081",
 		},
+
+		// Error Paths - Address Related
 		{
 			desc: "stake supplier: missing address",
 			// address:     "explicitly missing",
-			stakeString: "1000upokt",
-			err:         types.ErrSupplierInvalidAddress,
+			stakeString:    "1000upokt",
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidAddress,
 		},
 		{
-			desc:        "stake supplier: invalid address",
-			address:     "invalid",
-			stakeString: "1000upokt",
-			err:         types.ErrSupplierInvalidAddress,
+			desc:           "stake supplier: invalid address",
+			address:        "invalid",
+			stakeString:    "1000upokt",
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidAddress,
 		},
+
+		// Error Paths - Stake Related
 		{
 			desc:    "stake supplier: missing stake",
 			address: supplierAccount.Address.String(),
 			// stakeString: "explicitly missing",
-			err: types.ErrSupplierInvalidStake,
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake denom",
-			address:     supplierAccount.Address.String(),
-			stakeString: "1000invalid",
-			err:         types.ErrSupplierInvalidStake,
+			desc:           "stake supplier: invalid stake denom",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000invalid",
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake amount (zero)",
-			address:     supplierAccount.Address.String(),
-			stakeString: "0upokt",
-			err:         types.ErrSupplierInvalidStake,
+			desc:           "stake supplier: invalid stake amount (zero)",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "0upokt",
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidStake,
 		},
 		{
-			desc:        "stake supplier: invalid stake amount (negative)",
+			desc:           "stake supplier: invalid stake amount (negative)",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "-1000upokt",
+			servicesString: "svc1;http://pokt.network:8081",
+			err:            types.ErrSupplierInvalidStake,
+		},
+
+		// Happy Paths - Service Related
+		{
+			desc:           "services_test: valid multiple services",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "svc1;http://pokt.network:8081,svc2;http://pokt.network:8082",
+		},
+		{
+			desc:           "services_test: valid localhost",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "scv1;http://127.0.0.1:8082",
+		},
+		{
+			desc:           "services_test: valid loopback",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "scv1;http://localhost:8082",
+		},
+		{
+			desc:           "services_test: valid without a pork",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "scv1;http://pokt.network",
+		},
+
+		// Error Paths - Service Related
+		{
+			desc:        "services_test: invalid services (missing argument)",
 			address:     supplierAccount.Address.String(),
-			stakeString: "-1000upokt",
-			err:         types.ErrSupplierInvalidStake,
+			stakeString: "1000upokt",
+			// servicesString: "explicitly omitted",
+			err: types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:           "services_test: invalid services (empty string)",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "",
+			err:            types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:           "services_test: invalid because contains a space",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "scv1 http://127.0.0.1:8082",
+			err:            types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:           "services_test: invalid URL",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "svc1;bad_url",
+			err:            types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:           "services_test: missing URLs",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "svc1,svc2;",
+			err:            types.ErrSupplierInvalidServiceConfig,
+		},
+		{
+			desc:           "services_test: missing service IDs",
+			address:        supplierAccount.Address.String(),
+			stakeString:    "1000upokt",
+			servicesString: "localhost:8081,;localhost:8082",
+			err:            types.ErrSupplierInvalidServiceConfig,
 		},
 	}
 
@@ -99,6 +182,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			// Prepare the arguments for the CLI command
 			args := []string{
 				tt.stakeString,
+				tt.servicesString,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)

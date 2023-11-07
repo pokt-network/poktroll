@@ -9,9 +9,10 @@ const TypeMsgUndelegateFromGateway = "undelegate_from_gateway"
 
 var _ sdk.Msg = (*MsgUndelegateFromGateway)(nil)
 
-func NewMsgUndelegateFromGateway(address string) *MsgUndelegateFromGateway {
+func NewMsgUndelegateFromGateway(appAddress, gatewayAddress string) *MsgUndelegateFromGateway {
 	return &MsgUndelegateFromGateway{
-		Address: address,
+		AppAddress:     appAddress,
+		GatewayAddress: gatewayAddress,
 	}
 }
 
@@ -24,7 +25,7 @@ func (msg *MsgUndelegateFromGateway) Type() string {
 }
 
 func (msg *MsgUndelegateFromGateway) GetSigners() []sdk.AccAddress {
-	address, err := sdk.AccAddressFromBech32(msg.Address)
+	address, err := sdk.AccAddressFromBech32(msg.AppAddress)
 	if err != nil {
 		panic(err)
 	}
@@ -37,9 +38,13 @@ func (msg *MsgUndelegateFromGateway) GetSignBytes() []byte {
 }
 
 func (msg *MsgUndelegateFromGateway) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address address (%s)", err)
+	// Validate the application address
+	if _, err := sdk.AccAddressFromBech32(msg.AppAddress); err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.AppAddress, err)
+	}
+	// Validate the gateway address
+	if _, err := sdk.AccAddressFromBech32(msg.GatewayAddress); err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", msg.GatewayAddress, err)
 	}
 	return nil
 }

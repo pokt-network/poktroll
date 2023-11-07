@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 
-	"pocket/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (

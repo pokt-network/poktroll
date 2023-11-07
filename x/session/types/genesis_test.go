@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"pocket/x/session/types"
+
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

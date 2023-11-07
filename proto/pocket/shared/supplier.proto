@@ -4,7 +4,7 @@ package pocket.shared;
 // NOTE that the `shared` package is not a Cosmos module,
 // but rather a manually created package to resolve circular dependencies.
 
-option go_package = "pocket/x/shared/types";
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
 
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
@@ -16,4 +16,3 @@ message Supplier {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the supplier has staked
   repeated SupplierServiceConfig services = 3; // The service configs this supplier can support
 }
-

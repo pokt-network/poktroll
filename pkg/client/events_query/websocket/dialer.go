@@ -1,11 +1,11 @@
-package eventsquery
+package websocket
 
 import (
 	"context"
 
 	"github.com/gorilla/websocket"
 
-	"pocket/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 var _ client.Dialer = (*websocketDialer)(nil)

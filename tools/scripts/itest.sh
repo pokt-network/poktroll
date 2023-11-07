@@ -44,7 +44,7 @@ itest() {
 
         # If go test fails, exit the loop.
         if [[ $test_exit_status -ne 0 ]]; then
-            echo "go test failed on iteration $i. Exiting early."
+            echo "go test failed on iteration $i; exiting early. Total tests run: $total_tests_run"
             return 1
         fi
     done

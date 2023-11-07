@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
-	"pocket/x/application/types"
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var _ = strconv.Itoa(0)
@@ -22,7 +22,7 @@ func CmdUnstakeApplication() *cobra.Command {
 the application specified by the 'from' address.
 
 Example:
-$ pocketd --home=$(POCKETD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POCKETD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 
