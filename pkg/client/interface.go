@@ -45,7 +45,7 @@ type SupplierClient interface {
 }
 
 // TxClient provides a synchronous interface initiating and waiting for transactions
-// in a cosmos-sdk based blockchain network, derived from cosmos-sdk messages.
+// derived from cosmos-sdk messages, in a cosmos-sdk based blockchain network.
 type TxClient interface {
 	SignAndBroadcast(
 		ctx context.Context,
@@ -54,8 +54,8 @@ type TxClient interface {
 }
 
 // TxContext provides an interface which consolidates the operational dependencies
-// required to facilitate the sender side of the transaction lifecycle: build, sign, encode,
-// broadcast, query (optional).
+// required to facilitate the sender side of the transaction lifecycle: build, sign,
+// encode, broadcast, and query (optional).
 //
 // TODO_IMPROVE: Avoid depending on cosmos-sdk structs or interfaces; add Pocket
 // interface types to substitute:
@@ -95,6 +95,7 @@ type TxContext interface {
 
 // BlocksObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
+//
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
@@ -119,23 +120,24 @@ type Block interface {
 	Hash() []byte
 }
 
-// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
-// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
-// replace this custom websocket client with that.
-// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
-// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
-//
-// NOTE: a branch which attempts this is available at:
-// https://github.com/pokt-network/poktroll/pull/74
-
 // EventsBytesObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
+//
 // TODO_HACK: The purpose of this type is to work around gomock's lack of
 // support for generic types. For the same reason, this type cannot be an
 // alias (i.e. EventsBytesObservable = observable.Observable[either.Bytes]).
 type EventsBytesObservable observable.Observable[either.Bytes]
 
 // EventsQueryClient is used to subscribe to chain event messages matching the given query,
+//
+// TODO_CONSIDERATION: the cosmos-sdk CLI code seems to use a cometbft RPC client
+// which includes a `#Subscribe()` method for a similar purpose. Perhaps we could
+// replace our custom implementation with one which wraps that.
+// (see: https://github.com/cometbft/cometbft/blob/main/rpc/client/http/http.go#L110)
+// (see: https://github.com/cosmos/cosmos-sdk/blob/main/client/rpc/tx.go#L114)
+//
+// NOTE: a branch which attempts this is available at:
+// https://github.com/pokt-network/poktroll/pull/74
 type EventsQueryClient interface {
 	// EventsBytes returns an observable which is notified about chain event messages
 	// matching the given query. It receives an either value which contains either an

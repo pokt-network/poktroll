@@ -46,7 +46,7 @@ var _ client.TxClient = (*txClient)(nil)
 // the last status of the transaction, which is used to derive the asynchronous
 // error that's populated in the either.AsyncError.
 type txClient struct {
-	// INCOMPLETE: this should be configurable & integrated w/ viper, flags, etc.
+	// TODO_TECHDEBT: this should be configurable & integrated w/ viper, flags, etc.
 	// commitTimeoutHeightOffset is the number of blocks after the latest block
 	// that a transactions should be considered errored if it has not been committed.
 	commitTimeoutHeightOffset int64
