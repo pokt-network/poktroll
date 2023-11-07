@@ -15,7 +15,8 @@ COPY . /poktroll
 
 WORKDIR /poktroll
 
-RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld
+# TODO_IN_THIS_PR: move to poktroll binary across the board including helm charts
+RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld && ln -s /usr/bin/poktrolld /usr/bin/pocketd
 
 EXPOSE 8545
 EXPOSE 8546
