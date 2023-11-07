@@ -41,6 +41,6 @@ type RelayServer interface {
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
 
-	// Service returns the serviceId of the service.
+	// Service returns the service to which the RelayServer relays.
 	Service() *sharedtypes.Service
 }
