@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
-// NewLocalnetClient creates and returns a new events query client that configured
+// NewLocalnetClient creates and returns a new events query client that's configured
 // for use with the localnet sequencer. Any options provided are applied to the client.
 func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
@@ -28,7 +28,7 @@ func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) cli
 
 // NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects
 // a single call to the EventsBytes method. It returns a mock client whose event
-// bytes method always  constructs a new observable. query is the query string
+// bytes method always constructs a new observable. query is the query string
 // for which event bytes subscription is expected to be for.
 // The caller can simulate blockchain events by sending on publishCh, the value
 // of which is set to the publish channel of the events bytes observable publish
@@ -54,7 +54,7 @@ func NewOneTimeEventsQuery(
 	return eventsQueryClient
 }
 
-// NewOneTimeTxEventsQueryClient creates a mock of the Events that expects to to
+// NewOneTimeTxEventsQueryClient creates a mock of the Events that expects
 // a single call to the EventsBytes method where the query is for transaction
 // events for sender address matching that of the given key.
 // The caller can simulate blockchain events by sending on publishCh, the value
