@@ -27,9 +27,9 @@ type sessionTree struct {
 	tree *smt.SMST
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
-	// If it holds a non-nil value, it means that the SMST has been flushed, committed to disk
-	// and no more updates can be made to it. A non-nil value also indicates that a proof could be generated
-	// using ProveClosest function.
+	// If it holds a non-nil value, it means that the SMST has been flushed,
+	// committed to disk and no more updates can be made to it. A non-nil value also
+	// indicates that a proof could be generated using ProveClosest function.
 	claimedRoot []byte
 
 	// proofPath is the path for which the proof was generated.
@@ -47,10 +47,11 @@ type sessionTree struct {
 	// to delete the KVStore when it is no longer needed.
 	storePath string
 
-	// removeFromRelayerSessions is a function that removes the sessionTree from the RelayerSessionsManager.
-	// Since the sessionTree has no knowledge of the RelayerSessionsManager, we pass this callback
-	// from the session manager to the sessionTree so it can remove itself from the RelayerSessionsManager
-	// when it is no longer needed.
+	// removeFromRelayerSessions is a function that removes the sessionTree from
+	// the RelayerSessionsManager.
+	// Since the sessionTree has no knowledge of the RelayerSessionsManager,
+	// we pass this callback from the session manager to the sessionTree so
+	// it can remove itself from the RelayerSessionsManager when it is no longer needed.
 	removeFromRelayerSessions func(session *sessiontypes.Session)
 }
 
@@ -75,8 +76,8 @@ func NewSessionTree(
 		return nil, err
 	}
 
-	// Create the SMST from the KVStore and a nil value hasher so the proof would contain a non-hashed Relay
-	// that could be used to validate the proof on-chain.
+	// Create the SMST from the KVStore and a nil value hasher so the proof would
+	// contain a non-hashed Relay that could be used to validate the proof on-chain.
 	tree := smt.NewSparseMerkleSumTree(treeStore, sha256.New(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
@@ -96,9 +97,11 @@ func (st *sessionTree) GetSession() *sessiontypes.Session {
 	return st.session
 }
 
-// Update is a wrapper for the SMST's Update function. It updates the SMST with the given key, value, and weight.
+// Update is a wrapper for the SMST's Update function. It updates the SMST with
+// the given key, value, and weight.
 // This function should be called by the Miner when a Relay has been successfully served.
-// It returns an error if the SMST has been flushed to disk which indicates that updates are no longer allowed.
+// It returns an error if the SMST has been flushed to disk which indicates
+// that updates are no longer allowed.
 func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
@@ -143,8 +146,8 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	return st.proof, err
 }
 
-// Flush gets the root hash of the SMST needed for submitting the claim; then commits the entire tree to disk
-// and stops the KVStore.
+// Flush gets the root hash of the SMST needed for submitting the claim;
+// then commits the entire tree to disk and stops the KVStore.
 // It should be called before submitting the claim on-chain. This function frees up the KVStore resources.
 // If the SMST has already been flushed to disk, it returns the cached root hash.
 func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
@@ -175,8 +178,9 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 }
 
 // Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
-// WARNING: This function deletes the KVStore associated to the session and should be called only after
-// the proof has been successfully submitted on-chain and the servicer has confirmed that it has been rewarded.
+// WARNING: This function deletes the KVStore associated to the session and should be
+// called only after the proof has been successfully submitted on-chain and the servicer
+// has confirmed that it has been rewarded.
 func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()

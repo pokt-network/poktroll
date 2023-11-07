@@ -25,7 +25,8 @@ type relayerSessionsManager struct {
 	// claimableSessionsPublisher is the channel used to publish claimable sessions.
 	claimableSessionsPublisher chan<- relayer.SessionTree
 
-	// sessionTrees is a map of block heights containing another map of SessionTrees indexed by their sessionId.
+	// sessionTrees is a map of block heights containing another map of SessionTrees
+	// indexed by their sessionId.
 	// The block height index is used to know when the sessions contained in the entry should be closed,
 	// this helps to avoid iterating over all sessionsTrees to check if they are ready to be closed.
 	sessionsTrees   sessionsTreesMap
@@ -94,8 +95,8 @@ func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Sessio
 	return sessionTree, nil
 }
 
-// goListenToCommittedBlocks listens to committed blocks so that rs.claimableSessionsPublisher can notify
-// when sessions are ready to be claimed.
+// goListenToCommittedBlocks listens to committed blocks so that rs.claimableSessionsPublisher
+// can notify when sessions are ready to be claimed.
 // It is intended to be called as a background goroutine.
 func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context) {
 	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
