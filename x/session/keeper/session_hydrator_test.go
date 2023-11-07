@@ -217,37 +217,44 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 // TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	type test struct {
-		name      string
+		// Description
+		desc string
+		// Inputs
 		appAddr   string
 		serviceId string
 
+		// Outputs
 		expectedErr error
 	}
 
 	tests := []test{
 		{
-			name:      "app is found",
+			desc: "app is found",
+
 			appAddr:   keepertest.TestApp1Address,
 			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: nil,
 		},
 		{
-			name:      "app is not found",
+			desc: "app is not found",
+
 			appAddr:   sample.AccAddress(), // Generating a random address on the fly
 			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: types.ErrHydratingSession,
 		},
 		{
-			name:      "invalid app address",
+			desc: "invalid app address",
+
 			appAddr:   "invalid",
 			serviceId: keepertest.TestServiceId1,
 
 			expectedErr: types.ErrHydratingSession,
 		},
 		{
-			name:      "invalid - app not staked for service",
+			desc: "invalid - app not staked for service",
+
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: "svc9001",                  // app1 is only stake for svc1 and svc11
 
@@ -264,7 +271,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
 			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 			if tt.expectedErr != nil {
@@ -279,10 +286,14 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 // TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	type test struct {
-		name      string
+		// Description
+		desc string
+
+		// Inputs
 		appAddr   string
 		serviceId string
 
+		// Outputs
 		numExpectedSuppliers int
 		expectedErr          error
 	}
@@ -291,7 +302,8 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	// Currently assumes NumSupplierPerSession=15
 	tests := []test{
 		{
-			name:      "num_suppliers_available = 0",
+			desc: "num_suppliers_available = 0",
+
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: keepertest.TestServiceId11,
 
@@ -299,7 +311,8 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 			expectedErr:          types.ErrSuppliersNotFound,
 		},
 		{
-			name:      "num_suppliers_available < num_suppliers_per_session_param",
+			desc: "num_suppliers_available < num_suppliers_per_session_param",
+
 			appAddr:   keepertest.TestApp1Address, // app1
 			serviceId: keepertest.TestServiceId1,  // svc1
 
@@ -321,7 +334,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {})
+		t.Run(tt.desc, func(t *testing.T) {})
 
 		sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
 		session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
