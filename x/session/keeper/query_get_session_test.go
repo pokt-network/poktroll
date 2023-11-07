@@ -133,7 +133,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 			serviceId:   "service_id_is_too_long_to_be_valid",
 			blockHeight: 1,
 
-			expectedErrContains: "invalid serviceID for session being retrieved",
+			expectedErrContains: "invalid service in session",
 		},
 		{
 			name: "negative block height",
