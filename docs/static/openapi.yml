@@ -77568,7 +77568,7 @@ definitions:
         title: The height at which this session started
       session_id:
         type: string
-        description: A unique pseudoranom ID for this session/
+        description: A unique pseudoranom ID for this session
         title: >-
           NOTE: session_id can be derived from the above values using on-chain
           but is included in the header for convenience

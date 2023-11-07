@@ -4,8 +4,6 @@
 
 - [Overview](#overview)
 - [Architecture Diagrams](#architecture-diagrams)
-  - [Components](#components)
-  - [Subscriptions](#subscriptions)
 - [Installation](#installation)
 - [Features](#features)
 - [Usage](#usage)
