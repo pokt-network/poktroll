@@ -1,19 +1,22 @@
-package appclient
+package appserver
 
 import (
 	"context"
+	"log"
 	"net/url"
 
-	sessiontypes "pocket/x/session/types"
-	sharedtypes "pocket/x/shared/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_IMPROVE: This implements a naive greedy approach that defaults to the
+// first available URL but future optimizations can be introduced.
+// TODO(@h5law): Look into different endpoint selection depending on their suitability.
 // getRelayerUrl gets the URL of the relayer for the given service.
-// It gets the suppliers list from the current session and returns
-// the first relayer URL that matches the JSON RPC RpcType.
-func (app *appClient) getRelayerUrl(
+func (app *appServer) getRelayerUrl(
 	ctx context.Context,
 	serviceId string,
+	rpcType sharedtypes.RPCType,
 	session *sessiontypes.Session,
 ) (supplierUrl *url.URL, supplierAddress string, err error) {
 	for _, supplier := range session.Suppliers {
@@ -25,9 +28,13 @@ func (app *appClient) getRelayerUrl(
 
 			for _, endpoint := range service.Endpoints {
 				// Return the first endpoint url that matches the JSON RPC RpcType.
-				if endpoint.RpcType == sharedtypes.RPCType_JSON_RPC {
+				if endpoint.RpcType == rpcType {
 					supplierUrl, err := url.Parse(endpoint.Url)
-					return supplierUrl, supplier.Address, err
+					if err != nil {
+						log.Printf("error parsing url: %s", err)
+						continue
+					}
+					return supplierUrl, supplier.Address, nil
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-package appclient
+package appserver
 
 import sdkerrors "cosmossdk.io/errors"
 
