@@ -7,11 +7,16 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_TECHDEBT(@Olshansk): Remove existing claims from genesis.
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the supplier
 	for _, supplier := range genState.SupplierList {
 		k.SetSupplier(ctx, supplier)
+	}
+	// Set all the claim
+	for _, elem := range genState.ClaimList {
+		k.SetClaim(ctx, elem)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
@@ -23,6 +28,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.SupplierList = k.GetAllSupplier(ctx)
+	genesis.ClaimList = k.GetAllClaims(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis

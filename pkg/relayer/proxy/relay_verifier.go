@@ -15,7 +15,7 @@ import (
 func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
-	serviceId *sharedtypes.ServiceId,
+	service *sharedtypes.Service,
 ) (*types.RelayRequest, error) {
 	// Query for the application account to get the application's public key to verify the relay request signature.
 	applicationAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
@@ -45,7 +45,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	currentBlock := rp.blockClient.LatestBlock(ctx)
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: applicationAddress,
-		ServiceId:          serviceId,
+		Service:            service,
 		BlockHeight:        currentBlock.Height(),
 	}
 	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)

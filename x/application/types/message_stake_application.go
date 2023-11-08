@@ -23,7 +23,7 @@ func NewMsgStakeApplication(
 	appServiceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(serviceIds))
 	for idx, serviceId := range serviceIds {
 		appServiceConfigs[idx] = &sharedtypes.ApplicationServiceConfig{
-			ServiceId: &sharedtypes.ServiceId{
+			Service: &sharedtypes.Service{
 				Id: serviceId,
 			},
 		}

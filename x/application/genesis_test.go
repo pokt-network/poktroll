@@ -24,7 +24,7 @@ func TestGenesis(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+						Service: &sharedtypes.Service{Id: "svc1"},
 					},
 				},
 			},
@@ -33,7 +33,7 @@ func TestGenesis(t *testing.T) {
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{
-						ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
+						Service: &sharedtypes.Service{Id: "svc2"},
 					},
 				},
 			},

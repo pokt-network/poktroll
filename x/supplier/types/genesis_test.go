@@ -15,7 +15,7 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
 	serviceConfig1 := &sharedtypes.SupplierServiceConfig{
-		ServiceId: &sharedtypes.ServiceId{
+		Service: &sharedtypes.Service{
 			Id: "svcId1",
 		},
 		Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -31,7 +31,7 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
 	serviceConfig2 := &sharedtypes.SupplierServiceConfig{
-		ServiceId: &sharedtypes.ServiceId{
+		Service: &sharedtypes.Service{
 			Id: "svcId2",
 		},
 		Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -68,6 +68,14 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address:  addr2,
 						Stake:    &stake2,
 						Services: serviceList2,
+					},
+				},
+				ClaimList: []types.Claim{
+					{
+						Index: "0",
+					},
+					{
+						Index: "1",
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -250,7 +258,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Stake:   &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
-								ServiceId: &sharedtypes.ServiceId{
+								Service: &sharedtypes.Service{
 									Id: "svcId1",
 								},
 								Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -281,7 +289,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Stake:   &stake2,
 						Services: []*sharedtypes.SupplierServiceConfig{
 							{
-								ServiceId: &sharedtypes.ServiceId{
+								Service: &sharedtypes.Service{
 									Id: "svcId1",
 								},
 								Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -293,6 +301,20 @@ func TestGenesisState_Validate(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "duplicated claim",
+			genState: &types.GenesisState{
+				ClaimList: []types.Claim{
+					{
+						Index: "0",
+					},
+					{
+						Index: "0",
 					},
 				},
 			},

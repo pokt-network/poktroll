@@ -16,8 +16,8 @@ import (
 var _ relayer.RelayServer = (*jsonRPCServer)(nil)
 
 type jsonRPCServer struct {
-	// serviceId is the id of the service that the server is responsible for.
-	serviceId *sharedtypes.ServiceId
+	// service is the service that the server is responsible for.
+	service *sharedtypes.Service
 
 	// serverEndpoint is the advertised endpoint configuration that the server uses to
 	// listen for incoming relay requests.
@@ -42,14 +42,14 @@ type jsonRPCServer struct {
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
 // a RelayServer that listens to incoming RelayRequests.
 func NewJSONRPCServer(
-	serviceId *sharedtypes.ServiceId,
+	service *sharedtypes.Service,
 	supplierEndpoint *sharedtypes.SupplierEndpoint,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &jsonRPCServer{
-		serviceId:              serviceId,
+		service:                service,
 		serverEndpoint:         supplierEndpoint,
 		server:                 &http.Server{Addr: supplierEndpoint.Url},
 		relayerProxy:           proxy,
@@ -75,9 +75,9 @@ func (jsrv *jsonRPCServer) Stop(ctx context.Context) error {
 	return jsrv.server.Shutdown(ctx)
 }
 
-// ServiceId returns the serviceId of the JSON-RPC service.
-func (jsrv *jsonRPCServer) ServiceId() *sharedtypes.ServiceId {
-	return jsrv.serviceId
+// Service returns the JSON-RPC service.
+func (j *jsonRPCServer) Service() *sharedtypes.Service {
+	return j.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
@@ -105,7 +105,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 	log.Printf(
 		"INFO: relay request served successfully for application %s, service %s, session start block height %d, proxied service %s",
 		relay.Res.Meta.SessionHeader.ApplicationAddress,
-		relay.Res.Meta.SessionHeader.ServiceId.Id,
+		relay.Res.Meta.SessionHeader.Service.Id,
 		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
 		jsrv.serverEndpoint.Url,
 	)
@@ -129,7 +129,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	relayRequest, err = jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.serviceId)
+	relayRequest, err = jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service)
 	if err != nil {
 		return nil, err
 	}

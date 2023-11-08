@@ -17,13 +17,11 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pocket/session/params";
-
   }
 
   // Queries a list of GetSession items.
   rpc GetSession (QueryGetSessionRequest) returns (QueryGetSessionResponse) {
     option (google.api.http).get = "/pocket/session/get_session";
-
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -38,7 +36,7 @@ message QueryParamsResponse {
 
 message QueryGetSessionRequest {
   string application_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
-  shared.ServiceId service_id = 2; // The service id to query the session for
+  shared.Service service = 2; // The service id to query the session for
   int64 block_height = 3; // The block height to query the session for
 }
 
