@@ -64,32 +64,29 @@ func (rs *relayerSessionsManager) SessionsToClaim() observable.Observable[relaye
 
 // EnsureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Session) (relayer.SessionTree, error) {
+func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	// Calculate the session end height based on the session start block height
-	// and the number of blocks per session.
-	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
+	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
 		sessionsTrees = make(map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionEndHeight] = sessionsTrees
+		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
 	}
 
 	// Get the sessionTree for the given session.
-	sessionTree, ok := sessionsTrees[session.SessionId]
+	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create it.
 	if !ok {
-		sessionTree, err := NewSessionTree(session, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err := NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
 
-		sessionsTrees[session.SessionId] = sessionTree
+		sessionsTrees[sessionHeader.SessionId] = sessionTree
 	}
 
 	return sessionTree, nil
@@ -102,27 +99,37 @@ func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context)
 	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	for block := range committedBlocks {
-		// Check if there are sessions to be closed at this block height.
-		if sessionsTrees, ok := rs.sessionsTrees[block.Height()]; ok {
-			// Iterate over the sessionsTrees that end at this block height and publish them.
-			for _, sessionTree := range sessionsTrees {
-				rs.sessionsToClaimPublisher <- sessionTree
+		// Check if there are sessions that need to enter the claim/proof phase
+		// as their end block height was the one before the last committed block.
+		// Iterate over the sessionsTrees map to get the ones that end at a block height
+		// lower than the current block height.
+		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+			if endBlockHeight < block.Height() {
+				// Iterate over the sessionsTrees that end at this block height (or less) and publish them.
+				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+					rs.sessionsToClaimPublisher <- sessionTree
+				}
 			}
 		}
 	}
 }
 
-// removeFromRelayerSessions removes the session from the relayerSessions.
-func (rs *relayerSessionsManager) removeFromRelayerSessions(session *sessiontypes.Session) {
+// removeFromRelayerSessions removes the SessionTree from the relayerSessions.
+func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessiontypes.SessionHeader) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
+	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Print("session not found in relayerSessionsManager")
+		log.Printf("no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
 		return
 	}
 
-	delete(sessionsTrees, session.SessionId)
+	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+
+	// Check if the sessionsTrees map is empty and delete it if so.
+	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
+	if len(sessionsTreesEndingAtBlockHeight) == 0 {
+		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
+	}
 }

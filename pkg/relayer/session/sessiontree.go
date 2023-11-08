@@ -21,8 +21,8 @@ type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
 
-	// session is the Session corresponding to the SMST (Sparse Merkle State Tree).
-	session *sessiontypes.Session
+	// sessionHeader is the header of the session corresponding to the SMST (Sparse Merkle State Tree).
+	sessionHeader *sessiontypes.SessionHeader
 
 	// tree is the SMST (Sparse Merkle State Tree) corresponding the session.
 	tree *smt.SMST
@@ -53,19 +53,19 @@ type sessionTree struct {
 	// Since the sessionTree has no knowledge of the RelayerSessionsManager,
 	// we pass this callback from the session manager to the sessionTree so
 	// it can remove itself from the RelayerSessionsManager when it is no longer needed.
-	removeFromRelayerSessions func(session *sessiontypes.Session)
+	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader)
 }
 
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
 // removeFromRelayerSessions that removes the sessionTree from the RelayerSessionsManager.
 // It returns an error if the KVStore fails to be created.
 func NewSessionTree(
-	session *sessiontypes.Session,
+	sessionHeader *sessiontypes.SessionHeader,
 	storesDirectory string,
-	removeFromRelayerSessions func(session *sessiontypes.Session),
+	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader),
 ) (relayer.SessionTree, error) {
 	// Join the storePrefix and the session.sessionId to create a unique storePath
-	storePath := filepath.Join(storesDirectory, session.SessionId)
+	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
@@ -82,10 +82,10 @@ func NewSessionTree(
 	tree := smt.NewSparseMerkleSumTree(treeStore, sha256.New(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
-		session:   session,
-		storePath: storePath,
-		treeStore: treeStore,
-		tree:      tree,
+		sessionHeader: sessionHeader,
+		storePath:     storePath,
+		treeStore:     treeStore,
+		tree:          tree,
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
 	}
@@ -94,8 +94,8 @@ func NewSessionTree(
 }
 
 // GetSession returns the session corresponding to the SMST.
-func (st *sessionTree) GetSession() *sessiontypes.Session {
-	return st.session
+func (st *sessionTree) GetSessionHeader() *sessiontypes.SessionHeader {
+	return st.sessionHeader
 }
 
 // Update is a wrapper for the SMST's Update function. It updates the SMST with
@@ -191,7 +191,7 @@ func (st *sessionTree) Delete() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
-	st.removeFromRelayerSessions(st.session)
+	st.removeFromRelayerSessions(st.sessionHeader)
 
 	if err := st.treeStore.ClearAll(); err != nil {
 		return err
