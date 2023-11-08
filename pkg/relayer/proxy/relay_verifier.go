@@ -16,29 +16,28 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
 	service *sharedtypes.Service,
-) (*types.RelayRequest, error) {
+) error {
 	// Query for the application account to get the application's public key to verify the relay request signature.
 	applicationAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
 	accQueryReq := &accounttypes.QueryAccountRequest{Address: applicationAddress}
 	accQueryRes, err := rp.accountsQuerier.Account(ctx, accQueryReq)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var payloadBz []byte
-	_, err = relayRequest.Payload.MarshalTo(payloadBz)
-	if err != nil {
-		return nil, err
+	if _, err = relayRequest.Payload.MarshalTo(payloadBz); err != nil {
+		return err
 	}
 	hash := crypto.Sha256(payloadBz)
 
 	account := new(accounttypes.BaseAccount)
 	if err := account.Unmarshal(accQueryRes.Account.Value); err != nil {
-		return nil, err
+		return err
 	}
 
 	if !account.GetPubKey().VerifySignature(hash, relayRequest.Meta.Signature) {
-		return nil, ErrInvalidRelayRequestSignature
+		return ErrInvalidRelayRequestSignature
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
@@ -50,7 +49,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	session := sessionResponse.Session
@@ -63,15 +62,15 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return nil, ErrInvalidSession
+		return ErrInvalidSession
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
 	for _, supplier := range session.Suppliers {
 		if supplier.Address == rp.supplierAddress {
-			return relayRequest, nil
+			return nil
 		}
 	}
 
-	return nil, ErrInvalidSupplier
+	return ErrInvalidSupplier
 }

@@ -47,8 +47,7 @@ func (j *jsonRPCServer) newRelayResponse(
 	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonRPCResponse}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	relayResponse, err = j.relayerProxy.SignRelayResponse(relayResponse)
-	if err != nil {
+	if err = j.relayerProxy.SignRelayResponse(relayResponse); err != nil {
 		return nil, err
 	}
 

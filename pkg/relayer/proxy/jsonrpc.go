@@ -129,8 +129,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	relayRequest, err = jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service)
-	if err != nil {
+	if err = jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service); err != nil {
 		return nil, err
 	}
 
