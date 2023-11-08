@@ -1,0 +1,14 @@
+syntax = "proto3";
+package pocket.supplier;
+
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+
+// TODO_UPNEXT(@Olshansk): The structure below is the default (untouched) scaffolded type. Update
+// and productionize it for our use case.
+message Claim {
+  string index = 1;
+  string supplier_address = 2;
+  string session_id = 3;
+  string root_hash = 4;
+}
+

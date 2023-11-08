@@ -46478,17 +46478,15 @@ paths:
                         type: object
                         properties:
                           service:
-                            title: Unique and semantic identifier for the service
+                            title: >-
+                              The Service for which the application is
+                              configured for
                             type: object
                             properties:
                               id:
                                 type: string
                                 description: Unique identifier for the service
                                 title: >-
-                                  NOTE: `ServiceId.Id` may seem redundant but
-                                  was desigtned created to enable more complex
-                                  service identification
-
                                   For example, what if we want to request a
                                   session for a certain service but with some
                                   additional configs that identify it?
@@ -46662,17 +46660,15 @@ paths:
                       type: object
                       properties:
                         service:
-                          title: Unique and semantic identifier for the service
+                          title: >-
+                            The Service for which the application is configured
+                            for
                           type: object
                           properties:
                             id:
                               type: string
                               description: Unique identifier for the service
                               title: >-
-                                NOTE: `ServiceId.Id` may seem redundant but was
-                                desigtned created to enable more complex service
-                                identification
-
                                 For example, what if we want to request a
                                 session for a certain service but with some
                                 additional configs that identify it?
@@ -47182,7 +47178,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured
+                                configured for
                               type: object
                               properties:
                                 id:
@@ -47249,7 +47245,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured
+                                  configured for
                                 type: object
                                 properties:
                                   id:
@@ -47431,6 +47427,189 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
+  /pocket/supplier/claim:
+    get:
+      operationId: PocketSupplierAllClaims
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              claim:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    index:
+                      type: string
+                    supplier_address:
+                      type: string
+                    session_id:
+                      type: string
+                    root_hash:
+                      type: string
+                  description: >-
+                    TODO_UPNEXT(@Olshansk): The structure below is the default
+                    (untouched) scaffolded type. Update
+
+                    and productionize it for our use case.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /pocket/supplier/claim/{index}:
+    get:
+      summary: Queries a list of Claim items.
+      operationId: PocketSupplierClaim
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              claim:
+                type: object
+                properties:
+                  index:
+                    type: string
+                  supplier_address:
+                    type: string
+                  session_id:
+                    type: string
+                  root_hash:
+                    type: string
+                description: >-
+                  TODO_UPNEXT(@Olshansk): The structure below is the default
+                  (untouched) scaffolded type. Update
+
+                  and productionize it for our use case.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: index
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
   /pocket/supplier/params:
     get:
       summary: Parameters queries the parameters of the module.
@@ -47507,18 +47686,14 @@ paths:
                       items:
                         type: object
                         properties:
-                          service_id:
-                            title: Unique and semantic identifier for the service
+                          service:
+                            title: The Service for which the supplier is configured
                             type: object
                             properties:
                               id:
                                 type: string
                                 description: Unique identifier for the service
                                 title: >-
-                                  NOTE: `ServiceId.Id` may seem redundant but
-                                  was desigtned created to enable more complex
-                                  service identification
-
                                   For example, what if we want to request a
                                   session for a certain service but with some
                                   additional configs that identify it?
@@ -47739,18 +47914,14 @@ paths:
                     items:
                       type: object
                       properties:
-                        service_id:
-                          title: Unique and semantic identifier for the service
+                        service:
+                          title: The Service for which the supplier is configured
                           type: object
                           properties:
                             id:
                               type: string
                               description: Unique identifier for the service
                               title: >-
-                                NOTE: `ServiceId.Id` may seem redundant but was
-                                desigtned created to enable more complex service
-                                identification
-
                                 For example, what if we want to request a
                                 session for a certain service but with some
                                 additional configs that identify it?
@@ -76618,16 +76789,13 @@ definitions:
           type: object
           properties:
             service:
-              title: Unique and semantic identifier for the service
+              title: The Service for which the application is configured for
               type: object
               properties:
                 id:
                   type: string
                   description: Unique identifier for the service
                   title: >-
-                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                    created to enable more complex service identification
-
                     For example, what if we want to request a session for a
                     certain service but with some additional configs that
                     identify it?
@@ -76705,17 +76873,13 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: Unique and semantic identifier for the service
+                    title: The Service for which the application is configured for
                     type: object
                     properties:
                       id:
                         type: string
                         description: Unique identifier for the service
                         title: >-
-                          NOTE: `ServiceId.Id` may seem redundant but was
-                          desigtned created to enable more complex service
-                          identification
-
                           For example, what if we want to request a session for
                           a certain service but with some additional configs
                           that identify it?
@@ -76803,17 +76967,13 @@ definitions:
               type: object
               properties:
                 service:
-                  title: Unique and semantic identifier for the service
+                  title: The Service for which the application is configured for
                   type: object
                   properties:
                     id:
                       type: string
                       description: Unique identifier for the service
                       title: >-
-                        NOTE: `ServiceId.Id` may seem redundant but was
-                        desigtned created to enable more complex service
-                        identification
-
                         For example, what if we want to request a session for a
                         certain service but with some additional configs that
                         identify it?
@@ -76858,16 +77018,13 @@ definitions:
     type: object
     properties:
       service:
-        title: Unique and semantic identifier for the service
+        title: The Service for which the application is configured for
         type: object
         properties:
           id:
             type: string
             description: Unique identifier for the service
             title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
               For example, what if we want to request a session for a certain
               service but with some additional configs that identify it?
           name:
@@ -76887,9 +77044,6 @@ definitions:
         type: string
         description: Unique identifier for the service
         title: >-
-          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
-          enable more complex service identification
-
           For example, what if we want to request a session for a certain
           service but with some additional configs that identify it?
       name:
@@ -77132,7 +77286,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured
+                      title: The Service for which the application is configured for
                       type: object
                       properties:
                         id:
@@ -77196,7 +77350,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured
+                        title: The Service for which the supplier is configured for
                         type: object
                         properties:
                           id:
@@ -77386,7 +77540,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured
+                  title: The Service for which the application is configured for
                   type: object
                   properties:
                     id:
@@ -77448,7 +77602,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured
+                    title: The Service for which the supplier is configured for
                     type: object
                     properties:
                       id:
@@ -77576,26 +77730,6 @@ definitions:
         title: >-
           The height at which this session ended, this is the last block of the
           session
-      service_id:
-        title: The ID of the service this session is servicing
-        type: object
-        properties:
-          id:
-            type: string
-            description: Unique identifier for the service
-            title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
-              For example, what if we want to request a session for a certain
-              service but with some additional configs that identify it?
-          name:
-            type: string
-            description: (Optional) Semantic human readable name for the service
-            title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              than an optional onchain representation of the service is
-              necessary
     description: >-
       SessionHeader is a lightweight header for a session that can be passed
       around.
@@ -77682,7 +77816,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured
+              title: The Service for which the supplier is configured for
               type: object
               properties:
                 id:
@@ -77751,27 +77885,6 @@ definitions:
                     title: Additional configuration options for the endpoint
                 title: SupplierEndpoint message to hold service configuration details
               title: List of endpoints for the service
-            service_id:
-              title: Unique and semantic identifier for the service
-              type: object
-              properties:
-                id:
-                  type: string
-                  description: Unique identifier for the service
-                  title: >-
-                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                    created to enable more complex service identification
-
-                    For example, what if we want to request a session for a
-                    certain service but with some additional configs that
-                    identify it?
-                name:
-                  type: string
-                  description: (Optional) Semantic human readable name for the service
-                  title: >-
-                    TODO_TECHDEBT: Name is currently unused but acts as a
-                    reminder than an optional onchain representation of the
-                    service is necessary
           title: >-
             SupplierServiceConfig holds the service configuration the supplier
             stakes for
@@ -77832,7 +77945,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured
+        title: The Service for which the supplier is configured for
         type: object
         properties:
           id:
@@ -77900,50 +78013,25 @@ definitions:
               title: Additional configuration options for the endpoint
           title: SupplierEndpoint message to hold service configuration details
         title: List of endpoints for the service
-      service_id:
-        title: Unique and semantic identifier for the service
-        type: object
-        properties:
-          id:
-            type: string
-            description: Unique identifier for the service
-            title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
-              For example, what if we want to request a session for a certain
-              service but with some additional configs that identify it?
-          name:
-            type: string
-            description: (Optional) Semantic human readable name for the service
-            title: >-
-              TODO_TECHDEBT: Name is currently unused but acts as a reminder
-              than an optional onchain representation of the service is
-              necessary
     title: >-
       SupplierServiceConfig holds the service configuration the supplier stakes
       for
-  pocket.shared.ServiceId:
+  pocket.supplier.Claim:
     type: object
     properties:
-      id:
+      index:
         type: string
-        description: Unique identifier for the service
-        title: >-
-          NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
-          enable more complex service identification
+      supplier_address:
+        type: string
+      session_id:
+        type: string
+      root_hash:
+        type: string
+    description: >-
+      TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+      scaffolded type. Update
 
-          For example, what if we want to request a session for a certain
-          service but with some additional configs that identify it?
-      name:
-        type: string
-        description: (Optional) Semantic human readable name for the service
-        title: >-
-          TODO_TECHDEBT: Name is currently unused but acts as a reminder than an
-          optional onchain representation of the service is necessary
-    title: >-
-      ServiceId message to encapsulate unique and semantic identifiers for a
-      service on the network
+      and productionize it for our use case.
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -77955,6 +78043,53 @@ definitions:
   pocket.supplier.Params:
     type: object
     description: Params defines the parameters for the module.
+  pocket.supplier.QueryAllClaimsResponse:
+    type: object
+    properties:
+      claim:
+        type: array
+        items:
+          type: object
+          properties:
+            index:
+              type: string
+            supplier_address:
+              type: string
+            session_id:
+              type: string
+            root_hash:
+              type: string
+          description: >-
+            TODO_UPNEXT(@Olshansk): The structure below is the default
+            (untouched) scaffolded type. Update
+
+            and productionize it for our use case.
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
   pocket.supplier.QueryAllSupplierResponse:
     type: object
     properties:
@@ -77989,18 +78124,14 @@ definitions:
               items:
                 type: object
                 properties:
-                  service_id:
-                    title: Unique and semantic identifier for the service
+                  service:
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
                         type: string
                         description: Unique identifier for the service
                         title: >-
-                          NOTE: `ServiceId.Id` may seem redundant but was
-                          desigtned created to enable more complex service
-                          identification
-
                           For example, what if we want to request a session for
                           a certain service but with some additional configs
                           that identify it?
@@ -78101,6 +78232,25 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
+  pocket.supplier.QueryGetClaimResponse:
+    type: object
+    properties:
+      claim:
+        type: object
+        properties:
+          index:
+            type: string
+          supplier_address:
+            type: string
+          session_id:
+            type: string
+          root_hash:
+            type: string
+        description: >-
+          TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+          scaffolded type. Update
+
+          and productionize it for our use case.
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
@@ -78133,18 +78283,14 @@ definitions:
             items:
               type: object
               properties:
-                service_id:
-                  title: Unique and semantic identifier for the service
+                service:
+                  title: The Service for which the supplier is configured
                   type: object
                   properties:
                     id:
                       type: string
                       description: Unique identifier for the service
                       title: >-
-                        NOTE: `ServiceId.Id` may seem redundant but was
-                        desigtned created to enable more complex service
-                        identification
-
                         For example, what if we want to request a session for a
                         certain service but with some additional configs that
                         identify it?
