@@ -12,7 +12,7 @@ func NewTestApplicationServiceConfig(prefix string, count int) []*sharedtypes.Ap
 	for i, _ := range appSvcCfg {
 		serviceId := fmt.Sprintf("%s%d", prefix, i)
 		appSvcCfg[i] = &sharedtypes.ApplicationServiceConfig{
-			ServiceId: &sharedtypes.ServiceId{Id: serviceId},
+			Service: &sharedtypes.Service{Id: serviceId},
 		}
 	}
 	return appSvcCfg

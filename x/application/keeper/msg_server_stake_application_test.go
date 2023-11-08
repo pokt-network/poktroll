@@ -31,7 +31,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -46,7 +46,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, addr, appFound.Address)
 	require.Equal(t, int64(100), appFound.Stake.Amount.Int64())
 	require.Len(t, appFound.ServiceConfigs, 1)
-	require.Equal(t, "svc1", appFound.ServiceConfigs[0].ServiceId.Id)
+	require.Equal(t, "svc1", appFound.ServiceConfigs[0].Service.Id)
 
 	// Prepare an updated application with a higher stake and another service
 	updateStakeMsg := &types.MsgStakeApplication{
@@ -54,10 +54,10 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
+				Service: &sharedtypes.Service{Id: "svc2"},
 			},
 		},
 	}
@@ -69,8 +69,8 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, int64(200), appFound.Stake.Amount.Int64())
 	require.Len(t, appFound.ServiceConfigs, 2)
-	require.Equal(t, "svc1", appFound.ServiceConfigs[0].ServiceId.Id)
-	require.Equal(t, "svc2", appFound.ServiceConfigs[1].ServiceId.Id)
+	require.Equal(t, "svc1", appFound.ServiceConfigs[0].Service.Id)
+	require.Equal(t, "svc2", appFound.ServiceConfigs[1].Service.Id)
 }
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -86,7 +86,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -111,7 +111,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, app.Address)
 	require.Len(t, app.ServiceConfigs, 1)
-	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
+	require.Equal(t, "svc1", app.ServiceConfigs[0].Service.Id)
 
 	// Prepare the application stake message with an invalid service ID
 	updateStakeMsg = &types.MsgStakeApplication{
@@ -119,7 +119,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1 INVALID ! & *"},
+				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
 			},
 		},
 	}
@@ -133,7 +133,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, app.Address)
 	require.Len(t, app.ServiceConfigs, 1)
-	require.Equal(t, "svc1", app.ServiceConfigs[0].ServiceId.Id)
+	require.Equal(t, "svc1", app.ServiceConfigs[0].Service.Id)
 }
 
 func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
@@ -148,7 +148,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 		},
 	}
@@ -165,7 +165,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 		},
 	}

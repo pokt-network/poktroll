@@ -57,7 +57,6 @@ func (gs GenesisState) Validate() error {
 			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", supplier.Stake)
 		}
 
-		// Valid the application service configs
 		// Validate the application service configs
 		if err := servicehelpers.ValidateSupplierServiceConfigs(supplier.Services); err != nil {
 			return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())

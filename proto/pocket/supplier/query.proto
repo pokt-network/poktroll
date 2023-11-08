@@ -31,7 +31,7 @@ service Query {
   rpc Claim (QueryGetClaimRequest) returns (QueryGetClaimResponse) {
     option (google.api.http).get = "/pocket/supplier/claim/{index}";
   }
-  rpc AllClaims (QueryAllClaimRequest) returns (QueryAllClaimResponse) {
+  rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
     option (google.api.http).get = "/pocket/supplier/claim";
   }
 }
@@ -69,11 +69,11 @@ message QueryGetClaimResponse {
   Claim claim = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllClaimRequest {
+message QueryAllClaimsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
 
-message QueryAllClaimResponse {
+message QueryAllClaimsResponse {
   repeated Claim                                  claim      = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

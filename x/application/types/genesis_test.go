@@ -15,13 +15,13 @@ func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
 	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
 	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{
-		ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+		Service: &sharedtypes.Service{Id: "svc1"},
 	}
 
 	addr2 := sample.AccAddress()
 	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
 	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{
-		ServiceId: &sharedtypes.ServiceId{Id: "svc2"},
+		Service: &sharedtypes.Service{Id: "svc2"},
 	}
 
 	emptyDelegatees := make([]string, 0)
@@ -314,7 +314,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{ServiceId: &sharedtypes.ServiceId{Id: "12345678901"}},
+							{Service: &sharedtypes.Service{Id: "12345678901"}},
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
@@ -333,7 +333,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{ServiceId: &sharedtypes.ServiceId{
+							{Service: &sharedtypes.Service{
 								Id:   "123",
 								Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
 							}},
@@ -355,7 +355,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
+							{Service: &sharedtypes.Service{Id: "12 45 !"}},
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
