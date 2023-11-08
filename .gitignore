@@ -25,9 +25,13 @@ bin
 
 # Before we provision the localnet, `ignite` creates the accounts, genesis, etc. for us
 # As many of the files are dynamic, we only preserve the config files in git history.
-localnet/pocketd/*
-localnet/*/config/
-!localnet/*/config/{app.toml,client.toml,config.toml}
+localnet/poktrolld/*
+localnet/*/config/*.json
+!localnet/poktrolld/config/
+!localnet/poktrolld/config/app.toml
+!localnet/poktrolld/config/client.toml
+!localnet/poktrolld/config/config.toml
+
 
 # Macos
 .DS_Store
@@ -44,9 +48,6 @@ localnet/*/config/
 
 # Frontend utils
 ts-client/
-
-# asdf
-.tool-versions
 
 # Proto artifacts
 **/*.pb.go
