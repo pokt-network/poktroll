@@ -1,17 +1,23 @@
 package cli
 
 import (
+	"strconv"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func CmdListGateway() *cobra.Command {
+// Prevent strconv unused error
+var _ = strconv.IntSize
+
+func CmdListClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list-gateway",
-		Short: "list all gateways",
+		Use:   "list-claims",
+		Short: "list all claims",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -25,11 +31,11 @@ func CmdListGateway() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllGatewayRequest{
+			params := &types.QueryAllClaimsRequest{
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.GatewayAll(cmd.Context(), params)
+			res, err := queryClient.AllClaims(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
@@ -44,10 +50,10 @@ func CmdListGateway() *cobra.Command {
 	return cmd
 }
 
-func CmdShowGateway() *cobra.Command {
+func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-gateway <gateway_address>",
-		Short: "shows a gateway",
+		Use:   "show-claim <index>",
+		Short: "shows a claim",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -57,13 +63,13 @@ func CmdShowGateway() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			argAddress := args[0]
+			argIndex := args[0]
 
-			params := &types.QueryGetGatewayRequest{
-				Address: argAddress,
+			params := &types.QueryGetClaimRequest{
+				Index: argIndex,
 			}
 
-			res, err := queryClient.Gateway(cmd.Context(), params)
+			res, err := queryClient.Claim(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
