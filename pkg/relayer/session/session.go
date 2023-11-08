@@ -62,7 +62,7 @@ func (rs *relayerSessionsManager) SessionsToClaim() observable.Observable[relaye
 	return rs.sessionsToClaim
 }
 
-// EnsureSessionTree returns the SessionTree for a given session header.
+// EnsureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
 func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
@@ -101,12 +101,14 @@ func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context)
 	for block := range committedBlocks {
 		// Check if there are sessions that need to enter the claim/proof phase
 		// as their end block height was the one before the last committed block.
-		// TODO_TECHDEBT: We should persist any info about the last claimed session so we
-		// could claim not only the previous session but any session that's not claimed yet.
-		if sessionsTrees, ok := rs.sessionsTrees[block.Height()-1]; ok {
-			// Iterate over the sessionsTrees that end at this block height and publish them.
-			for _, sessionTree := range sessionsTrees {
-				rs.sessionsToClaimPublisher <- sessionTree
+		// Iterate over the sessionsTrees map to get the ones that end at a block height
+		// lower than the current block height.
+		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+			if endBlockHeight < block.Height() {
+				// Iterate over the sessionsTrees that end at this block height and publish them.
+				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+					rs.sessionsToClaimPublisher <- sessionTree
+				}
 			}
 		}
 	}
@@ -117,11 +119,17 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
+	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Print("session header not found in relayerSessionsManager")
+		log.Printf("no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
 		return
 	}
 
-	delete(sessionsTrees, sessionHeader.SessionId)
+	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+
+	// Check if the sessionsTrees map is empty and delete it if it is.
+	// This is done to avoid an ever growing sessionsTrees map.
+	if len(sessionsTreesEndingAtBlockHeight) == 0 {
+		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
+	}
 }

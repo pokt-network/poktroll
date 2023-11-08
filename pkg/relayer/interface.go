@@ -17,7 +17,7 @@ type RelayerSessionsManager interface {
 
 	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session header.
 	// It is used to retrieve the SMST and update it when a Relay has been successfully served.
-	// If the session header is seen for the first time, it creates a new SMST for it before returning it.
+	// If the session is seen for the first time, it creates a new SMST for it before returning it.
 	// An error is returned if the corresponding KVStore for SMST fails to be created.
 	EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (SessionTree, error)
 }
