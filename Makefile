@@ -1,6 +1,6 @@
 .SILENT:
 
-POCKETD_HOME := ./localnet/pocketd
+POKTROLLD_HOME := ./localnet/poktrolld
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 POCKET_ADDR_PREFIX = pokt
 
@@ -113,9 +113,10 @@ localnet_down: ## Delete resources created by localnet
 localnet_regenesis: ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init
-	cp -r ${HOME}/.pocket/keyring-test $(POCKETD_HOME)
-	cp ${HOME}/.pocket/config/*_key.json $(POCKETD_HOME)/config/
-	cp ${HOME}/.pocket/config/genesis.json $(POCKETD_HOME)/config/
+	mkdir -p $(POKTROLLD_HOME)/config/
+	cp -r ${HOME}/.pocket/keyring-test $(POKTROLLD_HOME)
+	cp ${HOME}/.pocket/config/*_key.json $(POKTROLLD_HOME)/config/
+	cp ${HOME}/.pocket/config/genesis.json $(POKTROLLD_HOME)/config/
 
 ###############
 ### Linting ###
@@ -134,7 +135,7 @@ go_imports: check_go_version ## Run goimports on all go files
 
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
-	export POCKET_NODE=$(POCKET_NODE) POCKETD_HOME=../../$(POCKETD_HOME) && go test -v ./e2e/tests/... -tags=e2e
+	export POCKET_NODE=$(POCKET_NODE) POKTROLLD_HOME=../../$(POKTROLLD_HOME) && go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests
@@ -231,11 +232,11 @@ todo_this_commit: ## List all the TODOs needed to be done in this commit
 
 .PHONY: gateway_list
 gateway_list: ## List all the staked gateways
-	poktrolld --home=$(POCKETD_HOME) q gateway list-gateway --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q gateway list-gateway --node $(POCKET_NODE)
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POCKETD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway 1000upokt --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -251,7 +252,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POCKETD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -271,11 +272,11 @@ gateway3_unstake: ## Unstake gateway3
 
 .PHONY: app_list
 app_list: ## List all the staked applications
-	poktrolld --home=$(POCKETD_HOME) q application list-application --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q application list-application --node $(POCKET_NODE)
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POCKETD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1
@@ -291,7 +292,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POCKETD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -307,7 +308,7 @@ app3_unstake: ## Unstake app3
 
 .PHONY: app_delegate
 app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POCKETD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
@@ -326,7 +327,7 @@ app3_delegate_gateway3: ## Delegate trust to gateway3
 
 .PHONY: app_undelegate
 app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POCKETD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
@@ -349,13 +350,13 @@ app3_undelegate_gateway3: ## Undelegate trust to gateway3
 
 .PHONY: supplier_list
 supplier_list: ## List all the staked supplier
-	poktrolld --home=$(POCKETD_HOME) q supplier list-supplier --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
 # TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
 # TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	poktrolld --home=$(POCKETD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1
@@ -371,7 +372,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POCKETD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -415,10 +416,10 @@ get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
 	@echo "~~~ Balances ~~~"
-	poktrolld --home=$(POCKETD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
 	@echo "~~~ Spendable Balances ~~~"
 	@echo "Querying spendable balance for $(ACC)"
-	poktrolld --home=$(POCKETD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
 .PHONY: acc_balance_query_module_app
 acc_balance_query_module_app: ## Query the balance of the network level "application" module
@@ -436,7 +437,7 @@ acc_balance_query_app1: ## Query the balance of app1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
-	poktrolld --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
 
 ######################
 ### Ignite Helpers ###
@@ -444,7 +445,7 @@ acc_balance_total_supply: ## Query the total supply of the network
 
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
-	ignite account list --keyring-dir=$(POCKETD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
 ##################
 ### CI Helpers ###
