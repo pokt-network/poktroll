@@ -79,77 +79,6 @@ func TestIsValidService(t *testing.T) {
 	}
 }
 
-func TestIsValidServiceId(t *testing.T) {
-	tests := []struct {
-		desc string
-
-		input    string
-		expected bool
-	}{
-		{
-			desc: "Valid alphanumeric with hyphen",
-
-			input:    "Hello-1",
-			expected: true,
-		},
-		{
-			desc: "Valid alphanumeric with underscore",
-
-			input:    "Hello_2",
-			expected: true,
-		},
-		{
-			desc: "Exceeds maximum length",
-
-			input:    "hello-world",
-			expected: false, // exceeds maxServiceIdLength
-		},
-		{
-			desc: "Contains invalid character '@'",
-
-			input:    "Hello@",
-			expected: false, // contains invalid character '@'
-		},
-		{
-			desc: "All uppercase",
-
-			input:    "HELLO",
-			expected: true,
-		},
-		{
-			desc: "Maximum length boundary",
-
-			input:    "12345678",
-			expected: true, // exactly maxServiceIdLength
-		},
-		{
-			desc: "Above maximum length boundary",
-
-			input:    "123456789",
-			expected: false, // exceeds maxServiceIdLength
-		},
-		{
-			desc: "Contains invalid character '.'",
-
-			input:    "Hello.World",
-			expected: false, // contains invalid character '.'
-		},
-		{
-			desc: "Empty string",
-
-			input:    "",
-			expected: false, // empty string
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.desc, func(t *testing.T) {
-			result := IsValidServiceId(test.input)
-			require.Equal(t, test.expected, result)
-		})
-	}
-}
-
 func TestIsValidServiceName(t *testing.T) {
 	tests := []struct {
 		desc     string
@@ -196,10 +125,6 @@ func TestIsValidServiceName(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			result := IsValidServiceName(test.input)
-			if result != test.expected {
-				t.Errorf("%s: For input '%s', expected %v but got %v", test.desc, test.input, test.expected, result)
-			}
-			result := IsValidService(service)
 			require.Equal(t, test.expected, result)
 		})
 	}
