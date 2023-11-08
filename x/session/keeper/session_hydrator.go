@@ -12,6 +12,7 @@ import (
 	_ "golang.org/x/crypto/sha3"
 
 	"github.com/pokt-network/poktroll/x/session/types"
+	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -61,22 +62,22 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 	logger := k.Logger(ctx).With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate the session metadata: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session metadata: %v", err)
 	}
 	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate the session ID: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session ID: %v", err)
 	}
 	logger.Info("Finished hydrating session ID: %s", sh.sessionHeader.SessionId)
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate application for session: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate application for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrHydratingSession, "failed to hydrate suppliers for session: %v", err)
+		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate suppliers for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session suppliers: %+v")
 
@@ -89,6 +90,10 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
+
+	if sh.blockHeight > ctx.BlockHeight() {
+		return sdkerrors.Wrapf(types.ErrSessionHydration, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
+	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
 	sh.session.SessionNumber = int64(sh.blockHeight / NumBlocksPerSession)
@@ -107,8 +112,11 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
-	// or not its permissioned  or permissionless
-	// TODO(@Olshansk): Add a check to make sure `IsValidServiceName(Service.Id)` returns True
+	// or not its permissioned or permissionless
+
+	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
+		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
+	}
 	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
 
 	sessionHeightBz := make([]byte, 8)
@@ -124,10 +132,17 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
 	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
-		return sdkerrors.Wrapf(types.ErrAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(types.ErrSessionAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
 	}
-	sh.session.Application = &app
-	return nil
+
+	for _, appServiceConfig := range app.ServiceConfigs {
+		if appServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
+			sh.session.Application = &app
+			return nil
+		}
+	}
+
+	return sdkerrors.Wrapf(types.ErrSessionAppNotStakedForService, "application %s not staked for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.Service.Id)
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
@@ -154,7 +169,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error("[ERROR] no suppliers found for session")
-		return sdkerrors.Wrapf(types.ErrSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {

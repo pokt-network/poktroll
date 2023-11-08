@@ -16,7 +16,7 @@ var _ = strconv.Itoa(0)
 func CmdUnstakeGateway() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "unstake-gateway [amount]",
+		Use:   "unstake-gateway <upokt_amount>",
 		Short: "Unstake a gateway",
 		Long: `Unstake a gateway. This is a broadcast operation that will unstake the gateway specified by the 'from' address.
 

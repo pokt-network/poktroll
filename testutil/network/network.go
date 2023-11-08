@@ -113,6 +113,9 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				{
 					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
 				},
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+				},
 			},
 		}
 		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
