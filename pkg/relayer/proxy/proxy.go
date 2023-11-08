@@ -26,7 +26,7 @@ type (
 	servicesEndpointsMap = map[serviceId]url.URL
 )
 
-// relayerProxy is the main relayer proxy that takes takes relay requests of supported services from the client
+// relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
 // and proxies them to the supported proxied services.
 // It is responsible for notifying the miner about the relays that have been served so they can be counted
 // when the miner enters the claim/proof phase.

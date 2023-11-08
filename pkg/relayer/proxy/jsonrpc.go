@@ -89,7 +89,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
 	relay, err := jsrv.serveHTTP(ctx, request)
 	if err != nil {
-		// Reply with an error if relay response could not be built.
+		// Reply with an error if the relay could not be served.
 		jsrv.replyWithError(writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
@@ -102,7 +102,13 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	log.Print("INFO: relay request served successfully")
+	log.Printf(
+		"INFO: relay request served successfully for application %s, service %s, session start block height %d, proxied service %s",
+		relay.Res.Meta.SessionHeader.ApplicationAddress,
+		relay.Res.Meta.SessionHeader.ServiceId.Id,
+		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
+		jsrv.serverEndpoint.Url,
+	)
 
 	// Emit the relay to the servedRelays observable.
 	jsrv.servedRelaysProducer <- relay
@@ -129,7 +135,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	}
 
 	// Get the relayRequest payload's `io.ReadCloser` to add it to the http.Request
-	// that will be sent to the native service.
+	// that will be sent to the proxied (i.e. staked for) service.
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
 	var payloadBz []byte
 	if _, err = relayRequest.Payload.MarshalTo(payloadBz); err != nil {
