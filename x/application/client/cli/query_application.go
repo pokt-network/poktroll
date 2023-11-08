@@ -46,7 +46,7 @@ func CmdListApplication() *cobra.Command {
 
 func CmdShowApplication() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "show-application [address]",
+		Use:   "show-application <application_address>",
 		Short: "shows a application",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
