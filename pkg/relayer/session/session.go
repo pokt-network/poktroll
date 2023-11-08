@@ -105,7 +105,7 @@ func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context)
 		// lower than the current block height.
 		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 			if endBlockHeight < block.Height() {
-				// Iterate over the sessionsTrees that end at this block height and publish them.
+				// Iterate over the sessionsTrees that end at this block height (or less) and publish them.
 				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 					rs.sessionsToClaimPublisher <- sessionTree
 				}
