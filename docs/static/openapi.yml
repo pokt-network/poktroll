@@ -47102,10 +47102,6 @@ paths:
                             type: string
                             description: Unique identifier for the service
                             title: >-
-                              NOTE: `ServiceId.Id` may seem redundant but was
-                              desigtned created to enable more complex service
-                              identification
-
                               For example, what if we want to request a session
                               for a certain service but with some additional
                               configs that identify it?
@@ -47129,6 +47125,12 @@ paths:
                           NOTE: session_id can be derived from the above values
                           using on-chain but is included in the header for
                           convenience
+                      session_end_block_height:
+                        type: string
+                        format: int64
+                        title: >-
+                          The height at which this session ended, this is the
+                          last block of the session
                     description: >-
                       SessionHeader is a lightweight header for a session that
                       can be passed around.
@@ -47178,17 +47180,15 @@ paths:
                           type: object
                           properties:
                             service:
-                              title: Unique and semantic identifier for the service
+                              title: >-
+                                The Service for which the application is
+                                configured
                               type: object
                               properties:
                                 id:
                                   type: string
                                   description: Unique identifier for the service
                                   title: >-
-                                    NOTE: `ServiceId.Id` may seem redundant but
-                                    was desigtned created to enable more complex
-                                    service identification
-
                                     For example, what if we want to request a
                                     session for a certain service but with some
                                     additional configs that identify it?
@@ -47247,17 +47247,15 @@ paths:
                             type: object
                             properties:
                               service:
-                                title: Unique and semantic identifier for the service
+                                title: >-
+                                  The Service for which the supplier is
+                                  configured
                                 type: object
                                 properties:
                                   id:
                                     type: string
                                     description: Unique identifier for the service
                                     title: >-
-                                      NOTE: `ServiceId.Id` may seem redundant
-                                      but was desigtned created to enable more
-                                      complex service identification
-
                                       For example, what if we want to request a
                                       session for a certain service but with
                                       some additional configs that identify it?
@@ -47371,9 +47369,6 @@ paths:
           type: string
         - name: service.id
           description: >-
-            NOTE: `ServiceId.Id` may seem redundant but was desigtned created to
-            enable more complex service identification
-
             For example, what if we want to request a session for a certain
             service but with some additional configs that identify it?
 
@@ -77063,9 +77058,6 @@ definitions:
                     type: string
                     description: Unique identifier for the service
                     title: >-
-                      NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                      created to enable more complex service identification
-
                       For example, what if we want to request a session for a
                       certain service but with some additional configs that
                       identify it?
@@ -77086,6 +77078,12 @@ definitions:
                 title: >-
                   NOTE: session_id can be derived from the above values using
                   on-chain but is included in the header for convenience
+              session_end_block_height:
+                type: string
+                format: int64
+                title: >-
+                  The height at which this session ended, this is the last block
+                  of the session
             description: >-
               SessionHeader is a lightweight header for a session that can be
               passed around.
@@ -77134,17 +77132,13 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: Unique and semantic identifier for the service
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
                           type: string
                           description: Unique identifier for the service
                           title: >-
-                            NOTE: `ServiceId.Id` may seem redundant but was
-                            desigtned created to enable more complex service
-                            identification
-
                             For example, what if we want to request a session
                             for a certain service but with some additional
                             configs that identify it?
@@ -77202,17 +77196,13 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: Unique and semantic identifier for the service
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
                             type: string
                             description: Unique identifier for the service
                             title: >-
-                              NOTE: `ServiceId.Id` may seem redundant but was
-                              desigtned created to enable more complex service
-                              identification
-
                               For example, what if we want to request a session
                               for a certain service but with some additional
                               configs that identify it?
@@ -77322,9 +77312,6 @@ definitions:
                 type: string
                 description: Unique identifier for the service
                 title: >-
-                  NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                  created to enable more complex service identification
-
                   For example, what if we want to request a session for a
                   certain service but with some additional configs that identify
                   it?
@@ -77345,6 +77332,12 @@ definitions:
             title: >-
               NOTE: session_id can be derived from the above values using
               on-chain but is included in the header for convenience
+          session_end_block_height:
+            type: string
+            format: int64
+            title: >-
+              The height at which this session ended, this is the last block of
+              the session
         description: >-
           SessionHeader is a lightweight header for a session that can be passed
           around.
@@ -77393,17 +77386,13 @@ definitions:
               type: object
               properties:
                 service:
-                  title: Unique and semantic identifier for the service
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
                       type: string
                       description: Unique identifier for the service
                       title: >-
-                        NOTE: `ServiceId.Id` may seem redundant but was
-                        desigtned created to enable more complex service
-                        identification
-
                         For example, what if we want to request a session for a
                         certain service but with some additional configs that
                         identify it?
@@ -77459,17 +77448,13 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: Unique and semantic identifier for the service
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
                         type: string
                         description: Unique identifier for the service
                         title: >-
-                          NOTE: `ServiceId.Id` may seem redundant but was
-                          desigtned created to enable more complex service
-                          identification
-
                           For example, what if we want to request a session for
                           a certain service but with some additional configs
                           that identify it?
@@ -77566,9 +77551,6 @@ definitions:
             type: string
             description: Unique identifier for the service
             title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
               For example, what if we want to request a session for a certain
               service but with some additional configs that identify it?
           name:
@@ -77588,6 +77570,12 @@ definitions:
         title: >-
           NOTE: session_id can be derived from the above values using on-chain
           but is included in the header for convenience
+      session_end_block_height:
+        type: string
+        format: int64
+        title: >-
+          The height at which this session ended, this is the last block of the
+          session
       service_id:
         title: The ID of the service this session is servicing
         type: object
@@ -77694,16 +77682,13 @@ definitions:
           type: object
           properties:
             service:
-              title: Unique and semantic identifier for the service
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
                   type: string
                   description: Unique identifier for the service
                   title: >-
-                    NOTE: `ServiceId.Id` may seem redundant but was desigtned
-                    created to enable more complex service identification
-
                     For example, what if we want to request a session for a
                     certain service but with some additional configs that
                     identify it?
@@ -77847,16 +77832,13 @@ definitions:
     type: object
     properties:
       service:
-        title: Unique and semantic identifier for the service
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:
             type: string
             description: Unique identifier for the service
             title: >-
-              NOTE: `ServiceId.Id` may seem redundant but was desigtned created
-              to enable more complex service identification
-
               For example, what if we want to request a session for a certain
               service but with some additional configs that identify it?
           name:

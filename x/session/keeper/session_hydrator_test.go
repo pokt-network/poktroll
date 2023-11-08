@@ -27,7 +27,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, "", sessionHeader.Service.Name)
 	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
 	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
-	require.Equal(t, "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0", sessionHeader.SessionId)
+	require.Equal(t, "5481d5ca2ddb15dc5edb792b8e20ba9c7d516a74475fc5feba6b6aeb95a26f58", sessionHeader.SessionId)
 
 	// Check the session
 	require.Equal(t, int64(4), session.NumBlocksPerSession)
