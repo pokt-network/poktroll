@@ -60,15 +60,15 @@ def generate_config_map_yaml(name, data):
 # Import keyring/keybase files into Kubernetes ConfigMap
 k8s_yaml(
     generate_config_map_yaml(
-        "pocketd-keys", read_files_from_directory("localnet/pocketd/keyring-test/")
+        "poktrolld-keys", read_files_from_directory("localnet/poktrolld/keyring-test/")
     )
-)  # pocketd/keys
+)  # poktrolld/keys
 # Import configuration files into Kubernetes ConfigMap
 k8s_yaml(
     generate_config_map_yaml(
-        "pocketd-configs", read_files_from_directory("localnet/pocketd/config/")
+        "poktrolld-configs", read_files_from_directory("localnet/poktrolld/config/")
     )
-)  # pocketd/configs
+)  # poktrolld/configs
 
 # Hot reload protobuf changes
 local_resource(
@@ -77,36 +77,36 @@ local_resource(
     deps=["proto"],
     labels=["hot-reloading"],
 )
-# Hot reload the pocketd binary used by the k8s cluster
+# Hot reload the poktrolld binary used by the k8s cluster
 local_resource(
-    "hot-reload: pocketd",
+    "hot-reload: poktrolld",
     "GOOS=linux ignite chain build --skip-proto --output=./bin --debug -v",
     deps=hot_reload_dirs,
     labels=["hot-reloading"],
     resource_deps=["hot-reload: generate protobufs"],
 )
-# Hot reload the local pocketd binary used by the CLI
+# Hot reload the local poktrolld binary used by the CLI
 local_resource(
-    "hot-reload: pocketd - local cli",
+    "hot-reload: poktrolld - local cli",
     "ignite chain build --skip-proto --debug -v -o $(go env GOPATH)/bin",
     deps=hot_reload_dirs,
     labels=["hot-reloading"],
     resource_deps=["hot-reload: generate protobufs"],
 )
 
-# Build an image with a pocketd binary
+# Build an image with a poktrolld binary
 docker_build_with_restart(
-    "pocketd",
+    "poktrolld",
     ".",
     dockerfile_contents="""FROM golang:1.20.8
 RUN apt-get -q update && apt-get install -qyy curl jq
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
-COPY bin/poktrolld /usr/local/bin/pocketd
+COPY bin/poktrolld /usr/local/bin/poktrolld
 WORKDIR /
 """,
     only=["./bin/poktrolld"],
     entrypoint=["/bin/sh", "/scripts/pocket.sh"],
-    live_update=[sync("bin/poktrolld", "/usr/local/bin/pocketd")],
+    live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
 )
 
 # Run celestia and anvil nodes
@@ -119,7 +119,7 @@ helm_resource(
     "sequencer",
     sequencer_chart,
     flags=["--values=./localnet/kubernetes/values-common.yaml"],
-    image_deps=["pocketd"],
+    image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
 helm_resource(
@@ -129,7 +129,7 @@ helm_resource(
         "--values=./localnet/kubernetes/values-common.yaml",
         "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
     ],
-    image_deps=["pocketd"],
+    image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
 
