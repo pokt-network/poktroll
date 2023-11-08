@@ -127,8 +127,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
 
-	// Check if the sessionsTrees map is empty and delete it if it is.
-	// This is done to avoid an ever growing sessionsTrees map.
+	// Check if the sessionsTrees map is empty and delete it if so.
+	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
 	if len(sessionsTreesEndingAtBlockHeight) == 0 {
 		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
 	}
