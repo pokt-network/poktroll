@@ -6,7 +6,12 @@ import (
 
 var _ binary.ByteOrder
 
+var (
+	CountKey = KeyPrefix("count")
+)
+
 const (
+
 	// ClaimPrimaryKeyPrefix is the prefix to retrieve all Claim (the primary store)
 	ClaimPrimaryKeyPrefix = "Claim/value/"
 
@@ -21,23 +26,29 @@ const (
 )
 
 // ClaimPrimaryKey returns the primary store key to retrieve a Claim
-func ClaimPrimaryKey(claim Claim) []byte {
+func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
 	var key []byte
 
 	// We are guaranteed uniqueness of the primary key if it's a composite of the (sessionId, supplierAddr)
-	key = append(key, []byte(claim.SessionId)...)
+	// because every supplier can only have one claim per session.
+	key = append(key, []byte(sessionId)...)
 	key = append(key, []byte("/")...)
-	key = append(key, []byte(claim.SupplierAddress)...)
+	key = append(key, []byte(supplierAddr)...)
 	key = append(key, []byte("/")...)
 
 	return key
 }
 
 // ClaimSupplierAddressKey returns the address key to iterate through claims given a supplier Address
-func ClaimSupplierAddressKey(supplierAddr string) []byte {
+func ClaimSupplierAddressKey(supplierAddr string, claimNum uint64) []byte {
 	var key []byte
 
+	numBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(numBz, claimNum)
+
 	key = append(key, []byte(supplierAddr)...)
+	key = append(key, []byte("/num/")...)
+	key = append(key, numBz...)
 	key = append(key, []byte("/")...)
 
 	return key

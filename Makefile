@@ -407,6 +407,22 @@ acc_balance_query_app1: ## Query the balance of app1
 acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POCKETD_HOME) q bank total --node $(POCKET_NODE)
 
+##############
+### Claims ###
+##############
+
+.PHONY: claim_list
+claim_list: ## List all the claims
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)
+
+.PHONY: claim_list_address
+claim_list_address: ## List all the claims for a specific address (make claim_list_address ADDR=pokt...)
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims $(ADDR) --node $(POCKET_NODE)
+
+.PHONY: claim_list_height
+claim_list_height: ## List all the claims for a specific height (make claim_list_height HEIGHT=...)
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims --height $(HEIGHT) --node $(POCKET_NODE)
+
 ######################
 ### Ignite Helpers ###
 ######################
