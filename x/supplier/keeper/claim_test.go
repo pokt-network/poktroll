@@ -57,11 +57,11 @@ func TestClaimRemove(t *testing.T) {
 	}
 }
 
-func TestClaimGetAll(t *testing.T) {
+func TestGetAllClaims(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	claims := createNClaim(keeper, ctx, 10)
+	items := createNClaims(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(claims),
+		nullify.Fill(items),
 		nullify.Fill(keeper.GetAllClaims(ctx)),
 	)
 }

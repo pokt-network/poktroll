@@ -312,15 +312,18 @@ app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_A
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
-	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_delegate
+	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) && \
+	APP=app1 GATEWAY_ADDR=$$GATEWAY1 make app_delegate
 
 .PHONY: app2_delegate_gateway2
 app2_delegate_gateway2: ## Delegate trust to gateway2
-	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_delegate
+	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) && \
+	APP=app2 GATEWAY_ADDR=$$GATEWAY2 make app_delegate
 
 .PHONY: app3_delegate_gateway3
 app3_delegate_gateway3: ## Delegate trust to gateway3
-	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_delegate
+	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) && \
+	APP=app3 GATEWAY_ADDR=$$GATEWAY3 make app_delegate
 
 .PHONY: app_undelegate
 app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
@@ -328,15 +331,18 @@ app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEW
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
-	APP=app1 GATEWAY_ADDR=pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4 make app_undelegate
+	GATEWAY1=$$(make poktrolld_addr ACC_NAME=gateway1) && \
+	APP=app1 GATEWAY_ADDR=$$GATEWAY1 make app_undelegate
 
 .PHONY: app2_undelegate_gateway2
 app2_undelegate_gateway2: ## Undelegate trust to gateway2
-	APP=app2 GATEWAY_ADDR=pokt15w3fhfyc0lttv7r585e2ncpf6t2kl9uh8rsnyz make app_undelegate
+	GATEWAY2=$$(make poktrolld_addr ACC_NAME=gateway2) && \
+	APP=app2 GATEWAY_ADDR=$$GATEWAY2 make app_undelegate
 
 .PHONY: app3_undelegate_gateway3
 app3_undelegate_gateway3: ## Undelegate trust to gateway3
-	APP=app3 GATEWAY_ADDR=pokt1zhmkkd0rh788mc9prfq0m2h88t9ge0j83gnxya make app_undelegate
+	GATEWAY3=$$(make poktrolld_addr ACC_NAME=gateway3) && \
+	APP=app3 GATEWAY_ADDR=$$GATEWAY3 make app_undelegate
 
 #################
 ### Suppliers ###
@@ -380,6 +386,29 @@ supplier2_unstake: ## Unstake supplier2
 supplier3_unstake: ## Unstake supplier3
 	SUPPLIER=supplier3 make supplier_unstake
 
+###############
+### Session ###
+###############
+
+.PHONY: get_session
+get_session: ## Retrieve the session given the following env vars: (APP_ADDR, SVC, HEIGHT)
+	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
+
+.PHONY: get_session_app1_anvil
+get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)
+	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
+	APP=$$APP1 SVC=anvil HEIGHT=0 make get_session
+
+.PHONY: get_session_app2_anvil
+get_session_app2_anvil: ## Retrieve the session for (app2, anvil, latest_height)
+	APP2=$$(make poktrolld_addr ACC_NAME=app2) && \
+	APP=$$APP2 SVC=anvil HEIGHT=0 make get_session
+
+.PHONY: get_session_app3_anvil
+get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
+	APP3=$$(make poktrolld_addr ACC_NAME=app3) && \
+	APP=$$APP3 SVC=anvil HEIGHT=0 make get_session
+
 ################
 ### Accounts ###
 ################
@@ -398,11 +427,13 @@ acc_balance_query_module_app: ## Query the balance of the network level "applica
 
 .PHONY: acc_balance_query_module_supplier
 acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
-	make acc_balance_query ACC=pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
+	SUPPLIER1=$(make poktrolld_addr ACC_NAME=supplier1)
+	make acc_balance_query ACC=SUPPLIER1
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
-	make acc_balance_query ACC=pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+	APP1=$$(make poktrolld_addr ACC_NAME=app1) && \
+	make acc_balance_query ACC=$$APP1
 
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
@@ -444,8 +475,20 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 #####################
 ### Documentation ###
 #####################
+
 .PHONY: go_docs
 go_docs: check_godoc ## Generate documentation for the project
 	echo "Visit http://localhost:6060/pkg/pocket/"
 	godoc -http=:6060
 
+.PHONY: openapi_gen
+openapi_gen: ## Generate the OpenAPI spec for the Ignite API
+	ignite generate openapi --yes
+
+######################
+### Ignite Helpers ###
+######################
+
+.PHONY: poktrolld_addr
+poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
+	@echo $(shell poktrolld keys show -a $(ACC_NAME))

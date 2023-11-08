@@ -56,6 +56,14 @@ func TestGenesis(t *testing.T) {
 				},
 			},
 		},
+		ClaimList: []types.Claim{
+			{
+				Index: "0",
+			},
+			{
+				Index: "1",
+			},
+		},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
@@ -68,5 +76,6 @@ func TestGenesis(t *testing.T) {
 	nullify.Fill(got)
 
 	require.ElementsMatch(t, genesisState.SupplierList, got.SupplierList)
+	require.ElementsMatch(t, genesisState.ClaimList, got.ClaimList)
 	// this line is used by starport scaffolding # genesis/test/assert
 }

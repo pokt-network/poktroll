@@ -12,7 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimRequest) (*types.QueryAllClaimResponse, error) {
+func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -37,7 +37,7 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimRequest
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllClaimResponse{Claim: claims, Pagination: pageRes}, nil
+	return &types.QueryAllClaimsResponse{Claim: claims, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*types.QueryGetClaimResponse, error) {

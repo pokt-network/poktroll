@@ -72,8 +72,8 @@ func TestClaimQueryPaginated(t *testing.T) {
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNClaims(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimRequest {
-		return &types.QueryAllClaimRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimsRequest {
+		return &types.QueryAllClaimsRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,

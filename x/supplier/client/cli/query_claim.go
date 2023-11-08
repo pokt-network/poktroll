@@ -15,7 +15,7 @@ var _ = strconv.IntSize
 
 func CmdListClaim() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list-claim",
+		Use:   "list-claims",
 		Short: "list all claims",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ func CmdListClaim() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllClaimRequest{
+			params := &types.QueryAllClaimsRequest{
 				Pagination: pageReq,
 			}
 

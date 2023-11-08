@@ -2,9 +2,8 @@ package cli
 
 import (
 	"encoding/base64"
-	"strconv"
-
 	"encoding/json"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -15,13 +14,13 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var _ = strconv.Itoa(0)
-
 // TODO(@bryanchriswhite): Add unit tests for the CLI command when implementing the business logic.
+
+var _ = strconv.Itoa(0)
 
 func CmdSubmitProof() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "submit-proof [session-header] [proof-base64]",
+		Use:   "submit-proof <session_header> <proof_base64>",
 		Short: "Broadcast message submit-proof",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {

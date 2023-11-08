@@ -1,11 +1,463 @@
 package cli_test
 
-import (
-	"strconv"
-)
+// import (
+// 	"fmt"
+// 	"strconv"
+// 	"testing"
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
-// Prevent strconv unused error
-var _ = strconv.IntSize
+// 	tmcli "github.com/cometbft/cometbft/libs/cli"
+// 	"github.com/cosmos/cosmos-sdk/client/flags"
+// 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+// 	"github.com/stretchr/testify/require"
+// 	"google.golang.org/grpc/codes"
+// 	"google.golang.org/grpc/status"
+
+// 	"github.com/pokt-network/poktroll/testutil/network"
+// 	"github.com/pokt-network/poktroll/testutil/nullify"
+// 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
+// 	"github.com/pokt-network/poktroll/x/supplier/types"
+// )
 
 // func networkWithClaimObjects(t *testing.T, n int) (*network.Network, []types.Claim) {
 // 	t.Helper()
@@ -16,6 +468,7 @@ var _ = strconv.IntSize
 // 			Index: strconv.Itoa(i),
 // 		}
 // 		nullify.Fill(&claim)
+// 		state.ClaimList = append(state.ClaimList, claim)
 // 	}
 // 	buf, err := cfg.Codec.MarshalJSON(&state)
 // 	require.NoError(t, err)
@@ -103,7 +556,7 @@ var _ = strconv.IntSize
 // 			args := request(nil, uint64(i), uint64(step), false)
 // 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaim(), args)
 // 			require.NoError(t, err)
-// 			var resp types.QueryAllClaimResponse
+// 			var resp types.QueryAllClaimsResponse
 // 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 // 			require.LessOrEqual(t, len(resp.Claim), step)
 // 			require.Subset(t,
@@ -119,7 +572,7 @@ var _ = strconv.IntSize
 // 			args := request(next, 0, uint64(step), false)
 // 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaim(), args)
 // 			require.NoError(t, err)
-// 			var resp types.QueryAllClaimResponse
+// 			var resp types.QueryAllClaimsResponse
 // 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 // 			require.LessOrEqual(t, len(resp.Claim), step)
 // 			require.Subset(t,
@@ -133,7 +586,7 @@ var _ = strconv.IntSize
 // 		args := request(nil, 0, uint64(len(objs)), true)
 // 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaim(), args)
 // 		require.NoError(t, err)
-// 		var resp types.QueryAllClaimResponse
+// 		var resp types.QueryAllClaimsResponse
 // 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 // 		require.NoError(t, err)
 // 		require.Equal(t, len(objs), int(resp.Pagination.Total))
