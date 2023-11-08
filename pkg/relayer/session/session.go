@@ -68,14 +68,12 @@ func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	// earliestSessionClaimBlockHeight is the height of the first block after the session ends.
-	earliestSessionClaimBlockHeight := sessionHeader.SessionEndBlockHeight + 1
-	sessionsTrees, ok := rs.sessionsTrees[earliestSessionClaimBlockHeight]
+	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
 		sessionsTrees = make(map[string]relayer.SessionTree)
-		rs.sessionsTrees[earliestSessionClaimBlockHeight] = sessionsTrees
+		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
 	}
 
 	// Get the sessionTree for the given session.
@@ -101,8 +99,11 @@ func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context)
 	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	for block := range committedBlocks {
-		// Check if there are sessions to be closed at this block height.
-		if sessionsTrees, ok := rs.sessionsTrees[block.Height()]; ok {
+		// Check if there are sessions that need to enter the claim/proof phase
+		// as their end block height was the one before the last committed block.
+		// TODO_TECHDEBT: We should persist any info about the last claimed session so we
+		// could claim not only the previous session but any session that's not claimed yet.
+		if sessionsTrees, ok := rs.sessionsTrees[block.Height()-1]; ok {
 			// Iterate over the sessionsTrees that end at this block height and publish them.
 			for _, sessionTree := range sessionsTrees {
 				rs.sessionsToClaimPublisher <- sessionTree
@@ -116,9 +117,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	// earliestSessionClaimBlockHeight is the height of the first block after the session ends.
-	earliestSessionClaimBlockHeight := sessionHeader.SessionEndBlockHeight + 1
-	sessionsTrees, ok := rs.sessionsTrees[earliestSessionClaimBlockHeight]
+	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
 		log.Print("session header not found in relayerSessionsManager")
 		return
