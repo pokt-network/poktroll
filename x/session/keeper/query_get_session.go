@@ -17,7 +17,7 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.ServiceId.Id, req.BlockHeight)
+	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, req.BlockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
 		return nil, err

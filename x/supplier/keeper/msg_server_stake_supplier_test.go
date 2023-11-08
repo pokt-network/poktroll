@@ -31,7 +31,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -55,7 +55,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, addr, supplierFound.Address)
 	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].ServiceId.Id)
+	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 
@@ -65,7 +65,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId2",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -86,7 +86,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(200), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId2", supplierFound.Services[0].ServiceId.Id)
+	require.Equal(t, "svcId2", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8082", supplierFound.Services[0].Endpoints[0].Url)
 }
@@ -104,7 +104,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -128,7 +128,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svcId"},
+				Service:   &sharedtypes.Service{Id: "svcId"},
 				Endpoints: []*sharedtypes.SupplierEndpoint{},
 			},
 		},
@@ -143,7 +143,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.True(t, isSupplierFound)
 	require.Equal(t, supplierAddr, supplierFound.Address)
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].ServiceId.Id)
+	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 
@@ -153,7 +153,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1 INVALID ! & *"},
+				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
 			},
 		},
 	}
@@ -167,7 +167,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	require.True(t, isSupplierFound)
 	require.Equal(t, supplierAddr, supplierFound.Address)
 	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].ServiceId.Id)
+	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
 	require.Len(t, supplierFound.Services[0].Endpoints, 1)
 	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
 }
@@ -184,7 +184,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
@@ -210,7 +210,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: "svcId",
 				},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
