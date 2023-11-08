@@ -27,10 +27,21 @@ type RelayerProxy interface {
 
 	// VerifyRelayRequest is a shared method used by RelayServers to check the
 	// relay request signature and session validity.
-	VerifyRelayRequest(ctx context.Context, relayRequest *types.RelayRequest, serviceId *sharedtypes.ServiceId) error
+	// This method may mutate the relay request in the future, so the returned
+	// relay request should be used instead of the passed in one.
+	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
+	// that should not be responsible for verifying relay requests.
+	VerifyRelayRequest(
+		ctx context.Context,
+		relayRequest *types.RelayRequest,
+		serviceId *sharedtypes.ServiceId,
+	) (*types.RelayRequest, error)
 
-	// SignRelayResponse is a shared method used by RelayServers to sign the relay response.
-	SignRelayResponse(relayResponse *types.RelayResponse) ([]byte, error)
+	// SignRelayResponse is a shared method used by RelayServers to sign
+	// and return a signed RelayResponse the relay response.
+	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
+	// that should not be responsible for signing relay responses.
+	SignRelayResponse(relayResponse *types.RelayResponse) (*types.RelayResponse, error)
 }
 
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
