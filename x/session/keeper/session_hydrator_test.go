@@ -25,6 +25,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, keepertest.TestServiceId1, sessionHeader.ServiceId.Id)
 	require.Equal(t, "", sessionHeader.ServiceId.Name)
 	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
+	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
 	require.Equal(t, "23f037a10f9d51d020d27763c42dd391d7e71765016d95d0d61f36c4a122efd0", sessionHeader.SessionId)
 
 	// Check the session
@@ -53,6 +54,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 		expectedNumBlocksPerSession int64
 		expectedSessionNumber       int64
 		expectedSessionStartBlock   int64
+		expectedSessionEndBlock     int64
 	}
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
@@ -65,6 +67,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
+			expectedSessionEndBlock:     4,
 		},
 		{
 			name:        "blockHeight = 1",
@@ -73,6 +76,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
+			expectedSessionEndBlock:     4,
 		},
 		{
 			name:        "blockHeight = sessionHeight",
@@ -81,6 +85,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
+			expectedSessionEndBlock:     8,
 		},
 		{
 			name:        "blockHeight != sessionHeight",
@@ -89,6 +94,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
+			expectedSessionEndBlock:     8,
 		},
 	}
 
@@ -105,6 +111,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			require.Equal(t, tt.expectedNumBlocksPerSession, session.NumBlocksPerSession)
 			require.Equal(t, tt.expectedSessionNumber, session.SessionNumber)
 			require.Equal(t, tt.expectedSessionStartBlock, session.Header.SessionStartBlockHeight)
+			require.Equal(t, tt.expectedSessionEndBlock, session.Header.SessionEndBlockHeight)
 		})
 	}
 }
