@@ -15,17 +15,17 @@ type RelayerSessionsManager interface {
 	// SessionsToClaim returns an observable that notifies of sessions ready to be claimed.
 	SessionsToClaim() observable.Observable[SessionTree]
 
-	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session.
+	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session header.
 	// It is used to retrieve the SMST and update it when a Relay has been successfully served.
-	// If the session is seen for the first time, it creates a new SMST for it before returning it.
+	// If the session header is seen for the first time, it creates a new SMST for it before returning it.
 	// An error is returned if the corresponding KVStore for SMST fails to be created.
-	EnsureSessionTree(session *sessiontypes.Session) (SessionTree, error)
+	EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (SessionTree, error)
 }
 
 // SessionTree is an interface that wraps an SMST (Sparse Merkle State Tree) and its corresponding session.
 type SessionTree interface {
-	// GetSession returns the session corresponding to the SMST.
-	GetSession() *sessiontypes.Session
+	// GetSessionHeader returns the header of the session corresponding to the SMST.
+	GetSessionHeader() *sessiontypes.SessionHeader
 
 	// Update is a wrapper for the SMST's Update function. It updates the SMST with
 	// the given key, value, and weight.
