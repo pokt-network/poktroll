@@ -3,9 +3,11 @@
 package e2e
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var (
@@ -16,7 +18,7 @@ var (
 	// defaultRPCHost is the default RPC host that pocketd listens on
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
-	defaultHome = os.Getenv("POCKETD_HOME")
+	defaultHome = os.Getenv("POKTROLLD_HOME")
 )
 
 func init() {
@@ -30,9 +32,10 @@ func init() {
 
 // commandResult combines the stdout, stderr, and err of an operation
 type commandResult struct {
-	Stdout string
-	Stderr string
-	Err    error
+	Command string // the command that was executed
+	Stdout  string // standard output
+	Stderr  string // standard error
+	Err     error  // execution error, if any
 }
 
 // PocketClient is a single function interface for interacting with a node
@@ -67,13 +70,26 @@ func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}
 	args = append(base, args...)
+	commandStr := "poktrolld " + strings.Join(args, " ") // Create a string representation of the command
 	cmd := exec.Command("poktrolld", args...)
-	r := &commandResult{}
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err := cmd.Run()
+	r := &commandResult{
+		Command: commandStr, // Set the command string
+		Stdout:  stdoutBuf.String(),
+		Stderr:  stderrBuf.String(),
+		Err:     err,
 	}
-	r.Stdout = string(out)
 	p.result = r
-	return r, nil
+
+	if err != nil {
+		// Include the command executed in the error message for context
+		err = fmt.Errorf("error running command [%s]: %v, stderr: %s", commandStr, err, stderrBuf.String())
+	}
+
+	return r, err
 }
