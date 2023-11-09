@@ -81,52 +81,27 @@ genesis:
           - amount: "10000"
             denom: upokt
     application:
-      params:
-        maxDelegatedGateways: 7
-    applicationList:
-      - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-        stake:
-          amount: "1000"
-          denom: upokt
-    # TODO(@Olshansk): Update genesis to include services
-    #   services:
-    #   - id: svc1
-    #     name: TODO
-    #   - id: svc2
-    #     name: TODO
-    # params: {}
-    # TODO(@Olshansk): Update genesis to include suppliers
-    # supplier:
-    #   params: {}
-    #   suppliersList:
-    #     - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-    #       services:
-    #         - endpoints:
-    #             - configs:
-    #                 - key: TIMEOUT
-    #                   value: 30s
-    #               metadata:
-    #                 entries: {}
-    #               rpc_type: WEBSOCKET
-    #               url: ws://localhost:8546/
-    #           id:
-    #             id: svc1
-    #             name: Pocket Network Service 1
-    #           metadata:
-    #             entries: {}
-    #         - endpoints:
-    #             - configs:
-    #                 - key: TIMEOUT
-    #                   value: 60s
-    #               metadata:
-    #                 entries: {}
-    #               rpc_type: JSON_RPC
-    #               url: http://localhost:8545
-    #           id:
-    #             id: svc2
-    #             name: Pocket Network Service 2
-    #           metadata:
-    #             entries: {}
-    #       stake:
-    #         amount: "1000000"
-    #         denom: upokt
+      applicationList:
+        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+          delegatee_gateway_addresses: []
+          service_configs:
+            - service:
+                id: anvil
+                name: ""
+          stake:
+            amount: "1000"
+            denom: upokt
+    supplier:
+      supplierList:
+        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          services:
+            - endpoints:
+                - configs: []
+                  rpc_type: JSON_RPC
+                  url: http://anvil:8547
+              service:
+                id: anvil
+                name: ""
+          stake:
+            amount: "1000"
+            denom: upokt
