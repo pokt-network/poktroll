@@ -18,7 +18,7 @@ import (
 //   - "Creating claims": The session SMST is flushed and a claim is created on-chain.
 //   - "Submitting proofs": The session SMST is proven and a proof is submitted on-chain.
 type Miner interface {
-	MineRelays(
+	StartMiningRelays(
 		ctx context.Context,
 		servedRelays observable.Observable[*servicetypes.Relay],
 	)
