@@ -11,8 +11,8 @@ Feature: Relay Namespace
     # TODO_TEST(@Olshansk):
     # - Successful relay if using a gateway to proxy the relay
     # - Succeedful relays when using multiple suppliers for app in some session
-    # - Succesful deduction of app's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
-    # - Succesful inflatino of supplier's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
+    # - Successful deduction of app's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
+    # - Successful inflatino of supplier's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
     # - Error if app1 is not staked for svc1 but relay is sent
     # - Error if supplier is not staked for svc1 but relay is sent
     # - Error if claiming the session too early
