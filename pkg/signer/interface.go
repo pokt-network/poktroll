@@ -5,5 +5,5 @@ package signer
 // The Signer interface expects a 32 byte message (sha256 hash) and returns a
 // byte slice containing the signature or any error that occurred during signing.
 type Signer interface {
-	Sign(msg [32]byte) (signature []byte, err error)
+	Sign(msg []byte) (signature []byte, err error)
 }

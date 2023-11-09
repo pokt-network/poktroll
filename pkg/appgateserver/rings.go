@@ -33,9 +33,11 @@ func (app *appGateServer) getRingSingerForAppAddress(ctx context.Context, appAdd
 	points, ok := app.ringCache[appAddress]
 	if !ok {
 		// if the ring is not in the cache, get it from the application module
+		log.Printf("DEBUG: No ring cached for address: %s", appAddress)
 		ring, err = app.getRingForAppAddress(ctx, appAddress)
 	} else {
 		// if the ring is in the cache, create it from the points
+		log.Printf("DEBUG: Ring cached for address: %s", appAddress)
 		ring, err = newRingFromPoints(points)
 	}
 	if err != nil {
@@ -68,6 +70,9 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 ) ([]ringtypes.Point, error) {
+	app.ringCacheMutex.RLock()
+	defer app.ringCacheMutex.RUnlock()
+
 	// get the application's on chain state
 	log.Printf("DEBUG: Getting application for address: %s", appAddress)
 	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
@@ -77,24 +82,24 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	}
 
 	// create a slice of addresses for the ring
-	ringAddresses := make([]string, len(res.Application.DelegateeGatewayAddresses)+1) // +1 for app address
-	ringAddresses[0] = appAddress                                                     // app address is index 0
-	copy(ringAddresses[1:], res.Application.DelegateeGatewayAddresses)                // copy the gateway addresses
+	ringAddresses := make([]string, 0)
+	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
+	ringAddresses = append(ringAddresses, appAddress) // add app address twice to make the ring size of mininmum 2
+	if len(res.Application.DelegateeGatewayAddresses) > 0 {
+		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...) // delegatee addresses are index 1+
+	}
 
 	// get the points on the secp256k1 curve for the addresses
-	log.Printf("DEBUG: Getting ring points for addresses: %v", ringAddresses)
+	log.Printf("DEBUG: Fetching public keys for ring: %v", ringAddresses)
 	points, err := app.addressesToPoints(ctx, ringAddresses)
 	if err != nil {
 		return nil, err
 	}
 
 	// update the cache overwriting the previous value
-	app.ringCacheMutex.Lock()
-	defer app.ringCacheMutex.Unlock()
 	app.ringCache[appAddress] = points
 
 	// return the public key points on the secp256k1 curve
-	log.Print("DEBUG: Ring points: ", points)
 	return points, nil
 }
 
@@ -104,7 +109,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []string) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
-	for _, addr := range addresses {
+	for i, addr := range addresses {
 		log.Printf("DEBUG: Getting account for address: %s", addr)
 		pubKeyReq := &accounttypes.QueryAccountRequest{Address: addr}
 		pubKeyRes, err := app.accountQuerier.Account(ctx, pubKeyReq)
@@ -115,7 +120,7 @@ func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []str
 		reg := codectypes.NewInterfaceRegistry()
 		accounttypes.RegisterInterfaces(reg)
 		cdc := codec.NewProtoCodec(reg)
-		log.Printf("DEBUG: Unpacking account for address: %s", addr)
+		log.Printf("DEBUG: Unpacking account for address")
 		if err := cdc.UnpackAny(pubKeyRes.Account, &acc); err != nil {
 			return nil, fmt.Errorf("unable to deserialise account for address: %s [%w]", addr, err)
 		}
@@ -123,13 +128,13 @@ func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []str
 		if _, ok := key.(*secp256k1.PubKey); !ok {
 			return nil, fmt.Errorf("public key is not a secp256k1 key: got %T", key)
 		}
-		log.Printf("DEBUG: Decoding public key for address: %s", addr)
+		log.Printf("DEBUG: Decoding public key for address")
 		point, err := curve.DecodeToPoint(key.Bytes())
 		if err != nil {
 			return nil, err
 		}
 		log.Printf("DEBUG: Adding point to ring: %v", point)
-		points = append(points, point)
+		points[i] = point
 	}
 	return points, nil
 }

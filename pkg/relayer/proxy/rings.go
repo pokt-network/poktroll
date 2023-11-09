@@ -19,15 +19,20 @@ import (
 func (rp *relayerProxy) getRingForAppAddress(ctx context.Context, appAddress string) (*ring.Ring, error) {
 	// lock the cache for reading
 	rp.ringCacheMutex.RLock()
-	defer rp.ringCacheMutex.RUnlock()
 
 	// check if the ring is in the cache
 	points, ok := rp.ringCache[appAddress]
+	rp.ringCacheMutex.RUnlock() // unlock the cache incase not found in cache
+	var err error
 	if !ok {
 		// if the ring is not in the cache, get it from the application module
-		return rp.getRingForAppAddress(ctx, appAddress)
+		points, err = rp.getDelegatedPubKeysForAddress(ctx, appAddress)
 	}
-	// if the ring is in the cache, create it from the points
+	if err != nil {
+		return nil, err
+	}
+
+	// create the ring from the points
 	return newRingFromPoints(points)
 }
 
@@ -42,6 +47,9 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 ) ([]ringtypes.Point, error) {
+	rp.ringCacheMutex.RLock()
+	defer rp.ringCacheMutex.RUnlock()
+
 	// get the application's on chain state
 	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := rp.applicationQuerier.Application(ctx, req)
@@ -50,9 +58,12 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	}
 
 	// create a slice of addresses for the ring
-	ringAddresses := make([]string, len(res.Application.DelegateeGatewayAddresses)+1) // +1 for app address
-	ringAddresses[0] = appAddress                                                     // app address is index 0
-	copy(ringAddresses[1:], res.Application.DelegateeGatewayAddresses)                // copy the gateway addresses
+	ringAddresses := make([]string, 0)
+	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
+	ringAddresses = append(ringAddresses, appAddress) // add app address twice to make the ring size of mininmum 2
+	if len(res.Application.DelegateeGatewayAddresses) > 0 {
+		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...) // delegatee addresses are index 1+
+	}
 
 	// get the points on the secp256k1 curve for the addresses
 	points, err := rp.addressesToPoints(ctx, ringAddresses)
@@ -61,8 +72,6 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	}
 
 	// update the cache overwriting the previous value
-	rp.ringCacheMutex.Lock()
-	defer rp.ringCacheMutex.Unlock()
 	rp.ringCache[appAddress] = points
 
 	// return the public key points on the secp256k1 curve

@@ -17,7 +17,7 @@ func NewSimpleSigner(keyring keyring.Keyring, keyName string) *SimpleSigner {
 }
 
 // Sign signs the given message using the SimpleSigner's keyring and keyName
-func (s *SimpleSigner) Sign(msg [32]byte) (signature []byte, err error) {
+func (s *SimpleSigner) Sign(msg []byte) (signature []byte, err error) {
 	sig, _, err := s.keyring.Sign(s.keyName, msg[:])
 	return sig, err
 }

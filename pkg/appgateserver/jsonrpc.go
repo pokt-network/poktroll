@@ -55,7 +55,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Get the application's signer.
-	log.Printf("DEBUG: Getting signer for app [%s]...", appAddress)
+	log.Printf("DEBUG: Getting signer for app: %s...", appAddress)
 	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
 	if err != nil {
 		return err
@@ -68,9 +68,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 		return err
 	}
 	hash := crypto.Sha256(signableBz)
-	var hash32 [32]byte
-	copy(hash32[:], hash)
-	signature, err := signer.Sign(hash32)
+	signature, err := signer.Sign(hash)
 	if err != nil {
 		return err
 	}
@@ -92,14 +90,14 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Perform the HTTP request to the relayer.
-	log.Printf("DEBUG: Sending relay request to relayer at [%s]...", supplierUrl)
+	log.Printf("DEBUG: Sending relay request to relayer at: %s...", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return err
 	}
 
 	// Read the response body bytes.
-	log.Printf("DEBUG: Received relay response from relayer at [%s]...", supplierUrl)
+	log.Printf("DEBUG: Received relay response from relayer at: %s...", supplierUrl)
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
 		return err
@@ -127,7 +125,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Sending relay response payload to app [%s]...", appAddress)
+	log.Printf("DEBUG: Sending relay response payload to app: %s...", appAddress)
 	if _, err := writer.Write(relayRequestBz); err != nil {
 		return err
 	}

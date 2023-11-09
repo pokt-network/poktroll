@@ -23,11 +23,9 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) er
 		return sdkerrors.Wrapf(ErrInvalidRelayResponse, "error getting signable bytes: %v", err)
 	}
 	hash := crypto.Sha256(signableBz)
-	var hash32 [32]byte
-	copy(hash32[:], hash)
 
 	// sign the relay response
-	sig, err := signer.Sign(hash32)
+	sig, err := signer.Sign(hash)
 	if err != nil {
 		return sdkerrors.Wrapf(ErrInvalidRelayResponse, "error signing relay response: %v", err)
 	}
