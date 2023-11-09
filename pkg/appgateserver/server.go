@@ -78,11 +78,11 @@ type appGateServer struct {
 	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
-func NewAppServer(
+func NewAppGateServer(
 	clientCtx sdkclient.Context,
 	signKey ringtypes.Scalar,
 	appAddress string,
-	applicationEndpoint *url.URL,
+	listeningEndpoint *url.URL,
 	blockClient blocktypes.BlockClient,
 ) *appGateServer {
 	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
@@ -96,10 +96,11 @@ func NewAppServer(
 		appAddress:           appAddress,
 		clientCtx:            clientCtx,
 		sessionQuerier:       sessionQuerier,
+		currentSessions:      make(map[string]*sessiontypes.Session),
 		accountQuerier:       accountQuerier,
 		applicationQuerier:   applicationQuerier,
 		blockClient:          blockClient,
-		server:               &http.Server{Addr: applicationEndpoint.Host},
+		server:               &http.Server{Addr: listeningEndpoint.Host},
 		supplierAccountCache: make(map[string]cryptotypes.PubKey),
 	}
 }
@@ -112,6 +113,9 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		<-ctx.Done()
 		app.server.Shutdown(ctx)
 	}()
+
+	// Set the HTTP handler.
+	app.server.Handler = app
 
 	// Start the HTTP server.
 	return app.server.ListenAndServe()
@@ -149,7 +153,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		)
 		log.Print("ERROR: no application address provided")
 		return
-	} else if appAddress != "" && appAddress != app.appAddress {
+	} else if appAddress != "" && app.appAddress != "" && appAddress != app.appAddress {
 		app.replyWithError(
 			writer,
 			sdkerrors.Wrapf(

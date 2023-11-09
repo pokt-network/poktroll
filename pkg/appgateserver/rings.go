@@ -7,9 +7,12 @@ import (
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	ring "github.com/noot/ring-go"
+
 	"github.com/pokt-network/poktroll/pkg/signer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
@@ -103,8 +106,11 @@ func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []str
 		if err != nil {
 			return nil, fmt.Errorf("unable to get account for address: %s [%w]", addr, err)
 		}
-		acc := new(accounttypes.BaseAccount)
-		if err := acc.Unmarshal(pubKeyRes.Account.Value); err != nil {
+		var acc accounttypes.AccountI
+		reg := codectypes.NewInterfaceRegistry()
+		accounttypes.RegisterInterfaces(reg)
+		cdc := codec.NewProtoCodec(reg)
+		if err := cdc.UnpackAny(pubKeyRes.Account, &acc); err != nil {
 			return nil, fmt.Errorf("unable to deserialise account for address: %s [%w]", addr, err)
 		}
 		key := acc.GetPubKey()
