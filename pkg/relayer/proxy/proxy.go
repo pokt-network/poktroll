@@ -76,6 +76,8 @@ type relayerProxy struct {
 	supplierAddress string
 }
 
+// NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
+// an error if the dependencies fail to resolve or the options are invalid.
 func NewRelayerProxy(
 	deps depinject.Config,
 	opts ...relayer.RelayerProxyOption,
@@ -155,6 +157,7 @@ func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 	return rp.servedRelays
 }
 
+// validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
 func (rp *relayerProxy) validateConfig() error {
 	if rp.signingKeyName == "" {
 		return ErrUndefinedSigningKeyName
