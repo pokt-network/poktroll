@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -189,10 +190,6 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 	}
 }
 
-func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
-	// TODO(#126): Implement this step
-}
-
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
 	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
 		if serviceConfig.Service.Id == serviceId {
@@ -211,12 +208,44 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
-func (s *suite) TheSupplierIsPartOfTheSessionForApplication(supplierName string, appName string) {
-	// TODO(#126): Implement this step
+func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
+	app, found := accNameToAppMap[appName]
+	if !found {
+		s.Fatalf("application %s not found", appName)
+	}
+	expectedSupplier, found := accNameToSupplierMap[supplierName]
+	if !found {
+		s.Fatalf("supplier %s not found", supplierName)
+	}
+	argsAndFlags := []string{
+		"query",
+		"session",
+		"get-session",
+		app.Address,
+		serviceId,
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting session for app %s and service %s: %s", appName, serviceId, err)
+	}
+	var resp sessiontypes.QueryGetSessionResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, supplier := range resp.Session.Suppliers {
+		if supplier.Address == expectedSupplier.Address {
+			return
+		}
+	}
+	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARelayRequestForService(appName string, supplierName string, requestName string, serviceId string) {
-	// TODO(#126): Implement this step
+	// TODO(#126, @Olshansk): Implement this step
+}
+
+func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+	// TODO(#126, @Olshansk): Implement this step
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {

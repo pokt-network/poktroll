@@ -4,7 +4,7 @@ Feature: Relay Namespace
         Given the user has the pocketd binary installed
         And the application "app1" is staked for service "anvil"
         And the supplier "supplier1" is staked for service "anvil"
-        And the supplier "supplier1" is part of the session for application "app1"
+        And the session for application "app1" and service "anvil" contains the supplier "supplier1"
         When the application "app1" sends the supplier "supplier1" a "getBlock" relay request for service "anvil"
         Then the application "app1" receives a successful relay response signed by "supplier1"
 
