@@ -33,6 +33,31 @@ func Map[S, D any](
 	return dstObservable
 }
 
+// MapExpand transforms the given observable by applying the given transformFn to
+// each notification received from the observable, similar to Map; however, the
+// transformFn returns a slice of output notifications for each input notification.
+func MapExpand[S, D any](
+	ctx context.Context,
+	srcObservable observable.Observable[S],
+	transformFn MapFn[S, []D],
+) observable.Observable[D] {
+	dstObservable, dstPublishCh := NewObservable[D]()
+	srcObserver := srcObservable.Subscribe(ctx)
+
+	go goMapTransformNotification(
+		ctx,
+		srcObserver,
+		transformFn,
+		func(dstNotifications []D) {
+			for _, dstNotification := range dstNotifications {
+				dstPublishCh <- dstNotification
+			}
+		},
+	)
+
+	return dstObservable
+}
+
 // MapReplay transforms the given observable by applying the given transformFn to
 // each notification received from the observable. If the transformFn returns a
 // skip bool of true, the notification is skipped and not emitted to the resulting
