@@ -39,4 +39,4 @@ jobs:
           location: ${{ env.GKE_ZONE }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
       
-      - run: kubectl get pod
+      - run: kubectl get jobs
