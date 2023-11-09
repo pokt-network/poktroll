@@ -6,7 +6,7 @@ package types
 func (req RelayRequest) GetSignableBytes() ([]byte, error) {
 	// set signature to nil
 	req.Meta.Signature = nil
-	// return the marshalled message
+	// return the marshaled message
 	return req.Marshal()
 }
 
@@ -16,6 +16,6 @@ func (req RelayRequest) GetSignableBytes() ([]byte, error) {
 func (res RelayResponse) GetSignableBytes() ([]byte, error) {
 	// set signature to nil
 	res.Meta.SupplierSignature = nil
-	// return the marshalled message
+	// return the marshaled message
 	return res.Marshal()
 }
