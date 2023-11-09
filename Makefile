@@ -133,6 +133,7 @@ go_imports: check_go_version ## Run goimports on all go files
 ### Tests ###
 #############
 
+# TODO_IN_THIS_PR: Remove `-run` from the command below
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
