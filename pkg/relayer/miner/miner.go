@@ -80,7 +80,10 @@ func NewMiner(
 // It also starts the claim and proof pipelines which are subsequently driven by
 // mapping over RelayerSessionsManager's SessionsToClaim return observable.
 // It does not block as map operations run in their own goroutines.
-func (mnr *miner) MineRelays(ctx context.Context, servedRelays observable.Relay) {
+func (mnr *miner) MineRelays(
+	ctx context.Context,
+	servedRelays observable.Observable[*servicetypes.Relay],
+) {
 	// sessiontypes.Relay ==> either.Either[minedRelay]
 	eitherMinedRelays := channel.Map(ctx, servedRelays, mnr.mapMineRelay)
 
@@ -99,7 +102,7 @@ func (mnr *miner) MineRelays(ctx context.Context, servedRelays observable.Relay)
 // a new observable which are subsequently logged. It returns an observable of
 // the successfully claimed sessions. It does not block as map operations run
 // in their own goroutines.
-func (mnr *miner) createClaims(ctx context.Context) observable.SessionTree {
+func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relayer.SessionTree] {
 	// Map SessionsToClaim observable to a new observable of the same type which
 	// is notified when the session is eligible to be claimed.
 	// relayer.SessionTree ==> relayer.SessionTree
@@ -135,7 +138,7 @@ func (mnr *miner) createClaims(ctx context.Context) observable.SessionTree {
 // goroutines.
 func (mnr *miner) submitProofs(
 	ctx context.Context,
-	claimedSessions observable.SessionTree,
+	claimedSessions observable.Observable[relayer.SessionTree],
 ) {
 	// Map claimedSessions to a new observable of the same type which is notified
 	// when the session is eligible to be proven.
