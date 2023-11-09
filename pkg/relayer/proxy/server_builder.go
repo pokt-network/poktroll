@@ -13,7 +13,7 @@ import (
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// Get the supplier address from the keyring
-	supplierAddress, err := rp.keyring.Key(rp.keyName)
+	supplierAddress, err := rp.keyring.Key(rp.signingKeyName)
 	if err != nil {
 		return err
 	}
