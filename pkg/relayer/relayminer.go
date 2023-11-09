@@ -23,7 +23,11 @@ func NewRelayMiner(
 ) (*relayMiner, error) {
 	rel := &relayMiner{}
 
-	if err := depinject.Inject(deps, &rel.relayerProxy, &rel.miner); err != nil {
+	if err := depinject.Inject(
+		deps,
+		&rel.relayerProxy,
+		&rel.miner,
+	); err != nil {
 		return nil, err
 	}
 
