@@ -23,7 +23,7 @@ func CmdStakeSupplier() *cobra.Command {
 		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
 		// This needs to be expand to specify the full SupplierServiceConfig. Furthermore, providing a flag to
 		// a file where SupplierServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
-		Use:   "stake-supplier [amount] [svcId1;url1,svcId2;url2,...,svcIdN;urlN]",
+		Use:   "stake-supplier <upokt_amount> <svcId1;url1,svcId2;url2,...,svcIdN;urlN>",
 		Short: "Stake a supplier",
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
@@ -84,7 +84,7 @@ func hackStringToServices(servicesArg string) ([]*sharedtypes.SupplierServiceCon
 			return nil, fmt.Errorf("invalid service string: %s. Expected it to be of the form 'service;url'", serviceString)
 		}
 		service := &sharedtypes.SupplierServiceConfig{
-			ServiceId: &sharedtypes.ServiceId{
+			Service: &sharedtypes.Service{
 				Id: serviceParts[0],
 			},
 			Endpoints: []*sharedtypes.SupplierEndpoint{

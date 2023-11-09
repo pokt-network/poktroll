@@ -5,12 +5,15 @@ package pocket.supplier;
 import "gogoproto/gogo.proto";
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
+import "pocket/supplier/claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
 // GenesisState defines the supplier module's genesis state.
 message GenesisState {
-           Params   params       = 1 [(gogoproto.nullable) = false];
+           Params                 params       = 1 [(gogoproto.nullable) = false];
   repeated pocket.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false];
+  // TODO_UPNEXT(@Olshansk): Delete `claimList` from the genesis state.
+  repeated Claim                  claimList    = 3 [(gogoproto.nullable) = false];
 }
 
