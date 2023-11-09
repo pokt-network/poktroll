@@ -287,11 +287,6 @@ func (mnr *miner) waitForEarliestCreateClaimHeight(
 
 	log.Printf("earliest claim submission createClaimWindowStartBlock height for this supplier: %d", earliestCreateClaimHeight)
 	_ = mnr.waitForBlock(ctx, earliestCreateClaimHeight)
-
-	// TODO_THIS_COMMIT: this didn't seem to be used, confirm and remove.
-	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// latestServicerClaimSubmissionBlockHeight := earliestCreateClaimHeight +
-	//   claimproofparams.GovClaimSubmissionBlocksWindow + 1
 }
 
 // waitForBlock blocks until the block at the given height (or greater) is
@@ -322,8 +317,6 @@ func (mnr *miner) newMapClaimSessionFn(
 		// this session should no longer be updated
 		claimRoot, err := session.Flush()
 		if err != nil {
-			// TODO_THIS_COMMIT: cleanup error handling/logging
-			log.Printf("failed to close tree: %s", err)
 			return either.Error[relayer.SessionTree](err), false
 		}
 
@@ -368,11 +361,6 @@ func (mnr *miner) waitForEarliestSubmitProofDistributionHeight(
 
 	earliestSubmitProofDistributionHeight := protocol.GetEarliestSubmitProofHeight(earliestSubmitProofBlock)
 	_ = mnr.waitForBlock(ctx, earliestSubmitProofDistributionHeight)
-
-	// TODO_THIS_COMMIT: this didn't seem to be used, confirm and remove.
-	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// latestServicerClaimSubmissionBlockHeight := earliestSubmitProofBlockHeight +
-	//   claimproofparams.GovProofSubmissionBlocksWindow + 1
 }
 
 // newMapProveSessionFn returns a new MapFn that submits a proof for the given
