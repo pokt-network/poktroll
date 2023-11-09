@@ -1,5 +1,3 @@
-//go:build e2e
-
 package e2e
 
 import (
@@ -10,15 +8,27 @@ import (
 	"testing"
 	"time"
 
+	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var (
-	addrRe           *regexp.Regexp
-	amountRe         *regexp.Regexp
-	accNameToAddrMap = make(map[string]string)
-	keyRingFlag      = "--keyring-backend=test"
+	addrRe   *regexp.Regexp
+	amountRe *regexp.Regexp
+
+	accNameToAddrMap     = make(map[string]string)
+	accAddrToNameMap     = make(map[string]string)
+	accNameToAppMap      = make(map[string]apptypes.Application)
+	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
+
+	keyRingFlag = "--keyring-backend=test"
 )
 
 func init() {
@@ -30,12 +40,15 @@ type suite struct {
 	gocuke.TestingT
 	pocketd       *pocketdBin
 	scenarioState map[string]any // temporary state for each scenario
+	cdc           codec.Codec
 }
 
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
 	s.scenarioState = make(map[string]any)
+	s.cdc = app.MakeEncodingConfig().Marshaler
 	s.buildAddrMap()
+	s.buildAppMap()
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -175,6 +188,38 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 	}
 }
 
+func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+	// TODO(#126): Implement this step
+}
+
+func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
+	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
+		if serviceConfig.Service.Id == serviceId {
+			fmt.Println("OLSH")
+			return
+		}
+	}
+	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+}
+
+func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
+	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
+		if serviceConfig.Service.Id == serviceId {
+			fmt.Println("OLSH")
+			return
+		}
+	}
+	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+}
+
+func (s *suite) TheSupplierIsPartOfTheSessionForApplication(supplierName string, appName string) {
+	// TODO(#126): Implement this step
+}
+
+func (s *suite) TheApplicationSendsTheSupplierARelayRequestForService(appName string, supplierName string, requestName string, serviceId string) {
+	// TODO(#126): Implement this step
+}
+
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 	s.Helper()
 	args := []string{
@@ -216,7 +261,30 @@ func (s *suite) buildAddrMap() {
 		name := match[2]
 		address := match[1]
 		accNameToAddrMap[name] = address
+		accAddrToNameMap[address] = name
 	}
+}
+
+func (s *suite) buildAppMap() {
+	s.Helper()
+	argsAndFlags := []string{
+		"query",
+		"application",
+		"list-application",
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting application list: %s", err)
+	}
+	s.pocketd.result = res
+	var resp types.QueryAllApplicationResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, app := range resp.Application {
+		accNameToAppMap[accAddrToNameMap[app.Address]] = app
+	}
+	fmt.Println(accNameToAppMap)
 }
 
 func (s *suite) getAccBalance(accName string) int {

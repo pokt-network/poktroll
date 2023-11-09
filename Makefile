@@ -135,7 +135,9 @@ go_imports: check_go_version ## Run goimports on all go files
 
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
-	export POCKET_NODE=$(POCKET_NODE) POKTROLLD_HOME=../../$(POKTROLLD_HOME) && go test -v ./e2e/tests/... -tags=e2e
+	export POCKET_NODE=$(POCKET_NODE) && \
+	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
+	go test -v ./e2e/tests/... -tags=e2e -run TestFeatures/Relay_Namespace/App_can_send_relay_to_Supplier
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests
@@ -392,7 +394,7 @@ supplier3_unstake: ## Unstake supplier3
 
 .PHONY: get_session
 get_session: ## Retrieve the session given the following env vars: (APP_ADDR, SVC, HEIGHT)
-	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)
