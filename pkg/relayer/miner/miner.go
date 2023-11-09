@@ -28,11 +28,7 @@ var (
 	defaultRelayDifficulty = 0
 )
 
-// TODO: https://stackoverflow.com/questions/77190071/golang-best-practice-for-functions-intended-to-be-called-as-goroutines
-
-// TODO_THIS_COMMIT: define interface & unexport
-// TODO_COMMENT: Explain what the responsibility of this structure is, how its used throughout
-// and leave comments alongside each field.
+// miner implements the relayer.Miner interface.
 type miner struct {
 	hasher          hash.Hash
 	relayDifficulty int
@@ -43,12 +39,15 @@ type miner struct {
 	blockClient    client.BlockClient
 }
 
+// minedRelay is a wrapper around a relay that has been serialized and hashed.
 type minedRelay struct {
 	servicetypes.Relay
 	bytes []byte
 	hash  []byte
 }
 
+// NewMiner creates a new miner from the given dependencies and options. It
+// returns an error if it has not been sufficiently configured or supplied.
 func NewMiner(
 	deps depinject.Config,
 	opts ...relayer.MinerOption,
@@ -75,7 +74,12 @@ func NewMiner(
 	return mnr, nil
 }
 
-// MineRelays assigns the servedRelays and sessions observables & starts their respective consumer goroutines.
+// MineRelays kicks off relay mining by mapping the servedRelays ovservable through
+// a pipeline which hashes the relay, checks if it's above the mining difficulty,
+// adds it to the session tree, and then maps any errors to a  new observable.
+// It also starts the claim and proof pipelines which are subsequently driven by
+// mapping over RelayerSessionsManager's SessionsToClaim return observable.
+// It does not block as map operations run in their own goroutines.
 func (mnr *miner) MineRelays(
 	ctx context.Context,
 	servedRelays observable.Observable[servicetypes.Relay],
@@ -92,6 +96,12 @@ func (mnr *miner) MineRelays(
 	mnr.submitProofs(ctx, claimedSessions)
 }
 
+// createClaims maps over the RelaySessionsManager's SessionsToClaim return
+// observable. For each claim, it calculates and waits for the earliest block
+// height at which it is safe to claim and does so. It then maps any errors to
+// a new observable which are subsequently logged. It returns an observable of
+// the successfully claimed sessions. It does not block as map operations run
+// in their own goroutines.
 func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relayer.SessionTree] {
 	// relayer.SessionTree ==> either.SessionTree
 	sessionsWithOpenClaimWindow := mnr.waitForOpenClaimWindow(ctx, mnr.sessionManager.SessionsToClaim())
@@ -113,6 +123,11 @@ func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relaye
 	return filter.EitherSuccess(ctx, eitherClaimedSessions)
 }
 
+// submitProofs maps over the given claimedSessions observable. For each session,
+// it calculates and waits for the earliest block height at which it is safe to
+// submit a proof and does so. It then maps any errors to a new observable which
+// are subsequently logged. It does not block as map operations run in their own
+// goroutines.
 func (mnr *miner) submitProofs(
 	ctx context.Context,
 	claimedSessions observable.Observable[relayer.SessionTree],
@@ -133,6 +148,8 @@ func (mnr *miner) submitProofs(
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessions))
 }
 
+// validateConfigAndSetDefaults ensures that the miner has been configured with
+// a hasher and uses the default hasher if not.
 func (mnr *miner) validateConfigAndSetDefaults() error {
 	if mnr.hasher == nil {
 		mnr.hasher = defaultHasher
@@ -140,6 +157,8 @@ func (mnr *miner) validateConfigAndSetDefaults() error {
 	return nil
 }
 
+// mineRelays maps over the servedRelays observable, applyging the mapMineRelay
+// method to each relay. It returns an observable of the mined relays.
 func (mnr *miner) mineRelays(
 	ctx context.Context,
 	servedRelays observable.Observable[servicetypes.Relay],
@@ -148,9 +167,11 @@ func (mnr *miner) mineRelays(
 	return channel.Map(ctx, servedRelays, mnr.mapMineRelay)
 }
 
-// TODO_THIS_COMMIT: update comment.
-// mapMineRelay validates, executes, & hashes the relay. If the relay's difficulty
-// is above the mining difficulty, it's inserted into SMST.
+// mapMineRelay is intended to be used as a MapFn. It hashes the relay and compares
+// its difficulty to the minimum threshold. If the relay difficulty is sifficient,
+// it returns an either populated with the minedRelay value. Otherwise, it skips
+// the relay. If it encounters an error, it returns an either populated with the
+// error.
 func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay servicetypes.Relay,
@@ -177,6 +198,9 @@ func (mnr *miner) mapMineRelay(
 	}), false
 }
 
+// addReplayToSessionTree maps over the eitherMinedRelays observable, applying the
+// mapAddRelayToSessionTree method to each relay. It returns an observable of the
+// errors encountered.
 func (mnr *miner) addReplayToSessionTree(
 	ctx context.Context,
 	eitherMinedRelays observable.Observable[either.Either[minedRelay]],
@@ -185,6 +209,9 @@ func (mnr *miner) addReplayToSessionTree(
 	return channel.Map(ctx, eitherMinedRelays, mnr.mapAddRelayToSessionTree)
 }
 
+// mapAddRelayToSessionTree is intended to be used as a MapFn. It adds the relay
+// to the session tree. If it encounters an error, it returns the error. Otherwise,
+// it skips output (only outputs errors).
 func (mnr *miner) mapAddRelayToSessionTree(
 	_ context.Context,
 	eitherRelay either.Either[minedRelay],
@@ -212,6 +239,10 @@ func (mnr *miner) mapAddRelayToSessionTree(
 	return nil, true
 }
 
+// waitForOpenClaimWindow maps over the SessionsToClaim observable, applying the
+// mapWaitForOpenClaimWindow method to each session. It returns an observable of
+// the sessions that are ready to be claimed which is notified when the respective
+// session is ready to be claimed.
 func (mnr *miner) waitForOpenClaimWindow(
 	ctx context.Context,
 	sessionsToClaim observable.Observable[relayer.SessionTree],
@@ -220,6 +251,9 @@ func (mnr *miner) waitForOpenClaimWindow(
 	return channel.Map(ctx, sessionsToClaim, mnr.mapWaitForOpenClaimWindow)
 }
 
+// mapWaitForOpenClaimWindow is intended to be used as a MapFn. It calculates and
+// waits for the earliest block height at which it is safe to claim and returns
+// the session when it should be claimed.
 func (mnr *miner) mapWaitForOpenClaimWindow(
 	ctx context.Context,
 	session relayer.SessionTree,
@@ -227,16 +261,12 @@ func (mnr *miner) mapWaitForOpenClaimWindow(
 	mnr.waitForEarliestCreateClaimDistributionHeight(
 		ctx, session.GetSessionHeader().GetSessionEndBlockHeight(),
 	)
-
-	// TODO_THIS_COMMIT: reconsider logging...
-	//log.Printf("currentBlock: %d, creating claim", block.Height())
 	return session, false
 }
 
-// waitForEarliestCreateClaimDistributionHeight returns the earliest and latest block heights at which
-// a claim can be submitted for the current session.
-// explanation of how the earliest and latest submission block height is determined is available in the
-// poktroll/x/servicer/keeper/msg_server_claim.go file
+// waitForEarliestCreateClaimDistributionHeight returns the earliest block height
+// at which a claim can be submitted. It is calculated from the session end block
+// height, on-chain governance parameters, and randomized input.
 func (mnr *miner) waitForEarliestCreateClaimDistributionHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
@@ -266,7 +296,7 @@ func (mnr *miner) waitForEarliestCreateClaimDistributionHeight(
 }
 
 // waitForBlock blocks until the block at the given height (or greater) is
-// observed as committed.
+// observed as having been committed.
 func (mnr *miner) waitForBlock(ctx context.Context, height int64) client.Block {
 	subscription := mnr.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
 	defer subscription.Unsubscribe()
@@ -280,6 +310,9 @@ func (mnr *miner) waitForBlock(ctx context.Context, height int64) client.Block {
 	return nil
 }
 
+// newMapClaimSessionFn returns a new MapFn that creates a claim for the given
+// session. Any session which encouters errors while creating a claim is sent
+// on the failedCreateClaimSessions channel.
 func (mnr *miner) newMapClaimSessionFn(
 	failedCreateClaimSessions chan<- relayer.SessionTree,
 ) channel.MapFn[relayer.SessionTree, either.SessionTree] {
@@ -305,6 +338,10 @@ func (mnr *miner) newMapClaimSessionFn(
 	}
 }
 
+// mapWaitForOpenProofWindow maps over the claimedSessions observable, applying
+// the mapWaitForOpenProofWindow method to each session. It returns an observable
+// of the sessions that are ready to be proven which is notified when the respective
+// session is ready to be proven.
 func (mnr *miner) mapWaitForOpenProofWindow(
 	ctx context.Context,
 	session relayer.SessionTree,
@@ -312,16 +349,12 @@ func (mnr *miner) mapWaitForOpenProofWindow(
 	mnr.waitForEarliestSubmitProofDistributionHeight(
 		ctx, session.GetSessionHeader().GetSessionEndBlockHeight(),
 	)
-
-	// TODO_THIS_COMMIT: reconsider logging...
-	//log.Printf("currentBlock: %d, submitting proof", block.Height())
 	return session, false
 }
 
-// getProofSubmissionWindow returns the earliest and latest block heights at which
-// a proof can be submitted.
-// explanation of how the earliest and latest submission block height is determined is available in the
-// poktroll/x/servicer/keeper/msg_server_claim.go file
+// waitForEarliestSubmitProofDistributionHeight returns the earliest block height
+// at which a proof can be submitted. It is calculated from the session claim
+// creation block height, on-chain governance parameters, and randomized input.
 func (mnr *miner) waitForEarliestSubmitProofDistributionHeight(
 	ctx context.Context,
 	createClaimHeight int64,
@@ -343,6 +376,9 @@ func (mnr *miner) waitForEarliestSubmitProofDistributionHeight(
 	//   claimproofparams.GovProofSubmissionBlocksWindow + 1
 }
 
+// newMapProveSessionFn returns a new MapFn that submits a proof for the given
+// session. Any session which encouters errors while submitting a proof is sent
+// on the failedSubmitProofSessions channel.
 func (mnr *miner) newMapProveSessionFn(
 	failedSubmitProofSessions chan<- relayer.SessionTree,
 ) channel.MapFn[relayer.SessionTree, either.SessionTree] {

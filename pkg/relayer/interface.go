@@ -12,6 +12,11 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// Miner encapsulates the following responsibilities:
+//   - "Mining relays": Served relays are hashed and difficulty is checked. Those
+//     with sufficient difficulty are added to the session SMST (tree).
+//   - "Creating claims": The session SMST is flushed and a claim is created on-chain.
+//   - "Submitting proofs": The session SMST is proven and a proof is submitted on-chain.
 type Miner interface {
 	MineRelays(
 		ctx context.Context,
