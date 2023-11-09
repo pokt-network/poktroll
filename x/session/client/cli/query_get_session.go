@@ -24,7 +24,7 @@ func CmdGetSession() *cobra.Command {
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 
 Example:
-$ pocketd --home=$(POCKETD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`,
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			appAddressString := args[0]
