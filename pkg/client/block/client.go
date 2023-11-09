@@ -69,7 +69,10 @@ type blockClient struct {
 // function which maps event subscription message bytes into block event objects.
 // This is used as a transformFn in a channel.Map() call and is the type returned
 // by the newEventsBytesToBlockMapFn factory function.
-type eventBytesToBlockMapFn func(either.Either[[]byte]) (client.Block, bool)
+type eventBytesToBlockMapFn = func(
+	context.Context,
+	either.Bytes,
+) (client.Block, bool)
 
 // NewBlockClient creates a new block client from the given dependencies and cometWebsocketURL.
 func NewBlockClient(
@@ -159,8 +162,12 @@ func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func(
 		// client.BlocksObservable cannot be an alias due to gomock's lack of
 		// support for generic types.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObsvbl)
-		blockEventFromEventBz := newEventsBytesToBlockMapFn(errCh)
-		blocksObsvbl := channel.MapReplay(ctx, latestBlockReplayBufferSize, eventsBz, blockEventFromEventBz)
+		blocksObsvbl := channel.MapReplay(
+			ctx,
+			latestBlockReplayBufferSize,
+			eventsBz,
+			newEventsBytesToBlockMapFn(errCh),
+		)
 
 		// Initially set latestBlockObsvbls and update if after retrying on error.
 		bClient.latestBlockObsvblsReplayPublishCh <- blocksObsvbl
@@ -182,7 +189,10 @@ func (bClient *blockClient) retryPublishBlocksFactory(ctx context.Context) func(
 // this value is also skipped.
 // If deserialization failed for some other reason, this function panics.
 func newEventsBytesToBlockMapFn(errCh chan<- error) eventBytesToBlockMapFn {
-	return func(eitherEventBz either.Either[[]byte]) (_ client.Block, skip bool) {
+	return func(
+		_ context.Context,
+		eitherEventBz either.Bytes,
+	) (_ client.Block, skip bool) {
 		eventBz, err := eitherEventBz.ValueOrError()
 		if err != nil {
 			errCh <- err
