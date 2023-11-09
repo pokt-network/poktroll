@@ -13,10 +13,15 @@ import (
 )
 
 // Miner encapsulates the following responsibilities:
-//   - "Mining relays": Served relays are hashed and difficulty is checked. Those
-//     with sufficient difficulty are added to the session SMST (tree).
-//   - "Creating claims": The session SMST is flushed and a claim is created on-chain.
-//   - "Submitting proofs": The session SMST is proven and a proof is submitted on-chain.
+//   1. Mining relays: Served relays are hashed and difficulty is checked.
+//      Those with sufficient difficulty are added to the session SMST (tree)
+//      to be applicable for relay volume.
+//   2. Creating claims: The session SMST is flushed and an on-chain 
+//      claim is created to the amount of work done by committing
+//      the tree's root.     
+//   3. Submitting proofs: A pseudo-random branch from the session SMST
+//      is "requested" (through on-chain mechanisms) and the necessary proof
+//      is submitted on-hcina.
 type Miner interface {
 	MineRelays(
 		ctx context.Context,

@@ -74,7 +74,7 @@ func NewMiner(
 	return mnr, nil
 }
 
-// MineRelays kicks off relay mining by mapping the servedRelays ovservable through
+// MineRelays kicks off relay mining by mapping the servedRelays observable through
 // a pipeline which hashes the relay, checks if it's above the mining difficulty,
 // adds it to the session tree, and then maps any errors to a  new observable.
 // It also starts the claim and proof pipelines which are subsequently driven by
