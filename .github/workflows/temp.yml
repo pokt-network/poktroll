@@ -25,6 +25,11 @@ jobs:
           service_account_key: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
 
+      # Configure Docker to use the gcloud command-line tool as a credential
+      # helper for authentication
+      - run: |-
+          gcloud --quiet auth configure-docker
+
       - uses: google-github-actions/get-gke-credentials@v1
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
