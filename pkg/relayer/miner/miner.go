@@ -1,3 +1,19 @@
+// Package miner encapsulates the responsibilities of the relayer miner interface:
+//  1. Mining relays: Served relays are hashed and difficulty is checked.
+//     Those with sufficient difficulty are added to the session SMST (tree)
+//     to be applicable for relay volume.
+//  2. Creating claims: The session SMST is flushed and an on-chain
+//     claim is created to the amount of work done by committing
+//     the tree's root.
+//  3. Submitting proofs: A pseudo-random branch from the session SMST
+//     is "requested" (through on-chain mechanisms) and the necessary proof
+//     is submitted on-chain.
+//
+// This is largely accomplished by pipelining observables of relays and sessions
+// Through a series of map operations.
+//
+// TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
+// the miner package.
 package miner
 
 import (
@@ -22,9 +38,9 @@ import (
 var (
 	_             relayer.Miner = (*miner)(nil)
 	defaultHasher               = sha256.New()
-	// TODO_THIS_COMMIT: where (on-chain) should this come from?
-	// TODO_TECHDEBT: setting this to 0 to effectively disable mining for now.
-	// I.e. all relays are added to the tree.
+	// TODO_BLOCKER: query on-chain governance params once available.
+	// Setting this to 0 to effectively disable mining for now.
+	// I.e., all relays are added to the tree.
 	defaultRelayDifficulty = 0
 )
 
@@ -240,40 +256,41 @@ func (mnr *miner) mapWaitForOpenClaimWindow(
 	ctx context.Context,
 	session relayer.SessionTree,
 ) (_ relayer.SessionTree, skip bool) {
-	mnr.waitForEarliestCreateClaimDistributionHeight(
+	mnr.waitForEarliestCreateClaimHeight(
 		ctx, session.GetSessionHeader().GetSessionEndBlockHeight(),
 	)
 	return session, false
 }
 
-// waitForEarliestCreateClaimDistributionHeight returns the earliest block height
-// at which a claim can be submitted. It is calculated from the session end block
-// height, on-chain governance parameters, and randomized input.
-func (mnr *miner) waitForEarliestCreateClaimDistributionHeight(
+// waitForEarliestCreateClaimHeight returns the earliest block height at which a
+// claim can be created. It is calculated from the session end block height,
+// on-chain governance parameters, and randomized input.
+func (mnr *miner) waitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
 ) {
 	// TODO_TECHDEBT: refactor this logic to a shared package.
 
-	earliestCreateClaimBlockHeight := sessionEndHeight
+	createClaimWindowStartHeight := sessionEndHeight
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
 	// + claimproofparams.GovEarliestClaimSubmissionBlocksOffset
 
-	// we wait for earliestCreateClaimBlockHeight to be received before proceeding since we need its hash
+	// we wait for createClaimWindowStartHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window starts.
-	log.Printf("waiting for global earliest claim submission earliestCreateClaimBlock height: %d", earliestCreateClaimBlockHeight)
-	earliestCreateClaimBlock := mnr.waitForBlock(ctx, earliestCreateClaimBlockHeight)
+	log.Printf("waiting for global earliest claim submission createClaimWindowStartBlock height: %d", createClaimWindowStartHeight)
+	createClaimWindowStartBlock := mnr.waitForBlock(ctx, createClaimWindowStartHeight)
 
-	log.Printf("received earliest claim submission earliestCreateClaimBlock height: %d, use its hash to have a random submission for the servicer", earliestCreateClaimBlock.Height())
+	log.Printf("received earliest claim submission createClaimWindowStartBlock height: %d, use its hash to have a random submission for the servicer", createClaimWindowStartBlock.Height())
 
-	earliestClaimSubmissionDistributionHeight := protocol.GetCreateClaimDistributionHeight(earliestCreateClaimBlock)
+	earliestCreateClaimHeight :=
+		protocol.GetEarliestCreateClaimHeight(createClaimWindowStartBlock)
 
-	log.Printf("earliest claim submission earliestCreateClaimBlock height for this supplier: %d", earliestClaimSubmissionDistributionHeight)
-	_ = mnr.waitForBlock(ctx, earliestClaimSubmissionDistributionHeight)
+	log.Printf("earliest claim submission createClaimWindowStartBlock height for this supplier: %d", earliestCreateClaimHeight)
+	_ = mnr.waitForBlock(ctx, earliestCreateClaimHeight)
 
 	// TODO_THIS_COMMIT: this didn't seem to be used, confirm and remove.
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// latestServicerClaimSubmissionBlockHeight := earliestClaimSubmissionDistributionHeight +
+	// latestServicerClaimSubmissionBlockHeight := earliestCreateClaimHeight +
 	//   claimproofparams.GovClaimSubmissionBlocksWindow + 1
 }
 
@@ -349,7 +366,7 @@ func (mnr *miner) waitForEarliestSubmitProofDistributionHeight(
 	log.Printf("waiting for global earliest proof submission earliestSubmitProofBlock height: %d", earliestSubmitProofBlockHeight)
 	earliestSubmitProofBlock := mnr.waitForBlock(ctx, earliestSubmitProofBlockHeight)
 
-	earliestSubmitProofDistributionHeight := protocol.GetSubmitProofDistributionHeight(earliestSubmitProofBlock)
+	earliestSubmitProofDistributionHeight := protocol.GetEarliestSubmitProofHeight(earliestSubmitProofBlock)
 	_ = mnr.waitForBlock(ctx, earliestSubmitProofDistributionHeight)
 
 	// TODO_THIS_COMMIT: this didn't seem to be used, confirm and remove.

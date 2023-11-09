@@ -21,7 +21,7 @@ import (
 //     the tree's root.
 //  3. Submitting proofs: A pseudo-random branch from the session SMST
 //     is "requested" (through on-chain mechanisms) and the necessary proof
-//     is submitted on-hcina.
+//     is submitted on-chain.
 type Miner interface {
 	MineRelays(
 		ctx context.Context,
