@@ -4,6 +4,7 @@ package appgateserver
 import (
 	"context"
 	"fmt"
+	"log"
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
@@ -68,6 +69,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	appAddress string,
 ) ([]ringtypes.Point, error) {
 	// get the application's on chain state
+	log.Printf("DEBUG: Getting application for address: %s", appAddress)
 	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := app.applicationQuerier.Application(ctx, req)
 	if err != nil {
@@ -80,6 +82,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	copy(ringAddresses[1:], res.Application.DelegateeGatewayAddresses)                // copy the gateway addresses
 
 	// get the points on the secp256k1 curve for the addresses
+	log.Printf("DEBUG: Getting ring points for addresses: %v", ringAddresses)
 	points, err := app.addressesToPoints(ctx, ringAddresses)
 	if err != nil {
 		return nil, err
@@ -91,6 +94,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	app.ringCache[appAddress] = points
 
 	// return the public key points on the secp256k1 curve
+	log.Print("DEBUG: Ring points: ", points)
 	return points, nil
 }
 
@@ -100,7 +104,8 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []string) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
-	for i, addr := range addresses {
+	for _, addr := range addresses {
+		log.Printf("DEBUG: Getting account for address: %s", addr)
 		pubKeyReq := &accounttypes.QueryAccountRequest{Address: addr}
 		pubKeyRes, err := app.accountQuerier.Account(ctx, pubKeyReq)
 		if err != nil {
@@ -110,6 +115,7 @@ func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []str
 		reg := codectypes.NewInterfaceRegistry()
 		accounttypes.RegisterInterfaces(reg)
 		cdc := codec.NewProtoCodec(reg)
+		log.Printf("DEBUG: Unpacking account for address: %s", addr)
 		if err := cdc.UnpackAny(pubKeyRes.Account, &acc); err != nil {
 			return nil, fmt.Errorf("unable to deserialise account for address: %s [%w]", addr, err)
 		}
@@ -117,11 +123,13 @@ func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []str
 		if _, ok := key.(*secp256k1.PubKey); !ok {
 			return nil, fmt.Errorf("public key is not a secp256k1 key: got %T", key)
 		}
+		log.Printf("DEBUG: Decoding public key for address: %s", addr)
 		point, err := curve.DecodeToPoint(key.Bytes())
 		if err != nil {
 			return nil, err
 		}
-		points[i] = point
+		log.Printf("DEBUG: Adding point to ring: %v", point)
+		points = append(points, point)
 	}
 	return points, nil
 }

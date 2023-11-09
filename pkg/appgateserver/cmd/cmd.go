@@ -58,7 +58,7 @@ can generate the correct ring for the application and sign the request.`,
 	}
 
 	cmd.Flags().StringVar(&signingKeyName, "signing-key-name", "", "The name of the key that will be used to sign relays")
-	cmd.Flags().StringVar(&listeningEndpoint, "listening-endpoint", "http://localhost:8080", "The host and port that the server will listen on")
+	cmd.Flags().StringVar(&listeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the server will listen on")
 	cmd.Flags().BoolVar(&selfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
 	cmd.Flags().StringVar(&cometWebsocketUrl, "comet-websocket-url", "ws://localhost:36657/websocket", "The URL of the tendermint websocket endpoint to interact with the chain")
 
@@ -168,7 +168,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	log.Printf("INFO: Starting AppGate server, listening on %s...", listeningUrl.String())
 
 	// Start the AppGate server.
-	if err := appGateServer.Start(ctx); err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		cancelCtx()
 		return fmt.Errorf("failed to start app gate server: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
