@@ -6,8 +6,6 @@ import (
 	"cosmossdk.io/depinject"
 )
 
-type RelayerOption func(*relayMiner)
-
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
 // It starts and stops the RelayerProxy and provide the served relays observable to them miner.
 type relayMiner struct {
@@ -17,10 +15,7 @@ type relayMiner struct {
 
 // NewRelayMiner creates a new Relayer instance with the given dependencies.
 // It injects the dependencies into the Relayer instance and returns it.
-func NewRelayMiner(
-	deps depinject.Config,
-	opts ...RelayerOption,
-) (*relayMiner, error) {
+func NewRelayMiner(deps depinject.Config) (*relayMiner, error) {
 	rel := &relayMiner{}
 
 	if err := depinject.Inject(
@@ -29,10 +24,6 @@ func NewRelayMiner(
 		&rel.miner,
 	); err != nil {
 		return nil, err
-	}
-
-	for _, opt := range opts {
-		opt(rel)
 	}
 
 	return rel, nil
