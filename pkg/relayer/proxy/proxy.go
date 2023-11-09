@@ -158,13 +158,14 @@ func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 }
 
 // validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
+// TODO_TEST: Add tests for validating these configurations.
 func (rp *relayerProxy) validateConfig() error {
 	if rp.signingKeyName == "" {
-		return ErrUndefinedSigningKeyName
+		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
 	if rp.proxiedServicesEndpoints == nil {
-		return ErrUndefinedProxiedServicesEndpoints
+		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
 	}
 
 	return nil

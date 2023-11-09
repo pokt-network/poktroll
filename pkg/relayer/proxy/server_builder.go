@@ -48,7 +48,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 					rp,
 				)
 			default:
-				return ErrUnsupportedRPCType
+				return ErrRelayerProxyUnsupportedRPCType
 			}
 
 			serviceEndpoints = append(serviceEndpoints, server)
