@@ -7,6 +7,7 @@ import (
 )
 
 type MapFn[S, D any] func(ctx context.Context, src S) (dst D, skip bool)
+type ForEachFn[V any] func(ctx context.Context, src V)
 
 // Map transforms the given observable by applying the given transformFn to each
 // notification received from the observable. If the transformFn returns a skip
@@ -79,4 +80,24 @@ func MapReplay[S, D any](
 	}()
 
 	return dstObservable
+}
+
+func ForEach[V any](
+	ctx context.Context,
+	srcObservable observable.Observable[V],
+	forEachFn ForEachFn[V],
+) {
+	Map(
+		ctx, srcObservable,
+		func(ctx context.Context, src V) (dst V, skip bool) {
+			forEachFn(ctx, src)
+
+			// No downstream observers; MAY always skip.
+			return zeroValue[V](), true
+		},
+	)
+}
+
+func zeroValue[T any]() (zero T) {
+	return zero
 }
