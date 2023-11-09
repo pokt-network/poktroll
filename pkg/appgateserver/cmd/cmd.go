@@ -164,6 +164,8 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		log.Println("INFO: Interrupt signal received, shutting down...")
 
 		// close websocket connections
+		// TODO(@h5law): Figure out why websockets arent closing properly
+		// in the sequencer logs
 		blockClient.Close()
 		eventsQueryClient.Close()
 
