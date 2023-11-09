@@ -32,6 +32,28 @@ func Map[S, D any](
 	return dstObservable
 }
 
+func MapExpand[S, D any](
+	ctx context.Context,
+	srcObservable observable.Observable[S],
+	transformFn MapFn[S, []D],
+) observable.Observable[D] {
+	dstObservable, dstPublishCh := NewObservable[D]()
+	srcObserver := srcObservable.Subscribe(ctx)
+
+	mapInternal[S, []D](
+		ctx,
+		srcObserver,
+		transformFn,
+		func(dstNotifications []D) {
+			for _, dstNotification := range dstNotifications {
+				dstPublishCh <- dstNotification
+			}
+		},
+	)
+
+	return dstObservable
+}
+
 func mapInternal[S, D any](
 	ctx context.Context,
 	srcObserver observable.Observer[S],
