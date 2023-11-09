@@ -1,0 +1,34 @@
+name: Temp CI job
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  GKE_CLUSTER: protocol-us-central1
+  GKE_ZONE: us-central1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Cloud SDK
+        if: contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e')
+        uses: 'google-github-actions/setup-gcloud@v1'
+        with:
+          service_account_key: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
+          project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
+
+      - uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+          credentials: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
+      
+      - run: kubectl get pod

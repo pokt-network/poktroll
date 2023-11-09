@@ -12,6 +12,10 @@ concurrency:
   group: ${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+env:
+  GKE_CLUSTER: protocol-us-central1
+  GKE_ZONE: us-central1
+
 jobs:
   build:
     runs-on: ubuntu-latest
