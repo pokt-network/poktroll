@@ -30,5 +30,6 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
           credentials: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
+          project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
       
       - run: kubectl get pod
