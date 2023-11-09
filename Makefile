@@ -133,12 +133,11 @@ go_imports: check_go_version ## Run goimports on all go files
 ### Tests ###
 #############
 
-# TODO_IN_THIS_PR: Remove `-run` from the command below
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	go test -v ./e2e/tests/... -tags=e2e -run TestFeatures/Relay_Namespace/App_can_send_relay_to_Supplier
+	go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests
