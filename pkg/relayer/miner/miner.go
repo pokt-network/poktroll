@@ -76,19 +76,16 @@ func NewMiner(
 
 // MineRelays kicks off relay mining by mapping the servedRelays observable through
 // a pipeline which hashes the relay, checks if it's above the mining difficulty,
-// adds it to the session tree, and then maps any errors to a  new observable.
+// adds it to the session tree, and then maps any errors to a new observable.
 // It also starts the claim and proof pipelines which are subsequently driven by
 // mapping over RelayerSessionsManager's SessionsToClaim return observable.
 // It does not block as map operations run in their own goroutines.
-func (mnr *miner) MineRelays(
-	ctx context.Context,
-	servedRelays observable.Observable[servicetypes.Relay],
-) {
+func (mnr *miner) MineRelays(ctx context.Context, servedRelays observable.Relay) {
 	// sessiontypes.Relay ==> either.Either[minedRelay]
-	eitherMinedRelays := mnr.mineRelays(ctx, servedRelays)
+	eitherMinedRelays := channel.Map(ctx, servedRelays, mnr.mapMineRelay)
 
 	// either.Either[minedRelay] ==> error
-	miningErrors := mnr.addReplayToSessionTree(ctx, eitherMinedRelays)
+	miningErrors := channel.Map(ctx, eitherMinedRelays, mnr.mapAddRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrors)
 
 	claimedSessions := mnr.createClaims(ctx)
@@ -102,14 +99,21 @@ func (mnr *miner) MineRelays(
 // a new observable which are subsequently logged. It returns an observable of
 // the successfully claimed sessions. It does not block as map operations run
 // in their own goroutines.
-func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relayer.SessionTree] {
-	// relayer.SessionTree ==> either.SessionTree
-	sessionsWithOpenClaimWindow := mnr.waitForOpenClaimWindow(ctx, mnr.sessionManager.SessionsToClaim())
+func (mnr *miner) createClaims(ctx context.Context) observable.SessionTree {
+	// Map SessionsToClaim observable to a new observable of the same type which
+	// is notified when the session is eligible to be claimed.
+	// relayer.SessionTree ==> relayer.SessionTree
+	sessionsWithOpenClaimWindow := channel.Map(
+		ctx, mnr.sessionManager.SessionsToClaim(),
+		mnr.mapWaitForOpenClaimWindow,
+	)
 
 	failedCreateClaimSessions, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[relayer.SessionTree]()
 
-	// either.SessionTree ==> either.SessionTree
+	// Map sessionsWithOpenClaimWindow to a new observable of an either type,
+	// populated with the session or an error, which is notified after the session
+	// claim has been created or an error has been encountered, respectively.
 	eitherClaimedSessions := channel.Map(
 		ctx, sessionsWithOpenClaimWindow,
 		mnr.newMapClaimSessionFn(failedCreateClaimSessionsPublishCh),
@@ -119,7 +123,8 @@ func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relaye
 	_ = failedCreateClaimSessions
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessions))
 
-	// either.SessionTree ==> relayer.SessionTree
+	// Map eitherClaimedSessions to a new observable of relayer.SessionTree which
+	// is notified when the corresponding claim creation succeeded.
 	return filter.EitherSuccess(ctx, eitherClaimedSessions)
 }
 
@@ -130,14 +135,21 @@ func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relaye
 // goroutines.
 func (mnr *miner) submitProofs(
 	ctx context.Context,
-	claimedSessions observable.Observable[relayer.SessionTree],
+	claimedSessions observable.SessionTree,
 ) {
-	// relayer.SessionTree ==> relayer.SessionTree
-	sessionsWithOpenProofWindow := channel.Map(ctx, claimedSessions, mnr.mapWaitForOpenProofWindow)
+	// Map claimedSessions to a new observable of the same type which is notified
+	// when the session is eligible to be proven.
+	sessionsWithOpenProofWindow := channel.Map(
+		ctx, claimedSessions,
+		mnr.mapWaitForOpenProofWindow,
+	)
 
-	failedSubmitProofSessions, failedSubmitProveSessionsPublishCh := channel.NewObservable[relayer.SessionTree]()
+	failedSubmitProofSessions, failedSubmitProveSessionsPublishCh :=
+		channel.NewObservable[relayer.SessionTree]()
 
-	// relayer.SessionTree ==> relayer.SessionTree
+	// Map sessionsWithOpenProofWindow to a new observable of an either type,
+	// populated with the session or an error, which is notified after the session
+	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessions := channel.Map(
 		ctx, sessionsWithOpenProofWindow,
 		mnr.newMapProveSessionFn(failedSubmitProveSessionsPublishCh),
@@ -157,16 +169,6 @@ func (mnr *miner) validateConfigAndSetDefaults() error {
 	return nil
 }
 
-// mineRelays maps over the servedRelays observable, applyging the mapMineRelay
-// method to each relay. It returns an observable of the mined relays.
-func (mnr *miner) mineRelays(
-	ctx context.Context,
-	servedRelays observable.Observable[servicetypes.Relay],
-) observable.Observable[either.Either[minedRelay]] {
-	// servicetypes.Relay ==> either.Either[minedRelay]
-	return channel.Map(ctx, servedRelays, mnr.mapMineRelay)
-}
-
 // mapMineRelay is intended to be used as a MapFn. It hashes the relay and compares
 // its difficulty to the minimum threshold. If the relay difficulty is sifficient,
 // it returns an either populated with the minedRelay value. Otherwise, it skips
@@ -174,11 +176,11 @@ func (mnr *miner) mineRelays(
 // error.
 func (mnr *miner) mapMineRelay(
 	_ context.Context,
-	relay servicetypes.Relay,
-) (_ either.Either[minedRelay], skip bool) {
+	relay *servicetypes.Relay,
+) (_ either.Either[*minedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		return either.Error[minedRelay](err), true
+		return either.Error[*minedRelay](err), true
 	}
 
 	// Is it correct that we need to hash the key while smst.Update() could do it
@@ -188,25 +190,14 @@ func (mnr *miner) mapMineRelay(
 	mnr.hasher.Reset()
 
 	if !protocol.BytesDifficultyGreaterThan(relayHash, defaultRelayDifficulty) {
-		return either.Success(minedRelay{}), true
+		return either.Success[*minedRelay](nil), true
 	}
 
-	return either.Success(minedRelay{
-		Relay: relay,
+	return either.Success(&minedRelay{
+		Relay: *relay,
 		bytes: relayBz,
 		hash:  relayHash,
 	}), false
-}
-
-// addReplayToSessionTree maps over the eitherMinedRelays observable, applying the
-// mapAddRelayToSessionTree method to each relay. It returns an observable of the
-// errors encountered.
-func (mnr *miner) addReplayToSessionTree(
-	ctx context.Context,
-	eitherMinedRelays observable.Observable[either.Either[minedRelay]],
-) observable.Observable[error] {
-	// either.Either[minedRelay] ==> error
-	return channel.Map(ctx, eitherMinedRelays, mnr.mapAddRelayToSessionTree)
 }
 
 // mapAddRelayToSessionTree is intended to be used as a MapFn. It adds the relay
@@ -214,7 +205,7 @@ func (mnr *miner) addReplayToSessionTree(
 // it skips output (only outputs errors).
 func (mnr *miner) mapAddRelayToSessionTree(
 	_ context.Context,
-	eitherRelay either.Either[minedRelay],
+	eitherRelay either.Either[*minedRelay],
 ) (_ error, skip bool) {
 	// Propagate any upstream errors.
 	relay, err := eitherRelay.ValueOrError()
@@ -237,18 +228,6 @@ func (mnr *miner) mapAddRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
-}
-
-// waitForOpenClaimWindow maps over the SessionsToClaim observable, applying the
-// mapWaitForOpenClaimWindow method to each session. It returns an observable of
-// the sessions that are ready to be claimed which is notified when the respective
-// session is ready to be claimed.
-func (mnr *miner) waitForOpenClaimWindow(
-	ctx context.Context,
-	sessionsToClaim observable.Observable[relayer.SessionTree],
-) observable.Observable[relayer.SessionTree] {
-	// relayer.SessionTree ==> relayer.SessionTree
-	return channel.Map(ctx, sessionsToClaim, mnr.mapWaitForOpenClaimWindow)
 }
 
 // mapWaitForOpenClaimWindow is intended to be used as a MapFn. It calculates and
@@ -311,7 +290,7 @@ func (mnr *miner) waitForBlock(ctx context.Context, height int64) client.Block {
 }
 
 // newMapClaimSessionFn returns a new MapFn that creates a claim for the given
-// session. Any session which encouters errors while creating a claim is sent
+// session. Any session which encouters an error while creating a claim is sent
 // on the failedCreateClaimSessions channel.
 func (mnr *miner) newMapClaimSessionFn(
 	failedCreateClaimSessions chan<- relayer.SessionTree,
