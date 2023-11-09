@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// TODO_TECHDEBT(https://github.com/ignite/cli/issues/3737): We're using a combination
+// of `pocketd` (legacy) and `poktrolld` (current) because of an issue of how ignite works.
 var (
 	// defaultRPCURL used by pocketdBin to run remote commands
 	defaultRPCURL = os.Getenv("POCKET_NODE")
@@ -26,7 +28,7 @@ func init() {
 		defaultRPCURL = fmt.Sprintf("tcp://%s:%d", defaultRPCHost, defaultRPCPort)
 	}
 	if defaultHome == "" {
-		defaultHome = "../../localnet/pocketd"
+		defaultHome = "../../localnet/poktrolld"
 	}
 }
 

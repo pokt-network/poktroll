@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	blockclient "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -33,7 +33,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient blockclient.BlockClient
+	blockClient client.BlockClient
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
@@ -43,16 +43,19 @@ type relayerSessionsManager struct {
 func NewRelayerSessions(
 	ctx context.Context,
 	storesDirectory string,
-	blockClient blockclient.BlockClient,
+	blockClient client.BlockClient,
 ) relayer.RelayerSessionsManager {
 	rs := &relayerSessionsManager{
 		sessionsTrees:   make(sessionsTreesMap),
 		storesDirectory: storesDirectory,
 		blockClient:     blockClient,
 	}
-	rs.sessionsToClaim, rs.sessionsToClaimPublisher = channel.NewObservable[relayer.SessionTree]()
 
-	go rs.goListenToCommittedBlocks(ctx)
+	rs.sessionsToClaim = channel.MapExpand[client.Block, relayer.SessionTree](
+		ctx,
+		blockClient.CommittedBlocksSequence(ctx),
+		rs.mapBlockToSessionsToClaim,
+	)
 
 	return rs
 }
@@ -64,65 +67,72 @@ func (rs *relayerSessionsManager) SessionsToClaim() observable.Observable[relaye
 
 // EnsureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) EnsureSessionTree(session *sessiontypes.Session) (relayer.SessionTree, error) {
+func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	// Calculate the session end height based on the session start block height
-	// and the number of blocks per session.
-	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
+	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
 	if !ok {
 		sessionsTrees = make(map[string]relayer.SessionTree)
-		rs.sessionsTrees[sessionEndHeight] = sessionsTrees
+		rs.sessionsTrees[sessionHeader.SessionEndBlockHeight] = sessionsTrees
 	}
 
 	// Get the sessionTree for the given session.
-	sessionTree, ok := sessionsTrees[session.SessionId]
+	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create it.
 	if !ok {
-		sessionTree, err := NewSessionTree(session, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err := NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
 
-		sessionsTrees[session.SessionId] = sessionTree
+		sessionsTrees[sessionHeader.SessionId] = sessionTree
 	}
 
 	return sessionTree, nil
 }
 
-// goListenToCommittedBlocks listens to committed blocks so that rs.sessionsToClaimPublisher
-// can notify when sessions are ready to be claimed.
-// It is intended to be called as a background goroutine.
-func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context) {
-	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
-
-	for block := range committedBlocks {
-		// Check if there are sessions to be closed at this block height.
-		if sessionsTrees, ok := rs.sessionsTrees[block.Height()]; ok {
-			// Iterate over the sessionsTrees that end at this block height and publish them.
-			for _, sessionTree := range sessionsTrees {
-				rs.sessionsToClaimPublisher <- sessionTree
+// mapBlockToSessionsToClaim maps a block to a list of sessions which can be
+// claimed as of that block.
+func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
+	_ context.Context,
+	block client.Block,
+) (sessionTrees []relayer.SessionTree, skip bool) {
+	// Check if there are sessions that need to enter the claim/proof phase
+	// as their end block height was the one before the last committed block.
+	// Iterate over the sessionsTrees map to get the ones that end at a block height
+	// lower than the current block height.
+	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+		if endBlockHeight < block.Height() {
+			// Iterate over the sessionsTrees that end at this block height (or
+			// less) and add them to the list of sessionTrees to be published.
+			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+				sessionTrees = append(sessionTrees, sessionTree)
 			}
 		}
 	}
+	return sessionTrees, false
 }
 
-// removeFromRelayerSessions removes the session from the relayerSessions.
-func (rs *relayerSessionsManager) removeFromRelayerSessions(session *sessiontypes.Session) {
+// removeFromRelayerSessions removes the SessionTree from the relayerSessions.
+func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessiontypes.SessionHeader) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
-	sessionEndHeight := session.Header.SessionStartBlockHeight + session.NumBlocksPerSession
-	sessionsTrees, ok := rs.sessionsTrees[sessionEndHeight]
+	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Print("session not found in relayerSessionsManager")
+		log.Printf("no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
 		return
 	}
 
-	delete(sessionsTrees, session.SessionId)
+	delete(sessionsTreesEndingAtBlockHeight, sessionHeader.SessionId)
+
+	// Check if the sessionsTrees map is empty and delete it if so.
+	// This is an optimization done to save memory by avoiding an endlessly growing sessionsTrees map.
+	if len(sessionsTreesEndingAtBlockHeight) == 0 {
+		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
+	}
 }

@@ -494,6 +494,7 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 //   - skip: A flag denoting if the event should be bypassed. A value of true
 //     suggests the event be disregarded, progressing to the succeeding message.
 func (tClient *txClient) txEventFromEventBz(
+	_ context.Context,
 	eitherEventBz either.Bytes,
 ) (eitherTxEvent either.Either[*TxEvent], skip bool) {
 

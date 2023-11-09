@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -31,10 +32,10 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	for _, serviceConfig := range services {
 		service := serviceConfig.Service
 		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
-		serviceEndpoints := make([]RelayServer, len(serviceConfig.Endpoints))
+		serviceEndpoints := make([]relayer.RelayServer, len(serviceConfig.Endpoints))
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			var server RelayServer
+			var server relayer.RelayServer
 
 			// Switch to the RPC type to create the appropriate RelayServer
 			switch endpoint.RpcType {
@@ -57,6 +58,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	rp.advertisedRelayServers = providedServices
+	rp.supplierAddress = supplierQueryResponse.Supplier.Address
 
 	return nil
 }

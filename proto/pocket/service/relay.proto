@@ -4,9 +4,8 @@ package pocket.service;
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 import "cosmos_proto/cosmos.proto";
-// TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
-// import "pocket/service/service.proto";
 import "pocket/application/application.proto";
+import "pocket/session/session.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
 // The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
@@ -17,8 +16,7 @@ message Relay {
 
 // RelayRequestMetadata contains the metadata for a RelayRequest.
 message RelayRequestMetadata {
-    // TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
-    // session.SessionHeader session_header = 1; // Session header associated with the relay.
+    session.SessionHeader session_header = 1; // Session header associated with the relay.
     // TODO_COMMENT(@h5law): Add link or more details to how this is related to ring signatures once implemented.
     bytes signature = 2; // The request signature. This may be the application signature, or any gateway it delegated to.
 }
@@ -77,8 +75,7 @@ message RelayResponse {
 
 // RelayResponseMetadata contains the metadata for a RelayResponse.
 message RelayResponseMetadata {
-    // TODO(@Olshansk): Uncomment the line below once the `service.proto` is added.
-    // session.SessionHeader session_header = 1; // Session header associated with the relay.
+    session.SessionHeader session_header = 1; // Session header associated with the relay.
     bytes supplier_signature = 2; // Signature of the supplier on the response.
 }
 
