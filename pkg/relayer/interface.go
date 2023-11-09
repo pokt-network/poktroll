@@ -20,7 +20,7 @@ import (
 type Miner interface {
 	MineRelays(
 		ctx context.Context,
-		servedRelays observable.Observable[servicetypes.Relay],
+		servedRelays observable.Observable[*servicetypes.Relay],
 	)
 }
 

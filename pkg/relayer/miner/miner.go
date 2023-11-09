@@ -41,7 +41,7 @@ type miner struct {
 
 // minedRelay is a wrapper around a relay that has been serialized and hashed.
 type minedRelay struct {
-	servicetypes.Relay
+	*servicetypes.Relay
 	bytes []byte
 	hash  []byte
 }
@@ -82,13 +82,13 @@ func NewMiner(
 // It does not block as map operations run in their own goroutines.
 func (mnr *miner) MineRelays(
 	ctx context.Context,
-	servedRelays observable.Observable[servicetypes.Relay],
+	servedRelays observable.Observable[*servicetypes.Relay],
 ) {
 	// sessiontypes.Relay ==> either.Either[minedRelay]
 	eitherMinedRelays := mnr.mineRelays(ctx, servedRelays)
 
 	// either.Either[minedRelay] ==> error
-	miningErrors := mnr.addReplayToSessionTree(ctx, eitherMinedRelays)
+	miningErrors := mnr.addRelayToSessionTree(ctx, eitherMinedRelays)
 	logging.LogErrors(ctx, miningErrors)
 
 	claimedSessions := mnr.createClaims(ctx)
@@ -161,20 +161,20 @@ func (mnr *miner) validateConfigAndSetDefaults() error {
 // method to each relay. It returns an observable of the mined relays.
 func (mnr *miner) mineRelays(
 	ctx context.Context,
-	servedRelays observable.Observable[servicetypes.Relay],
+	servedRelays observable.Observable[*servicetypes.Relay],
 ) observable.Observable[either.Either[minedRelay]] {
 	// servicetypes.Relay ==> either.Either[minedRelay]
 	return channel.Map(ctx, servedRelays, mnr.mapMineRelay)
 }
 
 // mapMineRelay is intended to be used as a MapFn. It hashes the relay and compares
-// its difficulty to the minimum threshold. If the relay difficulty is sifficient,
+// its difficulty to the minimum threshold. If the relay difficulty is sufficient,
 // it returns an either populated with the minedRelay value. Otherwise, it skips
 // the relay. If it encounters an error, it returns an either populated with the
 // error.
 func (mnr *miner) mapMineRelay(
 	_ context.Context,
-	relay servicetypes.Relay,
+	relay *servicetypes.Relay,
 ) (_ either.Either[minedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
@@ -198,10 +198,10 @@ func (mnr *miner) mapMineRelay(
 	}), false
 }
 
-// addReplayToSessionTree maps over the eitherMinedRelays observable, applying the
+// addRelayToSessionTree maps over the eitherMinedRelays observable, applying the
 // mapAddRelayToSessionTree method to each relay. It returns an observable of the
 // errors encountered.
-func (mnr *miner) addReplayToSessionTree(
+func (mnr *miner) addRelayToSessionTree(
 	ctx context.Context,
 	eitherMinedRelays observable.Observable[either.Either[minedRelay]],
 ) observable.Observable[error] {
@@ -311,7 +311,7 @@ func (mnr *miner) waitForBlock(ctx context.Context, height int64) client.Block {
 }
 
 // newMapClaimSessionFn returns a new MapFn that creates a claim for the given
-// session. Any session which encouters errors while creating a claim is sent
+// session. Any session which encounters errors while creating a claim is sent
 // on the failedCreateClaimSessions channel.
 func (mnr *miner) newMapClaimSessionFn(
 	failedCreateClaimSessions chan<- relayer.SessionTree,
