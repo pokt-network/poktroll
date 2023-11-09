@@ -149,9 +149,10 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 }
 
 // validateConfig validates the relayerSessionsManager's configuration.
+// TODO_TEST: Add unit tests to validate these configurations.
 func (rp *relayerSessionsManager) validateConfig() error {
 	if rp.storesDirectory == "" {
-		return ErrUndefinedStoresDirectory
+		return ErrSessionTreeUndefinedStoresDirectory
 	}
 
 	return nil
