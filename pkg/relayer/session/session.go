@@ -54,7 +54,7 @@ func NewRelayerSessions(
 	rs.sessionsToClaim = channel.MapExpand[client.Block, relayer.SessionTree](
 		ctx,
 		blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlocksToSessionsToClaim,
+		rs.mapBlockToSessionsToClaim,
 	)
 
 	return rs
@@ -95,10 +95,9 @@ func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.
 	return sessionTree, nil
 }
 
-// goListenToCommittedBlocks listens to committed blocks so that rs.sessionsToClaimPublisher
-// can notify when sessions are ready to be claimed.
-// It is intended to be called as a background goroutine.
-func (rs *relayerSessionsManager) mapBlocksToSessionsToClaim(
+// mapBlockToSessionsToClaim maps a block to a list of sessions which can be
+// claimed as of that block.
+func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	_ context.Context,
 	block client.Block,
 ) (sessionTrees []relayer.SessionTree, skip bool) {
