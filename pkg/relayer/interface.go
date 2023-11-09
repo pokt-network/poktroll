@@ -7,9 +7,19 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+type Miner interface {
+	MineRelays(
+		ctx context.Context,
+		servedRelays observable.Observable[servicetypes.Relay],
+	)
+}
+
+type MinerOption func(Miner)
 
 // RelayerProxy is the interface for the proxy that serves relays to the application.
 // It is responsible for starting and stopping all supported RelayServers.
