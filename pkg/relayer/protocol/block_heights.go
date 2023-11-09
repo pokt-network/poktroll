@@ -29,7 +29,7 @@ func GetSubmitProofDistributionHeight(earliestSubmitProofBlock client.Block) int
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	//randSubmitProofBlockHeightOffset := randomNumber % (claimproofparams.GovLatestProofSubmissionBlocksInterval - claimproofparams.GovProofSubmissionBlocksWindow - 1)
+	// randSubmitProofBlockHeightOffset := randomNumber % (claimproofparams.GovLatestProofSubmissionBlocksInterval - claimproofparams.GovProofSubmissionBlocksWindow - 1)
 	_ = randomNumber
 	randSubmitProofBlockHeightOffset := int64(0)
 
