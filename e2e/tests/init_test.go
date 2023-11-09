@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
@@ -49,6 +49,7 @@ func (s *suite) Before() {
 	s.cdc = app.MakeEncodingConfig().Marshaler
 	s.buildAddrMap()
 	s.buildAppMap()
+	s.buildSupplierMap()
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -195,7 +196,6 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
 	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
 		if serviceConfig.Service.Id == serviceId {
-			fmt.Println("OLSH")
 			return
 		}
 	}
@@ -203,13 +203,12 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 }
 
 func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
-	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
+	for _, serviceConfig := range accNameToSupplierMap[supplierName].Services {
 		if serviceConfig.Service.Id == serviceId {
-			fmt.Println("OLSH")
 			return
 		}
 	}
-	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
 func (s *suite) TheSupplierIsPartOfTheSessionForApplication(supplierName string, appName string) {
@@ -278,13 +277,33 @@ func (s *suite) buildAppMap() {
 		s.Fatalf("error getting application list: %s", err)
 	}
 	s.pocketd.result = res
-	var resp types.QueryAllApplicationResponse
+	var resp apptypes.QueryAllApplicationResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, app := range resp.Application {
 		accNameToAppMap[accAddrToNameMap[app.Address]] = app
 	}
-	fmt.Println(accNameToAppMap)
+}
+
+func (s *suite) buildSupplierMap() {
+	s.Helper()
+	argsAndFlags := []string{
+		"query",
+		"supplier",
+		"list-supplier",
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting supplier list: %s", err)
+	}
+	s.pocketd.result = res
+	var resp suppliertypes.QueryAllSupplierResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, supplier := range resp.Supplier {
+		accNameToSupplierMap[accAddrToNameMap[supplier.Address]] = supplier
+	}
 }
 
 func (s *suite) getAccBalance(accName string) int {
