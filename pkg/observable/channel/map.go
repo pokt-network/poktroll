@@ -32,6 +32,9 @@ func Map[S, D any](
 	return dstObservable
 }
 
+// MapExpand transforms the given observable by applying the given transformFn to
+// each notification received from the observable, similar to Map; however, the
+// transformFn returns a slice of output notifications for each input notification.
 func MapExpand[S, D any](
 	ctx context.Context,
 	srcObservable observable.Observable[S],
