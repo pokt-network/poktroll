@@ -61,8 +61,9 @@ func MapReplay[S, D any](
 }
 
 // ForEach applies the given forEachFn to each notification received from the
-// observable, similar to map; however, ForEach does not publish to a destination
-// observable. ForEach is useful for side effects.
+// observable, similar to Map; however, ForEach does not publish to a destination
+// observable. ForEach is useful for side effects and is a terminal observable
+// operator.
 func ForEach[V any](
 	ctx context.Context,
 	srcObservable observable.Observable[V],
@@ -73,7 +74,7 @@ func ForEach[V any](
 		func(ctx context.Context, src V) (dst V, skip bool) {
 			forEachFn(ctx, src)
 
-			// No downstream observers; MAY always skip.
+			// No downstream observers; SHOULD always skip.
 			return zeroValue[V](), true
 		},
 	)
