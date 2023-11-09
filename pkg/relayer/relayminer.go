@@ -33,7 +33,7 @@ func NewRelayMiner(deps depinject.Config) (*relayMiner, error) {
 // This method is blocking while the relayer proxy is running and returns when Stop is called
 // or when the relayer proxy fails to start.
 func (rel *relayMiner) Start(ctx context.Context) error {
-	// MineRelays does not block and subscribes to the served relays observable.
+	// StartMiningRelays does not block, it only subscribes to the served relays observable.
 	rel.miner.StartMiningRelays(ctx, rel.relayerProxy.ServedRelays())
 	return rel.relayerProxy.Start(ctx)
 }
