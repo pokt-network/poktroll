@@ -158,9 +158,15 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	go func() {
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, os.Interrupt)
+
 		// Block until we receive an interrupt or kill signal (OS-agnostic)
 		<-sigCh
 		log.Println("INFO: Interrupt signal received, shutting down...")
+
+		// close websocket connections
+		blockClient.Close()
+		eventsQueryClient.Close()
+
 		// Signal goroutines to stop
 		cancelCtx()
 	}()
