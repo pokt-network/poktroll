@@ -61,7 +61,7 @@ jobs:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: |
-            ghcr.io/pokt-network/pocketd
+            ghcr.io/pokt-network/poktrolld
           tags: |
             type=ref,event=branch
             type=ref,event=pr
