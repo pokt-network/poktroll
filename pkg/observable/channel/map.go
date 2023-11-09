@@ -7,6 +7,7 @@ import (
 )
 
 type MapFn[S, D any] func(ctx context.Context, src S) (dst D, skip bool)
+type ForEachFn[V any] func(ctx context.Context, src V)
 
 // Map transforms the given observable by applying the given transformFn to each
 // notification received from the observable. If the transformFn returns a skip
@@ -84,6 +85,26 @@ func MapReplay[S, D any](
 	return dstObservable
 }
 
+// ForEach applies the given forEachFn to each notification received from the
+// observable, similar to Map; however, ForEach does not publish to a destination
+// observable. ForEach is useful for side effects and is a terminal observable
+// operator.
+func ForEach[V any](
+	ctx context.Context,
+	srcObservable observable.Observable[V],
+	forEachFn ForEachFn[V],
+) {
+	Map(
+		ctx, srcObservable,
+		func(ctx context.Context, src V) (dst V, skip bool) {
+			forEachFn(ctx, src)
+
+			// No downstream observers; SHOULD always skip.
+			return zeroValue[V](), true
+		},
+	)
+}
+
 // goMapTransformNotification transforms, optionally skips, and publishes
 // notifications via the given publishFn.
 func goMapTransformNotification[S, D any](
@@ -101,4 +122,9 @@ func goMapTransformNotification[S, D any](
 		publishFn(dstNotifications)
 	}
 
+}
+
+// zeroValue is a generic helper which returns the zero value of the given type.
+func zeroValue[T any]() (zero T) {
+	return zero
 }
