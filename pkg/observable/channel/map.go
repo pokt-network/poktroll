@@ -82,6 +82,9 @@ func MapReplay[S, D any](
 	return dstObservable
 }
 
+// ForEach applies the given forEachFn to each notification received from the
+// observable, similar to map; however, ForEach does not publish to a destination
+// observable. ForEach is useful for side effects.
 func ForEach[V any](
 	ctx context.Context,
 	srcObservable observable.Observable[V],
@@ -98,6 +101,7 @@ func ForEach[V any](
 	)
 }
 
+// zeroValue is a generic helper which returns the zero value of the given type.
 func zeroValue[T any]() (zero T) {
 	return zero
 }
