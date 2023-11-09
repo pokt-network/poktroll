@@ -21,7 +21,7 @@ func Map[S, D any](
 	dstObservable, dstProducer := NewObservable[D]()
 	srcObserver := srcObservable.Subscribe(ctx)
 
-	mapInternal[S, D](
+	go goMapTransformNotification(
 		ctx,
 		srcObserver,
 		transformFn,
@@ -31,25 +31,6 @@ func Map[S, D any](
 	)
 
 	return dstObservable
-}
-
-func mapInternal[S, D any](
-	ctx context.Context,
-	srcObserver observable.Observer[S],
-	transformFn MapFn[S, D],
-	publishFn func(dstNotifications D),
-) {
-	go func() {
-		for srcNotification := range srcObserver.Ch() {
-			dstNotifications, skip := transformFn(ctx, srcNotification)
-			if skip {
-				continue
-			}
-
-			publishFn(dstNotifications)
-		}
-	}()
-
 }
 
 // MapReplay transforms the given observable by applying the given transformFn to
@@ -62,26 +43,27 @@ func MapReplay[S, D any](
 	ctx context.Context,
 	replayBufferSize int,
 	srcObservable observable.Observable[S],
-	// TODO_CONSIDERATION: if this were variadic, it could simplify serial transformations.
-	transformFn func(src S) (dst D, skip bool),
+	transformFn MapFn[S, D],
 ) observable.ReplayObservable[D] {
 	dstObservable, dstProducer := NewReplayObservable[D](ctx, replayBufferSize)
 	srcObserver := srcObservable.Subscribe(ctx)
 
-	go func() {
-		for srcNotification := range srcObserver.Ch() {
-			dstNotification, skip := transformFn(srcNotification)
-			if skip {
-				continue
-			}
-
+	go goMapTransformNotification(
+		ctx,
+		srcObserver,
+		transformFn,
+		func(dstNotification D) {
 			dstProducer <- dstNotification
-		}
-	}()
+		},
+	)
 
 	return dstObservable
 }
 
+// ForEach applies the given forEachFn to each notification received from the
+// observable, similar to Map; however, ForEach does not publish to a destination
+// observable. ForEach is useful for side effects and is a terminal observable
+// operator.
 func ForEach[V any](
 	ctx context.Context,
 	srcObservable observable.Observable[V],
@@ -92,12 +74,32 @@ func ForEach[V any](
 		func(ctx context.Context, src V) (dst V, skip bool) {
 			forEachFn(ctx, src)
 
-			// No downstream observers; MAY always skip.
+			// No downstream observers; SHOULD always skip.
 			return zeroValue[V](), true
 		},
 	)
 }
 
+// goMapTransformNotification transforms, optionally skips, and publishes
+// notifications via the given publishFn.
+func goMapTransformNotification[S, D any](
+	ctx context.Context,
+	srcObserver observable.Observer[S],
+	transformFn MapFn[S, D],
+	publishFn func(dstNotifications D),
+) {
+	for srcNotification := range srcObserver.Ch() {
+		dstNotifications, skip := transformFn(ctx, srcNotification)
+		if skip {
+			continue
+		}
+
+		publishFn(dstNotifications)
+	}
+
+}
+
+// zeroValue is a generic helper which returns the zero value of the given type.
 func zeroValue[T any]() (zero T) {
 	return zero
 }

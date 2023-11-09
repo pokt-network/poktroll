@@ -8,6 +8,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
+// EitherError operates on an observable of an either type. It filters for all
+// eithers which are not populated with errors, and maps them to their errors
+// (publishes errors to the resulting observable).
 func EitherError[T any](
 	ctx context.Context,
 	eitherObservable observable.Observable[either.Either[T]],
@@ -19,6 +22,9 @@ func EitherError[T any](
 	)
 }
 
+// EitherSuccess operates on an observable of an either type. It filters for all
+// eithers which are not populated with values, and maps them to their values
+// (publishes values to the resulting observable).
 func EitherSuccess[T any](
 	ctx context.Context,
 	eitherObservable observable.Observable[either.Either[T]],
@@ -30,6 +36,8 @@ func EitherSuccess[T any](
 	)
 }
 
+// mapEitherError is a MapFn that maps an either to its error. It skips the
+// notification if the either is populated with a value.
 func mapEitherError[T any](
 	_ context.Context,
 	inputEither either.Either[T],
@@ -40,6 +48,8 @@ func mapEitherError[T any](
 	return nil, true
 }
 
+// mapEitherSuccess is a MapFn that maps an either to its value. It skips the
+// notification if the either is populated with an error.
 func mapEitherSuccess[T any](
 	_ context.Context,
 	inputEither either.Either[T],
