@@ -14,10 +14,12 @@ env:
   GKE_ZONE: us-central1
 
 jobs:
-  build:
+  id:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Cloud SDK
         if: contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e')
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -25,16 +27,16 @@ jobs:
           service_account_key: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
 
-      # Configure Docker to use the gcloud command-line tool as a credential
-      # helper for authentication
-      - run: |-
-          gcloud --quiet auth configure-docker
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GKE_PROTOCOL_US_CENTRAL }}'
 
       - uses: google-github-actions/get-gke-credentials@v1
         with:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
-          credentials: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
       
       - run: kubectl get pod
