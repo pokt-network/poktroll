@@ -62,7 +62,7 @@ message QueryAllSupplierResponse {
 }
 
 message QueryGetClaimRequest {
-  string index = 1;
+  string supplier_address = 1;
 }
 
 message QueryGetClaimResponse {
