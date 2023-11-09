@@ -30,7 +30,7 @@ func (app *appGateServer) getCurrentSession(
 	// Query for the current session.
 	sessionQueryReq := sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
-		ServiceId:          &sharedtypes.ServiceId{Id: serviceId},
+		Service:            &sharedtypes.Service{Id: serviceId},
 		BlockHeight:        latestBlock.Height(),
 	}
 	sessionQueryRes, err := app.sessionQuerier.GetSession(ctx, &sessionQueryReq)

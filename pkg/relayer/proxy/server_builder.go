@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -29,18 +30,18 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
 	providedServices := make(relayServersMap)
 	for _, serviceConfig := range services {
-		serviceId := serviceConfig.ServiceId
-		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[serviceId.Id]
-		serviceEndpoints := make([]RelayServer, len(serviceConfig.Endpoints))
+		service := serviceConfig.Service
+		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
+		serviceEndpoints := make([]relayer.RelayServer, len(serviceConfig.Endpoints))
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			var server RelayServer
+			var server relayer.RelayServer
 
 			// Switch to the RPC type to create the appropriate RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewJSONRPCServer(
-					serviceId,
+					service,
 					endpoint,
 					proxiedServicesEndpoints,
 					rp.servedRelaysProducer,
@@ -53,10 +54,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			serviceEndpoints = append(serviceEndpoints, server)
 		}
 
-		providedServices[serviceId.Id] = serviceEndpoints
+		providedServices[service.Id] = serviceEndpoints
 	}
 
 	rp.advertisedRelayServers = providedServices
+	rp.supplierAddress = supplierQueryResponse.Supplier.Address
 
 	return nil
 }

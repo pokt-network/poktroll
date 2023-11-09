@@ -21,13 +21,13 @@ func CmdStakeApplication() *cobra.Command {
 		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
 		// This needs to be expand to specify the full ApplicationServiceConfig. Furthermore, providing a flag to
 		// a file where ApplicationServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
-		Use:   "stake-application [amount] [svcId1,svcId2,...,svcIdN]",
+		Use:   "stake-application <upokt_amount> <svcId1,svcId2,...,svcIdN>",
 		Short: "Stake an application",
 		Long: `Stake an application with the provided parameters. This is a broadcast operation that
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POCKETD_HOME) tx application stake-application 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt svc1,svc2,svc3 --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			stakeString := args[0]

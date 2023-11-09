@@ -32,7 +32,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 		Stake:   &initialStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: "svc1"},
+				Service: &sharedtypes.Service{Id: "svc1"},
 			},
 		},
 	}

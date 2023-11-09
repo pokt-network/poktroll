@@ -27,33 +27,44 @@ import (
 type option[V any] func(k *keeper.Keeper)
 
 var (
-	TestServiceId1 = "svc1"
-	TestServiceId2 = "svc2"
+	TestServiceId1  = "svc1"  // staked for by app1 & supplier1
+	TestServiceId11 = "svc11" // staked for by app1
 
-	TestApp1Address = "pokt106grzmkmep67pdfrm6ccl9snynryjqus6l3vct" // Generated via sample.AccAddress()
+	TestServiceId2  = "svc2"  // staked for by app2 & supplier1
+	TestServiceId22 = "svc22" // staked for by app2
+
+	TestServiceId12 = "svc12" // staked for by app1, app2 & supplier1
+
+	TestApp1Address = "pokt1mdccn4u38eyjdxkk4h0jaddw4n3c72u82m5m9e" // Generated via sample.AccAddress()
 	TestApp1        = apptypes.Application{
 		Address: TestApp1Address,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				Service: &sharedtypes.Service{Id: TestServiceId1},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId11},
+			},
+			{
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 			},
 		},
 	}
 
-	TestApp2Address = "pokt1dm7tr0a99ja232gzt5rjtrl7hj6z6h40669fwh" // Generated via sample.AccAddress()
+	TestApp2Address = "pokt133amv5suh75zwkxxcq896azvmmwszg99grvk9f" // Generated via sample.AccAddress()
 	TestApp2        = apptypes.Application{
 		Address: TestApp1Address,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				Service: &sharedtypes.Service{Id: TestServiceId2},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId22},
+			},
+			{
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 			},
 		},
 	}
@@ -65,7 +76,7 @@ var (
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId1},
+				Service: &sharedtypes.Service{Id: TestServiceId1},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,
@@ -75,7 +86,17 @@ var (
 				},
 			},
 			{
-				ServiceId: &sharedtypes.ServiceId{Id: TestServiceId2},
+				Service: &sharedtypes.Service{Id: TestServiceId2},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     TestSupplierUrl,
+						RpcType: sharedtypes.RPCType_GRPC,
+						Configs: make([]*sharedtypes.ConfigOption, 0),
+					},
+				},
+			},
+			{
+				Service: &sharedtypes.Service{Id: TestServiceId12},
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
 						Url:     TestSupplierUrl,

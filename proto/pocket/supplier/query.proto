@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
+import "pocket/supplier/claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
@@ -16,17 +17,22 @@ service Query {
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pocket/supplier/params";
-
   }
 
   // Queries a list of Supplier items.
-  rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
+  rpc Supplier (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
     option (google.api.http).get = "/pocket/supplier/supplier/{address}";
-
   }
   rpc SupplierAll (QueryAllSupplierRequest) returns (QueryAllSupplierResponse) {
     option (google.api.http).get = "/pocket/supplier/supplier";
+  }
 
+  // Queries a list of Claim items.
+  rpc Claim (QueryGetClaimRequest) returns (QueryGetClaimResponse) {
+    option (google.api.http).get = "/pocket/supplier/claim/{index}";
+  }
+  rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
+    option (google.api.http).get = "/pocket/supplier/claim";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -34,7 +40,6 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
   // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false];
 }
@@ -52,7 +57,23 @@ message QueryAllSupplierRequest {
 }
 
 message QueryAllSupplierResponse {
-  repeated pocket.shared.Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
+  repeated pocket.shared.Supplier                 supplier   = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
+message QueryGetClaimRequest {
+  string index = 1;
+}
+
+message QueryGetClaimResponse {
+  Claim claim = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllClaimsRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllClaimsResponse {
+  repeated Claim                                  claim      = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

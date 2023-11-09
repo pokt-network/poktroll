@@ -22,7 +22,7 @@ func (app *appGateServer) getRelayerUrl(
 	for _, supplier := range session.Suppliers {
 		for _, service := range supplier.Services {
 			// Skip services that don't match the requested serviceId.
-			if service.ServiceId.Id != serviceId {
+			if service.Service.Id != serviceId {
 				continue
 			}
 

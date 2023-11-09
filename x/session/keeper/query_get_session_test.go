@@ -8,6 +8,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -22,6 +23,7 @@ func init() {
 
 func TestSession_GetSession_Success(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	wctx := sdk.WrapSDKContext(ctx)
 
 	type test struct {
@@ -45,7 +47,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 			blockHeight: 1,
 
 			// Intentionally only checking a subset of the session metadata returned
-			expectedSessionId:     "e1e51d087e447525d7beb648711eb3deaf016a8089938a158e6a0f600979370c",
+			expectedSessionId:     "cf5bbdce56ee5a7c46c5d5482303907685a7e5dbb22703cd4a85df521b9ab6e9",
 			expectedSessionNumber: 0,
 			expectedNumSuppliers:  1,
 		},
@@ -53,10 +55,9 @@ func TestSession_GetSession_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: tt.appAddr,
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: tt.serviceId,
 				},
 				BlockHeight: 1,
@@ -75,6 +76,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 
 func TestSession_GetSession_Failure(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
+	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	wctx := sdk.WrapSDKContext(ctx)
 
 	type test struct {
@@ -91,20 +93,56 @@ func TestSession_GetSession_Failure(t *testing.T) {
 		{
 			name: "application address does not reflected a staked application",
 
-			appAddr:     "some string that is not a valid app address",
+			appAddr:     sample.AccAddress(), // a random (valid) app address that's not staked
 			serviceId:   keepertest.TestServiceId1,
 			blockHeight: 1,
 
-			expectedErrContains: types.ErrAppNotFound.Error(),
+			expectedErrContains: types.ErrSessionAppNotFound.Error(),
 		},
 		{
-			name: "service ID does not reflect one with staked suppliers",
+			name: "application staked for service that has no available suppliers",
 
 			appAddr:     keepertest.TestApp1Address,
-			serviceId:   "some string that is not a valid service Id",
+			serviceId:   keepertest.TestServiceId11,
 			blockHeight: 1,
 
-			expectedErrContains: types.ErrSuppliersNotFound.Error(),
+			expectedErrContains: types.ErrSessionSuppliersNotFound.Error(),
+		},
+		{
+			name: "application is valid but not staked for the specified service",
+
+			appAddr:     keepertest.TestApp1Address,
+			serviceId:   "svc9001", // App1 is not staked for service over 9000
+			blockHeight: 1,
+
+			expectedErrContains: types.ErrSessionAppNotStakedForService.Error(),
+		},
+		{
+			name: "application address is invalid format",
+
+			appAddr:     "invalid_app_address",
+			serviceId:   keepertest.TestServiceId1,
+			blockHeight: 1,
+
+			expectedErrContains: types.ErrSessionInvalidAppAddress.Error(),
+		},
+		{
+			name: "service ID is invalid",
+
+			appAddr:     keepertest.TestApp1Address,
+			serviceId:   "service_id_is_too_long_to_be_valid",
+			blockHeight: 1,
+
+			expectedErrContains: "invalid service in session",
+		},
+		{
+			name: "negative block height",
+
+			appAddr:     keepertest.TestApp1Address,
+			serviceId:   keepertest.TestServiceId1,
+			blockHeight: -1,
+
+			expectedErrContains: "invalid block height for session being retrieved",
 		},
 	}
 
@@ -112,13 +150,12 @@ func TestSession_GetSession_Failure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			req := &types.QueryGetSessionRequest{
 				ApplicationAddress: tt.appAddr,
-				ServiceId: &sharedtypes.ServiceId{
+				Service: &sharedtypes.Service{
 					Id: tt.serviceId,
 				},
-				BlockHeight: 1,
+				BlockHeight: tt.blockHeight,
 			}
 
 			res, err := keeper.GetSession(wctx, req)

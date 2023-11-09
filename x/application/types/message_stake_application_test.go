@@ -23,7 +23,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: "invalid_address",
 				// Stake explicitly nil
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidAddress,
@@ -36,7 +36,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				// Stake explicitly nil
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidStake,
@@ -46,7 +46,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 		}, {
@@ -55,7 +55,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidStake,
@@ -65,7 +65,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidStake,
@@ -75,7 +75,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidStake,
@@ -85,7 +85,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
 			err: ErrAppInvalidStake,
@@ -98,8 +98,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc1"}},
-					{ServiceId: &sharedtypes.ServiceId{Id: "svc2"}},
+					{Service: &sharedtypes.Service{Id: "svc1"}},
+					{Service: &sharedtypes.Service{Id: "svc2"}},
 				},
 			},
 		},
@@ -127,7 +127,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "123456790"}},
+					{Service: &sharedtypes.Service{Id: "123456790"}},
 				},
 			},
 			err: ErrAppInvalidServiceConfigs,
@@ -138,7 +138,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{
+					{Service: &sharedtypes.Service{
 						Id:   "123",
 						Name: "abcdefghijklmnopqrstuvwxyzab-abcdefghijklmnopqrstuvwxyzab",
 					}},
@@ -152,7 +152,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{ServiceId: &sharedtypes.ServiceId{Id: "12 45 !"}},
+					{Service: &sharedtypes.Service{Id: "12 45 !"}},
 				},
 			},
 			err: ErrAppInvalidServiceConfigs,
