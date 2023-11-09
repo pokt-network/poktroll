@@ -103,7 +103,7 @@ func NewRelayerProxy(
 		opt(rp)
 	}
 
-	if err := rp.validateConfigAndSetDefaults(); err != nil {
+	if err := rp.validateConfig(); err != nil {
 		return nil, err
 	}
 
@@ -155,7 +155,7 @@ func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 	return rp.servedRelays
 }
 
-func (rp *relayerProxy) validateConfigAndSetDefaults() error {
+func (rp *relayerProxy) validateConfig() error {
 	if rp.signingKeyName == "" {
 		return ErrUndefinedSigningKeyName
 	}
