@@ -45,7 +45,7 @@ func (app *appGateServer) getRingSingerForAppAddress(ctx context.Context, appAdd
 	}
 
 	// return the ring signer
-	return signer.NewRingSigner(ring, app.signingKey), nil
+	return signer.NewRingSigner(ring, app.signingInformation.SigningKey), nil
 }
 
 // getRingForAppAddress returns the RingSinger used to sign relays. It does so by fetching
