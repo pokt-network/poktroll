@@ -13,38 +13,38 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 )
 
-// createClaims maps over the sessionsToClaim observable. For each claim, it
-// calculates and waits for the earliest block height at which it is safe to
-// claim and does so. It then maps any errors to a new observable which are
-// subsequently logged. It returns an observable of the successfully claimed
-// sessions. It does not block as map operations run in their own goroutines.
+// createClaims maps over the sessionsToClaimObs observable. For each claim, it:
+// 1. Calculates the earliest block height at which it is safe to CreateClaim
+// 2. Waits for said block and creates the claim on-chain
+// 3. Maps errors to a new observable and logs them
+// 4. Returns an observable of the successfully claimed sessions
+// It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) createClaims(ctx context.Context) observable.Observable[relayer.SessionTree] {
-	// Map SessionsToClaim observable to a new observable of the same type which
-	// is notified when the session is eligible to be claimed.
-	// relayer.SessionTree ==> relayer.SessionTree
-	sessionsWithOpenClaimWindow := channel.Map(
-		ctx, rs.sessionsToClaim,
+	// Map sessionsToClaimObs to a new observable of the same type which is notified
+	// when the session is eligible to be claimed.
+	sessionsWithOpenClaimWindowObs := channel.Map(
+		ctx, rs.sessionsToClaimObs,
 		rs.mapWaitForEarliestCreateClaimHeight,
 	)
 
-	failedCreateClaimSessions, failedCreateClaimSessionsPublishCh :=
+	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[relayer.SessionTree]()
 
-	// Map sessionsWithOpenClaimWindow to a new observable of an either type,
+	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// claim has been created or an error has been encountered, respectively.
-	eitherClaimedSessions := channel.Map(
-		ctx, sessionsWithOpenClaimWindow,
+	eitherClaimedSessionsObs := channel.Map(
+		ctx, sessionsWithOpenClaimWindowObs,
 		rs.newMapClaimSessionFn(failedCreateClaimSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
-	_ = failedCreateClaimSessions
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessions))
+	_ = failedCreateClaimSessionsObs
+	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
 	// Map eitherClaimedSessions to a new observable of relayer.SessionTree which
 	// is notified when the corresponding claim creation succeeded.
-	return filter.EitherSuccess(ctx, eitherClaimedSessions)
+	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
 
 // mapWaitForEarliestCreateClaimHeight is intended to be used as a MapFn. It
@@ -65,6 +65,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimHeight(
 // earliest block height, allowed by the protocol, at which a claim can be created
 // for a session with the given sessionEndHeight. It is calculated relative to
 // sessionEndHeight using on-chain governance parameters and randomized input.
+// It IS A BLOCKING function.
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
@@ -77,7 +78,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 
 	// we wait for createClaimWindowStartHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window starts.
-	log.Printf("waiting for global earliest claim submission createClaimWindowStartBlock height: %d", createClaimWindowStartHeight)
+	log.Printf("waiting & blocking for global earliest claim submission createClaimWindowStartBlock height: %d", createClaimWindowStartHeight)
 	createClaimWindowStartBlock := rs.waitForBlock(ctx, createClaimWindowStartHeight)
 
 	log.Printf("received earliest claim submission createClaimWindowStartBlock height: %d, use its hash to have a random submission for the servicer", createClaimWindowStartBlock.Height())

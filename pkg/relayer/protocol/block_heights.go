@@ -11,7 +11,7 @@ import (
 // GetEarliestCreateClaimHeight returns the earliest block height at which a claim
 // for a session with the given createClaimWindowStartHeight can be created.
 //
-// TODO_TEST(@bryanchriswhite): Add test  coverage
+// TODO_TEST(@bryanchriswhite): Add test coverage and more logs
 func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int64 {
 	createClaimWindowStartBlockHash := createClaimWindowStartBlock.Hash()
 	log.Printf("using createClaimWindowStartBlock %d's hash %x as randomness", createClaimWindowStartBlock.Height(), createClaimWindowStartBlockHash)
@@ -29,7 +29,7 @@ func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int6
 // GetEarliestSubmitProofHeight returns the earliest block height at which a proof
 // for a session with the given submitProofWindowStartHeight can be submitted.
 //
-// TODO_TEST(@bryanchriswhite): Add test coverage.
+// TODO_TEST(@bryanchriswhite): Add test coverage and more logs
 func GetEarliestSubmitProofHeight(submitProofWindowStartBlock client.Block) int64 {
 	earliestSubmitProofBlockHash := submitProofWindowStartBlock.Hash()
 	log.Printf("using submitProofWindowStartBlock %d's hash %x as randomness", submitProofWindowStartBlock.Height(), earliestSubmitProofBlockHash)
