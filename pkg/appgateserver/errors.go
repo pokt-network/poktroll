@@ -8,5 +8,6 @@ var (
 	ErrAppGateNoRelayEndpoints              = sdkerrors.Register(codespace, 2, "no relay endpoints found")
 	ErrAppGateInvalidRequestURL             = sdkerrors.Register(codespace, 3, "invalid request URL")
 	ErrAppGateMissingAppAddress             = sdkerrors.Register(codespace, 4, "missing application address")
-	ErrAppGateMissingListeningEndpoint      = sdkerrors.Register(codespace, 5, "missing app client listening endpoint")
+	ErrAppGateMissingSigningInformation     = sdkerrors.Register(codespace, 5, "missing app client signing information")
+	ErrAppGateMissingListeningEndpoint      = sdkerrors.Register(codespace, 6, "missing app client listening endpoint")
 )

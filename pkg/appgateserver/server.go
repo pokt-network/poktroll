@@ -2,7 +2,6 @@ package appgateserver
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,11 +9,8 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -24,6 +20,16 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
+type SigningInformation struct {
+	// SigningKey is the scalar point on the appropriate curve corresponding to the
+	// signer's private key, and is used to sign relay requests via a ring signature
+	SigningKey ringtypes.Scalar
+
+	// AppAddress is the address of the application that the server is serving if
+	// it is nil then the application address must be included in each request
+	AppAddress string
+}
+
 // appGateServer is the server that listens for application requests and relays them to the supplier.
 // it is responsible for maintaining the current session for the application, signing the requests,
 // and verifying the response signatures.
@@ -31,22 +37,14 @@ import (
 // is running their own instance of the appGateServer or they are sending requests to a gateway running an
 // instance of the appGateServer, they will need to either include the application address in the request or not.
 type appGateServer struct {
-	// signingKeyName is the name of the key that will be used to sign relays
-	signingKeyName string
-
-	// signingKey is the scalar point on the appropriate curve corresponding to the
-	// signer's private key, and is used to sign relay requests via a ring signature
-	signingKey ringtypes.Scalar
+	// signing information holds the signing key and application address for the server
+	signingInformation *SigningInformation
 
 	// ringCache is a cache of the public keys used to create the ring for a given application
 	// they are stored in a map of application address to a slice of points on the secp256k1 curve
 	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
 	ringCache      map[string][]ringtypes.Point
 	ringCacheMutex *sync.RWMutex
-
-	// appAddress is the address of the application that the server is serving if
-	// it is nil then the application address must be included in each request
-	appAddress string
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
@@ -115,23 +113,6 @@ func NewAppGateServer(
 		return nil, err
 	}
 
-	key, err := app.clientCtx.Keyring.Key(app.signingKeyName)
-	if err != nil {
-		return nil, err
-	}
-
-	appAddress, err := key.GetAddress()
-	if err != nil {
-		return nil, err
-	}
-	app.appAddress = appAddress.String()
-
-	signingKey, err := recordLocalToScalar(key.GetLocal())
-	if err != nil {
-		return nil, err
-	}
-	app.signingKey = signingKey
-
 	app.sessionQuerier = sessiontypes.NewQueryClient(app.clientCtx)
 	app.accountQuerier = accounttypes.NewQueryClient(app.clientCtx)
 	app.applicationQuerier = apptypes.NewQueryClient(app.clientCtx)
@@ -180,10 +161,10 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	serviceId := strings.Split(path, "/")[1]
 	var appAddress string
 
-	if app.appAddress == "" {
+	if app.signingInformation.AppAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
 	} else {
-		appAddress = app.appAddress
+		appAddress = app.signingInformation.AppAddress
 	}
 
 	if appAddress == "" {
@@ -238,31 +219,13 @@ func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) 
 
 // validateConfig validates the appGateServer configuration.
 func (app *appGateServer) validateConfig() error {
+	if app.signingInformation == nil {
+		return ErrAppGateMissingSigningInformation
+	}
 	if app.listeningEndpoint == nil {
 		return ErrAppGateMissingListeningEndpoint
 	}
 	return nil
-}
-
-// recordLocalToScalar converts the private key obtained from a
-// key record to a scalar point on the secp256k1 curve
-func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) {
-	if local == nil {
-		return nil, fmt.Errorf("cannot extract private key from key record: nil")
-	}
-	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
-	if !ok {
-		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
-	}
-	if _, ok := priv.(*secp256k1.PrivKey); !ok {
-		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
-	}
-	crv := ring_secp256k1.NewCurve()
-	privKey, err := crv.DecodeToScalar(priv.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode private key: %w", err)
-	}
-	return privKey, nil
 }
 
 type appGateServerOption func(*appGateServer)

@@ -1,11 +1,13 @@
 package appgateserver
 
-import "net/url"
+import (
+	"net/url"
+)
 
-// WithSigningKeyName sets the signing key name for the app gate server.
-func WithSigningKeyName(signingKeyName string) appGateServerOption {
+// WithSigningInformation sets the signing key and app address for server.
+func WithSigningInformation(signingInfo *SigningInformation) appGateServerOption {
 	return func(appGateServer *appGateServer) {
-		appGateServer.signingKeyName = signingKeyName
+		appGateServer.signingInformation = signingInfo
 	}
 }
 
