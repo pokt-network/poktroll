@@ -14,6 +14,8 @@ import (
 )
 
 // handleJSONRPCRelay handles JSON RPC relay requests.
+// It does everything from preparing, signing and sending the request.
+// It then blocks on the response to come back and forward it to the provided writer.
 func (app *appGateServer) handleJSONRPCRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
@@ -46,7 +48,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	relayRequest := &types.RelayRequest{
 		Meta: &types.RelayRequestMetadata{
 			SessionHeader: session.Header,
-			Signature:     nil,
+			Signature:     nil, // signature added below
 		},
 		Payload: relayRequestPayload,
 	}
@@ -108,6 +110,8 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// the getRelayerUrl function since this is the address we are expecting to sign the response.
 	// TODO_TECHDEBT: if the RelayResponse is an internal error response, we should not verify the signature
 	// as in some relayer early failures, it may not be signed by the supplier.
+	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
+	// failed responses.
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
 		return err
 	}

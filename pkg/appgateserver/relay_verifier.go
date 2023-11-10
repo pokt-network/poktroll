@@ -40,9 +40,8 @@ func (app *appGateServer) verifyResponse(
 	return nil
 }
 
-// getSupplierPubKeyFromAddress gets the supplier's public key from the cache or queries
-// if it is not found.
-// The public key is then cached before being returned.
+// getSupplierPubKeyFromAddress gets the supplier's public key from the cache or
+// queries if it is not found. The public key is then cached before being returned.
 func (app *appGateServer) getSupplierPubKeyFromAddress(
 	ctx context.Context,
 	supplierAddress string,
@@ -52,7 +51,8 @@ func (app *appGateServer) getSupplierPubKeyFromAddress(
 		return pubKey, nil
 	}
 
-	// Query for the supplier account to get the application's public key to verify the relay request signature.
+	// Query for the supplier account to get the application's public key
+	// to verify the relay request signature.
 	accQueryReq := &accounttypes.QueryAccountRequest{Address: supplierAddress}
 	accQueryRes, err := app.accountQuerier.Account(ctx, accQueryReq)
 	if err != nil {
