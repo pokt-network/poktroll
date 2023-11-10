@@ -11,13 +11,8 @@ import (
 	"os/signal"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
@@ -77,68 +72,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx()
 
-	// Retrieve the client context for the chain interactions.
-	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
-
-	// Parse the listening endpoint.
-	listeningUrl, err := url.Parse(flagListeningEndpoint)
-	if err != nil {
-		return fmt.Errorf("failed to parse listening endpoint: %w", err)
-	}
-
-	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
-
-	// Create the block client with its dependency on the events client.
-	eventsQueryClient := eventsquery.NewEventsQueryClient(flagCometWebsocketUrl)
-	deps := depinject.Supply(eventsQueryClient)
-	blockClient, err := blockclient.NewBlockClient(ctx, deps, flagCometWebsocketUrl)
-	if err != nil {
-		return fmt.Errorf("failed to create block client: %w", err)
-	}
-
-	log.Println("INFO: Creating AppGate server...")
-
-	keyRecord, err := clientCtx.Keyring.Key(flagSigningKey)
-	if err != nil {
-		return fmt.Errorf("failed to get key from keyring: %w", err)
-	}
-
-	appAddress, err := keyRecord.GetAddress()
-	if err != nil {
-		return fmt.Errorf("failed to get address from key: %w", err)
-	}
-	signingAddress := ""
-	if flagSelfSigning {
-		signingAddress = appAddress.String()
-	}
-
-	// Convert the key record to a private key and return the scalar
-	// point on the secp256k1 curve that it corresponds to.
-	// If the key is not a secp256k1 key, this will return an error.
-	signingKey, err := recordLocalToScalar(keyRecord.GetLocal())
-	if err != nil {
-		return fmt.Errorf("failed to convert private key to scalar: %w", err)
-	}
-	signingInfo := appgateserver.SigningInformation{
-		SigningKey: signingKey,
-		AppAddress: signingAddress,
-	}
-
-	// Create the AppGate server.
-	appGateServerDeps := depinject.Supply(
-		clientCtx,
-		blockClient,
-	)
-
-	appGateServer, err := appgateserver.NewAppGateServer(
-		appGateServerDeps,
-		appgateserver.WithSigningInformation(&signingInfo),
-		appgateserver.WithListeningUrl(listeningUrl),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create AppGate server: %w", err)
-	}
-
 	// Handle interrupts in a goroutine.
 	go func() {
 		sigCh := make(chan os.Signal, 1)
@@ -152,6 +85,36 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		cancelCtx()
 	}()
 
+	// Parse the listening endpoint.
+	listeningUrl, err := url.Parse(flagListeningEndpoint)
+	if err != nil {
+		return fmt.Errorf("failed to parse listening endpoint: %w", err)
+	}
+
+	// Setup the AppGate server dependencies.
+	appGateServerDeps, err := setupAppGateServerDependencies(cmd, ctx, flagCometWebsocketUrl)
+	if err != nil {
+		return fmt.Errorf("failed to setup AppGate server dependencies: %w", err)
+	}
+
+	log.Println("INFO: Creating AppGate server...")
+
+	// Create the AppGate server.
+	appGateServer, err := appgateserver.NewAppGateServer(
+		appGateServerDeps,
+		appgateserver.WithSigningInformation(&appgateserver.SigningInformation{
+			// provide the name of the key to use for signing all incoming requests
+			SigningKeyName: flagSigningKey,
+			// provide whether the appgate server should sign all incoming requests
+			// with its own ring (for applications) or not (for gateways)
+			SelfSigning: flagSelfSigning,
+		}),
+		appgateserver.WithListeningUrl(listeningUrl),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create AppGate server: %w", err)
+	}
+
 	log.Printf("INFO: Starting AppGate server, listening on %s...", listeningUrl.String())
 
 	// Start the AppGate server.
@@ -164,23 +127,21 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// recordLocalToScalar converts the private key obtained from a
-// key record to a scalar point on the secp256k1 curve
-func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) {
-	if local == nil {
-		return nil, fmt.Errorf("cannot extract private key from key record: nil")
-	}
-	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
-	if !ok {
-		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
-	}
-	if _, ok := priv.(*secp256k1.PrivKey); !ok {
-		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
-	}
-	crv := ring_secp256k1.NewCurve()
-	privKey, err := crv.DecodeToScalar(priv.Bytes())
+func setupAppGateServerDependencies(cmd *cobra.Command, ctx context.Context, cometWebsocketUrl string) (depinject.Config, error) {
+	// Retrieve the client context for the chain interactions.
+	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
+
+	// Create the events client.
+	eventsQueryClient := eventsquery.NewEventsQueryClient(flagCometWebsocketUrl)
+
+	// Create the block client.
+	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
+	deps := depinject.Supply(eventsQueryClient)
+	blockClient, err := blockclient.NewBlockClient(ctx, deps, flagCometWebsocketUrl)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode private key: %w", err)
+		return nil, fmt.Errorf("failed to create block client: %w", err)
 	}
-	return privKey, nil
+
+	// Return the dependencie config.
+	return depinject.Supply(clientCtx, blockClient), nil
 }

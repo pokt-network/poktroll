@@ -2,6 +2,7 @@ package appgateserver
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -9,8 +10,11 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -21,6 +25,13 @@ import (
 )
 
 type SigningInformation struct {
+	// SelfSigning indicates whether the server is running in self-signing mode
+	SelfSigning bool
+
+	// SigningKeyName is the name of the key in the keyring that corresponds to the
+	// private key used to sign relay requests.
+	SigningKeyName string
+
 	// SigningKey is the scalar point on the appropriate curve corresponding to the
 	// signer's private key, and is used to sign relay requests via a ring signature
 	SigningKey ringtypes.Scalar
@@ -112,6 +123,28 @@ func NewAppGateServer(
 	if err := app.validateConfig(); err != nil {
 		return nil, err
 	}
+
+	keyRecord, err := app.clientCtx.Keyring.Key(app.signingInformation.SigningKeyName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get key from keyring: %w", err)
+	}
+
+	appAddress, err := keyRecord.GetAddress()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get address from key: %w", err)
+	}
+	if app.signingInformation.SelfSigning {
+		app.signingInformation.AppAddress = appAddress.String()
+	}
+
+	// Convert the key record to a private key and return the scalar
+	// point on the secp256k1 curve that it corresponds to.
+	// If the key is not a secp256k1 key, this will return an error.
+	signingKey, err := recordLocalToScalar(keyRecord.GetLocal())
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert private key to scalar: %w", err)
+	}
+	app.signingInformation.SigningKey = signingKey
 
 	app.sessionQuerier = sessiontypes.NewQueryClient(app.clientCtx)
 	app.accountQuerier = accounttypes.NewQueryClient(app.clientCtx)
@@ -218,13 +251,31 @@ func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) 
 
 // validateConfig validates the appGateServer configuration.
 func (app *appGateServer) validateConfig() error {
-	if app.signingInformation == nil {
-		return ErrAppGateMissingSigningInformation
-	}
 	if app.listeningEndpoint == nil {
 		return ErrAppGateMissingListeningEndpoint
 	}
 	return nil
+}
+
+// recordLocalToScalar converts the private key obtained from a
+// key record to a scalar point on the secp256k1 curve
+func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) {
+	if local == nil {
+		return nil, fmt.Errorf("cannot extract private key from key record: nil")
+	}
+	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
+	}
+	if _, ok := priv.(*secp256k1.PrivKey); !ok {
+		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
+	}
+	crv := ring_secp256k1.NewCurve()
+	privKey, err := crv.DecodeToScalar(priv.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode private key: %w", err)
+	}
+	return privKey, nil
 }
 
 type appGateServerOption func(*appGateServer)
