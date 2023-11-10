@@ -12,16 +12,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// Miner encapsulates the following responsibilities:
-//   - "Mining relays": Served relays are hashed and difficulty is checked. Those
-//     with sufficient difficulty are added to the session SMST (tree).
-//   - "Creating claims": The session SMST is flushed and a claim is created on-chain.
-//   - "Submitting proofs": The session SMST is proven and a proof is submitted on-chain.
+// Miner is responsible for observing servedRelayObs, hashing and checking the
+// difficulty of each, finally publishing those with sufficient difficulty to
+// minedRelayObs as they are applicable for relay volume.
 type Miner interface {
-	StartMiningRelays(
+	MinedRelays(
 		ctx context.Context,
-		servedRelays observable.Observable[*servicetypes.Relay],
-	)
+		servedRelayObs observable.Observable[*servicetypes.Relay],
+	) (minedRelaysObs observable.Observable[*MinedRelay])
 }
 
 type MinerOption func(Miner)
@@ -60,6 +58,8 @@ type RelayerProxy interface {
 	SignRelayResponse(relayResponse *types.RelayResponse) error
 }
 
+type RelayerProxyOption func(RelayerProxy)
+
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
 type RelayServer interface {
 	// Start starts the service server and returns an error if it fails.
@@ -72,20 +72,35 @@ type RelayServer interface {
 	Service() *sharedtypes.Service
 }
 
-// RelayerSessionsManager is an interface for managing the relayer's sessions and Sparse
-// Merkle Sum Trees (SMSTs). It provides notifications about closing sessions that are
-// ready to be claimed, and handles the creation and retrieval of SMSTs for a given session.
-// It also handles the creation and retrieval of SMSTs for a given session.
+// RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
+// It handles the creation and retrieval of SMSTs (trees) for a given session, as
+// well as the respective and subsequent claim creation and proof submission.
+// This is largely accomplished by pipelining observables of relays and sessions
+// through a series of map operations.
+//
+// TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
+// the relayer package.
 type RelayerSessionsManager interface {
-	// SessionsToClaim returns an observable that notifies of sessions ready to be claimed.
-	SessionsToClaim() observable.Observable[SessionTree]
+	// InsertRelays receives an observable of relays that should be included
+	// in their respective session's SMST (tree).
+	InsertRelays(minedRelaysObs observable.Observable[*MinedRelay])
 
-	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session header.
-	// It is used to retrieve the SMST and update it when a Relay has been successfully served.
-	// If the session is seen for the first time, it creates a new SMST for it before returning it.
-	// An error is returned if the corresponding KVStore for SMST fails to be created.
-	EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (SessionTree, error)
+	// Start iterates over the session trees at the end of each, respective, session.
+	// The session trees are piped through a series of map operations which progress
+	// them through the claim/proof lifecycle, broadcasting transactions to  the
+	// network as necessary.
+	Start(ctx context.Context)
+
+	// Stop unsubscribes all observables from the InsertRelays observable which
+	// will close downstream observables as they drain.
+	//
+	// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
+	// and/or ensure that the state at each pipeline stage is persisted to disk
+	// and exit as early as possible.
+	Stop()
 }
+
+type RelayerSessionsManagerOption func(RelayerSessionsManager)
 
 // SessionTree is an interface that wraps an SMST (Sparse Merkle State Tree) and its corresponding session.
 type SessionTree interface {

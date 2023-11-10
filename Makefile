@@ -114,9 +114,9 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init
 	mkdir -p $(POKTROLLD_HOME)/config/
-	cp -r ${HOME}/.pocket/keyring-test $(POKTROLLD_HOME)
-	cp ${HOME}/.pocket/config/*_key.json $(POKTROLLD_HOME)/config/
-	cp ${HOME}/.pocket/config/genesis.json $(POKTROLLD_HOME)/config/
+	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
+	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
+	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
 
 ###############
 ### Linting ###
@@ -135,7 +135,9 @@ go_imports: check_go_version ## Run goimports on all go files
 
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
-	export POCKET_NODE=$(POCKET_NODE) POKTROLLD_HOME=../../$(POKTROLLD_HOME) && go test -v ./e2e/tests/... -tags=e2e
+	export POCKET_NODE=$(POCKET_NODE) && \
+	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
+	go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests
@@ -392,7 +394,7 @@ supplier3_unstake: ## Unstake supplier3
 
 .PHONY: get_session
 get_session: ## Retrieve the session given the following env vars: (APP_ADDR, SVC, HEIGHT)
-	pocketd --home=$(POCKETD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q session get-session $(APP) $(SVC) $(HEIGHT) --node $(POCKET_NODE)
 
 .PHONY: get_session_app1_anvil
 get_session_app1_anvil: ## Retrieve the session for (app1, anvil, latest_height)

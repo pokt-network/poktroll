@@ -8,30 +8,38 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
-func GetCreateClaimDistributionHeight(earliestCreateClaimBlock client.Block) int64 {
-	earliestCreateClaimBlockHash := earliestCreateClaimBlock.Hash()
-	log.Printf("using earliestCreateClaimBlock %d's hash %x as randomness", earliestCreateClaimBlock.Height(), earliestCreateClaimBlockHash)
-	rngSeed, _ := binary.Varint(earliestCreateClaimBlockHash)
+// GetEarliestCreateClaimHeight returns the earliest block height at which a claim
+// for a session with the given createClaimWindowStartHeight can be created.
+//
+// TODO_TEST(@bryanchriswhite): Add test coverage and more logs
+func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int64 {
+	createClaimWindowStartBlockHash := createClaimWindowStartBlock.Hash()
+	log.Printf("using createClaimWindowStartBlock %d's hash %x as randomness", createClaimWindowStartBlock.Height(), createClaimWindowStartBlockHash)
+	rngSeed, _ := binary.Varint(createClaimWindowStartBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// randCreateClaimBlockHeightOffset := randomNumber % (claimproofparams.GovLatestClaimSubmissionBlocksInterval - claimproofparams.GovClaimSubmissionBlocksWindow - 1)
+	// randCreateClaimHeightOffset := randomNumber % (claimproofparams.GovCreateClaimIntervalBlocks - claimproofparams.GovCreateClaimWindowBlocks - 1)
 	_ = randomNumber
-	randCreateClaimBlockHeightOffset := int64(0)
+	randCreateClaimHeightOffset := int64(0)
 
-	return earliestCreateClaimBlock.Height() + randCreateClaimBlockHeightOffset
+	return createClaimWindowStartBlock.Height() + randCreateClaimHeightOffset
 }
 
-func GetSubmitProofDistributionHeight(earliestSubmitProofBlock client.Block) int64 {
-	earliestSubmitProofBlockHash := earliestSubmitProofBlock.Hash()
-	log.Printf("using earliestSubmitProofBlock %d's hash %x as randomness", earliestSubmitProofBlock.Height(), earliestSubmitProofBlockHash)
+// GetEarliestSubmitProofHeight returns the earliest block height at which a proof
+// for a session with the given submitProofWindowStartHeight can be submitted.
+//
+// TODO_TEST(@bryanchriswhite): Add test coverage and more logs
+func GetEarliestSubmitProofHeight(submitProofWindowStartBlock client.Block) int64 {
+	earliestSubmitProofBlockHash := submitProofWindowStartBlock.Hash()
+	log.Printf("using submitProofWindowStartBlock %d's hash %x as randomness", submitProofWindowStartBlock.Height(), earliestSubmitProofBlockHash)
 	rngSeed, _ := binary.Varint(earliestSubmitProofBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// randSubmitProofBlockHeightOffset := randomNumber % (claimproofparams.GovLatestProofSubmissionBlocksInterval - claimproofparams.GovProofSubmissionBlocksWindow - 1)
+	// randSubmitProofHeightOffset := randomNumber % (claimproofparams.GovSubmitProofIntervalBlocks - claimproofparams.GovSubmitProofWindowBlocks - 1)
 	_ = randomNumber
-	randSubmitProofBlockHeightOffset := int64(0)
+	randSubmitProofHeightOffset := int64(0)
 
-	return earliestSubmitProofBlock.Height() + randSubmitProofBlockHeightOffset
+	return submitProofWindowStartBlock.Height() + randSubmitProofHeightOffset
 }

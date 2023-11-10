@@ -10,15 +10,28 @@ import (
 	"testing"
 	"time"
 
+	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/app"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
-	addrRe           *regexp.Regexp
-	amountRe         *regexp.Regexp
-	accNameToAddrMap = make(map[string]string)
-	keyRingFlag      = "--keyring-backend=test"
+	addrRe   *regexp.Regexp
+	amountRe *regexp.Regexp
+
+	accNameToAddrMap     = make(map[string]string)
+	accAddrToNameMap     = make(map[string]string)
+	accNameToAppMap      = make(map[string]apptypes.Application)
+	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
+
+	keyRingFlag = "--keyring-backend=test"
 )
 
 func init() {
@@ -30,12 +43,16 @@ type suite struct {
 	gocuke.TestingT
 	pocketd       *pocketdBin
 	scenarioState map[string]any // temporary state for each scenario
+	cdc           codec.Codec
 }
 
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
 	s.scenarioState = make(map[string]any)
+	s.cdc = app.MakeEncodingConfig().Marshaler
 	s.buildAddrMap()
+	s.buildAppMap()
+	s.buildSupplierMap()
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -175,6 +192,64 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 	}
 }
 
+func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
+	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
+		if serviceConfig.Service.Id == serviceId {
+			return
+		}
+	}
+	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+}
+
+func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
+	for _, serviceConfig := range accNameToSupplierMap[supplierName].Services {
+		if serviceConfig.Service.Id == serviceId {
+			return
+		}
+	}
+	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
+}
+
+func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
+	app, found := accNameToAppMap[appName]
+	if !found {
+		s.Fatalf("application %s not found", appName)
+	}
+	expectedSupplier, found := accNameToSupplierMap[supplierName]
+	if !found {
+		s.Fatalf("supplier %s not found", supplierName)
+	}
+	argsAndFlags := []string{
+		"query",
+		"session",
+		"get-session",
+		app.Address,
+		serviceId,
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting session for app %s and service %s: %s", appName, serviceId, err)
+	}
+	var resp sessiontypes.QueryGetSessionResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, supplier := range resp.Session.Suppliers {
+		if supplier.Address == expectedSupplier.Address {
+			return
+		}
+	}
+	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+}
+
+func (s *suite) TheApplicationSendsTheSupplierARelayRequestForService(appName string, supplierName string, requestName string, serviceId string) {
+	// TODO(#126, @Olshansk): Implement this step
+}
+
+func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+	// TODO(#126, @Olshansk): Implement this step
+}
+
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 	s.Helper()
 	args := []string{
@@ -216,6 +291,49 @@ func (s *suite) buildAddrMap() {
 		name := match[2]
 		address := match[1]
 		accNameToAddrMap[name] = address
+		accAddrToNameMap[address] = name
+	}
+}
+
+func (s *suite) buildAppMap() {
+	s.Helper()
+	argsAndFlags := []string{
+		"query",
+		"application",
+		"list-application",
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting application list: %s", err)
+	}
+	s.pocketd.result = res
+	var resp apptypes.QueryAllApplicationResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, app := range resp.Application {
+		accNameToAppMap[accAddrToNameMap[app.Address]] = app
+	}
+}
+
+func (s *suite) buildSupplierMap() {
+	s.Helper()
+	argsAndFlags := []string{
+		"query",
+		"supplier",
+		"list-supplier",
+		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	if err != nil {
+		s.Fatalf("error getting supplier list: %s", err)
+	}
+	s.pocketd.result = res
+	var resp suppliertypes.QueryAllSupplierResponse
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	s.cdc.MustUnmarshalJSON(responseBz, &resp)
+	for _, supplier := range resp.Supplier {
+		accNameToSupplierMap[accAddrToNameMap[supplier.Address]] = supplier
 	}
 }
 

@@ -4,14 +4,7 @@ import (
 	"testing"
 )
 
+// TODO_TECHDEBT(@bryanchriswhite): add all the test coverage...
 func TestNewMiner(t *testing.T) {
-	//tests := []struct {
-	//	desc string
-	//	deps depinject.Config
-	//	opts []relayer.MinerOption
-	//} {
-	//	{
-	//		desc: ""
-	//	},
-	//}
+	t.Skip("TODO_TECHDEBT(@bryanchriswhite): add all the test coverage...")
 }
