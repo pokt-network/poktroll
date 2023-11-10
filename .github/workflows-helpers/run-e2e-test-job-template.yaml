@@ -40,4 +40,4 @@ spec:
           name: poktrolld-configs
         name: configs-volume
       serviceAccountName: default
-  backoffLimit: 1
+  backoffLimit: 0
