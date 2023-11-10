@@ -37,7 +37,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	if !account.GetPubKey().VerifySignature(hash, relayRequest.Meta.Signature) {
-		return ErrInvalidRelayRequestSignature
+		return ErrRelayerProxyInvalidRelayRequestSignature
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
@@ -62,7 +62,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return ErrInvalidSession
+		return ErrRelayerProxyInvalidSession
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
@@ -72,5 +72,5 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}
 	}
 
-	return ErrInvalidSupplier
+	return ErrRelayerProxyInvalidSupplier
 }

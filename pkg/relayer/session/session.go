@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"cosmossdk.io/depinject"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -21,9 +22,6 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 type relayerSessionsManager struct {
 	// sessionsToClaim notifies about sessions that are ready to be claimed.
 	sessionsToClaim observable.Observable[relayer.SessionTree]
-
-	// sessionsToClaimPublisher is the channel used to publish sessions to claim.
-	sessionsToClaimPublisher chan<- relayer.SessionTree
 
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
@@ -42,22 +40,35 @@ type relayerSessionsManager struct {
 // NewRelayerSessions creates a new relayerSessions.
 func NewRelayerSessions(
 	ctx context.Context,
-	storesDirectory string,
-	blockClient client.BlockClient,
-) relayer.RelayerSessionsManager {
+	deps depinject.Config,
+	opts ...relayer.RelayerSessionsManagerOption,
+) (relayer.RelayerSessionsManager, error) {
 	rs := &relayerSessionsManager{
-		sessionsTrees:   make(sessionsTreesMap),
-		storesDirectory: storesDirectory,
-		blockClient:     blockClient,
+		sessionsTrees: make(sessionsTreesMap),
+	}
+
+	if err := depinject.Inject(
+		deps,
+		&rs.blockClient,
+	); err != nil {
+		return nil, err
+	}
+
+	for _, opt := range opts {
+		opt(rs)
+	}
+
+	if err := rs.validateConfig(); err != nil {
+		return nil, err
 	}
 
 	rs.sessionsToClaim = channel.MapExpand[client.Block, relayer.SessionTree](
 		ctx,
-		blockClient.CommittedBlocksSequence(ctx),
+		rs.blockClient.CommittedBlocksSequence(ctx),
 		rs.mapBlockToSessionsToClaim,
 	)
 
-	return rs
+	return rs, nil
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
@@ -135,4 +146,14 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 	if len(sessionsTreesEndingAtBlockHeight) == 0 {
 		delete(rs.sessionsTrees, sessionHeader.SessionEndBlockHeight)
 	}
+}
+
+// validateConfig validates the relayerSessionsManager's configuration.
+// TODO_TEST: Add unit tests to validate these configurations.
+func (rp *relayerSessionsManager) validateConfig() error {
+	if rp.storesDirectory == "" {
+		return ErrSessionTreeUndefinedStoresDirectory
+	}
+
+	return nil
 }
