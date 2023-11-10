@@ -139,7 +139,9 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the session id filter
-		req.Filter.(*types.QueryAllClaimsRequest_SessionId).SessionId = sessionId
+		req.Filter = &types.QueryAllClaimsRequest_SessionId{
+			SessionId: sessionId,
+		}
 		return nil
 	}
 
@@ -150,7 +152,9 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the supplier address filter
-		req.Filter.(*types.QueryAllClaimsRequest_SupplierAddress).SupplierAddress = supplierAddr
+		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
+			SupplierAddress: supplierAddr,
+		}
 		return nil
 	}
 
@@ -161,7 +165,9 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 			return err
 		}
 		// Set the session end height filter
-		req.Filter.(*types.QueryAllClaimsRequest_SessionEndHeight).SessionEndHeight = sessionEndHeight
+		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
+			SessionEndHeight: sessionEndHeight,
+		}
 		return nil
 	}
 

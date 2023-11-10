@@ -446,24 +446,36 @@ acc_balance_total_supply: ## Query the total supply of the network
 ##############
 
 .PHONY: claim_create
-claim_create: ## Create a dummy claims 
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)
+claim_create: ## Create a dummy claim by supplier1
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier create-claim \
+	7b226170706c69636174696f6e5f61646472657373223a22706f6b74316d7271743566377168387578733237636a6d397437763965373461397676646e71356a766134222c2273657276696365223a7b226964223a22616e76696c222c226e616d65223a22227d2c2273657373696f6e5f73746172745f626c6f636b5f686569676874223a2231222c2273657373696f6e5f6964223a2273657373696f6e5f6964222c2273657373696f6e5f656e645f626c6f636b5f686569676874223a2235227d \
+	726f6f745f68617368 \
+	--from supplier1 --node $(POCKET_NODE)
 
 .PHONY: claims_list
 claim_list: ## List all the claims
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
 
 .PHONY: claims_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims address $(ADDR) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+
+.PHONY: claims_list_address_supplier1
+claim_list_address_supplier1: ## List all the claims for supplier1
+	SUPPLIER1=$$(make poktrolld_addr ACC_NAME=supplier1) && \
+	ADDR=$$SUPPLIER1 make claim_list_address
 
 .PHONY: claim_list_height
 claim_list_height: ## List all the claims ending at a specific height (specified via HEIGHT variable)
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims height $(HEIGHT) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-end-height $(HEIGHT) --node $(POCKET_NODE)
 
-.PHONY: claim_list_session
-claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims session $(SESSION) --node $(POCKET_NODE)
+.PHONY: claim_list_height_5
+claim_list_height_5: ## List all the claims at height 5
+	HEIGHT=5 make claim_list_height
+
+# .PHONY: claim_list_session
+# claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
+# 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims session $(SESSION) --node $(POCKET_NODE)
 
 ######################
 ### Ignite Helpers ###
@@ -501,4 +513,4 @@ openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
-	@echo $(shell poktrolld keys show -a $(ACC_NAME))
+	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))

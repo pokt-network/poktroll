@@ -1,13 +1,14 @@
 package cli
 
 import (
-	"encoding/base64"
-	"encoding/json"
+	"encoding/hex"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cobra"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -24,12 +25,32 @@ func CmdCreateClaim() *cobra.Command {
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			argSessionHeader := new(sessiontypes.SessionHeader)
-			err = json.Unmarshal([]byte(args[0]), argSessionHeader)
+			// fmt.Println("OLSH")
+			// argSessionHeader := &sessiontypes.SessionHeader{
+			// 	ApplicationAddress:      "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
+			// 	SessionStartBlockHeight: 1,
+			// 	SessionId:               "session_id",
+			// 	SessionEndBlockHeight:   5,
+			// 	Service: &sharedtypes.Service{
+			// 		Id: "anvil",
+			// 	},
+			// }
+			// fmt.Println("HERE", argSessionHeader)
+			// cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+			// bz := cdc.MustMarshalJSON(argSessionHeader)
+			// fmt.Println("HERE", hex.EncodeToString(bz))
+
+			// Get the session header
+			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+			sessionHeaderBz, err := hex.DecodeString(args[0])
 			if err != nil {
 				return err
 			}
-			argRootHash, err := base64.StdEncoding.DecodeString(args[1])
+			sessionHeader := sessiontypes.SessionHeader{}
+			cdc.MustUnmarshalJSON(sessionHeaderBz, &sessionHeader)
+
+			// Get the root hash
+			rootHash, err := hex.DecodeString(args[1])
 			if err != nil {
 				return err
 			}
@@ -38,16 +59,17 @@ func CmdCreateClaim() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			supplierAddress := clientCtx.GetFromAddress().String()
+
 			msg := types.NewMsgCreateClaim(
 				supplierAddress,
-				argSessionHeader,
-				argRootHash,
+				&sessionHeader,
+				rootHash,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
