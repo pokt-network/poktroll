@@ -45,6 +45,8 @@ type RelayerProxy interface {
 	SignRelayResponse(relayResponse *types.RelayResponse) error
 }
 
+type RelayerProxyOption func(RelayerProxy)
+
 // RelayServer is the interface of the advertised relay servers provided by the RelayerProxy.
 type RelayServer interface {
 	// Start starts the service server and returns an error if it fails.
@@ -71,6 +73,8 @@ type RelayerSessionsManager interface {
 	// An error is returned if the corresponding KVStore for SMST fails to be created.
 	EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (SessionTree, error)
 }
+
+type RelayerSessionsManagerOption func(RelayerSessionsManager)
 
 // SessionTree is an interface that wraps an SMST (Sparse Merkle State Tree) and its corresponding session.
 type SessionTree interface {
