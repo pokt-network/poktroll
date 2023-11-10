@@ -1,19 +1,3 @@
-// Package miner encapsulates the responsibilities of the relayer miner interface:
-//  1. Mining relays: Served relays are hashed and difficulty is checked.
-//     Those with sufficient difficulty are added to the session SMST (tree)
-//     to be applicable for relay volume.
-//  2. Creating claims: The session SMST is flushed and an on-chain
-//     claim is created to the amount of work done by committing
-//     the tree's root.
-//  3. Submitting proofs: A pseudo-random branch from the session SMST
-//     is "requested" (through on-chain mechanisms) and the necessary proof
-//     is submitted on-chain.
-//
-// This is largely accomplished by pipelining observables of relays and sessions
-// through a series of map operations.
-//
-// TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
-// the miner package.
 package miner
 
 import (
@@ -43,7 +27,9 @@ var (
 	defaultRelayDifficulty = 0
 )
 
-// miner implements the relayer.Miner interface.
+// Miner is responsible for observing servedRelayObs, hashing and checking the
+// difficulty of each, finally publishing those with sufficient difficulty to
+// minedRelayObs as they are applicable for relay volume.
 type miner struct {
 	hasherConstructor func() hash.Hash
 	relayDifficulty   int

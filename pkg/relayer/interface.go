@@ -75,6 +75,11 @@ type RelayServer interface {
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
 // It handles the creation and retrieval of SMSTs (trees) for a given session, as
 // well as the respective and subsequent claim creation and proof submission.
+// This is largely accomplished by pipelining observables of relays and sessions
+// through a series of map operations.
+//
+// TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
+// the relayer package.
 type RelayerSessionsManager interface {
 	// IncludeRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
