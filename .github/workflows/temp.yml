@@ -51,16 +51,12 @@ jobs:
           GITHUB_ISSUE: ${{ github.event.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-
-          ls -la 
-          ls -la .github
-
           envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
 
           kubectl apply -f job.yaml
 
           NAMESPACE=devnet-issue-${GITHUB_ISSUE}
-          JOB_NAME=run-e2e-test
+          JOB_NAME=e2e-test-${COMMIT_SHA}
 
           # Wait for the pod to be created
           while [[ -z $(kubectl get pods -n ${NAMESPACE} --selector=job-name=${JOB_NAME} -o jsonpath='{.items[0].metadata.name}') ]]; do
