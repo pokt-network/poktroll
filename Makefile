@@ -137,8 +137,8 @@ go_imports: check_go_version ## Run goimports on all go files
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
+	export RELAYER_NODE=$(RELAYER_NODE) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	RELAYER_NODE=$(RELAYER_NODE) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test

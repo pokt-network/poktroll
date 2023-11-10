@@ -109,7 +109,7 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlPostCmd(rpcUrl string, data string, args ...string) (*commandResult, error) {
-	base := []string{"-X", "POST", "-H", "Content-Type: application/json", "--data", data, rpcUrl}
+	base := []string{"-v", "-X", "POST", "-H", "'Content-Type: application/json'", "--data", fmt.Sprintf("'%s'", data), rpcUrl}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
 	cmd := exec.Command("curl", args...)
