@@ -4,7 +4,7 @@ metadata:
   name: ${JOB_NAME}
   namespace: ${NAMESPACE}
 spec:
-  ttlSecondsAfterFinished: 60
+  ttlSecondsAfterFinished: 120
   template:
     spec:
       containers:
