@@ -180,7 +180,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	serviceId := strings.Split(path, "/")[1]
 	var appAddress string
 
-	if app.appAddress != "" {
+	if app.appAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
 	} else {
 		appAddress = app.appAddress
