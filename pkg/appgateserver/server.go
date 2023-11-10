@@ -26,12 +26,12 @@ type SigningInformation struct {
 	SigningKey ringtypes.Scalar
 
 	// AppAddress is the address of the application that the server is serving if
-	// it is nil then the application address must be included in each request
+	// If it is nil, then the application address must be included in each request via a query parameter.
 	AppAddress string
 }
 
 // appGateServer is the server that listens for application requests and relays them to the supplier.
-// it is responsible for maintaining the current session for the application, signing the requests,
+// It is responsible for maintaining the current session for the application, signing the requests,
 // and verifying the response signatures.
 // The appGateServer is the basis for both applications and gateways, depending on whether the application
 // is running their own instance of the appGateServer or they are sending requests to a gateway running an
@@ -121,7 +121,7 @@ func NewAppGateServer(
 	return app, nil
 }
 
-// Start starts the application server and blocks until the context is done
+// Start starts the appgate server and blocks until the context is done
 // or the server returns an error.
 func (app *appGateServer) Start(ctx context.Context) error {
 	// Shutdown the HTTP server when the context is done.
@@ -137,12 +137,12 @@ func (app *appGateServer) Start(ctx context.Context) error {
 	return app.server.ListenAndServe()
 }
 
-// Stop stops the application server and returns any error that occurred.
+// Stop stops the appgate server and returns any error that occurred.
 func (app *appGateServer) Stop(ctx context.Context) error {
 	return app.server.Shutdown(ctx)
 }
 
-// ServeHTTP is the HTTP handler for the application server.
+// ServeHTTP is the HTTP handler for the appgate server.
 // It captures the application request, signs it, and sends it to the supplier.
 // After receiving the response from the supplier, it verifies the response signature
 // before returning the response to the application.
@@ -153,20 +153,19 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 //
 // where the serviceId is the id of the service that the application is requesting
 // and the other (possible) path segments are the JSON RPC request path.
+// TODO_TECHDEBT: Revisit the requestPath above based on the SDK that'll be exposed in the future.
 func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	// Extract the serviceId from the request path.
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
-	var appAddress string
 
-	if app.signingInformation.AppAddress == "" {
+	// Determine the application address.
+	appAddress := app.signingInformation.AppAddress
+	if appAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
-	} else {
-		appAddress = app.signingInformation.AppAddress
 	}
-
 	if appAddress == "" {
 		app.replyWithError(writer, ErrAppGateMissingAppAddress)
 		log.Print("ERROR: no application address provided")
