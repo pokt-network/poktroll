@@ -35,8 +35,8 @@ import (
 )
 
 var (
-	_             relayer.Miner = (*miner)(nil)
-	defaultHasher               = sha256.New()
+	_                        relayer.Miner = (*miner)(nil)
+	defaultHasherConstructor               = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disable mining for now.
 	// I.e., all relays are added to the tree.
@@ -45,8 +45,8 @@ var (
 
 // miner implements the relayer.Miner interface.
 type miner struct {
-	hasher          hash.Hash
-	relayDifficulty int
+	hasherConstructor func() hash.Hash
+	relayDifficulty   int
 
 	// Injected dependencies
 	sessionManager relayer.RelayerSessionsManager
@@ -96,11 +96,11 @@ func (mnr *miner) MinedRelays(
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
 }
 
-// setDefaults ensures that the miner has been configured with a hasher and uses
-// the default hasher if not.
+// setDefaults ensures that the miner has been configured with a hasherConstructor and uses
+// the default hasherConstructor if not.
 func (mnr *miner) setDefaults() error {
-	if mnr.hasher == nil {
-		mnr.hasher = defaultHasher
+	if mnr.hasherConstructor == nil {
+		mnr.hasherConstructor = defaultHasherConstructor
 	}
 	return nil
 }
@@ -123,10 +123,8 @@ func (mnr *miner) mapMineRelay(
 	// alongside signing & verification.
 	//
 	// We need to hash the key; it would be nice if smst.Update() could do it
-	// since smst has a reference to the hasher
-	mnr.hasher.Write(relayBz)
-	relayHash := mnr.hasher.Sum(nil)
-	mnr.hasher.Reset()
+	// since smst has a reference to the hasherConstructor
+	relayHash := mnr.hash(relayBz)
 
 	if !protocol.BytesDifficultyGreaterThan(relayHash, defaultRelayDifficulty) {
 		return either.Success[*relayer.MinedRelay](nil), true
@@ -137,4 +135,11 @@ func (mnr *miner) mapMineRelay(
 		Bytes: relayBz,
 		Hash:  relayHash,
 	}), false
+}
+
+// hash constructs a new hasher and hashes the given input bytes.
+func (mnr *miner) hash(inputBz []byte) []byte {
+	hasher := mnr.hasherConstructor()
+	hasher.Write(inputBz)
+	return hasher.Sum(nil)
 }
