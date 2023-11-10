@@ -26,50 +26,54 @@ import (
 )
 
 var (
-	signingKeyName    string
-	selfSigning       bool
-	listeningEndpoint string
-	cometWebsocketUrl string
+	flagSigningKey        string
+	flagSelfSigning       bool
+	flagListeningEndpoint string
+	flagCometWebsocketUrl string
 )
 
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "appgate-server",
 		Short: "Starts the AppGate server",
-		Long: `Starts the AppGate server that will listen for incoming relays requests and will handle
-the interaction with the chain, sessions and suppliers in order to receive the correct
-response for the request.
+		Long: `Starts the AppGate server that listens for incoming relay requests and handles
+the necessary on-chain interactions (sessions, suppliers, etc) to receive the
+respective relay response.
 
-If the server is started with a defined --self-signing flag, it will behave
-as an application and sign any incoming requests with the private key associated with
-the --signing-key-name flag. If however, this flag is not provided, the server will
-behave as a gateway and will sign relays on behalf of any application sending it relays provided
-that the address recieved in the query parameters of a request has been delegated to by the
-gateway, this is so that it can sign relays using the ring of the application with the
-key associated with the --signing-key-name flag.
+-- App Mode (Flag)- -
+If the server is started with a defined '--self-signing' flag, it will behave
+as an Application. Any incoming requests will be signed by using the private
+key and ring associated with the '--signing-key' flag.
 
-If an application doesn't provide the --self-signing flag, it will be able to send relays
-to the AppGate server and it will still function as an application, however each request
-will have to contain the "?senderAddress=[address]" query parameter, where [address] is
-the address of the application that is sending the request. This is so that the server
-can generate the correct ring for the application and sign the request.`,
+-- Gateway Mode (Flag)--
+If the '--self-signing' flag is not provided, the server will behave as a Gateway.
+It will sign relays on behalf of any Application sending it relays, provided
+that the address associated with '--signing-key' has been delegated to. This is
+necessary for the application<->gateway ring signature to function.
+
+-- App Mode (HTTP) --
+If an application doesn't provide the '--self-signing' flag, it can still send
+relays to the AppGate server and function as an Application, provided that:
+1. Each request contains the '?senderAddress=[address]' query parameter
+2. The key associated with the '--signing-key' flag belongs to the address
+   provided in the request, otherwise the ring signature will not be valid.`,
 		Args: cobra.NoArgs,
 		RunE: runAppGateServer,
 	}
 
-	cmd.Flags().StringVar(&signingKeyName, "signing-key-name", "", "The name of the key that will be used to sign relays")
-	cmd.Flags().StringVar(&listeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the server will listen on")
-	cmd.Flags().StringVar(&cometWebsocketUrl, "comet-websocket-url", "ws://localhost:36657/websocket", "The URL of the tendermint websocket endpoint to interact with the chain")
-	cmd.Flags().BoolVar(&selfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
+	cmd.Flags().StringVar(&flagSigningKey, "signing-key", "", "The name of the key that will be used to sign relays")
+	cmd.Flags().StringVar(&flagListeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the appgate server will listen on")
+	cmd.Flags().StringVar(&flagCometWebsocketUrl, "comet-websocket-url", "ws://localhost:36657/websocket", "The URL of the comet websocket endpoint to communicate with the pocket blockchain")
+	cmd.Flags().BoolVar(&flagSelfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
 
 	cmd.Flags().String(flags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(flags.FlagNode, "tcp://localhost:36657", "tcp://<host>:<port> to tendermint rpc interface for this chain")
+	cmd.Flags().String(flags.FlagNode, "tcp://localhost:36657", "The URL of the comet tcp endpoint to communicate with the pocket blockchain")
 
 	return cmd
 }
 
 func runAppGateServer(cmd *cobra.Command, _ []string) error {
-	// Create a context that is cancelled when the command is interrupted
+	// Create a context that is canceled when the command is interrupted
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx()
 
@@ -77,49 +81,52 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
 
 	// Parse the listening endpoint.
-	listeningUrl, err := url.Parse(listeningEndpoint)
+	listeningUrl, err := url.Parse(flagListeningEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse listening endpoint: %w", err)
 	}
 
-	// Obtain the tendermint websocket endpoint from the client context.
+	// Obtain the comet websocket endpoint from the client context.
 	cometWSUrl, err := url.Parse(clientCtx.NodeURI + "/websocket")
 	if err != nil {
 		return fmt.Errorf("failed to parse block query URL: %w", err)
 	}
 	cometWSUrl.Scheme = "ws"
 	// If the comet websocket URL is not provided, use the one from the client context.
-	if cometWebsocketUrl == "" {
-		cometWebsocketUrl = cometWSUrl.String()
+	if flagCometWebsocketUrl == "" {
+		flagCometWebsocketUrl = cometWSUrl.String()
 	}
 
-	log.Printf("INFO: Creating block client, using websocket URL: %s...", cometWebsocketUrl)
+	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
 
 	// Create the block client with its dependency on the events client.
-	eventsQueryClient := eventsquery.NewEventsQueryClient(cometWebsocketUrl)
+	eventsQueryClient := eventsquery.NewEventsQueryClient(flagCometWebsocketUrl)
 	deps := depinject.Supply(eventsQueryClient)
-	blockClient, err := blockclient.NewBlockClient(ctx, deps, cometWebsocketUrl)
+	blockClient, err := blockclient.NewBlockClient(ctx, deps, flagCometWebsocketUrl)
 	if err != nil {
 		return fmt.Errorf("failed to create block client: %w", err)
 	}
 
 	log.Println("INFO: Creating AppGate server...")
 
-	key, err := clientCtx.Keyring.Key(signingKeyName)
+	keyRecord, err := clientCtx.Keyring.Key(flagSigningKey)
 	if err != nil {
 		return fmt.Errorf("failed to get key from keyring: %w", err)
 	}
 
-	appAddress, err := key.GetAddress()
+	appAddress, err := keyRecord.GetAddress()
 	if err != nil {
 		return fmt.Errorf("failed to get address from key: %w", err)
 	}
 	signingAddress := ""
-	if selfSigning {
+	if flagSelfSigning {
 		signingAddress = appAddress.String()
 	}
 
-	signingKey, err := recordLocalToScalar(key.GetLocal())
+	// Convert the key record to a private key and return the scalar
+	// point on the secp256k1 curve that it corresponds to.
+	// If the key is not a secp256k1 key, this will return an error.
+	signingKey, err := recordLocalToScalar(keyRecord.GetLocal())
 	if err != nil {
 		return fmt.Errorf("failed to convert private key to scalar: %w", err)
 	}
