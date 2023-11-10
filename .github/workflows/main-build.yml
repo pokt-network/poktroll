@@ -90,17 +90,14 @@ jobs:
     needs: build-push-container
     if: contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e')
     runs-on: ubuntu-latest
+    env:
+      GKE_CLUSTER: protocol-us-central1
+      GKE_ZONE: us-central1
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             .github
-
-      - name: Set up Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v1'
-        with:
-          service_account_key: ${{ secrets.GKE_PROTOCOL_US_CENTRAL }}
-          project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
