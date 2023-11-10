@@ -71,6 +71,7 @@ can generate the correct ring for the application and sign the request.`,
 func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	// Create a context that is cancelled when the command is interrupted
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
+	defer cancelCtx()
 
 	// Retrieve the client context for the chain interactions.
 	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
@@ -78,14 +79,12 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	// Parse the listening endpoint.
 	listeningUrl, err := url.Parse(listeningEndpoint)
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to parse listening endpoint: %w", err)
 	}
 
 	// Obtain the tendermint websocket endpoint from the client context.
 	cometWSUrl, err := url.Parse(clientCtx.NodeURI + "/websocket")
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to parse block query URL: %w", err)
 	}
 	cometWSUrl.Scheme = "ws"
@@ -101,7 +100,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	deps := depinject.Supply(eventsQueryClient)
 	blockClient, err := blockclient.NewBlockClient(ctx, deps, cometWebsocketUrl)
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to create block client: %w", err)
 	}
 
@@ -109,13 +107,11 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 
 	key, err := clientCtx.Keyring.Key(signingKeyName)
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to get key from keyring: %w", err)
 	}
 
 	appAddress, err := key.GetAddress()
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to get address from key: %w", err)
 	}
 	signingAddress := ""
@@ -125,10 +121,8 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 
 	signingKey, err := recordLocalToScalar(key.GetLocal())
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to convert private key to scalar: %w", err)
 	}
-	signingKey = signingKey
 	signingInfo := appgateserver.SigningInformation{
 		SigningKey: signingKey,
 		AppAddress: signingAddress,
@@ -146,7 +140,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		appgateserver.WithListeningUrl(listeningUrl),
 	)
 	if err != nil {
-		cancelCtx()
 		return fmt.Errorf("failed to create AppGate server: %w", err)
 	}
 
@@ -167,10 +160,8 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		cancelCtx()
 		return fmt.Errorf("failed to start app gate server: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
-		cancelCtx()
 		log.Println("INFO: AppGate server stopped")
 	}
 
