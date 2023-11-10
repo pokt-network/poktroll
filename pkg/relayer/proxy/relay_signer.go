@@ -19,7 +19,7 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) er
 	}
 
 	hash := crypto.Sha256(responseBz)
-	relayResponse.Meta.SupplierSignature, _, err = rp.keyring.Sign(rp.keyName, hash)
+	relayResponse.Meta.SupplierSignature, _, err = rp.keyring.Sign(rp.signingKeyName, hash)
 
 	return err
 }
