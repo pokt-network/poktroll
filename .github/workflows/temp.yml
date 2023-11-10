@@ -20,6 +20,11 @@ jobs:
       id-token: 'write'
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+
       - name: Set up Cloud SDK
         if: contains(github.event.pull_request.labels.*.name, 'devnet-test-e2e')
         uses: 'google-github-actions/setup-gcloud@v1'
@@ -49,7 +54,7 @@ jobs:
 
           ls -la 
           ls -la .github
-          
+
           envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
 
           kubectl apply -f job.yaml
