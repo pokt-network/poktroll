@@ -53,25 +53,21 @@ jobs:
           # Check if the pod with the matching image SHA and purpose is ready
           echo "Checking for ready sequencer pod with image SHA ${IMAGE_SHA}..."
           while : ; do
-            # Get all pods with the matching purpose and filter by image SHA
-            PODS=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=${PURPOSE_LABEL} -o jsonpath="{.items[?(@.status.phase=='Running')]}")
-            READY_POD=""
-            for pod in $(echo "${PODS}" | jq -r '.[].metadata.name'); do
-              POD_IMAGE=$(kubectl get pod ${pod} -n ${NAMESPACE} -o jsonpath="{.spec.containers[0].image}")
-              if [[ "${POD_IMAGE}" == *"${IMAGE_SHA}"* ]]; then
-                READY_POD=${pod}
-                break
-              fi
-            done
+            # Get all pods with the matching purpose
+            PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=${PURPOSE_LABEL} -o json)
+            
+            # Check if any pods are running and have the correct image SHA
+            READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_SHA}\")) | .metadata.name")
 
             if [[ -n "${READY_POD}" ]]; then
               echo "Ready pod found: ${READY_POD}"
               break
             else
-              echo "Sequencer with with an image ${IMAGE_SHA} is not ready yet. Waiting..."
+              echo "No ready pod with the image SHA ${IMAGE_SHA} found. Waiting..."
               sleep 10
             fi
           done
+
 
       - name: Run E2E test job
         env:
