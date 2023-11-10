@@ -7,7 +7,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/x/service/types"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -18,7 +17,7 @@ import (
 type Miner interface {
 	MinedRelays(
 		ctx context.Context,
-		servedRelayObs observable.Observable[*servicetypes.Relay],
+		servedRelayObs observable.Observable[*types.Relay],
 	) (minedRelaysObs observable.Observable[*MinedRelay])
 }
 

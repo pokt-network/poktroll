@@ -113,7 +113,7 @@ func NewRelayerProxy(
 }
 
 // Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
-// This method is blocking until all RelayServers are started.
+// This method is blocking as long as all RelayServers are running.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
