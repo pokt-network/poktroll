@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"os/signal"
 
@@ -16,6 +17,7 @@ import (
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 )
 
@@ -52,58 +54,41 @@ func RelayerCmd() *cobra.Command {
 }
 
 func runRelayer(cmd *cobra.Command, _ []string) error {
-	// TODO_IN_THIS_COMMIT: ensure context is always cancelled.
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
+	// Ensure context cancellation.
+	defer cancelCtx()
 
-	// Set --node flag to the --sequencer-node for the client context
-	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
-
-	nodeURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	deps, err := setupRelayerDependencies(ctx, cmd)
 	if err != nil {
 		return err
 	}
 
-	// Construct base dependency injection config.
-	deps := supplyEventsQueryClient(nodeURL)
-	deps, err = supplyBlockClient(ctx, deps, nodeURL)
-	if err != nil {
-		return err
-	}
-
-	deps, err = supplyTxClient(ctx, deps, cmd)
-	if err != nil {
-		return err
-	}
-
-	deps, err = supplySupplierClient(deps)
-	if err != nil {
-		return err
-	}
-
-	// -- BEGIN relayer proxy
-	// INCOMPLETE: this should be populated from some relayer config.
-	serviceEndpoints := map[string][]string{
-		"svc1": {"ws://anvil:8547/"},
-		"svc2": {"http://anvil:8547"},
-	}
-
-	relayer, err := proxy.NewRelayerProxy(
-		deps,
-		relayerProxyOpts,
+	var (
+		relayerProxy           relayer.RelayerProxy
+		miner                  relayer.Miner
+		relayerSessionsManager relayer.RelayerSessionsManager
 	)
-	if err != nil {
-		cancelCtx()
+	if err := depinject.Inject(
+		deps,
+		&relayerProxy,
+		&miner,
+		&relayerSessionsManager,
+	); err != nil {
 		return err
 	}
-	//WithKey(ctx, clientFactory.Keybase(), signingKeyName, address.String(), clientCtx, servicerClient, serviceEndpoints).
-	//WithServicerClient(servicerClient).
-	//WithKVStorePath(ctx, filepath.Join(clientCtx.HomeDir, smtStorePath))
 
-	if err := relayer.Start(ctx); err != nil {
-		cancelCtx()
+	// Set up relay pipeline.
+	servedRelaysObs := relayerProxy.ServedRelays()
+	minedRelaysObs := miner.MinedRelays(ctx, servedRelaysObs)
+	relayerSessionsManager.IncludeRelays(minedRelaysObs)
+
+	// Set up the session (proof/claim) lifecycle pipeline.
+	relayerSessionsManager.Start(ctx)
+
+	// Start the flow of relays by starting relayer proxy.
+	if err := relayerProxy.Start(ctx); err != nil {
 		return err
 	}
-	// -- END relayer proxy
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -118,6 +103,40 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// TODO_IN_THIS_COMMIT: synchronize exit
 
 	return nil
+}
+
+func setupRelayerDependencies(ctx context.Context, cmd *cobra.Command) (depinject.Config, error) {
+	// Set --node flag to the --sequencer-node for the client context
+	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
+
+	nodeURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct base dependency injection config.
+	deps := supplyEventsQueryClient(nodeURL)
+	deps, err = supplyBlockClient(ctx, deps, nodeURL)
+	if err != nil {
+		return nil, err
+	}
+
+	deps, err = supplyTxClient(ctx, deps, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	deps, err = supplySupplierClient(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	deps, err = supplyRelayerProxy(ctx, deps)
+	if err != nil {
+		return nil, err
+	}
+
+	return deps, nil
 }
 
 func supplyEventsQueryClient(nodeURL string) depinject.Config {
@@ -184,9 +203,29 @@ func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
 	return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
 }
 
-func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
-	relayerProxy, err := proxy.NewRelayerProxy(deps)
+func supplyRelayerProxy(
+	ctx context.Context,
+	deps depinject.Config,
+) (depinject.Config, error) {
+	// TODO_INCOMPLETE: this should be populated from some relayerProxy config.
+	anvilURL, err := url.Parse("ws://anvil:8547/")
 	if err != nil {
+		return nil, err
+	}
+
+	proxiedServiceEndpoints := map[string]url.URL{
+		"svc1": *anvilURL,
+	}
+
+	relayerProxy, err := proxy.NewRelayerProxy(
+		deps,
+		proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := relayerProxy.Start(ctx); err != nil {
 		return nil, err
 	}
 
