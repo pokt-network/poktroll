@@ -242,8 +242,8 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARelayRequestForService(appName string, supplierName string, requestName string, serviceId string) {
-	// TODO(#126, @Olshansk): Implement this step
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+	s.pocketd.RunCurl(requestData)
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
