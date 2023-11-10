@@ -43,6 +43,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	appparams "github.com/pokt-network/poktroll/app/params"
+	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
 // NewRootCmd creates a new root command for a Cosmos SDK application
@@ -139,6 +140,11 @@ func initRootCmd(
 		a.newApp,
 		a.appExport,
 		addModuleInitFlags,
+	)
+
+	// add relayer command
+	rootCmd.AddCommand(
+		relayercmd.RelayerCmd(),
 	)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
