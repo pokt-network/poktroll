@@ -46,6 +46,10 @@ jobs:
           GITHUB_ISSUE: ${{ github.event.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+
+          ls -la 
+          ls -la .github
+          
           envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
 
           kubectl apply -f job.yaml
