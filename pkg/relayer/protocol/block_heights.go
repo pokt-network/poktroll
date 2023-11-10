@@ -19,11 +19,11 @@ func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int6
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// randCreateClaimBlockHeightOffset := randomNumber % (claimproofparams.GovLatestClaimSubmissionBlocksInterval - claimproofparams.GovClaimSubmissionBlocksWindow - 1)
+	// randCreateClaimHeightOffset := randomNumber % (claimproofparams.GovCreateClaimIntervalBlocks - claimproofparams.GovCreateClaimWindowBlocks - 1)
 	_ = randomNumber
-	randCreateClaimBlockHeightOffset := int64(0)
+	randCreateClaimHeightOffset := int64(0)
 
-	return createClaimWindowStartBlock.Height() + randCreateClaimBlockHeightOffset
+	return createClaimWindowStartBlock.Height() + randCreateClaimHeightOffset
 }
 
 // GetEarliestSubmitProofHeight returns the earliest block height at which a proof
@@ -37,9 +37,9 @@ func GetEarliestSubmitProofHeight(submitProofWindowStartBlock client.Block) int6
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// randSubmitProofBlockHeightOffset := randomNumber % (claimproofparams.GovLatestProofSubmissionBlocksInterval - claimproofparams.GovProofSubmissionBlocksWindow - 1)
+	// randSubmitProofHeightOffset := randomNumber % (claimproofparams.GovSubmitProofIntervalBlocks - claimproofparams.GovSubmitProofWindowBlocks - 1)
 	_ = randomNumber
-	randSubmitProofBlockHeightOffset := int64(0)
+	randSubmitProofHeightOffset := int64(0)
 
-	return submitProofWindowStartBlock.Height() + randSubmitProofBlockHeightOffset
+	return submitProofWindowStartBlock.Height() + randSubmitProofHeightOffset
 }

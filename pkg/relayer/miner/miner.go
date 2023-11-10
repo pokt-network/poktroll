@@ -124,7 +124,7 @@ func (mnr *miner) createClaims(ctx context.Context) observable.Observable[relaye
 	// relayer.SessionTree ==> relayer.SessionTree
 	sessionsWithOpenClaimWindow := channel.Map(
 		ctx, mnr.sessionManager.SessionsToClaim(),
-		mnr.mapWaitForOpenClaimWindow,
+		mnr.mapWaitForEarliestCreateClaimHeight,
 	)
 
 	failedCreateClaimSessions, failedCreateClaimSessionsPublishCh :=
@@ -160,7 +160,7 @@ func (mnr *miner) submitProofs(
 	// when the session is eligible to be proven.
 	sessionsWithOpenProofWindow := channel.Map(
 		ctx, claimedSessions,
-		mnr.mapWaitForOpenProofWindow,
+		mnr.mapWaitForEarliestSubmitProofHeight,
 	)
 
 	failedSubmitProofSessions, failedSubmitProveSessionsPublishCh :=
@@ -249,10 +249,11 @@ func (mnr *miner) mapAddRelayToSessionTree(
 	return nil, true
 }
 
-// mapWaitForOpenClaimWindow is intended to be used as a MapFn. It calculates and
-// waits for the earliest block height at which it is safe to claim and returns
-// the session when it should be claimed.
-func (mnr *miner) mapWaitForOpenClaimWindow(
+// mapWaitForEarliestCreateClaimHeight is intended to be used as a MapFn. It
+// calculates and waits for the earliest block height, allowed by the protocol,
+// at which a claim can be created for the given session, then emits the session
+// **at that moment**.
+func (mnr *miner) mapWaitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	session relayer.SessionTree,
 ) (_ relayer.SessionTree, skip bool) {
@@ -262,9 +263,10 @@ func (mnr *miner) mapWaitForOpenClaimWindow(
 	return session, false
 }
 
-// waitForEarliestCreateClaimHeight returns the earliest block height at which a
-// claim can be created. It is calculated from the session end block height,
-// on-chain governance parameters, and randomized input.
+// waitForEarliestCreateClaimHeight calculates and waits for the earliest block
+// height, allowed by the protocol, at which a claim can be created for a session
+// with the given sessionEndHeight. It is calculated relative to sessionEndHeight
+// using on-chain governance parameters and randomized input.
 func (mnr *miner) waitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
@@ -273,7 +275,7 @@ func (mnr *miner) waitForEarliestCreateClaimHeight(
 
 	createClaimWindowStartHeight := sessionEndHeight
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// + claimproofparams.GovEarliestClaimSubmissionBlocksOffset
+	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
 
 	// we wait for createClaimWindowStartHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window starts.
@@ -330,37 +332,38 @@ func (mnr *miner) newMapClaimSessionFn(
 	}
 }
 
-// mapWaitForOpenProofWindow maps over the claimedSessions observable, applying
-// the mapWaitForOpenProofWindow method to each session. It returns an observable
-// of the sessions that are ready to be proven which is notified when the respective
-// session is ready to be proven.
-func (mnr *miner) mapWaitForOpenProofWindow(
+// mapWaitForEarliestSubmitProofHeight is intended to be used as a MapFn. It
+// calculates and waits for the earliest block height, allowed by the protocol,
+// at which a proof can be submitted for the given session, then emits the session
+// **at that moment**.
+func (mnr *miner) mapWaitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	session relayer.SessionTree,
 ) (_ relayer.SessionTree, skip bool) {
-	mnr.waitForEarliestSubmitProofDistributionHeight(
+	mnr.waitForEarliestSubmitProofHeight(
 		ctx, session.GetSessionHeader().GetSessionEndBlockHeight(),
 	)
 	return session, false
 }
 
-// waitForEarliestSubmitProofDistributionHeight returns the earliest block height
-// at which a proof can be submitted. It is calculated from the session claim
-// creation block height, on-chain governance parameters, and randomized input.
-func (mnr *miner) waitForEarliestSubmitProofDistributionHeight(
+// waitForEarliestSubmitProofHeight calculates and waits for the earliest block
+// height, allowed by the protocol, at which a proof can be submitted for a session
+// which was claimed at createClaimHeight. It is calculated relative to
+// createClaimHeight using on-chain governance parameters and randomized input.
+func (mnr *miner) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
 ) {
-	earliestSubmitProofBlockHeight := createClaimHeight
+	submitProofWindowStartHeight := createClaimHeight
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
-	// + claimproofparams.GovEarliestProofSubmissionBlocksOffset
+	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
-	// we wait for earliestSubmitProofBlockHeight to be received before proceeding since we need its hash
-	log.Printf("waiting for global earliest proof submission earliestSubmitProofBlock height: %d", earliestSubmitProofBlockHeight)
-	earliestSubmitProofBlock := mnr.waitForBlock(ctx, earliestSubmitProofBlockHeight)
+	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash
+	log.Printf("waiting for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
+	submitProofWindowStartBlock := mnr.waitForBlock(ctx, submitProofWindowStartHeight)
 
-	earliestSubmitProofDistributionHeight := protocol.GetEarliestSubmitProofHeight(earliestSubmitProofBlock)
-	_ = mnr.waitForBlock(ctx, earliestSubmitProofDistributionHeight)
+	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(submitProofWindowStartBlock)
+	_ = mnr.waitForBlock(ctx, earliestSubmitProofHeight)
 }
 
 // newMapProveSessionFn returns a new MapFn that submits a proof for the given
