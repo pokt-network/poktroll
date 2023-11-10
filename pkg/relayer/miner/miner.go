@@ -5,8 +5,6 @@ import (
 	"crypto/sha256"
 	"hash"
 
-	"cosmossdk.io/depinject"
-
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -38,26 +36,14 @@ type miner struct {
 	// relayDifficulty is the minimum difficulty that a relay must have to be
 	// volume / reward applicable.
 	relayDifficulty int
-
-	// Injected dependencies
-	// sessionManaager facilitates the session (claim/proof) lifecycle.
-	sessionManager relayer.RelayerSessionsManager
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
 // returns an error if it has not been sufficiently configured or supplied.
 func NewMiner(
-	deps depinject.Config,
 	opts ...relayer.MinerOption,
 ) (*miner, error) {
 	mnr := &miner{}
-
-	if err := depinject.Inject(
-		deps,
-		&mnr.sessionManager,
-	); err != nil {
-		return nil, err
-	}
 
 	for _, opt := range opts {
 		opt(mnr)
