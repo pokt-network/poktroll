@@ -13,23 +13,24 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 )
 
-// submitProofs maps over the given claimedSessions observable. For each session,
-// it calculates and waits for the earliest block height at which it is safe to
-// submit a proof and does so. It then maps any errors to a new observable which
-// are subsequently logged. It does not block as map operations run in their own
-// goroutines.
+// submitProofs maps over the given claimedSessions observable.
+// For each session, it:
+// 1. Calculates the earliest block height at which to submit a proof
+// 2. Waits for said height and submits the proof on-chain
+// 3. Maps errors to a new observable and logs them
+// It DOES NOT BLOCKas map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
-	claimedSessions observable.Observable[relayer.SessionTree],
+	claimedSessionsObs observable.Observable[relayer.SessionTree],
 ) {
 	// Map claimedSessions to a new observable of the same type which is notified
 	// when the session is eligible to be proven.
-	sessionsWithOpenProofWindow := channel.Map(
+	sessionsWithOpenProofWindowObs := channel.Map(
 		ctx, claimedSessions,
 		rs.mapWaitForEarliestSubmitProofHeight,
 	)
 
-	failedSubmitProofSessions, failedSubmitProveSessionsPublishCh :=
+	failedSubmitProofSessionsObs, failedSubmitProveSessionsPublishCh :=
 		channel.NewObservable[relayer.SessionTree]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
