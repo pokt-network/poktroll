@@ -7,7 +7,6 @@ import (
 
 	"cosmossdk.io/depinject"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -19,8 +18,8 @@ import (
 )
 
 var (
-	_                        relayer.Miner = (*miner)(nil)
-	defaultHasherConstructor               = sha256.New
+	_                  relayer.Miner = (*miner)(nil)
+	defaultRelayHasher               = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
@@ -31,12 +30,16 @@ var (
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type miner struct {
+	// relayHasher is a function which returns a hash.Hash interfact type. It is
+	// used to hash serialized relays to measure their mining difficulty.
 	relayHasher func() hash.Hash
-	relayDifficulty   int
+	// relayDifficulty is the minimum difficulty that a relay must have to be
+	// volume / reward applicable.
+	relayDifficulty int
 
 	// Injected dependencies
+	// sessionManaager facilitates the session (claim/proof) lifecycle.
 	sessionManager relayer.RelayerSessionsManager
-	blockClient    client.BlockClient
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -50,7 +53,6 @@ func NewMiner(
 	if err := depinject.Inject(
 		deps,
 		&mnr.sessionManager,
-		&mnr.blockClient,
 	); err != nil {
 		return nil, err
 	}
@@ -85,8 +87,8 @@ func (mnr *miner) MinedRelays(
 // setDefaults ensures that the miner has been configured with a hasherConstructor and uses
 // the default hasherConstructor if not.
 func (mnr *miner) setDefaults() {
-	if mnr.hasherConstructor == nil {
-		mnr.hasherConstructor = defaultHasherConstructor
+	if mnr.relayHasher == nil {
+		mnr.relayHasher = defaultRelayHasher
 	}
 }
 
@@ -126,7 +128,7 @@ func (mnr *miner) mapMineRelay(
 
 // hash constructs a new hasher and hashes the given input bytes.
 func (mnr *miner) hash(inputBz []byte) []byte {
-	hasher := mnr.hasherConstructor()
+	hasher := mnr.relayHasher()
 	hasher.Write(inputBz)
 	return hasher.Sum(nil)
 }
