@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"sync"
 
+	"cosmossdk.io/depinject"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -35,10 +36,10 @@ type (
 // when the miner enters the claim/proof phase.
 // TODO_TEST: Have tests for the relayer proxy.
 type relayerProxy struct {
-	// keyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
+	// signingKeyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
-	keyName string
-	keyring keyring.Keyring
+	signingKeyName string
+	keyring        keyring.Keyring
 
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
@@ -88,34 +89,40 @@ type relayerProxy struct {
 	supplierAddress string
 }
 
+// NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
+// an error if the dependencies fail to resolve or the options are invalid.
 func NewRelayerProxy(
-	clientCtx sdkclient.Context,
-	keyName string,
-	keyring keyring.Keyring,
-	proxiedServicesEndpoints servicesEndpointsMap,
-	blockClient blocktypes.BlockClient,
-) relayer.RelayerProxy {
-	accountQuerier := accounttypes.NewQueryClient(clientCtx)
-	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
-	applicationQuerier := apptypes.NewQueryClient(clientCtx)
-	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
+	deps depinject.Config,
+	opts ...relayer.RelayerProxyOption,
+) (relayer.RelayerProxy, error) {
+	rp := &relayerProxy{}
+
+	if err := depinject.Inject(
+		deps,
+		&rp.clientCtx,
+		&rp.blockClient,
+	); err != nil {
+		return nil, err
+	}
+
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
-	return &relayerProxy{
-		blockClient:              blockClient,
-		keyName:                  keyName,
-		keyring:                  keyring,
-		accountsQuerier:          accountQuerier,
-		supplierQuerier:          supplierQuerier,
-		applicationQuerier:       applicationQuerier,
-		sessionQuerier:           sessionQuerier,
-		proxiedServicesEndpoints: proxiedServicesEndpoints,
-		servedRelays:             servedRelays,
-		servedRelaysProducer:     servedRelaysProducer,
-		ringCacheMutex:           &sync.RWMutex{},
-		ringCache:                make(map[string][]ringtypes.Point),
-		clientCtx:                clientCtx,
+	rp.servedRelays = servedRelays
+	rp.servedRelaysProducer = servedRelaysProducer
+	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
+	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
+	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
+	rp.keyring = rp.clientCtx.Keyring
+
+	for _, opt := range opts {
+		opt(rp)
 	}
+
+	if err := rp.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	return rp, nil
 }
 
 // Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
@@ -161,4 +168,18 @@ func (rp *relayerProxy) Stop(ctx context.Context) error {
 // and its RelayResponse has been signed and successfully sent to the client.
 func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
 	return rp.servedRelays
+}
+
+// validateConfig validates the relayer proxy's configuration options and returns an error if it is invalid.
+// TODO_TEST: Add tests for validating these configurations.
+func (rp *relayerProxy) validateConfig() error {
+	if rp.signingKeyName == "" {
+		return ErrRelayerProxyUndefinedSigningKeyName
+	}
+
+	if rp.proxiedServicesEndpoints == nil {
+		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
+	}
+
+	return nil
 }

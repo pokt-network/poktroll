@@ -22,11 +22,18 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// extract the relay request's ring signature
 	signature := relayRequest.Meta.Signature
 	if signature == nil {
-		return sdkerrors.Wrapf(ErrInvalidRelayRequest, "missing signature from relay request: %v", relayRequest)
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing signature from relay request: %v", relayRequest,
+		)
 	}
+
 	ringSig := new(ring.RingSig)
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
-		return sdkerrors.Wrapf(ErrInvalidRequestSignature, "error deserializing signature: %v", err)
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequestSignature,
+			"error deserializing signature: %v", err,
+		)
 	}
 
 	// get the ring for the application address of the relay request
@@ -34,7 +41,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
 	if err != nil {
 		return sdkerrors.Wrapf(
-			ErrInvalidRelayRequest,
+			ErrRelayerProxyInvalidRelayRequest,
 			"error getting ring for application address %s: %v", appAddress, err,
 		)
 	}
@@ -42,7 +49,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// verify the ring signature against the ring
 	if !ringSig.Ring().Equals(appRing) {
 		return sdkerrors.Wrapf(
-			ErrInvalidRequestSignature,
+			ErrRelayerProxyInvalidRelayRequestSignature,
 			"ring signature does not match ring for application address %s", appAddress,
 		)
 	}
@@ -50,15 +57,19 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// get and hash the signable bytes of the relay request
 	signableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
-		return sdkerrors.Wrapf(ErrInvalidRelayRequest, "error getting signable bytes: %v", err)
+		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
 	}
+
 	hash := crypto.Sha256(signableBz)
 	var hash32 [32]byte
 	copy(hash32[:], hash)
 
 	// verify the relay request's signature
 	if valid := ringSig.Verify(hash32); !valid {
-		return sdkerrors.Wrapf(ErrInvalidRequestSignature, "invalid ring signature")
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequestSignature,
+			"invalid ring signature",
+		)
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
@@ -83,7 +94,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return ErrInvalidSession
+		return ErrRelayerProxyInvalidSession
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
@@ -93,5 +104,5 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}
 	}
 
-	return ErrInvalidSupplier
+	return ErrRelayerProxyInvalidSupplier
 }
