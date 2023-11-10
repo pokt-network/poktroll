@@ -53,6 +53,13 @@ func RelayerCmd() *cobra.Command {
 	cmd.Flags().StringVar(&pocketNode, "pocket-node", "explicitly omitting default", "<host>:<port> to full/light pocket node for reading data and listening for on-chain events")
 	cmd.Flags().String(cosmosflags.FlagNode, "explicitly omitting default", "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
 
+	// Set --node flag to the --sequencer-node for the client context
+	err := cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
+	if err != nil {
+		//return nil, err
+		panic(err)
+	}
+
 	return cmd
 }
 
@@ -116,22 +123,23 @@ func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 ) (deps depinject.Config, err error) {
-	// Set --node flag to the --sequencer-node for the client context
-	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
-
-	nodeURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	// Initizlize deps to with empty depinject config.
+	deps, err = supplyMiner(depinject.Configs())
 	if err != nil {
 		return nil, err
 	}
 
-	deps, err = supplyMiner(deps)
+	rpcQueryURL, err := getPocketNodeWebsocketURL(cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	deps = supplyEventsQueryClient(deps, nodeURL)
+	deps, err = supplyEventsQueryClient(deps, rpcQueryURL)
+	if err != nil {
+		return nil, err
+	}
 
-	deps, err = supplyBlockClient(ctx, deps, nodeURL)
+	deps, err = supplyBlockClient(ctx, deps, rpcQueryURL)
 	if err != nil {
 		return nil, err
 	}
@@ -165,10 +173,20 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-func supplyEventsQueryClient(deps depinject.Config, nodeURL string) depinject.Config {
-	eventsQueryClient := eventsquery.NewEventsQueryClient(nodeURL)
+func supplyEventsQueryClient(deps depinject.Config, pocketNodeWebsocketURL string) (depinject.Config, error) {
+	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
 
-	return depinject.Configs(deps, depinject.Supply(eventsQueryClient))
+	return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
+}
+
+// TODO_IN_THIS_COMMIT: move
+func getPocketNodeWebsocketURL(cmd *cobra.Command) (string, error) {
+	pocketNodeHost, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("ws://%s/websocket", pocketNodeHost), nil
 }
 
 func supplyBlockClient(
