@@ -32,6 +32,7 @@ var (
 
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
+		// TODO_DISCUSS: do we want to rename this to `relay-miner`?
 		Use:   "relayer",
 		Short: "Run a relayer",
 		Long:  `Run a relayer`,
@@ -107,11 +108,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	// Wait for all goroutines to finish
-	// wg.Wait()
-
-	// TODO_IN_THIS_COMMIT: synchronize exit
-
+	log.Println("INFO: Relayer proxy stopped; exiting")
 	return nil
 }
 
@@ -132,8 +129,8 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
-	// Construct base dependency injection config.
 	deps = supplyEventsQueryClient(deps, nodeURL)
+
 	deps, err = supplyBlockClient(ctx, deps, nodeURL)
 	if err != nil {
 		return nil, err
