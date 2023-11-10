@@ -29,6 +29,8 @@ var (
 // Miner is responsible for observing servedRelayObs, hashing and checking the
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
+//
+// TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
 type miner struct {
 	// relayHasher is a function which returns a hash.Hash interfact type. It is
 	// used to hash serialized relays to measure their mining difficulty.
