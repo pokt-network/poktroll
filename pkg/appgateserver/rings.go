@@ -92,7 +92,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 		// twice. This is a HACK and should be investigated as to what is the
 		// best approach to take in this situation.
 		ringAddresses = append(ringAddresses, appAddress)
-	} else len(res.Application.DelegateeGatewayAddresses) > 0 {
+	} else if len(res.Application.DelegateeGatewayAddresses) > 0 {
 		// add the delegatee gateway addresses
 		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...)
 	}
