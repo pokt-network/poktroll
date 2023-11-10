@@ -32,7 +32,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return sdkerrors.Wrapf(
 			ErrRelayerProxyInvalidRelayRequestSignature,
-			"error deserializing signature: %v", err,
+			"error deserializing ring signature: %v", err,
 		)
 	}
 

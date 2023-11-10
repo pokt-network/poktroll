@@ -1,4 +1,6 @@
-// TODO(@h5law): Move all this logic out into a shared package
+// TODO_BLOCKER(@h5law): Move all this logic out into a shared package to avoid
+// the duplication of core business logic between `pkg/relayer/proxy/rings.go`
+// and `pkg/appgateserver/rings.go`
 package proxy
 
 import (
