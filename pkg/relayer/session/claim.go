@@ -13,39 +13,38 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 )
 
-// createClaims maps over the sessionsToClaim observable. For each claim, it:
+// createClaims maps over the sessionsToClaimObs observable. For each claim, it:
 // 1. Calculates the earliest block height at which it is safe to CreateClaim
 // 2. Waits for said block and creates the claim on-chain
 // 3. Maps errors to a new observable and logs them
 // 4. Returns an observable of the successfully claimed sessions
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) createClaims(ctx context.Context) observable.Observable[relayer.SessionTree] {
-	// Map SessionsToClaim observable to a new observable of the same type which
-	// is notified when the session is eligible to be claimed.
-	// relayer.SessionTree ==> relayer.SessionTree
+	// Map sessionsToClaimObs to a new observable of the same type which is notified
+	// when the session is eligible to be claimed.
 	sessionsWithOpenClaimWindowObs := channel.Map(
-		ctx, rs.sessionsToClaim,
+		ctx, rs.sessionsToClaimObs,
 		rs.mapWaitForEarliestCreateClaimHeight,
 	)
 
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
 		channel.NewObservable[relayer.SessionTree]()
 
-	// Map sessionsWithOpenClaimWindow to a new observable of an either type,
+	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// claim has been created or an error has been encountered, respectively.
 	eitherClaimedSessionsObs := channel.Map(
-		ctx, sessionsWithOpenClaimWindow,
+		ctx, sessionsWithOpenClaimWindowObs,
 		rs.newMapClaimSessionFn(failedCreateClaimSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed create claim sessions to some retry mechanism.
-	_ = failedCreateClaimSessions
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessions))
+	_ = failedCreateClaimSessionsObs
+	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
 	// Map eitherClaimedSessions to a new observable of relayer.SessionTree which
 	// is notified when the corresponding claim creation succeeded.
-	return filter.EitherSuccess(ctx, eitherClaimedSessions)
+	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
 
 // mapWaitForEarliestCreateClaimHeight is intended to be used as a MapFn. It

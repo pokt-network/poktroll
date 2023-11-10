@@ -81,9 +81,9 @@ type RelayServer interface {
 // TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
 // the relayer package.
 type RelayerSessionsManager interface {
-	// IncludeRelays receives an observable of relays that should be included
+	// InsertRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
-	IncludeRelays(relayObs observable.Observable[*MinedRelay])
+	InsertRelays(minedRelaysObs observable.Observable[*MinedRelay])
 
 	// Start iterates over the session trees at the end of each, respective, session.
 	// The session trees are piped through a series of map operations which progress
@@ -91,7 +91,7 @@ type RelayerSessionsManager interface {
 	// network as necessary.
 	Start(ctx context.Context)
 
-	// Stop unsubscribes all observables from the RelaysToInclude observable which
+	// Stop unsubscribes all observables from the InsertRelays observable which
 	// will close downstream observables as they drain.
 	//
 	// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete

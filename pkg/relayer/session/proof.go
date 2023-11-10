@@ -23,27 +23,27 @@ func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
 	claimedSessionsObs observable.Observable[relayer.SessionTree],
 ) {
-	// Map claimedSessions to a new observable of the same type which is notified
+	// Map claimedSessionsObs to a new observable of the same type which is notified
 	// when the session is eligible to be proven.
 	sessionsWithOpenProofWindowObs := channel.Map(
-		ctx, claimedSessions,
+		ctx, claimedSessionsObs,
 		rs.mapWaitForEarliestSubmitProofHeight,
 	)
 
-	failedSubmitProofSessionsObs, failedSubmitProveSessionsPublishCh :=
+	failedSubmitProofSessionsObs, failedSubmitProofSessionsPublishCh :=
 		channel.NewObservable[relayer.SessionTree]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessionsObs := channel.Map(
-		ctx, sessionsWithOpenProofWindow,
-		rs.newMapProveSessionFn(failedSubmitProveSessionsPublishCh),
+		ctx, sessionsWithOpenProofWindowObs,
+		rs.newMapProveSessionFn(failedSubmitProofSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
-	_ = failedSubmitProofSessions
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessions))
+	_ = failedSubmitProofSessionsObs
+	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
 }
 
 // mapWaitForEarliestSubmitProofHeight is intended to be used as a MapFn. It
@@ -91,7 +91,7 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
-		// TODO_BLOCKER: The block that'll be used as a source of entropy for which 
+		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
 		latestBlock := rs.blockClient.LatestBlock(ctx)
@@ -107,7 +107,7 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 			*session.GetSessionHeader(),
 			proof,
 		); err != nil {
-			failedSubmitProofSessions <- session
+			failedSubmitProofSessionsCh <- session
 			return either.Error[relayer.SessionTree](err), false
 		}
 

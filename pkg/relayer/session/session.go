@@ -24,8 +24,8 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 type relayerSessionsManager struct {
 	relayObs observable.Observable[*relayer.MinedRelay]
 
-	// sessionsToClaim notifies about sessions that are ready to be claimed.
-	sessionsToClaim observable.Observable[relayer.SessionTree]
+	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
+	sessionsToClaimObs observable.Observable[relayer.SessionTree]
 
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
@@ -70,7 +70,7 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	rs.sessionsToClaim = channel.MapExpand[client.Block, relayer.SessionTree](
+	rs.sessionsToClaimObs = channel.MapExpand[client.Block, relayer.SessionTree](
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
 		rs.mapBlockToSessionsToClaim,
@@ -88,14 +88,14 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// notified if an error was encountered while attampting to add the relay to
 	// the session tree.
 	miningErrorsObs := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
-	logging.LogErrors(ctx, miningErrors)
+	logging.LogErrors(ctx, miningErrorsObs)
 
 	// Start claim/proof pipeline.
 	claimedSessionsObs := rs.createClaims(ctx)
-	rs.submitProofs(ctx, claimedSessionsObservable)
+	rs.submitProofs(ctx, claimedSessionsObs)
 }
 
-// Stop unsubscribes all observables from the RelaysToInclude observable which
+// Stop unsubscribes all observables from the InsertRelays observable which
 // will close downstream observables as they drain.
 //
 // TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
@@ -106,7 +106,7 @@ func (rs *relayerSessionsManager) Stop() {
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessionsManager) IncludeRelays(relays observable.Observable[*relayer.MinedRelay]) {
+func (rs *relayerSessionsManager) InsertRelays(relays observable.Observable[*relayer.MinedRelay]) {
 	rs.relayObs = relays
 }
 
