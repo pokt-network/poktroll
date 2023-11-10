@@ -60,9 +60,17 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	// create a slice of addresses for the ring
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	ringAddresses = append(ringAddresses, appAddress) // add app address twice to make the ring size of mininmum 2
-	if len(res.Application.DelegateeGatewayAddresses) > 0 {
-		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...) // delegatee addresses are index 1+
+	if len(res.Application.DelegateeGatewayAddresses) < 1 {
+		// add app address twice to make the ring size of mininmum 2
+		// TODO_TECHDEBT: We are adding the appAddress twice because a ring
+		// signature requires AT LEAST two pubKeys. When the Application has
+		// not delegated to any gateways, we add the application's own address
+		// twice. This is a HACK and should be investigated as to what is the
+		// best approach to take in this situation.
+		ringAddresses = append(ringAddresses, appAddress)
+	} else len(res.Application.DelegateeGatewayAddresses) > 0 {
+		// add the delegatee gateway addresses
+		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...)
 	}
 
 	// get the points on the secp256k1 curve for the addresses

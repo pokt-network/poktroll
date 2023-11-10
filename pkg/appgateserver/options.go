@@ -4,7 +4,7 @@ import (
 	"net/url"
 )
 
-// WithSigningInformation sets the signing key and app address for server.
+// WithSigningInformation sets the signing key and app address for the server.
 func WithSigningInformation(signingInfo *SigningInformation) appGateServerOption {
 	return func(appGateServer *appGateServer) {
 		appGateServer.signingInformation = signingInfo

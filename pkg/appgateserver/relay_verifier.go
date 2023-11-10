@@ -17,13 +17,13 @@ func (app *appGateServer) verifyResponse(
 	relayResponse *types.RelayResponse,
 ) error {
 	// Get the supplier's public key.
-	pubKey, err := app.getSupplierPubKeyFromAddress(ctx, supplierAddress)
+	supplierPubKey, err := app.getSupplierPubKeyFromAddress(ctx, supplierAddress)
 	if err != nil {
 		return err
 	}
 
 	// Extract the supplier's signature
-	signature := relayResponse.Meta.SupplierSignature
+	supplierSignature := relayResponse.Meta.SupplierSignature
 
 	// Get the relay response signable bytes and hash them.
 	responseBz, err := relayResponse.GetSignableBytes()
@@ -33,7 +33,7 @@ func (app *appGateServer) verifyResponse(
 	hash := crypto.Sha256(responseBz)
 
 	// Verify the relay response signature.
-	if !pubKey.VerifySignature(hash, signature) {
+	if !supplierPubKey.VerifySignature(hash, supplierSignature) {
 		return ErrAppGateInvalidRelayResponseSignature
 	}
 
@@ -46,9 +46,9 @@ func (app *appGateServer) getSupplierPubKeyFromAddress(
 	ctx context.Context,
 	supplierAddress string,
 ) (cryptotypes.PubKey, error) {
-	pubKey, ok := app.supplierAccountCache[supplierAddress]
+	supplierPubKey, ok := app.supplierAccountCache[supplierAddress]
 	if ok {
-		return pubKey, nil
+		return supplierPubKey, nil
 	}
 
 	// Query for the supplier account to get the application's public key

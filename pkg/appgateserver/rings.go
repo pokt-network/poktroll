@@ -41,7 +41,7 @@ func (app *appGateServer) getRingSingerForAppAddress(ctx context.Context, appAdd
 		ring, err = newRingFromPoints(points)
 	}
 	if err != nil {
-		log.Printf("ERROR: Unable to get ring for address: %s [%w]", appAddress, err)
+		log.Printf("ERROR: Unable to get ring for address: %s [%v]", appAddress, err)
 		return nil, err
 	}
 
@@ -65,8 +65,8 @@ func newRingFromPoints(points []ringtypes.Point) (*ring.Ring, error) {
 	return ring.NewFixedKeyRingFromPublicKeys(ring_secp256k1.NewCurve(), points)
 }
 
-// getDelegatedPubKeysForAddress returns the ring used to sign a message for the given application
-// address, by querying the portal module for it's delegated pubkeys
+// getDelegatedPubKeysForAddress returns the ring used to sign a message for the given
+// application address, by querying the application module for it's delegated pubkeys
 func (app *appGateServer) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
@@ -84,9 +84,17 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	// create a slice of addresses for the ring
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	ringAddresses = append(ringAddresses, appAddress) // add app address twice to make the ring size of mininmum 2
-	if len(res.Application.DelegateeGatewayAddresses) > 0 {
-		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...) // delegatee addresses are index 1+
+	if len(res.Application.DelegateeGatewayAddresses) < 1 {
+		// add app address twice to make the ring size of mininmum 2
+		// TODO_TECHDEBT: We are adding the appAddress twice because a ring
+		// signature requires AT LEAST two pubKeys. When the Application has
+		// not delegated to any gateways, we add the application's own address
+		// twice. This is a HACK and should be investigated as to what is the
+		// best approach to take in this situation.
+		ringAddresses = append(ringAddresses, appAddress)
+	} else len(res.Application.DelegateeGatewayAddresses) > 0 {
+		// add the delegatee gateway addresses
+		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...)
 	}
 
 	// get the points on the secp256k1 curve for the addresses
@@ -102,9 +110,9 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	return points, nil
 }
 
-// addressesToPoints converts a slice of addresses to a slice of points on the secp256k1 curve
-// it does so by querying the account module for the public key for each address and converting
-// them to the corresponding points on the secp256k1 curve
+// addressesToPoints converts a slice of addresses to a slice of points on the
+// secp256k1 curve, by querying the account module for the public key for each
+// address and converting them to the corresponding points on the secp256k1 curve
 func (app *appGateServer) addressesToPoints(ctx context.Context, addresses []string) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))

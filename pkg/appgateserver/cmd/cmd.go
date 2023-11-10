@@ -86,17 +86,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to parse listening endpoint: %w", err)
 	}
 
-	// Obtain the comet websocket endpoint from the client context.
-	cometWSUrl, err := url.Parse(clientCtx.NodeURI + "/websocket")
-	if err != nil {
-		return fmt.Errorf("failed to parse block query URL: %w", err)
-	}
-	cometWSUrl.Scheme = "ws"
-	// If the comet websocket URL is not provided, use the one from the client context.
-	if flagCometWebsocketUrl == "" {
-		flagCometWebsocketUrl = cometWSUrl.String()
-	}
-
 	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
 
 	// Create the block client with its dependency on the events client.
