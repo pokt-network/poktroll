@@ -15,7 +15,7 @@ COPY . /poktroll
 
 WORKDIR /poktroll
 
-RUN mv /poktroll/bin/{ignite,poktrolld} /usr/bin/
+RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
 
 EXPOSE 8545
 EXPOSE 8546

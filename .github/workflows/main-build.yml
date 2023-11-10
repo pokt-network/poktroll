@@ -64,12 +64,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy binary to inside of the Docker context
+      - name: Copy binaries to inside of the Docker context
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
           cp $(which ignite) ./bin # Copy ignite binary to the repo's bin directory
           cp $(go env GOPATH)/bin/poktrolld ./bin # Copy the binary to the repo's bin directory
+          ls -la ./bin
 
       - name: Build and push Docker image
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
