@@ -21,6 +21,8 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
+
+	defaultDebugOutput = false
 )
 
 func init() {
@@ -29,6 +31,12 @@ func init() {
 	}
 	if defaultHome == "" {
 		defaultHome = "../../localnet/poktrolld"
+	}
+
+	if os.Getenv("E2E_DEBUG_OUTPUT") == "true" {
+		defaultDebugOutput = true
+	} else {
+		defaultDebugOutput = false
 	}
 }
 
@@ -91,6 +99,10 @@ func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
 	if err != nil {
 		// Include the command executed in the error message for context
 		err = fmt.Errorf("error running command [%s]: %v, stderr: %s", commandStr, err, stderrBuf.String())
+	}
+
+	if defaultDebugOutput {
+		fmt.Printf("%#v\n", r)
 	}
 
 	return r, err

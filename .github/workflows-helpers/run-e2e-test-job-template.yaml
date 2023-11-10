@@ -20,6 +20,8 @@ spec:
               name: celestia-secret
         - name: POCKET_NODE
           value: tcp://${NAMESPACE}-sequencer:36657
+        - name: E2E_DEBUG_OUTPUT
+          value: "true"
         - name: POKTROLLD_HOME
           value: /root/.pocket
         - name: CELESTIA_HOSTNAME
