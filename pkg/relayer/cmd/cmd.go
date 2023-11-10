@@ -82,23 +82,29 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	minedRelaysObs := miner.MinedRelays(ctx, servedRelaysObs)
 	relayerSessionsManager.IncludeRelays(minedRelaysObs)
 
+	// Handle interrupts in a goroutine.
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+
+		// Block until we receive an interrupt or kill signal (OS-agnostic)
+		<-sigCh
+
+		// Signal goroutines to stop
+		cancelCtx()
+	}()
+
 	// Set up the session (proof/claim) lifecycle pipeline.
 	relayerSessionsManager.Start(ctx)
 
 	// Start the flow of relays by starting relayer proxy.
+	// This is a blocking call as it waits for the waitgroup to be done.
 	if err := relayerProxy.Start(ctx); err != nil {
 		return err
 	}
 
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-	// Block until we receive an interrupt or kill signal (OS-agnostic)
-	<-sigCh
-
-	// Signal goroutines to stop
-	cancelCtx()
 	// Wait for all goroutines to finish
-	//wg.Wait()
+	// wg.Wait()
 
 	// TODO_IN_THIS_COMMIT: synchronize exit
 
@@ -131,7 +137,7 @@ func setupRelayerDependencies(ctx context.Context, cmd *cobra.Command) (depinjec
 		return nil, err
 	}
 
-	deps, err = supplyRelayerProxy(ctx, deps)
+	deps, err = supplyRelayerProxy(deps)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +153,8 @@ func supplyEventsQueryClient(nodeURL string) depinject.Config {
 func supplyBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-	nodeURL string) (depinject.Config, error) {
+	nodeURL string,
+) (depinject.Config, error) {
 	blockClient, err := block.NewBlockClient(ctx, deps, nodeURL)
 	if err != nil {
 		return nil, err
@@ -170,13 +177,13 @@ func supplyTxClient(
 		return nil, err
 	}
 
-	deps = depinject.Supply(clientCtx, clientFactory)
+	deps = depinject.Configs(deps, depinject.Supply(clientCtx, clientFactory))
 	txContext, err := tx.NewTxContext(deps)
 	if err != nil {
 		return nil, err
 	}
 
-	deps = depinject.Configs(depinject.Supply(txContext))
+	deps = depinject.Configs(deps, depinject.Supply(txContext))
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
@@ -188,7 +195,7 @@ func supplyTxClient(
 		return nil, err
 	}
 
-	return depinject.Configs(depinject.Supply(txClient)), nil
+	return depinject.Configs(deps, depinject.Supply(txClient)), nil
 }
 
 func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
@@ -203,10 +210,7 @@ func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
 	return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
 }
 
-func supplyRelayerProxy(
-	ctx context.Context,
-	deps depinject.Config,
-) (depinject.Config, error) {
+func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
 	// TODO_INCOMPLETE: this should be populated from some relayerProxy config.
 	anvilURL, err := url.Parse("ws://anvil:8547/")
 	if err != nil {
@@ -222,10 +226,6 @@ func supplyRelayerProxy(
 		proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
 	)
 	if err != nil {
-		return nil, err
-	}
-
-	if err := relayerProxy.Start(ctx); err != nil {
 		return nil, err
 	}
 
