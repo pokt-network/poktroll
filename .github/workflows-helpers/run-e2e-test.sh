@@ -1,17 +1,17 @@
 # Check if the pod with the matching image SHA and purpose is ready
-echo "Checking for ready sequencer pod with image SHA ${IMAGE_SHA}..."
+echo "Checking for ready sequencer pod with image SHA ${IMAGE_TAG}..."
 while : ; do
 # Get all pods with the matching purpose
 PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=sequencer -o json)
 
 # Check if any pods are running and have the correct image SHA
-READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_SHA}\")) | .metadata.name")
+READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
 
 if [[ -n "${READY_POD}" ]]; then
     echo "Ready pod found: ${READY_POD}"
     break
 else
-    echo "Sequencer with with an image ${IMAGE_SHA} is not ready yet. Waiting..."
+    echo "Sequencer with with an image ${IMAGE_TAG} is not ready yet. Waiting..."
     sleep 10
 fi
 done

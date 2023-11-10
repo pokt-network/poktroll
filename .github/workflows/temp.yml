@@ -46,7 +46,7 @@ jobs:
 
       - name: Run E2E test job
         env:
-          IMAGE_SHA: sha-${{ github.event.pull_request.head.sha || github.sha }}
+          IMAGE_TAG: sha-${{ github.event.pull_request.head.sha || github.sha }}
           NAMESPACE: devnet-issue-${{ github.event.number }}
           JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
         run: bash .github/workflows-helpers/run-e2e-test.sh
