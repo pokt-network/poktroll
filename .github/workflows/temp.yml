@@ -46,12 +46,10 @@ jobs:
 
       - name: Run E2E test job
         env:
-          GITHUB_ISSUE: ${{ github.event.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |          
-          NAMESPACE=devnet-issue-${GITHUB_ISSUE}
-          JOB_NAME=e2e-test-${COMMIT_SHA}
-
+          NAMESPACE: devnet-issue-${{ github.event.number }}
+          JOB_NAME: e2e-test-${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
           envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
 
           kubectl apply -f job.yaml
