@@ -251,6 +251,9 @@ func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) 
 
 // validateConfig validates the appGateServer configuration.
 func (app *appGateServer) validateConfig() error {
+	if app.signingInformation == nil {
+		return ErrAppGateMissingSigningInformation
+	}
 	if app.listeningEndpoint == nil {
 		return ErrAppGateMissingListeningEndpoint
 	}
