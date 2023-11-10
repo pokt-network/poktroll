@@ -67,6 +67,7 @@ func newRingFromPoints(points []ringtypes.Point) (*ring.Ring, error) {
 
 // getDelegatedPubKeysForAddress returns the ring used to sign a message for the given
 // application address, by querying the application module for it's delegated pubkeys
+// and converting them to points on the secp256k1 curve in order to create the ring.
 func (app *appGateServer) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
@@ -86,7 +87,7 @@ func (app *appGateServer) getDelegatedPubKeysForAddress(
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 	if len(res.Application.DelegateeGatewayAddresses) < 1 {
 		// add app address twice to make the ring size of mininmum 2
-		// TODO_TECHDEBT: We are adding the appAddress twice because a ring
+		// TODO_HACK: We are adding the appAddress twice because a ring
 		// signature requires AT LEAST two pubKeys. When the Application has
 		// not delegated to any gateways, we add the application's own address
 		// twice. This is a HACK and should be investigated as to what is the
