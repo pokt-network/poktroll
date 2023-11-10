@@ -39,9 +39,6 @@ func TestMap_Word_BytesToPalindrome(t *testing.T) {
 
 			// set up source bytes observable
 			bzObservable, bzPublishCh := channel.NewObservable[[]byte]()
-			bytesToPalindrome := func(wordBz []byte) (palindrome, bool) {
-				return newPalindrome(string(wordBz)), false
-			}
 
 			// map bytes observable to palindrome observable
 			palindromeObservable := channel.Map(ctx, bzObservable, bytesToPalindrome)
@@ -95,6 +92,10 @@ func newPalindrome(word string) palindrome {
 // IsValid returns true if the word actually is a palindrome.
 func (p *palindrome) IsValid() bool {
 	return p.forwards == (p.backwards)
+}
+
+func bytesToPalindrome(_ context.Context, wordBz []byte) (palindrome, bool) {
+	return newPalindrome(string(wordBz)), false
 }
 
 // reverseString reverses a string, character-by-character.

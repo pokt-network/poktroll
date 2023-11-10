@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	blockclient "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -33,7 +33,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient blockclient.BlockClient
+	blockClient client.BlockClient
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
@@ -43,16 +43,19 @@ type relayerSessionsManager struct {
 func NewRelayerSessions(
 	ctx context.Context,
 	storesDirectory string,
-	blockClient blockclient.BlockClient,
+	blockClient client.BlockClient,
 ) relayer.RelayerSessionsManager {
 	rs := &relayerSessionsManager{
 		sessionsTrees:   make(sessionsTreesMap),
 		storesDirectory: storesDirectory,
 		blockClient:     blockClient,
 	}
-	rs.sessionsToClaim, rs.sessionsToClaimPublisher = channel.NewObservable[relayer.SessionTree]()
 
-	go rs.goListenToCommittedBlocks(ctx)
+	rs.sessionsToClaim = channel.MapExpand[client.Block, relayer.SessionTree](
+		ctx,
+		blockClient.CommittedBlocksSequence(ctx),
+		rs.mapBlockToSessionsToClaim,
+	)
 
 	return rs
 }
@@ -92,26 +95,26 @@ func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.
 	return sessionTree, nil
 }
 
-// goListenToCommittedBlocks listens to committed blocks so that rs.sessionsToClaimPublisher
-// can notify when sessions are ready to be claimed.
-// It is intended to be called as a background goroutine.
-func (rs *relayerSessionsManager) goListenToCommittedBlocks(ctx context.Context) {
-	committedBlocks := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
-
-	for block := range committedBlocks {
-		// Check if there are sessions that need to enter the claim/proof phase
-		// as their end block height was the one before the last committed block.
-		// Iterate over the sessionsTrees map to get the ones that end at a block height
-		// lower than the current block height.
-		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-			if endBlockHeight < block.Height() {
-				// Iterate over the sessionsTrees that end at this block height (or less) and publish them.
-				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-					rs.sessionsToClaimPublisher <- sessionTree
-				}
+// mapBlockToSessionsToClaim maps a block to a list of sessions which can be
+// claimed as of that block.
+func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
+	_ context.Context,
+	block client.Block,
+) (sessionTrees []relayer.SessionTree, skip bool) {
+	// Check if there are sessions that need to enter the claim/proof phase
+	// as their end block height was the one before the last committed block.
+	// Iterate over the sessionsTrees map to get the ones that end at a block height
+	// lower than the current block height.
+	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+		if endBlockHeight < block.Height() {
+			// Iterate over the sessionsTrees that end at this block height (or
+			// less) and add them to the list of sessionTrees to be published.
+			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+				sessionTrees = append(sessionTrees, sessionTree)
 			}
 		}
 	}
+	return sessionTrees, false
 }
 
 // removeFromRelayerSessions removes the SessionTree from the relayerSessions.
