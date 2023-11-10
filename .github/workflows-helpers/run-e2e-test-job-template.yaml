@@ -29,7 +29,7 @@ spec:
         volumeMounts:
         - mountPath: /root/.pocket/keyring-test/
           name: keys-volume
-        - mountPath: /root/.pocket/config-src/
+        - mountPath: /root/.pocket/config/
           name: configs-volume
       restartPolicy: Never
       volumes:
