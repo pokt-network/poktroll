@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 )
 
@@ -81,7 +82,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Set up relay pipeline.
 	servedRelaysObs := relayerProxy.ServedRelays()
 	minedRelaysObs := miner.MinedRelays(ctx, servedRelaysObs)
-	relayerSessionsManager.IncludeRelays(minedRelaysObs)
+	relayerSessionsManager.InsertRelays(minedRelaysObs)
 
 	// Handle interrupts in a goroutine.
 	go func() {
@@ -114,7 +115,10 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func setupRelayerDependencies(ctx context.Context, cmd *cobra.Command) (depinject.Config, error) {
+func setupRelayerDependencies(
+	ctx context.Context,
+	cmd *cobra.Command,
+) (deps depinject.Config, err error) {
 	// Set --node flag to the --sequencer-node for the client context
 	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
 
@@ -123,8 +127,13 @@ func setupRelayerDependencies(ctx context.Context, cmd *cobra.Command) (depinjec
 		return nil, err
 	}
 
+	deps, err = supplyMiner(deps)
+	if err != nil {
+		return nil, err
+	}
+
 	// Construct base dependency injection config.
-	deps := supplyEventsQueryClient(nodeURL)
+	deps = supplyEventsQueryClient(deps, nodeURL)
 	deps, err = supplyBlockClient(ctx, deps, nodeURL)
 	if err != nil {
 		return nil, err
@@ -148,9 +157,21 @@ func setupRelayerDependencies(ctx context.Context, cmd *cobra.Command) (depinjec
 	return deps, nil
 }
 
-func supplyEventsQueryClient(nodeURL string) depinject.Config {
+func supplyMiner(
+	deps depinject.Config,
+) (depinject.Config, error) {
+	mnr, err := miner.NewMiner()
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(mnr)), nil
+}
+
+func supplyEventsQueryClient(deps depinject.Config, nodeURL string) depinject.Config {
 	eventsQueryClient := eventsquery.NewEventsQueryClient(nodeURL)
-	return depinject.Supply(eventsQueryClient)
+
+	return depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 }
 
 func supplyBlockClient(

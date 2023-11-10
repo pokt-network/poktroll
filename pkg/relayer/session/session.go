@@ -79,10 +79,11 @@ func NewRelayerSessions(
 	return rs, nil
 }
 
-// Start iterates over the session trees at the end of each, respective, session.
+// Start maps over the session trees at the end of each, respective, session.
 // The session trees are piped through a series of map operations which progress
 // them through the claim/proof lifecycle, broadcasting transactions to  the
 // network as necessary.
+// It IS NOT blocking as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attampting to add the relay to
