@@ -2,6 +2,7 @@
 
 POKTROLLD_HOME := ./localnet/poktrolld
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+RELAYER_NODE = http://anvil:8547 # TODO_IN_THIS_COMMIT: UPDATE THIS URL
 POCKET_ADDR_PREFIX = pokt
 
 ####################
@@ -137,6 +138,7 @@ go_imports: check_go_version ## Run goimports on all go files
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
+	RELAYER_NODE=$(RELAYER_NODE) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
 .PHONY: go_test
