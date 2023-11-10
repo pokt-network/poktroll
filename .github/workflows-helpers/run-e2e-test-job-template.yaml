@@ -11,7 +11,7 @@ spec:
       - name: e2e-tests
         image: ghcr.io/pokt-network/poktrolld:sha-${COMMIT_SHA}
         command: ["/bin/sh"]
-        args: ["-c", "go test -v ./e2e/tests/... -tags=e2e"]
+        args: ["-c", "make gateway_list && make app_list && make supplier_list && make ignite_acc_list && go test -v ./e2e/tests/... -tags=e2e"]
         env:
         - name: AUTH_TOKEN
           valueFrom:

@@ -9,10 +9,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-env:
-  GKE_CLUSTER: protocol-us-central1
-  GKE_ZONE: us-central1
-
 jobs:
   build-push-container:
     runs-on: ubuntu-latest
@@ -72,6 +68,7 @@ jobs:
         if: (github.ref == 'refs/heads/main') || (contains(github.event.pull_request.labels.*.name, 'push-image'))
         run: |
           mkdir -p ./bin # Make sure the bin directory exists
+          cp $(which ignite) ./bin # Copy ignite binary to the repo's bin directory
           cp $(go env GOPATH)/bin/poktrolld ./bin # Copy the binary to the repo's bin directory
 
       - name: Build and push Docker image
