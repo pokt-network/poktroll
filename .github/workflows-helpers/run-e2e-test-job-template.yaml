@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: e2e-test-${COMMIT_SHA}
-  namespace: devnet-issue-${GITHUB_ISSUE}
+  name: ${JOB_NAME}
+  namespace: ${NAMESPACE}
 spec:
   ttlSecondsAfterFinished: 60
   template:
@@ -19,7 +19,7 @@ spec:
               key: auth_token
               name: celestia-secret
         - name: POCKET_NODE
-          value: tcp://devnet-issue-${GITHUB_ISSUE}-sequencer:36657
+          value: tcp://${NAMESPACE}-sequencer:36657
         - name: POKTROLLD_HOME
           value: /root/.pocket
         - name: CELESTIA_HOSTNAME

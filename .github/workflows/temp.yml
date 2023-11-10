@@ -43,30 +43,30 @@ jobs:
           cluster_name: ${{ env.GKE_CLUSTER }}
           location: ${{ env.GKE_ZONE }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
-      
-      - run: kubectl get jobs
 
-      - name: Template Kubernetes Job Manifest
+      - name: Run E2E test job
         env:
           GITHUB_ISSUE: ${{ github.event.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
-
-          kubectl apply -f job.yaml
-
+        run: |          
           NAMESPACE=devnet-issue-${GITHUB_ISSUE}
           JOB_NAME=e2e-test-${COMMIT_SHA}
 
-          # Wait for the pod to be created
-          while [[ -z $(kubectl get pods -n ${NAMESPACE} --selector=job-name=${JOB_NAME} -o jsonpath='{.items[0].metadata.name}') ]]; do
-            echo "Waiting for the pod to be created..."
+          envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
+
+          kubectl apply -f job.yaml
+          
+          # Wait for the pod to be created and be in a running state
+          echo "Waiting for the pod to be in the running state..."
+          while : ; do
+            POD_NAME=$(kubectl get pods -n ${NAMESPACE} --selector=job-name=${JOB_NAME} -o jsonpath='{.items[0].metadata.name}')
+            POD_STATUS=$(kubectl get pod ${POD_NAME} -n ${NAMESPACE} -o jsonpath='{.status.phase}')
+            [[ "${POD_STATUS}" == "Running" ]] && break
+            echo "Current pod status: ${POD_STATUS}"
             sleep 5
           done
 
-          # Get the pod name
-          POD_NAME=$(kubectl get pods -n ${NAMESPACE} --selector=job-name=${JOB_NAME} -o jsonpath='{.items[0].metadata.name}')
-
+          echo "Pod is running. Streaming logs..."
           # Stream the pod logs
           kubectl logs -f ${POD_NAME} -n ${NAMESPACE}
 
