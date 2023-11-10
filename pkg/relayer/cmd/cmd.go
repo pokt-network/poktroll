@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"os/signal"
@@ -95,10 +96,12 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}()
 
 	// Set up the session (proof/claim) lifecycle pipeline.
+	log.Println("INFO: Starting relayer sessions manager...")
 	relayerSessionsManager.Start(ctx)
 
 	// Start the flow of relays by starting relayer proxy.
 	// This is a blocking call as it waits for the waitgroup to be done.
+	log.Println("INFO: Starting relayer proxy...")
 	if err := relayerProxy.Start(ctx); err != nil {
 		return err
 	}
