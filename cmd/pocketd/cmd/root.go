@@ -43,6 +43,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	appparams "github.com/pokt-network/poktroll/app/params"
+	appgateservercmd "github.com/pokt-network/poktroll/pkg/appgateserver/cmd"
 )
 
 // NewRootCmd creates a new root command for a Cosmos SDK application
@@ -147,6 +148,11 @@ func initRootCmd(
 		queryCommand(),
 		txCommand(),
 		keys.Commands(app.DefaultNodeHome),
+	)
+
+	// add the appgate server command
+	rootCmd.AddCommand(
+		appgateservercmd.AppGateServerCmd(),
 	)
 }
 
