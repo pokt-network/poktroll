@@ -36,7 +36,7 @@ func (rs *relayerSessionsManager) submitProofs(
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// proof has been submitted or an error has been encountered, respectively.
-	eitherProvenSessions := channel.Map(
+	eitherProvenSessionsObs := channel.Map(
 		ctx, sessionsWithOpenProofWindow,
 		rs.newMapProveSessionFn(failedSubmitProveSessionsPublishCh),
 	)
@@ -64,6 +64,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofHeight(
 // earliest block height, allowed by the protocol, at which a proof can be submitted
 // for a session which was claimed at createClaimHeight. It is calculated relative
 // to createClaimHeight using on-chain governance parameters and randomized input.
+// It IS A BLOCKING function.
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
@@ -73,7 +74,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash
-	log.Printf("waiting for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
+	log.Printf("waiting and blocking for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
 	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
 
 	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(submitProofWindowStartBlock)
@@ -84,12 +85,15 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 // session. Any session which encouters errors while submitting a proof is sent
 // on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionFn(
-	failedSubmitProofSessions chan<- relayer.SessionTree,
+	failedSubmitProofSessionsCh chan<- relayer.SessionTree,
 ) channel.MapFn[relayer.SessionTree, either.SessionTree] {
 	return func(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		// TODO_BLOCKER: The block that'll be used as a source of entropy for which 
+		// branch(es) to prove should be deterministic and use on-chain governance params
+		// rather than latest.
 		latestBlock := rs.blockClient.LatestBlock(ctx)
 		proof, err := session.ProveClosest(latestBlock.Hash())
 		if err != nil {

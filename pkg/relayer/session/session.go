@@ -87,11 +87,11 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attampting to add the relay to
 	// the session tree.
-	miningErrors := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
+	miningErrorsObs := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrors)
 
 	// Start claim/proof pipeline.
-	claimedSessionsObservable := rs.createClaims(ctx)
+	claimedSessionsObs := rs.createClaims(ctx)
 	rs.submitProofs(ctx, claimedSessionsObservable)
 }
 
