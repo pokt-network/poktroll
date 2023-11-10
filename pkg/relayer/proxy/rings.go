@@ -41,8 +41,9 @@ func newRingFromPoints(points []ringtypes.Point) (*ring.Ring, error) {
 	return ring.NewFixedKeyRingFromPublicKeys(ring_secp256k1.NewCurve(), points)
 }
 
-// getDelegatedPubKeysForAddress returns the ring used to sign a message for the given application
-// address, by querying the portal module for it's delegated pubkeys
+// getDelegatedPubKeysForAddress returns the ring used to sign a message for the given
+// application address, by querying the application module for it's delegated pubkeys
+// and converting them to points on the secp256k1 curve in order to create the ring.
 func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
@@ -86,9 +87,9 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	return points, nil
 }
 
-// addressesToPoints converts a slice of addresses to a slice of points on the secp256k1 curve
-// it does so by querying the account module for the public key for each address and converting
-// them to the corresponding points on the secp256k1 curve
+// addressesToPoints converts a slice of addresses to a slice of points on the
+// secp256k1 curve, by querying the account module for the public key for each
+// address and converting them to the corresponding points on the secp256k1 curve
 func (rp *relayerProxy) addressesToPoints(ctx context.Context, addresses []string) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
