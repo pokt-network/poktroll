@@ -10,7 +10,7 @@
 //     is submitted on-chain.
 //
 // This is largely accomplished by pipelining observables of relays and sessions
-// Through a series of map operations.
+// through a series of map operations.
 //
 // TODO_TECHDEBT: add architecture diagrams covering observable flows throughout
 // the miner package.
@@ -80,24 +80,20 @@ func NewMiner(
 	return mnr, nil
 }
 
-// TODO_IN_THIS_COMMIT: revisit comment...
-// MinedRelays kicks off relay mining by mapping the servedRelays observable through
-// a pipeline which hashes the relay, checks if it's above the mining difficulty,
-// adds it to the session tree, and then maps any errors to a new observable.
-// It also starts the claim and proof pipelines which are subsequently driven by
-// mapping over RelayerSessionsManager's SessionsToClaim return observable.
+// MinedRelays maps servedRelaysObs through a pipeline which hashes the relay,
+// checks if it's above the mining difficulty, adds it to the session tree if so.
 // It does not block as map operations run in their own goroutines.
 func (mnr *miner) MinedRelays(
 	ctx context.Context,
-	servedRelays observable.Observable[*servicetypes.Relay],
+	servedRelaysObs observable.Observable[*servicetypes.Relay],
 ) observable.Observable[*relayer.MinedRelay] {
-	// Map servedRelays observable to a new observable of an either type,
-	// populated with the minedRelay or an error, which is notified after the
-	// relay has been mined or an error has been encountered, respectively.
-	eitherMinedRelays := channel.Map(ctx, servedRelays, mnr.mapMineRelay)
-	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelays))
+	// Map servedRelaysObs to a new observable of an either type, populated with
+	// the minedRelay or an error, which is notified after the relay has been mined
+	// or an error has been encountered, respectively.
+	eitherMinedRelaysObs := channel.Map(ctx, servedRelaysObs, mnr.mapMineRelay)
+	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelaysObs))
 
-	return filter.EitherSuccess(ctx, eitherMinedRelays)
+	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
 }
 
 // setDefaults ensures that the miner has been configured with a hasher and uses
@@ -110,7 +106,7 @@ func (mnr *miner) setDefaults() error {
 }
 
 // mapMineRelay is intended to be used as a MapFn. It hashes the relay and compares
-// its difficulty to the minimum threshold. If the relay difficulty is sifficient,
+// its difficulty to the minimum threshold. If the relay difficulty is sufficient,
 // it returns an either populated with the MinedRelay value. Otherwise, it skips
 // the relay. If it encounters an error, it returns an either populated with the
 // error.
@@ -120,10 +116,13 @@ func (mnr *miner) mapMineRelay(
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
 	relayBz, err := relay.Marshal()
 	if err != nil {
-		return either.Error[*relayer.MinedRelay](err), true
+		return either.Error[*relayer.MinedRelay](err), false
 	}
 
-	// Is it correct that we need to hash the key while smst.Update() could do it
+	// TODO_BLOCKER: Centralize the logic of hashing a relay. It should be live
+	// alongside signing & verification.
+	//
+	// We need to hash the key; it would be nice if smst.Update() could do it
 	// since smst has a reference to the hasher
 	mnr.hasher.Write(relayBz)
 	relayHash := mnr.hasher.Sum(nil)

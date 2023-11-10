@@ -61,10 +61,10 @@ func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimHeight(
 	return session, false
 }
 
-// waitForEarliestCreateClaimHeight calculates and waits for the earliest block
-// height, allowed by the protocol, at which a claim can be created for a session
-// with the given sessionEndHeight. It is calculated relative to sessionEndHeight
-// using on-chain governance parameters and randomized input.
+// waitForEarliestCreateClaimHeight calculates and waits for (blocking until) the
+// earliest block height, allowed by the protocol, at which a claim can be created
+// for a session with the given sessionEndHeight. It is calculated relative to
+// sessionEndHeight using on-chain governance parameters and randomized input.
 func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
@@ -93,7 +93,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 // session. Any session which encouters an error while creating a claim is sent
 // on the failedCreateClaimSessions channel.
 func (rs *relayerSessionsManager) newMapClaimSessionFn(
-	failedCreateClaimSessions chan<- relayer.SessionTree,
+	failedCreateClaimSessionsPublishCh chan<- relayer.SessionTree,
 ) channel.MapFn[relayer.SessionTree, either.SessionTree] {
 	return func(
 		ctx context.Context,
@@ -107,7 +107,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 
 		sessionHeader := session.GetSessionHeader()
 		if err := rs.supplierClient.CreateClaim(ctx, *sessionHeader, claimRoot); err != nil {
-			failedCreateClaimSessions <- session
+			failedCreateClaimSessionsPublishCh <- session
 			return either.Error[relayer.SessionTree](err), false
 		}
 

@@ -59,10 +59,10 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofHeight(
 	return session, false
 }
 
-// waitForEarliestSubmitProofHeight calculates and waits for the earliest block
-// height, allowed by the protocol, at which a proof can be submitted for a session
-// which was claimed at createClaimHeight. It is calculated relative to
-// createClaimHeight using on-chain governance parameters and randomized input.
+// waitForEarliestSubmitProofHeight calculates and waits for (blocking until) the
+// earliest block height, allowed by the protocol, at which a proof can be submitted
+// for a session which was claimed at createClaimHeight. It is calculated relative
+// to createClaimHeight using on-chain governance parameters and randomized input.
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
