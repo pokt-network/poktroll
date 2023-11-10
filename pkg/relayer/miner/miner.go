@@ -59,9 +59,7 @@ func NewMiner(
 		opt(mnr)
 	}
 
-	if err := mnr.setDefaults(); err != nil {
-		return nil, err
-	}
+	mnr.setDefaults()
 
 	return mnr, nil
 }
@@ -84,11 +82,10 @@ func (mnr *miner) MinedRelays(
 
 // setDefaults ensures that the miner has been configured with a hasherConstructor and uses
 // the default hasherConstructor if not.
-func (mnr *miner) setDefaults() error {
+func (mnr *miner) setDefaults() {
 	if mnr.hasherConstructor == nil {
 		mnr.hasherConstructor = defaultHasherConstructor
 	}
-	return nil
 }
 
 // mapMineRelay is intended to be used as a MapFn. It hashes the relay and compares
