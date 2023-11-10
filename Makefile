@@ -445,17 +445,21 @@ acc_balance_total_supply: ## Query the total supply of the network
 ### Claims ###
 ##############
 
-.PHONY: claim_list
+.PHONY: claims_list
 claim_list: ## List all the claims
 	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)
 
-.PHONY: claim_list_address
-claim_list_address: ## List all the claims for a specific address (make claim_list_address ADDR=pokt...)
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims $(ADDR) --node $(POCKET_NODE)
+.PHONY: claims_list_address
+claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims address $(ADDR) --node $(POCKET_NODE)
 
 .PHONY: claim_list_height
-claim_list_height: ## List all the claims for a specific height (make claim_list_height HEIGHT=...)
-	poktrolld --home=$(POCKETD_HOME) q claim list-claims --height $(HEIGHT) --node $(POCKET_NODE)
+claim_list_height: ## List all the claims ending at a specific height (specified via HEIGHT variable)
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims height $(HEIGHT) --node $(POCKET_NODE)
+
+.PHONY: claim_list_session
+claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims session $(SESSION) --node $(POCKET_NODE)
 
 ######################
 ### Ignite Helpers ###

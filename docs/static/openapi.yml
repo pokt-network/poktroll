@@ -47446,6 +47446,10 @@ paths:
                   session_id:
                     type: string
                     title: session id from the SessionHeader
+                  session_end_block_height:
+                    type: string
+                    format: uint64
+                    title: session end block height from the SessionHeader
                   root_hash:
                     type: string
                     format: byte
@@ -47499,6 +47503,10 @@ paths:
                     session_id:
                       type: string
                       title: session id from the SessionHeader
+                    session_end_block_height:
+                      type: string
+                      format: uint64
+                      title: session end block height from the SessionHeader
                     root_hash:
                       type: string
                       format: byte
@@ -78036,6 +78044,10 @@ definitions:
       session_id:
         type: string
         title: session id from the SessionHeader
+      session_end_block_height:
+        type: string
+        format: uint64
+        title: session end block height from the SessionHeader
       root_hash:
         type: string
         format: byte
@@ -78065,6 +78077,10 @@ definitions:
             session_id:
               type: string
               title: session id from the SessionHeader
+            session_end_block_height:
+              type: string
+              format: uint64
+              title: session end block height from the SessionHeader
             root_hash:
               type: string
               format: byte
@@ -78249,6 +78265,10 @@ definitions:
           session_id:
             type: string
             title: session id from the SessionHeader
+          session_end_block_height:
+            type: string
+            format: uint64
+            title: session end block height from the SessionHeader
           root_hash:
             type: string
             format: byte

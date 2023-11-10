@@ -32,7 +32,6 @@ localnet/*/config/*.json
 !localnet/poktrolld/config/client.toml
 !localnet/poktrolld/config/config.toml
 
-
 # Macos
 .DS_Store
 **/.DS_Store
@@ -65,8 +64,5 @@ release
 # Only keep one go module in our codebase
 go.work.sum
 
-# Avoid accidently commiting gomock artifacts
+# Avoid accidentally committing gomock artifacts
 **/gomock_reflect_*
-
-
-gomock_reflect

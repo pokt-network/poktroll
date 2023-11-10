@@ -15,6 +15,14 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 		return nil, err
 	}
 
+	claim := types.Claim{
+		SupplierAddress:       msg.SupplierAddress,
+		SessionId:             msg.SessionHeader.SessionId,
+		SessionEndBlockHeight: uint64(msg.SessionHeader.SessionEndBlockHeight),
+		RootHash:              msg.RootHash,
+	}
+	k.Keeper.InsertClaim(ctx, claim)
+
 	/*
 		INCOMPLETE: Handling the message
 

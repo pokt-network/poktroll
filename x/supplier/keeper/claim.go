@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"encoding/binary"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -22,29 +24,40 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 	logger.Info("inserted claim with primaryKey %s", primaryKey)
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
-	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimAddressPrefix))
+	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
 	addressStoreIndex.Set(addressKey, primaryKey)
 
-	// TODO: Index by sessionId
-	// TODO: Index by sessionEndHeight
+	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
+	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
+	sessionHeightStoreIndex.Set(heightKey, primaryKey)
 }
 
 // RemoveClaim removes a claim from the store
 func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	parentStore := ctx.KVStore(k.storeKey)
+	store := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 
+	// Check if the claim exists
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
 	claim, foundClaim := k.getClaimByPrimaryKey(ctx, primaryKey)
 	if !foundClaim {
 		k.Logger(ctx).Error("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
 	}
 
-	addressStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimAddressPrefix))
-	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
+	// Prepare the indices for deletion
+	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
+	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 
-	addressStore.Delete(addressKey)
+	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
+	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
+
+	// Delete all the entries
 	store.Delete(primaryKey)
+	addressStoreIndex.Delete(addressKey)
+	sessionHeightStoreIndex.Delete(heightKey)
+
 }
 
 // GetClaim returns a Claim given a SessionId & SupplierAddr
@@ -68,11 +81,32 @@ func (k Keeper) GetAllClaims(ctx sdk.Context) (claims []types.Claim) {
 	return
 }
 
-// GetClaimsByAddress returns all claims for a given address
+// GetClaimsByAddress returns all claims for a given supplier address
 func (k Keeper) GetClaimsByAddress(ctx sdk.Context, address sdk.AccAddress) (claims []types.Claim) {
-	addressStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimAddressPrefix))
+	addressStoreIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 
-	iterator := sdk.KVStorePrefixIterator(addressStore, []byte(address))
+	iterator := sdk.KVStorePrefixIterator(addressStoreIndex, []byte(address))
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		primaryKey := iterator.Value()
+		claim, claimFound := k.getClaimByPrimaryKey(ctx, primaryKey)
+		if claimFound {
+			claims = append(claims, claim)
+		}
+	}
+
+	return claims
+}
+
+// GetClaimsByAddress returns all claims whose session ended at the given block height
+func (k Keeper) GetClaimsByHeight(ctx sdk.Context, height uint64) (claims []types.Claim) {
+	sessionHeightStoreIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+
+	heightBz := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBz, height)
+
+	iterator := sdk.KVStorePrefixIterator(sessionHeightStoreIndex, heightBz)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {

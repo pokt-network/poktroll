@@ -8,5 +8,6 @@ import "cosmos_proto/cosmos.proto";
 message Claim {
   string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // the address of the supplier that submitted this claims
   string session_id = 2; // session id from the SessionHeader
-  bytes  root_hash = 3; // smt.SMST#Root()
+  uint64 session_end_block_height = 3; // session end block height from the SessionHeader
+  bytes root_hash = 4; // smt.SMST#Root()
 }
