@@ -6,9 +6,11 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -20,6 +22,8 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
+	relaysObservable observable.Observable[*relayer.MinedRelay]
+
 	// sessionsToClaim notifies about sessions that are ready to be claimed.
 	sessionsToClaim observable.Observable[relayer.SessionTree]
 
@@ -32,6 +36,9 @@ type relayerSessionsManager struct {
 
 	// blockClient is used to get the notifications of committed blocks.
 	blockClient client.BlockClient
+
+	// supplierClient is used to create claims and submit proofs for sessions.
+	supplierClient client.SupplierClient
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
@@ -50,6 +57,7 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
+		&rs.supplierClient,
 	); err != nil {
 		return nil, err
 	}
@@ -71,14 +79,40 @@ func NewRelayerSessions(
 	return rs, nil
 }
 
-// SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessionsManager) SessionsToClaim() observable.Observable[relayer.SessionTree] {
-	return rs.sessionsToClaim
+// Start iterates over the session trees at the end of each, respective, session.
+// The session trees are piped through a series of map operations which progress
+// them through the claim/proof lifecycle, broadcasting transactions to  the
+// network as necessary.
+func (rs *relayerSessionsManager) Start(ctx context.Context) {
+	// Map eitherMinedRelays to a new observable of an error type which is
+	// notified if an error was encountered while attampting to add the relay to
+	// the session tree.
+	miningErrors := channel.Map(ctx, rs.relaysObservable, rs.mapAddRelayToSessionTree)
+	logging.LogErrors(ctx, miningErrors)
+
+	// Start claim/proof pipeline.
+	claimedSessionsObservable := rs.createClaims(ctx)
+	rs.submitProofs(ctx, claimedSessionsObservable)
 }
 
-// EnsureSessionTree returns the SessionTree for a given session.
+// Stop unsubscribes all observables from the RelaysToInclude observable which
+// will close downstream observables as they drain.
+//
+// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
+// and/or ensure that the state at each pipeline stage is persisted to disk
+// and exit as early as possible.
+func (rs *relayerSessionsManager) Stop() {
+	rs.relaysObservable.UnsubscribeAll()
+}
+
+// SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
+func (rs *relayerSessionsManager) RelaysToInclude(relays observable.Observable[*relayer.MinedRelay]) {
+	rs.relaysObservable = relays
+}
+
+// ensureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
+func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
@@ -156,4 +190,43 @@ func (rp *relayerSessionsManager) validateConfig() error {
 	}
 
 	return nil
+}
+
+// waitForBlock blocks until the block at the given height (or greater) is
+// observed as having been committed.
+func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
+	subscription := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
+	defer subscription.Unsubscribe()
+
+	for block := range subscription.Ch() {
+		if block.Height() >= height {
+			return block
+		}
+	}
+
+	return nil
+}
+
+// mapAddRelayToSessionTree is intended to be used as a MapFn. It adds the relay
+// to the session tree. If it encounters an error, it returns the error. Otherwise,
+// it skips output (only outputs errors).
+func (rs *relayerSessionsManager) mapAddRelayToSessionTree(
+	_ context.Context,
+	relay *relayer.MinedRelay,
+) (_ error, skip bool) {
+	// ensure the session tree exists for this relay
+	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
+	smst, err := rs.ensureSessionTree(sessionHeader)
+	if err != nil {
+		log.Printf("failed to ensure session tree: %s\n", err)
+		return err, false
+	}
+
+	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
+		log.Printf("failed to update smt: %s\n", err)
+		return err, false
+	}
+
+	// Skip because this map function only outputs errors.
+	return nil, true
 }

@@ -23,10 +23,10 @@ import (
 //     is "requested" (through on-chain mechanisms) and the necessary proof
 //     is submitted on-chain.
 type Miner interface {
-	MineRelays(
+	MinedRelays(
 		ctx context.Context,
 		servedRelays observable.Observable[*servicetypes.Relay],
-	)
+	) observable.Observable[*MinedRelay]
 }
 
 type MinerOption func(Miner)
@@ -84,14 +84,23 @@ type RelayServer interface {
 // ready to be claimed, and handles the creation and retrieval of SMSTs for a given session.
 // It also handles the creation and retrieval of SMSTs for a given session.
 type RelayerSessionsManager interface {
-	// SessionsToClaim returns an observable that notifies of sessions ready to be claimed.
-	SessionsToClaim() observable.Observable[SessionTree]
+	// RelaysToInclude receives an observable of Relays that should be included
+	// in their respective session's SMST (tree).
+	RelaysToInclude(relays observable.Observable[*MinedRelay])
 
-	// EnsureSessionTree returns the SMST (Sparse Merkle State Tree) for a given session header.
-	// It is used to retrieve the SMST and update it when a Relay has been successfully served.
-	// If the session is seen for the first time, it creates a new SMST for it before returning it.
-	// An error is returned if the corresponding KVStore for SMST fails to be created.
-	EnsureSessionTree(sessionHeader *sessiontypes.SessionHeader) (SessionTree, error)
+	// Start iterates over the session trees at the end of each, respective, session.
+	// The session trees are piped through a series of map operations which progress
+	// them through the claim/proof lifecycle, broadcasting transactions to  the
+	// network as necessary.
+	Start(ctx context.Context)
+
+	// Stop unsubscribes all observables from the RelaysToInclude observable which
+	// will close downstream observables as they drain.
+	//
+	// TODO_TECHDEBT: Either add a mechanism to wait for draining to complete
+	// and/or ensure that the state at each pipeline stage is persisted to disk
+	// and exit as early as possible.
+	Stop()
 }
 
 type RelayerSessionsManagerOption func(RelayerSessionsManager)
