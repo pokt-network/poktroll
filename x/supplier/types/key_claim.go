@@ -25,7 +25,7 @@ const (
 	ClaimSessionIdPrefix = "Claim/sessionId/"
 )
 
-// ClaimPrimaryKey returns the primary store key to retrieve a Claim
+// ClaimPrimaryKey returns the primary store key to retrieve a Claim by creating a composite key of the sessionId and supplierAddr
 func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
 	var key []byte
 
@@ -40,15 +40,12 @@ func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
 }
 
 // ClaimSupplierAddressKey returns the address key to iterate through claims given a supplier Address
-func ClaimSupplierAddressKey(supplierAddr string, claimNum uint64) []byte {
+func ClaimSupplierAddressKey(supplierAddr string, primaryKey []byte) []byte {
 	var key []byte
 
-	numBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(numBz, claimNum)
-
 	key = append(key, []byte(supplierAddr)...)
-	key = append(key, []byte("/num/")...)
-	key = append(key, numBz...)
+	key = append(key, []byte("/")...)
+	key = append(key, primaryKey...)
 	key = append(key, []byte("/")...)
 
 	return key

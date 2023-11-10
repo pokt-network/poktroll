@@ -13,27 +13,25 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func CmdListClaim() *cobra.Command {
+func CmdListClaims() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-claims",
 		Short: "list all claims",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
 			pageReq, err := client.ReadPageRequest(cmd.Flags())
 			if err != nil {
 				return err
 			}
-
-			queryClient := types.NewQueryClient(clientCtx)
-
 			params := &types.QueryAllClaimsRequest{
 				Pagination: pageReq,
 			}
+
+			clientCtx, err := client.GetClientQueryContext(cmd)
+			if err != nil {
+				return err
+			}
+			queryClient := types.NewQueryClient(clientCtx)
 
 			res, err := queryClient.AllClaims(cmd.Context(), params)
 			if err != nil {
@@ -53,9 +51,20 @@ func CmdListClaim() *cobra.Command {
 func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show-claim <session_id> <supplier_addr>",
-		Short: "shows a claim",
+		Short: "shows a specific claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			sessionId := args[0]
+			supplierAddr := args[1]
+
+			getClaimRequest := &types.QueryGetClaimRequest{
+				SessionId:       sessionId,
+				SupplierAddress: supplierAddr,
+			}
+			if err := getClaimRequest.ValidateBasic(); err != nil {
+				return err
+			}
+
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
 				return err
@@ -63,13 +72,7 @@ func CmdShowClaim() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			argIndex := args[0]
-
-			params := &types.QueryGetClaimRequest{
-				Index: argIndex,
-			}
-
-			res, err := queryClient.Claim(cmd.Context(), params)
+			res, err := queryClient.Claim(cmd.Context(), getClaimRequest)
 			if err != nil {
 				return err
 			}

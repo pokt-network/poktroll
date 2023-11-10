@@ -62,4 +62,11 @@ localnet_config.yaml
 # Relase artifacts produced by `ignite chain build --release`
 release
 
+# Only keep one go module in our codebase
 go.work.sum
+
+# Avoid accidently commiting gomock artifacts
+**/gomock_reflect_*
+
+
+gomock_reflect

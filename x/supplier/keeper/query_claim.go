@@ -48,7 +48,8 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 
 	val, found := k.GetClaim(
 		ctx,
-		req.Index
+		req.SessionId,
+		req.SupplierAddress,
 	)
 	if !found {
 		return nil, status.Error(codes.NotFound, "not found")

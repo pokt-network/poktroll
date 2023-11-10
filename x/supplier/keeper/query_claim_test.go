@@ -1,7 +1,6 @@
 package keeper_test
 
 import (
-	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,43 +11,71 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestClaimQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNClaims(keeper, ctx, 2)
+	claims := createNClaims(keeper, ctx, 2)
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetClaimRequest
+		desc string
+
+		request *types.QueryGetClaimRequest
+
 		response *types.QueryGetClaimResponse
 		err      error
 	}{
 		{
-			desc: "First",
+			desc: "First Claim",
+
 			request: &types.QueryGetClaimRequest{
-				Index: msgs[0].Index,
+				SessionId:       claims[0].SessionId,
+				SupplierAddress: claims[0].SupplierAddress,
 			},
-			response: &types.QueryGetClaimResponse{Claim: msgs[0]},
+
+			response: &types.QueryGetClaimResponse{Claim: claims[0]},
 		},
 		{
-			desc: "Second",
+			desc: "Second Claim",
+
 			request: &types.QueryGetClaimRequest{
-				Index: msgs[1].Index,
+				SessionId:       claims[1].SessionId,
+				SupplierAddress: claims[1].SupplierAddress,
 			},
-			response: &types.QueryGetClaimResponse{Claim: msgs[1]},
+
+			response: &types.QueryGetClaimResponse{Claim: claims[1]},
 		},
 		{
-			desc: "KeyNotFound",
+			desc: "Claim Not Found - Random SessionId",
+
 			request: &types.QueryGetClaimRequest{
-				Index: strconv.Itoa(100000),
+				SessionId:       "not a real session id",
+				SupplierAddress: claims[0].SupplierAddress,
 			},
+
 			err: status.Error(codes.NotFound, "not found"),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc: "Claim Not Found - Random Supplier Address",
+
+			request: &types.QueryGetClaimRequest{
+				SessionId:       claims[0].SessionId,
+				SupplierAddress: sample.AccAddress(),
+			},
+
+			err: status.Error(codes.NotFound, "not found"),
+		},
+		{
+			desc: "InvalidRequest - Missing SessionId",
+
+			err: status.Error(codes.InvalidArgument, "invalid request"),
+		},
+		{
+			desc: "InvalidRequest - Missing SessionId",
+
+			err: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
 	for _, tc := range tests {

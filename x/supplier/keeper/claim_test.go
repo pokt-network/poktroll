@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -21,7 +22,8 @@ func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim 
 	claims := make([]types.Claim, n)
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()
-
+		claims[i].SessionId = fmt.Sprintf("session-%d", i)
+		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
 		keeper.InsertClaim(ctx, claims[i])
 	}
 	return claims
@@ -32,7 +34,8 @@ func TestClaimGet(t *testing.T) {
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		rst, found := keeper.GetClaim(ctx,
-			claim.Index,
+			claim.SessionId,
+			claim.SupplierAddress,
 		)
 		require.True(t, found)
 		require.Equal(t,
