@@ -44,6 +44,35 @@ jobs:
           location: ${{ env.GKE_ZONE }}
           project_id: ${{ secrets.GKE_PROTOCOL_PROJECT }}
 
+      - name: Ensure Sequencer Pod is Ready
+        env:
+          NAMESPACE: devnet-issue-${{ github.event.number }}
+          IMAGE_SHA: sha-${{ github.event.pull_request.head.sha || github.sha }}
+          PURPOSE_LABEL: sequencer
+        run: |
+          # Check if the pod with the matching image SHA and purpose is ready
+          echo "Checking for ready sequencer pod with image SHA ${IMAGE_SHA}..."
+          while : ; do
+            # Get all pods with the matching purpose and filter by image SHA
+            PODS=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=${PURPOSE_LABEL} -o jsonpath="{.items[?(@.status.phase=='Running')]}")
+            READY_POD=""
+            for pod in $(echo "${PODS}" | jq -r '.[].metadata.name'); do
+              POD_IMAGE=$(kubectl get pod ${pod} -n ${NAMESPACE} -o jsonpath="{.spec.containers[0].image}")
+              if [[ "${POD_IMAGE}" == *"${IMAGE_SHA}"* ]]; then
+                READY_POD=${pod}
+                break
+              fi
+            done
+
+            if [[ -n "${READY_POD}" ]]; then
+              echo "Ready pod found: ${READY_POD}"
+              break
+            else
+              echo "Sequencer with with an image ${IMAGE_SHA} is not ready yet. Waiting..."
+              sleep 10
+            fi
+          done
+
       - name: Run E2E test job
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
