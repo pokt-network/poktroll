@@ -22,7 +22,7 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
-	relaysObservable observable.Observable[*relayer.MinedRelay]
+	relayObs observable.Observable[*relayer.MinedRelay]
 
 	// sessionsToClaim notifies about sessions that are ready to be claimed.
 	sessionsToClaim observable.Observable[relayer.SessionTree]
@@ -87,7 +87,7 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attampting to add the relay to
 	// the session tree.
-	miningErrors := channel.Map(ctx, rs.relaysObservable, rs.mapAddRelayToSessionTree)
+	miningErrors := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrors)
 
 	// Start claim/proof pipeline.
@@ -102,12 +102,12 @@ func (rs *relayerSessionsManager) Start(ctx context.Context) {
 // and/or ensure that the state at each pipeline stage is persisted to disk
 // and exit as early as possible.
 func (rs *relayerSessionsManager) Stop() {
-	rs.relaysObservable.UnsubscribeAll()
+	rs.relayObs.UnsubscribeAll()
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessionsManager) RelaysToInclude(relays observable.Observable[*relayer.MinedRelay]) {
-	rs.relaysObservable = relays
+func (rs *relayerSessionsManager) IncludeRelays(relays observable.Observable[*relayer.MinedRelay]) {
+	rs.relayObs = relays
 }
 
 // ensureSessionTree returns the SessionTree for a given session.

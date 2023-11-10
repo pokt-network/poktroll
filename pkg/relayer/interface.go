@@ -12,21 +12,14 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// Miner encapsulates the following responsibilities:
-//  1. Mining relays: Served relays are hashed and difficulty is checked.
-//     Those with sufficient difficulty are added to the session SMST (tree)
-//     to be applicable for relay volume.
-//  2. Creating claims: The session SMST is flushed and an on-chain
-//     claim is created to the amount of work done by committing
-//     the tree's root.
-//  3. Submitting proofs: A pseudo-random branch from the session SMST
-//     is "requested" (through on-chain mechanisms) and the necessary proof
-//     is submitted on-chain.
+// Miner is responsible for observing servedRelayObs, hashing and checking the
+// difficulty of each, finally publishing those with sufficient difficulty to
+// minedRelayObs as they are applicable for relay volume.
 type Miner interface {
 	MinedRelays(
 		ctx context.Context,
-		servedRelays observable.Observable[*servicetypes.Relay],
-	) observable.Observable[*MinedRelay]
+		servedRelayObs observable.Observable[*servicetypes.Relay],
+	) (minedRelaysObs observable.Observable[*MinedRelay])
 }
 
 type MinerOption func(Miner)
@@ -79,14 +72,13 @@ type RelayServer interface {
 	Service() *sharedtypes.Service
 }
 
-// RelayerSessionsManager is an interface for managing the relayer's sessions and Sparse
-// Merkle Sum Trees (SMSTs). It provides notifications about closing sessions that are
-// ready to be claimed, and handles the creation and retrieval of SMSTs for a given session.
-// It also handles the creation and retrieval of SMSTs for a given session.
+// RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
+// It handles the creation and retrieval of SMSTs (trees) for a given session, as
+// well as the respective and subsequent claim creation and proof submission.
 type RelayerSessionsManager interface {
-	// RelaysToInclude receives an observable of Relays that should be included
+	// IncludeRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
-	RelaysToInclude(relays observable.Observable[*MinedRelay])
+	IncludeRelays(relayObs observable.Observable[*MinedRelay])
 
 	// Start iterates over the session trees at the end of each, respective, session.
 	// The session trees are piped through a series of map operations which progress
