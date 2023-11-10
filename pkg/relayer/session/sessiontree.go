@@ -69,7 +69,7 @@ func NewSessionTree(
 
 	// Make sure storePath does not exist when creating a new SessionTree
 	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
-		return nil, ErrSessionStorePathExists
+		return nil, ErrSessionTreeUndefinedStoresDirectory
 	}
 
 	treeStore, err := smt.NewKVStore(storePath)
