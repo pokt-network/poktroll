@@ -6,7 +6,7 @@ FROM golang:1.20 as base
 RUN apt update && \
     apt-get install -y \
         ca-certificates \
-        curl jq make
+        curl jq make vim less
 
 # enable faster module downloading.
 ENV GOPROXY https://proxy.golang.org
