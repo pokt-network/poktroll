@@ -48,8 +48,8 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Create the relay request.
 	relayRequest := &types.RelayRequest{
 		Meta: &types.RelayRequestMetadata{
-			// SessionHeader: session.Header,
-			Signature: nil,
+			SessionHeader: session.Header,
+			Signature:     nil,
 		},
 		Payload: relayRequestPayload,
 	}
@@ -67,6 +67,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	if err != nil {
 		return err
 	}
+
 	hash := crypto.Sha256(signableBz)
 	signature, err := signer.Sign(hash)
 	if err != nil {

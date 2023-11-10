@@ -2,15 +2,19 @@ package appgateserver
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
 
-	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/depinject"
+	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -27,6 +31,9 @@ import (
 // is running their own instance of the appGateServer or they are sending requests to a gateway running an
 // instance of the appGateServer, they will need to either include the application address in the request or not.
 type appGateServer struct {
+	// signingKeyName is the name of the key that will be used to sign relays
+	signingKeyName string
+
 	// signingKey is the scalar point on the appropriate curve corresponding to the
 	// signer's private key, and is used to sign relay requests via a ring signature
 	signingKey ringtypes.Scalar
@@ -69,6 +76,9 @@ type appGateServer struct {
 	// It is used to get the current block height to query for the current session.
 	blockClient blocktypes.BlockClient
 
+	// listeningEndpoint is the endpoint that the appGateServer will listen on.
+	listeningEndpoint *url.URL
+
 	// server is the HTTP server that will be used capture application requests
 	// so that they can be signed and relayed to the supplier.
 	server *http.Server
@@ -79,30 +89,55 @@ type appGateServer struct {
 }
 
 func NewAppGateServer(
-	clientCtx sdkclient.Context,
-	signKey ringtypes.Scalar,
-	appAddress string,
-	listeningEndpoint *url.URL,
-	blockClient blocktypes.BlockClient,
-) *appGateServer {
-	sessionQuerier := sessiontypes.NewQueryClient(clientCtx)
-	accountQuerier := accounttypes.NewQueryClient(clientCtx)
-	applicationQuerier := apptypes.NewQueryClient(clientCtx)
-
-	return &appGateServer{
-		signingKey:           signKey,
+	deps depinject.Config,
+	opts ...appGateServerOption,
+) (*appGateServer, error) {
+	app := &appGateServer{
 		ringCacheMutex:       &sync.RWMutex{},
 		ringCache:            make(map[string][]ringtypes.Point),
-		appAddress:           appAddress,
-		clientCtx:            clientCtx,
-		sessionQuerier:       sessionQuerier,
 		currentSessions:      make(map[string]*sessiontypes.Session),
-		accountQuerier:       accountQuerier,
-		applicationQuerier:   applicationQuerier,
-		blockClient:          blockClient,
-		server:               &http.Server{Addr: listeningEndpoint.Host},
 		supplierAccountCache: make(map[string]cryptotypes.PubKey),
 	}
+
+	if err := depinject.Inject(
+		deps,
+		&app.clientCtx,
+		&app.blockClient,
+	); err != nil {
+		return nil, err
+	}
+
+	for _, opt := range opts {
+		opt(app)
+	}
+
+	if err := app.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	key, err := app.clientCtx.Keyring.Key(app.signingKeyName)
+	if err != nil {
+		return nil, err
+	}
+
+	appAddress, err := key.GetAddress()
+	if err != nil {
+		return nil, err
+	}
+	app.appAddress = appAddress.String()
+
+	signingKey, err := recordLocalToScalar(key.GetLocal())
+	if err != nil {
+		return nil, err
+	}
+	app.signingKey = signingKey
+
+	app.sessionQuerier = sessiontypes.NewQueryClient(app.clientCtx)
+	app.accountQuerier = accounttypes.NewQueryClient(app.clientCtx)
+	app.applicationQuerier = apptypes.NewQueryClient(app.clientCtx)
+	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
+
+	return app, nil
 }
 
 // Start starts the application server and blocks until the context is done
@@ -143,29 +178,17 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// Extract the serviceId from the request path.
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
-	appAddress := request.URL.Query().Get("senderAddr")
+	var appAddress string
 
-	// ensure the app address is present
-	if appAddress == "" && app.appAddress == "" {
-		app.replyWithError(
-			writer,
-			sdkerrors.Wrapf(ErrInvalidRequestURL, "missing sender address query parameter: got %s", request.URL.String()),
-		)
-		log.Print("ERROR: no application address provided")
-		return
-	} else if appAddress != "" && app.appAddress != "" && appAddress != app.appAddress {
-		app.replyWithError(
-			writer,
-			sdkerrors.Wrapf(
-				ErrInvalidRequestURL,
-				"sender address query parameter does not match the application address: got %s, want %s",
-				appAddress, app.appAddress,
-			),
-		)
-		log.Print("ERROR: application address does not match sender address query parameter")
-		return
-	} else if appAddress == "" {
+	if app.appAddress != "" {
+		appAddress = request.URL.Query().Get("senderAddr")
+	} else {
 		appAddress = app.appAddress
+	}
+
+	if appAddress == "" {
+		app.replyWithError(writer, ErrAppGateMissingAppAddress)
+		log.Print("ERROR: no application address provided")
 	}
 
 	// TODO_TECHDEBT: Currently, there is no information about the RPC type requested. It should
@@ -212,3 +235,34 @@ func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) 
 		return
 	}
 }
+
+// validateConfig validates the appGateServer configuration.
+func (app *appGateServer) validateConfig() error {
+	if app.listeningEndpoint == nil {
+		return ErrAppGateMissingListeningEndpoint
+	}
+	return nil
+}
+
+// recordLocalToScalar converts the private key obtained from a
+// key record to a scalar point on the secp256k1 curve
+func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) {
+	if local == nil {
+		return nil, fmt.Errorf("cannot extract private key from key record: nil")
+	}
+	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
+	}
+	if _, ok := priv.(*secp256k1.PrivKey); !ok {
+		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
+	}
+	crv := ring_secp256k1.NewCurve()
+	privKey, err := crv.DecodeToScalar(priv.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode private key: %w", err)
+	}
+	return privKey, nil
+}
+
+type appGateServerOption func(*appGateServer)

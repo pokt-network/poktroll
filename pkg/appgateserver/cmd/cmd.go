@@ -11,14 +11,8 @@ import (
 	"os/signal"
 
 	"cosmossdk.io/depinject"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
@@ -30,7 +24,6 @@ var (
 	signingKeyName    string
 	listeningEndpoint string
 	cometWebsocketUrl string
-	selfSigning       bool
 )
 
 func AppGateServerCmd() *cobra.Command {
@@ -41,14 +34,14 @@ func AppGateServerCmd() *cobra.Command {
 the interaction with the chain, sessions and suppliers in order to receive the correct
 response for the request.
 
-If the server is started with the --self-signing flag, it will behave as an application
-and sign any incoming requests with the private key associated with the --signing-key-name
-flag provided. If however, this flag is not provided, the server will behave as a
-gateway and will sign relays on behalf of any application sending it relays provided
-that the address assoicated with the --signing-key-name flag has been delegated to by the
+If the server is started with a defined --signing-key-name flag, it will behave
+as an application and sign any incoming requests with the private key associated with it.
+If however, this flag is not provided, the server will behave as a gateway and will
+sign relays on behalf of any application sending it relays provided
+that the address associated with the --signing-key-name flag has been delegated to by the
 gateway, this is so that it can sign relays using the ring of the application.
 
-If an application doesn't provide the --self-signing flag, it will be able to send relays
+If an application doesn't provide the --signing-key-name flag, it will be able to send relays
 to the AppGate server and it will still function as an application, however each request
 will have to contain the "?senderAddress=[address]" query parameter, where [address] is
 the address of the application that is sending the request. This is so that the server
@@ -59,7 +52,6 @@ can generate the correct ring for the application and sign the request.`,
 
 	cmd.Flags().StringVar(&signingKeyName, "signing-key-name", "", "The name of the key that will be used to sign relays")
 	cmd.Flags().StringVar(&listeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the server will listen on")
-	cmd.Flags().BoolVar(&selfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
 	cmd.Flags().StringVar(&cometWebsocketUrl, "comet-websocket-url", "ws://localhost:36657/websocket", "The URL of the tendermint websocket endpoint to interact with the chain")
 
 	cmd.Flags().String(flags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
@@ -69,45 +61,11 @@ can generate the correct ring for the application and sign the request.`,
 }
 
 func runAppGateServer(cmd *cobra.Command, _ []string) error {
-	// Validate the flags.
-	if signingKeyName == "" {
-		return fmt.Errorf("signing key name cannot be empty")
-	}
-
 	// Create a context that is cancelled when the command is interrupted
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 
 	// Retrieve the client context for the chain interactions.
 	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
-	clientFactory, err := tx.NewFactoryCLI(clientCtx, cmd.Flags())
-	if err != nil {
-		cancelCtx()
-		return fmt.Errorf("failed to create tx factory: %w", err)
-	}
-
-	// Get the signing key from the keyring.
-	key, err := clientFactory.Keybase().Key(signingKeyName)
-	if err != nil {
-		cancelCtx()
-		return fmt.Errorf("failed to get key: %w", err)
-	}
-
-	// Get the signing key address if the server is self-signing.
-	signingKeyAddr, err := key.GetAddress()
-	if err != nil {
-		cancelCtx()
-		return fmt.Errorf("failed to get address: %w", err)
-	}
-
-	log.Printf("INFO: Signing key address: %s", signingKeyAddr.String())
-
-	// Obtain the private key's scalar point on the secp256k1 curve, to sign
-	// relay requests with the appropriate ring.
-	signingKey, err := recordLocalToScalar(key.GetLocal())
-	if err != nil {
-		cancelCtx()
-		return fmt.Errorf("failed to get signing key: %w", err)
-	}
 
 	// Parse the listening endpoint.
 	listeningUrl, err := url.Parse(listeningEndpoint)
@@ -142,17 +100,20 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	log.Println("INFO: Creating AppGate server...")
 
 	// Create the AppGate server.
-	signingKeyAddrStr := ""
-	if selfSigning {
-		signingKeyAddrStr = signingKeyAddr.String()
-	}
-	appGateServer := appgateserver.NewAppGateServer(
+	appGateServerDeps := depinject.Supply(
 		clientCtx,
-		signingKey,
-		signingKeyAddrStr,
-		listeningUrl,
 		blockClient,
 	)
+
+	appGateServer, err := appgateserver.NewAppGateServer(
+		appGateServerDeps,
+		appgateserver.WithSigningKeyName(signingKeyName),
+		appgateserver.WithListeningUrl(listeningUrl),
+	)
+	if err != nil {
+		cancelCtx()
+		return fmt.Errorf("failed to create AppGate server: %w", err)
+	}
 
 	// Handle interrupts in a goroutine.
 	go func() {
@@ -162,12 +123,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		// Block until we receive an interrupt or kill signal (OS-agnostic)
 		<-sigCh
 		log.Println("INFO: Interrupt signal received, shutting down...")
-
-		// close websocket connections
-		// TODO(@h5law): Figure out why websockets arent closing properly
-		// in the sequencer logs
-		blockClient.Close()
-		eventsQueryClient.Close()
 
 		// Signal goroutines to stop
 		cancelCtx()
@@ -185,25 +140,4 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	}
 
 	return nil
-}
-
-// recordLocalToScalar converts the private key obtained from a
-// key record to a scalar point on the secp256k1 curve
-func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) {
-	if local == nil {
-		return nil, fmt.Errorf("cannot extract private key from key record: nil")
-	}
-	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
-	if !ok {
-		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
-	}
-	if _, ok := priv.(*secp256k1.PrivKey); !ok {
-		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
-	}
-	crv := ring_secp256k1.NewCurve()
-	privKey, err := crv.DecodeToScalar(priv.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode private key: %w", err)
-	}
-	return privKey, nil
 }

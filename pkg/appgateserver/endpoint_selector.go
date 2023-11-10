@@ -41,5 +41,5 @@ func (app *appGateServer) getRelayerUrl(
 	}
 
 	// Return an error if no relayer endpoints were found.
-	return nil, "", ErrNoRelayEndpoints
+	return nil, "", ErrAppGateNoRelayEndpoints
 }

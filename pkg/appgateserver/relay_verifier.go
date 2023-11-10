@@ -34,7 +34,7 @@ func (app *appGateServer) verifyResponse(
 
 	// Verify the relay response signature.
 	if !pubKey.VerifySignature(hash, signature) {
-		return ErrInvalidRelayResponseSignature
+		return ErrAppGateInvalidRelayResponseSignature
 	}
 
 	return nil
