@@ -8,7 +8,7 @@ import (
 )
 
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
-// It starts and stops the RelayerProxy and provide the served relays observable to them miner.
+// It starts and stops the RelayerProxy and provide the served relays observable to the miner.
 type relayMiner struct {
 	relayerProxy           RelayerProxy
 	miner                  Miner
@@ -47,7 +47,8 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 	rel.relayerSessionsManager.Start(ctx)
 
 	// Start the flow of relays by starting relayer proxy.
-	// This is a blocking call as it waits for the waitgroup to be done.
+	// This is a blocking call as it waits for the waitgroup in relayerProxy.Start()
+	// that starts all the relay servers to be done.
 	log.Println("INFO: Starting relayer proxy...")
 	if err := rel.relayerProxy.Start(ctx); err != nil {
 		return err
