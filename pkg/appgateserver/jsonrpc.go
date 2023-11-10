@@ -30,7 +30,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
 	relayRequestPayload.JsonRpcPayload.Unmarshal(payloadBz)
 
-	log.Printf("DEBUG: Getting current session for app [%s] and service [%s]...", appAddress, serviceId)
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
 		return err
@@ -38,12 +37,10 @@ func (app *appGateServer) handleJSONRPCRelay(
 	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
 
 	// Get a supplier URL and address for the given service and session.
-	log.Printf("DEBUG: Getting relayer URL for app [%s] and service [%s]...", appAddress, serviceId)
 	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, sharedtypes.RPCType_JSON_RPC, session)
 	if err != nil {
 		return err
 	}
-	log.Printf("DEBUG: Relayer URL: %s", supplierUrl)
 
 	// Create the relay request.
 	relayRequest := &types.RelayRequest{
@@ -55,14 +52,12 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Get the application's signer.
-	log.Printf("DEBUG: Getting signer for app: %s...", appAddress)
 	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
 	if err != nil {
 		return err
 	}
 
 	// Hash and sign the request's signable bytes.
-	log.Printf("DEBUG: Signing relay request...")
 	signableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
 		return err
@@ -91,14 +86,13 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Perform the HTTP request to the relayer.
-	log.Printf("DEBUG: Sending relay request to relayer at: %s...", supplierUrl)
+	log.Printf("DEBUG: Sending relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return err
 	}
 
 	// Read the response body bytes.
-	log.Printf("DEBUG: Received relay response from relayer at: %s...", supplierUrl)
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
 		return err
@@ -114,7 +108,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// the getRelayerUrl function since this is the address we are expecting to sign the response.
 	// TODO_TECHDEBT: if the RelayResponse is an internal error response, we should not verify the signature
 	// as in some relayer early failures, it may not be signed by the supplier.
-	log.Printf("DEBUG: Verifying relay response signature...")
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
 		return err
 	}
@@ -126,7 +119,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Sending relay response payload to app: %s...", appAddress)
 	if _, err := writer.Write(relayRequestBz); err != nil {
 		return err
 	}
