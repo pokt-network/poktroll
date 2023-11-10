@@ -88,7 +88,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Perform the HTTP request to the relayer.
-	log.Printf("DEBUG: Sending relay request to %s", supplierUrl)
+	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return err
@@ -112,6 +112,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// as in some relayer early failures, it may not be signed by the supplier.
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
+	log.Println("DEBUG: Verifying signed relay response from...")
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
 		return err
 	}
