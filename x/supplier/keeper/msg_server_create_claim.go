@@ -10,6 +10,7 @@ import (
 
 func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := k.Logger(ctx).With("method", "CreateClaim")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -22,6 +23,8 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 		RootHash:              msg.RootHash,
 	}
 	k.Keeper.InsertClaim(ctx, claim)
+
+	logger.Info("created claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
 
 	/*
 		INCOMPLETE: Handling the message

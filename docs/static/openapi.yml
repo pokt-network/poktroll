@@ -47442,7 +47442,7 @@ paths:
                 properties:
                   supplier_address:
                     type: string
-                    title: the address of the supplier that submitted this claims
+                    title: the address of the supplier that submitted this claim
                   session_id:
                     type: string
                     title: session id from the SessionHeader
@@ -47454,6 +47454,9 @@ paths:
                     type: string
                     format: byte
                     title: smt.SMST#Root()
+                title: >-
+                  Claim is the serialized object stored on-chain for claims
+                  pending to be proven
         default:
           description: An unexpected error response.
           schema:
@@ -47499,7 +47502,7 @@ paths:
                   properties:
                     supplier_address:
                       type: string
-                      title: the address of the supplier that submitted this claims
+                      title: the address of the supplier that submitted this claim
                     session_id:
                       type: string
                       title: session id from the SessionHeader
@@ -47511,6 +47514,9 @@ paths:
                       type: string
                       format: byte
                       title: smt.SMST#Root()
+                  title: >-
+                    Claim is the serialized object stored on-chain for claims
+                    pending to be proven
               pagination:
                 type: object
                 properties:
@@ -78040,7 +78046,7 @@ definitions:
     properties:
       supplier_address:
         type: string
-        title: the address of the supplier that submitted this claims
+        title: the address of the supplier that submitted this claim
       session_id:
         type: string
         title: session id from the SessionHeader
@@ -78052,6 +78058,9 @@ definitions:
         type: string
         format: byte
         title: smt.SMST#Root()
+    title: >-
+      Claim is the serialized object stored on-chain for claims pending to be
+      proven
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -78073,7 +78082,7 @@ definitions:
           properties:
             supplier_address:
               type: string
-              title: the address of the supplier that submitted this claims
+              title: the address of the supplier that submitted this claim
             session_id:
               type: string
               title: session id from the SessionHeader
@@ -78085,6 +78094,9 @@ definitions:
               type: string
               format: byte
               title: smt.SMST#Root()
+          title: >-
+            Claim is the serialized object stored on-chain for claims pending to
+            be proven
       pagination:
         type: object
         properties:
@@ -78261,7 +78273,7 @@ definitions:
         properties:
           supplier_address:
             type: string
-            title: the address of the supplier that submitted this claims
+            title: the address of the supplier that submitted this claim
           session_id:
             type: string
             title: session id from the SessionHeader
@@ -78273,6 +78285,9 @@ definitions:
             type: string
             format: byte
             title: smt.SMST#Root()
+        title: >-
+          Claim is the serialized object stored on-chain for claims pending to
+          be proven
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:

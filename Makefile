@@ -445,6 +445,10 @@ acc_balance_total_supply: ## Query the total supply of the network
 ### Claims ###
 ##############
 
+.PHONY: claim_create
+claim_create: ## Create a dummy claims 
+	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)
+
 .PHONY: claims_list
 claim_list: ## List all the claims
 	poktrolld --home=$(POCKETD_HOME) q claim list-claims --node $(POCKET_NODE)

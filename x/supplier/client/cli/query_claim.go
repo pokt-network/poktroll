@@ -15,9 +15,9 @@ import (
 var _ = strconv.IntSize
 
 const (
-	FlagSessionEndHeight = "height"
-	FlagSessionId        = "session"
-	FlagSupplierAddress  = "address"
+	FlagSessionEndHeight = "session-end-height"
+	FlagSessionId        = "session-id"
+	FlagSupplierAddress  = "supplier-address"
 )
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
@@ -33,13 +33,13 @@ func CmdListClaims() *cobra.Command {
 		Short: "list all claims",
 		Long: `List all the claims that the node being queried has in its state.
 
-The claims can be optionally filtered by one of --session --height or --address flags
+The claims can be optionally filtered by one of --session-end-height --session-id or --supplier-address flags
 
 Example:
 $ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --session <session_id> --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --height <session_end_height> --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --address <supplier_address> --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --session-id <session_id> --node $(POCKET_NODE)
+$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE)
+$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --supplier-address <supplier_address> --node $(POCKET_NODE)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageReq, err := client.ReadPageRequest(cmd.Flags())
@@ -77,50 +77,6 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --address <supplier_add
 	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
-}
-
-func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) error {
-	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
-	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
-	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
-
-	// Preparing a shared error in case more than one flag was set
-	err := fmt.Errorf("can only specify one flag filter but got sessionId (%s), supplierAddr (%s) and sessionEngHeight (%d)", sessionId, supplierAddr, sessionEndHeight)
-
-	// Use the session id as the filter
-	if sessionId != "" {
-		// If the session id is set, then the other flags must not be set
-		if supplierAddr != "" || sessionEndHeight > 0 {
-			return err
-		}
-		// Set the session id filter
-		req.Filter.(*types.QueryAllClaimsRequest_SessionId).SessionId = sessionId
-		return nil
-	}
-
-	// Use the supplier address as the filter
-	if supplierAddr != "" {
-		// If the supplier address is set, then the other flags must not be set
-		if sessionId != "" || sessionEndHeight > 0 {
-			return err
-		}
-		// Set the supplier address filter
-		req.Filter.(*types.QueryAllClaimsRequest_SupplierAddress).SupplierAddress = supplierAddr
-		return nil
-	}
-
-	// Use the session end height as the filter
-	if sessionEndHeight > 0 {
-		// If the session end height is set, then the other flags must not be set
-		if sessionId != "" || supplierAddr != "" {
-			return err
-		}
-		// Set the session end height filter
-		req.Filter.(*types.QueryAllClaimsRequest_SessionEndHeight).SessionEndHeight = sessionEndHeight
-		return nil
-	}
-
-	return nil
 }
 
 func CmdShowClaim() *cobra.Command {
@@ -165,4 +121,49 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_
 	flags.AddQueryFlagsToCmd(cmd)
 
 	return cmd
+}
+
+// updateClaimsFilter updates the claims filter request based on the flags set provided
+func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) error {
+	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
+	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
+	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
+
+	// Preparing a shared error in case more than one flag was set
+	err := fmt.Errorf("can only specify one flag filter but got sessionId (%s), supplierAddr (%s) and sessionEngHeight (%d)", sessionId, supplierAddr, sessionEndHeight)
+
+	// Use the session id as the filter
+	if sessionId != "" {
+		// If the session id is set, then the other flags must not be set
+		if supplierAddr != "" || sessionEndHeight > 0 {
+			return err
+		}
+		// Set the session id filter
+		req.Filter.(*types.QueryAllClaimsRequest_SessionId).SessionId = sessionId
+		return nil
+	}
+
+	// Use the supplier address as the filter
+	if supplierAddr != "" {
+		// If the supplier address is set, then the other flags must not be set
+		if sessionId != "" || sessionEndHeight > 0 {
+			return err
+		}
+		// Set the supplier address filter
+		req.Filter.(*types.QueryAllClaimsRequest_SupplierAddress).SupplierAddress = supplierAddr
+		return nil
+	}
+
+	// Use the session end height as the filter
+	if sessionEndHeight > 0 {
+		// If the session end height is set, then the other flags must not be set
+		if sessionId != "" || supplierAddr != "" {
+			return err
+		}
+		// Set the session end height filter
+		req.Filter.(*types.QueryAllClaimsRequest_SessionEndHeight).SessionEndHeight = sessionEndHeight
+		return nil
+	}
+
+	return nil
 }

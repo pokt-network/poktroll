@@ -21,21 +21,27 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 	primaryKey := types.ClaimPrimaryKey(claim.SessionId, claim.SupplierAddress)
 	primaryStore.Set(primaryKey, claimBz)
 
-	logger.Info("inserted claim with primaryKey %s", primaryKey)
+	logger.Info("inserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
 	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
 	addressStoreIndex.Set(addressKey, primaryKey)
 
+	logger.Info("indexed claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
+
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
 	sessionHeightStoreIndex.Set(heightKey, primaryKey)
+
+	logger.Info("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
 }
 
 // RemoveClaim removes a claim from the store
 func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
+	logger := k.Logger(ctx).With("method", "RemoveClaim")
+
 	parentStore := ctx.KVStore(k.storeKey)
 	store := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 
@@ -43,7 +49,8 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
 	claim, foundClaim := k.getClaimByPrimaryKey(ctx, primaryKey)
 	if !foundClaim {
-		k.Logger(ctx).Error("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
+		logger.Error("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
+		return
 	}
 
 	// Prepare the indices for deletion
@@ -58,6 +65,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	addressStoreIndex.Delete(addressKey)
 	sessionHeightStoreIndex.Delete(heightKey)
 
+	logger.Info("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
 }
 
 // GetClaim returns a Claim given a SessionId & SupplierAddr
