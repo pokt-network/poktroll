@@ -97,13 +97,19 @@ func NewRelayerProxy(
 ) (relayer.RelayerProxy, error) {
 	rp := &relayerProxy{}
 
+	var queryClientCtx relayer.QueryClientContext
+
 	if err := depinject.Inject(
 		deps,
-		&rp.clientCtx,
+		&queryClientCtx,
 		&rp.blockClient,
 	); err != nil {
 		return nil, err
 	}
+
+	// TODO_CONSIDERATION: it might improve readability to use
+	// QueryClientContext on the struct.
+	rp.clientCtx = sdkclient.Context(queryClientCtx)
 
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 

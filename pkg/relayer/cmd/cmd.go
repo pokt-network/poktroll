@@ -131,7 +131,7 @@ func setupRelayerDependencies(
 	}
 
 	// Has no dependencies.
-	deps, err = supplyClientCtxAndTxFactory(deps, cmd)
+	deps, err = supplyTxClientCtxAndTxFactory(deps, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func setupRelayerDependencies(
 	}
 
 	// Depends on clientCtx & BlockClient.
-	deps, err = supplyRelayerProxy(deps)
+	deps, err = supplyRelayerProxy(deps, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func supplyBlockClient(
 	return depinject.Configs(deps, depinject.Supply(blockClient)), nil
 }
 
-func supplyClientCtxAndTxFactory(
+func supplyTxClientCtxAndTxFactory(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
@@ -234,7 +234,8 @@ func supplyClientCtxAndTxFactory(
 		return nil, err
 	}
 
-	return depinject.Configs(deps, depinject.Supply(clientCtx, clientFactory)), nil
+	txClientCtx := relayer.TxClientContext(clientCtx)
+	return depinject.Configs(deps, depinject.Supply(txClientCtx, clientFactory)), nil
 }
 
 func supplyTxClient(
@@ -273,7 +274,10 @@ func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
 	return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
 }
 
-func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
+func supplyRelayerProxy(
+	deps depinject.Config,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
 	// TODO_INCOMPLETE: this should be populated from some relayerProxy config.
 	anvilURL, err := url.Parse("ws://anvil:8547/")
 	if err != nil {
@@ -283,6 +287,14 @@ func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
 	proxiedServiceEndpoints := map[string]url.URL{
 		"svc1": *anvilURL,
 	}
+
+	clientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	queryClientCtx := relayer.QueryClientContext(clientCtx)
+	deps = depinject.Configs(deps, depinject.Supply(queryClientCtx))
 
 	relayerProxy, err := proxy.NewRelayerProxy(
 		deps,
