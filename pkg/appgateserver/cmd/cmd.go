@@ -142,6 +142,6 @@ func setupAppGateServerDependencies(cmd *cobra.Command, ctx context.Context, com
 		return nil, fmt.Errorf("failed to create block client: %w", err)
 	}
 
-	// Return the dependencie config.
+	// Return the dependencies config.
 	return depinject.Supply(clientCtx, blockClient), nil
 }

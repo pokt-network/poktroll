@@ -243,7 +243,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
-	res, err := s.pocketd.RunCurl("", requestData)
+	res, err := s.pocketd.RunCurl("", serviceId, requestData)
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}

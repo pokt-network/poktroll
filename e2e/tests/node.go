@@ -21,8 +21,8 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
-	// defaultRelayerURL used by curl commands to send relay requests
-	defaultRelayerURL = os.Getenv("RELAYER_NODE")
+	// defaultAppGateServerURL used by curl commands to send relay requests
+	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
 )
 
 func init() {
@@ -46,7 +46,7 @@ type commandResult struct {
 type PocketClient interface {
 	RunCommand(args ...string) (*commandResult, error)
 	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
-	RunCurl(rpcUrl string, data string, args ...string) (*commandResult, error)
+	RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -72,11 +72,11 @@ func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 }
 
 // RunCurl runs a curl command on the local machine
-func (p *pocketdBin) RunCurl(rpcUrl string, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
-		rpcUrl = defaultRelayerURL
+		rpcUrl = defaultAppGateServerURL
 	}
-	return p.runCurlPostCmd(rpcUrl, data, args...)
+	return p.runCurlPostCmd(rpcUrl, service, data, args...)
 }
 
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
@@ -108,8 +108,8 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlPostCmd(rpcUrl string, data string, args ...string) (*commandResult, error) {
-	base := []string{"-v", "-X", "POST", "-H", "'Content-Type: application/json'", "--data", fmt.Sprintf("'%s'", data), rpcUrl}
+func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, args ...string) (*commandResult, error) {
+	base := []string{"-v", "-X", "POST", "-H", "'Content-Type: application/json'", "--data", fmt.Sprintf("'%s'", data), fmt.Sprintf("%s/%s", rpcUrl, service)}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
 	cmd := exec.Command("curl", args...)
