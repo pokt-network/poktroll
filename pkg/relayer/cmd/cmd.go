@@ -34,7 +34,7 @@ var (
 
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "relayer-miner",
+		Use:   "relayerminer",
 		Short: "Run a relay miner",
 		Long:  `Run a relay miner`,
 		RunE:  runRelayer,
