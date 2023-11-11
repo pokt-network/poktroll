@@ -124,6 +124,11 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
+	deps, err = supplyMiner(deps)
+	if err != nil {
+		return nil, err
+	}
+
 	// Depends on EventsQueryClient.
 	deps, err = supplyBlockClient(ctx, deps, rpcQueryURL)
 	if err != nil {
