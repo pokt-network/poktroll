@@ -145,13 +145,18 @@ func setupRelayerDependencies(
 	//}
 
 	clientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+	// clientCtx = clientCtx.WithNodeURI("tcp://localhost:36657")
 	if err != nil {
 		panic(err)
 	}
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	supplierQuery := &suppliertypes.QueryGetSupplierRequest{Address: ""}
 
+	log.Println("~~~~~")
 	log.Printf("clientCtx: %+v", clientCtx)
+	log.Println("~~~~~")
+	log.Printf("supplierQuerier: %+v", supplierQuerier)
+	log.Println("~~~~~")
 	_, err = supplierQuerier.Supplier(ctx, supplierQuery)
 	if err != nil {
 		panic(err)
