@@ -48,10 +48,18 @@ func NewJSONRPCServer(
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
+	// TODO_IN_THIS_COMMIT: refactor / rename / simplify
+	url, err := url.Parse(supplierEndpoint.Url)
+	if err != nil {
+		panic(err)
+	}
+	supplierEndpointHost := url.Host
+
 	return &jsonRPCServer{
-		service:                service,
-		serverEndpoint:         supplierEndpoint,
-		server:                 &http.Server{Addr: supplierEndpoint.Url},
+		service:        service,
+		serverEndpoint: supplierEndpoint,
+		//server:                 &http.Server{Addr: supplierEndpoint.Url},
+		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
 		proxiedServiceEndpoint: proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
