@@ -2,13 +2,14 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 
 # A list of directories where changes trigger a hot-reload of the sequencer
-hot_reload_dirs = ["app", "cmd", "tools", "x"]
+hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "relayers": {"count": 1},
     "gateways": {"count": 1},
+    "appgateservers": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
@@ -127,7 +128,19 @@ helm_resource(
     poktroll_chart,
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
+        "--values=./localnet/kubernetes/values-relayer.yaml",
         "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
+    ],
+    image_deps=["poktrolld"],
+    image_keys=[("image.repository", "image.tag")],
+)
+helm_resource(
+    "appgateservers",
+    poktroll_chart,
+    flags=[
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--values=./localnet/kubernetes/values-appgateserver.yaml",
+        "--set=replicaCount=" + str(localnet_config["appgateservers"]["count"]),
     ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
@@ -150,5 +163,11 @@ k8s_resource(
     labels=["blockchains"],
     resource_deps=["sequencer"],
     port_forwards=["8545", "8546", "40005"],
+)
+k8s_resource(
+    "appgateservers",
+    labels=["blockchains"],
+    resource_deps=["sequencer"],
+    port_forwards=["42069", "40006"],
 )
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
