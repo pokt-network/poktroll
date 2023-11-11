@@ -94,7 +94,9 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Start the relay miner
 	log.Println("INFO: Starting relay miner...")
-	relayMiner.Start(ctx)
+	if err := relayMiner.Start(ctx); err != nil {
+		return err
+	}
 
 	log.Println("INFO: Relay miner stopped; exiting")
 	return nil
