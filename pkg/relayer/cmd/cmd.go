@@ -75,24 +75,13 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	var (
-		relayerProxy           relayer.RelayerProxy
-		miner                  relayer.Miner
-		relayerSessionsManager relayer.RelayerSessionsManager
-	)
+	var relayMiner relayer.RelayMiner
 	if err := depinject.Inject(
 		deps,
-		&relayerProxy,
-		&miner,
-		&relayerSessionsManager,
+		&relayMiner,
 	); err != nil {
 		return err
 	}
-
-	// Set up relay pipeline.
-	servedRelaysObs := relayerProxy.ServedRelays()
-	minedRelaysObs := miner.MinedRelays(ctx, servedRelaysObs)
-	relayerSessionsManager.InsertRelays(minedRelaysObs)
 
 	// Handle interrupts in a goroutine.
 	go func() {
@@ -106,18 +95,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		cancelCtx()
 	}()
 
-	// Set up the session (proof/claim) lifecycle pipeline.
-	log.Println("INFO: Starting relayer sessions manager...")
-	relayerSessionsManager.Start(ctx)
+	// Start the relay miner
+	log.Println("INFO: Starting relay miner...")
+	relayMiner.Start(ctx)
 
-	// Start the flow of relays by starting relayer proxy.
-	// This is a blocking call as it waits for the waitgroup to be done.
-	log.Println("INFO: Starting relayer proxy...")
-	if err := relayerProxy.Start(ctx); err != nil {
-		return err
-	}
-
-	log.Println("INFO: Relayer proxy stopped; exiting")
+	log.Println("INFO: Relay miner stopped; exiting")
 	return nil
 }
 

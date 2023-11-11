@@ -3,8 +3,10 @@ package proxy
 import (
 	"context"
 	"net/url"
+	"sync"
 
 	"cosmossdk.io/depinject"
+	ringtypes "github.com/athanorlabs/go-dleq/types"
 	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -14,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -54,6 +57,10 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier sessiontypes.QueryClient
 
+	// applicationQuerier is the querier for the application module.
+	// It is used to get the ring for a given application address.
+	applicationQuerier apptypes.QueryClient
+
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
 	// the client that relays the request to the supported proxied service.
@@ -68,6 +75,12 @@ type relayerProxy struct {
 	// servedRelaysProducer is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysProducer chan<- *types.Relay
+
+	// ringCache is a cache of the public keys used to create the ring for a given application
+	// they are stored in a map of application address to a slice of points on the secp256k1 curve
+	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
+	ringCache      map[string][]ringtypes.Point
+	ringCacheMutex *sync.RWMutex
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
 	clientCtx sdkclient.Context
@@ -114,7 +127,7 @@ func NewRelayerProxy(
 
 // Start concurrently starts all advertised relay servers and returns an error
 // if any of them errors.
-// This method is blocking until all RelayServers are stopped.
+// This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.

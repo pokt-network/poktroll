@@ -86,7 +86,7 @@ func NewRelayerSessions(
 // It IS NOT blocking as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
-	// notified if an error was encountered while attampting to add the relay to
+	// notified if an error was encountered while attempting to add the relay to
 	// the session tree.
 	miningErrorsObs := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrorsObs)

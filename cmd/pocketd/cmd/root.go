@@ -43,6 +43,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	appparams "github.com/pokt-network/poktroll/app/params"
+	appgateservercmd "github.com/pokt-network/poktroll/pkg/appgateserver/cmd"
 	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
@@ -153,6 +154,11 @@ func initRootCmd(
 		queryCommand(),
 		txCommand(),
 		keys.Commands(app.DefaultNodeHome),
+	)
+
+	// add the appgate server command
+	rootCmd.AddCommand(
+		appgateservercmd.AppGateServerCmd(),
 	)
 }
 
