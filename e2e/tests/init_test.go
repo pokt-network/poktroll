@@ -247,7 +247,7 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}
-	fmt.Println("OLSH Res", res)
+	fmt.Println("OLSH Res", res.Stdout)
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {

@@ -2,6 +2,12 @@ Feature: Relay Namespace
 
     Scenario: App can send relay to Supplier
         Given the user has the pocketd binary installed
+
+        # TEMP: DELETE
+        When the user sends "1000" uPOKT from account "app2" to account "app1"
+        When the user sends "1000" uPOKT from account "app2" to account "supplier1"
+        # TEMP: DELETE
+
         And the application "app1" is staked for service "anvil"
         And the supplier "supplier1" is staked for service "anvil"
         And the session for application "app1" and service "anvil" contains the supplier "supplier1"

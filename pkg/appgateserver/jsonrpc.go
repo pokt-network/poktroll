@@ -3,6 +3,7 @@ package appgateserver
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -78,6 +79,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 		return err
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
+	// relayRequestReader := io.NopCloser(bytes.NewReader(payloadBz))
 
 	// Create the HTTP request to send the request to the relayer.
 	relayHTTPRequest := &http.Request{
@@ -87,8 +89,15 @@ func (app *appGateServer) handleJSONRPCRelay(
 		Body:   relayRequestReader,
 	}
 
+	// TODO: relayminer is currently named relayers
+	// application (localhost)
+	// -> appgate (localhost:42069); configured by the gateway/application **off-chain**
+	// -> relayminer (supplierURL); advertised **on-chain**
+	// -> anvil (localhost:8547); configured **behind-the-scenes**; chains.json (v0); currently hard-coded
+
 	// Perform the HTTP request to the relayer.
-	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
+	log.Printf("DEBUG: Sending raw payload to signed relay request to %s", supplierUrl)
+	fmt.Printf("\n~~~~ OLSH %+v \n~~~~\n", relayHTTPRequest)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return err
