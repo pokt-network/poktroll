@@ -21,6 +21,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
+	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
@@ -134,27 +136,56 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
+	// Has no dependencies.
 	deps, err = supplyEventsQueryClient(deps, rpcQueryURL)
 	if err != nil {
 		return nil, err
 	}
 
+	// Depends on EventsQueryClient.
 	deps, err = supplyBlockClient(ctx, deps, rpcQueryURL)
 	if err != nil {
 		return nil, err
 	}
 
-	deps, err = supplyTxClient(ctx, deps, cmd)
+	// Has no dependencies.
+	deps, err = supplyClientCtxAndTxFactory(deps, cmd)
 	if err != nil {
 		return nil, err
 	}
 
+	var clientCtx cosmosclient.Context
+	if err := depinject.Inject(deps, &clientCtx); err != nil {
+		panic(err)
+	}
+	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
+	supplierQuery := &suppliertypes.QueryGetSupplierRequest{Address: ""}
+	log.Printf("clientCtx: %+v", clientCtx)
+	_, err = supplierQuerier.Supplier(ctx, supplierQuery)
+	if err != nil {
+		panic(err)
+	}
+
+	// Depends on clientCtx, txFactory, EventsQueryClient, & BlockClient.
+	deps, err = supplyTxClient(ctx, deps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Depends on txClient & EventsQueryClient.
 	deps, err = supplySupplierClient(deps)
 	if err != nil {
 		return nil, err
 	}
 
+	// Depends on clientCtx & BlockClient.
 	deps, err = supplyRelayerProxy(deps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Depends on BlockClient & SupplierClient.
+	deps, err = supplyRelayerSessionsManager(ctx, deps)
 	if err != nil {
 		return nil, err
 	}
@@ -181,12 +212,12 @@ func supplyEventsQueryClient(deps depinject.Config, pocketNodeWebsocketURL strin
 
 // TODO_IN_THIS_COMMIT: move
 func getPocketNodeWebsocketURL(cmd *cobra.Command) (string, error) {
-	pocketNodeHost, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+	pocketNodeURI, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("ws://%s/websocket", pocketNodeHost), nil
+	return fmt.Sprintf("ws://%s/websocket", pocketNodeURI), nil
 }
 
 func supplyBlockClient(
@@ -202,11 +233,12 @@ func supplyBlockClient(
 	return depinject.Configs(deps, depinject.Supply(blockClient)), nil
 }
 
-func supplyTxClient(
-	ctx context.Context,
+func supplyClientCtxAndTxFactory(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
+	cosmosclient.GetClientQueryContext(cmd)
+
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return nil, err
@@ -216,7 +248,13 @@ func supplyTxClient(
 		return nil, err
 	}
 
-	deps = depinject.Configs(deps, depinject.Supply(clientCtx, clientFactory))
+	return depinject.Configs(deps, depinject.Supply(clientCtx, clientFactory)), nil
+}
+
+func supplyTxClient(
+	ctx context.Context,
+	deps depinject.Config,
+) (depinject.Config, error) {
 	txContext, err := tx.NewTxContext(deps)
 	if err != nil {
 		return nil, err
@@ -262,6 +300,7 @@ func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
 
 	relayerProxy, err := proxy.NewRelayerProxy(
 		deps,
+		proxy.WithSigningKeyName(signingKeyName),
 		proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
 	)
 	if err != nil {
@@ -269,4 +308,19 @@ func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
 	}
 
 	return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
+}
+
+func supplyRelayerSessionsManager(
+	ctx context.Context,
+	deps depinject.Config,
+) (depinject.Config, error) {
+	relayerSessionsManager, err := session.NewRelayerSessions(
+		ctx, deps,
+		session.WithStoresDirectory(smtStorePath),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
 }
