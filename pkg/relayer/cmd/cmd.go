@@ -24,33 +24,32 @@ import (
 )
 
 var (
-	signingKeyName string
-	smtStorePath   string
-	sequencerNode  string
-	pocketNode     string
+	flagSigningKeyName string
+	flagSmtStorePath   string
+	flagSequencerNode  string
+	flagPocketNode     string
 )
 
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		// TODO_DISCUSS: do we want to rename this to `relay-miner`?
-		Use:   "relayer",
-		Short: "Run a relayer",
-		Long:  `Run a relayer`,
+		Use:   "relayer-miner",
+		Short: "Run a relay miner",
+		Long:  `Run a relay miner`,
 		RunE:  runRelayer,
 	}
 
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
-	// TECHDEBT: integrate these cosmosflags with the client context (i.e. cosmosflags, config, viper, etc.)
+	// TODO_TECHDEBT: integrate these cosmosflags with the client context (i.e. cosmosflags, config, viper, etc.)
 	// This is simpler to do with server-side configs (see rootCmd#PersistentPreRunE).
 	// Will require more effort than currently justifiable.
-	cmd.Flags().StringVar(&signingKeyName, "signing-key", "", "Name of the key to sign transactions")
-	cmd.Flags().StringVar(&smtStorePath, "smt-store", "smt", "Path to the SMT KV store")
+	cmd.Flags().StringVar(&flagSigningKeyName, "signing-key", "", "Name of the key to sign transactions")
+	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to the SMT KV store")
 	// Communication cosmosflags
-	// TODO_DISCUSS: We're using `explicitly omitting default` so the relayer crashes if these aren't specified. Figure out
-	// what the defaults should be post alpha.
-	cmd.Flags().StringVar(&sequencerNode, "sequencer-node", "explicitly omitting default", "<host>:<port> to sequencer/validator node to submit txs")
-	cmd.Flags().StringVar(&pocketNode, "pocket-node", "explicitly omitting default", "<host>:<port> to full/light pocket node for reading data and listening for on-chain events")
+	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified. Figure out
+	// Figure out what good defaults should be post alpha.
+	cmd.Flags().StringVar(&flagSequencerNode, "sequencer-node", "explicitly omitting default", "<host>:<port> to sequencer node to submit txs")
+	cmd.Flags().StringVar(&flagPocketNode, "pocket-node", "explicitly omitting default", "<host>:<port> to full pocket node for reading data and listening for on-chain events")
 	cmd.Flags().String(cosmosflags.FlagNode, "explicitly omitting default", "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
 
 	return cmd
@@ -61,6 +60,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Ensure context cancellation.
 	defer cancelCtx()
 
+	// Sets up the following dependencies:
+	// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, RelayMiner dependencies.
 	deps, err := setupRelayerDependencies(ctx, cmd)
 	if err != nil {
 		return err
@@ -94,12 +95,14 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// setupRelayerDependencies sets up all the dependencies the relay miner needs to run:
+// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, RelayMiner
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 ) (deps depinject.Config, err error) {
-	// Set --node flag to the --sequencer-node for the client context
-	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", sequencerNode))
+	// TODO_TECHDEBT: Revisit this decision and see if it can be removed
+	cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", flagSequencerNode))
 
 	nodeURL, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
@@ -195,7 +198,7 @@ func supplyTxClient(
 	txClient, err := tx.NewTxClient(
 		ctx,
 		deps,
-		tx.WithSigningKeyName(signingKeyName),
+		tx.WithSigningKeyName(flagSigningKeyName),
 		// TODO_TECHDEBT: populate this from some config.
 		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
 	)
@@ -209,7 +212,7 @@ func supplyTxClient(
 func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
 	supplierClient, err := supplier.NewSupplierClient(
 		deps,
-		supplier.WithSigningKeyName(signingKeyName),
+		supplier.WithSigningKeyName(flagSigningKeyName),
 	)
 	if err != nil {
 		return nil, err
@@ -219,14 +222,14 @@ func supplySupplierClient(deps depinject.Config) (depinject.Config, error) {
 }
 
 func supplyRelayerProxy(deps depinject.Config) (depinject.Config, error) {
-	// TODO_INCOMPLETE: this should be populated from some relayerProxy config.
+	// TODO_TECHDEBT: this should be populated from some relayerProxy config.
 	anvilURL, err := url.Parse("ws://anvil:8547/")
 	if err != nil {
 		return nil, err
 	}
 
 	proxiedServiceEndpoints := map[string]url.URL{
-		"svc1": *anvilURL,
+		"anvil": *anvilURL,
 	}
 
 	relayerProxy, err := proxy.NewRelayerProxy(
