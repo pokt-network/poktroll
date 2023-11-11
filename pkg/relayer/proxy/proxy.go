@@ -97,13 +97,19 @@ func NewRelayerProxy(
 ) (relayer.RelayerProxy, error) {
 	rp := &relayerProxy{}
 
+	var queryClientCtx relayer.QueryClientContext
+
 	if err := depinject.Inject(
 		deps,
-		&rp.clientCtx,
+		&queryClientCtx,
 		&rp.blockClient,
 	); err != nil {
 		return nil, err
 	}
+
+	// TODO_CONSIDERATION: it might improve readability to use
+	// QueryClientContext on the struct.
+	rp.clientCtx = sdkclient.Context(queryClientCtx)
 
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
@@ -125,8 +131,9 @@ func NewRelayerProxy(
 	return rp, nil
 }
 
-// Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
-// This method is blocking as long as all RelayServers are running.
+// Start concurrently starts all advertised relay servers and returns an error
+// if any of them errors.
+// This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
