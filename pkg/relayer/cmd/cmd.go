@@ -124,11 +124,6 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
-	deps, err = supplyMiner(deps)
-	if err != nil {
-		return nil, err
-	}
-
 	// Depends on EventsQueryClient.
 	deps, err = supplyBlockClient(ctx, deps, rpcQueryURL)
 	if err != nil {
@@ -141,12 +136,18 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
-	var clientCtx cosmosclient.Context
-	if err := depinject.Inject(deps, &clientCtx); err != nil {
+	//var clientCtx cosmosclient.Context
+	//if err := depinject.Inject(deps, &clientCtx); err != nil {
+	//	panic(err)
+	//}
+
+	clientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+	if err != nil {
 		panic(err)
 	}
 	supplierQuerier := suppliertypes.NewQueryClient(clientCtx)
 	supplierQuery := &suppliertypes.QueryGetSupplierRequest{Address: ""}
+
 	log.Printf("clientCtx: %+v", clientCtx)
 	_, err = supplierQuerier.Supplier(ctx, supplierQuery)
 	if err != nil {
@@ -224,8 +225,6 @@ func supplyClientCtxAndTxFactory(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	cosmosclient.GetClientQueryContext(cmd)
-
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return nil, err
