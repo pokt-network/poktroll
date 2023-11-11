@@ -2,7 +2,7 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 
 # A list of directories where changes trigger a hot-reload of the sequencer
-hot_reload_dirs = ["app", "cmd", "tools", "x"]
+hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg/relayer"]
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
@@ -11,7 +11,7 @@ localnet_config_defaults = {
     "gateways": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
+    "helm_chart_local_repo": {"enabled": True, "path": "../helm-charts"},
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 localnet_config = {}
@@ -122,16 +122,16 @@ helm_resource(
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
-helm_resource(
-    "relayers",
-    poktroll_chart,
-    flags=[
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
-    ],
-    image_deps=["poktrolld"],
-    image_keys=[("image.repository", "image.tag")],
-)
+# helm_resource(
+#     "relayers",
+#     poktroll_chart,
+#     flags=[
+#         "--values=./localnet/kubernetes/values-common.yaml",
+#         "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
+#     ],
+#     image_deps=["poktrolld"],
+#     image_keys=[("image.repository", "image.tag")],
+# )
 
 # Configure tilt resources (tilt labels and port forwards) for all of the nodes above
 k8s_resource(
@@ -145,10 +145,10 @@ k8s_resource(
     resource_deps=["celestia-rollkit"],
     port_forwards=["36657", "40004"],
 )
-k8s_resource(
-    "relayers",
-    labels=["blockchains"],
-    resource_deps=["sequencer"],
-    port_forwards=["8545", "8546", "40005"],
-)
+# k8s_resource(
+#     "relayers",
+#     labels=["blockchains"],
+#     resource_deps=["sequencer"],
+#     port_forwards=["8545", "8546", "40005"],
+# )
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
