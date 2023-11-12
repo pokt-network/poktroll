@@ -98,6 +98,9 @@ func (j *jsonRPCServer) Service() *sharedtypes.Service {
 // (see https://pkg.go.dev/net/http#Handler)
 func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
+
+	log.Printf("DEBUG: ServeHTTP() request: %+v", request)
+
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
 	relay, err := jsrv.serveHTTP(ctx, request)
 	if err != nil {
@@ -106,6 +109,8 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
+
+	log.Printf("DEBUG: relay: %+v", relay)
 
 	// Send the relay response to the client.
 	if err := jsrv.sendRelayResponse(relay.Res, writer); err != nil {
