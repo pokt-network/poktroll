@@ -78,6 +78,8 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 	relayRequest.Meta.Signature = signature
 
+	log.Printf("DEBUG: relayRequest: %+v", relayRequest)
+
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	relayRequestBz, err := relayRequest.Marshal()
 	if err != nil {
@@ -93,6 +95,8 @@ func (app *appGateServer) handleJSONRPCRelay(
 		URL:    supplierUrl,
 		Body:   relayRequestReader,
 	}
+
+	log.Printf("DEBUG: relayHTTPRequest: %+v", relayHTTPRequest)
 
 	// Perform the HTTP request to the relayer.
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
@@ -111,7 +115,8 @@ func (app *appGateServer) handleJSONRPCRelay(
 
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
-	log.Printf("relayHTTPResponse: %s", string(relayResponseBz))
+	log.Printf("DEBUG: relayHTTPResponse body: %s", string(relayResponseBz))
+	log.Printf("DEBUG: relayHTTPResponse: %+v", relayHTTPResponse)
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
 		log.Println("ERROR: Failed unmarshaling relay response")
 		return err
