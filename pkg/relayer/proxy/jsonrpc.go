@@ -162,13 +162,16 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
+	// TODO_HACK: Currently, the native service's listen address is hardcoded to localhost:8547.
+	// This should be changed to the actual listen address of the native service.
+	// However, the native service 'ws://anvil:8547' causes errors
 	log.Printf("DEBUG: Building relay request to native service %s...", jsrv.proxiedServiceEndpoint.String())
 	destinationURL, err := url.Parse(request.URL.String())
 	if err != nil {
 		return nil, err
 	}
 	destinationURL.Host = "localhost:8547"
-	destinationURL.Scheme = "http"
+	destinationURL.Scheme = "http" // this is not captured and needs to be set
 	log.Printf("DEBUG: Sending relay request to native service %s...", destinationURL.String())
 
 	relayHTTPRequest := &http.Request{

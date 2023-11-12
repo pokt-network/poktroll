@@ -40,6 +40,8 @@ message JSONRPCRequestPayload {
     uint32 id = 1; // Identifier established by the Client to create context for the request.
     string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
     string method = 3; // Method being invoked on the server.
+    // TODO_RESEARCH: Find out why the params being a map causes errors
+    // should they be a list of maps?
     //map<string, string> params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
     repeated string params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
 }
