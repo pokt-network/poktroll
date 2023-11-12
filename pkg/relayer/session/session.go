@@ -115,9 +115,6 @@ func (rs *relayerSessionsManager) InsertRelays(relays observable.Observable[*rel
 // ensureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
 func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
-
 	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
@@ -130,8 +127,9 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create it.
+	var err error
 	if !ok {
-		sessionTree, err := NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
@@ -148,6 +146,9 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	_ context.Context,
 	block client.Block,
 ) (sessionTrees []relayer.SessionTree, skip bool) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	// Check if there are sessions that need to enter the claim/proof phase
 	// as their end block height was the one before the last committed block.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
