@@ -25,6 +25,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Read the request body bytes.
 	payloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
+		log.Println("ERROR: Failed reading relay request body")
 		return err
 	}
 
@@ -34,6 +35,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
+		log.Println("ERROR: Failed getting current session")
 		return err
 	}
 	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
@@ -41,6 +43,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Get a supplier URL and address for the given service and session.
 	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, sharedtypes.RPCType_JSON_RPC, session)
 	if err != nil {
+		log.Println("ERROR: Failed getting relayer URL")
 		return err
 	}
 
@@ -56,18 +59,21 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Get the application's signer.
 	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
 	if err != nil {
+		log.Println("ERROR: Failed getting signer")
 		return err
 	}
 
 	// Hash and sign the request's signable bytes.
 	signableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
+		log.Println("ERROR: Failed getting signable bytes")
 		return err
 	}
 
 	hash := crypto.Sha256(signableBz)
 	signature, err := signer.Sign(hash)
 	if err != nil {
+		log.Println("ERROR: Failed signing relay request")
 		return err
 	}
 	relayRequest.Meta.Signature = signature
@@ -75,6 +81,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	relayRequestBz, err := relayRequest.Marshal()
 	if err != nil {
+		log.Println("ERROR: Failed marshaling relay request")
 		return err
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
@@ -91,18 +98,22 @@ func (app *appGateServer) handleJSONRPCRelay(
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
+		log.Println("ERROR: Failed sending relay request to relayer")
 		return err
 	}
 
 	// Read the response body bytes.
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
+		log.Println("ERROR: Failed reading relay response body")
 		return err
 	}
 
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
+	log.Printf("relayHTTPResponse: %s", string(relayResponseBz))
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
+		log.Println("ERROR: Failed unmarshaling relay response")
 		return err
 	}
 
@@ -114,17 +125,20 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// failed responses.
 	log.Println("DEBUG: Verifying signed relay response from...")
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
+		log.Println("ERROR: Failed verifying relay response signature")
 		return err
 	}
 
 	// Marshal the response payload to bytes to be sent back to the application.
 	var responsePayloadBz []byte
 	if _, err = relayResponse.Payload.MarshalTo(responsePayloadBz); err != nil {
+		log.Println("ERROR: Failed marshaling relay response payload")
 		return err
 	}
 
 	// Reply with the RelayResponse payload.
 	if _, err := writer.Write(relayRequestBz); err != nil {
+		log.Println("ERROR: Failed writing relay response payload to writer")
 		return err
 	}
 
