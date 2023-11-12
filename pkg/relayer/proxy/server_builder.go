@@ -56,7 +56,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 					service,
 					endpoint,
 					proxiedServicesEndpoints,
-					rp.servedRelaysProducer,
+					rp.servedRelaysPublishCh,
 					rp,
 				)
 			default:

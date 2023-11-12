@@ -72,9 +72,9 @@ type relayerProxy struct {
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
 
-	// servedRelaysProducer is a channel that emits the relays that have been served so that the
+	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
-	servedRelaysProducer chan<- *types.Relay
+	servedRelaysPublishCh chan<- *types.Relay
 
 	// ringCache is a cache of the public keys used to create the ring for a given application
 	// they are stored in a map of application address to a slice of points on the secp256k1 curve
@@ -114,7 +114,7 @@ func NewRelayerProxy(
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
-	rp.servedRelaysProducer = servedRelaysProducer
+	rp.servedRelaysPublishCh = servedRelaysProducer
 	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
 	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
 	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
