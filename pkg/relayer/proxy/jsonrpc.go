@@ -70,10 +70,14 @@ func NewJSONRPCServer(
 // It also waits for the passed in context to end before shutting down.
 // This method is blocking and should be called in a goroutine.
 func (jsrv *jsonRPCServer) Start(ctx context.Context) error {
+
 	go func() {
 		<-ctx.Done()
 		jsrv.server.Shutdown(ctx)
 	}()
+
+	// Set the HTTP handler.
+	jsrv.server.Handler = jsrv
 
 	return jsrv.server.ListenAndServe()
 }
