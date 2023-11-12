@@ -16,7 +16,7 @@ func (j *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
 	relayResponse := &types.RelayResponse{
 		Payload: &types.RelayResponse_JsonRpcPayload{
 			JsonRpcPayload: &types.JSONRPCResponsePayload{
-				Id:      make([]byte, 0),
+				Id:      0,
 				Jsonrpc: "2.0",
 				Error: &types.JSONRPCResponseError{
 					// Using conventional error code indicating internal server error.

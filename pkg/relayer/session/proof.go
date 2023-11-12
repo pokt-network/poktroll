@@ -30,8 +30,7 @@ func (rs *relayerSessionsManager) submitProofs(
 		rs.mapWaitForEarliestSubmitProofHeight,
 	)
 
-	failedSubmitProofSessionsObs, failedSubmitProofSessionsPublishCh :=
-		channel.NewObservable[relayer.SessionTree]()
+	failedSubmitProofSessionsObs, failedSubmitProofSessionsPublishCh := channel.NewObservable[relayer.SessionTree]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -74,7 +73,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash
-	log.Printf("waiting and blocking for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
+	log.Printf("INFO: waiting and blocking for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
 	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
 
 	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(submitProofWindowStartBlock)

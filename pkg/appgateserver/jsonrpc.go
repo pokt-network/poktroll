@@ -28,10 +28,16 @@ func (app *appGateServer) handleJSONRPCRelay(
 		log.Println("ERROR: Failed reading relay request body")
 		return err
 	}
+	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
 
 	// Create the relay request payload.
 	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
-	relayRequestPayload.JsonRpcPayload.Unmarshal(payloadBz)
+	jsonPayload := &types.JSONRPCRequestPayload{}
+	cdc := types.ModuleCdc
+	if err := cdc.UnmarshalJSON(payloadBz, jsonPayload); err != nil {
+		return err
+	}
+	relayRequestPayload.JsonRpcPayload = jsonPayload
 
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
@@ -64,6 +70,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Hash and sign the request's signable bytes.
+	log.Printf("DEBUG: Signing relay request...")
 	signableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
 		log.Println("ERROR: Failed getting signable bytes")
@@ -78,15 +85,20 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 	relayRequest.Meta.Signature = signature
 
-	log.Printf("DEBUG: relayRequest: %+v", relayRequest)
+	// log.Printf("DEBUG: relayRequest: %+v", relayRequest)
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
-	relayRequestBz, err := relayRequest.Marshal()
+	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
 		log.Println("ERROR: Failed marshaling relay request")
 		return err
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
+	var relayReq types.RelayRequest
+	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
+		return err
+	}
+	// log.Printf("DEBUG: Signed relay request: %+v", relayReq)
 
 	// Create the HTTP request to send the request to the relayer.
 	relayHTTPRequest := &http.Request{
@@ -96,7 +108,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 		Body:   relayRequestReader,
 	}
 
-	log.Printf("DEBUG: relayHTTPRequest: %+v", relayHTTPRequest)
+	// log.Printf("DEBUG: relayHTTPRequest: %+v", relayHTTPRequest)
 
 	// Perform the HTTP request to the relayer.
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
@@ -107,6 +119,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 
 	// Read the response body bytes.
+	log.Printf("DEBUG: Reading relay response body...")
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
 		log.Println("ERROR: Failed reading relay response body")
@@ -115,8 +128,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
-	log.Printf("DEBUG: relayHTTPResponse body: %s", string(relayResponseBz))
-	log.Printf("DEBUG: relayHTTPResponse: %+v", relayHTTPResponse)
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
 		log.Println("ERROR: Failed unmarshaling relay response")
 		return err
@@ -128,21 +139,21 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// as in some relayer early failures, it may not be signed by the supplier.
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
-	log.Println("DEBUG: Verifying signed relay response from...")
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
 		log.Println("ERROR: Failed verifying relay response signature")
 		return err
 	}
 
 	// Marshal the response payload to bytes to be sent back to the application.
-	var responsePayloadBz []byte
-	if _, err = relayResponse.Payload.MarshalTo(responsePayloadBz); err != nil {
-		log.Println("ERROR: Failed marshaling relay response payload")
+	relayResponsePayloadBz, err := cdc.MarshalJSON(relayResponse.GetJsonRpcPayload())
+	if err != nil {
+		log.Println("ERROR: Failed unmarshaling relay response")
 		return err
 	}
 
 	// Reply with the RelayResponse payload.
-	if _, err := writer.Write(relayRequestBz); err != nil {
+	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponsePayloadBz))
+	if _, err := writer.Write(relayResponsePayloadBz); err != nil {
 		log.Println("ERROR: Failed writing relay response payload to writer")
 		return err
 	}

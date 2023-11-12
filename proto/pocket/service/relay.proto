@@ -37,10 +37,11 @@ message RelayRequest {
 // JSONRPCRequestPayload contains the payload for a JSON-RPC request.
 // See https://www.jsonrpc.org/specification#request_object for more details.
 message JSONRPCRequestPayload {
-    bytes id = 1; // Identifier established by the Client to create context for the request.
+    uint32 id = 1; // Identifier established by the Client to create context for the request.
     string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
     string method = 3; // Method being invoked on the server.
-    map<string, string> parameters = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
+    //map<string, string> params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
+    repeated string params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
 }
 
 // RESTRequestType represents the type of REST request.
@@ -82,9 +83,9 @@ message RelayResponseMetadata {
 // JSONRPCResponsePayload contains the response details for a JSON-RPC relay.
 // See www.jsonrpc.org/specification for more details.
 message JSONRPCResponsePayload {
-    bytes id = 1; // Identifier established by the Client to link the response back to the request.
+    uint32 id = 1; // Identifier established by the Client to link the response back to the request.
     string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
-    bytes result = 3; // Response result payload.
+    string result = 3; // Response result payload.
     JSONRPCResponseError error = 4; // Error message, if any. Can be nil.
 }
 

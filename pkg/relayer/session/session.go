@@ -51,7 +51,8 @@ func NewRelayerSessions(
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (relayer.RelayerSessionsManager, error) {
 	rs := &relayerSessionsManager{
-		sessionsTrees: make(sessionsTreesMap),
+		sessionsTrees:   make(sessionsTreesMap),
+		sessionsTreesMu: &sync.Mutex{},
 	}
 
 	if err := depinject.Inject(
@@ -170,7 +171,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Printf("no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
+		log.Printf("DEBUG: no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
 		return
 	}
 
@@ -215,16 +216,18 @@ func (rs *relayerSessionsManager) mapAddRelayToSessionTree(
 	_ context.Context,
 	relay *relayer.MinedRelay,
 ) (_ error, skip bool) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
 	// ensure the session tree exists for this relay
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
-		log.Printf("failed to ensure session tree: %s\n", err)
+		log.Printf("ERROR: failed to ensure session tree: %s\n", err)
 		return err, false
 	}
 
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
-		log.Printf("failed to update smt: %s\n", err)
+		log.Printf("ERROR: failed to update smt: %s\n", err)
 		return err, false
 	}
 

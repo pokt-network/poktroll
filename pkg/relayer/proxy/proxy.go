@@ -118,7 +118,10 @@ func NewRelayerProxy(
 	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
 	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
 	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
+	rp.applicationQuerier = apptypes.NewQueryClient(rp.clientCtx)
 	rp.keyring = rp.clientCtx.Keyring
+	rp.ringCache = make(map[string][]ringtypes.Point)
+	rp.ringCacheMutex = &sync.RWMutex{}
 
 	for _, opt := range opts {
 		opt(rp)

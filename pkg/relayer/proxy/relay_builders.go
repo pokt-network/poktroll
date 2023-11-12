@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -15,12 +16,13 @@ func (j *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequ
 		return nil, err
 	}
 
-	var relayRequest types.RelayRequest
-	if err := relayRequest.Unmarshal(requestBz); err != nil {
+	log.Printf("DEBUG: Unmarshaling relay request...")
+	var relayReq types.RelayRequest
+	if err := relayReq.Unmarshal(requestBz); err != nil {
 		return nil, err
 	}
 
-	return &relayRequest, nil
+	return &relayReq, nil
 }
 
 // newRelayResponse builds a RelayResponse from an http.Response and a SessionHeader.
@@ -39,12 +41,16 @@ func (j *jsonRPCServer) newRelayResponse(
 		return nil, err
 	}
 
-	jsonRPCResponse := &types.JSONRPCResponsePayload{}
-	if err := jsonRPCResponse.Unmarshal(responseBz); err != nil {
+	log.Printf("DEBUG: Unmarshaling relay response...")
+	relayResponsePayload := &types.RelayResponse_JsonRpcPayload{}
+	jsonPayload := &types.JSONRPCResponsePayload{}
+	cdc := types.ModuleCdc
+	if err := cdc.UnmarshalJSON(responseBz, jsonPayload); err != nil {
 		return nil, err
 	}
+	relayResponsePayload.JsonRpcPayload = jsonPayload
 
-	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonRPCResponse}
+	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonPayload}
 
 	// Sign the relay response and add the signature to the relay response metadata
 	if err = j.relayerProxy.SignRelayResponse(relayResponse); err != nil {

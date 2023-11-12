@@ -31,7 +31,7 @@ func (app *appGateServer) getRelayerUrl(
 				if endpoint.RpcType == rpcType {
 					supplierUrl, err := url.Parse(endpoint.Url)
 					if err != nil {
-						log.Printf("error parsing url: %s", err)
+						log.Printf("ERROR: error parsing url: %s", err)
 						continue
 					}
 					return supplierUrl, supplier.Address, nil

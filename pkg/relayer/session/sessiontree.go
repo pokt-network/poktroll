@@ -86,6 +86,7 @@ func NewSessionTree(
 		storePath:     storePath,
 		treeStore:     treeStore,
 		tree:          tree,
+		sessionMu:     &sync.Mutex{},
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
 	}
