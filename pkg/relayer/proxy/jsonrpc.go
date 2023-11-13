@@ -19,10 +19,6 @@ type jsonRPCServer struct {
 	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
-	// serverEndpoint is the advertised endpoint configuration that the server uses to
-	// listen for incoming relay requests.
-	serverEndpoint *sharedtypes.SupplierEndpoint
-
 	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
 	proxiedServiceEndpoint url.URL
 
@@ -43,22 +39,13 @@ type jsonRPCServer struct {
 // a RelayServer that listens to incoming RelayRequests.
 func NewJSONRPCServer(
 	service *sharedtypes.Service,
-	supplierEndpoint *sharedtypes.SupplierEndpoint,
+	supplierEndpointHost string,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
-	// TODO_IN_THIS_COMMIT: refactor / rename / simplify
-	url, err := url.Parse(supplierEndpoint.Url)
-	if err != nil {
-		panic(err)
-	}
-	supplierEndpointHost := url.Host
-
 	return &jsonRPCServer{
-		service:        service,
-		serverEndpoint: supplierEndpoint,
-		// server:                 &http.Server{Addr: supplierEndpoint.Url},
+		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
 		proxiedServiceEndpoint: proxiedServiceEndpoint,
@@ -121,7 +108,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 		relay.Res.Meta.SessionHeader.ApplicationAddress,
 		relay.Res.Meta.SessionHeader.Service.Id,
 		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
-		jsrv.serverEndpoint.Url,
+		jsrv.server.Addr,
 	)
 
 	// Emit the relay to the servedRelays observable.

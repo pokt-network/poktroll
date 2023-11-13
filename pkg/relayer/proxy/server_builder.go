@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"log"
+	"net/url"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -42,6 +43,12 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
+			url, err := url.Parse(endpoint.Url)
+			if err != nil {
+				return err
+			}
+			supplierEndpointHost := url.Host
+
 			var server relayer.RelayServer
 
 			log.Printf(
@@ -54,7 +61,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewJSONRPCServer(
 					service,
-					endpoint,
+					supplierEndpointHost,
 					proxiedServicesEndpoints,
 					rp.servedRelaysPublishCh,
 					rp,
