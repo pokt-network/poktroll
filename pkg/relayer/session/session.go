@@ -154,7 +154,11 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-		if endBlockHeight < block.Height() {
+		// TODO: We need this to be == instead of <= because we don't want to keep sending
+		// the same session while waiting the next step. This does not address the case
+		// where the block client misses the target block which should be handled by the
+		// retry mechanism.
+		if endBlockHeight == block.Height() {
 			// Iterate over the sessionsTrees that end at this block height (or
 			// less) and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {

@@ -267,7 +267,7 @@ func supplyRelayerProxy(
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
 	// TODO_TECHDEBT: this should be populated from some relayerProxy config.
-	anvilURL, err := url.Parse("ws://anvil:8547/")
+	anvilURL, err := url.Parse("http://localhost:8547/")
 	if err != nil {
 		return nil, err
 	}
