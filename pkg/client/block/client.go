@@ -82,8 +82,7 @@ func NewBlockClient(
 ) (client.BlockClient, error) {
 	// Initialize block client
 	bClient := &blockClient{endpointURL: cometWebsocketURL}
-	bClient.latestBlockObsvbls, bClient.latestBlockObsvblsReplayPublishCh =
-		channel.NewReplayObservable[client.BlocksObservable](ctx, latestBlockObsvblsReplayBufferSize)
+	bClient.latestBlockObsvbls, bClient.latestBlockObsvblsReplayPublishCh = channel.NewReplayObservable[client.BlocksObservable](ctx, latestBlockObsvblsReplayBufferSize)
 
 	// Inject dependencies
 	if err := depinject.Inject(deps, &bClient.eventsClient); err != nil {
@@ -141,7 +140,9 @@ func (bClient *blockClient) goPublishBlocks(ctx context.Context) {
 	// If we get here, the retry limit was reached and the retry loop exited.
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
-	panic(fmt.Errorf("BlockClient.goPublishBlocks shold never reach this spot: %w", publishErr))
+	if publishErr != nil {
+		panic(fmt.Errorf("BlockClient.goPublishBlocks should never reach this spot: %w", publishErr))
+	}
 }
 
 // retryPublishBlocksFactory returns a function which is intended to be passed to

@@ -3,8 +3,10 @@ package proxy
 import (
 	"context"
 
+	sdkerrors "cosmossdk.io/errors"
+	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	"github.com/cometbft/cometbft/crypto"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -17,33 +19,63 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	relayRequest *types.RelayRequest,
 	service *sharedtypes.Service,
 ) error {
-	// Query for the application account to get the application's public key to verify the relay request signature.
-	applicationAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
-	accQueryReq := &accounttypes.QueryAccountRequest{Address: applicationAddress}
-	accQueryRes, err := rp.accountsQuerier.Account(ctx, accQueryReq)
+	// extract the relay request's ring signature
+	signature := relayRequest.Meta.Signature
+	if signature == nil {
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing signature from relay request: %v", relayRequest,
+		)
+	}
+
+	ringSig := new(ring.RingSig)
+	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequestSignature,
+			"error deserializing ring signature: %v", err,
+		)
+	}
+
+	// get the ring for the application address of the relay request
+	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
 	if err != nil {
-		return err
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"error getting ring for application address %s: %v", appAddress, err,
+		)
 	}
 
-	var payloadBz []byte
-	if _, err = relayRequest.Payload.MarshalTo(payloadBz); err != nil {
-		return err
-	}
-	hash := crypto.Sha256(payloadBz)
-
-	account := new(accounttypes.BaseAccount)
-	if err := account.Unmarshal(accQueryRes.Account.Value); err != nil {
-		return err
+	// verify the ring signature against the ring
+	if !ringSig.Ring().Equals(appRing) {
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequestSignature,
+			"ring signature does not match ring for application address %s", appAddress,
+		)
 	}
 
-	if !account.GetPubKey().VerifySignature(hash, relayRequest.Meta.Signature) {
-		return ErrRelayerProxyInvalidRelayRequestSignature
+	// get and hash the signable bytes of the relay request
+	signableBz, err := relayRequest.GetSignableBytes()
+	if err != nil {
+		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
+	}
+
+	hash := crypto.Sha256(signableBz)
+	var hash32 [32]byte
+	copy(hash32[:], hash)
+
+	// verify the relay request's signature
+	if valid := ringSig.Verify(hash32); !valid {
+		return sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequestSignature,
+			"invalid ring signature",
+		)
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	currentBlock := rp.blockClient.LatestBlock(ctx)
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: applicationAddress,
+		ApplicationAddress: appAddress,
 		Service:            service,
 		BlockHeight:        currentBlock.Height(),
 	}
