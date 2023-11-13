@@ -11,7 +11,7 @@ localnet_config_defaults = {
     "gateways": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
-    "helm_chart_local_repo": {"enabled": True, "path": "../helm-charts"},
+    "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
 localnet_config = {}
