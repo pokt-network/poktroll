@@ -262,11 +262,22 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}
-	fmt.Println("OLSH Res", res.Stdout)
+
+	relayKey := getRelayKey(appName, supplierName)
+	s.scenarioState[relayKey] = res.Stdout
+}
+
+// TODO_IN_THIS_COMMIT: move
+func getRelayKey(appName, supplierName string) string {
+	return fmt.Sprintf("%s/%s", appName, supplierName)
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
-	// TODO(#126, @Olshansk): Implement this step
+	relayKey := getRelayKey(appName, supplierName)
+	stdout, ok := s.scenarioState[relayKey]
+
+	require.Truef(s, ok, "no relay response found for %s", relayKey)
+	require.Contains(s, stdout, `"result":"0x`)
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
