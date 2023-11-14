@@ -97,7 +97,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return ErrRelayerProxyInvalidSession
+		return ErrRelayerProxyInvalidSession.Wrapf("%+v", session)
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.
