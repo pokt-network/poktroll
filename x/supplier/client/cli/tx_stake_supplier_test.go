@@ -38,7 +38,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
-	defaultConfig := `---
+	defaultConfig := `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -80,7 +80,7 @@ services:
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidStake,
 			// stakeString:    "explicitly missing",
-			config: `---
+			config: `
 services:
 - service_id: svc1
   endpoints:
@@ -92,7 +92,7 @@ services:
 			desc:    "stake supplier: invalid stake denom",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidStake,
-			config: `---
+			config: `
 stake: 1000invalid
 services:
 - service_id: svc1
@@ -105,7 +105,7 @@ services:
 			desc:    "stake supplier: invalid stake amount (zero)",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidStake,
-			config: `---
+			config: `
 stake: 0upokt
 services:
 - service_id: svc1
@@ -118,7 +118,7 @@ services:
 			desc:    "stake supplier: invalid stake amount (negative)",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidStake,
-			config: `---
+			config: `
 stake: "-1000upokt"
 services:
 - service_id: svc1
@@ -132,7 +132,7 @@ services:
 		{
 			desc:    "services_test: valid multiple services",
 			address: supplierAccount.Address.String(),
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -148,7 +148,7 @@ services:
 		{
 			desc:    "services_test: valid localhost",
 			address: supplierAccount.Address.String(),
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -160,7 +160,7 @@ services:
 		{
 			desc:    "services_test: valid loopback",
 			address: supplierAccount.Address.String(),
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -172,7 +172,7 @@ services:
 		{
 			desc:    "services_test: valid without a pork",
 			address: supplierAccount.Address.String(),
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -188,7 +188,7 @@ services:
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
 			// servicesString: "explicitly omitted",
-			config: `---
+			config: `
 stake: 1000upokt
 `,
 		},
@@ -196,7 +196,7 @@ stake: 1000upokt
 			desc:    "services_test: invalid services (empty string)",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `---
+			config: `
 stake: 1000upokt
 services: []
 `,
@@ -205,7 +205,7 @@ services: []
 			desc:    "services_test: invalid URL",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -218,7 +218,7 @@ services:
 			desc:    "services_test: missing URLs",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1
@@ -229,7 +229,7 @@ services:
 			desc:    "services_test: missing service IDs",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - endpoints:
@@ -244,7 +244,7 @@ services:
 			desc:    "services_test: missing rpc type",
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `---
+			config: `
 stake: 1000upokt
 services:
 - service_id: svc1

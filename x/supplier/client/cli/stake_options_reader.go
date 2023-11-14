@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"net/url"
-	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
@@ -19,34 +18,32 @@ type ParsedStakeConfig struct {
 
 // StakeConfig is the structure of the stake config file
 type StakeConfig struct {
-	Stake    string         `json:"stake"`
-	Services []StakeService `json:"services"`
+	Stake    string         `yaml:"stake"`
+	Services []StakeService `yaml:"services"`
 }
 
 // StakeService is the structure describing a single service stake entry in the stake config file
 type StakeService struct {
-	ServiceId string            `json:"service_id"`
-	Endpoints []ServiceEndpoint `json:"endpoints"`
+	ServiceId string            `yaml:"service_id"`
+	Endpoints []ServiceEndpoint `yaml:"endpoints"`
 }
 
 // ServiceEndpoint is the structure describing a single service endpoint in the stake config file
 type ServiceEndpoint struct {
-	Url     string            `json:"url"`
-	RPCType string            `json:"rpc_type"`
-	Config  map[string]string `json:"config"`
+	Url     string            `yaml:"url"`
+	RPCType string            `yaml:"rpc_type"`
+	Config  map[string]string `yaml:"config"`
 }
 
 // parseStakeConfig parses the stake config file into a parsedStakeConfig
-func parseStakeConfig(configFile string) (*ParsedStakeConfig, error) {
-	// Read the stake config file into memory
-	configContent, err := os.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
+func parseStakeConfig(configContent []byte) (*ParsedStakeConfig, error) {
+	var (
+		stakeConfig *StakeConfig
+		err         error
+	)
 
 	// Unmarshal the stake config file into a stakeConfig
-	var stakeConfig *StakeConfig
-	if err := yaml.Unmarshal(configContent, &stakeConfig); err != nil {
+	if err = yaml.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, err
 	}
 

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"os"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -25,11 +26,16 @@ func CmdStakeSupplier() *cobra.Command {
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.json --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
-			stakeOptions, err := parseStakeConfig(flagStakeConfig)
+			configContent, err := os.ReadFile(flagStakeConfig)
+			if err != nil {
+				return err
+			}
+
+			stakeOptions, err := parseStakeConfig(configContent)
 			if err != nil {
 				return err
 			}
