@@ -254,7 +254,11 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
-	res, err := s.pocketd.RunCurl("", serviceId, requestData)
+	// TODO_TECHDEBT(#179): Once relayminer and appgateserver are running in tilt,
+	// use their respective in-tilt hostnames and run E2E tests in tilt. This
+	// should match the on-chain advertised endpoint for the service with the
+	// given serviceId.
+	res, err := s.pocketd.RunCurl("http://localhost:8545", serviceId, requestData)
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}
