@@ -25,8 +25,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Read the request body bytes.
 	payloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
-		log.Println("ERROR: Failed reading relay request body")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("reading relay request body", err)
 	}
 	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
 
@@ -41,16 +40,14 @@ func (app *appGateServer) handleJSONRPCRelay(
 
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
-		log.Println("ERROR: Failed getting current session")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
 	}
 	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
 
 	// Get a supplier URL and address for the given service and session.
 	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, sharedtypes.RPCType_JSON_RPC, session)
 	if err != nil {
-		log.Println("ERROR: Failed getting relayer URL")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
 	// Create the relay request.
@@ -65,40 +62,32 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Get the application's signer.
 	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
 	if err != nil {
-		log.Println("ERROR: Failed getting signer")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("getting signer", err)
 	}
 
 	// Hash and sign the request's signable bytes.
-	log.Printf("DEBUG: Signing relay request...")
 	signableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
-		log.Println("ERROR: Failed getting signable bytes")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("getting signable bytes", err)
 	}
 
 	hash := crypto.Sha256(signableBz)
 	signature, err := signer.Sign(hash)
 	if err != nil {
-		log.Println("ERROR: Failed signing relay request")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("signing relay", err)
 	}
 	relayRequest.Meta.Signature = signature
-
-	// log.Printf("DEBUG: relayRequest: %+v", relayRequest)
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
-		log.Println("ERROR: Failed marshaling relay request")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("marshalling relay request", err)
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
-		return err
+		return ErrAppGateHandleRelay.Wrapf("unmarshalling relay response", err)
 	}
-	// log.Printf("DEBUG: Signed relay request: %+v", relayReq)
 
 	// Create the HTTP request to send the request to the relayer.
 	relayHTTPRequest := &http.Request{
@@ -108,29 +97,23 @@ func (app *appGateServer) handleJSONRPCRelay(
 		Body:   relayRequestReader,
 	}
 
-	// log.Printf("DEBUG: relayHTTPRequest: %+v", relayHTTPRequest)
-
 	// Perform the HTTP request to the relayer.
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
-		log.Println("ERROR: Failed sending relay request to relayer")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("sending relay request", err)
 	}
 
 	// Read the response body bytes.
-	log.Printf("DEBUG: Reading relay response body...")
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
-		log.Println("ERROR: Failed reading relay response body")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("reading relay response body", err)
 	}
 
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
-		log.Println("ERROR: Failed unmarshaling relay response")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("unmarshalling relay response", err)
 	}
 
 	// Verify the response signature. We use the supplier address that we got from
@@ -140,22 +123,20 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
 	if err := app.verifyResponse(ctx, supplierAddress, relayResponse); err != nil {
-		log.Println("ERROR: Failed verifying relay response signature")
-		return err
+		// TODO_DISCUSS: should this be its own error type and asserted against in tests?
+		return ErrAppGateHandleRelay.Wrapf("verifying relay response signature", err)
 	}
 
 	// Marshal the response payload to bytes to be sent back to the application.
 	relayResponsePayloadBz, err := cdc.MarshalJSON(relayResponse.GetJsonRpcPayload())
 	if err != nil {
-		log.Println("ERROR: Failed unmarshaling relay response")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("unmarshallig relay response", err)
 	}
 
 	// Reply with the RelayResponse payload.
 	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponsePayloadBz))
 	if _, err := writer.Write(relayResponsePayloadBz); err != nil {
-		log.Println("ERROR: Failed writing relay response payload to writer")
-		return err
+		return ErrAppGateHandleRelay.Wrapf("writing relay response payload", err)
 	}
 
 	return nil
