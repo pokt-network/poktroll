@@ -11,33 +11,33 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// parsedStakeConfig is a parsed version of the stake config file
-type parsedStakeConfig struct {
+// ParsedStakeConfig is a parsed version of the stake config file
+type ParsedStakeConfig struct {
 	stake    sdk.Coin
 	services []*sharedtypes.SupplierServiceConfig
 }
 
-// stakeConfig is the structure of the stake config file
-type stakeConfig struct {
+// StakeConfig is the structure of the stake config file
+type StakeConfig struct {
 	Stake    string         `json:"stake"`
-	Services []stakeService `json:"services"`
+	Services []StakeService `json:"services"`
 }
 
-// stakeService is the structure describing a single service stake entry in the stake config file
-type stakeService struct {
+// StakeService is the structure describing a single service stake entry in the stake config file
+type StakeService struct {
 	ServiceId string            `json:"service_id"`
-	Endpoints []serviceEndpoint `json:"endpoints"`
+	Endpoints []ServiceEndpoint `json:"endpoints"`
 }
 
-// serviceEndpoint is the structure describing a single service endpoint in the stake config file
-type serviceEndpoint struct {
+// ServiceEndpoint is the structure describing a single service endpoint in the stake config file
+type ServiceEndpoint struct {
 	Url     string            `json:"url"`
 	RPCType string            `json:"rpc_type"`
 	Config  map[string]string `json:"config"`
 }
 
 // parseStakeConfig parses the stake config file into a parsedStakeConfig
-func parseStakeConfig(configFile string) (*parsedStakeConfig, error) {
+func parseStakeConfig(configFile string) (*ParsedStakeConfig, error) {
 	// Read the stake config file into memory
 	configContent, err := os.ReadFile(configFile)
 	if err != nil {
@@ -45,13 +45,13 @@ func parseStakeConfig(configFile string) (*parsedStakeConfig, error) {
 	}
 
 	// Unmarshal the stake config file into a stakeConfig
-	var stakeConfig *stakeConfig
+	var stakeConfig *StakeConfig
 	if err := json.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, err
 	}
 
 	// Prepare the parsedStakeConfig
-	parsedStakeConfig := &parsedStakeConfig{}
+	parsedStakeConfig := &ParsedStakeConfig{}
 
 	// Parse the stake amount and assign it to the parsedStakeConfig
 	parsedStakeConfig.stake, err = sdk.ParseCoinNormalized(stakeConfig.Stake)
@@ -93,7 +93,7 @@ func parseStakeConfig(configFile string) (*parsedStakeConfig, error) {
 	return parsedStakeConfig, nil
 }
 
-func parseEndpointEntry(endpoint serviceEndpoint) (*sharedtypes.SupplierEndpoint, error) {
+func parseEndpointEntry(endpoint ServiceEndpoint) (*sharedtypes.SupplierEndpoint, error) {
 	endpointEntry := &sharedtypes.SupplierEndpoint{}
 
 	// Endpoint URL
@@ -112,7 +112,7 @@ func parseEndpointEntry(endpoint serviceEndpoint) (*sharedtypes.SupplierEndpoint
 	return endpointEntry, nil
 }
 
-func validateEndpointURL(endpoint serviceEndpoint) (string, error) {
+func validateEndpointURL(endpoint ServiceEndpoint) (string, error) {
 	// Validate the endpoint URL
 	if _, err := url.Parse(endpoint.Url); err != nil {
 		return "", err
@@ -121,7 +121,7 @@ func validateEndpointURL(endpoint serviceEndpoint) (string, error) {
 	return endpoint.Url, nil
 }
 
-func parseEndpointConfigs(endpoint serviceEndpoint) []*sharedtypes.ConfigOption {
+func parseEndpointConfigs(endpoint ServiceEndpoint) []*sharedtypes.ConfigOption {
 	// Prepare the endpoint configs slice
 	endpointConfigs := []*sharedtypes.ConfigOption{}
 
@@ -150,7 +150,7 @@ func parseEndpointConfigs(endpoint serviceEndpoint) []*sharedtypes.ConfigOption 
 	return endpointConfigs
 }
 
-func parseEndpointRPCType(endpoint serviceEndpoint) sharedtypes.RPCType {
+func parseEndpointRPCType(endpoint ServiceEndpoint) sharedtypes.RPCType {
 	switch endpoint.RPCType {
 	case "json_rpc":
 		return sharedtypes.RPCType_JSON_RPC

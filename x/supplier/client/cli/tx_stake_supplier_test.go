@@ -1,7 +1,9 @@
 package cli_test
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -179,10 +181,12 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// write the stake config to a file
+			configPath := writeTestConfigToFile(tt.stakeString, tt.servicesString, t)
+
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stakeString,
-				tt.servicesString,
+				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
@@ -207,4 +211,32 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			require.Equal(t, uint32(0), resp.Code)
 		})
 	}
+}
+
+func writeTestConfigToFile(stakeString, servicesString string, t *testing.T) string {
+	stakeConfig := &cli.StakeConfig{
+		Stake:    stakeString,
+		Services: []cli.StakeService{},
+	}
+	services := strings.Split(servicesString, ",")
+
+	for _, service := range services {
+		serviceParts := strings.Split(service, ";")
+
+		stakeConfig.Services = append(stakeConfig.Services, cli.StakeService{
+			ServiceId: serviceParts[0],
+			Endpoints: []cli.ServiceEndpoint{
+				{
+					Url:     serviceParts[1],
+					RPCType: "json_rpc",
+				},
+			},
+		})
+	}
+
+	bz, err := json.Marshal(stakeConfig)
+	require.NoError(t, err)
+
+	file := testutil.WriteToNewTempFile(t, string(bz))
+	return file.Name()
 }
