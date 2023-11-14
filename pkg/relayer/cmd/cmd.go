@@ -34,19 +34,20 @@ func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
 		Short: "Run a relay miner",
-		Long:  `Run a relay miner`,
-		RunE:  runRelayer,
+		// TODO_TECHDEBT: add a longer long description.
+		Long: `Run a relay miner`,
+		RunE: runRelayer,
 	}
 
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
-	// TODO_TECHDEBT: integrate these cosmosflags with the client context (i.e. cosmosflags, config, viper, etc.)
+	// TODO_TECHDEBT: integrate these flags with the client context (i.e. cosmosflags, config, viper, etc.)
 	// This is simpler to do with server-side configs (see rootCmd#PersistentPreRunE).
 	// Will require more effort than currently justifiable.
 	cmd.Flags().StringVar(&flagSigningKeyName, "signing-key", "", "Name of the key to sign transactions")
 	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to the SMT KV store")
-	// Communication cosmosflags
-	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified. Figure out
+	// Communication flags
+	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified.
 	// Figure out what good defaults should be post alpha.
 	cmd.Flags().StringVar(&flagSequencerNode, "sequencer-node", "explicitly omitting default", "<host>:<port> to sequencer node to submit txs")
 	cmd.Flags().StringVar(&flagPocketNode, "pocket-node", "explicitly omitting default", "<host>:<port> to full pocket node for reading data and listening for on-chain events")
@@ -71,7 +72,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	signals.GoOnExitSignal(cancelCtx)
 
 	// Sets up the following dependencies:
-	// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, relayMiner dependencies.
+	// Miner, EventsQueryClient, BlockClient, cosmosclient.Context, TxFactory,
+	// TxContext, TxClient, SupplierClient, RelayerProxy, RelayerSessionsManager.
 	deps, err := setupRelayerDependencies(ctx, cmd)
 	if err != nil {
 		return err
@@ -93,7 +95,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 }
 
 // setupRelayerDependencies sets up all the dependencies the relay miner needs to run:
-// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, relayMiner
+// Miner, EventsQueryClient, BlockClient, cosmosclient.Context, TxFactory, TxContext,
+// TxClient, SupplierClient, RelayerProxy, RelayerSessionsManager.
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
@@ -257,6 +260,8 @@ func supplyRelayerProxy(
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
 	// TODO_TECHDEBT: this should be populated from some relayerProxy config.
+	// TODO_TECHDEBT(#179): this hostname should be updated to match that of the
+	// in-tilt anvil service.
 	anvilURL, err := url.Parse("http://localhost:8547/")
 	if err != nil {
 		return nil, err
