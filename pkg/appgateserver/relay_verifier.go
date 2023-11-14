@@ -2,7 +2,6 @@ package appgateserver
 
 import (
 	"context"
-	"log"
 
 	"github.com/cometbft/cometbft/crypto"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -26,7 +25,6 @@ func (app *appGateServer) verifyResponse(
 	}
 
 	// Extract the supplier's signature
-	log.Printf("DEBUG: Verifying relay response signature...")
 	if relayResponse.Meta == nil {
 		return ErrAppGateEmptyRelayResponse
 	}
