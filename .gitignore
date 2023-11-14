@@ -65,4 +65,10 @@ release
 # SMT KVStore files
 smt
 
+# Do not allow a multi-moduled projected
 go.work.sum
+
+# TODO_IN_THIS_COMMIT: Why did we start generating .dot files?
+# **/*.dot
+
+

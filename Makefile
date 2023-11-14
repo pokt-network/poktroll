@@ -281,7 +281,7 @@ app_stake: ## Stake tokens for the application specified (must specify the APP a
 	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 .PHONY: app1_stake
-app1_stake: ## Stake app1
+app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
 
 .PHONY: app2_stake
@@ -361,7 +361,7 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the APP
 	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
-supplier1_stake: ## Stake supplier1
+supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_IMPROVE: consolidate supplier1 staking; why/where is supplier1
 	# being staked other than this make target?
 	# Supplier1 seems to be staked at some point during localnet startup.
