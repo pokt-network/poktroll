@@ -107,7 +107,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Read the response body bytes.
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("reading relay response body", err)
+		return ErrAppGateHandleRelay.Wrapf("reading relay response body: %s", err)
 	}
 
 	// Unmarshal the response bytes into a RelayResponse.
@@ -130,7 +130,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Marshal the response payload to bytes to be sent back to the application.
 	relayResponsePayloadBz, err := cdc.MarshalJSON(relayResponse.GetJsonRpcPayload())
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshallig relay response", err)
+		return ErrAppGateHandleRelay.Wrapf("unmarshallig relay response: %s", err)
 	}
 
 	// Reply with the RelayResponse payload.
