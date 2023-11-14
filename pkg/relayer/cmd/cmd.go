@@ -124,8 +124,11 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
-	// Has no dependencies.
-	deps, err = supplyTxClientCtxAndTxFactory(deps, cmd)
+	// Has no dependencies
+	deps, err = supplyClientContext(deps, cmd)
+
+	// Depends on clientCtx.
+	deps, err = supplyTxFactory(deps, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -202,21 +205,36 @@ func supplyBlockClient(
 	return depinject.Configs(deps, depinject.Supply(blockClient)), nil
 }
 
-func supplyTxClientCtxAndTxFactory(
+func supplyClientContext(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
+	// NB: The implementation of #GetClientTxContext() is identical to that of
+	// #GetClientQueryContext(); either is sufficient for usage in both querying
+	// and transaction building and broadcasting.
 	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
 	if err != nil {
 		return nil, err
 	}
+	deps = depinject.Configs(deps, depinject.Supply(clientCtx))
+	return deps, nil
+}
+
+func supplyTxFactory(
+	deps depinject.Config,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
+	var clientCtx cosmosclient.Context
+	if err := depinject.Inject(deps, &clientCtx); err != nil {
+		return nil, err
+	}
+
 	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
 	if err != nil {
 		return nil, err
 	}
 
-	txClientCtx := relayer.TxClientContext(clientCtx)
-	return depinject.Configs(deps, depinject.Supply(txClientCtx, clientFactory)), nil
+	return depinject.Configs(deps, depinject.Supply(clientFactory)), nil
 }
 
 func supplyTxClient(
@@ -270,14 +288,6 @@ func supplyRelayerProxy(
 	proxiedServiceEndpoints := map[string]url.URL{
 		"anvil": *anvilURL,
 	}
-
-	clientCtx, err := cosmosclient.GetClientQueryContext(cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	queryClientCtx := relayer.QueryClientContext(clientCtx)
-	deps = depinject.Configs(deps, depinject.Supply(queryClientCtx))
 
 	relayerProxy, err := proxy.NewRelayerProxy(
 		deps,

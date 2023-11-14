@@ -12,7 +12,6 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 var _ client.TxContext = (*cosmosTxContext)(nil)
@@ -34,19 +33,15 @@ type cosmosTxContext struct {
 func NewTxContext(deps depinject.Config) (client.TxContext, error) {
 	txCtx := cosmosTxContext{}
 
-	var txClientCtx relayer.TxClientContext
-
 	if err := depinject.Inject(
 		deps,
-		&txClientCtx,
+		&txCtx.clientCtx,
 		&txCtx.txFactory,
 	); err != nil {
 		return nil, err
 	}
 
-	// TODO_CONSIDERATION: it might improve readability to use
-	// QueryClientContext on the struct.
-	txCtx.clientCtx = cosmosclient.Context(txClientCtx)
+	txCtx.clientCtx = cosmosclient.Context(txCtx.clientCtx)
 
 	return txCtx, nil
 }

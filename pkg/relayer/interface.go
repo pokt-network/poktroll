@@ -3,7 +3,6 @@ package relayer
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -131,8 +130,3 @@ type SessionTree interface {
 	// submitted on-chain and the servicer has confirmed that it has been rewarded.
 	Delete() error
 }
-
-// TODO_IN_THIS_COMMIT: comment.. these exist to differentiate in
-// depinject; therefore, can't be aliases.
-type TxClientContext client.Context
-type QueryClientContext client.Context
