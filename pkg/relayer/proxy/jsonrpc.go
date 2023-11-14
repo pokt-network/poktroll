@@ -19,10 +19,6 @@ type jsonRPCServer struct {
 	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
-	// serverEndpoint is the advertised endpoint configuration that the server uses to
-	// listen for incoming relay requests.
-	serverEndpoint *sharedtypes.SupplierEndpoint
-
 	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
 	proxiedServiceEndpoint url.URL
 
@@ -43,15 +39,14 @@ type jsonRPCServer struct {
 // a RelayServer that listens to incoming RelayRequests.
 func NewJSONRPCServer(
 	service *sharedtypes.Service,
-	supplierEndpoint *sharedtypes.SupplierEndpoint,
+	supplierEndpointHost string,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &jsonRPCServer{
 		service:                service,
-		serverEndpoint:         supplierEndpoint,
-		server:                 &http.Server{Addr: supplierEndpoint.Url},
+		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
 		proxiedServiceEndpoint: proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
@@ -67,6 +62,9 @@ func (jsrv *jsonRPCServer) Start(ctx context.Context) error {
 		jsrv.server.Shutdown(ctx)
 	}()
 
+	// Set the HTTP handler.
+	jsrv.server.Handler = jsrv
+
 	return jsrv.server.ListenAndServe()
 }
 
@@ -76,8 +74,8 @@ func (jsrv *jsonRPCServer) Stop(ctx context.Context) error {
 }
 
 // Service returns the JSON-RPC service.
-func (j *jsonRPCServer) Service() *sharedtypes.Service {
-	return j.service
+func (jsrv *jsonRPCServer) Service() *sharedtypes.Service {
+	return jsrv.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
@@ -86,6 +84,9 @@ func (j *jsonRPCServer) Service() *sharedtypes.Service {
 // (see https://pkg.go.dev/net/http#Handler)
 func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
+
+	log.Printf("DEBUG: Serving JSON-RPC relay request...")
+
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
 	relay, err := jsrv.serveHTTP(ctx, request)
 	if err != nil {
@@ -107,7 +108,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 		relay.Res.Meta.SessionHeader.ApplicationAddress,
 		relay.Res.Meta.SessionHeader.Service.Id,
 		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
-		jsrv.serverEndpoint.Url,
+		jsrv.server.Addr,
 	)
 
 	// Emit the relay to the servedRelays observable.
@@ -117,6 +118,7 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 // serveHTTP holds the underlying logic of ServeHTTP.
 func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request) (*types.Relay, error) {
 	// Extract the relay request from the request body.
+	log.Printf("DEBUG: Extracting relay request from request body...")
 	relayRequest, err := jsrv.newRelayRequest(request)
 	if err != nil {
 		return nil, err
@@ -136,25 +138,27 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// Get the relayRequest payload's `io.ReadCloser` to add it to the http.Request
 	// that will be sent to the proxied (i.e. staked for) service.
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
-	var payloadBz []byte
-	if _, err = relayRequest.Payload.MarshalTo(payloadBz); err != nil {
-		return nil, err
-	}
-	requestBodyReader := io.NopCloser(bytes.NewBuffer(payloadBz))
-
-	// Build the request to be sent to the native service by substituting
-	// the destination URL's host with the native service's listen address.
-	destinationURL, err := url.Parse(request.URL.String())
+	log.Printf("DEBUG: Getting relay request payload...")
+	cdc := types.ModuleCdc
+	payloadBz, err := cdc.MarshalJSON(relayRequest.GetJsonRpcPayload())
 	if err != nil {
 		return nil, err
 	}
-	destinationURL.Host = jsrv.proxiedServiceEndpoint.Host
+	requestBodyReader := io.NopCloser(bytes.NewBuffer(payloadBz))
+	log.Printf("DEBUG: Relay request payload: %s", string(payloadBz))
+
+	// Build the request to be sent to the native service by substituting
+	// the destination URL's host with the native service's listen address.
+	log.Printf("DEBUG: Building relay request to native service %s...", jsrv.proxiedServiceEndpoint.String())
+	if err != nil {
+		return nil, err
+	}
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    destinationURL,
-		Host:   destinationURL.Host,
+		URL:    &jsrv.proxiedServiceEndpoint,
+		Host:   jsrv.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}
 
@@ -167,6 +171,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// Build the relay response from the native service response
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
 	// and has to be the same as the relayResponse session header.
+	log.Printf("DEBUG: Building relay response from native service response...")
 	relayResponse, err := jsrv.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
@@ -176,8 +181,9 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
-func (j *jsonRPCServer) sendRelayResponse(relayResponse *types.RelayResponse, writer http.ResponseWriter) error {
-	relayResponseBz, err := relayResponse.Marshal()
+func (jsrv *jsonRPCServer) sendRelayResponse(relayResponse *types.RelayResponse, writer http.ResponseWriter) error {
+	cdc := types.ModuleCdc
+	relayResponseBz, err := cdc.Marshal(relayResponse)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"context"
+	"log"
+	"net/url"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -13,7 +15,13 @@ import (
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
 func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// Get the supplier address from the keyring
-	supplierAddress, err := rp.keyring.Key(rp.signingKeyName)
+	supplierKey, err := rp.keyring.Key(rp.signingKeyName)
+	if err != nil {
+		return err
+	}
+
+	// TODO_DISCUSS: is there a reason not to assign rp.supplierAddress here?
+	supplierAddress, err := supplierKey.GetAddress()
 	if err != nil {
 		return err
 	}
@@ -32,19 +40,30 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	for _, serviceConfig := range services {
 		service := serviceConfig.Service
 		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
-		serviceEndpoints := make([]relayer.RelayServer, len(serviceConfig.Endpoints))
+		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
+			url, err := url.Parse(endpoint.Url)
+			if err != nil {
+				return err
+			}
+			supplierEndpointHost := url.Host
+
 			var server relayer.RelayServer
+
+			log.Printf(
+				"INFO: starting relay server for service %s at endpoint %s",
+				service.Id, endpoint.Url,
+			)
 
 			// Switch to the RPC type to create the appropriate RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewJSONRPCServer(
 					service,
-					endpoint,
+					supplierEndpointHost,
 					proxiedServicesEndpoints,
-					rp.servedRelaysProducer,
+					rp.servedRelaysPublishCh,
 					rp,
 				)
 			default:

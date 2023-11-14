@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/cometbft/cometbft/crypto"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -23,6 +25,9 @@ func (app *appGateServer) verifyResponse(
 	}
 
 	// Extract the supplier's signature
+	if relayResponse.Meta == nil {
+		return ErrAppGateEmptyRelayResponse
+	}
 	supplierSignature := relayResponse.Meta.SupplierSignature
 
 	// Get the relay response signable bytes and hash them.
@@ -60,12 +65,15 @@ func (app *appGateServer) getSupplierPubKeyFromAddress(
 	}
 
 	// Unmarshal the query response into a BaseAccount.
-	account := new(accounttypes.BaseAccount)
-	if err := account.Unmarshal(accQueryRes.Account.Value); err != nil {
+	var acc accounttypes.AccountI
+	reg := codectypes.NewInterfaceRegistry()
+	accounttypes.RegisterInterfaces(reg)
+	cdc := codec.NewProtoCodec(reg)
+	if err := cdc.UnpackAny(accQueryRes.Account, &acc); err != nil {
 		return nil, err
 	}
 
-	fetchedPubKey := account.GetPubKey()
+	fetchedPubKey := acc.GetPubKey()
 	// Cache the retrieved public key.
 	app.supplierAccountCache[supplierAddress] = fetchedPubKey
 

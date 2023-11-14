@@ -32,7 +32,7 @@ var (
 	// byte data isn't recognized as a valid transaction event representation.
 	ErrNonTxEventBytes = errorsmod.Register(codespace, 9, "attempted to deserialize non-tx event bytes")
 
-	// ErrUnmarshalTx signals a failure in the unmarshalling process of a transaction.
+	// ErrUnmarshalTx signals a failure in the unmarshaling process of a transaction.
 	// This error is triggered when the system encounters issues translating a set of
 	// bytes into the corresponding Tx structure or object.
 	ErrUnmarshalTx = errorsmod.Register(codespace, 10, "failed to unmarshal tx")

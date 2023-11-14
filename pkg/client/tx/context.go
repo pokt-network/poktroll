@@ -41,6 +41,8 @@ func NewTxContext(deps depinject.Config) (client.TxContext, error) {
 		return nil, err
 	}
 
+	txCtx.clientCtx = cosmosclient.Context(txCtx.clientCtx)
+
 	return txCtx, nil
 }
 

@@ -51,7 +51,8 @@ func NewRelayerSessions(
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (relayer.RelayerSessionsManager, error) {
 	rs := &relayerSessionsManager{
-		sessionsTrees: make(sessionsTreesMap),
+		sessionsTrees:   make(sessionsTreesMap),
+		sessionsTreesMu: &sync.Mutex{},
 	}
 
 	if err := depinject.Inject(
@@ -79,10 +80,11 @@ func NewRelayerSessions(
 	return rs, nil
 }
 
-// Start iterates over the session trees at the end of each, respective, session.
+// Start maps over the session trees at the end of each, respective, session.
 // The session trees are piped through a series of map operations which progress
 // them through the claim/proof lifecycle, broadcasting transactions to  the
 // network as necessary.
+// It IS NOT blocking as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attempting to add the relay to
@@ -113,9 +115,6 @@ func (rs *relayerSessionsManager) InsertRelays(relays observable.Observable[*rel
 // ensureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
 func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
-
 	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
@@ -128,8 +127,9 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	sessionTree, ok := sessionsTrees[sessionHeader.SessionId]
 
 	// If the sessionTree does not exist, create it.
+	var err error
 	if !ok {
-		sessionTree, err := NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
 		if err != nil {
 			return nil, err
 		}
@@ -146,12 +146,19 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	_ context.Context,
 	block client.Block,
 ) (sessionTrees []relayer.SessionTree, skip bool) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
+
 	// Check if there are sessions that need to enter the claim/proof phase
 	// as their end block height was the one before the last committed block.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-		if endBlockHeight < block.Height() {
+		// TODO: We need this to be == instead of <= because we don't want to keep sending
+		// the same session while waiting the next step. This does not address the case
+		// where the block client misses the target block which should be handled by the
+		// retry mechanism.
+		if endBlockHeight == block.Height() {
 			// Iterate over the sessionsTrees that end at this block height (or
 			// less) and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -169,7 +176,7 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Printf("no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
+		log.Printf("DEBUG: no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
 		return
 	}
 
@@ -214,16 +221,18 @@ func (rs *relayerSessionsManager) mapAddRelayToSessionTree(
 	_ context.Context,
 	relay *relayer.MinedRelay,
 ) (_ error, skip bool) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
 	// ensure the session tree exists for this relay
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
-		log.Printf("failed to ensure session tree: %s\n", err)
+		log.Printf("ERROR: failed to ensure session tree: %s\n", err)
 		return err, false
 	}
 
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
-		log.Printf("failed to update smt: %s\n", err)
+		log.Printf("ERROR: failed to update smt: %s\n", err)
 		return err, false
 	}
 

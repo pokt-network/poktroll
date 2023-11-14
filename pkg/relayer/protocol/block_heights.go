@@ -14,7 +14,7 @@ import (
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
 func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int64 {
 	createClaimWindowStartBlockHash := createClaimWindowStartBlock.Hash()
-	log.Printf("using createClaimWindowStartBlock %d's hash %x as randomness", createClaimWindowStartBlock.Height(), createClaimWindowStartBlockHash)
+	log.Printf("DEBUG: using createClaimWindowStartBlock %d's hash %x as randomness", createClaimWindowStartBlock.Height(), createClaimWindowStartBlockHash)
 	rngSeed, _ := binary.Varint(createClaimWindowStartBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
@@ -32,7 +32,7 @@ func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int6
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
 func GetEarliestSubmitProofHeight(submitProofWindowStartBlock client.Block) int64 {
 	earliestSubmitProofBlockHash := submitProofWindowStartBlock.Hash()
-	log.Printf("using submitProofWindowStartBlock %d's hash %x as randomness", submitProofWindowStartBlock.Height(), earliestSubmitProofBlockHash)
+	log.Printf("DEBUG: using submitProofWindowStartBlock %d's hash %x as randomness", submitProofWindowStartBlock.Height(), earliestSubmitProofBlockHash)
 	rngSeed, _ := binary.Varint(earliestSubmitProofBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 

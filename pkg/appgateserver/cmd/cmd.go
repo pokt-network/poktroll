@@ -132,12 +132,12 @@ func setupAppGateServerDependencies(cmd *cobra.Command, ctx context.Context, com
 	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
 
 	// Create the events client.
-	eventsQueryClient := eventsquery.NewEventsQueryClient(flagCometWebsocketUrl)
+	eventsQueryClient := eventsquery.NewEventsQueryClient(cometWebsocketUrl)
 
 	// Create the block client.
-	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
+	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", cometWebsocketUrl)
 	deps := depinject.Supply(eventsQueryClient)
-	blockClient, err := blockclient.NewBlockClient(ctx, deps, flagCometWebsocketUrl)
+	blockClient, err := blockclient.NewBlockClient(ctx, deps, cometWebsocketUrl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create block client: %w", err)
 	}
