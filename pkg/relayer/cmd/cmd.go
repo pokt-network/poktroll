@@ -177,7 +177,6 @@ func supplyEventsQueryClient(deps depinject.Config, pocketNodeWebsocketURL strin
 	return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 }
 
-// TODO_IN_THIS_COMMIT: move
 func getPocketNodeWebsocketURL(cmd *cobra.Command) (string, error) {
 	pocketNodeURLStr, err := cmd.Flags().GetString(cosmosflags.FlagNode)
 	if err != nil {
