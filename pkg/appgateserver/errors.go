@@ -10,6 +10,6 @@ var (
 	ErrAppGateMissingAppAddress             = sdkerrors.Register(codespace, 4, "missing application address")
 	ErrAppGateMissingSigningInformation     = sdkerrors.Register(codespace, 5, "missing app client signing information")
 	ErrAppGateMissingListeningEndpoint      = sdkerrors.Register(codespace, 6, "missing app client listening endpoint")
-	ErrAppGateEmptyRelayResponse            = sdkerrors.Register(codespace, 7, "empty relay response")
+	ErrAppGateEmptyRelayResponseSignature   = sdkerrors.Register(codespace, 7, "empty relay response signature")
 	ErrAppGateHandleRelay                   = sdkerrors.Register(codespace, 8, "internal error handling relay request")
 )
