@@ -69,7 +69,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	defer cancelCtx()
 
 	// Sets up the following dependencies:
-	// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, RelayMiner dependencies.
+	// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, relayMiner dependencies.
 	deps, err := setupRelayerDependencies(ctx, cmd)
 	if err != nil {
 		return err
@@ -103,7 +103,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 }
 
 // setupRelayerDependencies sets up all the dependencies the relay miner needs to run:
-// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, RelayMiner
+// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, relayMiner
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
