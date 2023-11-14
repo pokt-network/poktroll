@@ -358,19 +358,19 @@ supplier_list: ## List all the staked supplier
 # TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1
-	SUPPLIER=supplier1 SERVICES="anvil;http://anvil:8547,svc1;http://localhost:8081" make supplier_stake
+	SUPPLIER=supplier1 SERVICES=stake_config.json make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	SUPPLIER=supplier2 SERVICES="anvil;http://anvil:8547,svc2;http://localhost:8082" make supplier_stake
+	SUPPLIER=supplier2 SERVICES=stake_config.json make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	SUPPLIER=supplier3 SERVICES="anvil;http://anvil:8547,svc3;http://localhost:8083" make supplier_stake
+	SUPPLIER=supplier3 SERVICES=stake_config.json make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
