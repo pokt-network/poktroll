@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gopkg.in/yaml.v2"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -46,7 +46,7 @@ func parseStakeConfig(configFile string) (*ParsedStakeConfig, error) {
 
 	// Unmarshal the stake config file into a stakeConfig
 	var stakeConfig *StakeConfig
-	if err := json.Unmarshal(configContent, &stakeConfig); err != nil {
+	if err := yaml.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, err
 	}
 
