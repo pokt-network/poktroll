@@ -122,16 +122,16 @@ helm_resource(
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
-# helm_resource(
-#     "relayers",
-#     poktroll_chart,
-#     flags=[
-#         "--values=./localnet/kubernetes/values-common.yaml",
-#         "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
-#     ],
-#     image_deps=["poktrolld"],
-#     image_keys=[("image.repository", "image.tag")],
-# )
+helm_resource(
+    "relayers",
+    poktroll_chart,
+    flags=[
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--set=replicaCount=" + str(localnet_config["relayers"]["count"]),
+    ],
+    image_deps=["poktrolld"],
+    image_keys=[("image.repository", "image.tag")],
+)
 
 # Configure tilt resources (tilt labels and port forwards) for all of the nodes above
 k8s_resource(
@@ -145,10 +145,10 @@ k8s_resource(
     resource_deps=["celestia-rollkit"],
     port_forwards=["36657", "40004"],
 )
-# k8s_resource(
-#     "relayers",
-#     labels=["blockchains"],
-#     resource_deps=["sequencer"],
-#     port_forwards=["8545", "8546", "40005"],
-# )
+k8s_resource(
+    "relayers",
+    labels=["blockchains"],
+    resource_deps=["sequencer"],
+    port_forwards=["8545", "8546", "40005"],
+)
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
