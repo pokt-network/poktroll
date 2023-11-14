@@ -56,7 +56,6 @@ func RelayerCmd() *cobra.Command {
 	// Set --node flag to the --sequencer-node for the client context
 	err := cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", flagSequencerNode))
 	if err != nil {
-		//return nil, err
 		panic(err)
 	}
 
