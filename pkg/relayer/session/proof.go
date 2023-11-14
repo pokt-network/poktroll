@@ -99,7 +99,7 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		log.Printf("currentBlock: %d, submitting proof", latestBlock.Height()+1)
+		log.Printf("INFO: currentBlock: %d, submitting proof", latestBlock.Height()+1)
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProof(
 			ctx,
