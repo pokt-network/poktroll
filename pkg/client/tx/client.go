@@ -517,7 +517,7 @@ func (tClient *txClient) txEventFromEventBz(
 		return either.Error[*TxEvent](ErrUnmarshalTx.Wrapf("%s", err)), true
 	}
 
-	// For successful unmarshalling, return the TxEvent.
+	// For successful unmarshaling, return the TxEvent.
 	return either.Success(txEvt), false
 }
 

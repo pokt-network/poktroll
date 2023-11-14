@@ -81,12 +81,12 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("marshalling relay request", err)
+		return ErrAppGateHandleRelay.Wrapf("marshaling relay request", err)
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshalling relay response", err)
+		return ErrAppGateHandleRelay.Wrapf("unmarshaling relay response", err)
 	}
 
 	// Create the HTTP request to send the request to the relayer.
@@ -113,7 +113,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshalling relay response", err)
+		return ErrAppGateHandleRelay.Wrapf("unmarshaling relay response", err)
 	}
 
 	// Verify the response signature. We use the supplier address that we got from
