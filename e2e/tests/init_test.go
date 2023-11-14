@@ -3,7 +3,9 @@
 package e2e
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,12 +33,21 @@ var (
 	accNameToAppMap      = make(map[string]apptypes.Application)
 	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
 
-	keyRingFlag = "--keyring-backend=test"
+	featuresPathFlag string
+	keyRingFlag      = "--keyring-backend=test"
 )
 
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
+
+	flag.StringVar(&featuresPathFlag, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	log.Printf("features path: %s", featuresPathFlag)
+	m.Run()
 }
 
 type suite struct {
@@ -58,7 +69,7 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path("*.feature").Run()
+	gocuke.NewRunner(t, &suite{}).Path(featuresPathFlag).Run()
 }
 
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
