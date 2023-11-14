@@ -15,12 +15,12 @@ func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayR
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("DEBUG: relay request body: %s", string(requestBz))
 
 	log.Printf("DEBUG: Unmarshaling relay request...")
 	var relayReq types.RelayRequest
-	if err := relayReq.Unmarshal(requestBz); err != nil {
-		return nil, err
-	}
+	cdc := types.ModuleCdc
+	cdc.MustUnmarshalJSON(requestBz, &relayReq)
 
 	return &relayReq, nil
 }

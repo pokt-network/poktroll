@@ -3,6 +3,7 @@ package appgateserver
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +13,15 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// InterimJSONRPCRequestPayload is a partial JSON RPC request payload that
+// excludes the params field, which is unmarshaled sperately.
+type InterimJSONRPCRequestPayload struct {
+	ID      uint32          `json:"id"`
+	Jsonrpc string          `json:"jsonrpc"`
+	Params  json.RawMessage `json:"params"`
+	Method  string          `json:"method"`
+}
 
 // handleJSONRPCRelay handles JSON RPC relay requests.
 // It does everything from preparing, signing and sending the request.
@@ -32,10 +42,40 @@ func (app *appGateServer) handleJSONRPCRelay(
 	// Create the relay request payload.
 	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
 	jsonPayload := &types.JSONRPCRequestPayload{}
-	cdc := types.ModuleCdc
-	if err := cdc.UnmarshalJSON(payloadBz, jsonPayload); err != nil {
+
+	// Unmarshal the request body bytes into an InterimJSONRPCRequestPayload.
+	interimPayload := &InterimJSONRPCRequestPayload{}
+	if err := json.Unmarshal(payloadBz, interimPayload); err != nil {
 		return err
 	}
+	jsonPayload.Jsonrpc = interimPayload.Jsonrpc
+	jsonPayload.Method = interimPayload.Method
+	jsonPayload.Id = interimPayload.ID
+
+	// Set the relay json payload's JSON RPC payload params.
+	var mapParams map[string]string
+	if err := json.Unmarshal(interimPayload.Params, &mapParams); err == nil {
+		jsonPayload.Params = &types.JSONRPCRequestPayload_MapParams{
+			MapParams: &types.JSONRPCRequestPayloadParamsMap{
+				Params: mapParams,
+			},
+		}
+	} else {
+		// Try unmarshaling into a list
+		var listParams []string
+		if err := json.Unmarshal(interimPayload.Params, &listParams); err == nil {
+			jsonPayload.Params = &types.JSONRPCRequestPayload_ListParams{
+				ListParams: &types.JSONRPCRequestPayloadParamsList{
+					Params: listParams,
+				},
+			}
+		} else {
+			// Neither a map nor a list
+			return ErrAppGateHandleRelay.Wrapf("params must be either a map or a list of strings: %v", err)
+		}
+	}
+
+	// Set the relay request payload's JSON RPC payload.
 	relayRequestPayload.JsonRpcPayload = jsonPayload
 
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
@@ -79,15 +119,14 @@ func (app *appGateServer) handleJSONRPCRelay(
 	relayRequest.Meta.Signature = signature
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
-	relayRequestBz, err := cdc.Marshal(relayRequest)
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("marshaling relay request: %s", err)
-	}
+	cdc := types.ModuleCdc
+	relayRequestBz := cdc.MustMarshalJSON(relayRequest)
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
 	var relayReq types.RelayRequest
-	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshaling relay response: %s", err)
+	if err := cdc.UnmarshalJSON(relayRequestBz, &relayReq); err != nil {
+		return ErrAppGateHandleRelay.Wrapf("unmarshaling relay request: %s", err)
 	}
+	log.Printf("DEBUG: relay request payload: %s", relayReq.GetJsonRpcPayload())
 
 	// Create the HTTP request to send the request to the relayer.
 	relayHTTPRequest := &http.Request{

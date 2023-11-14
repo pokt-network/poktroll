@@ -6,6 +6,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 import "cosmos_proto/cosmos.proto";
 import "pocket/application/application.proto";
 import "pocket/session/session.proto";
+import "gogoproto/gogo.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
 // The serialized tuple is inserted into the SMST leaves as values in the Claim/Proof lifecycle.
@@ -40,10 +41,22 @@ message JSONRPCRequestPayload {
     uint32 id = 1; // Identifier established by the Client to create context for the request.
     string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
     string method = 3; // Method being invoked on the server.
-    // TODO_TECHDEBT(#126): Make params a `oneof` of a list or map per the JSON-RPC specifications
-    // should they be a list of maps?
-    //map<string, string> params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
-    repeated string params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
+    oneof params {
+        JSONRPCRequestPayloadParamsList list_params = 4 [(gogoproto.jsontag) = "params"];
+        JSONRPCRequestPayloadParamsMap map_params = 5 [(gogoproto.jsontag) = "params"];
+    }
+}
+
+// JSONRPCRequestPayloadParamsList contains the list of parameters for a JSON-RPC request.
+// TODO_RESEARCH: Will this always be a string list? Or should we use a more generic type?
+message JSONRPCRequestPayloadParamsList {
+    repeated string params = 1;
+}
+
+// JSONRPCRequestPayloadParamsMap contains the map of parameters for a JSON-RPC request.
+// TODO_RESEARCH: Will this always be a string map? Or should we use a more generic type?
+message JSONRPCRequestPayloadParamsMap {
+    map<string, string> params = 1;
 }
 
 // RESTRequestType represents the type of REST request.

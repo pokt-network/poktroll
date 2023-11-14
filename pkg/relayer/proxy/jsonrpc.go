@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -115,6 +116,62 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 	jsrv.servedRelaysProducer <- relay
 }
 
+// InterimJSONRPCRequestPayload is a partial JSON RPC request payload that
+// excludes the params field, which is unmarshaled sperately.
+type InterimJSONRPCRequestPayload struct {
+	ID      uint32          `json:"id"`
+	Jsonrpc string          `json:"jsonrpc"`
+	Params  json.RawMessage `json:"params"`
+	Method  string          `json:"method"`
+}
+
+// UnmarshalJSON unmarshals the JSON RPC request payload into an
+// InterimJSONRPCRequestPayload. It extracts the params field from the
+// list_params or map_params fields and assigns it to the Params field.
+func (p *InterimJSONRPCRequestPayload) UnmarshalJSON(data []byte) error {
+	// Temporary struct to capture list_params and map_params
+	temp := struct {
+		ID         uint32          `json:"id"`
+		Jsonrpc    string          `json:"jsonrpc"`
+		ListParams json.RawMessage `json:"list_params"`
+		MapParams  json.RawMessage `json:"map_params"`
+		Method     string          `json:"method"`
+	}{}
+
+	// Unmarshal the data into the temporary struct
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Check and unmarshal the correct params field
+	if temp.ListParams != nil {
+		// Extract params from list_params
+		var listParams struct {
+			Params json.RawMessage `json:"params"`
+		}
+		if err := json.Unmarshal(temp.ListParams, &listParams); err != nil {
+			return err
+		}
+		p.Params = listParams.Params
+	} else if temp.MapParams != nil {
+		// Extract params from map_params
+		var mapParams struct {
+			Params json.RawMessage `json:"params"`
+		}
+		if err := json.Unmarshal(temp.MapParams, &mapParams); err != nil {
+			return err
+		}
+		p.Params = mapParams.Params
+	}
+
+	// Assign other fields
+	p.ID = temp.ID
+	p.Jsonrpc = temp.Jsonrpc
+	p.Method = temp.Method
+
+	return nil
+}
+
 // serveHTTP holds the underlying logic of ServeHTTP.
 func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request) (*types.Relay, error) {
 	// Extract the relay request from the request body.
@@ -140,7 +197,12 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
 	log.Printf("DEBUG: Getting relay request payload...")
 	cdc := types.ModuleCdc
-	payloadBz, err := cdc.MarshalJSON(relayRequest.GetJsonRpcPayload())
+	payloadBz := cdc.MustMarshalJSON(relayRequest.GetJsonRpcPayload())
+	var interimPayload InterimJSONRPCRequestPayload
+	if err := json.Unmarshal(payloadBz, &interimPayload); err != nil {
+		return nil, err
+	}
+	payloadBz, err = json.Marshal(interimPayload)
 	if err != nil {
 		return nil, err
 	}
