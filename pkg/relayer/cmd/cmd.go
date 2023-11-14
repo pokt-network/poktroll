@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"os"
-	"os/signal"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
@@ -14,6 +12,7 @@ import (
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
@@ -68,6 +67,9 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Ensure context cancellation.
 	defer cancelCtx()
 
+	// Handle interrupt and kill signals asynchronously.
+	signals.GoOnExitSignal(cancelCtx)
+
 	// Sets up the following dependencies:
 	// Miner, EventsQueryClient, BlockClient, TxClient, SupplierClient, RelayerProxy, relayMiner dependencies.
 	deps, err := setupRelayerDependencies(ctx, cmd)
@@ -79,18 +81,6 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-
-	// Handle interrupts in a goroutine.
-	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, os.Interrupt)
-
-		// Block until we receive an interrupt or kill signal (OS-agnostic)
-		<-sigCh
-
-		// Signal goroutines to stop
-		cancelCtx()
-	}()
 
 	// Start the relay miner
 	log.Println("INFO: Starting relay miner...")
