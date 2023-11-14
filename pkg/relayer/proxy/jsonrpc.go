@@ -74,8 +74,8 @@ func (jsrv *jsonRPCServer) Stop(ctx context.Context) error {
 }
 
 // Service returns the JSON-RPC service.
-func (j *jsonRPCServer) Service() *sharedtypes.Service {
-	return j.service
+func (jsrv *jsonRPCServer) Service() *sharedtypes.Service {
+	return jsrv.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
@@ -181,7 +181,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
-func (j *jsonRPCServer) sendRelayResponse(relayResponse *types.RelayResponse, writer http.ResponseWriter) error {
+func (jsrv *jsonRPCServer) sendRelayResponse(relayResponse *types.RelayResponse, writer http.ResponseWriter) error {
 	cdc := types.ModuleCdc
 	relayResponseBz, err := cdc.Marshal(relayResponse)
 	if err != nil {

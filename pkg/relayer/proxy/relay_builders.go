@@ -10,7 +10,7 @@ import (
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (j *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (j *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequ
 // newRelayResponse builds a RelayResponse from an http.Response and a SessionHeader.
 // It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierSignature.
 // If the response has a non-nil body, it will be parsed as a JSONRPCResponsePayload.
-func (j *jsonRPCServer) newRelayResponse(
+func (jsrv *jsonRPCServer) newRelayResponse(
 	response *http.Response,
 	sessionHeader *sessiontypes.SessionHeader,
 ) (*types.RelayResponse, error) {
@@ -53,7 +53,7 @@ func (j *jsonRPCServer) newRelayResponse(
 	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonPayload}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err = j.relayerProxy.SignRelayResponse(relayResponse); err != nil {
+	if err = jsrv.relayerProxy.SignRelayResponse(relayResponse); err != nil {
 		return nil, err
 	}
 
