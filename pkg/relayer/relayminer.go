@@ -8,7 +8,7 @@ import (
 )
 
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
-// It starts and stops the RelayerProxy and provide the served relays observable to them miner.
+// It starts and stops the RelayerProxy and provide the served relays observable to the miner.
 type relayMiner struct {
 	relayerProxy           RelayerProxy
 	miner                  Miner
