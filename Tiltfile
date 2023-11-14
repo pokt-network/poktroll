@@ -2,7 +2,7 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 
 # A list of directories where changes trigger a hot-reload of the sequencer
-hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg/relayer"]
+hot_reload_dirs = ["app", "cmd", "tools", "x"]
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
