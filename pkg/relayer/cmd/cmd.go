@@ -17,6 +17,7 @@ import (
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
@@ -31,12 +32,6 @@ var (
 	flagSequencerNodeUrl string
 	flagPocketNodeUrl    string
 )
-
-type supplierFn func(
-	context.Context,
-	depinject.Config,
-	*cobra.Command,
-) (depinject.Config, error)
 
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -120,9 +115,9 @@ func setupRelayerDependencies(
 		return nil, err
 	}
 
-	supplierFuncs := []supplierFn{
-		newSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
-		newSupplyBlockClientFn(pocketNodeWebsocketUrl),
+	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
+		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
 		supplyMiner,              // leaf
 		supplyQueryClientContext, // leaf
 		supplyTxClientContext,    // leaf
@@ -134,16 +129,7 @@ func setupRelayerDependencies(
 		supplyRelayerSessionsManager,
 	}
 
-	// Initialize deps to with empty depinject config.
-	deps = depinject.Configs()
-	for _, supplyFn := range supplierFuncs {
-		deps, err = supplyFn(ctx, deps, cmd)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return deps, nil
+	return config.SupplyConfig(ctx, cmd, supplierFuncs)
 }
 
 // getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
@@ -166,7 +152,7 @@ func getPocketNodeWebsocketUrl() (string, error) {
 // EventsQueryClient.
 func newSupplyEventsQueryClientFn(
 	pocketNodeWebsocketUrl string,
-) supplierFn {
+) config.SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
@@ -182,7 +168,7 @@ func newSupplyEventsQueryClientFn(
 // with the given nodeURL and returns a new
 // depinject.Config which is supplied with the given deps and the new
 // BlockClient.
-func newSupplyBlockClientFn(pocketNodeWebsocketUrl string) supplierFn {
+func newSupplyBlockClientFn(pocketNodeWebsocketUrl string) config.SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -212,6 +198,9 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
+// supplyQueryClientContext returns a function with constructs a ClientContext
+// instance with the given cmd and returns a new depinject.Config which is
+// supplied with the given deps and the new ClientContext.
 func supplyQueryClientContext(
 	_ context.Context,
 	deps depinject.Config,

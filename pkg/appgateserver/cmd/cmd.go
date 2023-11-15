@@ -15,8 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
-	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
 const omittedDefaultFlagValue = "explicitly omitting default"
@@ -27,12 +26,6 @@ var (
 	flagListeningEndpoint string
 	flagQueryNodeUrl      string
 )
-
-type supplierFn func(
-	context.Context,
-	depinject.Config,
-	*cobra.Command,
-) (depinject.Config, error)
 
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -133,22 +126,13 @@ func setupAppGateServerDependencies(
 		return nil, err
 	}
 
-	supplierFuncs := []supplierFn{
-		newSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
-		newSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		newSupplyClientContextFn(cmd),
+	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
+		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
+		newSupplyQueryClientContextFn(flagQueryNodeUrl),
 	}
 
-	// Initialize deps to with empty depinject config.
-	deps := depinject.Configs()
-	for _, supplyFn := range supplierFuncs {
-		deps, err = supplyFn(ctx, deps, cmd)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return deps, nil
+	return config.SupplyConfig(ctx, cmd, supplierFuncs)
 }
 
 // getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
@@ -166,53 +150,34 @@ func getPocketNodeWebsocketUrl() (string, error) {
 	return fmt.Sprintf("ws://%s/websocket", pocketNodeURL.Host), nil
 }
 
-// newSupplyEventsQueryClientFn constructs an EventsQueryClient instance and returns
-// a new depinject.Config which is supplied with the given deps and the new
-// EventsQueryClient.
-func newSupplyEventsQueryClientFn(
-	pocketNodeWebsocketUrl string,
-) supplierFn {
+// newSupplyQueryClientContextFn returns a new depinject.Config which is supplied with
+// the given deps and a new cosmos ClientCtx
+func newSupplyQueryClientContextFn(pocketQueryClientUrl string) config.SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
-		_ *cobra.Command,
+		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketUrl)
-
-		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
-	}
-}
-
-// newSupplyBlockClientFn returns a function with constructs a BlockClient instance
-// with the given nodeURL and returns a new
-// depinject.Config which is supplied with the given deps and the new
-// BlockClient.
-func newSupplyBlockClientFn(pocketNodeWebsocketUrl string) supplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketUrl)
+		// Set --node flag to the pocketQueryClientUrl for the client context
+		// This flag is read by cosmosclient.GetClientQueryContext.
+		err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryClientUrl)
 		if err != nil {
 			return nil, err
 		}
 
-		return depinject.Configs(deps, depinject.Supply(blockClient)), nil
-	}
-}
-
-// newSupplyClientContextFn returns a function with constructs a ClientContext instance
-// with the given cmd and returns a new depinject.Config which is supplied with
-// the given deps and the new ClientContext.
-func newSupplyClientContextFn(cmd *cobra.Command) supplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
-
-		return depinject.Configs(deps, depinject.Supply(clientCtx)), nil
+		// NB: Currently, the implementations of GetClientTxContext() and
+		// GetClientQueryContext() are identical, allowing for their interchangeable
+		// use in both querying and transaction operations. However, in order to support
+		// independent configuration of client contexts for distinct querying and
+		// transacting purposes. E.g.: transactions are dispatched to the sequencer
+		// while queries are handled by a trusted full-node.
+		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+		if err != nil {
+			return nil, err
+		}
+		deps = depinject.Configs(deps, depinject.Supply(
+			queryClientCtx,
+		))
+		return deps, nil
 	}
 }
