@@ -19,5 +19,7 @@ RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld
 
 EXPOSE 8545
 EXPOSE 8546
+EXPOSE 8547
+EXPOSE 8548
 
 ENTRYPOINT ["ignite"]

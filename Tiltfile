@@ -33,10 +33,6 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
 
-    # sequencer_chart = helm_chart_local_repo + "/charts/poktroll-sequencer"
-    # poktroll_chart = helm_chart_local_repo + "/charts/poktroll"
-
-
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
     files = listdir(directory)
@@ -136,7 +132,7 @@ helm_resource(
 )
 helm_resource(
     "appgateservers",
-    poktroll_chart,
+    chart_prefix + "appgate-server",
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-appgateserver.yaml",
@@ -162,7 +158,7 @@ k8s_resource(
     "relayminers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["8545", "8546", "40005"],
+    port_forwards=["8548", "40005"],
 )
 k8s_resource(
     "appgateservers",
