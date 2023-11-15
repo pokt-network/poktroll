@@ -26,6 +26,7 @@ import (
 
 const omittedDefaultFlagValue = "explicitly omitting default"
 
+// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
 	flagSigningKeyName   string
 	flagSmtStorePath     string
