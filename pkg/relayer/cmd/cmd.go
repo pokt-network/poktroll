@@ -24,14 +24,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
+// We're `explicitly omitting default` so the relayer crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
 
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
-	flagSigningKeyName   string
-	flagSmtStorePath     string
-	flagSequencerNodeUrl string
-	flagPocketNodeUrl    string
+	flagSigningKeyName string
+	flagSmtStorePath   string
+	flagNetworkNodeUrl string
+	flagQueryNodeUrl   string
 )
 
 func RelayerCmd() *cobra.Command {
@@ -62,10 +63,8 @@ for such operations.`,
 	// TODO_TECHDEBT(#137): This, alongside other flags, should be part of a config file suppliers provide.
 	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to where the data backing SMT KV store exists on disk")
 	// Communication flags
-	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified.
-	// Figure out what good defaults should be post alpha.
-	cmd.Flags().StringVar(&flagSequencerNodeUrl, "sequencer-node", "explicitly omitting default", "tcp://<host>:<port> to sequencer node to submit txs")
-	cmd.Flags().StringVar(&flagPocketNodeUrl, "pocket-node", omittedDefaultFlagValue, "tcp://<host>:<port> to full pocket node for reading data and listening for on-chain events")
+	cmd.Flags().StringVar(&flagNetworkNodeUrl, "network-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer")
+	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events")
 	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
 
 	return cmd
@@ -136,11 +135,11 @@ func setupRelayerDependencies(
 // getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
 // connect to for subscribing to on-chain events.
 func getPocketNodeWebsocketUrl() (string, error) {
-	if flagPocketNodeUrl == omittedDefaultFlagValue {
-		return "", fmt.Errorf("--pocket-node flag is required")
+	if flagQueryNodeUrl == omittedDefaultFlagValue {
+		return "", fmt.Errorf("--query-node flag is required")
 	}
 
-	pocketNodeURL, err := url.Parse(flagPocketNodeUrl)
+	pocketNodeURL, err := url.Parse(flagQueryNodeUrl)
 	if err != nil {
 		return "", err
 	}
@@ -207,9 +206,9 @@ func supplyQueryClientContext(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	// Set --node flag to the --pocket-node for the client context
+	// Set --node flag to the --query-node for the client context
 	// This flag is read by cosmosclient.GetClientQueryContext.
-	err := cmd.Flags().Set(cosmosflags.FlagNode, flagPocketNodeUrl)
+	err := cmd.Flags().Set(cosmosflags.FlagNode, flagQueryNodeUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -238,9 +237,9 @@ func supplyTxClientContext(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	// Set --node flag to the --sequencer-node for this client context.
+	// Set --node flag to the --network-node for this client context.
 	// This flag is read by cosmosclient.GetClientTxContext.
-	err := cmd.Flags().Set(cosmosflags.FlagNode, flagSequencerNodeUrl)
+	err := cmd.Flags().Set(cosmosflags.FlagNode, flagNetworkNodeUrl)
 	if err != nil {
 		return nil, err
 	}

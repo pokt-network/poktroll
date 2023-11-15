@@ -18,15 +18,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
 
+// We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
 	flagSigningKey        string
 	flagSelfSigning       bool
 	flagListeningEndpoint string
-	// TODO_DISCUSS: Should we use `--node` for both querying and sending transactions, or have the respective
-	// `--network-node` for txs and `--query-node` for querying in the future?
-	flagQueryNodeUrl string
+	flagQueryNodeUrl      string
 )
 
 func AppGateServerCmd() *cobra.Command {
@@ -58,11 +57,13 @@ relays to the AppGate server and function as an Application, provided that:
 		RunE: runAppGateServer,
 	}
 
+	// Custom flags
 	cmd.Flags().StringVar(&flagSigningKey, "signing-key", "", "The name of the key that will be used to sign relays")
 	cmd.Flags().StringVar(&flagListeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the appgate server will listen on")
 	cmd.Flags().BoolVar(&flagSelfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
-	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "The URL of the pocket node to query for on-chain data")
+	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events")
 
+	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "The URL of the comet tcp endpoint to communicate with the pocket blockchain")
 
