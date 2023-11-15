@@ -344,9 +344,8 @@ func supplyRelayerProxy(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
-	// TODO_BLOCKER:(#137): This MUST be populated via the `relayer.json` config file
-	// TODO_UPNEXT(@okdas): this hostname should be updated to match that of the
-	// in-tilt anvil service.
+	// TODO_BLOCKER:(#137, @red-0ne): This MUST be populated via the `relayer.json` config file
+	// TODO_UPNEXT(@okdas): this hostname should be updated to match that of the in-tilt anvil service.
 	proxyServiceURL, err := url.Parse("http://localhost:8547/")
 	if err != nil {
 		return nil, err

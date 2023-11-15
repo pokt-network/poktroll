@@ -20,7 +20,6 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		return err
 	}
 
-	// TODO_DISCUSS: is there a reason not to assign rp.supplierAddress here?
 	supplierAddress, err := supplierKey.GetAddress()
 	if err != nil {
 		return err
