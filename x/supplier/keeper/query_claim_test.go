@@ -105,7 +105,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 func TestClaim_QueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNClaims(keeper, ctx, 5)
+	claims := createNClaims(keeper, ctx, 10)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimsRequest {
 		return &types.QueryAllClaimsRequest{
@@ -119,12 +119,12 @@ func TestClaim_QueryPaginated(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(claims); i += step {
 			resp, err := keeper.AllClaims(wctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(claims),
 				nullify.Fill(resp.Claim),
 			)
 		}
@@ -132,12 +132,12 @@ func TestClaim_QueryPaginated(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(claims); i += step {
 			resp, err := keeper.AllClaims(wctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(claims),
 				nullify.Fill(resp.Claim),
 			)
 			next = resp.Pagination.NextKey
@@ -146,14 +146,44 @@ func TestClaim_QueryPaginated(t *testing.T) {
 	t.Run("Total", func(t *testing.T) {
 		resp, err := keeper.AllClaims(wctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
-		require.Equal(t, len(msgs), int(resp.Pagination.Total))
+		require.Equal(t, len(claims), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(msgs),
+			nullify.Fill(claims),
 			nullify.Fill(resp.Claim),
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
 		_, err := keeper.AllClaims(wctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
+	})
+
+	t.Run("BySupplierAddress", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
+			SupplierAddress: claims[0].SupplierAddress,
+		}
+		resp, err := keeper.AllClaims(wctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
+	})
+
+	t.Run("BySessionId", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SessionId{
+			SessionId: claims[0].SessionId,
+		}
+		resp, err := keeper.AllClaims(wctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
+	})
+
+	t.Run("BySessionEndHeight", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
+			SessionEndHeight: claims[0].SessionEndBlockHeight,
+		}
+		resp, err := keeper.AllClaims(wctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
 	})
 }

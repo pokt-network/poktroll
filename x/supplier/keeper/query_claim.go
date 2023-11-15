@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/binary"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,16 +18,55 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var claims []types.Claim
 	ctx := sdk.UnwrapSDKContext(goCtx)
-
 	store := ctx.KVStore(k.storeKey)
-	claimStore := prefix.NewStore(store, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 
+	// isCustomIndex is used to determined if we'll be using the store that points
+	// to the actual Claim values, or a secondary index that points to the primary keys.
+	var isCustomIndex bool
+	var claimStore sdk.KVStore
+	switch filter := req.Filter.(type) {
+	case *types.QueryAllClaimsRequest_SupplierAddress:
+		isCustomIndex = true
+		keyPrefix := types.KeyPrefix(types.ClaimSupplierAddressPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
+		claimStore = prefix.NewStore(store, keyPrefix)
+
+	case *types.QueryAllClaimsRequest_SessionEndHeight:
+		isCustomIndex = true
+		heightBz := make([]byte, 8)
+		binary.BigEndian.PutUint64(heightBz, filter.SessionEndHeight)
+
+		keyPrefix := types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
+		keyPrefix = append(keyPrefix, heightBz...)
+		claimStore = prefix.NewStore(store, keyPrefix)
+
+	case *types.QueryAllClaimsRequest_SessionId:
+		isCustomIndex = false
+		keyPrefix := types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SessionId)...)
+		claimStore = prefix.NewStore(store, keyPrefix)
+
+	default:
+		isCustomIndex = false
+		keyPrefix := types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
+		claimStore = prefix.NewStore(store, keyPrefix)
+	}
+
+	var claims []types.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
 		var claim types.Claim
-		if err := k.cdc.Unmarshal(value, &claim); err != nil {
-			return err
+		if isCustomIndex {
+			// We retrieve the primaryKey, and need to query the actual Claim before decoding it.
+			claim, claimFound := k.getClaimByPrimaryKey(ctx, value)
+			if claimFound {
+				claims = append(claims, claim)
+			}
+		} else {
+			// The value is an encoded Claim.
+			if err := k.cdc.Unmarshal(value, &claim); err != nil {
+				return err
+			}
 		}
 
 		claims = append(claims, claim)
