@@ -137,7 +137,7 @@ func NewRelayerProxy(
 	return rp, nil
 }
 
-// Start concurrently starts all advertised relay servers and returns an error
+// Start concurrently starts all advertised relay services and returns an error
 // if any of them errors.
 // This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {

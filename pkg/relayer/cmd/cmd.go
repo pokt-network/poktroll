@@ -343,14 +343,16 @@ func supplyRelayerProxy(
 	deps depinject.Config,
 	_ *cobra.Command,
 ) (depinject.Config, error) {
-	// TODO_TECHDEBT: this should be populated from some relayerProxy config.
+	// TODO_BLOCKER:(#137): This MUST be populated via the `relayer.json` config file
 	// TODO_TECHDEBT(#179): this hostname should be updated to match that of the
 	// in-tilt anvil service.
-	anvilURL, err := url.Parse("http://localhost:8547/")
+	proxyServiceURL, err := url.Parse("http://localhost:8547/")
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented an a local LLM node 
+	// is supported, this needs to be expanded such that a single relayer can proxy to multiple services at once.
 	proxiedServiceEndpoints := map[string]url.URL{
 		"anvil": *anvilURL,
 	}
