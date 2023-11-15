@@ -25,21 +25,6 @@ func CmdCreateClaim() *cobra.Command {
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			// fmt.Println("OLSH")
-			// argSessionHeader := &sessiontypes.SessionHeader{
-			// 	ApplicationAddress:      "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
-			// 	SessionStartBlockHeight: 1,
-			// 	SessionId:               "session_id",
-			// 	SessionEndBlockHeight:   5,
-			// 	Service: &sharedtypes.Service{
-			// 		Id: "anvil",
-			// 	},
-			// }
-			// fmt.Println("HERE", argSessionHeader)
-			// cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
-			// bz := cdc.MustMarshalJSON(argSessionHeader)
-			// fmt.Println("HERE", hex.EncodeToString(bz))
-
 			// Get the session header
 			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 			sessionHeaderBz, err := hex.DecodeString(args[0])
@@ -69,7 +54,6 @@ func CmdCreateClaim() *cobra.Command {
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
-
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

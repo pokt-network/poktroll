@@ -1,38 +1,90 @@
 package cli_test
 
 import (
+	"encoding/hex"
 	"fmt"
-	"strconv"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func networkWithClaimObjects(t *testing.T, n int) (*network.Network, []types.Claim) {
+func encodeSessionHeader(
+	t *testing.T,
+) string {
 	t.Helper()
-	cfg := network.DefaultConfig()
-	state := types.GenesisState{}
-	for i := 0; i < n; i++ {
-		claim := types.Claim{
-			Index: strconv.Itoa(i),
-		}
-		nullify.Fill(&claim)
-		state.ClaimList = append(state.ClaimList, claim)
+	argSessionHeader := &sessiontypes.SessionHeader{
+		ApplicationAddress:      "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
+		SessionStartBlockHeight: 1,
+		SessionId:               "session_id",
+		SessionEndBlockHeight:   5,
+		Service: &sharedtypes.Service{
+			Id: "anvil",
+		},
 	}
-	buf, err := cfg.Codec.MarshalJSON(&state)
+	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
+	return hex.EncodeToString(sessionHeaderBz)
+}
+
+func createClaim(t *testing.T, ctx client.Context, supplierAddr string) *types.Claim {
+	t.Helper()
+
+	sessionHeaderEncoded := encodeSessionHeader(t)
+
+	rootHash := []byte("root_hash")
+	rootHashEncoded := hex.EncodeToString(rootHash)
+
+	args := []string{
+		sessionHeaderEncoded,
+		rootHashEncoded,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin("upokt", sdkmath.NewInt(10))).String()),
+	}
+
+	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-	return network.New(t, cfg), state.ClaimList
+
+	return &types.Claim{
+		SupplierAddress:       "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
+		SessionId:             "session_id",
+		SessionEndBlockHeight: 5,
+		RootHash:              rootHash,
+	}
+}
+
+func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims []types.Claim) {
+	t.Helper()
+
+	cfg := network.DefaultConfig()
+	net = network.New(t, cfg)
+	validator := net.Validators[0]
+	ctx := validator.ClientCtx
+
+	for i := 0; i < n; i++ {
+		claim := createClaim(t, ctx, validator.Address.String())
+		claims = append(claims, *claim)
+	}
+
+	return net, claims
 }
 
 func TestShowClaim(t *testing.T) {
@@ -43,23 +95,34 @@ func TestShowClaim(t *testing.T) {
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
 	tests := []struct {
-		desc    string
-		idIndex string
+		desc         string
+		sessionId    string
+		supplierAddr string
 
 		args []string
 		err  error
 		obj  types.Claim
 	}{
 		{
-			desc:    "found",
-			idIndex: claims[0].Index,
+			desc:         "claim found",
+			sessionId:    claims[0].SessionId,
+			supplierAddr: claims[0].SupplierAddress,
 
 			args: common,
 			obj:  claims[0],
 		},
 		{
-			desc:    "not found",
-			idIndex: strconv.Itoa(100000),
+			desc:         "claim not found (wrong session ID)",
+			sessionId:    "wrong_session_id",
+			supplierAddr: claims[0].SupplierAddress,
+
+			args: common,
+			err:  status.Error(codes.NotFound, "not found"),
+		},
+		{
+			desc:         "claim not found (wrong supplier address)",
+			sessionId:    claims[0].SessionId,
+			supplierAddr: "wrong_supplier_address",
 
 			args: common,
 			err:  status.Error(codes.NotFound, "not found"),
@@ -68,7 +131,8 @@ func TestShowClaim(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := []string{
-				tc.idIndex,
+				tc.sessionId,
+				tc.supplierAddr,
 			}
 			args = append(args, tc.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowClaim(), args)

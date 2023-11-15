@@ -74,6 +74,10 @@ func (k Keeper) GetClaim(ctx sdk.Context, sessionId, supplierAddr string) (val t
 	return k.getClaimByPrimaryKey(ctx, primaryKey)
 }
 
+	// primaryStore := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	// primaryKey := types.ClaimPrimaryKey(claim.SessionId, claim.SupplierAddress)
+	// primaryStore.Set(primaryKey, claimBz)
+
 // GetAllClaims returns all claim
 func (k Keeper) GetAllClaims(ctx sdk.Context) (claims []types.Claim) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
