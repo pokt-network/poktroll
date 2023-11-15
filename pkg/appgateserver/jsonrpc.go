@@ -98,15 +98,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 		Body:   relayRequestReader,
 	}
 
-	// TODO: relayminer is currently named relayers
-	// application (localhost)
-	// -> appgate (localhost:42069); configured by the gateway/application **off-chain**
-	// -> relayminer (supplierURL); advertised **on-chain**
-	// -> anvil (localhost:8547); configured **behind-the-scenes**; chains.json (v0); currently hard-coded
-
-	// Perform the HTTP request to the relayer.
-	log.Printf("DEBUG: Sending raw payload to signed relay request to %s", supplierUrl)
-	fmt.Printf("\n~~~~ OLSH %+v \n~~~~\n", relayHTTPRequest)
+	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("sending relay request: %s", err)
