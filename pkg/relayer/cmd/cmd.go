@@ -344,7 +344,7 @@ func supplyRelayerProxy(
 	_ *cobra.Command,
 ) (depinject.Config, error) {
 	// TODO_BLOCKER:(#137): This MUST be populated via the `relayer.json` config file
-	// TODO_TECHDEBT(#179): this hostname should be updated to match that of the
+	// TODO_UPNEXT(@okdas): this hostname should be updated to match that of the
 	// in-tilt anvil service.
 	proxyServiceURL, err := url.Parse("http://localhost:8547/")
 	if err != nil {
@@ -372,6 +372,8 @@ func supplyRelayerProxy(
 // supplyRelayerSessionsManager constructs a RelayerSessionsManager instance
 // and returns a new depinject.Config which is supplied with the given deps and
 // the new RelayerSessionsManager.
+// See the comment next to `flagQueryNodeUrl` (if it still exists) on how/why
+// we have multiple flags pointing to different node types.
 func supplyRelayerSessionsManager(
 	ctx context.Context,
 	deps depinject.Config,

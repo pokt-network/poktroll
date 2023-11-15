@@ -24,7 +24,9 @@ var (
 	flagSigningKey        string
 	flagSelfSigning       bool
 	flagListeningEndpoint string
-	flagQueryNodeUrl      string
+	// TODO_DISCUSS: Should we use `--node` for both querying and sending transactions, or have the respective
+	// `--network-node` for txs and `--query-node` for querying in the future?
+	flagQueryNodeUrl string
 )
 
 func AppGateServerCmd() *cobra.Command {
