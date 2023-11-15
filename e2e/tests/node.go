@@ -21,6 +21,8 @@ var (
 	defaultRPCHost = "127.0.0.1"
 	// defaultHome is the default home directory for pocketd
 	defaultHome = os.Getenv("POKTROLLD_HOME")
+	// defaultAppGateServerURL used by curl commands to send relay requests
+	defaultAppGateServerURL = os.Getenv("APPGATE_SERVER")
 	// defaultDebugOutput provides verbose output on manipulations with binaries (cli command, stdout, stderr)
 	defaultDebugOutput = os.Getenv("E2E_DEBUG_OUTPUT")
 )
@@ -44,8 +46,9 @@ type commandResult struct {
 
 // PocketClient is a single function interface for interacting with a node
 type PocketClient interface {
-	RunCommand(...string) (*commandResult, error)
-	RunCommandOnHost(string, ...string) (*commandResult, error)
+	RunCommand(args ...string) (*commandResult, error)
+	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
+	RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -58,7 +61,7 @@ type pocketdBin struct {
 
 // RunCommand runs a command on the local machine using the pocketd binary
 func (p *pocketdBin) RunCommand(args ...string) (*commandResult, error) {
-	return p.runCmd(args...)
+	return p.runPocketCmd(args...)
 }
 
 // RunCommandOnHost runs a command on specified host with the given args
@@ -67,11 +70,19 @@ func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandRe
 		rpcUrl = defaultRPCURL
 	}
 	args = append(args, "--node", rpcUrl)
-	return p.runCmd(args...)
+	return p.runPocketCmd(args...)
 }
 
-// runCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
+// RunCurl runs a curl command on the local machine
+func (p *pocketdBin) RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error) {
+	if rpcUrl == "" {
+		rpcUrl = defaultAppGateServerURL
+	}
+	return p.runCurlPostCmd(rpcUrl, service, data, args...)
+}
+
+// runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
+func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 	base := []string{"--home", defaultHome}
 	args = append(base, args...)
 	commandStr := "poktrolld " + strings.Join(args, " ") // Create a string representation of the command
@@ -97,6 +108,34 @@ func (p *pocketdBin) runCmd(args ...string) (*commandResult, error) {
 
 	if defaultDebugOutput == "true" {
 		fmt.Printf("%#v\n", r)
+	}
+
+	return r, err
+}
+
+// runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
+func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, args ...string) (*commandResult, error) {
+	base := []string{"-v", "-X", "POST", "-H", "'Content-Type: application/json'", "--data", fmt.Sprintf("'%s'", data), fmt.Sprintf("%s/%s", rpcUrl, service)}
+	args = append(base, args...)
+	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
+	cmd := exec.Command("curl", args...)
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err := cmd.Run()
+	r := &commandResult{
+		Command: commandStr, // Set the command string
+		Stdout:  stdoutBuf.String(),
+		Stderr:  stderrBuf.String(),
+		Err:     err,
+	}
+	p.result = r
+
+	if err != nil {
+		// Include the command executed in the error message for context
+		err = fmt.Errorf("error running command [%s]: %v, stderr: %s", commandStr, err, stderrBuf.String())
 	}
 
 	return r, err
