@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
@@ -22,9 +21,7 @@ import (
 // We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
 
-var (
-	flagAppGateConfig string
-)
+var flagAppGateConfig string
 
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -62,7 +59,8 @@ provided that:
 
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+	cmd.Flags().
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
@@ -131,35 +129,9 @@ func setupAppGateServerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		newSupplyQueryClientContextFn(appGateConfig.QueryNodeUrl.String()),
+		config.NewSupplyQueryClientContextFn(appGateConfig.QueryNodeUrl.Host),
+		config.NewSupplyRingCacheFn(),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)
-}
-
-// newSupplyQueryClientContextFn returns a new depinject.Config which is supplied with
-// the given deps and a new cosmos ClientCtx
-func newSupplyQueryClientContextFn(pocketQueryClientUrl string) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		cmd *cobra.Command,
-	) (depinject.Config, error) {
-		// Set --node flag to the pocketQueryClientUrl for the client context
-		// This flag is read by cosmosclient.GetClientQueryContext.
-		err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryClientUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get the client context from the command.
-		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
-		if err != nil {
-			return nil, err
-		}
-		deps = depinject.Configs(deps, depinject.Supply(
-			queryClientCtx,
-		))
-		return deps, nil
-	}
 }

@@ -59,7 +59,6 @@ type MinerOption func(Miner)
 // While handling requests and responding in a closed loop, it also notifies
 // the miner about the relays that have been served.
 type RelayerProxy interface {
-
 	// Start starts all advertised relay servers and returns an error if any of them fail to start.
 	Start(ctx context.Context) error
 

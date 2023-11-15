@@ -56,7 +56,8 @@ for such operations.`,
 	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "The path to the relayminer config file")
 
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+	cmd.Flags().
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
@@ -123,8 +124,9 @@ func setupRelayerDependencies(
 		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
 		supplyMiner, // leaf
-		newSupplyQueryClientContextFn(queryNodeUrl), // leaf
-		newSupplyTxClientContextFn(networkNodeUrl),  // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeUrl), // leaf
+		newSupplyTxClientContextFn(networkNodeUrl),         // leaf
+		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
 		newSupplyTxClientFn(signingKeyName),
@@ -151,49 +153,16 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-// newSupplyQueryClientContextFn returns a function which constructs a ClientContext
-// instance with the given cmd and returns a new depinject.Config which is
-// supplied with the given deps and the new ClientContext.
-func newSupplyQueryClientContextFn(queryNodeUrl string) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		cmd *cobra.Command,
-	) (depinject.Config, error) {
-		// Set --node flag to the relayerConfig.QueryNodeUrl config for the client context
-		// This flag is read by cosmosclient.GetClientQueryContext.
-		err := cmd.Flags().Set(cosmosflags.FlagNode, queryNodeUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		// NB: Currently, the implementations of GetClientTxContext() and
-		// GetClientQueryContext() are identical, allowing for their interchangeable
-		// use in both querying and transaction operations. However, in order to support
-		// independent configuration of client contexts for distinct querying and
-		// transacting purposes. E.g.: transactions are dispatched to the sequencer
-		// while queries are handled by a trusted full-node.
-		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
-		if err != nil {
-			return nil, err
-		}
-		deps = depinject.Configs(deps, depinject.Supply(
-			relayer.QueryClientContext(queryClientCtx),
-		))
-		return deps, nil
-	}
-}
-
-// newSupplyTxClientContextFn returns a function which constructs a
-// cosmosclient.Context instance and returns a new depinject.Config
-// which is supplied with the given deps and the new cosmosclient.Context.
+// supplyTxClientContext constructs a cosmosclient.Context instance and returns a
+// new depinject.Config which is supplied with the given deps and the new
+// cosmosclient.Context.
 func newSupplyTxClientContextFn(networkNodeUrl string) config.SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		// Set --node flag to relayerConfig.NetworkNodeUrl for this client context.
+		// Set --node flag to the --network-node for this client context.
 		// This flag is read by cosmosclient.GetClientTxContext.
 		err := cmd.Flags().Set(cosmosflags.FlagNode, networkNodeUrl)
 		if err != nil {

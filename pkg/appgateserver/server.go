@@ -13,14 +13,15 @@ import (
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -51,16 +52,13 @@ type appGateServer struct {
 	// signing information holds the signing key and application address for the server
 	signingInformation *SigningInformation
 
-	// ringCache is a cache of the public keys used to create the ring for a given application
-	// they are stored in a map of application address to a slice of points on the secp256k1 curve
-	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
-	ringCache      map[string][]ringtypes.Point
-	ringCacheMutex *sync.RWMutex
+	// ringCache is used to obtain and store the ring for the application.
+	ringCache rings.RingCache
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
 	// and get the public key to verify the relay response signature.
-	clientCtx sdkclient.Context
+	clientCtx relayer.QueryClientContext
 
 	// sessionQuerier is the querier for the session module.
 	// It used to get the current session for the application given a requested service.
@@ -76,10 +74,6 @@ type appGateServer struct {
 	// accountQuerier is the querier for the account module.
 	// It is used to get the the supplier's public key to verify the relay response signature.
 	accountQuerier accounttypes.QueryClient
-
-	// applicationQuerier is the querier for the application module.
-	// It is used to get the ring for a given application address.
-	applicationQuerier apptypes.QueryClient
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
@@ -102,8 +96,6 @@ func NewAppGateServer(
 	opts ...appGateServerOption,
 ) (*appGateServer, error) {
 	app := &appGateServer{
-		ringCacheMutex:       &sync.RWMutex{},
-		ringCache:            make(map[string][]ringtypes.Point),
 		currentSessions:      make(map[string]*sessiontypes.Session),
 		supplierAccountCache: make(map[string]cryptotypes.PubKey),
 	}
@@ -112,6 +104,7 @@ func NewAppGateServer(
 		deps,
 		&app.clientCtx,
 		&app.blockClient,
+		&app.ringCache,
 	); err != nil {
 		return nil, err
 	}
@@ -146,9 +139,10 @@ func NewAppGateServer(
 	}
 	app.signingInformation.SigningKey = signingKey
 
-	app.sessionQuerier = sessiontypes.NewQueryClient(app.clientCtx)
-	app.accountQuerier = accounttypes.NewQueryClient(app.clientCtx)
-	app.applicationQuerier = apptypes.NewQueryClient(app.clientCtx)
+	clientCtx := cosmosclient.Context(app.clientCtx)
+
+	app.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
+	app.accountQuerier = accounttypes.NewQueryClient(clientCtx)
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil

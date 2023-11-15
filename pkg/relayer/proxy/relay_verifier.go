@@ -45,7 +45,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// get the ring for the application address of the relay request
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
-	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
+	appRing, err := rp.ringCache.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return sdkerrors.Wrapf(
 			ErrRelayerProxyInvalidRelayRequest,
