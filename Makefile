@@ -2,6 +2,7 @@
 
 POKTROLLD_HOME := ./localnet/poktrolld
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+APPGATE_SERVER = http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 
 ####################
@@ -136,6 +137,7 @@ go_imports: check_go_version ## Run goimports on all go files
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
+	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
 

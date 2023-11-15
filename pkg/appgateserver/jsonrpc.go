@@ -87,7 +87,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 		Body:   relayRequestReader,
 	}
 
-	// Perform the HTTP request to the relayer.
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
