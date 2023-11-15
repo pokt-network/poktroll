@@ -30,6 +30,10 @@ type cosmosTxContext struct {
 // NewTxContext initializes a new cosmosTxContext with the given dependencies.
 // It uses depinject to populate its members and returns a client.TxContext
 // interface type.
+//
+// Required dependencies:
+//   - cosmosclient.Context
+//   - cosmostx.Factory
 func NewTxContext(deps depinject.Config) (client.TxContext, error) {
 	txCtx := cosmosTxContext{}
 
@@ -40,8 +44,6 @@ func NewTxContext(deps depinject.Config) (client.TxContext, error) {
 	); err != nil {
 		return nil, err
 	}
-
-	txCtx.clientCtx = cosmosclient.Context(txCtx.clientCtx)
 
 	return txCtx, nil
 }

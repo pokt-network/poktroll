@@ -62,6 +62,11 @@ func (ebc *eventsBytesAndConn) Close() {
 	_ = ebc.conn.Close()
 }
 
+// NewEventsQueryClient returns a new events query client which is used to
+// subscribe to on-chain events matching the given query.
+//
+// Available options:
+//   - WithDialer
 func NewEventsQueryClient(cometWebsocketURL string, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	evtClient := &eventsQueryClient{
 		cometWebsocketURL:   cometWebsocketURL,

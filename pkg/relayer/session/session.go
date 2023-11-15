@@ -45,6 +45,13 @@ type relayerSessionsManager struct {
 }
 
 // NewRelayerSessions creates a new relayerSessions.
+//
+// Required dependencies:
+//   - client.BlockClient
+//   - client.SupplierClient
+//
+// Available options:
+//   - WithStoresDirectory
 func NewRelayerSessions(
 	ctx context.Context,
 	deps depinject.Config,
