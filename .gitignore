@@ -32,7 +32,6 @@ localnet/*/config/*.json
 !localnet/poktrolld/config/client.toml
 !localnet/poktrolld/config/config.toml
 
-
 # Macos
 .DS_Store
 **/.DS_Store
