@@ -47,7 +47,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "supplier with address \"100000\""),
 		},
 		{
 			desc: "InvalidRequest",
