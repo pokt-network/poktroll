@@ -53,6 +53,7 @@ func (k Keeper) Supplier(goCtx context.Context, req *types.QueryGetSupplierReque
 		req.Address,
 	)
 	if !found {
+		// TODO_TECHDEBT(#181): conform to logging conventions once established
 		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}
