@@ -165,12 +165,7 @@ func newSupplyQueryClientContextFn(pocketQueryClientUrl string) config.SupplierF
 			return nil, err
 		}
 
-		// NB: Currently, the implementations of GetClientTxContext() and
-		// GetClientQueryContext() are identical, allowing for their interchangeable
-		// use in both querying and transaction operations. However, in order to support
-		// independent configuration of client contexts for distinct querying and
-		// transacting purposes. E.g.: transactions are dispatched to the sequencer
-		// while queries are handled by a trusted full-node.
+		// Get the client context from the command.
 		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
 		if err != nil {
 			return nil, err
