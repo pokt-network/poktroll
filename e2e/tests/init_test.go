@@ -24,6 +24,12 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_TECHDEBT(#179): Once relayminer and appgateserver are running in tilt,
+// use their respective in-tilt hostnames and run E2E tests in tilt. This
+// should match the on-chain advertised endpoint for the service with the
+// given serviceId.
+const localnetAppGateServerUrl = "http://localhost:42069"
+
 var (
 	addrRe   *regexp.Regexp
 	amountRe *regexp.Regexp
@@ -33,7 +39,7 @@ var (
 	accNameToAppMap      = make(map[string]apptypes.Application)
 	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
 
-	featuresPathFlag string
+	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 )
 
@@ -41,12 +47,12 @@ func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 
-	flag.StringVar(&featuresPathFlag, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 }
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	log.Printf("features path: %s", featuresPathFlag)
+	log.Printf("features path: %s", flagFeaturesPath)
 	m.Run()
 }
 
@@ -69,7 +75,7 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path(featuresPathFlag).Run()
+	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).Run()
 }
 
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
@@ -254,26 +260,17 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
-	// TODO_TECHDEBT(#179): Once relayminer and appgateserver are running in tilt,
-	// use their respective in-tilt hostnames and run E2E tests in tilt. This
-	// should match the on-chain advertised endpoint for the service with the
-	// given serviceId.
-	res, err := s.pocketd.RunCurl("http://localhost:42069", serviceId, requestData)
+	res, err := s.pocketd.RunCurl(localnetAppGateServerUrl, serviceId, requestData)
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}
 
-	relayKey := getRelayKey(appName, supplierName)
+	relayKey := relayReferenceKey(appName, supplierName)
 	s.scenarioState[relayKey] = res.Stdout
 }
 
-// TODO_IN_THIS_COMMIT: move
-func getRelayKey(appName, supplierName string) string {
-	return fmt.Sprintf("%s/%s", appName, supplierName)
-}
-
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
-	relayKey := getRelayKey(appName, supplierName)
+	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
 
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
@@ -387,4 +384,10 @@ func (s *suite) getAccBalance(accName string) int {
 	found, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
 	return found
+}
+
+// TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
+// used to create the primary composite key on-chain to uniquely distinguish relays.
+func relayReferenceKey(appName, supplierName string) string {
+	return fmt.Sprintf("%s/%s", appName, supplierName)
 }

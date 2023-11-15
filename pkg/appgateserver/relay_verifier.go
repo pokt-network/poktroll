@@ -29,8 +29,8 @@ func (app *appGateServer) verifyResponse(
 		payload := relayResponse.GetPayload()
 		payloadBz := make([]byte, payload.Size())
 		if _, err := payload.MarshalTo(payloadBz); err != nil {
-			return ErrAppGateEmptyRelayResponseSignature.Wrapf(
-				"unable to unmarshal relay response payload: %s", err,
+			return ErrAppGateEmptyRelayResponseMeta.Wrapf(
+				"unable to marshal relay response payload: %s", err,
 			)
 		}
 		return ErrAppGateEmptyRelayResponseSignature.Wrapf(
