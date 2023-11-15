@@ -42,10 +42,10 @@ func RelayerCmd() *cobra.Command {
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 
 	// TODO_TECHDEBT: integrate these flags with the client context (i.e. cosmosflags, config, viper, etc.)
-	// This is simpler to do with server-side configs (see rootCmd#PersistentPreRunE).
-	// Will require more effort than currently justifiable.
+	// This is simpler to do with server-side configs (see rootCmd#PersistentPreRunE) and requires more effort than currently justifiable.
 	cmd.Flags().StringVar(&flagSigningKeyName, "signing-key", "", "Name of the key to sign transactions")
-	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to the SMT KV store")
+	// TODO_TECHDEBT(#137): This, alongside other flags, should be part of a config file suppliers provide. 
+	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to where the data backing SMT KV store exists on disk")
 	// Communication flags
 	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified.
 	// Figure out what good defaults should be post alpha.
