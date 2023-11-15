@@ -62,6 +62,7 @@ localnet_config.yaml
 release
 
 # SMT KVStore files
+# TODO_TECHDEBT(#126, @red-0ne):  Rename `smt` to `smt_stores` and make it configurable so it can be stored anywhere on this
 smt
 
 # Do not allow a multi-moduled projected
