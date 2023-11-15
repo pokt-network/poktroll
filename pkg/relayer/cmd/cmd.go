@@ -39,18 +39,19 @@ func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
 		Short: "Run a relay miner",
-		// TODO_TECHDEBT: add a longer long description.
 		Long: `Run a relay miner. The relay miner process configures and starts
 relay servers for each service the supplier actor identified by --signing-key is
-staked for (configured on-chain). Relay requests received by the relay servers
-are validated and proxied to their respective service endpoints. The responses
+staked for (configured on-chain).
+
+Relay requests received by the relay servers are validated and proxied to their
+respective service endpoints, maintained by the relayer off-chain. The responses
 are then signed and sent back to the requesting application.
 
 For each successfully served relay, the miner will hash and compare its difficulty
 against an on-chain threshold. If the difficulty is sufficient, it is applicable
 to relay volume and therefore rewards. Such relays are inserted into and persisted
 via an SMT KV store. The miner will monitor the current block height and periodically
-submit claim and proof messages according to the protocol as sessions become eligable
+submit claim and proof messages according to the protocol as sessions become eligible
 for such operations.`,
 		RunE: runRelayer,
 	}
@@ -65,7 +66,7 @@ for such operations.`,
 	// Communication flags
 	cmd.Flags().StringVar(&flagNetworkNodeUrl, "network-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer")
 	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events")
-	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
+	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
@@ -351,8 +352,9 @@ func supplyRelayerProxy(
 		return nil, err
 	}
 
-	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented an a local LLM node
-	// is supported, this needs to be expanded such that a single relayer can proxy to multiple services at once.
+	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
+	// is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
+	// multiple services is already in place but currently (as seen below) is hardcoded.
 	proxiedServiceEndpoints := map[string]url.URL{
 		"anvil": *proxyServiceURL,
 	}
