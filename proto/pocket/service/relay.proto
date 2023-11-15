@@ -24,82 +24,23 @@ message RelayRequestMetadata {
 // RelayRequest holds the request details for a relay.
 message RelayRequest {
     RelayRequestMetadata meta = 1;
-    oneof payload {
-        JSONRPCRequestPayload json_rpc_payload = 2;
-        RESTRequestPayload rest_payload = 3;
-        // Future possible relay types:
-        // WebSocketsRequestPayload websockets_payload = 4;
-        // GRPCRequestPayload grpc_payload = 5;
-        // GraphQLRequestPayload graphql_payload = 6;
-    }
-}
-
-// JSONRPCRequestPayload contains the payload for a JSON-RPC request.
-// See https://www.jsonrpc.org/specification#request_object for more details.
-message JSONRPCRequestPayload {
-    uint32 id = 1; // Identifier established by the Client to create context for the request.
-    string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
-    string method = 3; // Method being invoked on the server.
-    // TODO_TECHDEBT(#126): Make params a `oneof` of a list or map per the JSON-RPC specifications
-    // should they be a list of maps?
-    //map<string, string> params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
-    repeated string params = 4; // Parameters for the method. https://www.jsonrpc.org/specification#parameter_structures
-}
-
-// RESTRequestType represents the type of REST request.
-enum RESTRequestType {
-    REST_REQUEST_TYPE_UNKNOWN = 0; // Default uninitialized value.
-    REST_REQUEST_TYPE_GET = 1;
-    REST_REQUEST_TYPE_PUT = 2;
-    REST_REQUEST_TYPE_POST = 3;
-    REST_REQUEST_TYPE_DELETE = 4;
-}
-
-// RESTRequestPayload contains the payload and metadata for a REST request.
-message RESTRequestPayload {
-    RESTRequestType request_type = 1;
-    string http_path = 2; // Path for the REST endpoint.
-    string contents = 3; // Request contents.
-    map<string, string> headers = 4; // Request headers.
+    // payload is the serialised payload for the request.
+    // The payload is passed directly to the service and as such can be any
+    // format that the service supports: JSON-RPC, REST, gRPC, etc.
+    bytes payload = 2;
 }
 
 // RelayResponse contains the response details for a RelayRequest.
 message RelayResponse {
     RelayResponseMetadata meta = 1;
-    oneof payload {
-        JSONRPCResponsePayload json_rpc_payload = 2;
-        RESTResponsePayload rest_payload = 3;
-        // Future possible relay types:
-        // WebSocketsResponsePayload websockets_payload = 4;
-        // GRPCResponsePayload grpc_payload = 5;
-        // GraphQLResponsePayload graphql_payload = 6;
-    }
+    // payload is the serialised payload for the response.
+    // The payload is passed directly from the service and as such can be any
+    // format the the service responds with: JSON-RPC, REST, gRPC, etc.
+    bytes payload = 2;
 }
 
 // RelayResponseMetadata contains the metadata for a RelayResponse.
 message RelayResponseMetadata {
     session.SessionHeader session_header = 1; // Session header associated with the relay.
     bytes supplier_signature = 2; // Signature of the supplier on the response.
-}
-
-// JSONRPCResponsePayload contains the response details for a JSON-RPC relay.
-// See www.jsonrpc.org/specification for more details.
-message JSONRPCResponsePayload {
-    uint32 id = 1; // Identifier established by the Client to link the response back to the request.
-    string jsonrpc = 2; // Version of JSON-RPC. Must be exactly "2.0".
-    string result = 3; // Response result payload.
-    JSONRPCResponseError error = 4; // Error message, if any. Can be nil.
-}
-
-message JSONRPCResponseError {
-    int32 code = 1; // Error code.
-    string message  = 2; // Error message.
-    bytes data = 3; // Error data.
-}
-
-// RESTResponsePayload contains the response details for a REST relay.
-message RESTResponsePayload {
-    uint32 status_code = 1; // Response status code.
-    string err = 2; // Error message, if any.
-    bytes payload = 3; // Response payload.
 }

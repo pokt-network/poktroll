@@ -138,14 +138,8 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// Get the relayRequest payload's `io.ReadCloser` to add it to the http.Request
 	// that will be sent to the proxied (i.e. staked for) service.
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
-	log.Printf("DEBUG: Getting relay request payload...")
-	cdc := types.ModuleCdc
-	payloadBz, err := cdc.MarshalJSON(relayRequest.GetJsonRpcPayload())
-	if err != nil {
-		return nil, err
-	}
-	requestBodyReader := io.NopCloser(bytes.NewBuffer(payloadBz))
-	log.Printf("DEBUG: Relay request payload: %s", string(payloadBz))
+	requestBodyReader := io.NopCloser(bytes.NewBuffer(relayRequest.Payload))
+	log.Printf("DEBUG: Relay request payload: %s", string(relayRequest.Payload))
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.

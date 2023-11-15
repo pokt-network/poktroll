@@ -29,15 +29,6 @@ func (app *appGateServer) handleJSONRPCRelay(
 	}
 	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
 
-	// Create the relay request payload.
-	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
-	jsonPayload := &types.JSONRPCRequestPayload{}
-	cdc := types.ModuleCdc
-	if err := cdc.UnmarshalJSON(payloadBz, jsonPayload); err != nil {
-		return err
-	}
-	relayRequestPayload.JsonRpcPayload = jsonPayload
-
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
@@ -56,7 +47,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 			SessionHeader: session.Header,
 			Signature:     nil, // signature added below
 		},
-		Payload: relayRequestPayload,
+		Payload: payloadBz,
 	}
 
 	// Get the application's signer.
@@ -79,6 +70,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	relayRequest.Meta.Signature = signature
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
+	cdc := types.ModuleCdc
 	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("marshaling relay request: %s", err)
@@ -127,15 +119,9 @@ func (app *appGateServer) handleJSONRPCRelay(
 		return ErrAppGateHandleRelay.Wrapf("verifying relay response signature: %s", err)
 	}
 
-	// Marshal the response payload to bytes to be sent back to the application.
-	relayResponsePayloadBz, err := cdc.MarshalJSON(relayResponse.GetJsonRpcPayload())
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshallig relay response: %s", err)
-	}
-
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponsePayloadBz))
-	if _, err := writer.Write(relayResponsePayloadBz); err != nil {
+	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponse.Payload))
+	if _, err := writer.Write(relayResponse.Payload); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
 

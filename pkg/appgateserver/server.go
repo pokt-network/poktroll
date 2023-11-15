@@ -2,6 +2,7 @@ package appgateserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -222,20 +223,22 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 // TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
 // Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
 func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) {
-	relayResponse := &types.RelayResponse{
-		Payload: &types.RelayResponse_JsonRpcPayload{
-			JsonRpcPayload: &types.JSONRPCResponsePayload{
-				Id:      0,
-				Jsonrpc: "2.0",
-				Error: &types.JSONRPCResponseError{
-					// Using conventional error code indicating internal server error.
-					Code:    -32000,
-					Message: err.Error(),
-					Data:    nil,
-				},
-			},
+	response := map[string]interface{}{
+		"jsonrpc": "2.0",
+		"id":      0,
+		"error": map[string]interface{}{
+			"code":    -32000,
+			"message": err.Error(),
+			"data":    nil,
 		},
 	}
+	responseBz, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("ERROR: failed marshaling json error structure: %s", err)
+		return
+	}
+
+	relayResponse := &types.RelayResponse{Payload: responseBz}
 
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
