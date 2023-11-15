@@ -172,6 +172,29 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
+// SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
+func SupplierModuleGenesisStateWithAccount(t *testing.T, address string) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	supplier := sharedtypes.Supplier{
+		Address: address,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: &sharedtypes.Service{Id: "svc1"},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url:     "http://localhost:1",
+						RpcType: sharedtypes.RPCType_JSON_RPC,
+					},
+				},
+			},
+		},
+	}
+	state.SupplierList = append(state.SupplierList, supplier)
+	return state
+}
+
 // Initialize an Account by sending it some funds from the validator in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()

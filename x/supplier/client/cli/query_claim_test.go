@@ -1,7 +1,7 @@
 package cli_test
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -19,37 +20,38 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func encodeSessionHeader(
-	t *testing.T,
-) string {
+func encodeSessionHeader(t *testing.T, sessionId string, sessionEndHeight int64) string {
 	t.Helper()
+
 	argSessionHeader := &sessiontypes.SessionHeader{
-		ApplicationAddress:      "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
+		ApplicationAddress:      sample.AccAddress(),
 		SessionStartBlockHeight: 1,
-		SessionId:               "session_id",
-		SessionEndBlockHeight:   5,
+		SessionId:               sessionId,
+		SessionEndBlockHeight:   sessionEndHeight,
 		Service: &sharedtypes.Service{
 			Id: "anvil",
 		},
 	}
 	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
-	return hex.EncodeToString(sessionHeaderBz)
+	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
 }
 
-func createClaim(t *testing.T, ctx client.Context, supplierAddr string) *types.Claim {
+func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplierAddr string) *types.Claim {
 	t.Helper()
 
-	sessionHeaderEncoded := encodeSessionHeader(t)
-
+	sessionEndHeight := int64(5)
+	sessionId := "session_id"
 	rootHash := []byte("root_hash")
-	rootHashEncoded := hex.EncodeToString(rootHash)
+	sessionHeaderEncoded := encodeSessionHeader(t, sessionId, sessionEndHeight)
+	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
 
 	args := []string{
 		sessionHeaderEncoded,
@@ -57,16 +59,18 @@ func createClaim(t *testing.T, ctx client.Context, supplierAddr string) *types.C
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin("upokt", sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
-	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
+	res, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
 
+	// TODO_IN_THIS_PR: Figure out why this still isn't working...
+	fmt.Println("OLSH Claim created", res)
 	return &types.Claim{
-		SupplierAddress:       "pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4",
-		SessionId:             "session_id",
-		SessionEndBlockHeight: 5,
+		SupplierAddress:       supplierAddr,
+		SessionId:             sessionId,
+		SessionEndBlockHeight: uint64(sessionEndHeight),
 		RootHash:              rootHash,
 	}
 }
@@ -74,20 +78,39 @@ func createClaim(t *testing.T, ctx client.Context, supplierAddr string) *types.C
 func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
+	// Prepare the network
 	cfg := network.DefaultConfig()
 	net = network.New(t, cfg)
-	validator := net.Validators[0]
-	ctx := validator.ClientCtx
+	ctx := net.Validators[0].ClientCtx
 
+	// Prepare the keyring for the supplier account
+	kr := ctx.Keyring
+	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
+	supplierAccount := accounts[0]
+	supplierAddress := supplierAccount.Address.String()
+
+	// Update the context with the new keyring
+	ctx = ctx.WithKeyring(kr)
+
+	// Initialize the supplier account
+	network.InitAccount(t, net, supplierAccount.Address)
+
+	// Create one supplier
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAccount(t, supplierAddress)
+	buf, err := cfg.Codec.MarshalJSON(supplierGenesisState)
+	require.NoError(t, err)
+	cfg.GenesisState[types.ModuleName] = buf
+
+	// Create n claims for the supplier
 	for i := 0; i < n; i++ {
-		claim := createClaim(t, ctx, validator.Address.String())
+		claim := createClaim(t, net, ctx, supplierAddress)
 		claims = append(claims, *claim)
 	}
 
 	return net, claims
 }
 
-func TestShowClaim(t *testing.T) {
+func TestClaim_Show(t *testing.T) {
 	net, claims := networkWithClaimObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
@@ -154,13 +177,13 @@ func TestShowClaim(t *testing.T) {
 	}
 }
 
-func TestListClaim(t *testing.T) {
+func TestClaim_List(t *testing.T) {
 	net, claims := networkWithClaimObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
-			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+			// fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 		}
 		if next == nil {
 			args = append(args, fmt.Sprintf("--%s=%d", flags.FlagOffset, offset))
@@ -173,14 +196,17 @@ func TestListClaim(t *testing.T) {
 		}
 		return args
 	}
+
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(claims); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
+
 			var resp types.QueryAllClaimsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
 				nullify.Fill(claims),
@@ -195,8 +221,10 @@ func TestListClaim(t *testing.T) {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
+
 			var resp types.QueryAllClaimsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+
 			require.LessOrEqual(t, len(resp.Claim), step)
 			require.Subset(t,
 				nullify.Fill(claims),
@@ -209,9 +237,10 @@ func TestListClaim(t *testing.T) {
 		args := request(nil, 0, uint64(len(claims)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
+
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-		require.NoError(t, err)
+
 		require.Equal(t, len(claims), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(claims),
@@ -219,3 +248,5 @@ func TestListClaim(t *testing.T) {
 		)
 	})
 }
+
+// TODO_IN_THIS_PR: Add tests that query when querying with address/session/height filters

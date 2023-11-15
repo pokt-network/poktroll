@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -25,9 +25,12 @@ func CmdCreateClaim() *cobra.Command {
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			sessionHeaderEncodedStr := args[0]
+			rootHashEncodedStr := args[1]
+
 			// Get the session header
 			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
-			sessionHeaderBz, err := hex.DecodeString(args[0])
+			sessionHeaderBz, err := base64.StdEncoding.DecodeString(sessionHeaderEncodedStr)
 			if err != nil {
 				return err
 			}
@@ -35,7 +38,7 @@ func CmdCreateClaim() *cobra.Command {
 			cdc.MustUnmarshalJSON(sessionHeaderBz, &sessionHeader)
 
 			// Get the root hash
-			rootHash, err := hex.DecodeString(args[1])
+			rootHash, err := base64.StdEncoding.DecodeString(rootHashEncodedStr)
 			if err != nil {
 				return err
 			}

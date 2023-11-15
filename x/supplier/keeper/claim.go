@@ -60,7 +60,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
 	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
 
-	// Delete all the entries
+	// Delete all the entries (primary store and secondary indices)
 	store.Delete(primaryKey)
 	addressStoreIndex.Delete(addressKey)
 	sessionHeightStoreIndex.Delete(heightKey)
