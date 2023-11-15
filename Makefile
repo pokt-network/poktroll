@@ -364,6 +364,7 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the APP
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_TECHDEBT(#179): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
+	# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 	SUPPLIER=supplier1 SERVICES="anvil;http://localhost:8545,svc1;http://localhost:8081" make supplier_stake
 
 .PHONY: supplier2_stake
