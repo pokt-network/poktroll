@@ -364,19 +364,19 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the APP
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_TECHDEBT(#179): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier1 SERVICES="anvil;http://localhost:8548,svc1;http://localhost:8081" make supplier_stake
+	SUPPLIER=supplier1 SERVICES="anvil;http://localhost:8545,svc1;http://localhost:8081" make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
 	# TODO_TECHDEBT(#179): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier2 SERVICES="anvil;http://localhost:8548,svc2;http://localhost:8082" make supplier_stake
+	SUPPLIER=supplier2 SERVICES="anvil;http://localhost:8545,svc2;http://localhost:8082" make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
 	# TODO_TECHDEBT(#179): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier3 SERVICES="anvil;http://localhost:8548,svc3;http://localhost:8083" make supplier_stake
+	SUPPLIER=supplier3 SERVICES="anvil;http://localhost:8545,svc3;http://localhost:8083" make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
