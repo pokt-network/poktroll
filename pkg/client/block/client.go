@@ -75,6 +75,9 @@ type eventBytesToBlockMapFn = func(
 ) (client.Block, bool)
 
 // NewBlockClient creates a new block client from the given dependencies and cometWebsocketURL.
+//
+// Required dependencies:
+//   - client.EventsQueryClient
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,

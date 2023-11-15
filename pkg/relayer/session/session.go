@@ -45,6 +45,13 @@ type relayerSessionsManager struct {
 }
 
 // NewRelayerSessions creates a new relayerSessions.
+//
+// Required dependencies:
+//   - client.BlockClient
+//   - client.SupplierClient
+//
+// Available options:
+//   - WithStoresDirectory
 func NewRelayerSessions(
 	ctx context.Context,
 	deps depinject.Config,
@@ -84,7 +91,7 @@ func NewRelayerSessions(
 // The session trees are piped through a series of map operations which progress
 // them through the claim/proof lifecycle, broadcasting transactions to  the
 // network as necessary.
-// It IS NOT blocking as map operations run in their own goroutines.
+// It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attempting to add the relay to

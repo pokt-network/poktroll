@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
@@ -83,7 +83,7 @@ type relayerProxy struct {
 	ringCacheMutex *sync.RWMutex
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx sdkclient.Context
+	clientCtx relayer.QueryClientContext
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -91,6 +91,14 @@ type relayerProxy struct {
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
 // an error if the dependencies fail to resolve or the options are invalid.
+//
+// Required dependencies:
+//   - cosmosclient.Context
+//   - client.BlockClient
+//
+// Available options:
+//   - WithSigningKeyName
+//   - WithProxiedServicesEndpoints
 func NewRelayerProxy(
 	deps depinject.Config,
 	opts ...relayer.RelayerProxyOption,
@@ -105,16 +113,15 @@ func NewRelayerProxy(
 		return nil, err
 	}
 
-	rp.clientCtx = sdkclient.Context(rp.clientCtx)
-
+	clientCtx := cosmosclient.Context(rp.clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
-	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
-	rp.applicationQuerier = apptypes.NewQueryClient(rp.clientCtx)
+	rp.accountsQuerier = accounttypes.NewQueryClient(clientCtx)
+	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
+	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
+	rp.applicationQuerier = apptypes.NewQueryClient(clientCtx)
 	rp.keyring = rp.clientCtx.Keyring
 	rp.ringCache = make(map[string][]ringtypes.Point)
 	rp.ringCacheMutex = &sync.RWMutex{}
@@ -130,7 +137,7 @@ func NewRelayerProxy(
 	return rp, nil
 }
 
-// Start concurrently starts all advertised relay servers and returns an error
+// Start concurrently starts all advertised relay services and returns an error
 // if any of them errors.
 // This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
