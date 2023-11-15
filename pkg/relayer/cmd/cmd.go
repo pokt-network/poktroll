@@ -43,7 +43,18 @@ func RelayerCmd() *cobra.Command {
 		Use:   "relayminer",
 		Short: "Run a relay miner",
 		// TODO_TECHDEBT: add a longer long description.
-		Long: `Run a relay miner`,
+		Long: `Run a relay miner. The relay miner process configures and starts
+relay servers for each service the supplier actor identified by --signing-key is
+staked for (configured on-chain). Relay requests received by the relay servers
+are validated and proxied to their respective service endpoints. The responses
+are then signed and sent back to the requesting application.
+
+For each successfully served relay, the miner will hash and compare its difficulty
+against an on-chain threshold. If the difficulty is sufficient, it is applicable
+to relay volume and therefore rewards. Such relays are inserted into and persisted
+via an SMT KV store. The miner will monitor the current block height and periodically
+submit claim and proof messages according to the protocol as sessions become eligable
+for such operations.`,
 		RunE: runRelayer,
 	}
 
@@ -351,10 +362,10 @@ func supplyRelayerProxy(
 		return nil, err
 	}
 
-	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented an a local LLM node 
+	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented an a local LLM node
 	// is supported, this needs to be expanded such that a single relayer can proxy to multiple services at once.
 	proxiedServiceEndpoints := map[string]url.URL{
-		"anvil": *anvilURL,
+		"anvil": *proxyServiceURL,
 	}
 
 	relayerProxy, err := proxy.NewRelayerProxy(
