@@ -68,7 +68,7 @@ func NewSessionTree(
 	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
+	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
 		return nil, ErrSessionTreeUndefinedStoresDirectory
 	}
 

@@ -83,7 +83,7 @@ type relayerProxy struct {
 	ringCacheMutex *sync.RWMutex
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx cosmosclient.Context
+	clientCtx relayer.QueryClientContext
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -113,16 +113,15 @@ func NewRelayerProxy(
 		return nil, err
 	}
 
-	rp.clientCtx = cosmosclient.Context(rp.clientCtx)
-
+	clientCtx := cosmosclient.Context(rp.clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
-	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
-	rp.applicationQuerier = apptypes.NewQueryClient(rp.clientCtx)
+	rp.accountsQuerier = accounttypes.NewQueryClient(clientCtx)
+	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
+	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
+	rp.applicationQuerier = apptypes.NewQueryClient(clientCtx)
 	rp.keyring = rp.clientCtx.Keyring
 	rp.ringCache = make(map[string][]ringtypes.Point)
 	rp.ringCacheMutex = &sync.RWMutex{}

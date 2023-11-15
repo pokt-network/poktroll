@@ -23,11 +23,13 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 )
 
+const omittedDefaultFlagValue = "explicitly omitting default"
+
 var (
-	flagSigningKeyName string
-	flagSmtStorePath   string
-	flagSequencerNode  string
-	flagPocketNode     string
+	flagSigningKeyName   string
+	flagSmtStorePath     string
+	flagSequencerNodeUrl string
+	flagPocketNodeUrl    string
 )
 
 type supplierFn func(
@@ -55,15 +57,9 @@ func RelayerCmd() *cobra.Command {
 	// Communication flags
 	// TODO_TECHDEBT: We're using `explicitly omitting default` so the relayer crashes if these aren't specified.
 	// Figure out what good defaults should be post alpha.
-	cmd.Flags().StringVar(&flagSequencerNode, "sequencer-node", "explicitly omitting default", "<host>:<port> to sequencer node to submit txs")
-	cmd.Flags().StringVar(&flagPocketNode, "pocket-node", "explicitly omitting default", "<host>:<port> to full pocket node for reading data and listening for on-chain events")
-	cmd.Flags().String(cosmosflags.FlagNode, "explicitly omitting default", "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
-
-	// Set --node flag to the --sequencer-node for the client context
-	err := cmd.Flags().Set(cosmosflags.FlagNode, fmt.Sprintf("tcp://%s", flagSequencerNode))
-	if err != nil {
-		panic(err)
-	}
+	cmd.Flags().StringVar(&flagSequencerNodeUrl, "sequencer-node", "explicitly omitting default", "tcp://<host>:<port> to sequencer node to submit txs")
+	cmd.Flags().StringVar(&flagPocketNodeUrl, "pocket-node", omittedDefaultFlagValue, "tcp://<host>:<port> to full pocket node for reading data and listening for on-chain events")
+	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly")
 
 	return cmd
 }
@@ -108,7 +104,7 @@ func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 ) (deps depinject.Config, err error) {
-	pocketNodeWebsocketUrl, err := getPocketNodeWebsocketUrl(cmd)
+	pocketNodeWebsocketUrl, err := getPocketNodeWebsocketUrl()
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +112,9 @@ func setupRelayerDependencies(
 	supplierFuncs := []supplierFn{
 		newSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
 		newSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		supplyMiner,         // leaf
-		supplyClientContext, // leaf
+		supplyMiner,              // leaf
+		supplyQueryClientContext, // leaf
+		supplyTxClientContext,    // leaf
 		supplyTxFactory,
 		supplyTxContext,
 		supplyTxClient,
@@ -130,6 +127,9 @@ func setupRelayerDependencies(
 	deps = depinject.Configs()
 	for _, supplyFn := range supplierFuncs {
 		deps, err = supplyFn(ctx, deps, cmd)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return deps, nil
@@ -137,13 +137,12 @@ func setupRelayerDependencies(
 
 // getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
 // connect to for subscribing to on-chain events.
-func getPocketNodeWebsocketUrl(cmd *cobra.Command) (string, error) {
-	pocketNodeURLStr, err := cmd.Flags().GetString(cosmosflags.FlagNode)
-	if err != nil {
-		return "", err
+func getPocketNodeWebsocketUrl() (string, error) {
+	if flagPocketNodeUrl == omittedDefaultFlagValue {
+		return "", fmt.Errorf("--pocket-node flag is required")
 	}
 
-	pocketNodeURL, err := url.Parse(pocketNodeURLStr)
+	pocketNodeURL, err := url.Parse(flagPocketNodeUrl)
 	if err != nil {
 		return "", err
 	}
@@ -202,22 +201,62 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-// supplyClientContext constructs a cosmosclient.Context instance and returns a
-// new depinject.Config which is supplied with the given deps and the new
-// cosmosclient.Context.
-func supplyClientContext(
+func supplyQueryClientContext(
 	_ context.Context,
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	// NB: The implementation of #GetClientTxContext() is identical to that of
-	// #GetClientQueryContext(); either is sufficient for usage in both querying
-	// and transaction building and broadcasting.
-	clientCtx, err := cosmosclient.GetClientTxContext(cmd)
+	// Set --node flag to the --pocket-node for the client context
+	// This flag is read by cosmosclient.GetClientQueryContext.
+	err := cmd.Flags().Set(cosmosflags.FlagNode, flagPocketNodeUrl)
 	if err != nil {
 		return nil, err
 	}
-	deps = depinject.Configs(deps, depinject.Supply(clientCtx))
+
+	// NB: Currently, the implementations of GetClientTxContext() and
+	// GetClientQueryContext() are identical, allowing for their interchangeable
+	// use in both querying and transaction operations. However, in order to support
+	// independent configuration of client contexts for distinct querying and
+	// transacting purposes. E.g.: transactions are dispatched to the sequencer
+	// while queries are handled by a trusted full-node.
+	queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+	if err != nil {
+		return nil, err
+	}
+	deps = depinject.Configs(deps, depinject.Supply(
+		relayer.QueryClientContext(queryClientCtx),
+	))
+	return deps, nil
+}
+
+// supplyTxClientContext constructs a cosmosclient.Context instance and returns a
+// new depinject.Config which is supplied with the given deps and the new
+// cosmosclient.Context.
+func supplyTxClientContext(
+	_ context.Context,
+	deps depinject.Config,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
+	// Set --node flag to the --sequencer-node for this client context.
+	// This flag is read by cosmosclient.GetClientTxContext.
+	err := cmd.Flags().Set(cosmosflags.FlagNode, flagSequencerNodeUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	// NB: Currently, the implementations of GetClientTxContext() and
+	// GetClientQueryContext() are identical, allowing for their interchangeable
+	// use in both querying and transaction operations. However, in order to support
+	// independent configuration of client contexts for distinct querying and
+	// transacting purposes. E.g.: transactions are dispatched to the sequencer
+	// while queries are handled by a trusted full-node.
+	txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
+	if err != nil {
+		return nil, err
+	}
+	deps = depinject.Configs(deps, depinject.Supply(
+		relayer.TxClientContext(txClientCtx),
+	))
 	return deps, nil
 }
 
@@ -229,11 +268,12 @@ func supplyTxFactory(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	var clientCtx cosmosclient.Context
-	if err := depinject.Inject(deps, &clientCtx); err != nil {
+	var txClientCtx relayer.TxClientContext
+	if err := depinject.Inject(deps, &txClientCtx); err != nil {
 		return nil, err
 	}
 
+	clientCtx := cosmosclient.Context(txClientCtx)
 	clientFactory, err := cosmostx.NewFactoryCLI(clientCtx, cmd.Flags())
 	if err != nil {
 		return nil, err
