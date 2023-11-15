@@ -6,13 +6,9 @@ import (
 
 var _ binary.ByteOrder
 
-var (
-	CountKey = KeyPrefix("count")
-)
-
 const (
 
-	// ClaimPrimaryKeyPrefix is the prefix to retrieve all Claim (the primary store)
+	// ClaimPrimaryKeyPrefix is the prefix to retrieve the entire Claim object (the primary store)
 	ClaimPrimaryKeyPrefix = "Claim/value/"
 
 	// ClaimSupplierAddressPrefix is the key to retrieve a Claim's Primary Key from the Address index

@@ -23,28 +23,29 @@ func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim 
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()
 		claims[i].SessionId = fmt.Sprintf("session-%d", i)
+		claims[i].SessionEndBlockHeight = uint64(i)
 		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
 		keeper.InsertClaim(ctx, claims[i])
 	}
 	return claims
 }
 
-func TestClaimGet(t *testing.T) {
+func TestClaim_Get(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
-		rst, found := keeper.GetClaim(ctx,
+		foundClaim, isClaimFound := keeper.GetClaim(ctx,
 			claim.SessionId,
 			claim.SupplierAddress,
 		)
-		require.True(t, found)
+		require.True(t, isClaimFound)
 		require.Equal(t,
 			nullify.Fill(&claim),
-			nullify.Fill(&rst),
+			nullify.Fill(&foundClaim),
 		)
 	}
 }
-func TestClaimRemove(t *testing.T) {
+func TestClaim_Remove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
@@ -52,19 +53,58 @@ func TestClaimRemove(t *testing.T) {
 			claim.SessionId,
 			claim.SupplierAddress,
 		)
-		_, found := keeper.GetClaim(ctx,
+		_, isClaimFound := keeper.GetClaim(ctx,
 			claim.SessionId,
 			claim.SupplierAddress,
 		)
-		require.False(t, found)
+		require.False(t, isClaimFound)
 	}
 }
 
-func TestGetAllClaims(t *testing.T) {
+func TestClaim_GetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNClaims(keeper, ctx, 10)
+	claims := createNClaims(keeper, ctx, 10)
+
+	// Get all the claims and check if they match
+	allFoundClaims := keeper.GetAllClaims(ctx)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllClaims(ctx)),
+		nullify.Fill(claims),
+		nullify.Fill(allFoundClaims),
+	)
+}
+
+func TestClaim_GetAll_ByAddress(t *testing.T) {
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	claims := createNClaims(keeper, ctx, 10)
+
+	// Get all claims for a given address
+	allFoundClaimsByAddress := keeper.GetClaimsByAddress(ctx, claims[3].SupplierAddress)
+	require.ElementsMatch(t,
+		nullify.Fill([]types.Claim{claims[3]}),
+		nullify.Fill(allFoundClaimsByAddress),
+	)
+}
+
+func TestClaim_GetAll_ByHeight(t *testing.T) {
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	claims := createNClaims(keeper, ctx, 10)
+
+	// Get all claims for a given ending session block height
+	allFoundClaimsEndingAtHeight := keeper.GetClaimsByHeight(ctx, claims[6].SessionEndBlockHeight)
+	require.ElementsMatch(t,
+		nullify.Fill([]types.Claim{claims[6]}),
+		nullify.Fill(allFoundClaimsEndingAtHeight),
+	)
+}
+
+func TestClaim_GetAll_BySession(t *testing.T) {
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	claims := createNClaims(keeper, ctx, 10)
+
+	// Get all claims for a given ending session block height
+	allFoundClaimsForSession := keeper.GetClaimsBySession(ctx, claims[8].SessionId)
+	require.ElementsMatch(t,
+		nullify.Fill([]types.Claim{claims[8]}),
+		nullify.Fill(allFoundClaimsForSession),
 	)
 }

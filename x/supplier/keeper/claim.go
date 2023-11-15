@@ -74,10 +74,6 @@ func (k Keeper) GetClaim(ctx sdk.Context, sessionId, supplierAddr string) (val t
 	return k.getClaimByPrimaryKey(ctx, primaryKey)
 }
 
-	// primaryStore := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
-	// primaryKey := types.ClaimPrimaryKey(claim.SessionId, claim.SupplierAddress)
-	// primaryStore.Set(primaryKey, claimBz)
-
 // GetAllClaims returns all claim
 func (k Keeper) GetAllClaims(ctx sdk.Context) (claims []types.Claim) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
@@ -94,7 +90,7 @@ func (k Keeper) GetAllClaims(ctx sdk.Context) (claims []types.Claim) {
 }
 
 // GetClaimsByAddress returns all claims for a given supplier address
-func (k Keeper) GetClaimsByAddress(ctx sdk.Context, address sdk.AccAddress) (claims []types.Claim) {
+func (k Keeper) GetClaimsByAddress(ctx sdk.Context, address string) (claims []types.Claim) {
 	addressStoreIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 
 	iterator := sdk.KVStorePrefixIterator(addressStoreIndex, []byte(address))
@@ -127,6 +123,22 @@ func (k Keeper) GetClaimsByHeight(ctx sdk.Context, height uint64) (claims []type
 		if claimFound {
 			claims = append(claims, claim)
 		}
+	}
+
+	return claims
+}
+
+// GetClaimsByAddress returns all claims matching the given session id
+func (k Keeper) GetClaimsBySession(ctx sdk.Context, sessionId string) (claims []types.Claim) {
+	sessionIdStoreIndex := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+
+	iterator := sdk.KVStorePrefixIterator(sessionIdStoreIndex, []byte(sessionId))
+	defer iterator.Close()
+
+	for ; iterator.Valid(); iterator.Next() {
+		var val types.Claim
+		k.cdc.MustUnmarshal(iterator.Value(), &val)
+		claims = append(claims, val)
 	}
 
 	return claims
