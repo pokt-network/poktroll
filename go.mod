@@ -7,6 +7,7 @@ require (
 	cosmossdk.io/depinject v1.0.0-alpha.3
 	cosmossdk.io/errors v1.0.0-beta.7
 	cosmossdk.io/math v1.0.1
+	github.com/athanorlabs/go-dleq v0.1.0
 	github.com/cometbft/cometbft v0.37.2
 	github.com/cometbft/cometbft-db v0.8.0
 	github.com/cosmos/cosmos-proto v1.0.0-beta.2
@@ -20,6 +21,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
+	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
 	github.com/pokt-network/smt v0.7.1
 	github.com/regen-network/gocuke v0.6.2
 	github.com/spf13/cast v1.5.1
