@@ -11,7 +11,7 @@ if [[ -n "${READY_POD}" ]]; then
     echo "Ready pod found: ${READY_POD}"
     break
 else
-    echo "Sequencer with with an image ${IMAGE_TAG} is not ready yet. Waiting..."
+    echo "Sequencer with with an image ${IMAGE_TAG} is not ready yet. Will retry in 10 seconds..."
     sleep 10
 fi
 done
