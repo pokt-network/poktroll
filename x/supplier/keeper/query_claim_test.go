@@ -15,7 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func TestClaimQuerySingle(t *testing.T) {
+func TestClaim_QuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
 	claims := createNClaims(keeper, ctx, 2)
@@ -69,13 +69,21 @@ func TestClaimQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "InvalidRequest - Missing SessionId",
+			request: &types.QueryGetClaimRequest{
+				// SessionId:       Intentionally Omitted
+				SupplierAddress: claims[0].SupplierAddress,
+			},
 
-			err: status.Error(codes.InvalidArgument, "invalid request"),
+			err: types.ErrSupplierInvalidSessionId,
 		},
 		{
-			desc: "InvalidRequest - Missing SessionId",
+			desc: "InvalidRequest - Missing SupplierAddress",
+			request: &types.QueryGetClaimRequest{
+				SessionId: claims[0].SessionId,
+				// SupplierAddress: Intentionally Omitted,
+			},
 
-			err: status.Error(codes.InvalidArgument, "invalid request"),
+			err: types.ErrSupplierInvalidAddress,
 		},
 	}
 	for _, tc := range tests {
@@ -94,7 +102,7 @@ func TestClaimQuerySingle(t *testing.T) {
 	}
 }
 
-func TestClaimQueryPaginated(t *testing.T) {
+func TestClaim_QueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNClaims(keeper, ctx, 5)

@@ -19,6 +19,9 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 	}
 
 	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
+	if query.SessionId == "" {
+		return sdkerrors.Wrapf(ErrSupplierInvalidSessionId, "invalid session ID for claim being retrieved %s", query.SessionId)
+	}
 	return nil
 }
 

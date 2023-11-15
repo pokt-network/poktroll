@@ -44,6 +44,11 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
+
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	val, found := k.GetClaim(
