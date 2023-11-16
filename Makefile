@@ -455,11 +455,11 @@ acc_balance_total_supply: ## Query the total supply of the network
 ### Claims ###
 ##############
 
-# TODO_IN_THIS_PR: Explain where/how I got these; `encodeSessionHeader` in `x/supplier/client/cli/query_claim_test.go`
-ENCODED_SESSION_HEADER = "7b226170706c69636174696f6e5f61646472657373223a22706f6b74316d7271743566377168387578733237636a6d397437763965373461397676646e71356a766134222c2273657276696365223a7b226964223a22616e76696c222c226e616d65223a22227d2c2273657373696f6e5f73746172745f626c6f636b5f686569676874223a2231222c2273657373696f6e5f6964223a2273657373696f6e5f6964222c2273657373696f6e5f656e645f626c6f636b5f686569676874223a2235227d"
-ENCODED_ROOT_HASH = "726f6f745f68617368"
-.PHONY: claim_create
-claim_create: ## Create a dummy claim by supplier1
+# These encoded values were generated using the `encodeSessionHeader` helpers in `query_claim_test.go` as dummy values.
+ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZnpycmVyemd0djd2c3J4bDA5NDN0dXN4azRhayIsInNlcnZpY2UiOnsiaWQiOiJhbnZpbCIsIm5hbWUiOiIifSwic2Vzc2lvbl9zdGFydF9ibG9ja19oZWlnaHQiOiI1Iiwic2Vzc2lvbl9pZCI6InNlc3Npb25faWQxIiwic2Vzc2lvbl9lbmRfYmxvY2tfaGVpZ2h0IjoiOSJ9"
+ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
+.PHONY: claim_create_dummy
+claim_create_dummy: ## Create a dummy claim by supplier1
 	poktrolld --home=$(POKTROLLD_HOME) tx supplier create-claim \
 	$(ENCODED_SESSION_HEADER) \
 	$(ENCODED_ROOT_HASH) \

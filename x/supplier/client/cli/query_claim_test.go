@@ -60,6 +60,7 @@ func createClaim(
 	sessionHeaderEncoded := encodeSessionHeader(t, sessionId, sessionEndHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
 
+	fmt.Println("OLSH", sessionHeaderEncoded, rootHashEncoded)
 	args := []string{
 		sessionHeaderEncoded,
 		rootHashEncoded,
