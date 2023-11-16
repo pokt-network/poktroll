@@ -24,7 +24,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT(#179): Once relayminer and appgateserver are running in tilt,
+// TODO_TECHDEBT(@okdas): Once relayminer and appgateserver are running in tilt,
 // use their respective in-tilt hostnames and run E2E tests in tilt. This
 // should match the on-chain advertised endpoint for the service with the
 // given serviceId.
