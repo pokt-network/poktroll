@@ -32,7 +32,6 @@ localnet/*/config/*.json
 !localnet/poktrolld/config/client.toml
 !localnet/poktrolld/config/config.toml
 
-
 # Macos
 .DS_Store
 **/.DS_Store
@@ -62,4 +61,12 @@ localnet_config.yaml
 # Relase artifacts produced by `ignite chain build --release`
 release
 
+# SMT KVStore files
+# TODO_TECHDEBT(#126, @red-0ne):  Rename `smt` to `smt_stores` and make it configurable so it can be stored anywhere on this
+smt
+
+# Do not allow a multi-moduled projected
 go.work.sum
+
+# TODO_TECHDEBT: It seems that .dot files come and go so we need to figure out the root cause: https://github.com/pokt-network/poktroll/pull/177/files#r1392521547
+# **/*.dot

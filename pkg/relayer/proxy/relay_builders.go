@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -9,24 +10,25 @@ import (
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (j *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	var relayRequest types.RelayRequest
-	if err := relayRequest.Unmarshal(requestBz); err != nil {
+	log.Printf("DEBUG: Unmarshaling relay request...")
+	var relayReq types.RelayRequest
+	if err := relayReq.Unmarshal(requestBz); err != nil {
 		return nil, err
 	}
 
-	return &relayRequest, nil
+	return &relayReq, nil
 }
 
 // newRelayResponse builds a RelayResponse from an http.Response and a SessionHeader.
 // It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierSignature.
 // If the response has a non-nil body, it will be parsed as a JSONRPCResponsePayload.
-func (j *jsonRPCServer) newRelayResponse(
+func (jsrv *jsonRPCServer) newRelayResponse(
 	response *http.Response,
 	sessionHeader *sessiontypes.SessionHeader,
 ) (*types.RelayResponse, error) {
@@ -39,15 +41,19 @@ func (j *jsonRPCServer) newRelayResponse(
 		return nil, err
 	}
 
-	jsonRPCResponse := &types.JSONRPCResponsePayload{}
-	if err := jsonRPCResponse.Unmarshal(responseBz); err != nil {
+	log.Printf("DEBUG: Unmarshaling relay response...")
+	relayResponsePayload := &types.RelayResponse_JsonRpcPayload{}
+	jsonPayload := &types.JSONRPCResponsePayload{}
+	cdc := types.ModuleCdc
+	if err := cdc.UnmarshalJSON(responseBz, jsonPayload); err != nil {
 		return nil, err
 	}
+	relayResponsePayload.JsonRpcPayload = jsonPayload
 
-	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonRPCResponse}
+	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonPayload}
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err = j.relayerProxy.SignRelayResponse(relayResponse); err != nil {
+	if err = jsrv.relayerProxy.SignRelayResponse(relayResponse); err != nil {
 		return nil, err
 	}
 

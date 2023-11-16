@@ -2,6 +2,7 @@
 
 POKTROLLD_HOME := ./localnet/poktrolld
 POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+APPGATE_SERVER = http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 
 ####################
@@ -136,6 +137,7 @@ go_imports: check_go_version ## Run goimports on all go files
 .PHONY: test_e2e
 test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
+	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
@@ -280,8 +282,9 @@ app_list: ## List all the staked applications
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
+# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
-app1_stake: ## Stake app1
+app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
 
 .PHONY: app2_stake
@@ -360,16 +363,23 @@ supplier_list: ## List all the staked supplier
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
+# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
-supplier1_stake: ## Stake supplier1
+supplier1_stake: ## Stake supplier1 (also staked in genesis)
+	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
+	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
+	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
+	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
+	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
+	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake

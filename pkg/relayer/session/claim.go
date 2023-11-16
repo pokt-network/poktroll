@@ -106,6 +106,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
+		latestBlock := rs.blockClient.LatestBlock(ctx)
+		log.Printf("INFO: currentBlock: %d, submitting claim", latestBlock.Height()+1)
+
 		sessionHeader := session.GetSessionHeader()
 		if err := rs.supplierClient.CreateClaim(ctx, *sessionHeader, claimRoot); err != nil {
 			failedCreateClaimSessionsPublishCh <- session
