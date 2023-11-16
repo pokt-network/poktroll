@@ -12,11 +12,13 @@ import (
 // the caller pass it along with the error if available.
 // TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
 // Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
-func (j *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
+func (jsrv *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
 	relayResponse := &types.RelayResponse{
 		Payload: &types.RelayResponse_JsonRpcPayload{
 			JsonRpcPayload: &types.JSONRPCResponsePayload{
-				Id:      make([]byte, 0),
+				// TODO_BLOCKER(@red-0ne): This MUST match the Id provided by the request.
+				// If JSON-RPC request is not unmarshaled yet (i.e. can't extract ID), it SHOULD be a random ID.
+				Id:      0,
 				Jsonrpc: "2.0",
 				Error: &types.JSONRPCResponseError{
 					// Using conventional error code indicating internal server error.

@@ -68,8 +68,8 @@ func NewSessionTree(
 	storePath := filepath.Join(storesDirectory, sessionHeader.SessionId)
 
 	// Make sure storePath does not exist when creating a new SessionTree
-	if _, err := os.Stat(storePath); !os.IsNotExist(err) {
-		return nil, ErrSessionTreeUndefinedStoresDirectory
+	if _, err := os.Stat(storePath); err != nil && !os.IsNotExist(err) {
+		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
 	}
 
 	treeStore, err := smt.NewKVStore(storePath)
@@ -86,6 +86,7 @@ func NewSessionTree(
 		storePath:     storePath,
 		treeStore:     treeStore,
 		tree:          tree,
+		sessionMu:     &sync.Mutex{},
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
 	}

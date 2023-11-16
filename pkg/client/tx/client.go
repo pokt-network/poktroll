@@ -105,6 +105,15 @@ type TxEvent struct {
 //     validateConfigAndSetDefaults method.
 //  5. Subscribes the client to its own transactions. This step might be
 //     reconsidered for relocation to a potential Start() method in the future.
+//
+// Required dependencies:
+//   - client.TxContext
+//   - client.EventsQueryClient
+//   - client.BlockClient
+//
+// Available options:
+//   - WithSigningKeyName
+//   - WithCommitTimeoutHeightOffset
 func NewTxClient(
 	ctx context.Context,
 	deps depinject.Config,
@@ -517,7 +526,7 @@ func (tClient *txClient) txEventFromEventBz(
 		return either.Error[*TxEvent](ErrUnmarshalTx.Wrapf("%s", err)), true
 	}
 
-	// For successful unmarshalling, return the TxEvent.
+	// For successful unmarshaling, return the TxEvent.
 	return either.Success(txEvt), false
 }
 

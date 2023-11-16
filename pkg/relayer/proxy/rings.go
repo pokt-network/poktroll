@@ -6,9 +6,12 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"log"
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	ring "github.com/noot/ring-go"
@@ -28,7 +31,10 @@ func (rp *relayerProxy) getRingForAppAddress(ctx context.Context, appAddress str
 	var err error
 	if !ok {
 		// if the ring is not in the cache, get it from the application module
+		log.Printf("DEBUG: Ring not found in cache for %s, fetching from application module...", appAddress)
 		points, err = rp.getDelegatedPubKeysForAddress(ctx, appAddress)
+	} else {
+		log.Printf("DEBUG: Ring found in cache for %s", appAddress)
 	}
 	if err != nil {
 		return nil, err
@@ -50,8 +56,8 @@ func (rp *relayerProxy) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 ) ([]ringtypes.Point, error) {
-	rp.ringCacheMutex.RLock()
-	defer rp.ringCacheMutex.RUnlock()
+	rp.ringCacheMutex.Lock()
+	defer rp.ringCacheMutex.Unlock()
 
 	// get the application's on chain state
 	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
@@ -101,8 +107,11 @@ func (rp *relayerProxy) addressesToPoints(ctx context.Context, addresses []strin
 		if err != nil {
 			return nil, fmt.Errorf("unable to get account for address: %s [%w]", addr, err)
 		}
-		acc := new(accounttypes.BaseAccount)
-		if err := acc.Unmarshal(pubKeyRes.Account.Value); err != nil {
+		var acc accounttypes.AccountI
+		reg := codectypes.NewInterfaceRegistry()
+		accounttypes.RegisterInterfaces(reg)
+		cdc := codec.NewProtoCodec(reg)
+		if err := cdc.UnpackAny(pubKeyRes.Account, &acc); err != nil {
 			return nil, fmt.Errorf("unable to deserialise account for address: %s [%w]", addr, err)
 		}
 		key := acc.GetPubKey()

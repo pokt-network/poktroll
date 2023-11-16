@@ -12,6 +12,7 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 var _ client.TxContext = (*cosmosTxContext)(nil)
@@ -21,7 +22,7 @@ var _ client.TxContext = (*cosmosTxContext)(nil)
 type cosmosTxContext struct {
 	// Holds cosmos-sdk client context.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client#Context)
-	clientCtx cosmosclient.Context
+	clientCtx relayer.TxClientContext
 	// Holds the cosmos-sdk transaction factory.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory
@@ -30,6 +31,10 @@ type cosmosTxContext struct {
 // NewTxContext initializes a new cosmosTxContext with the given dependencies.
 // It uses depinject to populate its members and returns a client.TxContext
 // interface type.
+//
+// Required dependencies:
+//   - cosmosclient.Context
+//   - cosmostx.Factory
 func NewTxContext(deps depinject.Config) (client.TxContext, error) {
 	txCtx := cosmosTxContext{}
 
@@ -60,7 +65,7 @@ func (txCtx cosmosTxContext) SignTx(
 ) error {
 	return authclient.SignTx(
 		txCtx.txFactory,
-		txCtx.clientCtx,
+		cosmosclient.Context(txCtx.clientCtx),
 		signingKeyName,
 		txBuilder,
 		offline, overwriteSig,
@@ -80,8 +85,8 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 // BroadcastTx broadcasts the given transaction to the network, blocking until the check-tx
 // ABCI operation completes and returns a TxResponse of the transaction status at that point in time.
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
-	return txCtx.clientCtx.BroadcastTxAsync(txBytes)
-	//return txCtx.clientCtx.BroadcastTxSync(txBytes)
+	clientCtx := cosmosclient.Context(txCtx.clientCtx)
+	return clientCtx.BroadcastTxAsync(txBytes)
 }
 
 // QueryTx queries the transaction based on its hash and optionally provides proof
