@@ -129,9 +129,10 @@ func networkWithClaimObjects(
 			supplierAddr := addresses[claimNum]
 			claim := createClaim(t, net, ctx, supplierAddr, sessionId, sessionEndHeight)
 			claims = append(claims, *claim)
+			// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
+			require.NoError(t, net.WaitForNextBlock())
 		}
 	}
-	require.NoError(t, net.WaitForNextBlock())
 
 	return net, claims
 }
