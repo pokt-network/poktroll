@@ -17,7 +17,7 @@ import (
 
 var (
 	_                  relayer.Miner = (*miner)(nil)
-	defaultRelayHasher               = sha256.New
+	DefaultRelayHasher               = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
@@ -32,6 +32,7 @@ var (
 //   - WithDifficulty
 //
 // TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
+// from on-chain.
 type miner struct {
 	// relayHasher is a function which returns a hash.Hash interfact type. It is
 	// used to hash serialized relays to measure their mining difficulty.
@@ -79,7 +80,7 @@ func (mnr *miner) MinedRelays(
 // the default hasherConstructor if not.
 func (mnr *miner) setDefaults() {
 	if mnr.relayHasher == nil {
-		mnr.relayHasher = defaultRelayHasher
+		mnr.relayHasher = DefaultRelayHasher
 	}
 }
 
@@ -92,6 +93,7 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
+	// TODO_BLOCKER: marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
@@ -105,7 +107,7 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if !protocol.BytesDifficultyGreaterThan(relayHash, defaultRelayDifficulty) {
+	if !protocol.BytesDifficultyGreaterThan(relayHash, mnr.relayDifficulty) {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
