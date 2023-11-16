@@ -10,6 +10,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 )
 
+// NewMockOneTimeRelayerProxy creates a new mock RelayerProxy. This mock
+// RelayerProxy will expect a call to ServedRelays with the given context, and
+// when that call is made, returnedRelaysObs is returned. It also expects a call
+// to Start and Stop with the given context.
 func NewMockOneTimeRelayerProxy(
 	ctx context.Context,
 	t *testing.T,

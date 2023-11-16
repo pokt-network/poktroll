@@ -28,10 +28,18 @@ type TxClientContext client.Context
 // to the dependency injector
 type QueryClientContext client.Context
 
-// TODO_IN_THIS_COMMIT: comment...
+// RelaysObservable is an observable which is notified with Relay values.
+//
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. RelaysObservable = observable.Observable[*servicetypes.Relay]).
 type RelaysObservable observable.Observable[*servicetypes.Relay]
 
-// TODO_IN_THIS_COMMIT: comment...
+// MinedRelaysObservable is an observable which is notified with MinedRelay values.
+//
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. MinedRelaysObservable = observable.Observable[*MinedRelay]).
 type MinedRelaysObservable observable.Observable[*MinedRelay]
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the

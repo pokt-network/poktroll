@@ -10,6 +10,11 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 )
 
+// NewMockOneTimeRelayerSessionsManager creates a new mock RelayerSessionsManager.
+// This mock RelayerSessionsManager will expect a call to InsertRelays with the
+// given context and expectedMinedRelaysObs args. When that call is made,
+// returnedMinedRelaysObs is returned. It also expects a call to Start with the
+// given context, and stop.
 func NewMockOneTimeRelayerSessionsManager(
 	ctx context.Context,
 	t *testing.T,

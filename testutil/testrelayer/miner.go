@@ -10,7 +10,9 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockrelayer"
 )
 
-// TODO_IN_THIS_COMMIT: comment ...
+// NewMockOneTimeMiner creates a new mock Miner. This mock Miner will expect a
+// call to MinedRelays with the given context and expectedRelayObs args. When
+// that call is made, returnedMinedRelaysObs is returned.
 func NewMockOneTimeMiner(
 	ctx context.Context,
 	t *testing.T,
