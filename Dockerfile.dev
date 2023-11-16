@@ -6,7 +6,7 @@ FROM golang:1.20 as base
 RUN apt update && \
     apt-get install -y \
         ca-certificates \
-        curl jq make
+        curl jq make vim less
 
 # enable faster module downloading.
 ENV GOPROXY https://proxy.golang.org
@@ -15,9 +15,12 @@ COPY . /poktroll
 
 WORKDIR /poktroll
 
-RUN mv /poktroll/bin/poktrolld /usr/bin/poktrolld
+RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
 
+# TODO_TECHDEBT(@okdas): Ports are not documented as they will soon be changed with a document to follow
 EXPOSE 8545
 EXPOSE 8546
+EXPOSE 8547
+EXPOSE 8548
 
 ENTRYPOINT ["ignite"]
