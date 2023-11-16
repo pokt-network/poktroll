@@ -7,20 +7,22 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/x/supplier/client/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var (
 	flagStakeConfig string
-	_               = strconv.Itoa(0)
+	_               = strconv.Itoa(0) // Part of the default ignite imports
 )
 
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "stake-supplier",
+		Use:   "stake-supplier <upokt_amount> [--config config_file]",
 		Short: "Stake a supplier",
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
@@ -28,14 +30,20 @@ will stake the tokens and associate them with the supplier specified by the 'fro
 Example:
 $ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 
-		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) (err error) {
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			stakeString := args[0]
 			configContent, err := os.ReadFile(flagStakeConfig)
 			if err != nil {
 				return err
 			}
 
-			stakeOptions, err := parseStakeConfig(configContent)
+			stake, err := sdk.ParseCoinNormalized(stakeString)
+			if err != nil {
+				return err
+			}
+
+			supplierStakeConfigs, err := config.ParseSupplierConfigs(configContent)
 			if err != nil {
 				return err
 			}
@@ -47,8 +55,8 @@ $ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_c
 
 			msg := types.NewMsgStakeSupplier(
 				clientCtx.GetFromAddress().String(),
-				stakeOptions.stake,
-				stakeOptions.services,
+				stake,
+				supplierStakeConfigs,
 			)
 
 			if err := msg.ValidateBasic(); err != nil {

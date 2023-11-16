@@ -15,6 +15,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
+	"github.com/pokt-network/poktroll/x/supplier/client/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -39,39 +40,41 @@ func TestCLI_StakeSupplier(t *testing.T) {
 	}
 
 	defaultConfig := `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-`
+		- service_id: svc1
+		  endpoints:
+		  - url: http://pokt.network:8081
+		    rpc_type: json_rpc
+		`
 
 	tests := []struct {
-		desc    string
-		address string
-		config  string
-		err     *sdkerrors.Error
+		desc        string
+		address     string
+		stakeString string
+		config      string
+		err         *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
-			desc:    "stake supplier: valid",
-			address: supplierAccount.Address.String(),
-			config:  defaultConfig,
+			desc:        "stake supplier: valid",
+			address:     supplierAccount.Address.String(),
+			stakeString: "1000upokt",
+			config:      defaultConfig,
 		},
 
 		// Error Paths - Address Related
 		{
 			desc: "stake supplier: missing address",
 			// address:     "explicitly missing",
-			err:    types.ErrSupplierInvalidAddress,
-			config: defaultConfig,
+			err:         types.ErrSupplierInvalidAddress,
+			stakeString: "1000upokt",
+			config:      defaultConfig,
 		},
 		{
-			desc:    "stake supplier: invalid address",
-			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
-			config:  defaultConfig,
+			desc:        "stake supplier: invalid address",
+			address:     "invalid",
+			stakeString: "1000upokt",
+			err:         types.ErrSupplierInvalidAddress,
+			config:      defaultConfig,
 		},
 
 		// Error Paths - Stake Related
@@ -81,105 +84,97 @@ services:
 			err:     types.ErrSupplierInvalidStake,
 			// stakeString:    "explicitly missing",
 			config: `
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://pokt.network:8081
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake denom",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake denom",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidStake,
+			stakeString: "1000invalid",
 			config: `
-stake: 1000invalid
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+			    endpoints:
+			    - url: http://pokt.network:8081
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake amount (zero)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake amount (zero)",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidStake,
+			stakeString: "0upokt",
 			config: `
-stake: 0upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://pokt.network:8081
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake amount (negative)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake amount (negative)",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidStake,
+			stakeString: "-1000upokt",
 			config: `
-stake: "-1000upokt"
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://pokt.network:8081
+				    rpc_type: json_rpc
+				`,
 		},
 
 		// Happy Paths - Service Related
 		{
-			desc:    "services_test: valid multiple services",
-			address: supplierAccount.Address.String(),
+			desc:        "services_test: valid multiple services",
+			address:     supplierAccount.Address.String(),
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network:8081
-    rpc_type: json_rpc
-- service_id: svc2
-  endpoints:
-  - url: http://pokt.network:8082
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://pokt.network:8081
+				    rpc_type: json_rpc
+				- service_id: svc2
+				  endpoints:
+				  - url: http://pokt.network:8082
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "services_test: valid localhost",
-			address: supplierAccount.Address.String(),
+			desc:        "services_test: valid localhost",
+			address:     supplierAccount.Address.String(),
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://127.0.0.1:8082
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://127.0.0.1:8082
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "services_test: valid loopback",
-			address: supplierAccount.Address.String(),
+			desc:        "services_test: valid loopback",
+			address:     supplierAccount.Address.String(),
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://localhost:8082
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://localhost:8082
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "services_test: valid without a pork",
-			address: supplierAccount.Address.String(),
+			desc:        "services_test: valid without a pork",
+			address:     supplierAccount.Address.String(),
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: http://pokt.network
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: http://pokt.network
+				    rpc_type: json_rpc
+				`,
 		},
 
 		// Error Paths - Service Related
@@ -188,69 +183,61 @@ services:
 			address: supplierAccount.Address.String(),
 			err:     types.ErrSupplierInvalidServiceConfig,
 			// servicesString: "explicitly omitted",
-			config: `
-stake: 1000upokt
-`,
+			stakeString: "1000upokt",
 		},
 		{
-			desc:    "services_test: invalid services (empty string)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
-			config: `
-stake: 1000upokt
-services: []
-`,
+			desc:        "services_test: invalid services (empty string)",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidServiceConfig,
+			stakeString: "1000upokt",
+			config:      ``,
 		},
 		{
-			desc:    "services_test: invalid URL",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: invalid URL",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidServiceConfig,
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: bad_url
-    rpc_type: json_rpc
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: bad_url
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "services_test: missing URLs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing URLs",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidServiceConfig,
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-- service_id: svc2
-`,
+				- service_id: svc1
+				- service_id: svc2
+				`,
 		},
 		{
-			desc:    "services_test: missing service IDs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing service IDs",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidServiceConfig,
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- endpoints:
-  - url: localhost:8081
-    rpc_type: json_rpc
-- endpoints:
-  - url: localhost:8082
-    rpc_type: json_rpc
-`,
+				- endpoints:
+				  - url: localhost:8081
+				    rpc_type: json_rpc
+				- endpoints:
+				  - url: localhost:8082
+				    rpc_type: json_rpc
+				`,
 		},
 		{
-			desc:    "services_test: missing rpc type",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing rpc type",
+			address:     supplierAccount.Address.String(),
+			err:         types.ErrSupplierInvalidServiceConfig,
+			stakeString: "1000upokt",
 			config: `
-stake: 1000upokt
-services:
-- service_id: svc1
-  endpoints:
-  - url: localhost:8082
-`,
+				- service_id: svc1
+				  endpoints:
+				  - url: localhost:8082
+				`,
 		},
 	}
 
@@ -264,10 +251,11 @@ services:
 			require.NoError(t, net.WaitForNextBlock())
 
 			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, tt.config).Name()
+			configPath := testutil.WriteToNewTempFile(t, config.NormalizeYAMLIndentation(tt.config)).Name()
 
 			// Prepare the arguments for the CLI command
 			args := []string{
+				tt.stakeString,
 				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
