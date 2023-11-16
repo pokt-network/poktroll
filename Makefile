@@ -487,9 +487,9 @@ claim_list_height_5: ## List all the claims at height 5
 	HEIGHT=5 make claim_list_height
 
 # TODO_IN_THIS_PR: Test and uncomment this.
-# .PHONY: claim_list_session
-# claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
-# 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims session $(SESSION) --node $(POCKET_NODE)
+.PHONY: claim_list_session
+claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
 
 ######################
 ### Ignite Helpers ###

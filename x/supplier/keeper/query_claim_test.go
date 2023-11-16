@@ -36,6 +36,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 			},
 
 			response: &types.QueryGetClaimResponse{Claim: claims[0]},
+			err:      nil,
 		},
 		{
 			desc: "Second Claim",
@@ -46,6 +47,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 			},
 
 			response: &types.QueryGetClaimResponse{Claim: claims[1]},
+			err:      nil,
 		},
 		{
 			desc: "Claim Not Found - Random SessionId",
@@ -55,7 +57,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 				SupplierAddress: claims[0].SupplierAddress,
 			},
 
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "claim not found"),
 		},
 		{
 			desc: "Claim Not Found - Random Supplier Address",
@@ -65,7 +67,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 				SupplierAddress: sample.AccAddress(),
 			},
 
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "claim not found"),
 		},
 		{
 			desc: "InvalidRequest - Missing SessionId",
@@ -90,7 +92,8 @@ func TestClaim_QuerySingle(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.Claim(wctx, tc.request)
 			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+				require.Error(t, err)
+				require.ErrorContains(t, err, tc.err.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,

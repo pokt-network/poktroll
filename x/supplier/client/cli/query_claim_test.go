@@ -336,5 +336,3 @@ func TestClaim_List(t *testing.T) {
 		)
 	})
 }
-
-// TODO_IN_THIS_PR: Add tests that query when querying with address/session/height filters
