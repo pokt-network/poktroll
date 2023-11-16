@@ -28,6 +28,9 @@ var (
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 //
+// Available options:
+//   - WithDifficulty
+//
 // TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
 type miner struct {
 	// relayHasher is a function which returns a hash.Hash interfact type. It is
