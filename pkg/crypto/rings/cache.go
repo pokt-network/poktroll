@@ -9,8 +9,6 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/noot/ring-go"
@@ -133,13 +131,13 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := rc.applicationQuerier.Application(ctx, req)
 	if err != nil {
-		return nil, ErrRingsAccountNotFound.Wrapf("address: %s [%v]", appAddress, err)
+		return nil, ErrRingsAccountNotFound.Wrapf("app address: %s [%v]", appAddress, err)
 	}
 
 	// create a slice of addresses for the ring
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	if len(res.Application.DelegateeGatewayAddresses) < 1 {
+	if len(res.Application.DelegateeGatewayAddresses) == 0 {
 		// add app address twice to make the ring size of mininmum 2
 		// TODO_HACK: We are adding the appAddress twice because a ring
 		// signature requires AT LEAST two pubKeys. When the Application has
@@ -147,7 +145,7 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 		// twice. This is a HACK and should be investigated as to what is the
 		// best approach to take in this situation.
 		ringAddresses = append(ringAddresses, appAddress)
-	} else if len(res.Application.DelegateeGatewayAddresses) > 0 {
+	} else {
 		// add the delegatee gateway addresses
 		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...)
 	}
@@ -159,6 +157,7 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	}
 
 	// update the cache overwriting the previous value
+	log.Printf("DEBUG: Updating ring cache for [%s]", appAddress)
 	rc.ringPointsCache[appAddress] = points
 
 	// return the public key points on the secp256k1 curve
@@ -181,10 +180,7 @@ func (rc *ringCache) addressesToPoints(
 			return nil, ErrRingsAccountNotFound.Wrapf("address: %s [%v]", addr, err)
 		}
 		var acc accounttypes.AccountI
-		reg := codectypes.NewInterfaceRegistry()
-		accounttypes.RegisterInterfaces(reg)
-		cdc := codec.NewProtoCodec(reg)
-		if err := cdc.UnpackAny(pubKeyRes.Account, &acc); err != nil {
+		if err = ringCodec.UnpackAny(pubKeyRes.Account, &acc); err != nil {
 			return nil, ErrRingsUnableToDeserialiseAccount.Wrapf("address: %s [%v]", addr, err)
 		}
 		key := acc.GetPubKey()
