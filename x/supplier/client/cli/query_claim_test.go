@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -49,8 +50,8 @@ func createClaim(
 	t *testing.T,
 	net *network.Network,
 	ctx client.Context,
-	sessionId string,
 	supplierAddr string,
+	sessionId string,
 	sessionEndHeight int64,
 ) *types.Claim {
 	t.Helper()
@@ -62,20 +63,18 @@ func createClaim(
 	args := []string{
 		sessionHeaderEncoded,
 		rootHashEncoded,
-
-		// fmt.Sprintf("--%s=true", flags.FlagOffline),
-		// fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
-		// fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
-
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
-	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
-	// fmt.Println("TODO_IN_THIS_PR - understand the error around account sequence numbers: ", res)
+	var responseJson map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 
 	return &types.Claim{
 		SupplierAddress:       supplierAddr,
@@ -104,8 +103,8 @@ func networkWithClaimObjects(
 
 	// Initialize all the accounts
 	for i, account := range accounts {
-		// network.InitAccount(t, net, account.Address)
-		network.InitAccountWithSequence(t, net, account.Address, 0, i+1)
+		signatureSequenceNumber := i + 1
+		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
 	}
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
@@ -121,19 +120,18 @@ func networkWithClaimObjects(
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
 
-	// Create n claims for the supplier
+	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
 	for sessionNum := 0; sessionNum < numSessions; sessionNum++ {
 		sessionEndHeight += numBlocksPerSession
 		sessionId := fmt.Sprintf("session_id%d", sessionNum)
 		for claimNum := 0; claimNum < numClaimsPerSession; claimNum++ {
-			claim := createClaim(t, net, ctx, sessionId, addresses[claimNum], sessionEndHeight)
+			supplierAddr := addresses[claimNum]
+			claim := createClaim(t, net, ctx, supplierAddr, sessionId, sessionEndHeight)
 			claims = append(claims, *claim)
-			// TODO_IN_THIS_PR: Figure out why putting this AFTER the leads to an error
-			// need to wait for the claims to be stored on-chain in the next block
-			require.NoError(t, net.WaitForNextBlock())
 		}
 	}
+	require.NoError(t, net.WaitForNextBlock())
 
 	return net, claims
 }

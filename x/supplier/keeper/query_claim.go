@@ -61,7 +61,6 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 				claims = append(claims, claim)
 			}
 		} else {
-			fmt.Println("OLSH HERE")
 			// The value is an encoded Claim.
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
 				return err
