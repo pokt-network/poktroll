@@ -225,6 +225,8 @@ func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) 
 	relayResponse := &types.RelayResponse{
 		Payload: &types.RelayResponse_JsonRpcPayload{
 			JsonRpcPayload: &types.JSONRPCResponsePayload{
+				// TODO_BLOCKER(@red-0ne): This MUST match the Id provided by the request.
+				// If JSON-RPC request is not unmarshaled yet (i.e. can't extract ID), it SHOULD be a random ID.
 				Id:      0,
 				Jsonrpc: "2.0",
 				Error: &types.JSONRPCResponseError{

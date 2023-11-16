@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ${JOB_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  ttlSecondsAfterFinished: 120
+  template:
+    spec:
+      containers:
+      - name: e2e-tests
+        image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
+        command: ["/bin/sh"]
+        args: ["-c", "poktrolld q gateway list-gateway --node=$POCKET_NODE && poktrolld q application list-application --node=$POCKET_NODE && poktrolld q supplier list-supplier --node=$POCKET_NODE && go test -v ./e2e/tests/... -tags=e2e"]
+        env:
+        - name: AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: auth_token
+              name: celestia-secret
+        - name: POCKET_NODE
+          value: tcp://${NAMESPACE}-sequencer:36657
+        - name: E2E_DEBUG_OUTPUT
+          value: "false" # Flip to true to see the command and result of the execution
+        - name: POKTROLLD_HOME
+          value: /root/.pocket
+        - name: CELESTIA_HOSTNAME
+          value: celestia-rollkit
+        volumeMounts:
+        - mountPath: /root/.pocket/keyring-test/
+          name: keys-volume
+        - mountPath: /root/.pocket/config/
+          name: configs-volume
+      restartPolicy: Never
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: poktrolld-keys
+        name: keys-volume
+      - configMap:
+          defaultMode: 420
+          name: poktrolld-configs
+        name: configs-volume
+      serviceAccountName: default
+  backoffLimit: 0

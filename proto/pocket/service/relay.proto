@@ -34,6 +34,8 @@ message RelayRequest {
     }
 }
 
+// TODO_TECHDEBT(#189, @h5law): See discussion related to #189 on how/why JSONRPC should be refactored altogether.
+
 // JSONRPCRequestPayload contains the payload for a JSON-RPC request.
 // See https://www.jsonrpc.org/specification#request_object for more details.
 message JSONRPCRequestPayload {
