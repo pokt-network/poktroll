@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -51,7 +52,7 @@ func (k Keeper) Application(goCtx context.Context, req *types.QueryGetApplicatio
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("application with address %s not found", req.Address))
 	}
 
 	return &types.QueryGetApplicationResponse{Application: val}, nil

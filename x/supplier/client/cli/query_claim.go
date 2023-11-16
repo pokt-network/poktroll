@@ -67,7 +67,6 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --supplier-address <sup
 			if err != nil {
 				return err
 			}
-			fmt.Println("OLSH", res, req)
 			return clientCtx.PrintProto(res)
 		},
 	}

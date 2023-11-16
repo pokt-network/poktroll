@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -97,7 +98,7 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 		req.SupplierAddress,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("claim not found for session %s and supplier %s", req.SessionId, req.SupplierAddress))
 	}
 
 	return &types.QueryGetClaimResponse{Claim: val}, nil

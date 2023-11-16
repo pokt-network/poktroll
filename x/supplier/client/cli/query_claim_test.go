@@ -62,11 +62,9 @@ func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplie
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
-	res, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
+	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
 
-	// TODO_IN_THIS_PR: Figure out why this still isn't working...
-	fmt.Println("OLSH Claim created", res)
 	return &types.Claim{
 		SupplierAddress:       supplierAddr,
 		SessionId:             sessionId,
@@ -94,6 +92,8 @@ func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims 
 
 	// Initialize the supplier account
 	network.InitAccount(t, net, supplierAccount.Address)
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
 
 	// Create one supplier
 	supplierGenesisState := network.SupplierModuleGenesisStateWithAccount(t, supplierAddress)
@@ -106,6 +106,8 @@ func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims 
 		claim := createClaim(t, net, ctx, supplierAddress)
 		claims = append(claims, *claim)
 	}
+	// need to wait for the claims to be stored on-chain in the next block
+	require.NoError(t, net.WaitForNextBlock())
 
 	return net, claims
 }
