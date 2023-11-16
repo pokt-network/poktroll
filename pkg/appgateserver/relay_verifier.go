@@ -26,7 +26,16 @@ func (app *appGateServer) verifyResponse(
 
 	// Extract the supplier's signature
 	if relayResponse.Meta == nil {
-		return ErrAppGateEmptyRelayResponse
+		payload := relayResponse.GetPayload()
+		payloadBz := make([]byte, payload.Size())
+		if _, err := payload.MarshalTo(payloadBz); err != nil {
+			return ErrAppGateEmptyRelayResponseMeta.Wrapf(
+				"unable to marshal relay response payload: %s", err,
+			)
+		}
+		return ErrAppGateEmptyRelayResponseSignature.Wrapf(
+			"response payload: %s", relayResponse.Payload,
+		)
 	}
 	supplierSignature := relayResponse.Meta.SupplierSignature
 
