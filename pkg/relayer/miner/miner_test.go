@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
+	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -126,20 +127,11 @@ func unmarshalHexMinedRelay(
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
-	relayHashBz := hashRelay(t, newHasher, relayBz)
+	relayHashBz := testrelayer.HashBytes(t, newHasher, relayBz)
 
 	return &relayer.MinedRelay{
 		Relay: relay,
 		Bytes: relayBz,
 		Hash:  relayHashBz,
 	}
-}
-
-func hashRelay(t *testing.T, newHasher func() hash.Hash, relayBz []byte) []byte {
-	t.Helper()
-
-	hasher := newHasher()
-	_, err := hasher.Write(relayBz)
-	require.NoError(t, err)
-	return hasher.Sum(nil)
 }
