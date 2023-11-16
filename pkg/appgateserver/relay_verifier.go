@@ -26,7 +26,9 @@ func (app *appGateServer) verifyResponse(
 
 	// Extract the supplier's signature
 	if relayResponse.Meta == nil {
-		return ErrAppGateEmptyRelayResponse
+		return ErrAppGateEmptyRelayResponseSignature.Wrapf(
+			"response payload: %s", relayResponse.Payload,
+		)
 	}
 	supplierSignature := relayResponse.Meta.SupplierSignature
 

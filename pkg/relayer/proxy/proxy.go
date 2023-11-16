@@ -123,7 +123,7 @@ func NewRelayerProxy(
 	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
 	rp.applicationQuerier = apptypes.NewQueryClient(clientCtx)
 	rp.keyring = rp.clientCtx.Keyring
-	rp.ringCache = make(map[string][]ringtypes.Point)
+	rp.ringCache = make(map[string][]ringtypes.Point) // the key is the appAddress
 	rp.ringCacheMutex = &sync.RWMutex{}
 
 	for _, opt := range opts {

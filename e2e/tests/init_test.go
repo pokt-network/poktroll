@@ -3,7 +3,9 @@
 package e2e
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,6 +24,12 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_TECHDEBT(@okdas): Once relayminer and appgateserver are running in tilt,
+// use their respective in-tilt hostnames and run E2E tests in tilt. This
+// should match the on-chain advertised endpoint for the service with the
+// given serviceId.
+const localnetAppGateServerUrl = "http://localhost:42069"
+
 var (
 	addrRe   *regexp.Regexp
 	amountRe *regexp.Regexp
@@ -31,12 +39,21 @@ var (
 	accNameToAppMap      = make(map[string]apptypes.Application)
 	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
 
-	keyRingFlag = "--keyring-backend=test"
+	flagFeaturesPath string
+	keyRingFlag      = "--keyring-backend=test"
 )
 
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
+
+	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	log.Printf("features path: %s", flagFeaturesPath)
+	m.Run()
 }
 
 type suite struct {
@@ -58,7 +75,7 @@ func (s *suite) Before() {
 // TestFeatures runs the e2e tests specified in any .features files in this directory
 // * This test suite assumes that a LocalNet is running
 func TestFeatures(t *testing.T) {
-	gocuke.NewRunner(t, &suite{}).Path("*.feature").Run()
+	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).Run()
 }
 
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
@@ -242,12 +259,22 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARelayRequestForService(appName string, supplierName string, requestName string, serviceId string) {
-	// TODO(#126, @Olshansk): Implement this step
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+	res, err := s.pocketd.RunCurl(localnetAppGateServerUrl, serviceId, requestData)
+	if err != nil {
+		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
+	}
+
+	relayKey := relayReferenceKey(appName, supplierName)
+	s.scenarioState[relayKey] = res.Stdout
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
-	// TODO(#126, @Olshansk): Implement this step
+	relayKey := relayReferenceKey(appName, supplierName)
+	stdout, ok := s.scenarioState[relayKey]
+
+	require.Truef(s, ok, "no relay response found for %s", relayKey)
+	require.Contains(s, stdout, `"result":"0x`)
 }
 
 func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
@@ -357,4 +384,10 @@ func (s *suite) getAccBalance(accName string) int {
 	found, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
 	return found
+}
+
+// TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
+// used to create the primary composite key on-chain to uniquely distinguish relays.
+func relayReferenceKey(appName, supplierName string) string {
+	return fmt.Sprintf("%s/%s", appName, supplierName)
 }
