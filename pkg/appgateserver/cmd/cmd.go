@@ -7,24 +7,25 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"os/signal"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
+	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
-	blockclient "github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/deps/config"
 )
+
+// We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
+const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
 	flagSigningKey        string
 	flagSelfSigning       bool
 	flagListeningEndpoint string
-	flagCometWebsocketUrl string
+	flagQueryNodeUrl      string
 )
 
 func AppGateServerCmd() *cobra.Command {
@@ -56,13 +57,15 @@ relays to the AppGate server and function as an Application, provided that:
 		RunE: runAppGateServer,
 	}
 
+	// Custom flags
 	cmd.Flags().StringVar(&flagSigningKey, "signing-key", "", "The name of the key that will be used to sign relays")
 	cmd.Flags().StringVar(&flagListeningEndpoint, "listening-endpoint", "http://localhost:42069", "The host and port that the appgate server will listen on")
-	cmd.Flags().StringVar(&flagCometWebsocketUrl, "comet-websocket-url", "ws://localhost:36657/websocket", "The URL of the comet websocket endpoint to communicate with the pocket blockchain")
 	cmd.Flags().BoolVar(&flagSelfSigning, "self-signing", false, "Whether the server should sign all incoming requests with its own ring (for applications)")
+	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events")
 
-	cmd.Flags().String(flags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(flags.FlagNode, "tcp://localhost:36657", "The URL of the comet tcp endpoint to communicate with the pocket blockchain")
+	// Cosmos flags
+	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
+	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
@@ -72,18 +75,8 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx()
 
-	// Handle interrupts in a goroutine.
-	go func() {
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, os.Interrupt)
-
-		// Block until we receive an interrupt or kill signal (OS-agnostic)
-		<-sigCh
-		log.Println("INFO: Interrupt signal received, shutting down...")
-
-		// Signal goroutines to stop
-		cancelCtx()
-	}()
+	// Handle interrupt and kill signals asynchronously.
+	signals.GoOnExitSignal(cancelCtx)
 
 	// Parse the listening endpoint.
 	listeningUrl, err := url.Parse(flagListeningEndpoint)
@@ -92,7 +85,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Setup the AppGate server dependencies.
-	appGateServerDeps, err := setupAppGateServerDependencies(cmd, ctx, flagCometWebsocketUrl)
+	appGateServerDeps, err := setupAppGateServerDependencies(ctx, cmd)
 	if err != nil {
 		return fmt.Errorf("failed to setup AppGate server dependencies: %w", err)
 	}
@@ -127,21 +120,62 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func setupAppGateServerDependencies(cmd *cobra.Command, ctx context.Context, cometWebsocketUrl string) (depinject.Config, error) {
-	// Retrieve the client context for the chain interactions.
-	clientCtx := cosmosclient.GetClientContextFromCmd(cmd)
-
-	// Create the events client.
-	eventsQueryClient := eventsquery.NewEventsQueryClient(flagCometWebsocketUrl)
-
-	// Create the block client.
-	log.Printf("INFO: Creating block client, using comet websocket URL: %s...", flagCometWebsocketUrl)
-	deps := depinject.Supply(eventsQueryClient)
-	blockClient, err := blockclient.NewBlockClient(ctx, deps, flagCometWebsocketUrl)
+func setupAppGateServerDependencies(
+	ctx context.Context,
+	cmd *cobra.Command,
+) (depinject.Config, error) {
+	pocketNodeWebsocketUrl, err := getPocketNodeWebsocketUrl()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create block client: %w", err)
+		return nil, err
 	}
 
-	// Return the dependencie config.
-	return depinject.Supply(clientCtx, blockClient), nil
+	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
+		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
+		newSupplyQueryClientContextFn(flagQueryNodeUrl),
+	}
+
+	return config.SupplyConfig(ctx, cmd, supplierFuncs)
+}
+
+// getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
+// connect to for subscribing to on-chain events.
+func getPocketNodeWebsocketUrl() (string, error) {
+	if flagQueryNodeUrl == omittedDefaultFlagValue {
+		return "", errors.New("missing required flag: --query-node")
+	}
+
+	pocketNodeURL, err := url.Parse(flagQueryNodeUrl)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("ws://%s/websocket", pocketNodeURL.Host), nil
+}
+
+// newSupplyQueryClientContextFn returns a new depinject.Config which is supplied with
+// the given deps and a new cosmos ClientCtx
+func newSupplyQueryClientContextFn(pocketQueryClientUrl string) config.SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		cmd *cobra.Command,
+	) (depinject.Config, error) {
+		// Set --node flag to the pocketQueryClientUrl for the client context
+		// This flag is read by cosmosclient.GetClientQueryContext.
+		err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryClientUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get the client context from the command.
+		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+		if err != nil {
+			return nil, err
+		}
+		deps = depinject.Configs(deps, depinject.Supply(
+			queryClientCtx,
+		))
+		return deps, nil
+	}
 }

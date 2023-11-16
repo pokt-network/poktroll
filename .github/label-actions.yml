@@ -1,13 +1,13 @@
-# When `devnet-e2e-test` is added, also assign `devnet` to the PR.
-devnet-e2e-test:
+# When `devnet-test-e2e` is added, also assign `devnet` to the PR.
+devnet-test-e2e:
   prs:
     comment: The CI will now also run the e2e tests on devnet, which increases the time it takes to complete all CI checks.
     label:
       - devnet
       - push-image
 
-# When `devnet-e2e-test` is removed, also delete `devnet` from the PR.
--devnet-e2e-test:
+# When `devnet-test-e2e` is removed, also delete `devnet` from the PR.
+-devnet-test-e2e:
   prs:
     unlabel:
       - devnet
@@ -18,11 +18,11 @@ devnet:
     label:
       - push-image
 
-# When `devnet` is removed, also delete `devnet-e2e-test` from the PR.
+# When `devnet` is removed, also delete `devnet-test-e2e` from the PR.
 -devnet:
   prs:
     unlabel:
-      - devnet-e2e-test
+      - devnet-test-e2e
 
 # Let the developer know that they need to push another commit after attaching the label to PR.
 push-image:
@@ -34,4 +34,4 @@ push-image:
   prs:
     unlabel:
       - devnet
-      - devnet-e2e-test
+      - devnet-test-e2e

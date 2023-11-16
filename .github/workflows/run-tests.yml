@@ -1,0 +1,48 @@
+name: Run tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  GKE_CLUSTER: protocol-us-central1
+  GKE_ZONE: us-central1
+
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: install ignite
+        # If this step fails due to ignite.com failing, see #116 for a temporary workaround
+        run: |
+          curl https://get.ignite.com/cli! | bash
+          ignite version
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20.10"
+
+      - name: Install CI dependencies
+        run: make install_ci_deps
+
+      - name: Generate protobufs
+        run: make proto_regen
+
+      - name: Generate mocks
+        run: make go_mockgen
+
+      - name: Run golangci-lint
+        run: make go_lint
+
+      - name: Test
+        run: make go_test

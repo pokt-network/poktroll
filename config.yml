@@ -100,7 +100,8 @@ genesis:
             - endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
-                  url: http://anvil:8547
+                  # TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to it instead of `localhost`.
+                  url: http://localhost:8545
               service:
                 id: anvil
                 name: ""

@@ -7,7 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
@@ -72,9 +72,9 @@ type relayerProxy struct {
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
 
-	// servedRelaysProducer is a channel that emits the relays that have been served so that the
+	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
-	servedRelaysProducer chan<- *types.Relay
+	servedRelaysPublishCh chan<- *types.Relay
 
 	// ringCache is a cache of the public keys used to create the ring for a given application
 	// they are stored in a map of application address to a slice of points on the secp256k1 curve
@@ -83,7 +83,7 @@ type relayerProxy struct {
 	ringCacheMutex *sync.RWMutex
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx sdkclient.Context
+	clientCtx relayer.QueryClientContext
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -91,6 +91,14 @@ type relayerProxy struct {
 
 // NewRelayerProxy creates a new relayer proxy with the given dependencies or returns
 // an error if the dependencies fail to resolve or the options are invalid.
+//
+// Required dependencies:
+//   - cosmosclient.Context
+//   - client.BlockClient
+//
+// Available options:
+//   - WithSigningKeyName
+//   - WithProxiedServicesEndpoints
 func NewRelayerProxy(
 	deps depinject.Config,
 	opts ...relayer.RelayerProxyOption,
@@ -105,14 +113,18 @@ func NewRelayerProxy(
 		return nil, err
 	}
 
+	clientCtx := cosmosclient.Context(rp.clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
-	rp.servedRelaysProducer = servedRelaysProducer
-	rp.accountsQuerier = accounttypes.NewQueryClient(rp.clientCtx)
-	rp.supplierQuerier = suppliertypes.NewQueryClient(rp.clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(rp.clientCtx)
+	rp.servedRelaysPublishCh = servedRelaysProducer
+	rp.accountsQuerier = accounttypes.NewQueryClient(clientCtx)
+	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
+	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
+	rp.applicationQuerier = apptypes.NewQueryClient(clientCtx)
 	rp.keyring = rp.clientCtx.Keyring
+	rp.ringCache = make(map[string][]ringtypes.Point) // the key is the appAddress
+	rp.ringCacheMutex = &sync.RWMutex{}
 
 	for _, opt := range opts {
 		opt(rp)
@@ -125,8 +137,9 @@ func NewRelayerProxy(
 	return rp, nil
 }
 
-// Start concurrently starts all advertised relay servers and returns an error if any of them fails to start.
-// This method is blocking as long as all RelayServers are running.
+// Start concurrently starts all advertised relay services and returns an error
+// if any of them errors.
+// This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
