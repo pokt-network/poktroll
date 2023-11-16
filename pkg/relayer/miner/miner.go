@@ -63,7 +63,9 @@ func (mnr *miner) MinedRelays(
 	ctx context.Context,
 	servedRelaysObs relayer.RelaysObservable,
 ) relayer.MinedRelaysObservable {
-	// TODO_IN_THIS_COMMIT: comment...
+	// NB: must cast back to generic observable type to use with Map.
+	// relayer.RelaysObervable cannot be an alias due to gomock's lack of
+	// support for generic types.
 	relaysObs := observable.Observable[*servicetypes.Relay](servedRelaysObs)
 
 	// Map servedRelaysObs to a new observable of an either type, populated with

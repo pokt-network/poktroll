@@ -93,7 +93,9 @@ func NewRelayerSessions(
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
-	// TODO_IN_THIS_COMMIT: comment...
+	// NB: must cast back to generic observable type to use with Map.
+	// relayer.MinedRelaysObservable cannot be an alias due to gomock's lack of
+	// support for generic types.
 	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
 
 	// Map eitherMinedRelays to a new observable of an error type which is
