@@ -173,25 +173,28 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 }
 
 // SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
-func SupplierModuleGenesisStateWithAccount(t *testing.T, address string) *suppliertypes.GenesisState {
+func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
-	supplier := sharedtypes.Supplier{
-		Address: address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
-		Services: []*sharedtypes.SupplierServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-				Endpoints: []*sharedtypes.SupplierEndpoint{
-					{
-						Url:     "http://localhost:1",
-						RpcType: sharedtypes.RPCType_JSON_RPC,
+	for _, addr := range addresses {
+		supplier := sharedtypes.Supplier{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     "http://localhost:1",
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
 					},
 				},
 			},
-		},
+		}
+		state.SupplierList = append(state.SupplierList, supplier)
 	}
-	state.SupplierList = append(state.SupplierList, supplier)
+
 	return state
 }
 
@@ -209,4 +212,31 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	_, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
+}
+
+// Initialize an Account by sending it some funds from the validator in the network to the address provided
+func InitAccountWithSequence(
+	t *testing.T,
+	net *Network,
+	addr sdk.AccAddress,
+	signerAccountNumber int,
+	signatureSequencerNumber int,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=true", flags.FlagOffline),
+		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	res, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
+	require.NoError(t, err)
+	fmt.Println("OLSH 000", res)
 }

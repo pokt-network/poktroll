@@ -27,28 +27,34 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable
+const numBlocksPerSession = 4
+
 func encodeSessionHeader(t *testing.T, sessionId string, sessionEndHeight int64) string {
 	t.Helper()
 
 	argSessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      sample.AccAddress(),
-		SessionStartBlockHeight: 1,
+		SessionStartBlockHeight: sessionEndHeight - numBlocksPerSession,
 		SessionId:               sessionId,
 		SessionEndBlockHeight:   sessionEndHeight,
-		Service: &sharedtypes.Service{
-			Id: "anvil",
-		},
+		Service:                 &sharedtypes.Service{Id: "anvil"}, // hardcoded for simplicity
 	}
 	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
 	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
 }
 
-func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplierAddr string) *types.Claim {
+func createClaim(
+	t *testing.T,
+	net *network.Network,
+	ctx client.Context,
+	sessionId string,
+	supplierAddr string,
+	sessionEndHeight int64,
+) *types.Claim {
 	t.Helper()
 
-	sessionEndHeight := int64(5)
-	sessionId := "session_id"
 	rootHash := []byte("root_hash")
 	sessionHeaderEncoded := encodeSessionHeader(t, sessionId, sessionEndHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
@@ -56,6 +62,11 @@ func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplie
 	args := []string{
 		sessionHeaderEncoded,
 		rootHashEncoded,
+
+		// fmt.Sprintf("--%s=true", flags.FlagOffline),
+		// fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		// fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -64,6 +75,7 @@ func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplie
 
 	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
+	// fmt.Println("TODO_IN_THIS_PR - understand the error around account sequence numbers: ", res)
 
 	return &types.Claim{
 		SupplierAddress:       supplierAddr,
@@ -73,7 +85,11 @@ func createClaim(t *testing.T, net *network.Network, ctx client.Context, supplie
 	}
 }
 
-func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims []types.Claim) {
+func networkWithClaimObjects(
+	t *testing.T,
+	numSessions int,
+	numClaimsPerSession int,
+) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
 	// Prepare the network
@@ -83,37 +99,50 @@ func networkWithClaimObjects(t *testing.T, n int) (net *network.Network, claims 
 
 	// Prepare the keyring for the supplier account
 	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	supplierAccount := accounts[0]
-	supplierAddress := supplierAccount.Address.String()
-
-	// Update the context with the new keyring
+	accounts := testutil.CreateKeyringAccounts(t, kr, numClaimsPerSession)
 	ctx = ctx.WithKeyring(kr)
 
-	// Initialize the supplier account
-	network.InitAccount(t, net, supplierAccount.Address)
+	// Initialize all the accounts
+	for i, account := range accounts {
+		// network.InitAccount(t, net, account.Address)
+		network.InitAccountWithSequence(t, net, account.Address, 0, i+1)
+	}
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
+	addresses := make([]string, len(accounts))
+	for i, account := range accounts {
+		addresses[i] = account.Address.String()
+	}
+
 	// Create one supplier
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAccount(t, supplierAddress)
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAccounts(t, addresses)
 	buf, err := cfg.Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
 	cfg.GenesisState[types.ModuleName] = buf
 
 	// Create n claims for the supplier
-	for i := 0; i < n; i++ {
-		claim := createClaim(t, net, ctx, supplierAddress)
-		claims = append(claims, *claim)
+	sessionEndHeight := int64(1)
+	for sessionNum := 0; sessionNum < numSessions; sessionNum++ {
+		sessionEndHeight += numBlocksPerSession
+		sessionId := fmt.Sprintf("session_id%d", sessionNum)
+		for claimNum := 0; claimNum < numClaimsPerSession; claimNum++ {
+			claim := createClaim(t, net, ctx, sessionId, addresses[claimNum], sessionEndHeight)
+			claims = append(claims, *claim)
+			// TODO_IN_THIS_PR: Figure out why putting this AFTER the leads to an error
+			// need to wait for the claims to be stored on-chain in the next block
+			require.NoError(t, net.WaitForNextBlock())
+		}
 	}
-	// need to wait for the claims to be stored on-chain in the next block
-	require.NoError(t, net.WaitForNextBlock())
 
 	return net, claims
 }
 
 func TestClaim_Show(t *testing.T) {
-	net, claims := networkWithClaimObjects(t, 2)
+	numSessions := 1
+	numClaimsPerSession := 2
+
+	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -180,12 +209,16 @@ func TestClaim_Show(t *testing.T) {
 }
 
 func TestClaim_List(t *testing.T) {
-	net, claims := networkWithClaimObjects(t, 5)
+	numSessions := 2
+	numClaimsPerSession := 5
+	totalClaims := numSessions * numClaimsPerSession
+
+	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
 
 	ctx := net.Validators[0].ClientCtx
-	request := func(next []byte, offset, limit uint64, total bool) []string {
+	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
-			// fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 		}
 		if next == nil {
 			args = append(args, fmt.Sprintf("--%s=%d", flags.FlagOffset, offset))
@@ -201,8 +234,8 @@ func TestClaim_List(t *testing.T) {
 
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(claims); i += step {
-			args := request(nil, uint64(i), uint64(step), false)
+		for i := 0; i < totalClaims; i += step {
+			args := prepareArgs(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
 
@@ -216,11 +249,12 @@ func TestClaim_List(t *testing.T) {
 			)
 		}
 	})
+
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(claims); i += step {
-			args := request(next, 0, uint64(step), false)
+		for i := 0; i < totalClaims; i += step {
+			args := prepareArgs(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
 
@@ -235,15 +269,67 @@ func TestClaim_List(t *testing.T) {
 			next = resp.Pagination.NextKey
 		}
 	})
-	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(claims)), true)
+
+	t.Run("ByAddress", func(t *testing.T) {
+		args := prepareArgs(nil, 0, uint64(totalClaims), true)
+		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSupplierAddress, claims[0].SupplierAddress))
+
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, len(claims), int(resp.Pagination.Total))
+		require.Equal(t, numSessions, int(resp.Pagination.Total))
+		// require.ElementsMatch(t,
+		// 	nullify.Fill(claims),
+		// 	nullify.Fill(resp.Claim),
+		// )
+	})
+
+	t.Run("BySession", func(t *testing.T) {
+		args := prepareArgs(nil, 0, uint64(totalClaims), true)
+		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSessionId, claims[0].SessionId))
+
+		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		require.NoError(t, err)
+
+		var resp types.QueryAllClaimsResponse
+		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+
+		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
+		// require.ElementsMatch(t,
+		// 	nullify.Fill(claims),
+		// 	nullify.Fill(resp.Claim),
+		// )
+	})
+
+	t.Run("ByHeight", func(t *testing.T) {
+		args := prepareArgs(nil, 0, uint64(totalClaims), true)
+		args = append(args, fmt.Sprintf("--%s=%d", cli.FlagSessionEndHeight, claims[0].SessionEndBlockHeight))
+
+		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		require.NoError(t, err)
+
+		var resp types.QueryAllClaimsResponse
+		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+
+		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
+		// require.ElementsMatch(t,
+		// 	nullify.Fill(claims),
+		// 	nullify.Fill(resp.Claim),
+		// )
+	})
+
+	t.Run("Total", func(t *testing.T) {
+		args := prepareArgs(nil, 0, uint64(totalClaims), true)
+		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		require.NoError(t, err)
+
+		var resp types.QueryAllClaimsResponse
+		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+
+		require.Equal(t, totalClaims, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(claims),
 			nullify.Fill(resp.Claim),

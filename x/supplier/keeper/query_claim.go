@@ -25,34 +25,31 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 	// isCustomIndex is used to determined if we'll be using the store that points
 	// to the actual Claim values, or a secondary index that points to the primary keys.
 	var isCustomIndex bool
-	var claimStore sdk.KVStore
+	var keyPrefix []byte
 	switch filter := req.Filter.(type) {
 	case *types.QueryAllClaimsRequest_SupplierAddress:
 		isCustomIndex = true
-		keyPrefix := types.KeyPrefix(types.ClaimSupplierAddressPrefix)
+		keyPrefix = types.KeyPrefix(types.ClaimSupplierAddressPrefix)
 		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
-		claimStore = prefix.NewStore(store, keyPrefix)
 
 	case *types.QueryAllClaimsRequest_SessionEndHeight:
 		isCustomIndex = true
 		heightBz := make([]byte, 8)
 		binary.BigEndian.PutUint64(heightBz, filter.SessionEndHeight)
 
-		keyPrefix := types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
+		keyPrefix = types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
 		keyPrefix = append(keyPrefix, heightBz...)
-		claimStore = prefix.NewStore(store, keyPrefix)
 
 	case *types.QueryAllClaimsRequest_SessionId:
 		isCustomIndex = false
-		keyPrefix := types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
+		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
 		keyPrefix = append(keyPrefix, []byte(filter.SessionId)...)
-		claimStore = prefix.NewStore(store, keyPrefix)
 
 	default:
 		isCustomIndex = false
-		keyPrefix := types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
-		claimStore = prefix.NewStore(store, keyPrefix)
+		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
 	}
+	claimStore := prefix.NewStore(store, keyPrefix)
 
 	var claims []types.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
@@ -64,6 +61,7 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 				claims = append(claims, claim)
 			}
 		} else {
+			fmt.Println("OLSH HERE")
 			// The value is an encoded Claim.
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
 				return err

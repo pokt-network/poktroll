@@ -25,9 +25,10 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 	k.Keeper.InsertClaim(ctx, claim)
 
 	logger.Info("created claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
+	logger.Info("TODO_INCOMPLETE: Handling actual claim business logic  %s", claim.SessionId)
 
 	/*
-		INCOMPLETE: Handling the message
+		TODO_INCOMPLETE: Handling the message
 
 		## Validation
 
