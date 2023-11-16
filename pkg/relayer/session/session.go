@@ -22,7 +22,7 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
-	relayObs observable.Observable[*relayer.MinedRelay]
+	relayObs relayer.MinedRelaysObservable
 
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
 	sessionsToClaimObs observable.Observable[relayer.SessionTree]
@@ -93,10 +93,13 @@ func NewRelayerSessions(
 // network as necessary.
 // It IS NOT BLOCKING as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) Start(ctx context.Context) {
+	// TODO_IN_THIS_COMMIT: comment...
+	relayObs := observable.Observable[*relayer.MinedRelay](rs.relayObs)
+
 	// Map eitherMinedRelays to a new observable of an error type which is
 	// notified if an error was encountered while attempting to add the relay to
 	// the session tree.
-	miningErrorsObs := channel.Map(ctx, rs.relayObs, rs.mapAddRelayToSessionTree)
+	miningErrorsObs := channel.Map(ctx, relayObs, rs.mapAddMinedRelayToSessionTree)
 	logging.LogErrors(ctx, miningErrorsObs)
 
 	// Start claim/proof pipeline.
@@ -115,7 +118,7 @@ func (rs *relayerSessionsManager) Stop() {
 }
 
 // SessionsToClaim returns an observable that notifies when sessions are ready to be claimed.
-func (rs *relayerSessionsManager) InsertRelays(relays observable.Observable[*relayer.MinedRelay]) {
+func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObservable) {
 	rs.relayObs = relays
 }
 
@@ -222,10 +225,10 @@ func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64
 	return nil
 }
 
-// mapAddRelayToSessionTree is intended to be used as a MapFn. It adds the relay
+// mapAddMinedRelayToSessionTree is intended to be used as a MapFn. It adds the relay
 // to the session tree. If it encounters an error, it returns the error. Otherwise,
 // it skips output (only outputs errors).
-func (rs *relayerSessionsManager) mapAddRelayToSessionTree(
+func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	_ context.Context,
 	relay *relayer.MinedRelay,
 ) (_ error, skip bool) {

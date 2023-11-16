@@ -1,3 +1,7 @@
+//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
+//go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
+//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
+
 package relayer
 
 import (
@@ -7,7 +11,7 @@ import (
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -24,14 +28,20 @@ type TxClientContext client.Context
 // to the dependency injector
 type QueryClientContext client.Context
 
+// TODO_IN_THIS_COMMIT: comment...
+type RelaysObservable observable.Observable[*servicetypes.Relay]
+
+// TODO_IN_THIS_COMMIT: comment...
+type MinedRelaysObservable observable.Observable[*MinedRelay]
+
 // Miner is responsible for observing servedRelayObs, hashing and checking the
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type Miner interface {
 	MinedRelays(
 		ctx context.Context,
-		servedRelayObs observable.Observable[*types.Relay],
-	) (minedRelaysObs observable.Observable[*MinedRelay])
+		servedRelayObs RelaysObservable,
+	) (minedRelaysObs MinedRelaysObservable)
 }
 
 type MinerOption func(Miner)
@@ -51,7 +61,7 @@ type RelayerProxy interface {
 	// ServedRelays returns an observable that notifies the miner about the relays that have been served.
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
-	ServedRelays() observable.Observable[*types.Relay]
+	ServedRelays() RelaysObservable
 
 	// VerifyRelayRequest is a shared method used by RelayServers to check the
 	// relay request signature and session validity.
@@ -59,7 +69,7 @@ type RelayerProxy interface {
 	// that should not be responsible for verifying relay requests.
 	VerifyRelayRequest(
 		ctx context.Context,
-		relayRequest *types.RelayRequest,
+		relayRequest *servicetypes.RelayRequest,
 		service *sharedtypes.Service,
 	) error
 
@@ -67,7 +77,7 @@ type RelayerProxy interface {
 	// and append the signature to the RelayResponse.
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
-	SignRelayResponse(relayResponse *types.RelayResponse) error
+	SignRelayResponse(relayResponse *servicetypes.RelayResponse) error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -95,7 +105,7 @@ type RelayServer interface {
 type RelayerSessionsManager interface {
 	// InsertRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
-	InsertRelays(minedRelaysObs observable.Observable[*MinedRelay])
+	InsertRelays(minedRelaysObs MinedRelaysObservable)
 
 	// Start iterates over the session trees at the end of each, respective, session.
 	// The session trees are piped through a series of map operations which progress
