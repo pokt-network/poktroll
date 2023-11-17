@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"

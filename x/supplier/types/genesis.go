@@ -18,7 +18,8 @@ func DefaultGenesis() *GenesisState {
 	return &GenesisState{
 		SupplierList: []sharedtypes.Supplier{},
 		ClaimList:    []Claim{},
-		// this line is used by starport scaffolding # genesis/types/default
+		ProofList: []Proof{},
+// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}
 }
@@ -73,7 +74,17 @@ func (gs GenesisState) Validate() error {
 		}
 		claimIndexMap[index] = struct{}{}
 	}
-	// this line is used by starport scaffolding # genesis/types/validate
+	// Check for duplicated index in proof
+proofIndexMap := make(map[string]struct{})
+
+for _, elem := range gs.ProofList {
+	index := string(ProofKey(elem.Index))
+	if _, ok := proofIndexMap[index]; ok {
+		return fmt.Errorf("duplicated index for proof")
+	}
+	proofIndexMap[index] = struct{}{}
+}
+// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
 }
