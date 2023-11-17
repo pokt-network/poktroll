@@ -52,7 +52,7 @@ func (k Keeper) Gateway(goCtx context.Context, req *types.QueryGetGatewayRequest
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateways with address %s not found", req.Address))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
 	}
 
 	return &types.QueryGetGatewayResponse{Gateway: val}, nil

@@ -92,7 +92,6 @@ func TestClaim_QuerySingle(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.Claim(wctx, tc.request)
 			if tc.err != nil {
-				require.Error(t, err)
 				require.ErrorContains(t, err, tc.err.Error())
 			} else {
 				require.NoError(t, err)

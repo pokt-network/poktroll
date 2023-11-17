@@ -52,7 +52,7 @@ func (k Keeper) Application(goCtx context.Context, req *types.QueryGetApplicatio
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("application with address %s not found", req.Address))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("application not found: address %s", req.Address))
 	}
 
 	return &types.QueryGetApplicationResponse{Application: val}, nil
