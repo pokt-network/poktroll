@@ -26,6 +26,8 @@ spec:
           value: /root/.pocket
         - name: CELESTIA_HOSTNAME
           value: celestia-rollkit
+        - name: APPGATE_SERVER_URL
+          value: ${NAMESPACE}-appgate-server
         volumeMounts:
         - mountPath: /root/.pocket/keyring-test/
           name: keys-volume
