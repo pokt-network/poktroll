@@ -1,17 +1,16 @@
 package cli
 
 import (
-	"github.com/pokt-network/poktroll/x/supplier/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/spf13/cobra"
 )
 
 func CmdListProof() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "list-proof",
-		Short: "list all proof",
+		Use:   "list-proofs",
+		Short: "list all proofs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -25,11 +24,11 @@ func CmdListProof() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllProofRequest{
+			params := &types.QueryAllProofsRequest{
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.ProofAll(cmd.Context(), params)
+			res, err := queryClient.AllProofs(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

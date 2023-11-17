@@ -4,10 +4,9 @@ import (
 	"strconv"
 	"testing"
 
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"

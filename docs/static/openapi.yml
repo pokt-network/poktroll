@@ -47648,7 +47648,7 @@ paths:
         - Query
   /pocket/supplier/proof:
     get:
-      operationId: PocketSupplierProofAll
+      operationId: PocketSupplierAllProofs
       responses:
         '200':
           description: A successful response.
@@ -47780,7 +47780,11 @@ paths:
         - Query
   /pocket/supplier/proof/{index}:
     get:
-      summary: Queries a list of Proof items.
+      summary: >-
+        TODO_UPNEXT(@Olshansk): Update these endpoints after implementing proof
+        persistence
+
+        Queries a list of Proof items.
       operationId: PocketSupplierProof
       responses:
         '200':
@@ -78289,7 +78293,7 @@ definitions:
                    repeated Bar results = 1;
                    PageResponse page = 2;
            }
-  pocket.supplier.QueryAllProofResponse:
+  pocket.supplier.QueryAllProofsResponse:
     type: object
     properties:
       proof:

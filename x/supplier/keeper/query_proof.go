@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (k Keeper) ProofAll(goCtx context.Context, req *types.QueryAllProofRequest) (*types.QueryAllProofResponse, error) {
+func (k Keeper) AllProofs(goCtx context.Context, req *types.QueryAllProofsRequest) (*types.QueryAllProofsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -36,7 +36,7 @@ func (k Keeper) ProofAll(goCtx context.Context, req *types.QueryAllProofRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllProofResponse{Proof: proofs, Pagination: pageRes}, nil
+	return &types.QueryAllProofsResponse{Proof: proofs, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Proof(goCtx context.Context, req *types.QueryGetProofRequest) (*types.QueryGetProofResponse, error) {
