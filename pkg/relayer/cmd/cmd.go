@@ -13,8 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
-	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
@@ -146,42 +144,6 @@ func getPocketNodeWebsocketUrl() (string, error) {
 	}
 
 	return fmt.Sprintf("ws://%s/websocket", pocketNodeURL.Host), nil
-}
-
-// newSupplyEventsQueryClientFn constructs an EventsQueryClient instance and returns
-// a new depinject.Config which is supplied with the given deps and the new
-// EventsQueryClient.
-func newSupplyEventsQueryClientFn(
-	pocketNodeWebsocketUrl string,
-) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketUrl)
-
-		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
-	}
-}
-
-// newSupplyBlockClientFn returns a function with constructs a BlockClient instance
-// with the given nodeURL and returns a new
-// depinject.Config which is supplied with the given deps and the new
-// BlockClient.
-func newSupplyBlockClientFn(pocketNodeWebsocketUrl string) config.SupplierFn {
-	return func(
-		ctx context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(blockClient)), nil
-	}
 }
 
 // supplyMiner constructs a Miner instance and returns a new depinject.Config

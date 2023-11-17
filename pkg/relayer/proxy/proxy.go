@@ -13,7 +13,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -70,7 +69,7 @@ type relayerProxy struct {
 	proxiedServicesEndpoints servicesEndpointsMap
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
-	servedRelays observable.Observable[*types.Relay]
+	servedRelays relayer.RelaysObservable
 
 	// servedRelaysPublishCh is a channel that emits the relays that have been served so that the
 	// servedRelays observable can fan out the notifications to its subscribers.
@@ -179,7 +178,7 @@ func (rp *relayerProxy) Stop(ctx context.Context) error {
 // ServedRelays returns an observable that notifies the miner about the relays that have been served.
 // A served relay is one whose RelayRequest's signature and session have been verified,
 // and its RelayResponse has been signed and successfully sent to the client.
-func (rp *relayerProxy) ServedRelays() observable.Observable[*types.Relay] {
+func (rp *relayerProxy) ServedRelays() relayer.RelaysObservable {
 	return rp.servedRelays
 }
 

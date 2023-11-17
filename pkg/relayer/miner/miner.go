@@ -66,12 +66,17 @@ func NewMiner(
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (mnr *miner) MinedRelays(
 	ctx context.Context,
-	servedRelaysObs observable.Observable[*servicetypes.Relay],
-) observable.Observable[*relayer.MinedRelay] {
+	servedRelaysObs relayer.RelaysObservable,
+) relayer.MinedRelaysObservable {
+	// NB: must cast back to generic observable type to use with Map.
+	// relayer.RelaysObervable cannot be an alias due to gomock's lack of
+	// support for generic types.
+	relaysObs := observable.Observable[*servicetypes.Relay](servedRelaysObs)
+
 	// Map servedRelaysObs to a new observable of an either type, populated with
 	// the minedRelay or an error. It is notified after the relay has been mined
 	// or an error has been encountered, respectively.
-	eitherMinedRelaysObs := channel.Map(ctx, servedRelaysObs, mnr.mapMineRelay)
+	eitherMinedRelaysObs := channel.Map(ctx, relaysObs, mnr.mapMineRelay)
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelaysObs))
 
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
