@@ -17,6 +17,11 @@ type relayMiner struct {
 
 // NewRelayMiner creates a new Relayer instance with the given dependencies.
 // It injects the dependencies into the Relayer instance and returns it.
+//
+// Required dependencies:
+//   - RelayerProxy
+//   - Miner
+//   - RelayerSessionsManager
 func NewRelayMiner(ctx context.Context, deps depinject.Config) (*relayMiner, error) {
 	rel := &relayMiner{}
 
@@ -61,5 +66,6 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 // Stop stops the relayer proxy which in turn stops all advertised relay servers
 // and unsubscribes the miner from the served relays observable.
 func (rel *relayMiner) Stop(ctx context.Context) error {
+	rel.relayerSessionsManager.Stop()
 	return rel.relayerProxy.Stop(ctx)
 }
