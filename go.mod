@@ -1,4 +1,12 @@
+// NB: Since this repostiory was scaffolded using `ignite s chain pocket`
+// but the module was later rename to the github repo name seen above, we
+// need to swap the two lines below only during the scaffolding operation.
+// Note that the operation will but all the necesary types will be generated.
+// Ref: https://github.com/ignite/cli/issues/3737
 module github.com/pokt-network/poktroll
+// module pocket
+
+
 
 go 1.20
 
@@ -22,6 +30,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
+	github.com/pokt-network/poktroll v0.0.0-20231116164404-dd3434115ee1
 	github.com/pokt-network/smt v0.7.1
 	github.com/regen-network/gocuke v0.6.2
 	github.com/spf13/cast v1.5.1
