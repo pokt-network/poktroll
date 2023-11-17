@@ -452,9 +452,52 @@ acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
 
 ##############
+### Proofs ###
+##############
+
+# TODO(@Olshansk): Use the test fixture generator @bryanchriswhite put together
+# These encoded values were generated using the `encodeSessionHeader` helpers in `query_claim_test.go` as dummy values.
+ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZnpycmVyemd0djd2c3J4bDA5NDN0dXN4azRhayIsInNlcnZpY2UiOnsiaWQiOiJhbnZpbCIsIm5hbWUiOiIifSwic2Vzc2lvbl9zdGFydF9ibG9ja19oZWlnaHQiOiI1Iiwic2Vzc2lvbl9pZCI6InNlc3Npb25faWQxIiwic2Vzc2lvbl9lbmRfYmxvY2tfaGVpZ2h0IjoiOSJ9"
+ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
+.PHONY: submit_proof_dummy
+submit_proof_dummy: ## Create a dummy claim by supplier1
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier create-claim \
+	$(ENCODED_SESSION_HEADER) \
+	$(ENCODED_ROOT_HASH) \
+	--from supplier1 --node $(POCKET_NODE)
+
+.PHONY: proofs_list
+claim_list: ## List all the claims
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
+
+.PHONY: claims_list_address
+claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+
+.PHONY: proof_list_address_supplier1
+proof_list_address_supplier1: ## List all the claims for supplier1
+	SUPPLIER1=$$(make poktrolld_addr ACC_NAME=supplier1) && \
+	ADDR=$$SUPPLIER1 make claim_list_address
+
+.PHONY: proof_list_height
+proof_list_height: ## List all the claims ending at a specific height (specified via HEIGHT variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-end-height $(HEIGHT) --node $(POCKET_NODE)
+
+.PHONY: proof_list_height_5
+proof_list_height_5: ## List all the claims at height 5
+	HEIGHT=5 make claim_list_height
+
+.PHONY: proof_list_session
+proof_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+
+# TODO: Review the following PR and update all the other things accoredingly: https://github.com/pokt-network/poktroll/pull/151/files?show-viewed-files=true&file-filters%5B%5D=
+
+##############
 ### Claims ###
 ##############
 
+# TODO(@Olshansk): Use `go_fixturegen` to update or generate these by following @bryanchriswhite's pattern.
 # These encoded values were generated using the `encodeSessionHeader` helpers in `query_claim_test.go` as dummy values.
 ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZnpycmVyemd0djd2c3J4bDA5NDN0dXN4azRhayIsInNlcnZpY2UiOnsiaWQiOiJhbnZpbCIsIm5hbWUiOiIifSwic2Vzc2lvbl9zdGFydF9ibG9ja19oZWlnaHQiOiI1Iiwic2Vzc2lvbl9pZCI6InNlc3Npb25faWQxIiwic2Vzc2lvbl9lbmRfYmxvY2tfaGVpZ2h0IjoiOSJ9"
 ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
@@ -465,15 +508,15 @@ claim_create_dummy: ## Create a dummy claim by supplier1
 	$(ENCODED_ROOT_HASH) \
 	--from supplier1 --node $(POCKET_NODE)
 
-.PHONY: claims_list
+.PHONY: claim_list
 claim_list: ## List all the claims
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
 
-.PHONY: claims_list_address
+.PHONY: claim_list_address
 claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
 
-.PHONY: claims_list_address_supplier1
+.PHONY: claim_list_address_supplier1
 claim_list_address_supplier1: ## List all the claims for supplier1
 	SUPPLIER1=$$(make poktrolld_addr ACC_NAME=supplier1) && \
 	ADDR=$$SUPPLIER1 make claim_list_address

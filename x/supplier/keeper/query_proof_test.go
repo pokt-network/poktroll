@@ -1,13 +1,13 @@
 package keeper_test
 
 import (
-	keepertest "pocket/testutil/keeper"
-	"pocket/testutil/nullify"
 	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
