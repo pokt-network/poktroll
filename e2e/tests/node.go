@@ -117,7 +117,13 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, args ...string) (*commandResult, error) {
 	dataStr := fmt.Sprintf("%s", data)
 	urlStr := fmt.Sprintf("%s/%s", rpcUrl, service)
-	base := []string{"-v", "POST", "-H", "Content-Type: application/json", "--data", dataStr, urlStr}
+	base := []string{
+		"-v",                                   // verbose output
+		"-sS",                                  // silent with error
+		"POST",                                 // HTTP method
+		"-H", "Content-Type: application/json", // HTTP headers
+		"--data", dataStr, urlStr, // POST data
+	}
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
 	cmd := exec.Command("curl", args...)

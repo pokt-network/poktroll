@@ -47427,7 +47427,66 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
-  /pocket/supplier/claim:
+  /pocket/supplier/claim/{session_id}/{supplier_address}:
+    get:
+      summary: Queries a list of Claim items.
+      operationId: PocketSupplierClaim
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              claim:
+                type: object
+                properties:
+                  supplier_address:
+                    type: string
+                    title: the address of the supplier that submitted this claim
+                  session_id:
+                    type: string
+                    title: session id from the SessionHeader
+                  session_end_block_height:
+                    type: string
+                    format: uint64
+                    title: session end block height from the SessionHeader
+                  root_hash:
+                    type: string
+                    format: byte
+                    title: smt.SMST#Root()
+                title: >-
+                  Claim is the serialized object stored on-chain for claims
+                  pending to be proven
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          type: string
+        - name: supplier_address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /pocket/supplier/claims:
     get:
       operationId: PocketSupplierAllClaims
       responses:
@@ -47441,19 +47500,23 @@ paths:
                 items:
                   type: object
                   properties:
-                    index:
-                      type: string
                     supplier_address:
                       type: string
+                      title: the address of the supplier that submitted this claim
                     session_id:
                       type: string
+                      title: session id from the SessionHeader
+                    session_end_block_height:
+                      type: string
+                      format: uint64
+                      title: session end block height from the SessionHeader
                     root_hash:
                       type: string
-                  description: >-
-                    TODO_UPNEXT(@Olshansk): The structure below is the default
-                    (untouched) scaffolded type. Update
-
-                    and productionize it for our use case.
+                      format: byte
+                      title: smt.SMST#Root()
+                  title: >-
+                    Claim is the serialized object stored on-chain for claims
+                    pending to be proven
               pagination:
                 type: object
                 properties:
@@ -47557,57 +47620,19 @@ paths:
           in: query
           required: false
           type: boolean
-      tags:
-        - Query
-  /pocket/supplier/claim/{index}:
-    get:
-      summary: Queries a list of Claim items.
-      operationId: PocketSupplierClaim
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              claim:
-                type: object
-                properties:
-                  index:
-                    type: string
-                  supplier_address:
-                    type: string
-                  session_id:
-                    type: string
-                  root_hash:
-                    type: string
-                description: >-
-                  TODO_UPNEXT(@Olshansk): The structure below is the default
-                  (untouched) scaffolded type. Update
-
-                  and productionize it for our use case.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: index
-          in: path
-          required: true
+        - name: supplier_address
+          in: query
+          required: false
           type: string
+        - name: session_id
+          in: query
+          required: false
+          type: string
+        - name: session_end_height
+          in: query
+          required: false
+          type: string
+          format: uint64
       tags:
         - Query
   /pocket/supplier/params:
@@ -47646,7 +47671,155 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
-  /pocket/supplier/supplier:
+  /pocket/supplier/supplier/{address}:
+    get:
+      summary: Queries a list of Supplier items.
+      operationId: PocketSupplierSupplier
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              supplier:
+                type: object
+                properties:
+                  address:
+                    type: string
+                    title: >-
+                      The Bech32 address of the supplier using cosmos'
+                      ScalarDescriptor to ensure deterministic encoding
+                  stake:
+                    title: The total amount of uPOKT the supplier has staked
+                    type: object
+                    properties:
+                      denom:
+                        type: string
+                      amount:
+                        type: string
+                    description: >-
+                      Coin defines a token with a denomination and an amount.
+
+
+                      NOTE: The amount field is an Int which implements the
+                      custom method
+
+                      signatures required by gogoproto.
+                  services:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        service:
+                          title: The Service for which the supplier is configured
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
+                        endpoints:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              url:
+                                type: string
+                                title: URL of the endpoint
+                              rpc_type:
+                                title: Type of RPC exposed on the url above
+                                type: string
+                                enum:
+                                  - UNKNOWN_RPC
+                                  - GRPC
+                                  - WEBSOCKET
+                                  - JSON_RPC
+                                default: UNKNOWN_RPC
+                                description: |-
+                                  - UNKNOWN_RPC: Undefined RPC type
+                                   - GRPC: gRPC
+                                   - WEBSOCKET: WebSocket
+                                   - JSON_RPC: JSON-RPC
+                              configs:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key:
+                                      title: Config option key
+                                      type: string
+                                      enum:
+                                        - UNKNOWN_CONFIG
+                                        - TIMEOUT
+                                      default: UNKNOWN_CONFIG
+                                      description: >-
+                                        Enum to define configuration options
+
+                                        TODO_RESEARCH: Should these be configs,
+                                        SLAs or something else? There will be
+                                        more discussion once we get closer to
+                                        implementing on-chain QoS.
+
+                                         - UNKNOWN_CONFIG: Undefined config option
+                                         - TIMEOUT: Timeout setting
+                                    value:
+                                      type: string
+                                      title: Config option value
+                                  title: >-
+                                    Key-value wrapper for config options, as
+                                    proto maps can't be keyed by enums
+                                title: >-
+                                  Additional configuration options for the
+                                  endpoint
+                            title: >-
+                              SupplierEndpoint message to hold service
+                              configuration details
+                          title: List of endpoints for the service
+                      title: >-
+                        SupplierServiceConfig holds the service configuration
+                        the supplier stakes for
+                    title: The service configs this supplier can support
+                description: >-
+                  Supplier is the type defining the actor in Pocket Network that
+                  provides RPC services.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: address
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
+  /pocket/supplier/suppliers:
     get:
       operationId: PocketSupplierSupplierAll
       responses:
@@ -47873,154 +48046,6 @@ paths:
           in: query
           required: false
           type: boolean
-      tags:
-        - Query
-  /pocket/supplier/supplier/{address}:
-    get:
-      summary: Queries a list of Supplier items.
-      operationId: PocketSupplierSupplier
-      responses:
-        '200':
-          description: A successful response.
-          schema:
-            type: object
-            properties:
-              supplier:
-                type: object
-                properties:
-                  address:
-                    type: string
-                    title: >-
-                      The Bech32 address of the supplier using cosmos'
-                      ScalarDescriptor to ensure deterministic encoding
-                  stake:
-                    title: The total amount of uPOKT the supplier has staked
-                    type: object
-                    properties:
-                      denom:
-                        type: string
-                      amount:
-                        type: string
-                    description: >-
-                      Coin defines a token with a denomination and an amount.
-
-
-                      NOTE: The amount field is an Int which implements the
-                      custom method
-
-                      signatures required by gogoproto.
-                  services:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        service:
-                          title: The Service for which the supplier is configured
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                              description: Unique identifier for the service
-                              title: >-
-                                For example, what if we want to request a
-                                session for a certain service but with some
-                                additional configs that identify it?
-                            name:
-                              type: string
-                              description: >-
-                                (Optional) Semantic human readable name for the
-                                service
-                              title: >-
-                                TODO_TECHDEBT: Name is currently unused but acts
-                                as a reminder than an optional onchain
-                                representation of the service is necessary
-                        endpoints:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              url:
-                                type: string
-                                title: URL of the endpoint
-                              rpc_type:
-                                title: Type of RPC exposed on the url above
-                                type: string
-                                enum:
-                                  - UNKNOWN_RPC
-                                  - GRPC
-                                  - WEBSOCKET
-                                  - JSON_RPC
-                                default: UNKNOWN_RPC
-                                description: |-
-                                  - UNKNOWN_RPC: Undefined RPC type
-                                   - GRPC: gRPC
-                                   - WEBSOCKET: WebSocket
-                                   - JSON_RPC: JSON-RPC
-                              configs:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    key:
-                                      title: Config option key
-                                      type: string
-                                      enum:
-                                        - UNKNOWN_CONFIG
-                                        - TIMEOUT
-                                      default: UNKNOWN_CONFIG
-                                      description: >-
-                                        Enum to define configuration options
-
-                                        TODO_RESEARCH: Should these be configs,
-                                        SLAs or something else? There will be
-                                        more discussion once we get closer to
-                                        implementing on-chain QoS.
-
-                                         - UNKNOWN_CONFIG: Undefined config option
-                                         - TIMEOUT: Timeout setting
-                                    value:
-                                      type: string
-                                      title: Config option value
-                                  title: >-
-                                    Key-value wrapper for config options, as
-                                    proto maps can't be keyed by enums
-                                title: >-
-                                  Additional configuration options for the
-                                  endpoint
-                            title: >-
-                              SupplierEndpoint message to hold service
-                              configuration details
-                          title: List of endpoints for the service
-                      title: >-
-                        SupplierServiceConfig holds the service configuration
-                        the supplier stakes for
-                    title: The service configs this supplier can support
-                description: >-
-                  Supplier is the type defining the actor in Pocket Network that
-                  provides RPC services.
-        default:
-          description: An unexpected error response.
-          schema:
-            type: object
-            properties:
-              code:
-                type: integer
-                format: int32
-              message:
-                type: string
-              details:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    '@type':
-                      type: string
-                  additionalProperties: {}
-      parameters:
-        - name: address
-          in: path
-          required: true
-          type: string
       tags:
         - Query
 definitions:
@@ -78019,19 +78044,23 @@ definitions:
   pocket.supplier.Claim:
     type: object
     properties:
-      index:
-        type: string
       supplier_address:
         type: string
+        title: the address of the supplier that submitted this claim
       session_id:
         type: string
+        title: session id from the SessionHeader
+      session_end_block_height:
+        type: string
+        format: uint64
+        title: session end block height from the SessionHeader
       root_hash:
         type: string
-    description: >-
-      TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
-      scaffolded type. Update
-
-      and productionize it for our use case.
+        format: byte
+        title: smt.SMST#Root()
+    title: >-
+      Claim is the serialized object stored on-chain for claims pending to be
+      proven
   pocket.supplier.MsgCreateClaimResponse:
     type: object
   pocket.supplier.MsgStakeSupplierResponse:
@@ -78051,19 +78080,23 @@ definitions:
         items:
           type: object
           properties:
-            index:
-              type: string
             supplier_address:
               type: string
+              title: the address of the supplier that submitted this claim
             session_id:
               type: string
+              title: session id from the SessionHeader
+            session_end_block_height:
+              type: string
+              format: uint64
+              title: session end block height from the SessionHeader
             root_hash:
               type: string
-          description: >-
-            TODO_UPNEXT(@Olshansk): The structure below is the default
-            (untouched) scaffolded type. Update
-
-            and productionize it for our use case.
+              format: byte
+              title: smt.SMST#Root()
+          title: >-
+            Claim is the serialized object stored on-chain for claims pending to
+            be proven
       pagination:
         type: object
         properties:
@@ -78238,19 +78271,23 @@ definitions:
       claim:
         type: object
         properties:
-          index:
-            type: string
           supplier_address:
             type: string
+            title: the address of the supplier that submitted this claim
           session_id:
             type: string
+            title: session id from the SessionHeader
+          session_end_block_height:
+            type: string
+            format: uint64
+            title: session end block height from the SessionHeader
           root_hash:
             type: string
-        description: >-
-          TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
-          scaffolded type. Update
-
-          and productionize it for our use case.
+            format: byte
+            title: smt.SMST#Root()
+        title: >-
+          Claim is the serialized object stored on-chain for claims pending to
+          be proven
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
