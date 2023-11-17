@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"flag"
 	"hash"
 	"sync"
 	"testing"
@@ -22,6 +23,11 @@ import (
 const testDifficulty = 2
 
 var (
+	// flagGenMinedRelayFixtures is a flag which is used in the
+	// TestFixtureGeneration_MineMockRelays test to determine whether it should
+	// generate mined fixtures relays and print them.
+	flagGenMinedRelayFixtures bool
+
 	// marshaledMinableRelaysHex are the hex encoded strings of serialized relays
 	// which have been pre-mined to difficulty 2 by populating the signature with
 	// random bytes. It is intended for use in tests.
@@ -45,6 +51,15 @@ var (
 		"0a140a121210d9580e5db33ae495e7805fa0ee0f13ef",
 	}
 )
+
+func init() {
+	flag.BoolVar(&flagGenMinedRelayFixtures, "gen-mined-relays", false, "generate mined relay fixtures for testing")
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	m.Run()
+}
 
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
@@ -171,15 +186,21 @@ func hashRelay(t *testing.T, newHasher func() hash.Hash, relayBz []byte) []byte 
 }
 
 func TestFixtureGeneration_MineMockRelays(t *testing.T) {
-	t.Skip("this test is intended to be run manually as a utility to generate relay fixtures for testing")
+	if !flagGenMinedRelayFixtures {
+		t.Skip("skipping test; flag gen-mined-relays not set")
+	}
 
+	const (
+		randLength = 16 // number of random bytes provided for relay generation
+		limit      = 5  // number of required relays (passing testDifficulty)
+	)
 	ctx := context.Background()
 
 	minedRelaysObs := mineRelayFixturesForDifficulty(
 		t,
-		16, // number of random bytes provided for relay generation
+		randLength,
 		testDifficulty,
-		5, // number of required relays (passing testDifficulty)
+		limit,
 		miner.DefaultRelayHasher,
 	)
 	minedRelaysObserver := minedRelaysObs.Subscribe(ctx)
