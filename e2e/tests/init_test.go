@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -24,12 +25,6 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT(@okdas): Once relayminer and appgateserver are running in tilt,
-// use their respective in-tilt hostnames and run E2E tests in tilt. This
-// should match the on-chain advertised endpoint for the service with the
-// given serviceId.
-const localnetAppGateServerUrl = "http://localhost:42069"
-
 var (
 	addrRe   *regexp.Regexp
 	amountRe *regexp.Regexp
@@ -41,6 +36,7 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
+	appGateServerUrl = "http://localhost:42069"
 )
 
 func init() {
@@ -48,6 +44,11 @@ func init() {
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+
+	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
+	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
+		appGateServerUrl = url
+	}
 }
 
 func TestMain(m *testing.M) {
@@ -260,7 +261,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
-	res, err := s.pocketd.RunCurl(localnetAppGateServerUrl, serviceId, requestData)
+	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
 	if err != nil {
 		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}

@@ -5,8 +5,8 @@ FROM golang:1.20 as base
 
 RUN apt update && \
     apt-get install -y \
-        ca-certificates \
-        curl jq make vim less
+        ca-certificates net-tools \
+        curl jq make vim less dnsutils
 
 # enable faster module downloading.
 ENV GOPROXY https://proxy.golang.org
