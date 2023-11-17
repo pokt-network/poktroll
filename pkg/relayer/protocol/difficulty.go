@@ -24,15 +24,17 @@ func CountDifficultyBits(bz []byte) (int, error) {
 	bzLen := len(bz)
 
 	var zeroBits int
-	for i, b := range bz {
-		if b != 0 {
-			zeroBits = bits.LeadingZeros8(b)
+	for byteIdx, byteValue := range bz {
+		if byteValue != 0 {
+			zeroBits = bits.LeadingZeros8(byteValue)
 			if zeroBits == 8 {
-				// we already checked that b != 0.
+				// we already checked that byteValue != 0.
 				return 0, ErrDifficulty.Wrap("impossible code path")
 			}
 
-			return (i)*8 + zeroBits, nil
+			// We have byteIdx bytes that are all 0s and one byte that has
+			// zeroBits number of leading 0 bits.
+			return (byteIdx)*8 + zeroBits, nil
 		}
 	}
 

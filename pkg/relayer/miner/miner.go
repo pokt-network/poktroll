@@ -102,7 +102,7 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if protocol.MustCountDifficultyBits(relayHash) >= defaultRelayDifficultyBits {
+	if protocol.MustCountDifficultyBits(relayHash) < defaultRelayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
