@@ -1,12 +1,18 @@
 // NB: Since this repostiory was scaffolded using `ignite s chain pocket`
-// but the module was later rename to the github repo name seen above, we
+// but the module was later rename to github.com/pokt-network/poktroll, we
 // need to swap the two lines below only during the scaffolding operation.
-// Note that the operation will but all the necesary types will be generated.
+// NOTE that the operation is expected to error out but all the necesary
+// types and functions will be scaffolded correctly.
 // Ref: https://github.com/ignite/cli/issues/3737
-module github.com/pokt-network/poktroll
+//
+// The following will need to be done manually after the scaffold:
+// - Reverting the module name in go.mod (this file)
+// - Manually updating imports in .go files: "pocket/x/" => "github.com/pokt-network/pocket/x/"
+// - Manually `option go_package` in .proto files: `option go_package = "pocket` =>  `option go_package = "github.com/pokt-network/poktroll`
+// - If an empty `service Msg {}` is generated in a `tx.proto` file, remove it
+
 // module pocket
-
-
+module github.com/pokt-network/poktroll
 
 go 1.20
 
@@ -30,7 +36,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
-	github.com/pokt-network/poktroll v0.0.0-20231116164404-dd3434115ee1
 	github.com/pokt-network/smt v0.7.1
 	github.com/regen-network/gocuke v0.6.2
 	github.com/spf13/cast v1.5.1

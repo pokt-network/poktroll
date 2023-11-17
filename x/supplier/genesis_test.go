@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/stretchr/testify/require"
 )
 
 // Please see `x/supplier/types/genesis_test.go` for extensive tests related to the validity of the genesis state.
@@ -64,15 +63,7 @@ func TestGenesis(t *testing.T) {
 				Index: "1",
 			},
 		},
-		ProofList: []types.Proof{
-		{
-			Index: "0",
-},
-		{
-			Index: "1",
-},
-	},
-	// this line is used by starport scaffolding # genesis/test/state
+		// this line is used by starport scaffolding # genesis/test/state
 	}
 
 	k, ctx := keepertest.SupplierKeeper(t)
@@ -85,6 +76,5 @@ func TestGenesis(t *testing.T) {
 
 	require.ElementsMatch(t, genesisState.SupplierList, got.SupplierList)
 	require.ElementsMatch(t, genesisState.ClaimList, got.ClaimList)
-	require.ElementsMatch(t, genesisState.ProofList, got.ProofList)
-// this line is used by starport scaffolding # genesis/test/assert
+	// this line is used by starport scaffolding # genesis/test/assert
 }

@@ -4,11 +4,12 @@ import (
 	"strconv"
 	"testing"
 
-	"pocket/x/supplier/keeper"
-	"pocket/x/supplier/types"
 	keepertest "pocket/testutil/keeper"
 	"pocket/testutil/nullify"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/poktroll/x/supplier/keeper"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func createNProof(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof {
 	items := make([]types.Proof, n)
 	for i := range items {
 		items[i].Index = strconv.Itoa(i)
-        
+
 		keeper.SetProof(ctx, items[i])
 	}
 	return items
@@ -30,8 +31,7 @@ func TestProofGet(t *testing.T) {
 	items := createNProof(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetProof(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		require.True(t, found)
 		require.Equal(t,
@@ -45,12 +45,10 @@ func TestProofRemove(t *testing.T) {
 	items := createNProof(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveProof(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		_, found := keeper.GetProof(ctx,
-		    item.Index,
-            
+			item.Index,
 		)
 		require.False(t, found)
 	}

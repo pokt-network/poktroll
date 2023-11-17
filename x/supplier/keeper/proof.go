@@ -1,34 +1,34 @@
 package keeper
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"pocket/x/supplier/types"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // SetProof set a specific proof in the store from its index
 func (k Keeper) SetProof(ctx sdk.Context, proof types.Proof) {
-	store :=  prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	b := k.cdc.MustMarshal(&proof)
 	store.Set(types.ProofKey(
-        proof.Index,
-    ), b)
+		proof.Index,
+	), b)
 }
 
 // GetProof returns a proof from its index
 func (k Keeper) GetProof(
-    ctx sdk.Context,
-    index string,
-    
+	ctx sdk.Context,
+	index string,
+
 ) (val types.Proof, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 
 	b := store.Get(types.ProofKey(
-        index,
-    ))
-    if b == nil {
-        return val, false
-    }
+		index,
+	))
+	if b == nil {
+		return val, false
+	}
 
 	k.cdc.MustUnmarshal(b, &val)
 	return val, true
@@ -36,19 +36,19 @@ func (k Keeper) GetProof(
 
 // RemoveProof removes a proof from the store
 func (k Keeper) RemoveProof(
-    ctx sdk.Context,
-    index string,
-    
+	ctx sdk.Context,
+	index string,
+
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	store.Delete(types.ProofKey(
-	    index,
-    ))
+		index,
+	))
 }
 
 // GetAllProof returns all proof
 func (k Keeper) GetAllProof(ctx sdk.Context) (list []types.Proof) {
-    store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()
@@ -56,8 +56,8 @@ func (k Keeper) GetAllProof(ctx sdk.Context) (list []types.Proof) {
 	for ; iterator.Valid(); iterator.Next() {
 		var val types.Proof
 		k.cdc.MustUnmarshal(iterator.Value(), &val)
-        list = append(list, val)
+		list = append(list, val)
 	}
 
-    return
+	return
 }

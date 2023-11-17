@@ -1591,8 +1591,6 @@ github.com/pkg/sftp v1.13.1/go.mod h1:3HaPG6Dq1ILlpPZRO0HVMrsydcdLt6HRDccSgb87qR
 github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/pokt-network/poktroll v0.0.0-20231116164404-dd3434115ee1 h1:Y0eeoa4cDqykM3dPmXW4D6nMKNlalV5YjGqzCbAglqE=
-github.com/pokt-network/poktroll v0.0.0-20231116164404-dd3434115ee1/go.mod h1:YLe1YzoVPuhPXiyIzUzhKpwf/70mjUZxdbKpFpX6js8=
 github.com/pokt-network/smt v0.7.1 h1:WHcZeMLe+9U1/kCAhdbssdyTYzYxxb74sf8MCvG34M8=
 github.com/pokt-network/smt v0.7.1/go.mod h1:K7BLEOWoZGZmY5USQuYvTkZ3qXjE6m39BMufBvVo3U8=
 github.com/polydawn/refmt v0.89.0 h1:ADJTApkvkeBZsN0tBTx8QjpD9JkmxbKp0cxfr9qszm4=

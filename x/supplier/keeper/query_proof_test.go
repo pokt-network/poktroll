@@ -1,7 +1,7 @@
 package keeper_test
 
 import (
-    "strconv"
+	"strconv"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,9 +10,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"pocket/x/supplier/types"
-	"pocket/testutil/nullify"
 	keepertest "pocket/testutil/keeper"
+	"pocket/testutil/nullify"
+
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // Prevent strconv unused error
@@ -29,28 +30,25 @@ func TestProofQuerySingle(t *testing.T) {
 		err      error
 	}{
 		{
-			desc:     "First",
-			request:  &types.QueryGetProofRequest{
-			    Index: msgs[0].Index,
-                
+			desc: "First",
+			request: &types.QueryGetProofRequest{
+				Index: msgs[0].Index,
 			},
 			response: &types.QueryGetProofResponse{Proof: msgs[0]},
 		},
 		{
-			desc:     "Second",
-			request:  &types.QueryGetProofRequest{
-			    Index: msgs[1].Index,
-                
+			desc: "Second",
+			request: &types.QueryGetProofRequest{
+				Index: msgs[1].Index,
 			},
 			response: &types.QueryGetProofResponse{Proof: msgs[1]},
 		},
 		{
-			desc:    "KeyNotFound",
+			desc: "KeyNotFound",
 			request: &types.QueryGetProofRequest{
-			    Index:strconv.Itoa(100000),
-                
+				Index: strconv.Itoa(100000),
 			},
-			err:     status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "not found"),
 		},
 		{
 			desc: "InvalidRequest",
@@ -95,9 +93,9 @@ func TestProofQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Proof), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.Proof),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.Proof),
+			)
 		}
 	})
 	t.Run("ByKey", func(t *testing.T) {
@@ -108,9 +106,9 @@ func TestProofQueryPaginated(t *testing.T) {
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Proof), step)
 			require.Subset(t,
-            	nullify.Fill(msgs),
-            	nullify.Fill(resp.Proof),
-            )
+				nullify.Fill(msgs),
+				nullify.Fill(resp.Proof),
+			)
 			next = resp.Pagination.NextKey
 		}
 	})

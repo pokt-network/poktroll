@@ -5,7 +5,6 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -18,8 +17,7 @@ func DefaultGenesis() *GenesisState {
 	return &GenesisState{
 		SupplierList: []sharedtypes.Supplier{},
 		ClaimList:    []Claim{},
-		ProofList: []Proof{},
-// this line is used by starport scaffolding # genesis/types/default
+		// this line is used by starport scaffolding # genesis/types/default
 		Params: DefaultParams(),
 	}
 }
@@ -74,17 +72,8 @@ func (gs GenesisState) Validate() error {
 		}
 		claimIndexMap[index] = struct{}{}
 	}
-	// Check for duplicated index in proof
-proofIndexMap := make(map[string]struct{})
 
-for _, elem := range gs.ProofList {
-	index := string(ProofKey(elem.Index))
-	if _, ok := proofIndexMap[index]; ok {
-		return fmt.Errorf("duplicated index for proof")
-	}
-	proofIndexMap[index] = struct{}{}
-}
-// this line is used by starport scaffolding # genesis/types/validate
+	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
 }

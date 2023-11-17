@@ -1,13 +1,14 @@
 syntax = "proto3";
 package pocket.supplier;
 
-option go_package = "pocket/x/supplier/types";
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
+// TODO_UPNEXT(@Olshansk): The structure below is the default (untouched) scaffolded type. Update
+// and productionize it for our use case.
 message Proof {
-  string index = 1; 
-  string supplierAddress = 2; 
-  string sessionId = 3; 
-  string rootHash = 4; 
-  
+  string index = 1;
+  string supplier_address = 2;
+  string session_id = 3;
+  string merkle_proof = 4;
 }
 
