@@ -1,10 +1,10 @@
+//go:generate go run gen/gen_fixtures.go -difficulty-bits-threshold=2 -fixture-limit-per-group=5
+
 package miner_test
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/hex"
-	"flag"
 	"hash"
 	"sync"
 	"testing"
@@ -12,54 +12,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
 const testDifficulty = 2
 
-var (
-	// flagGenMinedRelayFixtures is a flag which is used in the
-	// TestFixtureGeneration_MineMockRelays test to determine whether it should
-	// generate mined fixtures relays and print them.
-	flagGenMinedRelayFixtures bool
-
-	// marshaledMinableRelaysHex are the hex encoded strings of serialized relays
-	// which have been pre-mined to difficulty 2 by populating the signature with
-	// random bytes. It is intended for use in tests.
-	marshaledMinableRelaysHex = []string{
-		"0a140a12121084e353443a333908e9f883c66914a0fb",
-		"0a140a121210044c754c27cf71b6b0b4da4db65a9519",
-		"0a140a121210e7ae4950528a2f452bdcb753119acb84",
-		"0a140a121210d03a97e53b83db84550ee0a4d10f9182",
-		"0a140a121210b16c079b8317f0d60435e6a3d4ba185f",
-	}
-
-	// marshaledUnminableRelaysHex are the hex encoded strings of serialized relays
-	// which have been pre-mined to **exclude** relays with difficulty 2 (or greater).
-	// Like marshaledMinableRelaysHex, this is done by populating the signature with
-	// random bytes. It is intended for use in tests.
-	marshaledUnminableRelaysHex = []string{
-		"0a140a121210ec621c4e66d50a7fbd9cab8055f33340",
-		"0a140a121210d5b6f79c4a0a5a61a71082d6ffcbba06",
-		"0a140a121210963c95b5af267a1b04bce4b6aa1a6684",
-		"0a140a121210a303a033c99f91841051b3fcc0984822",
-		"0a140a121210d9580e5db33ae495e7805fa0ee0f13ef",
-	}
-)
-
-func init() {
-	flag.BoolVar(&flagGenMinedRelayFixtures, "gen-mined-relays", false, "generate mined relay fixtures for testing")
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	m.Run()
-}
+//func TestMain(m *testing.M) {
+//	flag.Parse()
+//	m.Run()
+//}
 
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
@@ -183,110 +147,4 @@ func hashRelay(t *testing.T, newHasher func() hash.Hash, relayBz []byte) []byte 
 	_, err := hasher.Write(relayBz)
 	require.NoError(t, err)
 	return hasher.Sum(nil)
-}
-
-func TestFixtureGeneration_MineMockRelays(t *testing.T) {
-	if !flagGenMinedRelayFixtures {
-		t.Skip("skipping test; flag gen-mined-relays not set")
-	}
-
-	const (
-		randLength = 16 // number of random bytes provided for relay generation
-		limit      = 5  // number of required relays (passing testDifficulty)
-	)
-	ctx := context.Background()
-
-	minedRelaysObs := mineRelayFixturesForDifficulty(
-		t,
-		randLength,
-		testDifficulty,
-		limit,
-		miner.DefaultRelayHasher,
-	)
-	minedRelaysObserver := minedRelaysObs.Subscribe(ctx)
-
-	for minedRelay := range minedRelaysObserver.Ch() {
-		minedRelayBz, err := minedRelay.Marshal()
-		require.NoError(t, err)
-
-		t.Logf("%x", minedRelayBz)
-	}
-}
-
-// mineRelayFixturesForDifficulty is a single-threaded utility for generating
-// relay fixtures for testing. It returns an observable of mined relays which
-// are published as they are mined, where difficulty is the difficulty threshold
-// in bytes. Each relay fixture is populated with a randomized signature of
-// randLength length. Relay fixtures are then hashed using the hasher returned
-// from newHasher and checked against the difficulty threshold. If the relay
-// meets the difficulty threshold, it is published to the returned observable.
-// It stops mining & publishing once limit number of relay fixtures have been
-// published.
-// It is not intended to be used **in/by** any tests but rather is persisted to
-// aid in re-generation of relay fixtures should the test requirements change.
-func mineRelayFixturesForDifficulty(
-	t *testing.T,
-	randLength int,
-	difficulty int,
-	limit int,
-	newHasher func() hash.Hash,
-) observable.Observable[*relayer.MinedRelay] {
-	t.Helper()
-
-	var (
-		mined                      = 0
-		attempted                  = 0
-		randBzObs, randBzPublishCh = channel.NewObservable[*relayer.MinedRelay]()
-	)
-
-	go func() {
-		for {
-			if mined >= limit {
-				break
-			}
-
-			randBz := make([]byte, randLength)
-			n, err := rand.Read(randBz)
-			require.NoError(t, err)
-			require.Equal(t, randLength, n)
-
-			// Populate a relay with the minimally sufficient randomized data.
-			relay := servicetypes.Relay{
-				Req: &servicetypes.RelayRequest{
-					Meta: &servicetypes.RelayRequestMetadata{
-						Signature: randBz,
-					},
-					Payload: nil,
-				},
-				Res: nil,
-			}
-
-			// TODO_BLOCKER: use canonical codec.
-			relayBz, err := relay.Marshal()
-			require.NoError(t, err)
-
-			// Hash relay bytes
-			relayHash := hashRelay(t, newHasher, relayBz)
-
-			// TODO_TECHDEBT(#192): react to refactoring of protocol package.
-			// Check difficulty & publish.
-			if !protocol.BytesDifficultyGreaterThan(relayHash, difficulty) {
-				randBzPublishCh <- &relayer.MinedRelay{
-					Relay: relay,
-					Bytes: relayBz,
-					Hash:  relayHash,
-				}
-				mined++
-			}
-			attempted++
-
-			// Log occasionally; signal liveness/progress.
-			if attempted%100000 == 0 {
-				t.Logf("attempted: %d, mined: %d", attempted, mined)
-			}
-		}
-		close(randBzPublishCh)
-	}()
-
-	return randBzObs
 }
