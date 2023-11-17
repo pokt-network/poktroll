@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	_                  relayer.Miner = (*miner)(nil)
-	DefaultRelayHasher               = sha256.New
+	_ relayer.Miner = (*miner)(nil)
+	// TODO_TECHDEBT(@h5law): Retrieve the relay hasher mechanism from the `smt` repo.
+	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.

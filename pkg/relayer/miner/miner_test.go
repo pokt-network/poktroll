@@ -23,7 +23,8 @@ const testDifficulty = 2
 
 var (
 	// marshaledMinableRelaysHex are the hex encoded strings of serialized relays
-	// which have been pre-mined to difficulty 2 by populating the , intended for use in testing.
+	// which have been pre-mined to difficulty 2 by populating the signature with
+	// random bytes. It is intended for use in tests.
 	marshaledMinableRelaysHex = []string{
 		"0a140a12121084e353443a333908e9f883c66914a0fb",
 		"0a140a121210044c754c27cf71b6b0b4da4db65a9519",
@@ -32,6 +33,10 @@ var (
 		"0a140a121210b16c079b8317f0d60435e6a3d4ba185f",
 	}
 
+	// marshaledUnminableRelaysHex are the hex encoded strings of serialized relays
+	// which have been pre-mined to **exclude** relays with difficulty 2 (or greater).
+	// Like marshaledMinableRelaysHex, this is done by populating the signature with
+	// random bytes. It is intended for use in tests.
 	marshaledUnminableRelaysHex = []string{
 		"0a140a121210ec621c4e66d50a7fbd9cab8055f33340",
 		"0a140a121210d5b6f79c4a0a5a61a71082d6ffcbba06",
@@ -41,7 +46,6 @@ var (
 	}
 )
 
-// TODO_TECHDEBT(@bryanchriswhite): add all the test coverage...
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
 		minedRelayCounter                     = 0
@@ -72,7 +76,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		}
 	}()
 
-	// Publish uniminable relay fixtures to the mock relays observable.
+	// Publish unminable relay fixtures to the mock relays observable.
 	publishRelayFixtures(t, marshaledUnminableRelaysHex, relaysFixturePublishCh)
 	time.Sleep(time.Millisecond)
 
@@ -96,6 +100,8 @@ func publishRelayFixtures(
 	marshalledRelaysHex []string,
 	mockRelaysPublishCh chan<- *servicetypes.Relay,
 ) {
+	t.Helper()
+
 	for _, marshalledRelayHex := range marshalledRelaysHex {
 		relay := unmarshalHexRelay(t, marshalledRelayHex)
 
@@ -107,6 +113,8 @@ func unmarshalHexRelay(
 	t *testing.T,
 	marshalledHexRelay string,
 ) *servicetypes.Relay {
+	t.Helper()
+
 	relayBz, err := hex.DecodeString(marshalledHexRelay)
 	require.NoError(t, err)
 
@@ -122,6 +130,8 @@ func unmarshalHexMinedRelays(
 	marshalledHexMinedRelays []string,
 	newHasher func() hash.Hash,
 ) (relays []*relayer.MinedRelay) {
+	t.Helper()
+
 	for _, marshalledRelayHex := range marshalledHexMinedRelays {
 		relays = append(relays, unmarshalHexMinedRelay(t, marshalledRelayHex, newHasher))
 	}
@@ -133,6 +143,8 @@ func unmarshalHexMinedRelay(
 	marshalledHexMinedRelay string,
 	newHasher func() hash.Hash,
 ) *relayer.MinedRelay {
+	t.Helper()
+
 	relayBz, err := hex.DecodeString(marshalledHexMinedRelay)
 	require.NoError(t, err)
 
@@ -150,27 +162,29 @@ func unmarshalHexMinedRelay(
 }
 
 func hashRelay(t *testing.T, newHasher func() hash.Hash, relayBz []byte) []byte {
+	t.Helper()
+
 	hasher := newHasher()
 	_, err := hasher.Write(relayBz)
 	require.NoError(t, err)
 	return hasher.Sum(nil)
 }
 
-func TestSimpleMineMockRelays(t *testing.T) {
+func TestFixtureGeneration_MineMockRelays(t *testing.T) {
 	t.Skip("this test is intended to be run manually as a utility to generate relay fixtures for testing")
 
 	ctx := context.Background()
 
-	minedBytesObs := mineRelayFixturesForDifficulty(
+	minedRelaysObs := mineRelayFixturesForDifficulty(
 		t,
-		16,
+		16, // number of random bytes provided for relay generation
 		testDifficulty,
-		5,
+		5, // number of required relays (passing testDifficulty)
 		miner.DefaultRelayHasher,
 	)
-	minedBytesObserver := minedBytesObs.Subscribe(ctx)
+	minedRelaysObserver := minedRelaysObs.Subscribe(ctx)
 
-	for minedRelay := range minedBytesObserver.Ch() {
+	for minedRelay := range minedRelaysObserver.Ch() {
 		minedRelayBz, err := minedRelay.Marshal()
 		require.NoError(t, err)
 
@@ -231,14 +245,15 @@ func mineRelayFixturesForDifficulty(
 			require.NoError(t, err)
 
 			// Hash relay bytes
-			relayHashBz := hashRelay(t, newHasher, relayBz)
+			relayHash := hashRelay(t, newHasher, relayBz)
 
+			// TODO_TECHDEBT(#192): react to refactoring of protocol package.
 			// Check difficulty & publish.
-			if !protocol.BytesDifficultyGreaterThan(relayHashBz, difficulty) {
+			if !protocol.BytesDifficultyGreaterThan(relayHash, difficulty) {
 				randBzPublishCh <- &relayer.MinedRelay{
 					Relay: relay,
 					Bytes: relayBz,
-					Hash:  relayHashBz,
+					Hash:  relayHash,
 				}
 				mined++
 			}
