@@ -298,7 +298,6 @@ func appendUnminableRelays(
 		) (_ *relayer.MinedRelay, skip bool) {
 			counterMu.Lock()
 			defer counterMu.Unlock()
-			//log.Printf("minedRelay: %+v", minedRelay)
 
 			// At the end of each iteration, check if the relayCounter has reached
 			// the limit. If so, cancel the mapCtx to stop the map operation.
