@@ -2,15 +2,10 @@ package cli
 
 import (
 	"fmt"
-	// "strings"
-
-	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	// "github.com/cosmos/cosmos-sdk/client/flags"
-	// sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/spf13/cobra"
 )
 
 // GetQueryCmd returns the cli query commands for this module
@@ -31,7 +26,7 @@ func GetQueryCmd(queryRoute string) *cobra.Command {
 	cmd.AddCommand(CmdShowClaim())
 	cmd.AddCommand(CmdListProof())
 	cmd.AddCommand(CmdShowProof())
-// this line is used by starport scaffolding # 1
+	// this line is used by starport scaffolding # 1
 
 	return cmd
 }
