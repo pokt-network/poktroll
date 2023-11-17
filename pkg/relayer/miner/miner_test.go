@@ -20,11 +20,6 @@ import (
 
 const testDifficulty = 2
 
-//func TestMain(m *testing.M) {
-//	flag.Parse()
-//	m.Run()
-//}
-
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
 		minedRelayCounter                     = 0
