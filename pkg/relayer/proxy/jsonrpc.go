@@ -20,7 +20,7 @@ type jsonRPCServer struct {
 	service *sharedtypes.Service
 
 	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
-	proxiedServiceEndpoint url.URL
+	proxiedServiceEndpoint *url.URL
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -40,7 +40,7 @@ type jsonRPCServer struct {
 func NewJSONRPCServer(
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
-	proxiedServiceEndpoint url.URL,
+	proxiedServiceEndpoint *url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
@@ -157,7 +157,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &jsrv.proxiedServiceEndpoint,
+		URL:    jsrv.proxiedServiceEndpoint,
 		Host:   jsrv.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}

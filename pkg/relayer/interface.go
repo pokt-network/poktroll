@@ -1,3 +1,9 @@
+//go:generate mockgen -destination=../../testutil/mockrelayer/account/query_client.go -package=mockaccount github.com/cosmos/cosmos-sdk/x/auth/types QueryClient
+//go:generate mockgen -destination=../../testutil/mockrelayer/application/query_client.go -package=mockapp github.com/pokt-network/poktroll/x/application/types QueryClient
+//go:generate mockgen -destination=../../testutil/mockrelayer/session/query_client.go -package=mocksession github.com/pokt-network/poktroll/x/session/types QueryClient
+//go:generate mockgen -destination=../../testutil/mockrelayer/supplier/query_client.go -package=mocksupplier github.com/pokt-network/poktroll/x/supplier/types QueryClient
+//go:generate mockgen -destination=../../testutil/mockrelayer/keyring/keyring.go -package=mockkeyring github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
+
 package relayer
 
 import (

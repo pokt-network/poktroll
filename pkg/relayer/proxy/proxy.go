@@ -7,7 +7,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
@@ -27,7 +26,7 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type (
 	serviceId            = string
 	relayServersMap      = map[serviceId][]relayer.RelayServer
-	servicesEndpointsMap = map[serviceId]url.URL
+	ServicesEndpointsMap = map[serviceId]*url.URL
 )
 
 // relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
@@ -67,7 +66,7 @@ type relayerProxy struct {
 	advertisedRelayServers relayServersMap
 
 	// proxiedServicesEndpoints is a map of the proxied services endpoints that the relayer proxy supports.
-	proxiedServicesEndpoints servicesEndpointsMap
+	proxiedServicesEndpoints ServicesEndpointsMap
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays observable.Observable[*types.Relay]
@@ -109,20 +108,19 @@ func NewRelayerProxy(
 		deps,
 		&rp.clientCtx,
 		&rp.blockClient,
+		&rp.accountsQuerier,
+		&rp.supplierQuerier,
+		&rp.sessionQuerier,
+		&rp.applicationQuerier,
+		&rp.keyring,
 	); err != nil {
 		return nil, err
 	}
 
-	clientCtx := cosmosclient.Context(rp.clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.accountsQuerier = accounttypes.NewQueryClient(clientCtx)
-	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
-	rp.applicationQuerier = apptypes.NewQueryClient(clientCtx)
-	rp.keyring = rp.clientCtx.Keyring
 	rp.ringCache = make(map[string][]ringtypes.Point) // the key is the appAddress
 	rp.ringCacheMutex = &sync.RWMutex{}
 
@@ -190,7 +188,7 @@ func (rp *relayerProxy) validateConfig() error {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
-	if rp.proxiedServicesEndpoints == nil {
+	if rp.proxiedServicesEndpoints == nil || len(rp.proxiedServicesEndpoints) == 0 {
 		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
 	}
 

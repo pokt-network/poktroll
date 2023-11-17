@@ -10,6 +10,8 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -20,6 +22,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // We're `explicitly omitting default` so the relayer crashes if these aren't specified.
@@ -316,8 +321,8 @@ func supplyRelayerProxy(
 	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
 	// is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
 	// multiple services is already in place but currently (as seen below) is hardcoded.
-	proxiedServiceEndpoints := map[string]url.URL{
-		"anvil": *proxyServiceURL,
+	proxiedServiceEndpoints := map[string]*url.URL{
+		"anvil": proxyServiceURL,
 	}
 
 	relayerProxy, err := proxy.NewRelayerProxy(
@@ -329,7 +334,24 @@ func supplyRelayerProxy(
 		return nil, err
 	}
 
-	return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
+	var (
+		queryClientCtx relayer.QueryClientContext
+		keyring        keyring.Keyring
+	)
+	if err := depinject.Inject(deps, &queryClientCtx); err != nil {
+		return nil, err
+	}
+
+	clientCtx := cosmosclient.Context(queryClientCtx)
+
+	return depinject.Configs(deps, depinject.Supply(
+		accounttypes.NewQueryClient(clientCtx),
+		suppliertypes.NewQueryClient(clientCtx),
+		sessiontypes.NewQueryClient(clientCtx),
+		apptypes.NewQueryClient(clientCtx),
+		keyring,
+		relayerProxy,
+	)), nil
 }
 
 // supplyRelayerSessionsManager constructs a RelayerSessionsManager instance

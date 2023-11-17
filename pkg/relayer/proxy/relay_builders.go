@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -19,9 +20,16 @@ func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayR
 	log.Printf("DEBUG: Unmarshaling relay request...")
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(requestBz); err != nil {
+		log.Printf("DEBUG: Unmarshaling relay request failed: %v", err)
 		return nil, err
 	}
 
+	if relayReq.Meta == nil {
+		return nil, sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing meta from relay request: %v", relayReq,
+		)
+	}
 	return &relayReq, nil
 }
 
