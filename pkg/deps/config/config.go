@@ -36,9 +36,9 @@ func SupplyConfig(
 	return deps, nil
 }
 
-// NewSupplyEventsQueryClientFn constructs an EventsQueryClient instance and returns
-// a new depinject.Config which is supplied with the given deps and the new
-// EventsQueryClient.
+// NewSupplyEventsQueryClientFn returns a new function which constructs an
+// EventsQueryClient instance and returns a new depinject.Config which is supplied
+// with the given deps and the new EventsQueryClient.
 func NewSupplyEventsQueryClientFn(
 	pocketNodeWebsocketUrl string,
 ) SupplierFn {
@@ -53,10 +53,9 @@ func NewSupplyEventsQueryClientFn(
 	}
 }
 
-// NewSupplyBlockClientFn returns a function with constructs a BlockClient instance
-// with the given nodeURL and returns a new
-// depinject.Config which is supplied with the given deps and the new
-// BlockClient.
+// NewSupplyBlockClientFn returns a function which constructs a BlockClient instance
+// with the given nodeURL and returns a new depinject.Config which is supplied with
+// the given deps and the new BlockClient.
 func NewSupplyBlockClientFn(pocketNodeWebsocketUrl string) SupplierFn {
 	return func(
 		ctx context.Context,
