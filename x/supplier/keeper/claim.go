@@ -43,7 +43,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	logger := k.Logger(ctx).With("method", "RemoveClaim")
 
 	parentStore := ctx.KVStore(k.storeKey)
-	store := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	primaryStore := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
 
 	// Check if the claim exists
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
@@ -61,7 +61,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
 
 	// Delete all the entries (primary store and secondary indices)
-	store.Delete(primaryKey)
+	primaryStore.Delete(primaryKey)
 	addressStoreIndex.Delete(addressKey)
 	sessionHeightStoreIndex.Delete(heightKey)
 
@@ -76,8 +76,8 @@ func (k Keeper) GetClaim(ctx sdk.Context, sessionId, supplierAddr string) (val t
 
 // GetAllClaims returns all claim
 func (k Keeper) GetAllClaims(ctx sdk.Context) (claims []types.Claim) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
-	iterator := sdk.KVStorePrefixIterator(store, []byte{})
+	primaryStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	iterator := sdk.KVStorePrefixIterator(primaryStore, []byte{})
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
@@ -146,8 +146,8 @@ func (k Keeper) GetClaimsBySession(ctx sdk.Context, sessionId string) (claims []
 
 // getClaimByPrimaryKey is a helper that retrieves, if exists, the Claim associated with the key provided
 func (k Keeper) getClaimByPrimaryKey(ctx sdk.Context, primaryKey []byte) (val types.Claim, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
-	b := store.Get(primaryKey)
+	primaryStore := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
+	b := primaryStore.Get(primaryKey)
 	if b == nil {
 		return val, false
 	}
