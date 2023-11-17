@@ -270,8 +270,16 @@ func TestClaim_List(t *testing.T) {
 	})
 
 	t.Run("ByAddress", func(t *testing.T) {
+		supplierAddr := claims[0].SupplierAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSupplierAddress, claims[0].SupplierAddress))
+		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSupplierAddress, supplierAddr))
+
+		expectedClaims := make([]types.Claim, 0)
+		for _, claim := range claims {
+			if claim.SupplierAddress == supplierAddr {
+				expectedClaims = append(expectedClaims, claim)
+			}
+		}
 
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
@@ -280,15 +288,23 @@ func TestClaim_List(t *testing.T) {
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numSessions, int(resp.Pagination.Total))
-		// require.ElementsMatch(t,
-		// 	nullify.Fill(claims),
-		// 	nullify.Fill(resp.Claim),
-		// )
+		require.ElementsMatch(t,
+			nullify.Fill(expectedClaims),
+			nullify.Fill(resp.Claim),
+		)
 	})
 
 	t.Run("BySession", func(t *testing.T) {
+		sessionId := claims[0].SessionId
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSessionId, claims[0].SessionId))
+		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSessionId, sessionId))
+
+		expectedClaims := make([]types.Claim, 0)
+		for _, claim := range claims {
+			if claim.SessionId == sessionId {
+				expectedClaims = append(expectedClaims, claim)
+			}
+		}
 
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
@@ -297,15 +313,23 @@ func TestClaim_List(t *testing.T) {
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
-		// require.ElementsMatch(t,
-		// 	nullify.Fill(claims),
-		// 	nullify.Fill(resp.Claim),
-		// )
+		require.ElementsMatch(t,
+			nullify.Fill(expectedClaims),
+			nullify.Fill(resp.Claim),
+		)
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {
+		sessionEndHeight := claims[0].SessionEndBlockHeight
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		args = append(args, fmt.Sprintf("--%s=%d", cli.FlagSessionEndHeight, claims[0].SessionEndBlockHeight))
+		args = append(args, fmt.Sprintf("--%s=%d", cli.FlagSessionEndHeight, sessionEndHeight))
+
+		expectedClaims := make([]types.Claim, 0)
+		for _, claim := range claims {
+			if claim.SessionEndBlockHeight == sessionEndHeight {
+				expectedClaims = append(expectedClaims, claim)
+			}
+		}
 
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
@@ -314,10 +338,10 @@ func TestClaim_List(t *testing.T) {
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
 		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
-		// require.ElementsMatch(t,
-		// 	nullify.Fill(claims),
-		// 	nullify.Fill(resp.Claim),
-		// )
+		require.ElementsMatch(t,
+			nullify.Fill(expectedClaims),
+			nullify.Fill(resp.Claim),
+		)
 	})
 
 	t.Run("Total", func(t *testing.T) {

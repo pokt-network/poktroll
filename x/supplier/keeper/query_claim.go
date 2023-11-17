@@ -53,7 +53,6 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 
 	var claims []types.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
-		var claim types.Claim
 		if isCustomIndex {
 			// We retrieve the primaryKey, and need to query the actual Claim before decoding it.
 			claim, claimFound := k.getClaimByPrimaryKey(ctx, value)
@@ -62,12 +61,13 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 			}
 		} else {
 			// The value is an encoded Claim.
+			var claim types.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
 				return err
 			}
+			claims = append(claims, claim)
 		}
 
-		claims = append(claims, claim)
 		return nil
 	})
 
