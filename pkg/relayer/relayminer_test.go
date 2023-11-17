@@ -14,7 +14,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-func TestRelayMiner(t *testing.T) {
+func TestRelayMiner_StartAndStop(t *testing.T) {
 	srObs, _ := channel.NewObservable[*servicetypes.Relay]()
 	servedRelaysObs := relayer.RelaysObservable(srObs)
 
