@@ -1,6 +1,7 @@
 package network
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -172,6 +173,32 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
+// SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
+func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for _, addr := range addresses {
+		supplier := sharedtypes.Supplier{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     "http://localhost:1",
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+
+	return state
+}
+
 // Initialize an Account by sending it some funds from the validator in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
@@ -184,6 +211,40 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
-	_, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
+	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
+	var responseJson map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+}
+
+// Initialize an Account by sending it some funds from the validator in the network to the address provided
+func InitAccountWithSequence(
+	t *testing.T,
+	net *Network,
+	addr sdk.AccAddress,
+	signatureSequencerNumber int,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	signerAccountNumber := 0
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=true", flags.FlagOffline),
+		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
+	require.NoError(t, err)
+	var responseJson map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 }
