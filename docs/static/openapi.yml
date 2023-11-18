@@ -46480,7 +46480,7 @@ paths:
                           service:
                             title: >-
                               The Service for which the application is
-                              configured for
+                              configured
                             type: object
                             properties:
                               id:
@@ -46660,9 +46660,7 @@ paths:
                       type: object
                       properties:
                         service:
-                          title: >-
-                            The Service for which the application is configured
-                            for
+                          title: The Service for which the application is configured
                           type: object
                           properties:
                             id:
@@ -47178,7 +47176,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured for
+                                configured
                               type: object
                               properties:
                                 id:
@@ -47245,7 +47243,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured for
+                                  configured
                                 type: object
                                 properties:
                                   id:
@@ -76814,7 +76812,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the application is configured for
+              title: The Service for which the application is configured
               type: object
               properties:
                 id:
@@ -76898,7 +76896,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the application is configured for
+                    title: The Service for which the application is configured
                     type: object
                     properties:
                       id:
@@ -76992,7 +76990,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77043,7 +77041,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the application is configured for
+        title: The Service for which the application is configured
         type: object
         properties:
           id:
@@ -77311,7 +77309,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured for
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
@@ -77375,7 +77373,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured for
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
@@ -77565,7 +77563,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77627,7 +77625,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured for
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
@@ -77841,7 +77839,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured for
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
@@ -77970,7 +77968,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured for
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:

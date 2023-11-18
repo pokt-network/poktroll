@@ -5,7 +5,7 @@ FROM golang:1.20 as base
 
 RUN apt update && \
     apt-get install -y \
-        ca-certificates net-tools \
+        ca-certificates net-tools kubernetes-client \
         curl jq make vim less dnsutils
 
 # enable faster module downloading.
