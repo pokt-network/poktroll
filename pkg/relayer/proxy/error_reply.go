@@ -8,11 +8,8 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// replyWithError builds a JSONRPCResponseError from the passed in error and writes it to the writer.
-// TODO_TECHDEBT: This method should be aware of the request id and use it in the response by having
-// the caller pass it along with the error if available.
-// TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
-// Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
+// replyWithError builds a JSONRPCResponseError from the passed in error and
+// writes it to the writer.
 // NOTE: This method is used to reply with an "internal" error that is related
 // to the proxy itself and not to the relayed request.
 func (jsrv *jsonRPCServer) replyWithError(payloadBz []byte, writer http.ResponseWriter, err error) {
