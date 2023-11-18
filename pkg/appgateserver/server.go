@@ -3,10 +3,10 @@ package appgateserver
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"io"
 	"strings"
 	"sync"
 
@@ -198,12 +198,12 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	payloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		app.replyWithError(
-      payloadBz,
-      writer,
-      ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
-    )
-    log.Printf("ERROR: failed reading relay request body: %s", err)
-    return
+			payloadBz,
+			writer,
+			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
+		)
+		log.Printf("ERROR: failed reading relay request body: %s", err)
+		return
 	}
 	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
 
