@@ -17,6 +17,8 @@ WORKDIR /poktroll
 
 RUN mv /poktroll/bin/ignite /usr/bin/ && mv /poktroll/bin/poktrolld /usr/bin/
 
+RUN ignite chain init --skip-proto
+
 # TODO_TECHDEBT(@okdas): Ports are not documented as they will soon be changed with a document to follow
 EXPOSE 8545
 EXPOSE 8546
