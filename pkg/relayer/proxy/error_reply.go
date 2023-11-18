@@ -1,10 +1,10 @@
 package proxy
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
+	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -13,19 +13,12 @@ import (
 // the caller pass it along with the error if available.
 // TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
 // Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
-func (jsrv *jsonRPCServer) replyWithError(writer http.ResponseWriter, err error) {
-	response := map[string]interface{}{
-		"jsonrpc": "2.0",
-		"id":      0,
-		"error": map[string]interface{}{
-			"code":    -32000,
-			"message": err.Error(),
-			"data":    nil,
-		},
-	}
-	responseBz, err := json.Marshal(response)
+// NOTE: This method is used to reply with an "internal" error that is related
+// to the proxy itself and not to the relayed request.
+func (jsrv *jsonRPCServer) replyWithError(payloadBz []byte, writer http.ResponseWriter, err error) {
+	responseBz, err := partials.GetErrorReply(payloadBz, err)
 	if err != nil {
-		log.Printf("ERROR: failed marshaling json error structure: %s", err)
+		log.Printf("ERROR: failed getting error reply: %s", err)
 		return
 	}
 

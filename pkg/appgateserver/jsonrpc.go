@@ -19,16 +19,10 @@ import (
 func (app *appGateServer) handleJSONRPCRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
-	request *http.Request,
-	writer http.ResponseWriter,
+  payloadBz []byte,
+  request *http.Request,
+  writer http.ResponseWriter,
 ) error {
-	// Read the request body bytes.
-	payloadBz, err := io.ReadAll(request.Body)
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err)
-	}
-	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
-
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)

@@ -87,18 +87,27 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 
 	log.Printf("DEBUG: Serving JSON-RPC relay request...")
 
+	// Extract the relay request from the request body.
+	log.Printf("DEBUG: Extracting relay request from request body...")
+	relayRequest, err := jsrv.newRelayRequest(request)
+	if err != nil {
+		jsrv.replyWithError(relayRequest.Payload, writer, err)
+		log.Printf("WARN: failed serving relay request: %s", err)
+		return
+	}
+
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
-	relay, err := jsrv.serveHTTP(ctx, request)
+	relay, err := jsrv.serveHTTP(ctx, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		jsrv.replyWithError(writer, err)
+		jsrv.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := jsrv.sendRelayResponse(relay.Res, writer); err != nil {
-		jsrv.replyWithError(writer, err)
+		jsrv.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed sending relay response: %s", err)
 		return
 	}
@@ -116,14 +125,11 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 }
 
 // serveHTTP holds the underlying logic of ServeHTTP.
-func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request) (*types.Relay, error) {
-	// Extract the relay request from the request body.
-	log.Printf("DEBUG: Extracting relay request from request body...")
-	relayRequest, err := jsrv.newRelayRequest(request)
-	if err != nil {
-		return nil, err
-	}
-
+func (jsrv *jsonRPCServer) serveHTTP(
+	ctx context.Context,
+	request *http.Request,
+	relayRequest *types.RelayRequest,
+) (*types.Relay, error) {
 	// Verify the relay request signature and session.
 	// TODO_TECHDEBT(red-0ne): Currently, the relayer proxy is responsible for verifying
 	// the relay request signature. This responsibility should be shifted to the relayer itself.
@@ -131,7 +137,7 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err = jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service); err != nil {
+	if err := jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service); err != nil {
 		return nil, err
 	}
 
@@ -143,10 +149,10 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
-	log.Printf("DEBUG: Building relay request to native service %s...", jsrv.proxiedServiceEndpoint.String())
-	if err != nil {
-		return nil, err
-	}
+	log.Printf(
+		"DEBUG: Building relay request to native service %s...",
+		jsrv.proxiedServiceEndpoint.String(),
+	)
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
@@ -175,7 +181,10 @@ func (jsrv *jsonRPCServer) serveHTTP(ctx context.Context, request *http.Request)
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
-func (jsrv *jsonRPCServer) sendRelayResponse(relayResponse *types.RelayResponse, writer http.ResponseWriter) error {
+func (jsrv *jsonRPCServer) sendRelayResponse(
+	relayResponse *types.RelayResponse,
+	writer http.ResponseWriter,
+) error {
 	cdc := types.ModuleCdc
 	relayResponseBz, err := cdc.Marshal(relayResponse)
 	if err != nil {
