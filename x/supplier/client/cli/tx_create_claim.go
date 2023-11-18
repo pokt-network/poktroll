@@ -2,12 +2,13 @@ package cli
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cobra"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -24,12 +25,20 @@ func CmdCreateClaim() *cobra.Command {
 		Short: "Broadcast message create-claim",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			argSessionHeader := new(sessiontypes.SessionHeader)
-			err = json.Unmarshal([]byte(args[0]), argSessionHeader)
+			sessionHeaderEncodedStr := args[0]
+			rootHashEncodedStr := args[1]
+
+			// Get the session header
+			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+			sessionHeaderBz, err := base64.StdEncoding.DecodeString(sessionHeaderEncodedStr)
 			if err != nil {
 				return err
 			}
-			argRootHash, err := base64.StdEncoding.DecodeString(args[1])
+			sessionHeader := sessiontypes.SessionHeader{}
+			cdc.MustUnmarshalJSON(sessionHeaderBz, &sessionHeader)
+
+			// Get the root hash
+			rootHash, err := base64.StdEncoding.DecodeString(rootHashEncodedStr)
 			if err != nil {
 				return err
 			}
@@ -38,15 +47,17 @@ func CmdCreateClaim() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			supplierAddress := clientCtx.GetFromAddress().String()
 
 			msg := types.NewMsgCreateClaim(
-				clientCtx.GetFromAddress().String(),
-				argSessionHeader,
-				argRootHash,
+				supplierAddress,
+				&sessionHeader,
+				rootHash,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}

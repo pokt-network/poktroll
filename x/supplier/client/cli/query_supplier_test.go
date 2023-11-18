@@ -19,7 +19,7 @@ import (
 )
 
 func TestShowSupplier(t *testing.T) {
-	net, objs := networkWithSupplierObjects(t, 2)
+	net, suppliers := networkWithSupplierObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -34,14 +34,14 @@ func TestShowSupplier(t *testing.T) {
 		obj  sharedtypes.Supplier
 	}{
 		{
-			desc:      "found",
-			idAddress: objs[0].Address,
+			desc:      "supplier found",
+			idAddress: suppliers[0].Address,
 
 			args: common,
-			obj:  objs[0],
+			obj:  suppliers[0],
 		},
 		{
-			desc:      "not found",
+			desc:      "supplier not found",
 			idAddress: strconv.Itoa(100000),
 
 			args: common,
@@ -74,7 +74,7 @@ func TestShowSupplier(t *testing.T) {
 }
 
 func TestListSupplier(t *testing.T) {
-	net, objs := networkWithSupplierObjects(t, 5)
+	net, suppliers := networkWithSupplierObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
@@ -94,7 +94,7 @@ func TestListSupplier(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
 			require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestListSupplier(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 		}
@@ -110,7 +110,7 @@ func TestListSupplier(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
 			require.NoError(t, err)
@@ -118,22 +118,22 @@ func TestListSupplier(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(objs)), true)
+		args := request(nil, 0, uint64(len(suppliers)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
 		require.NoError(t, err)
 		var resp types.QueryAllSupplierResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
-		require.Equal(t, len(objs), int(resp.Pagination.Total))
+		require.Equal(t, len(suppliers), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(objs),
+			nullify.Fill(suppliers),
 			nullify.Fill(resp.Supplier),
 		)
 	})
