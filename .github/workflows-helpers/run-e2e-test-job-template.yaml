@@ -37,11 +37,11 @@ spec:
       volumes:
       - configMap:
           defaultMode: 420
-          name: poktrolld-keys
+          name: keys-${IMAGE_TAG}
         name: keys-volume
       - configMap:
           defaultMode: 420
-          name: poktrolld-configs
+          name: configs-${IMAGE_TAG}
         name: configs-volume
       serviceAccountName: default
   backoffLimit: 0
