@@ -10,9 +10,9 @@ import (
 func GetErrorReply(payloadBz []byte, err error) ([]byte, error) {
 	log.Printf("DEBUG: Partially Unmarshalling request: %s", string(payloadBz))
 	partialRequest, er := partiallyUnmarshalRequest(payloadBz)
-    if er != nil {
-        return nil, er
-    }
+	if er != nil {
+		return nil, er
+	}
 	return partialRequest.GenerateErrorPayload(err)
 }
 

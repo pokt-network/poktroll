@@ -19,9 +19,9 @@ import (
 func (app *appGateServer) handleJSONRPCRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
-  payloadBz []byte,
-  request *http.Request,
-  writer http.ResponseWriter,
+	payloadBz []byte,
+	request *http.Request,
+	writer http.ResponseWriter,
 ) error {
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
