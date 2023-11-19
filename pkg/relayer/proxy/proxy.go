@@ -7,7 +7,6 @@ import (
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
@@ -41,10 +40,6 @@ type relayerProxy struct {
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
 	blockClient blocktypes.BlockClient
-
-	// accountsQuerier is the querier used to get account data (e.g. app publicKey) from the blockchain,
-	// which, in the context of the RelayerProxy, is used to verify the relay request signatures.
-	accountsQuerier accounttypes.QueryClient
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
@@ -109,7 +104,6 @@ func NewRelayerProxy(
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.accountsQuerier = accounttypes.NewQueryClient(clientCtx)
 	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
 	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
 	rp.keyring = rp.clientCtx.Keyring

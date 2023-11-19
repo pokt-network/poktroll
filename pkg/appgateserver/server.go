@@ -17,10 +17,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	deptypes "github.com/pokt-network/poktroll/pkg/deps/types"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -73,7 +73,7 @@ type appGateServer struct {
 
 	// accountQuerier is the querier for the account module.
 	// It is used to get the the supplier's public key to verify the relay response signature.
-	accountQuerier accounttypes.QueryClient
+	accountQuerier deptypes.AccountQuerier
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
@@ -104,6 +104,7 @@ func NewAppGateServer(
 		deps,
 		&app.clientCtx,
 		&app.blockClient,
+		&app.accountQuerier,
 		&app.ringCache,
 	); err != nil {
 		return nil, err
@@ -142,7 +143,6 @@ func NewAppGateServer(
 	clientCtx := cosmosclient.Context(app.clientCtx)
 
 	app.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
-	app.accountQuerier = accounttypes.NewQueryClient(clientCtx)
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
