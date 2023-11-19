@@ -217,10 +217,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		log.Print("ERROR: no application address provided")
 	}
 
-	// TODO_TECHDEBT: Currently, there is no information about the RPC type requested. It should
-	// be extracted from the request and used to determine the RPC type to handle. handle*Relay()
-	// calls should be wrapped into a switch statement to handle different types of relays.
-	if err := app.handleJSONRPCRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
+	// TODO(@h5law, @red0ne): Add support for asymmetric relays, and switch on
+	// the request type here.
+	if err := app.handleSymmetricRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(payloadBz, writer, err)
 		log.Printf("ERROR: failed handling relay: %s", err)
@@ -249,10 +248,17 @@ func recordLocalToScalar(local *keyring.Record_Local) (ringtypes.Scalar, error) 
 	}
 	priv, ok := local.PrivKey.GetCachedValue().(cryptotypes.PrivKey)
 	if !ok {
-		return nil, fmt.Errorf("cannot extract private key from key record: %T", local.PrivKey.GetCachedValue())
+		return nil, fmt.Errorf(
+			"cannot extract private key from key record: %T",
+			local.PrivKey.GetCachedValue(),
+		)
 	}
 	if _, ok := priv.(*secp256k1.PrivKey); !ok {
-		return nil, fmt.Errorf("unexpected private key type: %T, want %T", priv, &secp256k1.PrivKey{})
+		return nil, fmt.Errorf(
+			"unexpected private key type: %T, want %T",
+			priv,
+			&secp256k1.PrivKey{},
+		)
 	}
 	crv := ring_secp256k1.NewCurve()
 	privKey, err := crv.DecodeToScalar(priv.Bytes())
