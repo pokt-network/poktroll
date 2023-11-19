@@ -186,7 +186,7 @@ When returning an internal server error the response must contain the fields:
     "error": {
         "code":    -32000, // the error code of an internal error
         "message": "",     // the error message
-        "data":    nil,    // a nil data field
+        "data":    null,   // a nil data field
     },
 }
 ```
