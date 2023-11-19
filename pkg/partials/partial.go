@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"log"
 
-    "github.com/pokt-network/poktroll/pkg/partials/types"
+	"github.com/pokt-network/poktroll/pkg/partials/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // GetRequestType returns the request type for the given payload.
 func GetRequestType(payloadBz []byte) (sharedtypes.RPCType, error) {
-    partialRequest, err := partiallyUnmarshalRequest(payloadBz)
-    if err != nil {
-        return sharedtypes.RPCType_UNKNOWN_RPC, err
-    }
-    return partialRequest.GetRPCType(), nil
+	partialRequest, err := partiallyUnmarshalRequest(payloadBz)
+	if err != nil {
+		return sharedtypes.RPCType_UNKNOWN_RPC, err
+	}
+	return partialRequest.GetRPCType(), nil
 }
 
 // GetErrorReply returns an error reply for the given payload and error,
@@ -29,11 +29,11 @@ func GetErrorReply(payloadBz []byte, err error) ([]byte, error) {
 
 // GetMethodWeighting returns the weighting for the given request.
 func GetMethodWeighting(payloadBz []byte) (uint64, error) {
-    partialRequest, err := partiallyUnmarshalRequest(payloadBz)
-    if err != nil {
-        return 0, err
-    }
-    return partialRequest.GetMethodWeighting()
+	partialRequest, err := partiallyUnmarshalRequest(payloadBz)
+	if err != nil {
+		return 0, err
+	}
+	return partialRequest.GetMethodWeighting()
 }
 
 // partiallyUnmarshalRequest unmarshals the payload into a partial request
