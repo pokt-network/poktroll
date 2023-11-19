@@ -13,9 +13,9 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ relayer.RelayServer = (*jsonRPCServer)(nil)
+var _ relayer.RelayServer = (*symmetricServer)(nil)
 
-type jsonRPCServer struct {
+type symmetricServer struct {
 	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
@@ -33,18 +33,18 @@ type jsonRPCServer struct {
 	servedRelaysProducer chan<- *types.Relay
 }
 
-// NewJSONRPCServer creates a new HTTP server that listens for incoming relay requests
-// and forwards them to the supported proxied service endpoint.
-// It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments and returns
-// a RelayServer that listens to incoming RelayRequests.
-func NewJSONRPCServer(
+// NewSymmetricServer creates a new HTTP server that listens for incoming relay
+// requests and forwards them to the supported proxied service endpoint.
+// It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments
+// and returns a RelayServer that listens to incoming RelayRequests.
+func NewSymmetricServer(
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
-	return &jsonRPCServer{
+	return &symmetricServer{
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
@@ -56,58 +56,58 @@ func NewJSONRPCServer(
 // Start starts the service server and returns an error if it fails.
 // It also waits for the passed in context to end before shutting down.
 // This method is blocking and should be called in a goroutine.
-func (jsrv *jsonRPCServer) Start(ctx context.Context) error {
+func (sym *symmetricServer) Start(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
-		jsrv.server.Shutdown(ctx)
+		sym.server.Shutdown(ctx)
 	}()
 
 	// Set the HTTP handler.
-	jsrv.server.Handler = jsrv
+	sym.server.Handler = sym
 
-	return jsrv.server.ListenAndServe()
+	return sym.server.ListenAndServe()
 }
 
 // Stop terminates the service server and returns an error if it fails.
-func (jsrv *jsonRPCServer) Stop(ctx context.Context) error {
-	return jsrv.server.Shutdown(ctx)
+func (sym *symmetricServer) Stop(ctx context.Context) error {
+	return sym.server.Shutdown(ctx)
 }
 
 // Service returns the JSON-RPC service.
-func (jsrv *jsonRPCServer) Service() *sharedtypes.Service {
-	return jsrv.service
+func (sym *symmetricServer) Service() *sharedtypes.Service {
+	return sym.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
 // method of the http.Handler interface. It is called by http.ListenAndServe()
-// when jsonRPCServer is used as an http.Handler with an http.Server.
+// when symmetricServer is used as an http.Handler with an http.Server.
 // (see https://pkg.go.dev/net/http#Handler)
-func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (sym *symmetricServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	log.Printf("DEBUG: Serving JSON-RPC relay request...")
+	log.Printf("DEBUG: Serving symmetric relay request...")
 
 	// Extract the relay request from the request body.
 	log.Printf("DEBUG: Extracting relay request from request body...")
-	relayRequest, err := jsrv.newRelayRequest(request)
+	relayRequest, err := sym.newRelayRequest(request)
 	if err != nil {
-		jsrv.replyWithError(relayRequest.Payload, writer, err)
+		sym.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
-	relay, err := jsrv.serveHTTP(ctx, request, relayRequest)
+	relay, err := sym.serveHTTP(ctx, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		jsrv.replyWithError(relayRequest.Payload, writer, err)
+		sym.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Send the relay response to the client.
-	if err := jsrv.sendRelayResponse(relay.Res, writer); err != nil {
-		jsrv.replyWithError(relayRequest.Payload, writer, err)
+	if err := sym.sendRelayResponse(relay.Res, writer); err != nil {
+		sym.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed sending relay response: %s", err)
 		return
 	}
@@ -117,15 +117,15 @@ func (jsrv *jsonRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.R
 		relay.Res.Meta.SessionHeader.ApplicationAddress,
 		relay.Res.Meta.SessionHeader.Service.Id,
 		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
-		jsrv.server.Addr,
+		sym.server.Addr,
 	)
 
 	// Emit the relay to the servedRelays observable.
-	jsrv.servedRelaysProducer <- relay
+	sym.servedRelaysProducer <- relay
 }
 
 // serveHTTP holds the underlying logic of ServeHTTP.
-func (jsrv *jsonRPCServer) serveHTTP(
+func (sym *symmetricServer) serveHTTP(
 	ctx context.Context,
 	request *http.Request,
 	relayRequest *types.RelayRequest,
@@ -137,7 +137,7 @@ func (jsrv *jsonRPCServer) serveHTTP(
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err := jsrv.relayerProxy.VerifyRelayRequest(ctx, relayRequest, jsrv.service); err != nil {
+	if err := sym.relayerProxy.VerifyRelayRequest(ctx, relayRequest, sym.service); err != nil {
 		return nil, err
 	}
 
@@ -151,14 +151,14 @@ func (jsrv *jsonRPCServer) serveHTTP(
 	// the destination URL's host with the native service's listen address.
 	log.Printf(
 		"DEBUG: Building relay request to native service %s...",
-		jsrv.proxiedServiceEndpoint.String(),
+		sym.proxiedServiceEndpoint.String(),
 	)
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &jsrv.proxiedServiceEndpoint,
-		Host:   jsrv.proxiedServiceEndpoint.Host,
+		URL:    &sym.proxiedServiceEndpoint,
+		Host:   sym.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}
 
@@ -169,10 +169,11 @@ func (jsrv *jsonRPCServer) serveHTTP(
 	}
 
 	// Build the relay response from the native service response
-	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
-	// and has to be the same as the relayResponse session header.
+	// Use relayRequest.Meta.SessionHeader on the relayResponse session header
+	// since it was verified to be valid and has to be the same as the
+	// relayResponse session header.
 	log.Printf("DEBUG: Building relay response from native service response...")
-	relayResponse, err := jsrv.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sym.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +182,7 @@ func (jsrv *jsonRPCServer) serveHTTP(
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
-func (jsrv *jsonRPCServer) sendRelayResponse(
+func (sym *symmetricServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
