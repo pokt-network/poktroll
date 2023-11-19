@@ -1,4 +1,4 @@
-package rings
+package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -6,10 +6,10 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-var ringCodec *codec.ProtoCodec
+var depCodec *codec.ProtoCodec
 
 func init() {
 	reg := codectypes.NewInterfaceRegistry()
 	accounttypes.RegisterInterfaces(reg)
-	ringCodec = codec.NewProtoCodec(reg)
+	depCodec = codec.NewProtoCodec(reg)
 }

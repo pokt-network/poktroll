@@ -8,13 +8,10 @@ import (
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/noot/ring-go"
 
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	deptypes "github.com/pokt-network/poktroll/pkg/deps/types"
 )
 
 var _ RingCache = (*ringCache)(nil)
@@ -26,17 +23,13 @@ type ringCache struct {
 	ringPointsCache map[string][]ringtypes.Point
 	ringPointsMu    *sync.RWMutex
 
-	// clientCtx is the client context for the application, and is used to query
-	// the application and account modules.
-	clientCtx relayer.QueryClientContext
-
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
-	applicationQuerier apptypes.QueryClient
+	applicationQuerier deptypes.ApplicationQuerier
 
 	// accountQuerier is the querier for the account module, and is used to get
 	// the public keys of the application and its delegated gateways.
-	accountQuerier accounttypes.QueryClient
+	accountQuerier deptypes.AccountQuerier
 }
 
 // NewRingCache returns a new RingCache instance. It requires a depinject.Config
@@ -47,17 +40,14 @@ func NewRingCache(deps depinject.Config) (RingCache, error) {
 		ringPointsMu:    &sync.RWMutex{},
 	}
 
+	// Supply the account and application queriers to the RingCache.
 	if err := depinject.Inject(
 		deps,
-		&rc.clientCtx,
+		&rc.applicationQuerier,
+		&rc.accountQuerier,
 	); err != nil {
 		return nil, err
 	}
-
-	clientCtx := cosmosclient.Context(rc.clientCtx)
-
-	rc.accountQuerier = accounttypes.NewQueryClient(clientCtx)
-	rc.applicationQuerier = apptypes.NewQueryClient(clientCtx)
 
 	return rc, nil
 }
@@ -73,19 +63,19 @@ func (rc *ringCache) GetRingForAddress(
 	var ring *ring.Ring
 	var err error
 
-	// lock the cache for reading
+	// Lock the cache for reading.
 	rc.ringPointsMu.RLock()
-	// check if the ring is in the cache
+	// Check if the ring is in the cache.
 	points, ok := rc.ringPointsCache[appAddress]
-	// unlock the cache incase it was not cached
+	// Unlock the cache incase it was not cached.
 	rc.ringPointsMu.RUnlock()
 
 	if !ok {
-		// if the ring is not in the cache, get it from the application module
+		// If the ring is not in the cache, get it from the application module.
 		log.Printf("DEBUG: Ring not in cache, fetching from application module [%s]", appAddress)
 		ring, err = rc.getRingForAppAddress(ctx, appAddress)
 	} else {
-		// if the ring is in the cache, create it from the points
+		// If the ring is in the cache, create it from the points.
 		log.Printf("DEBUG: Ring in cache, creating from points [%s]", appAddress)
 		ring, err = newRingFromPoints(points)
 	}
@@ -93,7 +83,7 @@ func (rc *ringCache) GetRingForAddress(
 		return nil, err
 	}
 
-	// return the ring
+	// Return the ring.
 	return ring, nil
 }
 
@@ -127,17 +117,16 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	rc.ringPointsMu.Lock()
 	defer rc.ringPointsMu.Unlock()
 
-	// get the application's on chain state
-	req := &apptypes.QueryGetApplicationRequest{Address: appAddress}
-	res, err := rc.applicationQuerier.Application(ctx, req)
+	// Get the application's on chain state.
+	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
 	if err != nil {
-		return nil, ErrRingsAccountNotFound.Wrapf("app address: %s [%v]", appAddress, err)
+		return nil, err
 	}
 
-	// create a slice of addresses for the ring
+	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	if len(res.Application.DelegateeGatewayAddresses) == 0 {
+	if len(app.DelegateeGatewayAddresses) == 0 {
 		// add app address twice to make the ring size of mininmum 2
 		// TODO_HACK: We are adding the appAddress twice because a ring
 		// signature requires AT LEAST two pubKeys. When the Application has
@@ -147,20 +136,20 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 		ringAddresses = append(ringAddresses, appAddress)
 	} else {
 		// add the delegatee gateway addresses
-		ringAddresses = append(ringAddresses, res.Application.DelegateeGatewayAddresses...)
+		ringAddresses = append(ringAddresses, app.DelegateeGatewayAddresses...)
 	}
 
-	// get the points on the secp256k1 curve for the addresses
+	// Get the points on the secp256k1 curve for the addresses.
 	points, err := rc.addressesToPoints(ctx, ringAddresses)
 	if err != nil {
 		return nil, err
 	}
 
-	// update the cache overwriting the previous value
+	// Update the cache overwriting the previous value.
 	log.Printf("DEBUG: Updating ring cache for [%s]", appAddress)
 	rc.ringPointsCache[appAddress] = points
 
-	// return the public key points on the secp256k1 curve
+	// Return the public key points on the secp256k1 curve.
 	return points, nil
 }
 
@@ -174,23 +163,22 @@ func (rc *ringCache) addressesToPoints(
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
 	for i, addr := range addresses {
-		pubKeyReq := &accounttypes.QueryAccountRequest{Address: addr}
-		pubKeyRes, err := rc.accountQuerier.Account(ctx, pubKeyReq)
+		// Retrieve the account from the auth module
+		acc, err := rc.accountQuerier.GetAccount(ctx, addr)
 		if err != nil {
-			return nil, ErrRingsAccountNotFound.Wrapf("address: %s [%v]", addr, err)
-		}
-		var acc accounttypes.AccountI
-		if err = ringCodec.UnpackAny(pubKeyRes.Account, &acc); err != nil {
-			return nil, ErrRingsUnableToDeserialiseAccount.Wrapf("address: %s [%v]", addr, err)
+			return nil, err
 		}
 		key := acc.GetPubKey()
+		// Check if the key is a secp256k1 public key
 		if _, ok := key.(*secp256k1.PubKey); !ok {
 			return nil, ErrRingsWrongCurve.Wrapf("got %T", key)
 		}
+		// Convert the public key to the point on the secp256k1 curve
 		point, err := curve.DecodeToPoint(key.Bytes())
 		if err != nil {
 			return nil, err
 		}
+		// Insert the point into the slice of points
 		points[i] = point
 	}
 	return points, nil

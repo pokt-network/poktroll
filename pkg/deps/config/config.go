@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/deps/types"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
@@ -104,6 +105,47 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 			relayer.QueryClientContext(queryClientCtx),
 		))
 		return deps, nil
+	}
+}
+
+// NewSupplyAccountQuerierFn returns a function with constructs an AccountQuerier
+// instance with the required dependencies and returns a new depinject.Config which
+// is supplied with the given deps and the new AccountQuerier.
+func NewAccountQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the account querier.
+		accountQuerier, err := types.NewAccountQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the account querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(accountQuerier)), nil
+	}
+}
+
+// NewSupplyApplicationQuerierFn returns a function with constructs an
+// ApplicationQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new ApplicationQuerier.
+func NewApplicationQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the application querier.
+		applicationQuerier, err := types.NewApplicationQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the application querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(applicationQuerier)), nil
 	}
 }
 
