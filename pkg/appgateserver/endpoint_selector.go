@@ -27,7 +27,7 @@ func (app *appGateServer) getRelayerUrl(
 			}
 
 			for _, endpoint := range service.Endpoints {
-				// Return the first endpoint url that matches the JSON RPC RpcType.
+				// Return the first endpoint url that matches the request's RpcType.
 				if endpoint.RpcType == rpcType {
 					supplierUrl, err := url.Parse(endpoint.Url)
 					if err != nil {
