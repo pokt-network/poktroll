@@ -16,6 +16,15 @@ else
 fi
 done
 
+# Check we can reach the sequencer endpoint
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-sequencer:36657)
+if [[ "${HTTP_STATUS}" -eq 200 ]]; then
+    echo "HTTP request to devnet-issue-198-sequencer returned 200 OK."
+else
+    echo "HTTP request to devnet-issue-198-sequencer did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
+    sleep 10
+fi
+
 # Create a job to run the e2e tests
 envsubst < .github/workflows-helpers/run-e2e-test-job-template.yaml > job.yaml
 kubectl apply -f job.yaml
