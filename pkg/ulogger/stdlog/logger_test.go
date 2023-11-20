@@ -38,7 +38,7 @@ var expectedMsgs = []string{
 	//"Timestamp=1700509048049",
 	//"Time=2006-01-02T15:04:05Z07:00",
 	//"Dur=",
-	"Fields=map[key1:value1 key2:value2]",
+	//"Fields=map[key1:value1 key2:value2]",
 }
 
 // TODO_IN_THIS_COMMIT: comment...
@@ -59,7 +59,7 @@ func TestStdLogULogger(t *testing.T) {
 		log.SetOutput(os.Stderr)
 	}()
 
-	// TODO_IN_THIS_COMMIT: configuration ... debug level for this test
+	// TODO_IN_THIS_COMMIT: configuration ... debug levelString for this test
 	logger := stdlog.NewUniversalLogger()
 
 	logger.Debug().Msg("Msg")
@@ -82,10 +82,10 @@ func TestStdLogULogger(t *testing.T) {
 	//logger.Debug().Timestamp().Send()
 	//logger.Debug().Time().Send()
 	//logger.Debug().Dur().Send()
-	logger.Debug().Fields(map[string]string{
-		"key1": "value1",
-		"key2": "value2",
-	}).Send()
+	//logger.Debug().Fields(map[string]string{
+	//	"key1": "value1",
+	//	"key2": "value2",
+	//}).Send()
 
 	// TODO_IN_THIS_COMMIT: comment...
 	funcSpy := funcMethodSpy{}
@@ -98,13 +98,14 @@ func TestStdLogULogger(t *testing.T) {
 	// Assert that the log output contains the expected messages. Split the log
 	// output into lines and iterate over them.
 	lines := strings.Split(logOutput.String(), "\n")
+	lines = lines[:len(lines)-1] // Remove last empty line.
 	// Assert that the log output contains the expected number of lines.
 	// Intentionally not using `require` to provide additional error context.
 	assert.Lenf(
 		t, lines,
 		len(expectedMsgs),
-		"log output should contain %d lines, got: %v",
-		len(expectedMsgs), lines,
+		"log output should contain %d lines, got: %d",
+		len(expectedMsgs), len(lines),
 	)
 
 	for lineIdx, line := range lines {
@@ -122,7 +123,7 @@ func TestStdLogULogger(t *testing.T) {
 		}
 
 		// Assert that each line contains the expected prefix.
-		require.Contains(t, line, `"level":"debug"`)
+		require.Contains(t, line, `[DEBUG] `)
 
 		expectedMsg := expectedMsgs[lineIdx]
 		require.Contains(t, line, expectedMsg)

@@ -9,22 +9,21 @@ import (
 type stdLogULogger struct{}
 
 func NewUniversalLogger() ulogger.UniversalLogger {
-	//return &stdLogULogger{}
-	return nil
+	return &stdLogULogger{}
 }
 
-func (st *stdLogULogger) Debug() {
-	//return newEvent
+func (st *stdLogULogger) Debug() ulogger.Event {
+	return newEvent(ulogger.LevelDebug)
 }
 
-func (st *stdLogULogger) Info() {
-	//log.Println("[INFO]", msg, keysAndValues)
+func (st *stdLogULogger) Info() ulogger.Event {
+	return newEvent(ulogger.LevelInfo)
 }
 
-func (st *stdLogULogger) Warn() {
-	//log.Println("[WARN]", msg, keysAndValues)
+func (st *stdLogULogger) Warn() ulogger.Event {
+	return newEvent(ulogger.LevelWarn)
 }
 
-func (st *stdLogULogger) Error() {
-	//log.Println("[ERROR]", msg, keysAndValues)
+func (st *stdLogULogger) Error() ulogger.Event {
+	return newEvent(ulogger.LevelError)
 }
