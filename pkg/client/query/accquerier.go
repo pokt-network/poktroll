@@ -11,11 +11,16 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query/types"
 )
 
+// accQuerier is a wrapper around the accounttypes.QueryClient that enables the
+// querying of on-chain account information through a single exposed method
+// which returns an accounttypes.AccountI interface
 type accQuerier struct {
 	clientCtx      types.Context
 	accountQuerier accounttypes.QueryClient
 }
 
+// NewAccountQuerier returns a new instance of a client.AccountQueryClient by
+// injecting the dependecies provided by the depinject.Config
 func NewAccountQuerier(
 	deps depinject.Config,
 ) (client.AccountQueryClient, error) {
@@ -33,6 +38,7 @@ func NewAccountQuerier(
 	return aq, nil
 }
 
+// GetAccount returns an accounttypes.AccountI interface for a given address
 func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,

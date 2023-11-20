@@ -11,11 +11,16 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+// appQuerier is a wrapper around the apptypes.QueryClient that enables the
+// querying of on-chain application information through a single exposed method
+// which returns an apptypes.Application interface
 type appQuerier struct {
 	clientCtx          types.Context
 	applicationQuerier apptypes.QueryClient
 }
 
+// NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
+// by injecting the dependecies provided by the depinject.Config
 func NewApplicationQuerier(
 	deps depinject.Config,
 ) (client.ApplicationQueryClient, error) {
@@ -33,6 +38,7 @@ func NewApplicationQuerier(
 	return aq, nil
 }
 
+// GetApplication returns an apptypes.Application interface for a given address
 func (aq *appQuerier) GetApplication(
 	ctx context.Context,
 	appAddress string,
