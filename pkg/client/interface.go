@@ -180,12 +180,6 @@ type TxClientOption func(TxClient)
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
 
-// QueryClientContext is used to distinguish a cosmosclient.Context intended
-// for use in queries from others.
-// This type is intentionally not an alias in order to make this distinction
-// clear to the dependency injector
-type QueryClientContext cosmosclient.Context
-
 // AccountQueryClient defines an interface that enables the querying of the
 // on-chain account information
 type AccountQueryClient interface {

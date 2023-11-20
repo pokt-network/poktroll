@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -68,7 +69,7 @@ type relayerProxy struct {
 	ringCache rings.RingCache
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx client.QueryClientContext
+	clientCtx querytypes.Context
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string

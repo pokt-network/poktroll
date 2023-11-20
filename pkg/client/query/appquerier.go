@@ -7,11 +7,12 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 type appQuerier struct {
-	clientCtx          client.QueryClientContext
+	clientCtx          types.Context
 	applicationQuerier apptypes.QueryClient
 }
 

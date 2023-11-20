@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/query"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 )
 
@@ -104,7 +105,7 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeUrl string) SupplierFn {
 			return nil, err
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
-			client.QueryClientContext(queryClientCtx),
+			querytypes.Context(queryClientCtx),
 		))
 
 		// Restore the flag's original value in order for other components

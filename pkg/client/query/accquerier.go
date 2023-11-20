@@ -8,10 +8,11 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/query/types"
 )
 
 type accQuerier struct {
-	clientCtx      client.QueryClientContext
+	clientCtx      types.Context
 	accountQuerier accounttypes.QueryClient
 }
 
