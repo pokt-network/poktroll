@@ -78,8 +78,8 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 	}
 
 	// Initialize the App and Gateway Accounts by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, appAccount.Address)
-	network.InitAccount(t, net, gatewayAccount.Address)
+	network.InitAccountWithSequence(t, net, appAccount.Address, 1)
+	network.InitAccountWithSequence(t, net, gatewayAccount.Address, 2)
 
 	// Run the tests
 	for _, tt := range tests {

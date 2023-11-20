@@ -47,7 +47,7 @@ func TestGatewayQuerySingle(t *testing.T) {
 			request: &types.QueryGetGatewayRequest{
 				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "gateway not found"),
 		},
 		{
 			desc: "InvalidRequest",
@@ -58,7 +58,7 @@ func TestGatewayQuerySingle(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.Gateway(wctx, tc.request)
 			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+				require.ErrorContains(t, err, tc.err.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,

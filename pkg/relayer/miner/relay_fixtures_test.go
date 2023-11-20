@@ -6,11 +6,11 @@ var (
 	// populating the signature with random bytes. It is intended for use
 	// in tests.
 	marshaledMinableRelaysHex = []string{
-		"0a140a121210ce0ab4fd4aad01b34e7716db67d832ee",
-		"0a140a121210fde079350fddd8208252f159bed86410",
-		"0a140a121210e134e72f4f6fe842a8d7cc34a0225150",
-		"0a140a1212106de195b55f220f024404ea23d7b88c0d",
-		"0a140a12121095e7bc76a0895af0998d2592364f2e37",
+		"0a140a12121098b6df6b5ec8fe98de5c116a8e7f6850",
+		"0a140a121210520a01ac0ad6b28676a0d989ff78086a",
+		"0a140a121210a2fa71cc6e5b40f05fe8f387877cc3ac",
+		"0a140a1212101278fa6ea89b5220b514bdbc75b4f5db",
+		"0a140a12121039bf26d5bf597114358aed856859ff2b",
 	}
 
 	// marshaledUnminableRelaysHex are the hex encoded strings of serialized
@@ -19,10 +19,10 @@ var (
 	// by populating the signature with random bytes. It is intended for use in
 	// tests.
 	marshaledUnminableRelaysHex = []string{
-		"0a140a121210e413cbff48a482948e133fad6fe1ef8b",
-		"0a140a121210bcfbb8b6c3eb1b4bfb686e166de06b0d",
-		"0a140a121210d8f42bd65193e99e03a8dda3a5881ab4",
-		"0a140a121210da25576fcca8f16b0111767ba5bad3d7",
-		"0a140a1212103d95fac81ab9a39e29601a75b77a97bf",
+		"0a140a12121065ce0e7d6f07e9232bb9ab8666045b14",
+		"0a140a121210fddee35a08751413aaf56b3c514bfa0c",
+		"0a140a121210377827b8dfb1d844ca8fb3a6348876f4",
+		"0a140a12121019292f9bb1d74e27023738320543481d",
+		"0a140a1212105a82f10c0c86d5c844346522eeaa8401",
 	}
 )

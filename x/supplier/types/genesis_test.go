@@ -70,14 +70,6 @@ func TestGenesisState_Validate(t *testing.T) {
 						Services: serviceList2,
 					},
 				},
-				ClaimList: []types.Claim{
-					{
-						Index: "0",
-					},
-					{
-						Index: "1",
-					},
-				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			valid: true,
@@ -301,20 +293,6 @@ func TestGenesisState_Validate(t *testing.T) {
 								},
 							},
 						},
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "duplicated claim",
-			genState: &types.GenesisState{
-				ClaimList: []types.Claim{
-					{
-						Index: "0",
-					},
-					{
-						Index: "0",
 					},
 				},
 			},

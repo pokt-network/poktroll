@@ -24,15 +24,15 @@ service Query {
     option (google.api.http).get = "/pocket/supplier/supplier/{address}";
   }
   rpc SupplierAll (QueryAllSupplierRequest) returns (QueryAllSupplierResponse) {
-    option (google.api.http).get = "/pocket/supplier/supplier";
+    option (google.api.http).get = "/pocket/supplier/suppliers";
   }
 
   // Queries a list of Claim items.
   rpc Claim (QueryGetClaimRequest) returns (QueryGetClaimResponse) {
-    option (google.api.http).get = "/pocket/supplier/claim/{index}";
+    option (google.api.http).get = "/pocket/supplier/claim/{session_id}/{supplier_address}";
   }
   rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
-    option (google.api.http).get = "/pocket/supplier/claim";
+    option (google.api.http).get = "/pocket/supplier/claims";
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -62,7 +62,8 @@ message QueryAllSupplierResponse {
 }
 
 message QueryGetClaimRequest {
-  string index = 1;
+  string session_id = 1;
+  string supplier_address = 2;
 }
 
 message QueryGetClaimResponse {
@@ -71,6 +72,11 @@ message QueryGetClaimResponse {
 
 message QueryAllClaimsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  oneof filter {
+    string supplier_address = 2;
+    string session_id = 3;
+    uint64 session_end_height = 4;
+  }
 }
 
 message QueryAllClaimsResponse {

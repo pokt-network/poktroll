@@ -22,7 +22,7 @@ var (
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
-	defaultRelayDifficulty = 0
+	defaultRelayDifficultyBits = 0
 )
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the
@@ -38,9 +38,9 @@ type miner struct {
 	// relayHasher is a function which returns a hash.Hash interfact type. It is
 	// used to hash serialized relays to measure their mining difficulty.
 	relayHasher func() hash.Hash
-	// relayDifficulty is the minimum difficulty that a relay must have to be
+	// relayDifficultyBits is the minimum difficulty that a relay must have to be
 	// volume / reward applicable.
-	relayDifficulty int
+	relayDifficultyBits int
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -88,6 +88,10 @@ func (mnr *miner) setDefaults() {
 	if mnr.relayHasher == nil {
 		mnr.relayHasher = DefaultRelayHasher
 	}
+
+	if mnr.relayDifficultyBits == 0 {
+		mnr.relayDifficultyBits = defaultRelayDifficultyBits
+	}
 }
 
 // mapMineRelay is intended to be used as a MapFn.
@@ -113,7 +117,8 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if !protocol.BytesDifficultyGreaterThan(relayHash, mnr.relayDifficulty) {
+	diff := protocol.MustCountDifficultyBits(relayHash)
+	if diff < mnr.relayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
