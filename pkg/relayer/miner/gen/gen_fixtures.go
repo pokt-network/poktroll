@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	defaultDifficulty           = 2
+	defaultDifficultyBits       = 16
 	defaultFixtureLimitPerGroup = 5
 	defaultRandLength           = 16
 	defaultOutPath              = "relay_fixtures_test.go"
@@ -58,7 +58,7 @@ type marshalable interface {
 }
 
 func init() {
-	flag.IntVar(&flagDifficultyBitsThreshold, "difficulty-bits-threshold", defaultDifficulty, "the number of leading zero bits that a randomized, serialized relay must have to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty allowed for relays to be included in the `marshaledUnminableRelaysHex` slice.")
+	flag.IntVar(&flagDifficultyBitsThreshold, "difficulty-bits-threshold", defaultDifficultyBits, "the number of leading zero bits that a randomized, serialized relay must have to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty allowed for relays to be included in the `marshaledUnminableRelaysHex` slice.")
 	flag.IntVar(&flagFixtureLimitPerGroup, "fixture-limit-per-group", defaultFixtureLimitPerGroup, "the number of randomized, serialized relays that will be generated for each of `marshaledMinableRelaysHex` and `marshaledUnminableRelaysHex`.")
 	flag.IntVar(&flagRandLength, "rand-length", defaultRandLength, "the number of random bytes used for randomized values during fixture generation.")
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated file.")
@@ -223,56 +223,18 @@ func exitOnError(errCh <-chan error) {
 // appended.
 func appendMinableRelays(
 	ctx context.Context,
-	randMinedRelaysObs observable.Observable[*relayer.MinedRelay],
+	randRelaysObs observable.Observable[*relayer.MinedRelay],
 	outputBuffer *bytes.Buffer,
 ) {
-	var (
-		counterMu               sync.Mutex
-		minedRelayAcceptCounter = int32(0)
-		minedRelayRejectCounter = int32(0)
-		mapCtx, cancelMap       = context.WithCancel(ctx)
-	)
-
-	minableRelaysObs := channel.Map(mapCtx, randMinedRelaysObs,
-		func(
-			_ context.Context,
-			minedRelay *relayer.MinedRelay,
-		) (_ *relayer.MinedRelay, skip bool) {
-			counterMu.Lock()
-			defer counterMu.Unlock()
-
-			// At the end of each iteration, check if the minedRelayAcceptCounter has reached
-			// the limit. If so, cancel the mapCtx to stop the map operation.
-			defer func() {
-				if minedRelayAcceptCounter >= int32(flagFixtureLimitPerGroup) {
-					cancelMap()
-				}
-			}()
-
-			// TODO_TECHDEBT(#192): react to refactoring of protocol package.
-			// Skip if difficulty is less than threshold.
-			if !protocol.BytesDifficultyGreaterThan(minedRelay.Hash, flagDifficultyBitsThreshold) {
-				minedRelayRejectCounter++
-				return nil, true
-			}
-
-			// NB: slow down map loop, when  not skipping, to prevent overshooting
-			// the limit.
-			time.Sleep(10 * time.Millisecond)
-
-			// Publish if difficulty is greater than or equal to threshold.
-			minedRelayAcceptCounter++
-			return minedRelay, false
+	appendRelays(
+		ctx,
+		randRelaysObs,
+		outputBuffer,
+		func(hash []byte) bool {
+			// Append if difficulty is greater than or equal to threshold.
+			return protocol.MustCountDifficultyBits(hash) >= flagDifficultyBitsThreshold
 		},
 	)
-
-	channel.ForEach(
-		ctx, minableRelaysObs,
-		newAppendMarshalableHex[*relayer.MinedRelay](outputBuffer),
-	)
-
-	// Wait for the map operation to finish.
-	<-mapCtx.Done()
 }
 
 // appendUnminableRelays maps over the given observable of mined relays, checks
@@ -284,14 +246,36 @@ func appendUnminableRelays(
 	randRelaysObs observable.Observable[*relayer.MinedRelay],
 	outputBuffer *bytes.Buffer,
 ) {
+	appendRelays(
+		ctx,
+		randRelaysObs,
+		outputBuffer,
+		func(hash []byte) bool {
+			// Append if difficulty is less than threshold.
+			return protocol.MustCountDifficultyBits(hash) < flagDifficultyBitsThreshold
+		},
+	)
+}
+
+// appendRelays maps over the given observable of mined relays, checks whether
+// they should be appended to outpubBuffer by calling the given shouldAppend
+// function, and appends them to the given output buffer if it returns true. It
+// stops appending once flagFixtureLimitPerGroup number of relay fixtures have
+// been appended.
+func appendRelays(
+	ctx context.Context,
+	randRelaysObs observable.Observable[*relayer.MinedRelay],
+	outputBuffer *bytes.Buffer,
+	shouldAppend func(hash []byte) bool,
+) {
 	var (
 		counterMu               sync.Mutex
-		minedRelayAcceptCounter = int32(0)
-		minedRelayRejectCounter = int32(0)
+		minedRelayAcceptCounter = 0
+		minedRelayRejectCounter = 0
 		mapCtx, cancelMap       = context.WithCancel(ctx)
 	)
 
-	unminableRelaysObs := channel.Map(mapCtx, randRelaysObs,
+	filteredRelaysObs := channel.Map(mapCtx, randRelaysObs,
 		func(
 			_ context.Context,
 			minedRelay *relayer.MinedRelay,
@@ -302,30 +286,28 @@ func appendUnminableRelays(
 			// At the end of each iteration, check if the relayCounter has reached
 			// the limit. If so, cancel the mapCtx to stop the map operation.
 			defer func() {
-				if minedRelayAcceptCounter >= int32(flagFixtureLimitPerGroup) {
+				if minedRelayAcceptCounter >= flagFixtureLimitPerGroup {
 					cancelMap()
 				}
 			}()
 
-			// TODO_TECHDEBT(#192): react to refactoring of protocol package.
-			// Publish if difficulty is less than threshold.
-			if !protocol.BytesDifficultyGreaterThan(minedRelay.Hash, flagDifficultyBitsThreshold) {
-				// NB: slow down map loop, when not skipping, to prevent
-				// overshooting the limit.
-				time.Sleep(10 * time.Millisecond)
-
-				minedRelayAcceptCounter++
-				return minedRelay, false
+			// Skip if shouldAppend returns false.
+			if !shouldAppend(minedRelay.Hash) {
+				minedRelayRejectCounter++
+				return nil, true
 			}
 
-			// Skip if difficulty is greater than threshold.
-			minedRelayRejectCounter++
-			return nil, true
+			// NB: slow down map loop, when not skipping, to prevent
+			// overshooting the limit.
+			time.Sleep(10 * time.Millisecond)
+
+			minedRelayAcceptCounter++
+			return minedRelay, false
 		},
 	)
 
 	channel.ForEach(
-		ctx, unminableRelaysObs,
+		ctx, filteredRelaysObs,
 		newAppendMarshalableHex[*relayer.MinedRelay](outputBuffer))
 
 	// Wait for the map operation to finish.

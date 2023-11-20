@@ -1,4 +1,4 @@
-//go:generate go run gen/gen_fixtures.go -difficulty-bits-threshold=2 -fixture-limit-per-group=5
+//go:generate go run gen/gen_fixtures.go
 
 package miner_test
 
@@ -19,7 +19,7 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
-const testDifficulty = 2
+const testDifficulty = 16
 
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
