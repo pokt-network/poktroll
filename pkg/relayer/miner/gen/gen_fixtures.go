@@ -69,9 +69,9 @@ func init() {
 // of relay fixtures should the test requirements change. It generates two slices
 // of minedRelays, `marshaledMinableRelaysHex` and `marshaledUnminableRelaysHex`,
 // which contain hex encoded strings of serialized relays. The relays in
-// `marshaledMinableRelaysHex` have been pre-mined to difficulty 2 by populating
+// `marshaledMinableRelaysHex` have been pre-mined to difficulty 16 by populating
 // the signature with random bytes. The relays in `marshaledUnminableRelaysHex`
-// have been pre-mined to **exclude** relays with difficulty 2 (or greater). Like
+// have been pre-mined to **exclude** relays with difficulty 16 (or greater). Like
 // `marshaledMinableRelaysHex`, this is done by populating the signature with
 // random bytes.
 // Output file is truncated and overwritten if it already exists.
