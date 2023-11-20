@@ -64,10 +64,16 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockPublishCh <- noopBlock
 
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
+	// TODO_TECHDEBT: assumes claiming at sessionEndHeight is valid. This will
+	// likely change in future work.
 	triggerClaimBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionEndHeight)
 	blockPublishCh <- triggerClaimBlock
 
+	// TODO_IMPROVE: ensure correctness of persisted session trees here.
+
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
+	// TODO_TECHDEBT: assumes proving at sessionEndHeight is valid. This will
+	// likely change in future work.
 	triggerProofBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionEndHeight+1)
 	blockPublishCh <- triggerProofBlock
 
