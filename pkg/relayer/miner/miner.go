@@ -22,7 +22,7 @@ var (
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
-	defaultRelayDifficulty = 0
+	defaultRelayDifficultyBits = 0
 )
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the
@@ -113,7 +113,7 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if !protocol.BytesDifficultyGreaterThan(relayHash, mnr.relayDifficulty) {
+	if protocol.MustCountDifficultyBits(relayHash) < defaultRelayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
