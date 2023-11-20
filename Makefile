@@ -360,27 +360,27 @@ supplier_list: ## List all the staked supplier
 # TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
 # TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
-supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier1 SERVICES="anvil;http://localhost:8545,svc1;http://localhost:8081" make supplier_stake
+	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier2 SERVICES="anvil;http://localhost:8545,svc2;http://localhost:8082" make supplier_stake
+	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier3 SERVICES="anvil;http://localhost:8545,svc3;http://localhost:8083" make supplier_stake
+	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
