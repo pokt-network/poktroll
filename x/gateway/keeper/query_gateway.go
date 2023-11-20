@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -51,7 +52,7 @@ func (k Keeper) Gateway(goCtx context.Context, req *types.QueryGetGatewayRequest
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
 	}
 
 	return &types.QueryGetGatewayResponse{Gateway: val}, nil
