@@ -23,7 +23,7 @@ type YAMLServiceEndpoint struct {
 	Config  map[string]string `yaml:"config"`
 }
 
-// parseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
+// ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
 func ParseSupplierConfigs(configContent []byte) ([]*sharedtypes.SupplierServiceConfig, error) {
 	var stakeConfig []*YAMLStakeService
 
@@ -42,8 +42,6 @@ func ParseSupplierConfigs(configContent []byte) ([]*sharedtypes.SupplierServiceC
 	// Populate the services slice
 	for _, svc := range stakeConfig {
 		// Validate the serviceId
-		// TODO_TECHDEBT: This should be validated against some governance state
-		// defining the network's supported services
 		if !sharedhelpers.IsValidServiceId(svc.ServiceId) {
 			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
 		}

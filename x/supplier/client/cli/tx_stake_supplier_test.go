@@ -97,8 +97,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			stakeString: "1000invalid",
 			config: `
 				- service_id: svc1
-			    endpoints:
-			    - url: http://pokt.network:8081
+				  endpoints:
+				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				`,
 		},
