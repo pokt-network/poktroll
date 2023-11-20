@@ -15,10 +15,12 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -177,3 +179,23 @@ type TxClientOption func(TxClient)
 
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
+
+// QueryClientContext is used to distinguish a cosmosclient.Context intended
+// for use in queries from others.
+// This type is intentionally not an alias in order to make this distinction
+// clear to the dependency injector
+type QueryClientContext cosmosclient.Context
+
+// AccountQueryClient defines an interface that enables the querying of the
+// on-chain account information
+type AccountQueryClient interface {
+	// GetAccount queries the chain for the details of the account provided
+	GetAccount(ctx context.Context, address string) (accounttypes.AccountI, error)
+}
+
+// ApplicationQueryClient defines an interface that enables the querying of the
+// on-chain application information
+type ApplicationQueryClient interface {
+	// GetApplication queries the chain for the details of the application provided
+	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
+}

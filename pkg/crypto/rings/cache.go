@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/noot/ring-go"
 
-	deptypes "github.com/pokt-network/poktroll/pkg/deps/types"
+	"github.com/pokt-network/poktroll/pkg/client"
 )
 
 var _ RingCache = (*ringCache)(nil)
@@ -25,11 +25,11 @@ type ringCache struct {
 
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
-	applicationQuerier deptypes.ApplicationQuerier
+	applicationQuerier client.ApplicationQueryClient
 
 	// accountQuerier is the querier for the account module, and is used to get
 	// the public keys of the application and its delegated gateways.
-	accountQuerier deptypes.AccountQuerier
+	accountQuerier client.AccountQueryClient
 }
 
 // NewRingCache returns a new RingCache instance. It requires a depinject.Config

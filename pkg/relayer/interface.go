@@ -22,12 +22,6 @@ import (
 // to the dependency injector
 type TxClientContext client.Context
 
-// QueryClientContext is used to distinguish a cosmosclient.Context intended for use
-// in queries from others.
-// This type is intentionally not an alias in order to make this distinction clear
-// to the dependency injector
-type QueryClientContext client.Context
-
 // RelaysObservable is an observable which is notified with Relay values.
 //
 // TODO_HACK: The purpose of this type is to work around gomock's lack of

@@ -8,11 +8,11 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
-	"github.com/pokt-network/poktroll/pkg/deps/types"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
 // SupplierFn is a function that is used to supply a depinject config.
@@ -45,29 +45,29 @@ func SupplyConfig(
 // EventsQueryClient instance and returns a new depinject.Config which is
 // supplied with the given deps and the new EventsQueryClient.
 func NewSupplyEventsQueryClientFn(
-	pocketNodeWebsocketURL string,
+	pocketNodeWebsocketUrl string,
 ) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
+		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketUrl)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
 }
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
-// instance with the given nodeURL and returns a new depinject.Config which
+// instance with the given nodeUrl and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
-func NewSupplyBlockClientFn(pocketNodeWebsocketURL string) SupplierFn {
+func NewSupplyBlockClientFn(pocketNodeWebsocketUrl string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketURL)
+		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -79,15 +79,17 @@ func NewSupplyBlockClientFn(pocketNodeWebsocketURL string) SupplierFn {
 // NewSupplyQueryClientContextFn returns a function with constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
+func NewSupplyQueryClientContextFn(pocketQueryNodeUrl string) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
+		// Temporarily store the flag's current value
+		tmp := cosmosflags.FlagNode
+
 		// Set --node flag to the --pocket-node for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
-		err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryNodeURL)
-		if err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryNodeUrl); err != nil {
 			return nil, err
 		}
 
@@ -102,8 +104,15 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 			return nil, err
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
-			relayer.QueryClientContext(queryClientCtx),
+			client.QueryClientContext(queryClientCtx),
 		))
+
+		// Restore the flag's original value in order for other components
+		// to use the flag as expected.
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, tmp); err != nil {
+			return nil, err
+		}
+
 		return deps, nil
 	}
 }
@@ -118,7 +127,7 @@ func NewAccountQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the account querier.
-		accountQuerier, err := types.NewAccountQuerier(deps)
+		accountQuerier, err := query.NewAccountQuerier(deps)
 		if err != nil {
 			return nil, err
 		}
@@ -139,7 +148,7 @@ func NewApplicationQuerierFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the application querier.
-		applicationQuerier, err := types.NewApplicationQuerier(deps)
+		applicationQuerier, err := query.NewApplicationQuerier(deps)
 		if err != nil {
 			return nil, err
 		}

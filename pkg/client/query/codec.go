@@ -1,4 +1,4 @@
-package types
+package query
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -6,10 +6,10 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-var depCodec *codec.ProtoCodec
+var queryCodec *codec.ProtoCodec
 
 func init() {
 	reg := codectypes.NewInterfaceRegistry()
 	accounttypes.RegisterInterfaces(reg)
-	depCodec = codec.NewProtoCodec(reg)
+	queryCodec = codec.NewProtoCodec(reg)
 }

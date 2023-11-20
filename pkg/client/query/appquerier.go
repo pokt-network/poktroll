@@ -1,27 +1,23 @@
-package types
+package query
 
 import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/cosmos-sdk/client"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-type ApplicationQuerier interface {
-	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
-}
-
 type appQuerier struct {
-	clientCtx          relayer.QueryClientContext
+	clientCtx          client.QueryClientContext
 	applicationQuerier apptypes.QueryClient
 }
 
 func NewApplicationQuerier(
 	deps depinject.Config,
-) (ApplicationQuerier, error) {
+) (client.ApplicationQueryClient, error) {
 	aq := &appQuerier{}
 
 	if err := depinject.Inject(
@@ -31,7 +27,7 @@ func NewApplicationQuerier(
 		return nil, err
 	}
 
-	aq.applicationQuerier = apptypes.NewQueryClient(client.Context(aq.clientCtx))
+	aq.applicationQuerier = apptypes.NewQueryClient(cosmosclient.Context(aq.clientCtx))
 
 	return aq, nil
 }
@@ -43,7 +39,7 @@ func (aq *appQuerier) GetApplication(
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
-		return apptypes.Application{}, ErrDepsAccountNotFound.Wrapf("app address: %s [%v]", appAddress, err)
+		return apptypes.Application{}, ErrQueryAccountNotFound.Wrapf("app address: %s [%v]", appAddress, err)
 	}
 	return res.Application, nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"golang.org/x/sync/errgroup"
 
-	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -39,7 +39,7 @@ type relayerProxy struct {
 
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
-	blockClient blocktypes.BlockClient
+	blockClient client.BlockClient
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
@@ -68,7 +68,7 @@ type relayerProxy struct {
 	ringCache rings.RingCache
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx relayer.QueryClientContext
+	clientCtx client.QueryClientContext
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string

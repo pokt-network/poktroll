@@ -18,10 +18,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
-	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
-	deptypes "github.com/pokt-network/poktroll/pkg/deps/types"
-	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -58,7 +56,7 @@ type appGateServer struct {
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
 	// and get the public key to verify the relay response signature.
-	clientCtx relayer.QueryClientContext
+	clientCtx client.QueryClientContext
 
 	// sessionQuerier is the querier for the session module.
 	// It used to get the current session for the application given a requested service.
@@ -73,11 +71,11 @@ type appGateServer struct {
 
 	// accountQuerier is the querier for the account module.
 	// It is used to get the the supplier's public key to verify the relay response signature.
-	accountQuerier deptypes.AccountQuerier
+	accountQuerier client.AccountQueryClient
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
-	blockClient blocktypes.BlockClient
+	blockClient client.BlockClient
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
