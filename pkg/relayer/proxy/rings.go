@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	ring "github.com/noot/ring-go"
+
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 

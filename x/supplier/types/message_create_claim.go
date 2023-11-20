@@ -3,6 +3,7 @@ package types
 import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )

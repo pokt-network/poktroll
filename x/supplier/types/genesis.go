@@ -5,6 +5,7 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )

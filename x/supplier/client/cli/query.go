@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // GetQueryCmd returns the cli query commands for this module
