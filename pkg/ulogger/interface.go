@@ -17,18 +17,18 @@ type Event interface {
 	Str(key, value string) Event
 	Bool(key string, value bool) Event
 	Int(key string, value int) Event
-	//Int8(key string, value int) Event
-	//Int16(key string, value int) Event
-	//Int32(key string, value int) Event
-	//Int64(key string, value int) Event
-	//Uint(key string, value int) Event
-	//Uint8(key string, value int) Event
-	//Uint16(key string, value int) Event
-	//Uint32(key string, value int) Event
-	//Uint64(key string, value int) Event
-	//Float32(key string, value float64) Event
-	//Float64(key string, value float64) Event
-	//Err(err error) Event
+	Int8(key string, value int8) Event
+	Int16(key string, value int16) Event
+	Int32(key string, value int32) Event
+	Int64(key string, value int64) Event
+	Uint(key string, value uint) Event
+	Uint8(key string, value uint8) Event
+	Uint16(key string, value uint16) Event
+	Uint32(key string, value uint32) Event
+	Uint64(key string, value uint64) Event
+	Float32(key string, value float32) Event
+	Float64(key string, value float64) Event
+	Err(err error) Event
 	//Func(func(Event)) Event
 	//Timestamp() Event
 	//Time() Event

@@ -2,6 +2,7 @@ package uzerolog_test
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -19,18 +20,18 @@ var expectedMsgs = []string{
 	`"Str":"str_value"`,
 	`"Bool":true`,
 	`"Int":42`,
-	//`"Int8":"42"`,
-	//`"Int16":"42"`,
-	//`"Int32":"42"`,
-	//`"Int64":"42"`,
-	//`"Uint":"42"`,
-	//`"Uint8":"42"`,
-	//`"Uint16":"42"`,
-	//`"Uint32":"42"`,
-	//`"Uint64":"42"`,
-	//`"Float32":"420.69"`,
-	//`"Float64":"420.69"`,
-	//`"Err":"42"`,
+	`"Int8":42`,
+	`"Int16":42`,
+	`"Int32":42`,
+	`"Int64":42`,
+	`"Uint":42`,
+	`"Uint8":42`,
+	`"Uint16":42`,
+	`"Uint32":42`,
+	`"Uint64":42`,
+	`"Float32":420.69`,
+	`"Float64":420.69`,
+	`"error":"42"`,
 	//`"Func":"0x"`,
 	//`"Timestamp":"1700509048049"`,
 	//`"Time":"2006-01-02T15:04:05Z07:00"`,
@@ -59,18 +60,18 @@ func TestZerologULogger(t *testing.T) {
 	logger.Debug().Str("Str", "str_value").Send()
 	logger.Debug().Bool("Bool", true).Send()
 	logger.Debug().Int("Int", 42).Send()
-	//logger.Debug().Int8("Int8", 42).Send()
-	//logger.Debug().Int16("Int16", 42).Send()
-	//logger.Debug().Int32("Int32", 42).Send()
-	//logger.Debug().Int64("Int64", 42).Send()
-	//logger.Debug().Uint("Uint", 42).Send()
-	//logger.Debug().Uint8("Uint8", 42).Send()
-	//logger.Debug().Uint16("Uint16", 42).Send()
-	//logger.Debug().Uint32("Uint32", 42).Send()
-	//logger.Debug().Uint64("Uint64", 42).Send()
-	//logger.Debug().Float32("Float32", 420.69).Send()
-	//logger.Debug().Float64("Float64", 420.69).Send()
-	//logger.Debug().Err(fmt.Errorf("%d", 42)).Send()
+	logger.Debug().Int8("Int8", 42).Send()
+	logger.Debug().Int16("Int16", 42).Send()
+	logger.Debug().Int32("Int32", 42).Send()
+	logger.Debug().Int64("Int64", 42).Send()
+	logger.Debug().Uint("Uint", 42).Send()
+	logger.Debug().Uint8("Uint8", 42).Send()
+	logger.Debug().Uint16("Uint16", 42).Send()
+	logger.Debug().Uint32("Uint32", 42).Send()
+	logger.Debug().Uint64("Uint64", 42).Send()
+	logger.Debug().Float32("Float32", 420.69).Send()
+	logger.Debug().Float64("Float64", 420.69).Send()
+	logger.Debug().Err(fmt.Errorf("%d", 42)).Send()
 	//logger.Debug().Timestamp().Send()
 	//logger.Debug().Time().Send()
 	//logger.Debug().Dur().Send()
