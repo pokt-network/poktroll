@@ -1,5 +1,7 @@
 package ulogger
 
+import "time"
+
 // TODO_CONSIDERATION: this may be a good candidate package for extraction to
 // its own module.
 
@@ -29,12 +31,12 @@ type Event interface {
 	Float32(key string, value float32) Event
 	Float64(key string, value float64) Event
 	Err(err error) Event
-	//Func(func(Event)) Event
-	//Timestamp() Event
-	//Time() Event
-	//Dur() Event
+	Timestamp() Event
+	Time(key string, value time.Time) Event
+	Dur(key string, value time.Duration) Event
 
 	//Fields(fields any) Event
+	//Func(func(Event)) Event
 
 	// Enabled return false if the *Event is going to be filtered out by log
 	// level or sampling.

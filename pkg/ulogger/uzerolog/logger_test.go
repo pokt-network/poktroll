@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -14,30 +15,36 @@ import (
 	"github.com/pokt-network/poktroll/pkg/ulogger/uzerolog"
 )
 
-var expectedMsgs = []string{
-	"Msg",
-	"Msgf",
-	`"Str":"str_value"`,
-	`"Bool":true`,
-	`"Int":42`,
-	`"Int8":42`,
-	`"Int16":42`,
-	`"Int32":42`,
-	`"Int64":42`,
-	`"Uint":42`,
-	`"Uint8":42`,
-	`"Uint16":42`,
-	`"Uint32":42`,
-	`"Uint64":42`,
-	`"Float32":420.69`,
-	`"Float64":420.69`,
-	`"error":"42"`,
-	//`"Func":"0x"`,
-	//`"Timestamp":"1700509048049"`,
-	//`"Time":"2006-01-02T15:04:05Z07:00"`,
-	//`"Dur":""`,
-	//`"Fields":"map[key1:value1 key2:value2]"`,
-}
+var (
+	expectedTime           = time.Now()
+	expectedDuration       = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
+	expectedDurationString = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
+	expectedMsgs           = []string{
+		"Msg",
+		"Msgf",
+		`"Str":"str_value"`,
+		`"Bool":true`,
+		`"Int":42`,
+		`"Int8":42`,
+		`"Int16":42`,
+		`"Int32":42`,
+		`"Int64":42`,
+		`"Uint":42`,
+		`"Uint8":42`,
+		`"Uint16":42`,
+		`"Uint32":42`,
+		`"Uint64":42`,
+		`"Float32":420.69`,
+		`"Float64":420.69`,
+		`"error":"42"`,
+		//`"Func":"0x"`,
+		fmt.Sprintf(`"time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
+		fmt.Sprintf(`"Time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
+		fmt.Sprintf(`"Dur":%s`, expectedDurationString),
+		//`"Fields":"map[key1:value1 key2:value2]"`,
+	}
+	expectedTimestampLayout = "2006-01-02T15:04:05-07:00"
+)
 
 // TODO_IN_THIS_COMMIT: comment...
 type funcMethodSpy struct{ mock.Mock }
@@ -72,9 +79,9 @@ func TestZerologULogger(t *testing.T) {
 	logger.Debug().Float32("Float32", 420.69).Send()
 	logger.Debug().Float64("Float64", 420.69).Send()
 	logger.Debug().Err(fmt.Errorf("%d", 42)).Send()
-	//logger.Debug().Timestamp().Send()
-	//logger.Debug().Time().Send()
-	//logger.Debug().Dur().Send()
+	logger.Debug().Timestamp().Send()
+	logger.Debug().Time("Time", expectedTime).Send()
+	logger.Debug().Dur("Dur", expectedDuration).Send()
 	//logger.Debug().Fields(map[string]string{
 	//	"key1": "value1",
 	//	"key2": "value2",

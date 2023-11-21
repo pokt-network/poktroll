@@ -1,6 +1,8 @@
 package uzerolog
 
 import (
+	"time"
+
 	"github.com/rs/zerolog"
 
 	"github.com/pokt-network/poktroll/pkg/ulogger"
@@ -90,6 +92,23 @@ func (zle zerologEvent) Float64(key string, value float64) ulogger.Event {
 
 func (zle zerologEvent) Err(err error) ulogger.Event {
 	zle.event.Err(err)
+	return zle
+}
+
+func (zle zerologEvent) Timestamp() ulogger.Event {
+	// TODO_IMPROVE: the key for this can be configured by changing the value of
+	// the zerolog.TimestampFieldName variable.
+	zle.event.Timestamp()
+	return zle
+}
+
+func (zle zerologEvent) Time(key string, value time.Time) ulogger.Event {
+	zle.event.Time(key, value)
+	return zle
+}
+
+func (zle zerologEvent) Dur(key string, value time.Duration) ulogger.Event {
+	zle.event.Dur(key, value)
 	return zle
 }
 
