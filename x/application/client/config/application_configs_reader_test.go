@@ -10,20 +10,28 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/application/client/config"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func Test_ParseApplicationConfigs(t *testing.T) {
 	tests := []struct {
 		desc     string
 		err      *sdkerrors.Error
-		expected []string
+		expected []*sharedtypes.ApplicationServiceConfig
 		config   string
 	}{
 		// Valid Configs
 		{
-			desc:     "application_staking_config_test: valid service staking config",
-			err:      nil,
-			expected: []string{"svc1", "svc2"},
+			desc: "application_staking_config_test: valid service staking config",
+			err:  nil,
+			expected: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+				{
+					Service: &sharedtypes.Service{Id: "svc2"},
+				},
+			},
 			config: `
 				service_ids:
 				  - svc1
