@@ -6,8 +6,9 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 120
   template:
-    labels:
-      pokt.network/purpose: e2e-tests
+    metadata:
+      labels:
+        pokt.network/purpose: e2e-tests
     spec:
       containers:
       - name: e2e-tests
