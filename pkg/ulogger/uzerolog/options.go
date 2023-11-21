@@ -1,4 +1,4 @@
-package zerolog
+package uzerolog
 
 import (
 	"io"
@@ -12,6 +12,12 @@ func WithOutput(output io.Writer) ulogger.LoggerOption {
 	return func(logger ulogger.UniversalLogger) {
 		zl := zerolog.New(output)
 		logger.(*zerologULogger).Logger = zl
+	}
+}
+
+func WithLevel(level zerolog.Level) ulogger.LoggerOption {
+	return func(logger ulogger.UniversalLogger) {
+		logger.(*zerologULogger).level = level
 	}
 }
 

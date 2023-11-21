@@ -1,4 +1,4 @@
-package zerolog_test
+package uzerolog_test
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/ulogger"
-	uzerolog "github.com/pokt-network/poktroll/pkg/ulogger/zerolog"
+	"github.com/pokt-network/poktroll/pkg/ulogger/uzerolog"
 )
 
 var expectedMsgs = []string{
@@ -46,7 +46,7 @@ func (m *funcMethodSpy) Fn(event ulogger.Event) {
 	m.Called(event)
 }
 
-func TestStdLogULogger(t *testing.T) {
+func TestZerologULogger(t *testing.T) {
 	// Redirect standard log output to logOutput buffer.
 	logOutput := new(bytes.Buffer)
 	outputOpt := uzerolog.WithOutput(logOutput)

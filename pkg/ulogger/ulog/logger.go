@@ -1,4 +1,4 @@
-package stdlog
+package ulog
 
 import (
 	"github.com/pokt-network/poktroll/pkg/ulogger"

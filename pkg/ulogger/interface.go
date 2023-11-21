@@ -34,7 +34,7 @@ type Event interface {
 	//Time() Event
 	//Dur() Event
 
-	Fields(fields any) Event
+	//Fields(fields any) Event
 
 	// Enabled return false if the *Event is going to be filtered out by log
 	// level or sampling.

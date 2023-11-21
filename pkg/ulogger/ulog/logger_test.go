@@ -1,4 +1,4 @@
-package stdlog_test
+package ulog_test
 
 import (
 	"bytes"
@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/ulogger"
-	"github.com/pokt-network/poktroll/pkg/ulogger/stdlog"
 )
 
 var expectedMsgs = []string{
@@ -60,7 +59,7 @@ func TestStdLogULogger(t *testing.T) {
 	}()
 
 	// TODO_IN_THIS_COMMIT: configuration ... debug levelString for this test
-	logger := stdlog.NewUniversalLogger()
+	logger := ustdlog.NewUniversalLogger()
 
 	logger.Debug().Msg("Msg")
 	logger.Debug().Msgf("%s", "Msgf")

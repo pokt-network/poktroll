@@ -1,4 +1,4 @@
-package zerolog
+package uzerolog
 
 import (
 	"github.com/rs/zerolog"
@@ -8,9 +8,12 @@ import (
 )
 
 type zerologULogger struct {
+	// NB: Default (0) is Debug.
+	level zerolog.Level
 	zerolog.Logger
 }
 
+// TODO_IN_THIS_COMMIT: how to configure level?
 func NewUniversalLogger(
 	opts ...ulogger.LoggerOption,
 ) ulogger.UniversalLogger {
@@ -18,6 +21,8 @@ func NewUniversalLogger(
 		// Default to global  zerolog logger; stderr with timestamp.
 		Logger: log.Logger,
 	}
+
+	ze.level = zerolog.DebugLevel
 
 	for _, opt := range opts {
 		opt(ze)
