@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/application/client/cli"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -38,36 +39,43 @@ func TestCLI_StakeApplication(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
+	defaultConfig := `
+		service_ids:
+		  - svc1
+		  - svc2
+		  - svc3
+		`
+
 	tests := []struct {
-		desc             string
-		address          string
-		stakeString      string
-		serviceIdsString string
-		err              *sdkerrors.Error
+		desc        string
+		address     string
+		stakeString string
+		config      string
+		err         *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
-			desc:             "valid",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              nil,
+			desc:        "valid",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+			config:      defaultConfig,
+			err:         nil,
 		},
 
 		// Error Paths - Address Related
 		{
 			desc: "address_test: missing address",
 			// address:     "explicitly missing",
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidAddress,
+			stakeString: "1000upokt",
+			config:      defaultConfig,
+			err:         types.ErrAppInvalidAddress,
 		},
 		{
-			desc:             "stake application: invalid address",
-			address:          "invalid",
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidAddress,
+			desc:        "stake application: invalid address",
+			address:     "invalid",
+			stakeString: "1000upokt",
+			config:      defaultConfig,
+			err:         types.ErrAppInvalidAddress,
 		},
 
 		// Error Paths - Stake Related
@@ -75,59 +83,70 @@ func TestCLI_StakeApplication(t *testing.T) {
 			desc:    "address_test: missing stake",
 			address: appAccount.Address.String(),
 			// stakeString: "explicitly missing",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			config: defaultConfig,
+			err:    types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake denom",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000invalid",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc:        "address_test: invalid stake denom",
+			address:     appAccount.Address.String(),
+			stakeString: "1000invalid",
+			config:      defaultConfig,
+			err:         types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake amount (zero)",
-			address:          appAccount.Address.String(),
-			stakeString:      "0upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc:        "address_test: invalid stake amount (zero)",
+			address:     appAccount.Address.String(),
+			stakeString: "0upokt",
+			config:      defaultConfig,
+			err:         types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake amount (negative)",
-			address:          appAccount.Address.String(),
-			stakeString:      "-1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc:        "address_test: invalid stake amount (negative)",
+			address:     appAccount.Address.String(),
+			stakeString: "-1000upokt",
+			config:      defaultConfig,
+			err:         types.ErrAppInvalidStake,
 		},
 
 		// Error Paths - Service Related
 		{
-			desc:             "services_test: invalid services (empty string)",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc:        "services_test: invalid services (empty string)",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+			config:      "",
+			err:         types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: single invalid service contains spaces",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1 svc1_part2 svc1_part3",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc:        "services_test: single invalid service contains spaces",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+			config: `
+				service_ids:
+				  - svc1 svc1_part2 svc1_part3
+				`,
+			err: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: one of two services is invalid because it contains spaces",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1 svc1_part2,svc2",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc:        "services_test: one of two services is invalid because it contains spaces",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+			config: `
+				service_ids:
+				  - svc1 svc1_part2
+				  - svc2
+				`,
+			err: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: service ID is too long (8 chars is the max)",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,abcdefghi",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc:        "services_test: service ID is too long (8 chars is the max)",
+			address:     appAccount.Address.String(),
+			stakeString: "1000upokt",
+			config: `
+				service_ids:
+				  - svc1,
+				  - abcdefghi
+				`,
+			err: types.ErrAppInvalidServiceConfigs,
 		},
 	}
 
@@ -140,10 +159,13 @@ func TestCLI_StakeApplication(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// write the stake config to a file
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.config)).Name()
+
 			// Prepare the arguments for the CLI command
 			args := []string{
 				tt.stakeString,
-				tt.serviceIdsString,
+				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
