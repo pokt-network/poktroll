@@ -1,4 +1,4 @@
-package uzerolog_test
+package polyzap_test
 
 import (
 	"bytes"
@@ -10,16 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 
-	"github.com/pokt-network/poktroll/pkg/ulogger"
-	"github.com/pokt-network/poktroll/pkg/ulogger/uzerolog"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzap"
 )
 
 var (
-	expectedTime           = time.Now()
-	expectedDuration       = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
-	expectedDurationString = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
-	expectedMsgs           = []string{
+	expectedTime     = time.Now()
+	expectedDuration = time.Millisecond + (250 * time.Nanosecond) // 1000250
+	expectedMsgs     = []string{
 		"Msg",
 		"Msgf",
 		`"Str":"str_value"`,
@@ -37,30 +37,33 @@ var (
 		`"Float32":420.69`,
 		`"Float64":420.69`,
 		`"error":"42"`,
-		//`"Func":"0x"`,
-		fmt.Sprintf(`"time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
-		fmt.Sprintf(`"Time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
-		fmt.Sprintf(`"Dur":%s`, expectedDurationString),
+		fmt.Sprintf(`"ts":%d.`, expectedTime.Unix()),
+		fmt.Sprintf(`"Time":%d.`, expectedTime.Unix()),
+		fmt.Sprintf(`"Dur":%f`, expectedDuration.Seconds()),
 		//`"Fields":"map[key1:value1 key2:value2]"`,
+		"", // polylog.Event#Func() prints a line with the level only: `{"level":"debug"}`, this is zerolog behavior.
 	}
-	expectedTimestampLayout = "2006-01-02T15:04:05-07:00"
+	// TODO_THIS_COMMIT: should configurable via an option:
 )
 
 // TODO_IN_THIS_COMMIT: comment...
 type funcMethodSpy struct{ mock.Mock }
 
 // TODO_IN_THIS_COMMIT: comment...
-func (m *funcMethodSpy) Fn(event ulogger.Event) {
+func (m *funcMethodSpy) Fn(event polylog.Event) {
 	m.Called(event)
 }
 
-func TestZerologULogger(t *testing.T) {
-	// Redirect standard log output to logOutput buffer.
+func TestZapULogger(t *testing.T) {
 	logOutput := new(bytes.Buffer)
-	outputOpt := uzerolog.WithOutput(logOutput)
+	opts := []polylog.LoggerOption{
+		// Redirect standard log output to logOutput buffer.
+		polyzap.WithOutput(logOutput),
+		// Ensure all levels print as the default zap level is Info.
+		polyzap.WithLevel(zapcore.DebugLevel),
+	}
 
-	// TODO_IN_THIS_COMMIT: configuration ... debug level for this test
-	logger := uzerolog.NewUniversalLogger(outputOpt)
+	logger := polyzap.NewPolyLogger(opts...)
 
 	logger.Debug().Msg("Msg")
 	logger.Debug().Msgf("%s", "Msgf")
@@ -89,11 +92,15 @@ func TestZerologULogger(t *testing.T) {
 
 	// TODO_IN_THIS_COMMIT: comment...
 	funcSpy := funcMethodSpy{}
-	//logger.Debug().Func(funcSpy.Fn).Send()
+	funcSpy.On("Fn", mock.AnythingOfType("*polyzap.zapEvent")).Return()
+
+	logger.Debug().Func(funcSpy.Fn).Send()
 
 	// TODO:
 	// .Enabled()
 	// .Discard()
+
+	// TODO_IN_THIS_COMMIT: TDD #With()
 
 	// Assert that the log output contains the expected messages. Split the log
 	// output into lines and iterate over them.
@@ -109,23 +116,19 @@ func TestZerologULogger(t *testing.T) {
 	)
 
 	for lineIdx, line := range lines {
-		// Skip empty lines.
-		//if line == "" {
-		//	continue
-		//}
-
-		if strings.Contains(line, "Func=0x") {
-			// Assert that the Func field contains the expected value.
-			// TODO_IMPROVE: add coverage of an event which is disabled,
-			// asserting that `Fn` is not called.
-			funcSpy.AssertCalled(t, "Fn")
-			continue
-		}
-
 		// Assert that each line contains the expected prefix.
 		require.Contains(t, line, `"level":"debug"`)
 
 		expectedMsg := expectedMsgs[lineIdx]
 		require.Contains(t, line, expectedMsg)
 	}
+
+	// Assert that the Func field contains the expected value.
+	// TODO_IN_THIS_COMMIT: add coverage of an event which is disabled,
+	// asserting that `Fn` is not called!
+	funcSpy.AssertCalled(t, "Fn", mock.AnythingOfType("*polyzap.zapEvent"))
+}
+
+func TestZapEvent_EnabledAndDiscard(t *testing.T) {
+
 }

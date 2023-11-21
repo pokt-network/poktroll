@@ -1,4 +1,4 @@
-package uzap
+package polyzap
 
 import (
 	"os"
@@ -6,10 +6,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/pokt-network/poktroll/pkg/ulogger"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-var _ ulogger.UniversalLogger = (*zapULogger)(nil)
+var _ polylog.PolyLogger = (*zapULogger)(nil)
 
 type zapULogger struct {
 	// NB: Default (0) is Info.
@@ -21,9 +21,9 @@ type zapULogger struct {
 	logger        *zap.Logger
 }
 
-func NewUniversalLogger(
-	opts ...ulogger.LoggerOption,
-) ulogger.UniversalLogger {
+func NewPolyLogger(
+	opts ...polylog.LoggerOption,
+) polylog.PolyLogger {
 	ze := &zapULogger{}
 
 	for _, opt := range opts {
@@ -35,19 +35,19 @@ func NewUniversalLogger(
 	return ze
 }
 
-func (za *zapULogger) Debug() ulogger.Event {
+func (za *zapULogger) Debug() polylog.Event {
 	return newEvent(za.logger, zapcore.DebugLevel)
 }
 
-func (za *zapULogger) Info() ulogger.Event {
+func (za *zapULogger) Info() polylog.Event {
 	return newEvent(za.logger, zapcore.InfoLevel)
 }
 
-func (za *zapULogger) Warn() ulogger.Event {
+func (za *zapULogger) Warn() polylog.Event {
 	return newEvent(za.logger, zapcore.WarnLevel)
 }
 
-func (za *zapULogger) Error() ulogger.Event {
+func (za *zapULogger) Error() polylog.Event {
 	return newEvent(za.logger, zapcore.ErrorLevel)
 }
 

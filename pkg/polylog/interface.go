@@ -1,4 +1,4 @@
-package ulogger
+package polylog
 
 import "time"
 
@@ -8,7 +8,7 @@ import "time"
 // TODO_INVESTIGATE: check whether the pkg dependency tree includes all logging
 // libraries.
 
-type UniversalLogger interface {
+type PolyLogger interface {
 	Debug() Event
 	Info() Event
 	Warn() Event
@@ -36,13 +36,13 @@ type Event interface {
 	Dur(key string, value time.Duration) Event
 
 	//Fields(fields any) Event
-	//Func(func(Event)) Event
+	Func(func(Event)) Event
 
 	// Enabled return false if the *Event is going to be filtered out by log
 	// level or sampling.
-	//Enabled() bool
+	Enabled() bool
 	// Discard disables the event so it won't print
-	//Discard() Event
+	Discard() Event
 	// Fields ... fields is expected to either be a map or a slice.
 
 	Msg(message string)

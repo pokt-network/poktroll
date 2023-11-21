@@ -1,4 +1,4 @@
-package ulogger
+package polylog
 
 const (
 	LevelDebug Level = iota
@@ -10,7 +10,7 @@ const (
 
 type Level int
 
-type LoggerOption func(logger UniversalLogger)
+type LoggerOption func(logger PolyLogger)
 
 func (l Level) String() string {
 	switch l {

@@ -1,11 +1,11 @@
-package ulog
+package polystd
 
 import (
 	"fmt"
 	"log"
 	"strings"
 
-	"github.com/pokt-network/poktroll/pkg/ulogger"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 	fieldsFieldKey = "fields"
 )
 
-var _ ulogger.Event = (*stdLogEvent)(nil)
+var _ polylog.Event = (*stdLogEvent)(nil)
 
 type stdLogEvent struct {
 	levelString string
@@ -22,34 +22,34 @@ type stdLogEvent struct {
 
 type stdLogFields map[string]any
 
-func newEvent(level ulogger.Level) ulogger.Event {
+func newEvent(level polylog.Level) polylog.Event {
 	return &stdLogEvent{
 		levelString: getLevelString(level),
 		fields:      make(stdLogFields),
 	}
 }
 
-func (st *stdLogEvent) Str(key, value string) ulogger.Event {
+func (st *stdLogEvent) Str(key, value string) polylog.Event {
 	st.fields[key] = value
 	return st
 }
 
-func (st *stdLogEvent) Bool(key string, value bool) ulogger.Event {
+func (st *stdLogEvent) Bool(key string, value bool) polylog.Event {
 	st.fields[key] = value
 	return st
 }
 
-func (st *stdLogEvent) Int(key string, value int) ulogger.Event {
+func (st *stdLogEvent) Int(key string, value int) polylog.Event {
 	st.fields[key] = value
 	return st
 }
 
-func (st *stdLogEvent) Err(err error) ulogger.Event {
+func (st *stdLogEvent) Err(err error) polylog.Event {
 	st.fields[errorFieldKey] = err
 	return st
 }
 
-func (st *stdLogEvent) Fields(fields any) ulogger.Event {
+func (st *stdLogEvent) Fields(fields any) polylog.Event {
 	st.fields[fieldsFieldKey] = fields
 	return st
 }
@@ -76,15 +76,15 @@ func (stf stdLogFields) String() string {
 	return strings.Join(fieldLines, " ")
 }
 
-func getLevelString(level ulogger.Level) string {
+func getLevelString(level polylog.Level) string {
 	switch level {
-	case ulogger.LevelDebug:
+	case polylog.LevelDebug:
 		return "[DEBUG]"
-	case ulogger.LevelInfo:
+	case polylog.LevelInfo:
 		return "[INFO]"
-	case ulogger.LevelWarn:
+	case polylog.LevelWarn:
 		return "[WARN]"
-	case ulogger.LevelError:
+	case polylog.LevelError:
 		return "[ERROR]"
 	default:
 		return "[UNKNOWN]"

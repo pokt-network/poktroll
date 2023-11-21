@@ -1,4 +1,4 @@
-package ulog_test
+package polystd_test
 
 import (
 	"bytes"
@@ -12,8 +12,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/ulogger"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+
+	"github.com/pokt-network/poktroll/pkg/polylog/polystd"
 )
+
+// TODO_IN_THIS_COMMIT: configurable key/value delimiter.
 
 var expectedMsgs = []string{
 	"Msg",
@@ -44,7 +48,7 @@ var expectedMsgs = []string{
 type funcMethodSpy struct{ mock.Mock }
 
 // TODO_IN_THIS_COMMIT: comment...
-func (m *funcMethodSpy) Fn(event ulogger.Event) {
+func (m *funcMethodSpy) Fn(event polylog.Event) {
 	m.Called(event)
 }
 
@@ -59,7 +63,7 @@ func TestStdLogULogger(t *testing.T) {
 	}()
 
 	// TODO_IN_THIS_COMMIT: configuration ... debug levelString for this test
-	logger := ustdlog.NewUniversalLogger()
+	logger := polystd.NewPolyLogger()
 
 	logger.Debug().Msg("Msg")
 	logger.Debug().Msgf("%s", "Msgf")
