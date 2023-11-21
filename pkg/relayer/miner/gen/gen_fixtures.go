@@ -13,6 +13,7 @@ import (
 	"hash"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -44,10 +45,6 @@ var (
 	// `marshaledUnminableRelaysHex`.
 	flagFixtureLimitPerGroup int
 
-	// flagRandLength is the number of random bytes used for randomized values
-	// during fixture generation.
-	flagRandLength int
-
 	// flagOut is the path to the generated file.
 	flagOut string
 )
@@ -60,7 +57,6 @@ type marshalable interface {
 func init() {
 	flag.IntVar(&flagDifficultyBitsThreshold, "difficulty-bits-threshold", defaultDifficultyBits, "the number of leading zero bits that a randomized, serialized relay must have to be included in the `marshaledMinableRelaysHex` slice which is generated. It is also used as the maximum difficulty allowed for relays to be included in the `marshaledUnminableRelaysHex` slice.")
 	flag.IntVar(&flagFixtureLimitPerGroup, "fixture-limit-per-group", defaultFixtureLimitPerGroup, "the number of randomized, serialized relays that will be generated for each of `marshaledMinableRelaysHex` and `marshaledUnminableRelaysHex`.")
-	flag.IntVar(&flagRandLength, "rand-length", defaultRandLength, "the number of random bytes used for randomized values during fixture generation.")
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated file.")
 }
 
@@ -78,55 +74,36 @@ func init() {
 func main() {
 	flag.Parse()
 
-	const (
-		randLength = 16 // number of random bytes provided for relay generation
-	)
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
 	randRelaysObs, errCh := genRandomizedMinedRelayFixtures(
 		ctx,
-		flagRandLength,
+		defaultRandLength,
 		miner.DefaultRelayHasher,
 	)
 	exitOnError(errCh)
 
 	outputBuffer := new(bytes.Buffer)
 
-	// Append the beginning until the first `marshaledMinableRelaysHex` slice value.
-	outputBuffer.WriteString(`package miner_test
+	// Collect the minable relay fixtures into a single string (one relay per line).
+	marshaledMinableRelaysHex := getMarshaledRelayFmtLines(ctx, randRelaysObs, difficultyGTE)
 
-var (
-	// marshaledMinableRelaysHex are the hex encoded strings of serialized
-	// relayer.MinedRelays which have been pre-mined to difficulty 2 by
-	// populating the signature with random bytes. It is intended for use
-	// in tests.
-	marshaledMinableRelaysHex = []string{
-`)
+	// Collect the unminable relay fixtures into a single string (one relay per line).
+	marshaledUnminableRelaysHex := getMarshaledRelayFmtLines(ctx, randRelaysObs, difficultyLT)
 
-	// Append the minable relay fixtures.
-	appendMinableRelays(ctx, randRelaysObs, outputBuffer)
+	// Interpolate the collected relay fixtures into the relay fixtures template.
+	if err := relayFixturesTemplate.Execute(
+		outputBuffer,
+		map[string]any{
+			"MarshaledMinableRelaysHex":   marshaledMinableRelaysHex,
+			"MarshaledUnminableRelaysHex": marshaledUnminableRelaysHex,
+		},
+	); err != nil {
+		log.Fatal(err)
+	}
 
-	// Append the middle section between the two `marshaledMinableRelaysHex` and
-	// `marshaledUnminableRelaysHex` slices.
-	outputBuffer.WriteString(`	}
-
-	// marshaledUnminableRelaysHex are the hex encoded strings of serialized
-	// relayer.MinedRelays which have been pre-mined to **exclude** relays with
-	// difficulty 2 (or greater). Like marshaledMinableRelaysHex, this is done
-	// by populating the signature with random bytes. It is intended for use in
-	// tests.
-	marshaledUnminableRelaysHex = []string{
-`)
-
-	// Append the unminable relay fixtures.
-	appendUnminableRelays(ctx, randRelaysObs, outputBuffer)
-
-	// Append the end of the file.
-	outputBuffer.WriteString(`	}
-)
-`)
-
+	// Write the output buffer to the file at flagOut path.
 	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0644); err != nil {
 		log.Fatal(err)
 	}
@@ -216,66 +193,66 @@ func exitOnError(errCh <-chan error) {
 	}()
 }
 
-// appendMinableRelays maps over the given observable of mined relays, checks
-// their difficulty against flagDifficultyBitsThreshold, and appends them to the
-// given output buffer if it is greater than or equal to the threshold. It stops
-// appending once flagFixtureLimitPerGroup number of relay fixtures have been
-// appended.
-func appendMinableRelays(
-	ctx context.Context,
-	randRelaysObs observable.Observable[*relayer.MinedRelay],
-	outputBuffer *bytes.Buffer,
-) {
-	appendRelays(
-		ctx,
-		randRelaysObs,
-		outputBuffer,
-		func(hash []byte) bool {
-			// Append if difficulty is greater than or equal to threshold.
-			return protocol.MustCountDifficultyBits(hash) >= flagDifficultyBitsThreshold
-		},
-	)
+// difficultyGTE returns true if the given hash has a difficulty greater than or
+// equal to flagDifficultyBitsThreshold.
+func difficultyGTE(hash []byte) bool {
+	return protocol.MustCountDifficultyBits(hash) >= flagDifficultyBitsThreshold
 }
 
-// appendUnminableRelays maps over the given observable of mined relays, checks
-// their difficulty against flagDifficultyBitsThreshold, and appends them to the
-// given output buffer if it is less than the threshold. It stops appending once
-// flagFixtureLimitPerGroup number of relay fixtures have been appended.
-func appendUnminableRelays(
-	ctx context.Context,
-	randRelaysObs observable.Observable[*relayer.MinedRelay],
-	outputBuffer *bytes.Buffer,
-) {
-	appendRelays(
-		ctx,
-		randRelaysObs,
-		outputBuffer,
-		func(hash []byte) bool {
-			// Append if difficulty is less than threshold.
-			return protocol.MustCountDifficultyBits(hash) < flagDifficultyBitsThreshold
-		},
-	)
+// difficultyLT returns true if the given hash has a difficulty less than
+// flagDifficultyBitsThreshold.
+func difficultyLT(hash []byte) bool {
+	return protocol.MustCountDifficultyBits(hash) < flagDifficultyBitsThreshold
 }
 
-// appendRelays maps over the given observable of mined relays, checks whether
-// they should be appended to outpubBuffer by calling the given shouldAppend
-// function, and appends them to the given output buffer if it returns true. It
-// stops appending once flagFixtureLimitPerGroup number of relay fixtures have
-// been appended.
-func appendRelays(
+// getMarshaledRelayFmtLines performs two map operations followed by a collect.
+// The first map filters mined relays from the given observable, skipping when
+// shouldAccept is false. This map, and as a result, all downstream observables
+// are closed when flagFixtureLimitPerGroup number of relays have been accepted.
+// The second map then marshals, hex-encodes, and formats the filtered mined relay.
+// Finally, the collect operation collects the formatted mined relays into a slice
+// to return.
+func getMarshaledRelayFmtLines(
 	ctx context.Context,
 	randRelaysObs observable.Observable[*relayer.MinedRelay],
-	outputBuffer *bytes.Buffer,
-	shouldAppend func(hash []byte) bool,
-) {
+	shouldAccept func(hash []byte) bool,
+) string {
+	ctx, cancelFilterMapCollect := context.WithCancel(ctx)
+	filteredRelaysObs := filterLimitRelays(
+		ctx,
+		cancelFilterMapCollect,
+		flagFixtureLimitPerGroup,
+		randRelaysObs,
+		shouldAccept,
+	)
+
+	marshaledFilteredRelayLinesObs := channel.Map(
+		ctx, filteredRelaysObs,
+		newMapRelayMarshalLineFmt[*relayer.MinedRelay](relayFixtureLineFmt),
+	)
+
+	// Collect the filtered relays and return them (as a slice).
+	marshaledFilteredRelayLines := channel.Collect(ctx, marshaledFilteredRelayLinesObs)
+	return strings.Join(marshaledFilteredRelayLines, "\n")
+}
+
+// filterLimitRelays maps over the given observable of mined relays, skipping when
+// the given shouldAppend function returns false. Once flagFixtureLimitPerGroup
+// number of relay fixtures have been mapped, it calls the given cancel function.
+func filterLimitRelays(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	limit int,
+	randRelaysObs observable.Observable[*relayer.MinedRelay],
+	shouldCollect func(hash []byte) bool,
+) observable.Observable[*relayer.MinedRelay] {
 	var (
 		counterMu               sync.Mutex
 		minedRelayAcceptCounter = 0
 		minedRelayRejectCounter = 0
-		mapCtx, cancelMap       = context.WithCancel(ctx)
 	)
 
-	filteredRelaysObs := channel.Map(mapCtx, randRelaysObs,
+	return channel.Map(ctx, randRelaysObs,
 		func(
 			_ context.Context,
 			minedRelay *relayer.MinedRelay,
@@ -283,52 +260,41 @@ func appendRelays(
 			counterMu.Lock()
 			defer counterMu.Unlock()
 
-			// At the end of each iteration, check if the relayCounter has reached
-			// the limit. If so, cancel the mapCtx to stop the map operation.
-			defer func() {
-				if minedRelayAcceptCounter >= flagFixtureLimitPerGroup {
-					cancelMap()
-				}
-			}()
-
-			// Skip if shouldAppend returns false.
-			if !shouldAppend(minedRelay.Hash) {
-				minedRelayRejectCounter++
+			// At the start of each iteration, check if the relayCounter has reached
+			// the limit. If so, cancel the ctx to stop the map operation.
+			if minedRelayAcceptCounter >= limit {
+				// Wait a tick for the map to complete as the observable drains
+				// asynchronously.
+				time.Sleep(time.Millisecond)
+				cancel()
 				return nil, true
 			}
 
-			// NB: slow down map loop, when not skipping, to prevent
-			// overshooting the limit.
-			time.Sleep(10 * time.Millisecond)
+			// Skip if shouldCollect returns false.
+			if !shouldCollect(minedRelay.Hash) {
+				minedRelayRejectCounter++
+				return nil, true
+			}
 
 			minedRelayAcceptCounter++
 			return minedRelay, false
 		},
 	)
-
-	channel.ForEach(
-		ctx, filteredRelaysObs,
-		newAppendMarshalableHex[*relayer.MinedRelay](outputBuffer))
-
-	// Wait for the map operation to finish.
-	<-mapCtx.Done()
 }
 
-// newAppendMarshalableHex returns a new ForEachFn which appends the hex encoded
-// string of the given marshalable to the given buffer.
-func newAppendMarshalableHex[T marshalable](buf *bytes.Buffer) channel.ForEachFn[T] {
+// newMapRelayMarshalLineFmt returns a MapFn which formats the given marshalable
+// as a hex-encoded string with the given linePrefix.
+func newMapRelayMarshalLineFmt[T marshalable](lineFmt string) channel.MapFn[T, string] {
 	return func(
 		_ context.Context,
 		marsh T,
-	) {
+	) (_ string, skip bool) {
 		// TODO_BLOCKER: marshal using canonical codec.
 		minedRelayBz, err := marsh.Marshal()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if _, err := fmt.Fprintf(buf, "\t\t\"%x\",\n", minedRelayBz); err != nil {
-			log.Fatal(err)
-		}
+		return fmt.Sprintf(lineFmt, minedRelayBz), false
 	}
 }

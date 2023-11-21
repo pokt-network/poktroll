@@ -1,4 +1,4 @@
-//go:generate go run gen/gen_fixtures.go
+//go:generate go run gen/gen_fixtures.go gen/template.go
 
 package miner_test
 
