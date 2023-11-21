@@ -34,10 +34,10 @@ func AppGateServerCmd() *cobra.Command {
 the necessary on-chain interactions (sessions, suppliers, etc) to receive the
 respective relay response.
 
--- App Mode--
+-- App Mode --
 If the server is started with a defined 'self-signing' configuration directive,
 it will behave as an Application. Any incoming requests will be signed by using
-the private key and ring associated with the 'signing_key' directive.
+the private key and ring associated with the 'signing_key' configuration directive.
 
 -- Gateway Mode --
 If the 'self_signing' configuration directive is not provided, the server will

@@ -22,11 +22,12 @@ type AppGateConfig struct {
 	QueryNodeUrl      *url.URL
 }
 
-// ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
+// ParseAppGateConfigs parses the stake config file into a AppGateConfig
+// NOTE: If SelfSigning is not defined in the config file, it will default to false
 func ParseAppGateConfigs(configContent []byte) (*AppGateConfig, error) {
 	var yamlAppGateConfig YAMLAppGateConfig
 
-	// Unmarshal the stake config file into a stakeConfig
+	// Unmarshal the stake config file into a yamlAppGateConfig
 	if err := yaml.Unmarshal(configContent, &yamlAppGateConfig); err != nil {
 		return nil, ErrAppGateConfigUnmarshalYAML.Wrapf("%s", err)
 	}
