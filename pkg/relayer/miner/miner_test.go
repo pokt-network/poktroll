@@ -1,4 +1,6 @@
 //go:generate go run gen/gen_fixtures.go gen/template.go
+// (see: https://pkg.go.dev/cmd/go/internal/generate)
+// (see: https://go.googlesource.com/proposal/+/refs/heads/master/design/go-generate.md)
 
 package miner_test
 
@@ -21,6 +23,12 @@ import (
 
 const testDifficulty = 16
 
+// TestMiner_MinedRelays constructs an observable of mined relays, through which
+// it pipes pre-mined relay fixtures. It asserts that the observable only emits
+// mined relays with difficulty equal to or greater than testDifficulty.
+//
+// To regenerate all fixtures, use `make go_fixturegen`; to regenerate only this
+// test's fixtures run `go generate ./pkg/relayer/miner/miner_test.go`.
 func TestMiner_MinedRelays(t *testing.T) {
 	var (
 		minedRelayCounter                     = 0
