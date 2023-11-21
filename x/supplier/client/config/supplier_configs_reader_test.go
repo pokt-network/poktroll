@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/config"
 )
@@ -45,8 +46,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-					    timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		{
 			desc: "services_test: valid service config without endpoint config",
@@ -67,7 +68,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  endpoints:
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
-			`,
+				`,
 		},
 		{
 			desc: "services_test: valid service config with empty endpoint config",
@@ -90,7 +91,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-			`,
+				`,
 		},
 		{
 			desc: "services_test: valid service config with multiple endpoints",
@@ -128,12 +129,12 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-					    timeout: 10
+				      timeout: 10
 				  - url: http://pokt.network:8082
 				    rpc_type: json_rpc
 				    config:
-					    timeout: 11
-			`,
+				      timeout: 11
+				`,
 		},
 		{
 			desc: "services_test: valid service config with multiple services",
@@ -176,14 +177,14 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-					    timeout: 10
+				      timeout: 10
 				- service_id: svc2
 				  endpoints:
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-					    timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		// Invalid Configs
 		{
@@ -194,8 +195,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-						  timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		{
 			desc: "services_test: invalid service config with empty service ID",
@@ -206,8 +207,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-						  timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		{
 			desc: "services_test: invalid service config without endpoints",
@@ -222,7 +223,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 			config: `
 				- service_id: svc
 				  endpoints:
-			`,
+				`,
 		},
 		{
 			desc: "services_test: invalid service config with unknown endpoint config key",
@@ -233,8 +234,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: json_rpc
 				    config:
-						  somekey: 10
-			`,
+				      somekey: 10
+				`,
 		},
 		{
 			desc: "services_test: invalid service config with unknown endpoint rpc type",
@@ -245,8 +246,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: http://pokt.network:8081
 				    rpc_type: somerpc
 				    config:
-						  timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		{
 			desc: "services_test: invalid service config with invalid endpoint url",
@@ -257,8 +258,8 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 				  - url: ::invalid_url
 				    rpc_type: json_rpc
 				    config:
-						  timeout: 10
-			`,
+				      timeout: 10
+				`,
 		},
 		{
 			desc:   "services_test: invalid service config with empty content",
@@ -269,7 +270,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := config.NormalizeYAMLIndentation(tt.config)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.config)
 			supplierServiceConfig, err := config.ParseSupplierConfigs([]byte(normalizedConfig))
 
 			if tt.err != nil {
