@@ -17,8 +17,6 @@ type zapEvent struct {
 	logger      *zap.Logger
 	level       zapcore.Level
 	fields      []zapcore.Field
-	fnMu        sync.Mutex
-	fn          func(polylog.Event)
 	discardedMu sync.Mutex
 	discarded   bool
 }
@@ -107,13 +105,7 @@ func (zae *zapEvent) Err(err error) polylog.Event {
 
 func (zae *zapEvent) Timestamp() polylog.Event {
 	// TODO_IMPROVE: the key should be configurable via an option.
-
-	// TODO_TECHDEBT/TODO_CONSIDERATION: if it's possible to alter the zap logger's configuration
-	// such that the persistent timestamp is not included, then this should no
-	// longer be a no-op.
-
-	// no-op, timestamp is always included.
-
+	zae.fields = append(zae.fields, zap.Time("timestamp", time.Now()))
 	return zae
 }
 
@@ -156,12 +148,6 @@ func (zae *zapEvent) Discard() polylog.Event {
 }
 
 func (zae *zapEvent) Msg(msg string) {
-	zae.fnMu.Lock()
-	defer zae.fnMu.Unlock()
-
-	if zae.fn != nil {
-
-	}
 	zae.log(msg, zae.fields...)
 }
 

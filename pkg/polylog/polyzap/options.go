@@ -9,13 +9,13 @@ import (
 )
 
 func WithOutput(output io.Writer) polylog.LoggerOption {
-	return func(ul polylog.PolyLogger) {
+	return func(ul polylog.Logger) {
 		ul.(*zapULogger).writeSyncer = zapcore.AddSync(output)
 	}
 }
 
 func WithLevel(level zapcore.Level) polylog.LoggerOption {
-	return func(ul polylog.PolyLogger) {
+	return func(ul polylog.Logger) {
 		ul.(*zapULogger).level = level
 	}
 }

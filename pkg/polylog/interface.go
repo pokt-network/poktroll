@@ -8,7 +8,7 @@ import "time"
 // TODO_INVESTIGATE: check whether the pkg dependency tree includes all logging
 // libraries.
 
-type PolyLogger interface {
+type Logger interface {
 	Debug() Event
 	Info() Event
 	Warn() Event
@@ -35,6 +35,7 @@ type Event interface {
 	Time(key string, value time.Time) Event
 	Dur(key string, value time.Duration) Event
 
+	// Fields ... fields is expected to either be a map or a slice.
 	//Fields(fields any) Event
 	Func(func(Event)) Event
 
@@ -43,7 +44,6 @@ type Event interface {
 	Enabled() bool
 	// Discard disables the event so it won't print
 	Discard() Event
-	// Fields ... fields is expected to either be a map or a slice.
 
 	Msg(message string)
 	Msgf(format string, v ...interface{})

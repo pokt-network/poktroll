@@ -14,9 +14,9 @@ type zerologULogger struct {
 }
 
 // TODO_IN_THIS_COMMIT: how to configure level?
-func NewUniversalLogger(
+func NewLogger(
 	opts ...polylog.LoggerOption,
-) polylog.PolyLogger {
+) polylog.Logger {
 	ze := &zerologULogger{
 		// Default to global  zerolog logger; stderr with timestamp.
 		Logger: log.Logger,

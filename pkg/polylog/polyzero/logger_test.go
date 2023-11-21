@@ -3,124 +3,152 @@ package polyzero_test
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
+	"github.com/rs/zerolog"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/testpolylog"
 )
 
 var (
-	expectedTime           = time.Now()
-	expectedDuration       = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
-	expectedDurationString = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
-	expectedMsgs           = []string{
-		"Msg",
-		"Msgf",
-		`"Str":"str_value"`,
-		`"Bool":true`,
-		`"Int":42`,
-		`"Int8":42`,
-		`"Int16":42`,
-		`"Int32":42`,
-		`"Int64":42`,
-		`"Uint":42`,
-		`"Uint8":42`,
-		`"Uint16":42`,
-		`"Uint32":42`,
-		`"Uint64":42`,
-		`"Float32":420.69`,
-		`"Float64":420.69`,
-		`"error":"42"`,
-		//`"Func":"0x"`,
-		fmt.Sprintf(`"time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
-		fmt.Sprintf(`"Time":"%s"`, expectedTime.Format(expectedTimestampLayout)),
-		fmt.Sprintf(`"Dur":%s`, expectedDurationString),
-		//`"Fields":"map[key1:value1 key2:value2]"`,
-		"", // polylog.Event#Func() prints a line with the level only: `{"level":"debug"}`, this is zerolog behavior.
-	}
-	expectedTimestampLayout = "2006-01-02T15:04:05-07:00"
+	expectedTime                   = time.Now()
+	expectedTimestampLayout        = "2006-01-02T15:04:05-07:00"
+	expectedTimestampEventContains = fmt.Sprintf(`"time":"%s"`, expectedTime.Format(expectedTimestampLayout))
+	expectedTimeEventContains      = fmt.Sprintf(`"Time":"%s"`, expectedTime.Format(expectedTimestampLayout))
+	expectedDuration               = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
+	expectedDurationString         = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
+	expectedDurationEventContains  = fmt.Sprintf(`"Dur":%s`, expectedDurationString)
 )
 
-// TODO_IN_THIS_COMMIT: comment...
-type funcMethodSpy struct{ mock.Mock }
+func TestZerologPolyLogger_AllLevels_AllEventMethods(t *testing.T) {
+	tests := []testpolylog.EventMethodsTest{
+		{
+			Msg:                    "Msg",
+			ExpectedOutputContains: "Msg",
+		},
+		{
+			MsgFmt:                 "%s",
+			MsgFmtArgs:             []any{"Msgf"},
+			ExpectedOutputContains: "Msgf",
+		},
+		{
+			Key:                    "Str",
+			Value:                  "str_value",
+			ExpectedOutputContains: `"Str":"str_value"`,
+		},
+		{
+			Key:                    "Bool",
+			Value:                  true,
+			ExpectedOutputContains: `"Bool":true`,
+		},
+		{
+			Key:                    "Int",
+			Value:                  int(42),
+			ExpectedOutputContains: `"Int":42`,
+		},
+		{
+			Key:                    "Int8",
+			Value:                  int8(42),
+			ExpectedOutputContains: `"Int8":42`,
+		},
+		{
+			Key:                    "Int16",
+			Value:                  int16(42),
+			ExpectedOutputContains: `"Int16":42`,
+		},
+		{
+			Key:                    "Int32",
+			Value:                  int32(42),
+			ExpectedOutputContains: `"Int32":42`,
+		},
+		{
+			Key:                    "Int64",
+			Value:                  int64(42),
+			ExpectedOutputContains: `"Int64":42`,
+		},
+		{
+			Key:                    "Uint",
+			Value:                  uint(42),
+			ExpectedOutputContains: `"Uint":42`,
+		},
+		{
+			Key:                    "Uint8",
+			Value:                  uint8(42),
+			ExpectedOutputContains: `"Uint8":42`,
+		},
+		{
+			Key:                    "Uint16",
+			Value:                  uint16(42),
+			ExpectedOutputContains: `"Uint16":42`,
+		},
+		{
+			Key:                    "Uint32",
+			Value:                  uint32(42),
+			ExpectedOutputContains: `"Uint32":42`,
+		},
+		{
+			Key:                    "Uint64",
+			Value:                  uint64(42),
+			ExpectedOutputContains: `"Uint64":42`,
+		},
+		{
+			Key:                    "Float32",
+			Value:                  float32(420.69),
+			ExpectedOutputContains: `"Float32":420.69`,
+		},
+		{
+			Key:                    "Float64",
+			Value:                  float64(420.69),
+			ExpectedOutputContains: `"Float64":420.69`,
+		},
+		{
+			EventMethodName:        "Err",
+			Value:                  fmt.Errorf("%d", 42),
+			ExpectedOutputContains: `"error":"42"`,
+		},
+		{
+			EventMethodName:        "Timestamp",
+			ExpectedOutputContains: expectedTimestampEventContains,
+		},
+		{
+			Key:                    "Time",
+			Value:                  expectedTime,
+			ExpectedOutputContains: expectedTimeEventContains,
+		},
+		{
+			Key:                    "Dur",
+			Value:                  expectedDuration,
+			ExpectedOutputContains: expectedDurationEventContains,
+		},
+	}
 
-// TODO_IN_THIS_COMMIT: comment...
-func (m *funcMethodSpy) Fn(event polylog.Event) {
-	m.Called(event)
+	levels := []zerolog.Level{
+		zerolog.DebugLevel,
+		zerolog.InfoLevel,
+		zerolog.WarnLevel,
+		zerolog.ErrorLevel,
+	}
+
+	// TODO_IN_THIS_COMMIT: comment...
+	for _, level := range levels {
+		testpolylog.RunEventMethodTests(t, level.String(), tests, newLoggerFn)
+	}
 }
 
-func TestZerologULogger(t *testing.T) {
+func newLoggerFn() (polylog.Logger, *bytes.Buffer) {
 	// Redirect standard log output to logOutput buffer.
 	logOutput := new(bytes.Buffer)
 	outputOpt := polyzero.WithOutput(logOutput)
 
 	// TODO_IN_THIS_COMMIT: configuration ... debug level for this test
-	logger := polyzero.NewUniversalLogger(outputOpt)
+	logger := polyzero.NewLogger(outputOpt)
 
-	logger.Debug().Msg("Msg")
-	logger.Debug().Msgf("%s", "Msgf")
-	logger.Debug().Str("Str", "str_value").Send()
-	logger.Debug().Bool("Bool", true).Send()
-	logger.Debug().Int("Int", 42).Send()
-	logger.Debug().Int8("Int8", 42).Send()
-	logger.Debug().Int16("Int16", 42).Send()
-	logger.Debug().Int32("Int32", 42).Send()
-	logger.Debug().Int64("Int64", 42).Send()
-	logger.Debug().Uint("Uint", 42).Send()
-	logger.Debug().Uint8("Uint8", 42).Send()
-	logger.Debug().Uint16("Uint16", 42).Send()
-	logger.Debug().Uint32("Uint32", 42).Send()
-	logger.Debug().Uint64("Uint64", 42).Send()
-	logger.Debug().Float32("Float32", 420.69).Send()
-	logger.Debug().Float64("Float64", 420.69).Send()
-	logger.Debug().Err(fmt.Errorf("%d", 42)).Send()
-	logger.Debug().Timestamp().Send()
-	logger.Debug().Time("Time", expectedTime).Send()
-	logger.Debug().Dur("Dur", expectedDuration).Send()
-	//logger.Debug().Fields(map[string]string{
-	//	"key1": "value1",
-	//	"key2": "value2",
-	//}).Send()
-
-	// TODO_IN_THIS_COMMIT: comment...
-	funcSpy := funcMethodSpy{}
-	funcSpy.On("Fn", mock.AnythingOfType("*polyzero.zerologEvent")).Return()
-
-	logger.Debug().Func(funcSpy.Fn).Send()
-
-	// TODO:
-	// .Enabled()
-	// .Discard()
-
-	// Assert that the log output contains the expected messages. Split the log
-	// output into lines and iterate over them.
-	lines := strings.Split(logOutput.String(), "\n")
-	lines = lines[:len(lines)-1] // Remove last empty line.
-	// Assert that the log output contains the expected number of lines.
-	// Intentionally not using `require` to provide additional error context.
-	assert.Lenf(
-		t, lines,
-		len(expectedMsgs),
-		"log output should contain %d lines, got: %d",
-		len(expectedMsgs), len(lines),
-	)
-
-	for lineIdx, line := range lines {
-		// Assert that each line contains the expected prefix.
-		require.Contains(t, line, `"level":"debug"`)
-
-		expectedMsg := expectedMsgs[lineIdx]
-		require.Contains(t, line, expectedMsg)
-	}
-
-	// Assert that the Func field contains the expected value.
-	// TODO_IN_THIS_COMMIT: add coverage of an zerologEvent which is disabled,
-	// asserting that `Fn` is not called!
-	funcSpy.AssertCalled(t, "Fn", mock.AnythingOfType("*polyzero.zerologEvent"))
+	return logger, logOutput
 }
+
+// TODO_TEST: that exactly all expected levels log at each level.
+
+// TODO_TEST: #Enabled() and #Discard()

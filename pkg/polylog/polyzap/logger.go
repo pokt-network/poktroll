@@ -9,7 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-var _ polylog.PolyLogger = (*zapULogger)(nil)
+var _ polylog.Logger = (*zapULogger)(nil)
 
 type zapULogger struct {
 	// NB: Default (0) is Info.
@@ -21,9 +21,9 @@ type zapULogger struct {
 	logger        *zap.Logger
 }
 
-func NewPolyLogger(
+func NewLogger(
 	opts ...polylog.LoggerOption,
-) polylog.PolyLogger {
+) polylog.Logger {
 	ze := &zapULogger{}
 
 	for _, opt := range opts {
