@@ -100,7 +100,7 @@ genesis:
             - endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
-                  url: http://anvil:8547
+                  url: http://0.0.0.0:8547
               service:
                 id: anvil
                 name: ""
