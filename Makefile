@@ -288,7 +288,7 @@ app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
 
 .PHONY: app2_stake
-app2_stake: ## Stake app3
+app2_stake: ## Stake app2
 	APP=app2 SERVICES=application2_stake_config.yaml make app_stake
 
 .PHONY: app3_stake

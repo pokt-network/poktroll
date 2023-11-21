@@ -36,7 +36,7 @@ func ParseSupplierConfigs(configContent []byte) ([]*sharedtypes.SupplierServiceC
 	}
 
 	// Prepare the supplierServiceConfig
-	supplierServiceConfig := []*sharedtypes.SupplierServiceConfig{}
+	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig))
 
 	// Populate the services slice
 	for _, svc := range stakeConfig {

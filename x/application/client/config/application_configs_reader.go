@@ -4,6 +4,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // YAMLApplicationConfig is the structure describing a single service stake entry in the stake config file
@@ -12,26 +13,37 @@ type YAMLApplicationConfig struct {
 }
 
 // ParseApplicationConfig parses the stake config file and returns a slice of serviceIds
-func ParseApplicationConfigs(configContent []byte) ([]string, error) {
-	var applicationServiceConfig YAMLApplicationConfig
+func ParseApplicationConfigs(configContent []byte) ([]*sharedtypes.ApplicationServiceConfig, error) {
+	var parsedAppConfig YAMLApplicationConfig
 
 	// Unmarshal the stake config file into a applicationServiceConfig
-	if err := yaml.Unmarshal(configContent, &applicationServiceConfig); err != nil {
+	if err := yaml.Unmarshal(configContent, &parsedAppConfig); err != nil {
 		return nil, ErrApplicationConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if len(applicationServiceConfig.ServiceIds) == 0 {
+	if len(parsedAppConfig.ServiceIds) == 0 {
 		return nil, ErrApplicationConfigEmptyContent
 	}
 
-	serviceIds := make([]string, 0, len(applicationServiceConfig.ServiceIds))
-	for _, serviceId := range applicationServiceConfig.ServiceIds {
+	// Prepare the applicationServiceConfig
+	applicationServiceConfig := make(
+		[]*sharedtypes.ApplicationServiceConfig,
+		0,
+		len(parsedAppConfig.ServiceIds),
+	)
+
+	for _, serviceId := range parsedAppConfig.ServiceIds {
 		// Validate serviceId
 		if !sharedhelpers.IsValidServiceId(serviceId) {
 			return nil, ErrApplicationConfigInvalidServiceId.Wrapf("%s", serviceId)
 		}
-		serviceIds = append(serviceIds, serviceId)
+
+		appServiceConfig := &sharedtypes.ApplicationServiceConfig{
+			Service: &sharedtypes.Service{Id: serviceId},
+		}
+
+		applicationServiceConfig = append(applicationServiceConfig, appServiceConfig)
 	}
 
-	return serviceIds, nil
+	return applicationServiceConfig, nil
 }

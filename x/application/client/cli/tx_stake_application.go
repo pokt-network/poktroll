@@ -22,10 +22,9 @@ var (
 func CmdStakeApplication() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		// TODO_HACK: For now we are only specifying the service IDs as a list of of strings separated by commas.
 		// This needs to be expand to specify the full ApplicationServiceConfig. Furthermore, providing a flag to
 		// a file where ApplicationServiceConfig specifying full service configurations in the CLI by providing a flag that accepts a JSON string
-		Use:   "stake-application <upokt_amount> --config stake_config.yaml",
+		Use:   "stake-application <upokt_amount> --config <config_file.yaml>",
 		Short: "Stake an application",
 		Long: `Stake an application with the provided parameters. This is a broadcast operation that
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
@@ -50,7 +49,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt 
 				return err
 			}
 
-			serviceIds, err := config.ParseApplicationConfigs(configContent)
+			appStakeConfigs, err := config.ParseApplicationConfigs(configContent)
 			if err != nil {
 				return err
 			}
@@ -58,7 +57,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt 
 			msg := types.NewMsgStakeApplication(
 				clientCtx.GetFromAddress().String(),
 				stake,
-				serviceIds,
+				appStakeConfigs,
 			)
 
 			if err := msg.ValidateBasic(); err != nil {
