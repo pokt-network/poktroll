@@ -64,24 +64,24 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.config)
-			serviceIds, err := config.ParseApplicationConfigs([]byte(normalizedConfig))
+			appServiceConfig, err := config.ParseApplicationConfigs([]byte(normalizedConfig))
 
 			if tt.err != nil {
 				require.Error(t, err)
-				require.Nil(t, serviceIds)
+				require.Nil(t, appServiceConfig)
 				stat, ok := status.FromError(tt.err)
 				require.True(t, ok)
 				require.Contains(t, stat.Message(), tt.err.Error())
-				require.Nil(t, serviceIds)
+				require.Nil(t, appServiceConfig)
 				return
 			}
 
 			require.NoError(t, err)
 
-			log.Printf("serviceIds: %v", serviceIds)
-			require.Equal(t, len(tt.expected), len(serviceIds))
+			log.Printf("serviceIds: %v", appServiceConfig)
+			require.Equal(t, len(tt.expected), len(appServiceConfig))
 			for i, expected := range tt.expected {
-				require.Equal(t, expected, serviceIds[i])
+				require.Equal(t, expected.Service.Id, appServiceConfig[i].Service.Id)
 			}
 		})
 	}
