@@ -21,7 +21,7 @@ spec:
         - name: POCKET_NODE
           value: tcp://${NAMESPACE}-sequencer:36657
         - name: E2E_DEBUG_OUTPUT
-          value: "false" # Flip to true to see the command and result of the execution
+          value: "true" # Flip to true to see the command and result of the execution
         - name: POKTROLLD_HOME
           value: /root/.pocket
         - name: CELESTIA_HOSTNAME
