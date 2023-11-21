@@ -11,11 +11,11 @@ type YAMLApplicationConfig struct {
 	ServiceIds []string `yaml:"service_ids"`
 }
 
-// ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
+// ParseApplicationConfig parses the stake config file and returns a slice of serviceIds
 func ParseApplicationConfigs(configContent []byte) ([]string, error) {
 	var applicationServiceConfig YAMLApplicationConfig
 
-	// Unmarshal the stake config file into a stakeConfig
+	// Unmarshal the stake config file into a applicationServiceConfig
 	if err := yaml.Unmarshal(configContent, &applicationServiceConfig); err != nil {
 		return nil, ErrApplicationConfigUnmarshalYAML.Wrapf("%s", err)
 	}
