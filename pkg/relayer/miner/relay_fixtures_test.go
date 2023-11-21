@@ -1,3 +1,5 @@
+// To regenerate all fixtures, use make go_fixturegen; to regenerate only this
+// test's fixtures run go generate ./pkg/relayer/miner/miner_test.go.
 package miner_test
 
 var (
