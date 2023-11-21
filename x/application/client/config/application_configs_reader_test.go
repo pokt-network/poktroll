@@ -49,7 +49,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			err:  config.ErrApplicationConfigInvalidServiceId,
 			config: `
 				service_ids:
-			`,
+				`,
 		},
 		{
 			desc: "application_staking_config_test: invalid serviceId",

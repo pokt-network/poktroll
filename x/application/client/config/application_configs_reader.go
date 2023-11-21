@@ -12,7 +12,7 @@ type YAMLApplicationConfig struct {
 	ServiceIds []string `yaml:"service_ids"`
 }
 
-// ParseApplicationConfig parses the stake config file and returns a slice of serviceIds
+// ParseApplicationConfig parses the stake config file and returns a slice of ApplicationServiceConfig
 func ParseApplicationConfigs(configContent []byte) ([]*sharedtypes.ApplicationServiceConfig, error) {
 	var parsedAppConfig YAMLApplicationConfig
 
