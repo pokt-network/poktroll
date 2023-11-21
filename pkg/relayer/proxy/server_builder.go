@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"log"
-	"net/url"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -42,17 +41,17 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			url, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			supplierEndpointHost := url.Host
+			// TODO: Move `supplierEndpointHost` into a separate config file (similar to current chains.json)
+			// the endpoint from blockchain state should only be used to advertise the endpoint to the internet.
+			// This endpoing however should not be used to determine the network interface to bind the port on.
+			// supplierEndpointHost := url.Host
+			supplierEndpointHost := "0.0.0.0:8545"
 
 			var server relayer.RelayServer
 
 			log.Printf(
-				"INFO: starting relay server for service %s at endpoint %s",
-				service.Id, endpoint.Url,
+				"INFO: starting relay server for service %s at endpoint %s (listening for connections on %s)",
+				service.Id, endpoint.Url, supplierEndpointHost,
 			)
 
 			// Switch to the RPC type to create the appropriate RelayServer
