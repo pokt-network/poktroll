@@ -366,20 +366,14 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the SUP
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake
