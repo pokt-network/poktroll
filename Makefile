@@ -360,27 +360,27 @@ supplier_list: ## List all the staked supplier
 # TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
 # TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
-supplier_stake: ## Stake tokens for the supplier specified (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt "$(SERVICES)" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier1 SERVICES="anvil;http://localhost:8545,svc1;http://localhost:8081" make supplier_stake
+	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier2 SERVICES="anvil;http://localhost:8545,svc2;http://localhost:8082" make supplier_stake
+	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
 	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
-	SUPPLIER=supplier3 SERVICES="anvil;http://localhost:8545,svc3;http://localhost:8083" make supplier_stake
+	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
@@ -451,6 +451,45 @@ acc_balance_query_app1: ## Query the balance of app1
 acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
 
+##############
+### Claims ###
+##############
+
+# These encoded values were generated using the `encodeSessionHeader` helpers in `query_claim_test.go` as dummy values.
+ENCODED_SESSION_HEADER = "eyJhcHBsaWNhdGlvbl9hZGRyZXNzIjoicG9rdDFleXJuNDUwa3JoZnpycmVyemd0djd2c3J4bDA5NDN0dXN4azRhayIsInNlcnZpY2UiOnsiaWQiOiJhbnZpbCIsIm5hbWUiOiIifSwic2Vzc2lvbl9zdGFydF9ibG9ja19oZWlnaHQiOiI1Iiwic2Vzc2lvbl9pZCI6InNlc3Npb25faWQxIiwic2Vzc2lvbl9lbmRfYmxvY2tfaGVpZ2h0IjoiOSJ9"
+ENCODED_ROOT_HASH = "cm9vdF9oYXNo"
+.PHONY: claim_create_dummy
+claim_create_dummy: ## Create a dummy claim by supplier1
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier create-claim \
+	$(ENCODED_SESSION_HEADER) \
+	$(ENCODED_ROOT_HASH) \
+	--from supplier1 --node $(POCKET_NODE)
+
+.PHONY: claims_list
+claim_list: ## List all the claims
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --node $(POCKET_NODE)
+
+.PHONY: claims_list_address
+claim_list_address: ## List all the claims for a specific address (specified via ADDR variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --supplier-address $(ADDR) --node $(POCKET_NODE)
+
+.PHONY: claims_list_address_supplier1
+claim_list_address_supplier1: ## List all the claims for supplier1
+	SUPPLIER1=$$(make poktrolld_addr ACC_NAME=supplier1) && \
+	ADDR=$$SUPPLIER1 make claim_list_address
+
+.PHONY: claim_list_height
+claim_list_height: ## List all the claims ending at a specific height (specified via HEIGHT variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-end-height $(HEIGHT) --node $(POCKET_NODE)
+
+.PHONY: claim_list_height_5
+claim_list_height_5: ## List all the claims at height 5
+	HEIGHT=5 make claim_list_height
+
+.PHONY: claim_list_session
+claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
+	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+
 ######################
 ### Ignite Helpers ###
 ######################
@@ -487,4 +526,4 @@ openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
-	@echo $(shell poktrolld keys show -a $(ACC_NAME))
+	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))

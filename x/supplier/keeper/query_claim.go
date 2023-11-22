@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"context"
+	"encoding/binary"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,19 +19,55 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var claims []types.Claim
 	ctx := sdk.UnwrapSDKContext(goCtx)
-
 	store := ctx.KVStore(k.storeKey)
-	claimStore := prefix.NewStore(store, types.KeyPrefix(types.ClaimKeyPrefix))
 
+	// isCustomIndex is used to determined if we'll be using the store that points
+	// to the actual Claim values, or a secondary index that points to the primary keys.
+	var isCustomIndex bool
+	var keyPrefix []byte
+	switch filter := req.Filter.(type) {
+	case *types.QueryAllClaimsRequest_SupplierAddress:
+		isCustomIndex = true
+		keyPrefix = types.KeyPrefix(types.ClaimSupplierAddressPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SupplierAddress)...)
+
+	case *types.QueryAllClaimsRequest_SessionEndHeight:
+		isCustomIndex = true
+		heightBz := make([]byte, 8)
+		binary.BigEndian.PutUint64(heightBz, filter.SessionEndHeight)
+
+		keyPrefix = types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
+		keyPrefix = append(keyPrefix, heightBz...)
+
+	case *types.QueryAllClaimsRequest_SessionId:
+		isCustomIndex = false
+		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
+		keyPrefix = append(keyPrefix, []byte(filter.SessionId)...)
+
+	default:
+		isCustomIndex = false
+		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
+	}
+	claimStore := prefix.NewStore(store, keyPrefix)
+
+	var claims []types.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
-		var claim types.Claim
-		if err := k.cdc.Unmarshal(value, &claim); err != nil {
-			return err
+		if isCustomIndex {
+			// We retrieve the primaryKey, and need to query the actual Claim before decoding it.
+			claim, claimFound := k.getClaimByPrimaryKey(ctx, value)
+			if claimFound {
+				claims = append(claims, claim)
+			}
+		} else {
+			// The value is an encoded Claim.
+			var claim types.Claim
+			if err := k.cdc.Unmarshal(value, &claim); err != nil {
+				return err
+			}
+			claims = append(claims, claim)
 		}
 
-		claims = append(claims, claim)
 		return nil
 	})
 
@@ -44,14 +82,20 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
+
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	val, found := k.GetClaim(
 		ctx,
-		req.Index,
+		req.SessionId,
+		req.SupplierAddress,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("claim not found for session %s and supplier %s", req.SessionId, req.SupplierAddress))
 	}
 
 	return &types.QueryGetClaimResponse{Claim: val}, nil

@@ -3,6 +3,9 @@
 //go:generate mockgen -destination=../../testutil/mockrelayer/session/query_client.go -package=mocksession github.com/pokt-network/poktroll/x/session/types QueryClient
 //go:generate mockgen -destination=../../testutil/mockrelayer/supplier/query_client.go -package=mocksupplier github.com/pokt-network/poktroll/x/supplier/types QueryClient
 //go:generate mockgen -destination=../../testutil/mockrelayer/keyring/keyring.go -package=mockkeyring github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
+//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_proxy_mock.go -package=mockrelayer . RelayerProxy
+//go:generate mockgen -destination=../../testutil/mockrelayer/miner_mock.go -package=mockrelayer . Miner
+//go:generate mockgen -destination=../../testutil/mockrelayer/relayer_sessions_manager_mock.go -package=mockrelayer . RelayerSessionsManager
 
 package relayer
 
@@ -13,7 +16,7 @@ import (
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/x/service/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -30,14 +33,28 @@ type TxClientContext client.Context
 // to the dependency injector
 type QueryClientContext client.Context
 
+// RelaysObservable is an observable which is notified with Relay values.
+//
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. RelaysObservable = observable.Observable[*servicetypes.Relay]).
+type RelaysObservable observable.Observable[*servicetypes.Relay]
+
+// MinedRelaysObservable is an observable which is notified with MinedRelay values.
+//
+// TODO_HACK: The purpose of this type is to work around gomock's lack of
+// support for generic types. For the same reason, this type cannot be an
+// alias (i.e. MinedRelaysObservable = observable.Observable[*MinedRelay]).
+type MinedRelaysObservable observable.Observable[*MinedRelay]
+
 // Miner is responsible for observing servedRelayObs, hashing and checking the
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 type Miner interface {
 	MinedRelays(
 		ctx context.Context,
-		servedRelayObs observable.Observable[*types.Relay],
-	) (minedRelaysObs observable.Observable[*MinedRelay])
+		servedRelayObs RelaysObservable,
+	) (minedRelaysObs MinedRelaysObservable)
 }
 
 type MinerOption func(Miner)
@@ -57,7 +74,7 @@ type RelayerProxy interface {
 	// ServedRelays returns an observable that notifies the miner about the relays that have been served.
 	// A served relay is one whose RelayRequest's signature and session have been verified,
 	// and its RelayResponse has been signed and successfully sent to the client.
-	ServedRelays() observable.Observable[*types.Relay]
+	ServedRelays() RelaysObservable
 
 	// VerifyRelayRequest is a shared method used by RelayServers to check the
 	// relay request signature and session validity.
@@ -65,7 +82,7 @@ type RelayerProxy interface {
 	// that should not be responsible for verifying relay requests.
 	VerifyRelayRequest(
 		ctx context.Context,
-		relayRequest *types.RelayRequest,
+		relayRequest *servicetypes.RelayRequest,
 		service *sharedtypes.Service,
 	) error
 
@@ -73,7 +90,7 @@ type RelayerProxy interface {
 	// and append the signature to the RelayResponse.
 	// TODO_TECHDEBT(@red-0ne): This method should be moved out of the RelayerProxy interface
 	// that should not be responsible for signing relay responses.
-	SignRelayResponse(relayResponse *types.RelayResponse) error
+	SignRelayResponse(relayResponse *servicetypes.RelayResponse) error
 }
 
 type RelayerProxyOption func(RelayerProxy)
@@ -101,7 +118,7 @@ type RelayServer interface {
 type RelayerSessionsManager interface {
 	// InsertRelays receives an observable of relays that should be included
 	// in their respective session's SMST (tree).
-	InsertRelays(minedRelaysObs observable.Observable[*MinedRelay])
+	InsertRelays(minedRelaysObs MinedRelaysObservable)
 
 	// Start iterates over the session trees at the end of each, respective, session.
 	// The session trees are piped through a series of map operations which progress

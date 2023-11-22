@@ -1,0 +1,11 @@
+# TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
+# TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
+# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
+- service_id: anvil
+  endpoints:
+  - url: http://anvil:8547
+    rpc_type: json_rpc
+- service_id: svc1
+  endpoints:
+  - url: http://lovalhost:8081
+    rpc_type: json_rpc

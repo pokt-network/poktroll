@@ -21,7 +21,7 @@ var (
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
-	defaultRelayDifficulty = 0
+	defaultRelayDifficultyBits = 0
 )
 
 // Miner is responsible for observing servedRelayObs, hashing and checking the
@@ -61,12 +61,17 @@ func NewMiner(
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (mnr *miner) MinedRelays(
 	ctx context.Context,
-	servedRelaysObs observable.Observable[*servicetypes.Relay],
-) observable.Observable[*relayer.MinedRelay] {
+	servedRelaysObs relayer.RelaysObservable,
+) relayer.MinedRelaysObservable {
+	// NB: must cast back to generic observable type to use with Map.
+	// relayer.RelaysObervable cannot be an alias due to gomock's lack of
+	// support for generic types.
+	relaysObs := observable.Observable[*servicetypes.Relay](servedRelaysObs)
+
 	// Map servedRelaysObs to a new observable of an either type, populated with
 	// the minedRelay or an error. It is notified after the relay has been mined
 	// or an error has been encountered, respectively.
-	eitherMinedRelaysObs := channel.Map(ctx, servedRelaysObs, mnr.mapMineRelay)
+	eitherMinedRelaysObs := channel.Map(ctx, relaysObs, mnr.mapMineRelay)
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherMinedRelaysObs))
 
 	return filter.EitherSuccess(ctx, eitherMinedRelaysObs)
@@ -102,7 +107,7 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if !protocol.BytesDifficultyGreaterThan(relayHash, defaultRelayDifficulty) {
+	if protocol.MustCountDifficultyBits(relayHash) < defaultRelayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 

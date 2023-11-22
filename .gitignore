@@ -61,6 +61,12 @@ localnet_config.yaml
 # Relase artifacts produced by `ignite chain build --release`
 release
 
+# Only keep one go module in our codebase
+go.work.sum
+
+# Avoid accidentally committing gomock artifacts
+**/gomock_reflect_*
+
 # SMT KVStore files
 # TODO_TECHDEBT(#126, @red-0ne):  Rename `smt` to `smt_stores` and make it configurable so it can be stored anywhere on this
 smt

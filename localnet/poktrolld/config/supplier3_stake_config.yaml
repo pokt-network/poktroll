@@ -1,0 +1,8 @@
+- service_id: anvil
+  endpoints:
+  - url: http://anvil:8547
+    rpc_type: json_rpc
+- service_id: svc1
+  endpoints:
+  - url: http://lovalhost:8083
+    rpc_type: json_rpc
