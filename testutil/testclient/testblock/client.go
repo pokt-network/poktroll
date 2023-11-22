@@ -8,6 +8,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -30,6 +31,31 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	require.NoError(t, err)
 
 	return bClient
+}
+
+// NewAnyTimesCommittedBlocksSequenceBlockClient creates a new mock BlockClient.
+// This mock BlockClient will expect any number of calls to CommittedBlocksSequence,
+// and when that call is made, it returns the given BlocksObservable.
+func NewAnyTimesCommittedBlocksSequenceBlockClient(
+	t *testing.T,
+	blocksObs observable.Observable[client.Block],
+) *mockclient.MockBlockClient {
+	t.Helper()
+
+	// Create a mock for the block client which expects the LatestBlock method to be called any number of times.
+	blockClientMock := NewAnyTimeLatestBlockBlockClient(t, nil, 0)
+
+	// Set up the mock expectation for the CommittedBlocksSequence method. When
+	// the method is called, it returns a new replay observable that publishes
+	// blocks sent on the given blocksPublishCh.
+	blockClientMock.EXPECT().
+		CommittedBlocksSequence(
+			gomock.AssignableToTypeOf(context.Background()),
+		).
+		Return(blocksObs).
+		AnyTimes()
+
+	return blockClientMock
 }
 
 // NewOneTimeCommittedBlocksSequenceBlockClient creates a new mock BlockClient.

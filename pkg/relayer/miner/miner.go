@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	_                  relayer.Miner = (*miner)(nil)
-	defaultRelayHasher               = sha256.New
+	_ relayer.Miner = (*miner)(nil)
+	// TODO_TECHDEBT(@h5law): Retrieve the relay hasher mechanism from the `smt` repo.
+	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
@@ -28,14 +29,18 @@ var (
 // difficulty of each, finally publishing those with sufficient difficulty to
 // minedRelayObs as they are applicable for relay volume.
 //
+// Available options:
+//   - WithDifficulty
+//
 // TODO_BLOCKER: The relay hashing and relay difficulty mechanisms & values must come
+// from on-chain.
 type miner struct {
 	// relayHasher is a function which returns a hash.Hash interfact type. It is
 	// used to hash serialized relays to measure their mining difficulty.
 	relayHasher func() hash.Hash
-	// relayDifficulty is the minimum difficulty that a relay must have to be
+	// relayDifficultyBits is the minimum difficulty that a relay must have to be
 	// volume / reward applicable.
-	relayDifficulty int
+	relayDifficultyBits int
 }
 
 // NewMiner creates a new miner from the given dependencies and options. It
@@ -81,7 +86,11 @@ func (mnr *miner) MinedRelays(
 // the default hasherConstructor if not.
 func (mnr *miner) setDefaults() {
 	if mnr.relayHasher == nil {
-		mnr.relayHasher = defaultRelayHasher
+		mnr.relayHasher = DefaultRelayHasher
+	}
+
+	if mnr.relayDifficultyBits == 0 {
+		mnr.relayDifficultyBits = defaultRelayDifficultyBits
 	}
 }
 
@@ -94,6 +103,7 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
+	// TODO_BLOCKER: marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
@@ -107,7 +117,7 @@ func (mnr *miner) mapMineRelay(
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
-	if protocol.MustCountDifficultyBits(relayHash) < defaultRelayDifficultyBits {
+	if protocol.MustCountDifficultyBits(relayHash) < mnr.relayDifficultyBits {
 		return either.Success[*relayer.MinedRelay](nil), true
 	}
 
