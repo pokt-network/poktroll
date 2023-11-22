@@ -16,6 +16,7 @@ func Collect[V any](
 	srcObservable observable.Observable[V],
 ) (dstCollection []V) {
 	var dstCollectionMu sync.Mutex
+	// Defer unlocking as lock is acquired immediately before returning.
 	defer dstCollectionMu.Unlock()
 
 	ForEach(ctx, srcObservable, func(ctx context.Context, src V) {
@@ -27,6 +28,7 @@ func Collect[V any](
 	// Wait for context to be done before returning.
 	<-ctx.Done()
 
+	// Lock to read from dstCollection in return.
 	dstCollectionMu.Lock()
 	return dstCollection
 }
