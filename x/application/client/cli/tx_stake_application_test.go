@@ -51,7 +51,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		address     string
 		stakeString string
 		config      string
-		err         *sdkerrors.Error
+		expectedErr *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
@@ -59,75 +59,75 @@ func TestCLI_StakeApplication(t *testing.T) {
 			address:     appAccount.Address.String(),
 			stakeString: "1000upokt",
 			config:      defaultConfig,
-			err:         nil,
+			expectedErr: nil,
 		},
 
 		// Error Paths - Address Related
 		{
-			desc: "address_test: missing address",
+			desc: "invalid: missing address",
 			// address:     "explicitly missing",
 			stakeString: "1000upokt",
 			config:      defaultConfig,
-			err:         types.ErrAppInvalidAddress,
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 		{
-			desc:        "stake application: invalid address",
+			desc:        "invalid: invalid address",
 			address:     "invalid",
 			stakeString: "1000upokt",
 			config:      defaultConfig,
-			err:         types.ErrAppInvalidAddress,
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 
 		// Error Paths - Stake Related
 		{
-			desc:    "address_test: missing stake",
+			desc:    "invalid: missing stake",
 			address: appAccount.Address.String(),
 			// stakeString: "explicitly missing",
-			config: defaultConfig,
-			err:    types.ErrAppInvalidStake,
+			config:      defaultConfig,
+			expectedErr: types.ErrAppInvalidStake,
 		},
 		{
-			desc:        "address_test: invalid stake denom",
+			desc:        "invalid: invalid stake denom",
 			address:     appAccount.Address.String(),
 			stakeString: "1000invalid",
 			config:      defaultConfig,
-			err:         types.ErrAppInvalidStake,
+			expectedErr: types.ErrAppInvalidStake,
 		},
 		{
-			desc:        "address_test: invalid stake amount (zero)",
+			desc:        "invalid: stake amount (zero)",
 			address:     appAccount.Address.String(),
 			stakeString: "0upokt",
 			config:      defaultConfig,
-			err:         types.ErrAppInvalidStake,
+			expectedErr: types.ErrAppInvalidStake,
 		},
 		{
-			desc:        "address_test: invalid stake amount (negative)",
+			desc:        "invalid: stake amount (negative)",
 			address:     appAccount.Address.String(),
 			stakeString: "-1000upokt",
 			config:      defaultConfig,
-			err:         types.ErrAppInvalidStake,
+			expectedErr: types.ErrAppInvalidStake,
 		},
 
 		// Error Paths - Service Related
 		{
-			desc:        "services_test: invalid services (empty string)",
+			desc:        "invalid: services (empty string)",
 			address:     appAccount.Address.String(),
 			stakeString: "1000upokt",
 			config:      "",
-			err:         types.ErrAppInvalidServiceConfigs,
+			expectedErr: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:        "services_test: single invalid service contains spaces",
+			desc:        "invalid: single invalid service contains spaces",
 			address:     appAccount.Address.String(),
 			stakeString: "1000upokt",
 			config: `
 				service_ids:
 				  - svc1 svc1_part2 svc1_part3
 				`,
-			err: types.ErrAppInvalidServiceConfigs,
+			expectedErr: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:        "services_test: one of two services is invalid because it contains spaces",
+			desc:        "invalid: one of two services is invalid because it contains spaces",
 			address:     appAccount.Address.String(),
 			stakeString: "1000upokt",
 			config: `
@@ -135,10 +135,10 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc1 svc1_part2
 				  - svc2
 				`,
-			err: types.ErrAppInvalidServiceConfigs,
+			expectedErr: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:        "services_test: service ID is too long (8 chars is the max)",
+			desc:        "invalid: service ID is too long (8 chars is the max)",
 			address:     appAccount.Address.String(),
 			stakeString: "1000upokt",
 			config: `
@@ -146,7 +146,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 				  - svc1,
 				  - abcdefghi
 				`,
-			err: types.ErrAppInvalidServiceConfigs,
+			expectedErr: types.ErrAppInvalidServiceConfigs,
 		},
 	}
 
@@ -174,10 +174,10 @@ func TestCLI_StakeApplication(t *testing.T) {
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeApplication(), args)
 
 			// Validate the error if one is expected
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if tt.expectedErr != nil {
+				stat, ok := status.FromError(tt.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

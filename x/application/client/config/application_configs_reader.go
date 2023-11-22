@@ -8,6 +8,7 @@ import (
 )
 
 // YAMLApplicationConfig is the structure describing a single service stake entry in the stake config file
+// TODO_DOCUMENT(@red-0ne): Add additional documentation on app config files
 type YAMLApplicationConfig struct {
 	ServiceIds []string `yaml:"service_ids"`
 }

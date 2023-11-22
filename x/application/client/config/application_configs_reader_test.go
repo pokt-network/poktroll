@@ -22,7 +22,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 	}{
 		// Valid Configs
 		{
-			desc: "application_staking_config_test: valid service staking config",
+			desc: "valid: service staking config",
 			err:  nil,
 			expected: []*sharedtypes.ApplicationServiceConfig{
 				{
@@ -40,19 +40,19 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 		},
 		// Invalid Configs
 		{
-			desc:   "application_staking_config_test: empty service staking config",
+			desc:   "invalid: empty service staking config",
 			err:    config.ErrApplicationConfigUnmarshalYAML,
 			config: ``,
 		},
 		{
-			desc: "alllication_staking_config_test: no service ids",
+			desc: "invalid: no service ids",
 			err:  config.ErrApplicationConfigInvalidServiceId,
 			config: `
 				service_ids:
 				`,
 		},
 		{
-			desc: "application_staking_config_test: invalid serviceId",
+			desc: "invalid: invalid serviceId",
 			err:  config.ErrApplicationConfigInvalidServiceId,
 			config: `
 				service_ids:
