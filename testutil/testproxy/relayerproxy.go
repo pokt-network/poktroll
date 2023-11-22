@@ -70,6 +70,19 @@ type TestBehavior struct {
 
 	SupplierKeyName string
 	supplierAddress types.AccAddress
+
+	ApplicationPrivateKey *secp256k1.PrivKey
+}
+
+func (test *TestBehavior) GetApplicationAddress() string {
+	applicationPublicKey, err := codectypes.NewAnyWithValue(test.ApplicationPrivateKey.PubKey())
+
+	require.NoError(test.t, err)
+	record := &keyringtypes.Record{Name: "app1", PubKey: applicationPublicKey}
+
+	applicationAddress, err := record.GetAddress()
+	require.NoError(test.t, err)
+	return applicationAddress.String()
 }
 
 type RelayerProxyConfig struct {
@@ -92,6 +105,7 @@ func NewRelayerProxyTestBehavior(
 		SupplierKeyName:       config.SupplierKeyName,
 		proxiedServicesConfig: config.ProxiedServicesConfig,
 		ProvidedServices:      config.ProvidedServices,
+		ApplicationPrivateKey: secp256k1.GenPrivKey(),
 	}
 
 	for _, behavior := range behaviors {
@@ -198,12 +212,42 @@ func WithSupplierDefaultBehavior(test *TestBehavior) {
 		Return(&suppliertypes.QueryGetSupplierResponse{Supplier: supplier}, nil)
 }
 
+func WithApplicationDefaultBehavior(test *TestBehavior) {
+	applicationReq := &apptypes.QueryGetApplicationRequest{Address: test.GetApplicationAddress()}
+	application := apptypes.Application{Address: test.supplierAddress.String()}
+	test.mocks.appQuerierMock.EXPECT().
+		Application(gomock.Any(), applicationReq).
+		AnyTimes().
+		Return(&apptypes.QueryGetApplicationResponse{Application: application}, nil)
+
+	test.mocks.appQuerierMock.EXPECT().
+		Application(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(nil, fmt.Errorf("key not found"))
+}
+
+func WithAccountsDefaultBehavior(test *TestBehavior) {
+	accountReq := &accounttypes.QueryAccountRequest{Address: test.GetApplicationAddress()}
+	pubKeyAny, err := codectypes.NewAnyWithValue(test.ApplicationPrivateKey.PubKey())
+	require.NoError(test.t, err)
+	accountAny, err := codectypes.NewAnyWithValue(&accounttypes.BaseAccount{
+		Address: test.supplierAddress.String(),
+		PubKey:  pubKeyAny,
+	})
+	require.NoError(test.t, err)
+	test.mocks.accountQuerierMock.EXPECT().
+		Account(gomock.Any(), accountReq).
+		AnyTimes().
+		Return(&accounttypes.QueryAccountResponse{Account: accountAny}, nil)
+}
+
 func WithKeyringDefaultBehavior(test *TestBehavior) {
-	sk := secp256k1.GenPrivKey()
-	pk, err := codectypes.NewAnyWithValue(sk.PubKey())
+	supplierPrivateKey := secp256k1.GenPrivKey()
+	supplierPublicKey, err := codectypes.NewAnyWithValue(supplierPrivateKey.PubKey())
+
 	require.NoError(test.t, err)
 
-	record := &keyringtypes.Record{Name: test.SupplierKeyName, PubKey: pk}
+	record := &keyringtypes.Record{Name: test.SupplierKeyName, PubKey: supplierPublicKey}
 
 	test.mocks.keyringMock.EXPECT().
 		Key(gomock.Eq(test.SupplierKeyName)).
@@ -219,4 +263,27 @@ func WithKeyringDefaultBehavior(test *TestBehavior) {
 	require.NoError(test.t, err)
 
 	test.supplierAddress = address
+}
+
+func WithBlockClientDefaultBehavior(test *TestBehavior) {
+	test.mocks.blockClientMock.EXPECT().
+		LatestBlock(gomock.Any()).
+		AnyTimes().
+		Return(newBlock(1))
+}
+
+type block struct {
+	height int64
+}
+
+func (b *block) Height() int64 {
+	return b.height
+}
+
+func (b *block) Hash() []byte {
+	return []byte{}
+}
+
+func newBlock(height int64) *block {
+	return &block{height: height}
 }

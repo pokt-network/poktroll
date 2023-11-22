@@ -38,6 +38,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		)
 	}
 
+	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
+		return sdkerrors.Wrap(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing application address from relay request",
+		)
+	}
+
 	// get the ring for the application address of the relay request
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
 	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
