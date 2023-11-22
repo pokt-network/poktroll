@@ -12,18 +12,31 @@ import (
 	"github.com/pokt-network/poktroll/testutil/yaml"
 )
 
-func Test_ParseAppGateConfigs(t *testing.T) {
+func Test_ParseRelayMinerConfigs(t *testing.T) {
 	tests := []struct {
-		desc     string
-		err      *sdkerrors.Error
-		expected *config.RelayMinerConfig
-		config   string
+		desc string
+
+		inputConfig string
+
+		expectedError  *sdkerrors.Error
+		expectedConfig *config.RelayMinerConfig
 	}{
 		// Valid Configs
 		{
-			desc: "relayminer_config_test: valid relay miner config",
-			err:  nil,
-			expected: &config.RelayMinerConfig{
+			desc: "valid: relay miner config",
+
+			inputConfig: `
+				query_node_url: tcp://localhost:26657
+				network_node_url: tcp://127.0.0.1:36657
+				signing_key_name: servicer1
+				proxied_service_endpoints:
+				  anvil: http://anvil:8080
+				  svc1: http://svc1:8080
+				smt_store_path: smt_stores
+				`,
+
+			expectedError: nil,
+			expectedConfig: &config.RelayMinerConfig{
 				QueryNodeUrl:   &url.URL{Scheme: "tcp", Host: "localhost:26657"},
 				NetworkNodeUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				SigningKeyName: "servicer1",
@@ -33,21 +46,12 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				},
 				SmtStorePath: "smt_stores",
 			},
-			config: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: tcp://127.0.0.1:36657
-				signing_key_name: servicer1
-				proxied_service_endpoints:
-				  anvil: http://anvil:8080
-				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
-				`,
 		},
 		// Invalid Configs
 		{
-			desc: "relayminer_config_test: invalid network node url",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: invalid network node url",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name: servicer1
@@ -56,11 +60,13 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: missing network node url",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: missing network node url",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
@@ -68,11 +74,13 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: invalid query node url",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: invalid query node url",
+
+			inputConfig: `
 				query_node_url: &tcp://localhost:26657
 				network_node_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
@@ -81,11 +89,13 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: missing query node url",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: missing query node url",
+
+			inputConfig: `
 				network_node_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
@@ -93,11 +103,13 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: missing signing key name",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: missing signing key name",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name:
@@ -106,11 +118,13 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: missing smt store path",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: missing smt store path",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name: servicer1
@@ -118,22 +132,26 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: empty proxied service endpoints",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: empty proxied service endpoints",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: invalid proxied service endpoint",
-			err:  config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
-			config: `
+			desc: "invalid: invalid proxied service endpoint",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name: servicer1
@@ -142,47 +160,53 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
 		},
 		{
-			desc: "relayminer_config_test: invalid network node url",
-			err:  config.ErrRelayMinerConfigUnmarshalYAML,
-			config: `
+			desc: "invalid: invalid network node url",
+
+			inputConfig: `
 				query_node_url: tcp://localhost:26657
 				network_node_url: &tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				`,
+
+			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
 		},
 		{
-			desc:   "relayminer_config_test: invalid relay miner config file",
-			err:    config.ErrRelayMinerConfigUnmarshalYAML,
-			config: ``,
+			desc: "invalid: empty RelayMiner config file",
+
+			inputConfig: ``,
+
+			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.config)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
 			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
 
-			if tt.err != nil {
+			if tt.expectedError != nil {
 				require.Error(t, err)
 				require.Nil(t, config)
-				stat, ok := status.FromError(tt.err)
+				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				require.Nil(t, config)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expected.QueryNodeUrl.String(), config.QueryNodeUrl.String())
-			require.Equal(t, tt.expected.NetworkNodeUrl.String(), config.NetworkNodeUrl.String())
-			require.Equal(t, tt.expected.SigningKeyName, config.SigningKeyName)
-			require.Equal(t, tt.expected.SmtStorePath, config.SmtStorePath)
-			require.Equal(t, len(tt.expected.ProxiedServiceEndpoints), len(config.ProxiedServiceEndpoints))
-			for serviceId, endpoint := range tt.expected.ProxiedServiceEndpoints {
+			require.Equal(t, tt.expectedConfig.QueryNodeUrl.String(), config.QueryNodeUrl.String())
+			require.Equal(t, tt.expectedConfig.NetworkNodeUrl.String(), config.NetworkNodeUrl.String())
+			require.Equal(t, tt.expectedConfig.SigningKeyName, config.SigningKeyName)
+			require.Equal(t, tt.expectedConfig.SmtStorePath, config.SmtStorePath)
+			require.Equal(t, len(tt.expectedConfig.ProxiedServiceEndpoints), len(config.ProxiedServiceEndpoints))
+			for serviceId, endpoint := range tt.expectedConfig.ProxiedServiceEndpoints {
 				require.Equal(t, endpoint.String(), config.ProxiedServiceEndpoints[serviceId].String())
 			}
 		})

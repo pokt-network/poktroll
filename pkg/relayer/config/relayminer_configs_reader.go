@@ -8,6 +8,7 @@ import (
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
+// TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files.
 type YAMLRelayMinerConfig struct {
 	QueryNodeUrl            string            `yaml:"query_node_url"`
 	NetworkNodeUrl          string            `yaml:"network_node_url"`
