@@ -99,6 +99,7 @@ func main() {
 	if err := relayFixturesTemplate.Execute(
 		outputBuffer,
 		map[string]any{
+			"difficultyBitsThreshold":     flagDifficultyBitsThreshold,
 			"MarshaledMinableRelaysHex":   marshaledMinableRelaysHex,
 			"MarshaledUnminableRelaysHex": marshaledUnminableRelaysHex,
 		},
@@ -286,7 +287,7 @@ func filterLimitRelays(
 }
 
 // newMapRelayMarshalLineFmt returns a MapFn which formats the given marshalable
-// as a hex-encoded string with the given linePrefix.
+// as a hex-encoded string with the given line format string.
 func newMapRelayMarshalLineFmt[T marshalable](lineFmt string) channel.MapFn[T, string] {
 	return func(
 		_ context.Context,
