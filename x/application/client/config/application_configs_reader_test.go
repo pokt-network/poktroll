@@ -15,16 +15,25 @@ import (
 
 func Test_ParseApplicationConfigs(t *testing.T) {
 	tests := []struct {
-		desc     string
-		err      *sdkerrors.Error
-		expected []*sharedtypes.ApplicationServiceConfig
-		config   string
+		desc string
+
+		inputConfig string
+
+		expectedError  *sdkerrors.Error
+		expectedConfig []*sharedtypes.ApplicationServiceConfig
 	}{
 		// Valid Configs
 		{
 			desc: "valid: service staking config",
-			err:  nil,
-			expected: []*sharedtypes.ApplicationServiceConfig{
+
+			inputConfig: `
+				service_ids:
+				  - svc1
+				  - svc2
+				`,
+
+			expectedError: nil,
+			expectedConfig: []*sharedtypes.ApplicationServiceConfig{
 				{
 					Service: &sharedtypes.Service{Id: "svc1"},
 				},
@@ -32,46 +41,47 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 					Service: &sharedtypes.Service{Id: "svc2"},
 				},
 			},
-			config: `
-				service_ids:
-				  - svc1
-				  - svc2
-				`,
 		},
 		// Invalid Configs
 		{
-			desc:   "invalid: empty service staking config",
-			err:    config.ErrApplicationConfigUnmarshalYAML,
-			config: ``,
+			desc: "invalid: empty service staking config",
+
+			inputConfig: ``,
+
+			expectedError: config.ErrApplicationConfigUnmarshalYAML,
 		},
 		{
 			desc: "invalid: no service ids",
-			err:  config.ErrApplicationConfigInvalidServiceId,
-			config: `
+
+			inputConfig: `
 				service_ids:
 				`,
+
+			expectedError: config.ErrApplicationConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid: invalid serviceId",
-			err:  config.ErrApplicationConfigInvalidServiceId,
-			config: `
+
+			inputConfig: `
 				service_ids:
 				  - sv c1
 				`,
+
+			expectedError: config.ErrApplicationConfigInvalidServiceId,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.config)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
 			appServiceConfig, err := config.ParseApplicationConfigs([]byte(normalizedConfig))
 
-			if tt.err != nil {
+			if tt.expectedError != nil {
 				require.Error(t, err)
 				require.Nil(t, appServiceConfig)
-				stat, ok := status.FromError(tt.err)
+				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				require.Nil(t, appServiceConfig)
 				return
 			}
@@ -79,8 +89,8 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			require.NoError(t, err)
 
 			log.Printf("serviceIds: %v", appServiceConfig)
-			require.Equal(t, len(tt.expected), len(appServiceConfig))
-			for i, expected := range tt.expected {
+			require.Equal(t, len(tt.expectedConfig), len(appServiceConfig))
+			for i, expected := range tt.expectedConfig {
 				require.Equal(t, expected.Service.Id, appServiceConfig[i].Service.Id)
 			}
 		})
