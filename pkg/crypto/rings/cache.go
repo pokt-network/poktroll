@@ -122,6 +122,7 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("DEBUG: Application: %+v", app)
 
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
@@ -162,6 +163,7 @@ func (rc *ringCache) addressesToPoints(
 ) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
+	log.Printf("DEBUG: Converting addresses to points: %v", addresses)
 	for i, addr := range addresses {
 		// Retrieve the account from the auth module
 		acc, err := rc.accountQuerier.GetAccount(ctx, addr)

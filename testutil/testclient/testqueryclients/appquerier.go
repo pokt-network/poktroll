@@ -14,6 +14,17 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// addressApplicationMap is a map of application addresses that are deemed to
+// exist on chain, if an address is not in this map an error will be returned
+// from the mock ApplicationQueryClient's GetApplication method.
+// The integer value is the number of delegated gateways the application is
+// delegated to, these are randomly generated addresses.
+var addressApplicationMap map[string]int
+
+func init() {
+	addressApplicationMap = make(map[string]int)
+}
+
 // NewTestApplicationQueryClient creates a mock of the ApplicationQueryClient
 // which allows the caller to call GetApplication any times and will return
 // an application with the given address.
@@ -21,20 +32,24 @@ import (
 // gateways any application returned from the GetApplication method will have.
 func NewTestApplicationQueryClient(
 	t *testing.T,
-	ctx context.Context,
-	delegateeNumber int,
 ) *mockclient.MockApplicationQueryClient {
 	ctrl := gomock.NewController(t)
 
 	applicationQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
-	applicationQuerier.EXPECT().GetApplication(gomock.Eq(ctx), gomock.Any()).
+	applicationQuerier.EXPECT().GetApplication(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
 			ctx context.Context,
 			appAddress string,
 		) (application *types.Application, err error) {
-			delegateeGatewayAddresses := make([]string, delegateeNumber)
-			for i := range delegateeGatewayAddresses {
-				delegateeGatewayAddresses[i] = sample.AccAddress()
+			delegateeNumber, ok := addressApplicationMap[appAddress]
+			if !ok {
+				return nil, apptypes.ErrAppNotFound
+			}
+			delegateeGatewayAddresses := make([]string, 0)
+			for i := 0; i < delegateeNumber; i++ {
+				gatewayAddress := sample.AccAddress()
+				delegateeGatewayAddresses = append(delegateeGatewayAddresses, gatewayAddress)
+				addAddressToAccountMap(t, gatewayAddress)
 			}
 			return &apptypes.Application{
 				Address: appAddress,
@@ -53,4 +68,19 @@ func NewTestApplicationQueryClient(
 		AnyTimes()
 
 	return applicationQuerier
+}
+
+// AddAddressToApplicationMap adds the given address to the addressApplicationMap
+// with the given number of delegated gateways. It also adds it to the
+// addressAccountMap so that the account will be deemed to exist on chain.
+func AddAddressToApplicationMap(
+	t *testing.T,
+	address string,
+	delegateeNumber int,
+) {
+	addressApplicationMap[address] = delegateeNumber
+	addAddressToAccountMap(t, address)
+	t.Cleanup(func() {
+		delete(addressApplicationMap, address)
+	})
 }
