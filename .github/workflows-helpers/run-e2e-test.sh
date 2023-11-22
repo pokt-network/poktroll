@@ -1,3 +1,5 @@
+# TODO: also check readiness of appgate and relayminer
+
 # Check if the pod with the matching image SHA and purpose is ready
 echo "Checking for ready sequencer pod with image SHA ${IMAGE_TAG}..."
 while :; do
