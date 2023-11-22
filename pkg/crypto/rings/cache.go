@@ -122,7 +122,6 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("DEBUG: Application: %+v", app)
 
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)

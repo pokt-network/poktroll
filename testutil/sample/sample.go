@@ -1,6 +1,7 @@
 package sample
 
 import (
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,4 +18,11 @@ func AccAddressAndPubKey() (string, cryptotypes.PubKey) {
 func AccAddress() string {
 	addr, _ := AccAddressAndPubKey()
 	return addr
+}
+
+// AccAddressAndPubKeyEdd2519 returns a sample account address and public key
+func AccAddressAndPubKeyEdd2519() (string, cryptotypes.PubKey) {
+	pk := ed25519.GenPrivKey().PubKey()
+	addr := pk.Address()
+	return sdk.AccAddress(addr).String(), pk
 }
