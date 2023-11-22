@@ -21,3 +21,11 @@ func (res RelayResponse) GetSignableBytes() ([]byte, error) {
 	// return the marshaled message
 	return res.Marshal()
 }
+
+func (res *RelayResponse) ValidateBasic() error {
+	// TODO_FUTURE: if a client gets a response with an invalid/incomplete
+	// SessionHeader, consider sending an on-chain challenge, lowering their
+	// QoS, or other future work.
+
+	return nil
+}
