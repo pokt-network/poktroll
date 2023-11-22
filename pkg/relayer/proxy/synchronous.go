@@ -88,7 +88,7 @@ func (sync *synchronousRPCServer) Service() *sharedtypes.Service {
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	log.Printf("DEBUG: Serving symmetric relay request...")
+	log.Printf("DEBUG: Serving synchronous relay request...")
 
 	// Extract the relay request from the request body.
 	log.Printf("DEBUG: Extracting relay request from request body...")
