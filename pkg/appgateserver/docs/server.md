@@ -11,8 +11,8 @@
   - [Gateways](#gateways)
 - [Requests](#requests)
   - [Request Types](#request-types)
-    - [Symmetric Protocols](#symmetric-protocols)
-    - [Asymmetric Protocols](#asymmetric-protocols)
+    - [Synchronous Protocols](#synchronous-protocols)
+    - [Asynchronous Protocols](#asynchronous-protocols)
 - [Sessions](#sessions)
 - [Endpoint Selection](#endpoint-selection)
 - [Signatures](#signatures)
@@ -36,7 +36,7 @@ implementation.
 
 The server will listen on a configured endpoint for incoming requests from an
 application (or applications if it is in "gateway mode"). The requests can be
-of any type, provided the protocol is "symmetric", that is there is a
+of any type, provided the protocol is "synchronous", that is there is a
 one-to-one correspondance between requests and responses.
 
 See [requests](#requests) for more detail on requests, thier structure and
@@ -141,16 +141,16 @@ Depending on the service the request will be of a different form: JSON-RPC,
 REST, gRPC, GraphQL, etc. These different payload types can be catagorised into
 two catagories.
 
-1. Symmetric Protocols
+1. Synchronous Protocols
    - Where there is one request for each response (an `n-n` correspondance)
-1. Asymmetric Protocols
+1. Asynchronous Protocols
    - Where there is many requests for a single response (an `m-n` correspondance)
 
 The `AppGateServer` handles these types of protocol seperately.
 
-#### Symmetric Protocols
+#### Synchronous Protocols
 
-Symmetric protocols are handled by simply passing the serialised payload of the
+Synchronous protocols are handled by simply passing the serialised payload of the
 request from the application to the supplier, who in turn passes it directly to
 the service itself. The response is handled in the same way.
 
@@ -193,12 +193,12 @@ When returning an internal server error the response must contain the fields:
 
 In order to extract the relevent fields from the serialised payload we must
 partially unmarshal it, extracting only the desired fields. The same logic
-is used for other types of symmetric protocols, extracting different fields for
+is used for other types of synchronous protocols, extracting different fields for
 each payload type.
 
-#### Asymmetric Protocols
+#### Asynchronous Protocols
 
-_NOTE: Asymmetric Protocols are currently unsupported as of writing this
+_NOTE: Asynchronous Protocols are currently unsupported as of writing this
 document_
 
 ## Sessions
@@ -228,17 +228,21 @@ implementation of supplier endpoint selection.
 
 ## Signatures
 
-The `AppGateServer` signs all requests (as both applications and gateways) using
-the ring of the application sending the request. They sign the ring using the
-private key associated with the key used when starting the server.
+The `AppGateServer` signs all requests (in both application and gateway mode)
+using the ring of the application sending the request. They sign the ring using
+the private key associated with the key used when starting the server.
 
 When a response is received from the supplier, it is verified using the public
-key of the supplier who made the request.
+key of the supplier who executed the request.
 
 ### Rings
 
 Rings are created using the application's on-chain state. This includes a list
-of addresses of gateways the specified application is delegated to.
+of addresses of gateways the specified application is delegated to. If an
+`AppGateServer` is started in application mode, and the application has
+delegated to gateways on-chain, even thought the application is self-signing,
+it's ring will still contain these gateways' addresses corresponding public
+keys.
 
 In order to create the ring these addresses are first converted to their
 corresponding public keys. This is achieved by querying the `auth` module.
