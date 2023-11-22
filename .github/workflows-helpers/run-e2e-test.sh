@@ -1,4 +1,4 @@
-# TODO: also check readiness of appgate and relayminer
+# TODO_TECHDEBT(@okdas): also check readiness of appgate and relayminer to avoid false negatives due to race-conditions
 
 # Check if the pod with the matching image SHA and purpose is ready
 echo "Checking for ready sequencer pod with image SHA ${IMAGE_TAG}..."
