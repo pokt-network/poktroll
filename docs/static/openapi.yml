@@ -47744,12 +47744,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
+                                  - REST_RPC
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
+                                   - REST_RPC: REST-RPC
                               configs:
                                 type: array
                                 items:
@@ -47893,12 +47895,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
+                                    - REST_RPC
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
+                                     - REST_RPC: REST-RPC
                                 configs:
                                   type: array
                                   items:
@@ -77805,6 +77809,7 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
+      - REST_RPC
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
@@ -77872,6 +77877,7 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
+                      - REST_RPC
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
@@ -77929,6 +77935,7 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
+          - REST_RPC
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
@@ -78000,6 +78007,7 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
+                - REST_RPC
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
@@ -78191,12 +78199,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST_RPC
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST_RPC: REST-RPC
                         configs:
                           type: array
                           items:
@@ -78352,12 +78362,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
+                          - REST_RPC
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
+                           - REST_RPC: REST-RPC
                       configs:
                         type: array
                         items:

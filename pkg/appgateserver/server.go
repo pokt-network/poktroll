@@ -217,10 +217,11 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		log.Print("ERROR: no application address provided")
 	}
 
-	// TODO_TECHDEBT: Currently, there is no information about the RPC type requested. It should
-	// be extracted from the request and used to determine the RPC type to handle. handle*Relay()
-	// calls should be wrapped into a switch statement to handle different types of relays.
-	if err := app.handleJSONRPCRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
+	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
+	// the request type here.
+	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
+	// concurrent requests from numerous applications?
+	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(payloadBz, writer, err)
 		log.Printf("ERROR: failed handling relay: %s", err)

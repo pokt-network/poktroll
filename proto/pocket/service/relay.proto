@@ -17,8 +17,11 @@ message Relay {
 // RelayRequestMetadata contains the metadata for a RelayRequest.
 message RelayRequestMetadata {
   session.SessionHeader session_header = 1; // Session header associated with the relay.
-  // TODO_COMMENT(@h5law): Add link or more details to how this is related to ring signatures once implemented.
-  bytes signature = 2; // The request signature. This may be the application signature, or any gateway it delegated to.
+  // The request signature is a serialised ring signature that may have been
+  // by either the application itself or one of the gateways that the
+  // application has delegated to. The signature is made using the ring of the
+  // application in both cases.
+  bytes signature = 2; 
 }
 
 // RelayRequest holds the request details for a relay.
