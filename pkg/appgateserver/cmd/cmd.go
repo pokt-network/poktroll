@@ -80,7 +80,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	appGateConfigs, err := appgateconfig.ParseAppGateConfigs(configContent)
+	appGateConfigs, err := appgateconfig.ParseAppGateServerConfigs(configContent)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 func setupAppGateServerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
-	appGateConfig *appgateconfig.AppGateConfig,
+	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (depinject.Config, error) {
 	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", appGateConfig.QueryNodeUrl.Host)
 

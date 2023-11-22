@@ -1,6 +1,6 @@
 # Whether the server should sign all incoming requests with its own ring (for applications)
 self_signing: true
-# The name of the key that will be used to sign relays
+# The name of the key (in the keyring) that will be used to sign relays
 signing_key: app1
 # The host and port that the appgate server will listen on
 listening_endpoint: http://localhost:42069
