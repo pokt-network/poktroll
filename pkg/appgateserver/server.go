@@ -217,11 +217,11 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		log.Print("ERROR: no application address provided")
 	}
 
-	// TODO(@h5law, @red0ne): Add support for asymmetric relays, and switch on
+	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
 	// the request type here.
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?
-	if err := app.handleSymmetricRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
+	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(payloadBz, writer, err)
 		log.Printf("ERROR: failed handling relay: %s", err)

@@ -13,9 +13,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ relayer.RelayServer = (*symmetricServer)(nil)
+var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 
-type symmetricServer struct {
+// synchronousRPCServer is the struct that holds the state of the synchronous
+// RPC server. It is used to listen for and respond to relay requests where
+// there is a one-to-one correspondence between relay requests and relay responses.
+type synchronousRPCServer struct {
 	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
@@ -33,18 +36,18 @@ type symmetricServer struct {
 	servedRelaysProducer chan<- *types.Relay
 }
 
-// NewSymmetricServer creates a new HTTP server that listens for incoming relay
-// requests and forwards them to the supported proxied service endpoint.
+// NewSynchronousServer creates a new HTTP server that listens for incoming
+// relay requests and forwards them to the supported proxied service endpoint.
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments
 // and returns a RelayServer that listens to incoming RelayRequests.
-func NewSymmetricServer(
+func NewSynchronousServer(
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
 	proxiedServiceEndpoint url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
-	return &symmetricServer{
+	return &synchronousRPCServer{
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
@@ -56,58 +59,58 @@ func NewSymmetricServer(
 // Start starts the service server and returns an error if it fails.
 // It also waits for the passed in context to end before shutting down.
 // This method is blocking and should be called in a goroutine.
-func (sym *symmetricServer) Start(ctx context.Context) error {
+func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
-		sym.server.Shutdown(ctx)
+		sync.server.Shutdown(ctx)
 	}()
 
 	// Set the HTTP handler.
-	sym.server.Handler = sym
+	sync.server.Handler = sync
 
-	return sym.server.ListenAndServe()
+	return sync.server.ListenAndServe()
 }
 
 // Stop terminates the service server and returns an error if it fails.
-func (sym *symmetricServer) Stop(ctx context.Context) error {
-	return sym.server.Shutdown(ctx)
+func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
+	return sync.server.Shutdown(ctx)
 }
 
-// Service returns the JSON-RPC service.
-func (sym *symmetricServer) Service() *sharedtypes.Service {
-	return sym.service
+// Service returns the underlying service object.
+func (sync *synchronousRPCServer) Service() *sharedtypes.Service {
+	return sync.service
 }
 
 // ServeHTTP listens for incoming relay requests. It implements the respective
 // method of the http.Handler interface. It is called by http.ListenAndServe()
-// when symmetricServer is used as an http.Handler with an http.Server.
+// when synchronousRPCServer is used as an http.Handler with an http.Server.
 // (see https://pkg.go.dev/net/http#Handler)
-func (sym *symmetricServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	log.Printf("DEBUG: Serving symmetric relay request...")
 
 	// Extract the relay request from the request body.
 	log.Printf("DEBUG: Extracting relay request from request body...")
-	relayRequest, err := sym.newRelayRequest(request)
+	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		sym.replyWithError(relayRequest.Payload, writer, err)
+		sync.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
-	relay, err := sym.serveHTTP(ctx, request, relayRequest)
+	relay, err := sync.serveHTTP(ctx, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sym.replyWithError(relayRequest.Payload, writer, err)
+		sync.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
 	}
 
 	// Send the relay response to the client.
-	if err := sym.sendRelayResponse(relay.Res, writer); err != nil {
-		sym.replyWithError(relayRequest.Payload, writer, err)
+	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
+		sync.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed sending relay response: %s", err)
 		return
 	}
@@ -117,15 +120,15 @@ func (sym *symmetricServer) ServeHTTP(writer http.ResponseWriter, request *http.
 		relay.Res.Meta.SessionHeader.ApplicationAddress,
 		relay.Res.Meta.SessionHeader.Service.Id,
 		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
-		sym.server.Addr,
+		sync.server.Addr,
 	)
 
 	// Emit the relay to the servedRelays observable.
-	sym.servedRelaysProducer <- relay
+	sync.servedRelaysProducer <- relay
 }
 
 // serveHTTP holds the underlying logic of ServeHTTP.
-func (sym *symmetricServer) serveHTTP(
+func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
 	request *http.Request,
 	relayRequest *types.RelayRequest,
@@ -137,7 +140,7 @@ func (sym *symmetricServer) serveHTTP(
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err := sym.relayerProxy.VerifyRelayRequest(ctx, relayRequest, sym.service); err != nil {
+	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, sync.service); err != nil {
 		return nil, err
 	}
 
@@ -151,14 +154,14 @@ func (sym *symmetricServer) serveHTTP(
 	// the destination URL's host with the native service's listen address.
 	log.Printf(
 		"DEBUG: Building relay request to native service %s...",
-		sym.proxiedServiceEndpoint.String(),
+		sync.proxiedServiceEndpoint.String(),
 	)
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &sym.proxiedServiceEndpoint,
-		Host:   sym.proxiedServiceEndpoint.Host,
+		URL:    &sync.proxiedServiceEndpoint,
+		Host:   sync.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}
 
@@ -173,7 +176,7 @@ func (sym *symmetricServer) serveHTTP(
 	// since it was verified to be valid and has to be the same as the
 	// relayResponse session header.
 	log.Printf("DEBUG: Building relay response from native service response...")
-	relayResponse, err := sym.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sync.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +185,7 @@ func (sym *symmetricServer) serveHTTP(
 }
 
 // sendRelayResponse marshals the relay response and sends it to the client.
-func (sym *symmetricServer) sendRelayResponse(
+func (sync *synchronousRPCServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {

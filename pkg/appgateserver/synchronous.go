@@ -13,29 +13,28 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// handleSymmetricRelay handles relay requests for symmetric protocols, where
+// handleSynchronousRelay handles relay requests for synchronous protocols, where
 // there is a one-to-one correspondance between the request and response.
 // It does everything from preparing, signing and sending the request.
 // It then blocks on the response to come back and forward it to the provided writer.
-func (app *appGateServer) handleSymmetricRelay(
+func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
 	payloadBz []byte,
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
-	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
-	}
-	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
-
 	// Get the type of the request by doing a partial unmarshal of the payload
 	log.Printf("DEBUG: Determining request type...")
 	requestType, err := partials.GetRequestType(payloadBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
+	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
+	if err != nil {
+		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
+	}
+	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
 
 	// Get a supplier URL and address for the given service and session.
 	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, requestType, session)

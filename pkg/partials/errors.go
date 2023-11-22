@@ -6,9 +6,6 @@ import (
 
 var (
 	codespace                           = "partial"
-	ErrPartialUnrecognisedRequestFormat = sdkerrors.Register(
-		codespace,
-		1,
-		"unrecognised request format",
-	)
+	ErrPartialInvalidPayload            = sdkerrors.Register(codespace, 1, "invalid payload")
+	ErrPartialUnrecognisedRequestFormat = sdkerrors.Register(codespace, 2, "unrecognised request format")
 )
