@@ -5,8 +5,8 @@ import (
 )
 
 // PartialRESTPayload is a partial representation of a REST request payload
-// that contains the minimal fields necessary to generate an error response and
-// handle accounting for the request's method as determined by its headers.
+// that contains the minimal fields necessary for basic business logic such as
+// generating an  error response, handling request account, etc...
 type PartialRESTPayload struct {
 	Headers map[string]string `json:"headers"`
 }
@@ -25,7 +25,7 @@ func PartiallyUnmarshalRESTPayload(payloadBz []byte) (restPayload *PartialRESTPa
 // It uses a non-pointer receiver to ensure the default values of unset fields
 // are present
 func (r PartialRESTPayload) ValidateBasic() error {
-	// @h5law: Implement this function
+	// TODO(@h5law): Implement this function
 	var err error
 	return err
 }

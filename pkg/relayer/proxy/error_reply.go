@@ -8,7 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// replyWithError builds the appropirate error format according to the payload
+// replyWithError builds the appropriate error format according to the payload
 // using the passed in error and writes it to the writer.
 // NOTE: This method is used to reply with an "internal" error that is related
 // to the proxy itself and not to the relayed request.
