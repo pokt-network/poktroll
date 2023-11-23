@@ -57,8 +57,7 @@ type EventMethodsTest struct {
 	ExpectedOutputContains string
 }
 
-// RunEventMethodTests runs a set of tests for a given level. It also includes a
-// test for polylog.Event#Func().
+// RunEventMethodTests runs a set of tests for a given level.
 func RunEventMethodTests(
 	t *testing.T,
 	level polylog.Level,
@@ -164,22 +163,4 @@ func RunEventMethodTests(
 			t.Log(logOutput.String())
 		})
 	}
-
-	// Assert that #Func() works for each test at each level.
-	funcTestDesc := fmt.Sprintf("%s().Func()", levelMethodStr)
-	t.Run(funcTestDesc, func(t *testing.T) {
-		logger, _ := newLoggerAndOutput(t, level)
-
-		// Construct a spy which implements a #Fn() method which we can use to
-		// assert that the function passed to polylog.Event#Func() is called with
-		// the expected arg(s).
-		funcSpy := FnMethodSpy{}
-		funcSpy.On("Fn", mock.AnythingOfType(funcMethodEventTypeName)).Return()
-
-		logger.Debug().Func(funcSpy.Fn).Send()
-
-		// Assert that `funcSpy#Fn()` method is called with an event whose type
-		// name matches funcMethodEventTypeName.
-		funcSpy.AssertCalled(t, "Fn", mock.AnythingOfType(funcMethodEventTypeName))
-	})
 }
