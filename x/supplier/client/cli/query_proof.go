@@ -44,6 +44,7 @@ func CmdListProof() *cobra.Command {
 	return cmd
 }
 
+// TODO_UPNEXT(@Olshansk): Remove the dependency on index which was part of the default scaffolding behaviour
 func CmdShowProof() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show-proof <index>",

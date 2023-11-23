@@ -10,6 +10,7 @@ const (
 )
 
 // ProofKey returns the store key to retrieve a Proof from the index fields
+// TODO_UPNEXT(@Olshansk): Implement a similar indexing strategy for Proofs as we do for Claims
 func ProofKey(
 	index string,
 ) []byte {

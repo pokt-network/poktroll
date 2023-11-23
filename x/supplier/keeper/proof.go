@@ -47,8 +47,8 @@ func (k Keeper) RemoveProof(
 	))
 }
 
-// GetAllProof returns all proof
-func (k Keeper) GetAllProof(ctx sdk.Context) (list []types.Proof) {
+// GetAllProofs returns all proof
+func (k Keeper) GetAllProofs(ctx sdk.Context) (list []types.Proof) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
