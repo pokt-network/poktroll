@@ -1,5 +1,5 @@
 // NB: Since this repostiory was scaffolded using `ignite s chain pocket`
-// but the module was later rename to github.com/pokt-network/poktroll, we
+// but the module was later renamed to github.com/pokt-network/poktroll, we
 // need to swap the two lines below only during the scaffolding operation.
 // NOTE that the operation is expected to error out but all the necesary
 // types and functions will be scaffolded correctly.
