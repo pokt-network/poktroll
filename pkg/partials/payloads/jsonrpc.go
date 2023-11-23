@@ -9,8 +9,8 @@ import (
 )
 
 // PartialJSONPayload is a partial representation of a JSON-RPC request payload
-// that contains the minimal fields necessary to generate an error response and
-// handle accounting for the request's method field.
+// that contains the minimal fields necessary for basic business logic such as
+// generating an  error response, handling request account, etc...
 type PartialJSONPayload struct {
 	Id      uint64 `json:"id"`
 	JsonRPC string `json:"jsonrpc"`

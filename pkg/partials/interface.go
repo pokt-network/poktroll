@@ -10,16 +10,17 @@ var (
 	_ PartialPayload = (*payloads.PartialRESTPayload)(nil)
 )
 
-// PartialPayload is an interface that is implemented by each of the partial
-// payload types that allows for error messages to be created using the provided
-// error and request payload, that matches the correct format required by the
-// request type. As well as for accounting the weight of the request payload,
-// which is determined by the request's method field.
+// PartialPayload defines an interface for partial RPC payloads that enables the
+// transparent relaying of RPC requests from applications to suppliers. In order
+// for this to occur we must be able to infer its format. This requires the RPC
+// payload to be partially decoded, extracting the required fields, currently
+// limited for the purpose of determine the RPC type, compute units and error
+// generation, but may be used for other logic in the future
 type PartialPayload interface {
 	// GetRPCType returns the request type for the given payload.
 	GetRPCType() sharedtypes.RPCType
 	// GenerateErrorPayload creates an error message from the provided error
-	// in the format of the request type.
+	// compatible with the protocol of this RPC type.
 	GenerateErrorPayload(err error) ([]byte, error)
 	// GetRPCComputeUnits returns the compute units for the RPC request
 	GetRPCComputeUnits() (uint64, error)
