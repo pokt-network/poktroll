@@ -185,9 +185,13 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		// RelayerProxy instrumented behavior
 		relayerProxyBehavior []func(*testproxy.TestBehavior)
 		// Input scenario builds a RelayRequest, marshals it and sends it to the RelayerProxy
-		inputScenario func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errMsg string)
+		inputScenario func(
+			t *testing.T,
+			test *testproxy.TestBehavior,
+		) (errCode int32, errMsg string)
 
-		// The request result should not contain any error returned by the http.DefaultClient.Do call
+		// The request result should not contain any error returned by
+		// the http.DefaultClient.Do call.
 		// We infer the behavior from the response's code and message prefix
 		expectedErrCode int32
 		expectedErrMsg  string
@@ -302,7 +306,13 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		ctrl := gomock.NewController(t)
 
-		test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, relayerProxyConfig, tt.relayerProxyBehavior...)
+		test := testproxy.NewRelayerProxyTestBehavior(
+			ctx,
+			t,
+			ctrl,
+			relayerProxyConfig,
+			tt.relayerProxyBehavior...,
+		)
 
 		rp, err := proxy.NewRelayerProxy(
 			test.Deps,
@@ -330,7 +340,11 @@ func sendRequestWithUnparsableBody(
 	// Send non JSONRpc payload
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
-	res, err := http.DefaultClient.Post(test.ProvidedServices["service1"].Url, "application/json", reader)
+	res, err := http.DefaultClient.Post(
+		test.ProvidedServices["service1"].Url,
+		"application/json",
+		reader,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -420,7 +434,10 @@ func sendRequestWithNonStakedApplicationAddress(
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
 				// The key used to sign the request is not staked
-				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, randomPrivKey),
+				ApplicationAddress: testproxy.GetAddressFromPrivateKey(
+					test,
+					randomPrivKey,
+				),
 			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
@@ -440,7 +457,10 @@ func sendRequestWithRingSignatureMismatch(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, test.ApplicationPrivateKey),
+				ApplicationAddress: testproxy.GetAddressFromPrivateKey(
+					test,
+					test.ApplicationPrivateKey,
+				),
 			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
@@ -462,7 +482,10 @@ func sendRequestWithInvalidRelaySupplier(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, test.ApplicationPrivateKey),
+				ApplicationAddress: testproxy.GetAddressFromPrivateKey(
+					test,
+					test.ApplicationPrivateKey,
+				),
 			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
@@ -488,7 +511,10 @@ func sendRequestWithInvalidSignature(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, test.ApplicationPrivateKey),
+				ApplicationAddress: testproxy.GetAddressFromPrivateKey(
+					test,
+					test.ApplicationPrivateKey,
+				),
 			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
@@ -510,9 +536,12 @@ func sendRequestWithSuccessfulReply(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, test.ApplicationPrivateKey),
-				Service:            &sharedtypes.Service{Id: "service1"},
-				SessionId:          "",
+				ApplicationAddress: testproxy.GetAddressFromPrivateKey(
+					test,
+					test.ApplicationPrivateKey,
+				),
+				Service:   &sharedtypes.Service{Id: "service1"},
+				SessionId: "",
 			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{

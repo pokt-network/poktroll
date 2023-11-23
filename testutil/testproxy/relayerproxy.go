@@ -306,8 +306,11 @@ func WithSessionDefaultBehavior(test *TestBehavior) {
 	}
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
-			Service:                 &sharedtypes.Service{Id: "service1"},
-			ApplicationAddress:      GetAddressFromPrivateKey(test, test.ApplicationPrivateKey),
+			Service: &sharedtypes.Service{Id: "service1"},
+			ApplicationAddress: GetAddressFromPrivateKey(
+				test,
+				test.ApplicationPrivateKey,
+			),
 			SessionStartBlockHeight: 1,
 		},
 		SessionId: "",
@@ -374,7 +377,11 @@ func MarshalAndSend(
 	require.NoError(test.t, err)
 
 	reader := io.NopCloser(bytes.NewReader(reqBz))
-	res, err := http.DefaultClient.Post(test.ProvidedServices["service1"].Url, "application/json", reader)
+	res, err := http.DefaultClient.Post(
+		test.ProvidedServices["service1"].Url,
+		"application/json",
+		reader,
+	)
 	require.NoError(test.t, err)
 	require.NotNil(test.t, res)
 
