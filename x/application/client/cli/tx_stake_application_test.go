@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/application/client/cli"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -38,96 +39,137 @@ func TestCLI_StakeApplication(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
 
+	defaultConfig := `
+		service_ids:
+		  - svc1
+		  - svc2
+		  - svc3
+		`
+
 	tests := []struct {
-		desc             string
-		address          string
-		stakeString      string
-		serviceIdsString string
-		err              *sdkerrors.Error
+		desc string
+
+		inputConfig      string
+		inputAddress     string
+		inputStakeString string
+
+		expectedError *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
-			desc:             "valid",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              nil,
+			desc: "valid",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000upokt",
+			inputConfig:      defaultConfig,
+
+			expectedError: nil,
 		},
 
 		// Error Paths - Address Related
 		{
-			desc: "address_test: missing address",
-			// address:     "explicitly missing",
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidAddress,
+			desc: "invalid: missing address",
+			// inputAddress:     "explicitly missing",
+			inputStakeString: "1000upokt",
+			inputConfig:      defaultConfig,
+
+			expectedError: types.ErrAppInvalidAddress,
 		},
 		{
-			desc:             "stake application: invalid address",
-			address:          "invalid",
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidAddress,
+			desc: "invalid: invalid address",
+
+			inputAddress:     "invalid",
+			inputStakeString: "1000upokt",
+			inputConfig:      defaultConfig,
+
+			expectedError: types.ErrAppInvalidAddress,
 		},
 
 		// Error Paths - Stake Related
 		{
-			desc:    "address_test: missing stake",
-			address: appAccount.Address.String(),
-			// stakeString: "explicitly missing",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc: "invalid: missing stake",
+
+			inputAddress: appAccount.Address.String(),
+			// inputStakeString: "explicitly missing",
+			inputConfig: defaultConfig,
+
+			expectedError: types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake denom",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000invalid",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc: "invalid: invalid stake denom",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000invalid",
+			inputConfig:      defaultConfig,
+
+			expectedError: types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake amount (zero)",
-			address:          appAccount.Address.String(),
-			stakeString:      "0upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc: "invalid: stake amount (zero)",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "0upokt",
+			inputConfig:      defaultConfig,
+
+			expectedError: types.ErrAppInvalidStake,
 		},
 		{
-			desc:             "address_test: invalid stake amount (negative)",
-			address:          appAccount.Address.String(),
-			stakeString:      "-1000upokt",
-			serviceIdsString: "svc1,svc2,svc3",
-			err:              types.ErrAppInvalidStake,
+			desc: "invalid: stake amount (negative)",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "-1000upokt",
+			inputConfig:      defaultConfig,
+
+			expectedError: types.ErrAppInvalidStake,
 		},
 
 		// Error Paths - Service Related
 		{
-			desc:             "services_test: invalid services (empty string)",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc: "invalid: services (empty string)",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000upokt",
+			inputConfig:      "",
+
+			expectedError: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: single invalid service contains spaces",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1 svc1_part2 svc1_part3",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc: "invalid: single invalid service contains spaces",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000upokt",
+			inputConfig: `
+				service_ids:
+				  - svc1 svc1_part2 svc1_part3
+				`,
+
+			expectedError: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: one of two services is invalid because it contains spaces",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1 svc1_part2,svc2",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc: "invalid: one of two services is invalid because it contains spaces",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000upokt",
+			inputConfig: `
+				service_ids:
+				  - svc1 svc1_part2
+				  - svc2
+				`,
+
+			expectedError: types.ErrAppInvalidServiceConfigs,
 		},
 		{
-			desc:             "services_test: service ID is too long (8 chars is the max)",
-			address:          appAccount.Address.String(),
-			stakeString:      "1000upokt",
-			serviceIdsString: "svc1,abcdefghi",
-			err:              types.ErrAppInvalidServiceConfigs,
+			desc: "invalid: service ID is too long (8 chars is the max)",
+
+			inputAddress:     appAccount.Address.String(),
+			inputStakeString: "1000upokt",
+			inputConfig: `
+				service_ids:
+				  - svc1,
+				  - abcdefghi
+				`,
+
+			expectedError: types.ErrAppInvalidServiceConfigs,
 		},
 	}
 
@@ -140,11 +182,14 @@ func TestCLI_StakeApplication(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// write the stake config to a file
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.inputConfig)).Name()
+
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stakeString,
-				tt.serviceIdsString,
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
+				tt.inputStakeString,
+				fmt.Sprintf("--config=%s", configPath),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.inputAddress),
 			}
 			args = append(args, commonArgs...)
 
@@ -152,10 +197,10 @@ func TestCLI_StakeApplication(t *testing.T) {
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeApplication(), args)
 
 			// Validate the error if one is expected
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if tt.expectedError != nil {
+				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
