@@ -40,7 +40,7 @@ type jsonRPCServer struct {
 func NewJSONRPCServer(
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
-	proxiedServiceEndpoint url.URL,
+	proxiedServiceEndpoint *url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
@@ -48,7 +48,7 @@ func NewJSONRPCServer(
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
-		proxiedServiceEndpoint: proxiedServiceEndpoint,
+		proxiedServiceEndpoint: *proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
