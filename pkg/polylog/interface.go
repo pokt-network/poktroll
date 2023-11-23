@@ -57,8 +57,7 @@ type Logger interface {
 	//
 	// TODO_IMPROVE/TODO_COMMUNITY: support #UpdateContext() and  update this
 	// godoc to include #UpdateContext() usage example.
-	//
-	// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext
+	// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext.
 	WithContext(ctx context.Context) context.Context
 
 	// WithLevel starts a new message (event) with level.
@@ -76,11 +75,12 @@ type Logger interface {
 // adding fields to the event which will be rendered in an encoding-appropriate
 // way in the log output.
 //
-// TODO_IMPROVE/TODO_COMMUNITY: support #Dict(), #Stack(), #Any() fields.
+// TODO_IMPROVE/TODO_COMMUNITY: support #Dict(), #Stack(), #Any() type methods.
 // See: https://pkg.go.dev/github.com/rs/zerolog#Event
 //
-// TODO_IMPROVE/TODO_COMMUNITY: support #UpdateContext() and  update #Ctx() godoc.
-// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext
+// TODO_IMPROVE/TODO_COMMUNITY: support #Ctx() and #GetCtx() methods.
+// See: https://pkg.go.dev/github.com/rs/zerolog#Event.Ctx and
+// https://pkg.go.dev/github.com/rs/zerolog#Event.Ctx.
 type Event interface {
 	// Str adds the field key with value as a string to the Event context.
 	Str(key, value string) Event
