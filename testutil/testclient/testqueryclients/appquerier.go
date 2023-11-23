@@ -14,22 +14,20 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// addressApplicationMap is a map of application addresses that are deemed to
-// exist on chain, if an address is not in this map an error will be returned
-// from the mock ApplicationQueryClient's GetApplication method.
-// The array of strings is the addresses of the delegated gateways that the
-// application is supposed to have.
-var addressApplicationMap map[string][]string
+// appToGatewayMap is a map of:
+//
+//	applicationAddresses -> list of the app's delegated gateway addresses.
+//
+// All addresses are assumed to exist on chain.
+var appToGatewayMap map[string][]string
 
 func init() {
-	addressApplicationMap = make(map[string][]string)
+	appToGatewayMap = make(map[string][]string)
 }
 
 // NewTestApplicationQueryClient creates a mock of the ApplicationQueryClient
 // which allows the caller to call GetApplication any times and will return
 // an application with the given address.
-// The delegateeNumber parameter is used to determine how many delegated
-// gateways any application returned from the GetApplication method will have.
 func NewTestApplicationQueryClient(
 	t *testing.T,
 ) *mockclient.MockApplicationQueryClient {
@@ -41,7 +39,7 @@ func NewTestApplicationQueryClient(
 			ctx context.Context,
 			appAddress string,
 		) (application types.Application, err error) {
-			delegateeAddresses, ok := addressApplicationMap[appAddress]
+			delegateeAddresses, ok := appToGatewayMap[appAddress]
 			if !ok {
 				return types.Application{}, apptypes.ErrAppNotFound
 			}
@@ -79,8 +77,8 @@ func AddAddressToApplicationMap(
 		delegateeAddresses = append(delegateeAddresses, delegateeAddress)
 		addAddressToAccountMap(t, delegateeAddress, delegateePubKey)
 	}
-	addressApplicationMap[address] = delegateeAddresses
+	appToGatewayMap[address] = delegateeAddresses
 	t.Cleanup(func() {
-		delete(addressApplicationMap, address)
+		delete(appToGatewayMap, address)
 	})
 }

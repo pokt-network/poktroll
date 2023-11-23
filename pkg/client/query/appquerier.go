@@ -21,9 +21,10 @@ type appQuerier struct {
 
 // NewApplicationQuerier returns a new instance of a client.ApplicationQueryClient
 // by injecting the dependecies provided by the depinject.Config
-func NewApplicationQuerier(
-	deps depinject.Config,
-) (client.ApplicationQueryClient, error) {
+//
+// Required dependencies:
+// - clientCtx
+func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient, error) {
 	aq := &appQuerier{}
 
 	if err := depinject.Inject(
@@ -39,14 +40,11 @@ func NewApplicationQuerier(
 }
 
 // GetApplication returns an apptypes.Application interface for a given address
-func (aq *appQuerier) GetApplication(
-	ctx context.Context,
-	appAddress string,
-) (apptypes.Application, error) {
+func (aq *appQuerier) GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error) {
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
-		return apptypes.Application{}, ErrQueryAccountNotFound.Wrapf("app address: %s [%v]", appAddress, err)
+		return apptypes.Application{}, apptypes.ErrAppNotFound.Wrapf("app address: %s [%v]", appAddress, err)
 	}
 	return res.Application, nil
 }

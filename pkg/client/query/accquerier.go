@@ -20,10 +20,11 @@ type accQuerier struct {
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
-// injecting the dependecies provided by the depinject.Config
-func NewAccountQuerier(
-	deps depinject.Config,
-) (client.AccountQueryClient, error) {
+// injecting the dependecies provided by the depinject.Config.
+//
+// Required dependencies:
+// - clientCtx
+func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
 	aq := &accQuerier{}
 
 	if err := depinject.Inject(
@@ -39,10 +40,7 @@ func NewAccountQuerier(
 }
 
 // GetAccount returns an accounttypes.AccountI interface for a given address
-func (aq *accQuerier) GetAccount(
-	ctx context.Context,
-	address string,
-) (accounttypes.AccountI, error) {
+func (aq *accQuerier) GetAccount(ctx context.Context, address string) (accounttypes.AccountI, error) {
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := aq.accountQuerier.Account(ctx, req)
 	if err != nil {

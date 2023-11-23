@@ -12,9 +12,12 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
-// addressAccountMap is a map of addresses that are deemed to exist on chain
-// if an address is not in this map a public key will not be included in the
-// response from the mock AccountQueryClient's GetAccount method.
+// addressAccountMap is a map of:
+//
+//	addresses -> public keys.
+//
+// If an address is not present in the map or if the public key associated
+// with an address is nil it is assumed that it does not exist on chain.
 var addressAccountMap map[string]cryptotypes.PubKey
 
 func init() {
