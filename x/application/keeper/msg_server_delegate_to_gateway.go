@@ -3,10 +3,10 @@ package keeper
 import (
 	"context"
 
-	"github.com/pokt-network/poktroll/x/application/types"
-
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelegateToGateway) (*types.MsgDelegateToGatewayResponse, error) {
@@ -56,6 +56,9 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info("Successfully delegated application to gateway for app: %+v", app)
+
+	// Emit the application delegation change event
+	ctx.EventManager().EmitTypedEvent(msg.NewDelegateeChangeEvent())
 
 	return &types.MsgDelegateToGatewayResponse{}, nil
 }

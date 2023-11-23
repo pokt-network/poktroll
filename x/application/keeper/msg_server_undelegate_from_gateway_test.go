@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,18 +21,14 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 
 	// Generate an address for the application and gateways
 	appAddr := sample.AccAddress()
-	gatewayAddresses := make([]string, int(k.GetParams(ctx).MaxDelegatedGateways))
+	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
+	gatewayAddresses := make([]string, int(maxDelegatedGateways))
 	for i := 0; i < len(gatewayAddresses); i++ {
 		gatewayAddr := sample.AccAddress()
 		// Mock the gateway being staked via the staked gateway map
-		keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
+		keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
 		gatewayAddresses[i] = gatewayAddr
 	}
-	t.Cleanup(func() {
-		for _, gatewayAddr := range gatewayAddresses {
-			delete(keepertest.StakedGatewayMap, gatewayAddr)
-		}
-	})
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -60,9 +57,15 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 		_, err = srv.DelegateToGateway(wctx, delegateMsg)
 		require.NoError(t, err)
 	}
+	events := ctx.EventManager().Events()
+	require.Equal(t, int(maxDelegatedGateways), len(events))
+	for _, event := range events {
+		require.Equal(t, "pocket.application.EventDelegateeChange", event.Type)
+		require.Equal(t, "app_address", event.Attributes[0].Key)
+		require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), event.Attributes[0].Value)
+	}
 
 	// Verify that the application exists
-	maxDelegatedGateways := k.GetParams(ctx).MaxDelegatedGateways
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
@@ -80,6 +83,11 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	// Undelegate the application from the gateway
 	_, err = srv.UndelegateFromGateway(wctx, undelegateMsg)
 	require.NoError(t, err)
+	events = ctx.EventManager().Events()
+	require.Equal(t, int(maxDelegatedGateways)+1, len(events))
+	require.Equal(t, "pocket.application.EventDelegateeChange", events[7].Type)
+	require.Equal(t, "app_address", events[7].Attributes[0].Key)
+	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[7].Attributes[0].Value)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
@@ -100,12 +108,8 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	gatewayAddr1 := sample.AccAddress()
 	gatewayAddr2 := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.StakedGatewayMap[gatewayAddr1] = struct{}{}
-	keepertest.StakedGatewayMap[gatewayAddr2] = struct{}{}
-	t.Cleanup(func() {
-		delete(keepertest.StakedGatewayMap, gatewayAddr1)
-		delete(keepertest.StakedGatewayMap, gatewayAddr2)
-	})
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr1)
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr2)
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -137,6 +141,8 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
+	events := ctx.EventManager().Events()
+	require.Equal(t, 0, len(events))
 
 	// Prepare a delegation message
 	delegateMsg := &types.MsgDelegateToGateway{
@@ -147,10 +153,17 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	// Delegate the application to the gateway
 	_, err = srv.DelegateToGateway(wctx, delegateMsg)
 	require.NoError(t, err)
+	events = ctx.EventManager().Events()
+	require.Equal(t, 1, len(events))
+	require.Equal(t, "pocket.application.EventDelegateeChange", events[0].Type)
+	require.Equal(t, "app_address", events[0].Attributes[0].Key)
+	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
 
 	// Ensure the failed undelegation did not affect the application
 	_, err = srv.UndelegateFromGateway(wctx, undelegateMsg)
 	require.ErrorIs(t, err, types.ErrAppNotDelegated)
+	events = ctx.EventManager().Events()
+	require.Equal(t, 1, len(events))
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, 1, len(foundApp.DelegateeGatewayAddresses))
@@ -166,7 +179,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	appAddr := sample.AccAddress()
 	gatewayAddr := sample.AccAddress()
 	// Mock the gateway being staked via the staked gateway map
-	keepertest.StakedGatewayMap[gatewayAddr] = struct{}{}
+	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
@@ -193,6 +206,11 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	// Delegate the application to the gateway
 	_, err = srv.DelegateToGateway(wctx, delegateMsg)
 	require.NoError(t, err)
+	events := ctx.EventManager().Events()
+	require.Equal(t, 1, len(events))
+	require.Equal(t, "pocket.application.EventDelegateeChange", events[0].Type)
+	require.Equal(t, "app_address", events[0].Attributes[0].Key)
+	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
 
 	// Verify that the application exists
 	foundApp, isAppFound := k.GetApplication(ctx, appAddr)
@@ -202,7 +220,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, gatewayAddr, foundApp.DelegateeGatewayAddresses[0])
 
 	// Mock unstaking the gateway
-	delete(keepertest.StakedGatewayMap, gatewayAddr)
+	keepertest.RemoveGatewayFromStakedGatewayMap(t, gatewayAddr)
 
 	// Prepare an undelegation message
 	undelegateMsg := &types.MsgUndelegateFromGateway{
@@ -213,6 +231,11 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	// Undelegate the application from the gateway
 	_, err = srv.UndelegateFromGateway(wctx, undelegateMsg)
 	require.NoError(t, err)
+	events = ctx.EventManager().Events()
+	require.Equal(t, 2, len(events))
+	require.Equal(t, "pocket.application.EventDelegateeChange", events[1].Type)
+	require.Equal(t, "app_address", events[1].Attributes[0].Key)
+	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[1].Attributes[0].Value)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)

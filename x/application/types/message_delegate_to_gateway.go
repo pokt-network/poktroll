@@ -37,6 +37,12 @@ func (msg *MsgDelegateToGateway) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
+func (msg *MsgDelegateToGateway) NewDelegateeChangeEvent() *EventDelegateeChange {
+	return &EventDelegateeChange{
+		AppAddress: msg.AppAddress,
+	}
+}
+
 func (msg *MsgDelegateToGateway) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(msg.AppAddress); err != nil {

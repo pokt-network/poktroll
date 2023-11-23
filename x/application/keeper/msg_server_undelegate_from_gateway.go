@@ -9,7 +9,10 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
+func (k msgServer) UndelegateFromGateway(
+	goCtx context.Context,
+	msg *types.MsgUndelegateFromGateway,
+) (*types.MsgUndelegateFromGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "UndelegateFromGateway")
@@ -46,6 +49,9 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)
 	logger.Info("Successfully undelegated application from gateway for app: %+v", app)
+
+	// Emit the application delegation change event
+	ctx.EventManager().EmitTypedEvent(msg.NewDelegateeChangeEvent())
 
 	return &types.MsgUndelegateFromGatewayResponse{}, nil
 }

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package pocket.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+
+import "cosmos_proto/cosmos.proto";
+
+// EventDelegateeChange is an event emitted whenever an application changes its
+// delegatee gateways on chain. This is in response to both a DelegateToGateway
+// and UndelegateFromGateway message.
+message EventDelegateeChange {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+}
