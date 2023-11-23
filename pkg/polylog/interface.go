@@ -56,7 +56,9 @@ type Logger interface {
 	// You must call Msg on the returned event in order to send the event.
 	WithLevel(level int) Event
 
-	Write(outBz []byte) (n int, err error)
+	// Write implements the io.Writer interface. This is useful to set as a writer
+	// for the standard library log.
+	Write(p []byte) (n int, err error)
 }
 
 // Event represents a log event. It is instanced by one of the level methods of
