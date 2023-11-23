@@ -1,6 +1,6 @@
 package cli_test
 
-// TODO_UPNEXT(@Olshansk): Add these tests back in after updating how Proofs are stored on-chain.
+// TODO_UPNEXT(@Olshansk): Add these tests back in after merging on-chain Proof persistence.
 // Prevent strconv unused error
 // var _ = strconv.IntSize
 
