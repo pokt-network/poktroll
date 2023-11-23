@@ -41,7 +41,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			// TODO: Move `supplierEndpointHost` into a separate config file (could be a part of chains.json if we
+			// TODO(#137): Move `supplierEndpointHost` into a separate config file (could be a part of chains.json if we
 			// should bind different ports for different chains, or just one port as a part of the main config/CLI argument)
 			// `endpoint.Url` should only be used to advertise the endpoint to the internet as a part of stake.
 			supplierEndpointHost := "0.0.0.0:8545"
