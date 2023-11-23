@@ -20,7 +20,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var defaultConfig = testproxy.RelayerProxyConfig{
+var relayerProxyConfig = testproxy.RelayerProxyConfig{
 	SupplierKeyName: "supplierKeyName",
 	ProxiedServicesConfig: map[string]string{
 		"service1": "http://localhost:8080",
@@ -45,6 +45,7 @@ var defaultBehavior = []func(*testproxy.TestBehavior){
 	testproxy.WithSessionDefaultBehavior,
 }
 
+// RelayerProxy should start and stop without errors
 func TestRelayerProxy_StartAndStop(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -52,8 +53,10 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, defaultConfig, defaultBehavior...)
+	// Setup the RelayerProxy instrumented behavior
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, relayerProxyConfig, defaultBehavior...)
 
+	// Create a RelayerProxy
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName(test.SupplierKeyName),
@@ -61,9 +64,11 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// Start RelayerProxy
 	go rp.Start(ctx)
 	time.Sleep(100 * time.Millisecond)
 
+	// Test that RelayerProxy is handling requests, don't care about the response here
 	res1, err := http.DefaultClient.Get(test.ProvidedServices["service1"].Url)
 	require.NoError(t, err)
 	require.NotNil(t, res1)
@@ -72,10 +77,12 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, res2)
 
+	// Stop RelayerProxy
 	err = rp.Stop(ctx)
 	require.NoError(t, err)
 }
 
+// RelayerProxy should fail to start if the signing key is not found in the keyring
 func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -83,7 +90,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, defaultConfig, defaultBehavior...)
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, relayerProxyConfig, defaultBehavior...)
 
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
@@ -96,6 +103,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 	require.Error(t, err)
 }
 
+// RelayerProxy should fail to build if the signing key name is not provided
 func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -103,7 +111,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, defaultConfig, defaultBehavior...)
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, relayerProxyConfig, defaultBehavior...)
 
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
@@ -113,6 +121,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 	require.Error(t, err)
 }
 
+// RelayerProxy should fail to build if the proxied services endpoints are not provided
 func TestRelayerProxy_NoProxiedServices(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -121,9 +130,10 @@ func TestRelayerProxy_NoProxiedServices(t *testing.T) {
 	defer ctrl.Finish()
 
 	cfg := testproxy.RelayerProxyConfig{
-		SupplierKeyName:       "supplierKeyName",
+		SupplierKeyName: relayerProxyConfig.SupplierKeyName,
+		// Do not provide proxied services
 		ProxiedServicesConfig: nil,
-		ProvidedServices:      defaultConfig.ProvidedServices,
+		ProvidedServices:      relayerProxyConfig.ProvidedServices,
 	}
 
 	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, cfg, defaultBehavior...)
@@ -136,6 +146,8 @@ func TestRelayerProxy_NoProxiedServices(t *testing.T) {
 	require.Error(t, err)
 }
 
+// RelayerProxy should fail to start if it cannot spawn a server for the
+// services it advertized on-chain
 func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -144,8 +156,9 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	defer ctrl.Finish()
 
 	cfg := testproxy.RelayerProxyConfig{
-		SupplierKeyName:       "supplierKeyName",
-		ProxiedServicesConfig: defaultConfig.ProxiedServicesConfig,
+		SupplierKeyName:       relayerProxyConfig.SupplierKeyName,
+		ProxiedServicesConfig: relayerProxyConfig.ProxiedServicesConfig,
+		// Supplier has advertised providing a GRPC service but does not support it
 		ProvidedServices: map[string]testproxy.ProvidedServiceConfig{
 			"service1": {Url: "http://localhost:8180", RpcType: sharedtypes.RPCType_GRPC},
 		},
@@ -163,12 +176,19 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	err = rp.Start(ctx)
 	require.Error(t, err)
 }
+
+// Test different RelayRequest scenarios
 func TestRelayerProxy_Relays(t *testing.T) {
 	tests := []struct {
-		name                 string
-		relayerProxyBehavior []func(*testproxy.TestBehavior)
-		inputScenario        func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errMsg string)
+		name string
 
+		// RelayerProxy instrumented behavior
+		relayerProxyBehavior []func(*testproxy.TestBehavior)
+		// Input scenario builds a RelayRequest, marshals it and sends it to the RelayerProxy
+		inputScenario func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errMsg string)
+
+		// The request result should not contain any error returned by the http.DefaultClient.Do call
+		// We infer the behavior from the response's code and message prefix
 		expectedErrCode int32
 		expectedErrMsg  string
 	}{
@@ -218,15 +238,6 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			expectedErrMsg:  "missing application address from relay request",
 		},
 		{
-			name: "Invalid session header application address",
-
-			relayerProxyBehavior: defaultBehavior,
-			inputScenario:        sendRequestWithNonStakedApplicationAddress,
-
-			expectedErrCode: -32000,
-			expectedErrMsg:  "error getting ring for application address",
-		},
-		{
 			name: "Non staked application address",
 
 			relayerProxyBehavior: defaultBehavior,
@@ -257,6 +268,8 @@ func TestRelayerProxy_Relays(t *testing.T) {
 				testproxy.WithApplicationDefaultBehavior,
 				testproxy.WithAccountsDefaultBehavior,
 				testproxy.WithBlockClientDefaultBehavior,
+
+				// The client requested a relay from us but we don't belong to its session
 				testproxy.WithSessionSupplierMismatchBehavior,
 			},
 			inputScenario: sendRequestWithInvalidRelaySupplier,
@@ -289,11 +302,11 @@ func TestRelayerProxy_Relays(t *testing.T) {
 		ctx, cancel := context.WithCancel(ctx)
 		ctrl := gomock.NewController(t)
 
-		test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, defaultConfig, tt.relayerProxyBehavior...)
+		test := testproxy.NewRelayerProxyTestBehavior(ctx, t, ctrl, relayerProxyConfig, tt.relayerProxyBehavior...)
 
 		rp, err := proxy.NewRelayerProxy(
 			test.Deps,
-			proxy.WithSigningKeyName(defaultConfig.SupplierKeyName),
+			proxy.WithSigningKeyName(relayerProxyConfig.SupplierKeyName),
 			proxy.WithProxiedServicesEndpoints(test.ProxiedServicesEndpoints),
 		)
 		require.NoError(t, err)
@@ -314,6 +327,7 @@ func sendRequestWithUnparsableBody(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errorCode int32, errorMessage string) {
+	// Send non JSONRpc payload
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
 	res, err := http.DefaultClient.Post(test.ProvidedServices["service1"].Url, "application/json", reader)
@@ -329,6 +343,7 @@ func sendRequestWithMissingMeta(
 ) (errorCode int32, errorMessage string) {
 
 	req := &servicetypes.RelayRequest{
+		// RelayRequest is missing Metadata
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
 			JsonRpcPayload: testproxy.ValidPayload,
 		},
@@ -343,6 +358,7 @@ func sendRequestWithMissingSignature(
 ) (errorCode int32, errorMessage string) {
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
+			// RelayRequest metadata is missing the signature
 			SessionHeader: &sessiontypes.SessionHeader{},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
@@ -360,7 +376,8 @@ func sendRequestWithInvalidRingSignature(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{},
-			Signature:     []byte("invalidSignature"),
+			// RelayRequest metadata has an invalid signature
+			Signature: []byte("invalidSignature"),
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
 			JsonRpcPayload: testproxy.ValidPayload,
@@ -376,13 +393,17 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 ) (errCode int32, errorMessage string) {
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
-			SessionHeader: &sessiontypes.SessionHeader{},
+			SessionHeader: &sessiontypes.SessionHeader{
+				// RelayRequest session header is missing the application address
+			},
 		},
 		Payload: &servicetypes.RelayRequest_JsonRpcPayload{
 			JsonRpcPayload: testproxy.ValidPayload,
 		},
 	}
 
+	// Assign a valid but random ring signature so that the request is not rejected
+	// before looking at the application address
 	randomPrivKey := secp256k1.GenPrivKey()
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
@@ -398,6 +419,7 @@ func sendRequestWithNonStakedApplicationAddress(
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
+				// The key used to sign the request is not staked
 				ApplicationAddress: testproxy.GetAddressFromPrivateKey(test, randomPrivKey),
 			},
 		},
@@ -405,6 +427,7 @@ func sendRequestWithNonStakedApplicationAddress(
 			JsonRpcPayload: testproxy.ValidPayload,
 		},
 	}
+	// Have a legit signature from the non staked key
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
 	return testproxy.MarshalAndSend(test, req)
@@ -424,6 +447,7 @@ func sendRequestWithRingSignatureMismatch(
 			JsonRpcPayload: testproxy.ValidPayload,
 		},
 	}
+	// The signature is valid but does not match the ring for the application address
 	randomPrivKey := secp256k1.GenPrivKey()
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
@@ -434,6 +458,7 @@ func sendRequestWithInvalidRelaySupplier(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
+	// The RelayRequest is correctly formatted but the supplier does not belong to the session
 	req := &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
@@ -471,6 +496,8 @@ func sendRequestWithInvalidSignature(
 		},
 	}
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, test.ApplicationPrivateKey)
+
+	// Alter the reuqest payload so the hash doesn't match the signature
 	jsonRpcPayload.Params = []string{"alteredParam"}
 
 	return testproxy.MarshalAndSend(test, req)
