@@ -48,7 +48,7 @@ func NewJSONRPCServer(
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
-		proxiedServiceEndpoint: proxiedServiceEndpoint,
+		proxiedServiceEndpoint: *proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
