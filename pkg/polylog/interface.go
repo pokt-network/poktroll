@@ -11,6 +11,16 @@ import (
 // TODO_INVESTIGATE: check whether the pkg dependency tree includes all logging
 // libraries.
 
+// Level is the minimal interface required to express and convert between log levels
+// of the underlying logging libraries.
+type Level interface {
+	// String returns the string representation of the underlying Level.
+	String() string
+	// Int returns the int representation of the underlying Level. Level types are
+	// typically defined as enums of a concrete type that implement #String().
+	Int() int
+}
+
 // Logger is an interface that exposes methods for each supported log level, each
 // of which returns an Event.
 type Logger interface {
@@ -54,7 +64,7 @@ type Logger interface {
 	// WithLevel starts a new message (event) with level.
 	//
 	// You must call Msg on the returned event in order to send the event.
-	WithLevel(level int) Event
+	WithLevel(level Level) Event
 
 	// Write implements the io.Writer interface. This is useful to set as a writer
 	// for the standard library log.
