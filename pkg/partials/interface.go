@@ -10,13 +10,10 @@ var (
 	_ PartialPayload = (*payloads.PartialRESTPayload)(nil)
 )
 
-// PartialPayload defines an interface for partial RPC payloads that enables the
-// transparent relaying of RPC requests from applications to suppliers. In order
-// for this to occur we must be able to infer its format. This requires the RPC
-// payload to be partially decoded, extracting the required fields for the
-// purpose of determining the RPC type and the compute units required to process
-// as well as generating error responses in the correct format. The partial
-// payload is only used internally and is not transmitted over the wire.
+// PartialPayload is an interface that is implemented by each of the partial
+// payload types. It allows for partially unmarshalling the payload of various
+// request types for things like error generation, request cost accounting,
+// messages types, etc...
 type PartialPayload interface {
 	// GetRPCType returns the request type for the given payload.
 	GetRPCType() sharedtypes.RPCType
