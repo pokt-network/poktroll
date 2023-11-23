@@ -237,6 +237,8 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 	// ensure the session tree exists for this relay
+	// TODO_CONSIDERATION: if we get the session header from the response, there
+	// is no possibility that we forgot to hydrate it (i.e. blindly trust the client).
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
