@@ -40,7 +40,10 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 }
 
 // GetAccount returns an accounttypes.AccountI interface for a given address
-func (aq *accQuerier) GetAccount(ctx context.Context, address string) (accounttypes.AccountI, error) {
+func (aq *accQuerier) GetAccount(
+	ctx context.Context,
+	address string,
+) (accounttypes.AccountI, error) {
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := aq.accountQuerier.Account(ctx, req)
 	if err != nil {

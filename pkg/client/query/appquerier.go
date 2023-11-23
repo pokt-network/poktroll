@@ -40,7 +40,10 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 }
 
 // GetApplication returns an apptypes.Application interface for a given address
-func (aq *appQuerier) GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error) {
+func (aq *appQuerier) GetApplication(
+	ctx context.Context,
+	appAddress string,
+) (apptypes.Application, error) {
 	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
 	res, err := aq.applicationQuerier.Application(ctx, &req)
 	if err != nil {
