@@ -10,11 +10,13 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
+	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -27,7 +29,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	)
 	var (
 		zeroByteSlice = []byte{0}
-		ctx           = context.Background()
+		_, ctx        = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 	)
 
 	// Set up dependencies.

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/cometbft/cometbft/crypto"
@@ -24,9 +23,11 @@ func (app *appGateServer) handleSynchronousRelay(
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Debug().Msg("determining request type")
+
 	// Get the type of the request by doing a partial unmarshal of the payload
-	log.Printf("DEBUG: Determining request type...")
-	requestType, err := partials.GetRequestType(payloadBz)
+	requestType, err := partials.GetRequestType(ctx, payloadBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
@@ -34,7 +35,11 @@ func (app *appGateServer) handleSynchronousRelay(
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
 	}
-	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
+
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Debug().
+		Str("request_type", requestType.String()).
+		Msg("got request type")
 
 	// Get a supplier URL and address for the given service and session.
 	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, requestType, session)
@@ -90,7 +95,10 @@ func (app *appGateServer) handleSynchronousRelay(
 		Body:   relayRequestReader,
 	}
 
-	log.Printf("DEBUG: Sending signed relay request to %s", supplierUrl)
+	app.logger.Debug().
+		Str("supplier_url", supplierUrl.String()).
+		Msg("sending relay request")
+
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("sending relay request: %s", err)
@@ -119,8 +127,11 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("verifying relay response signature: %s", err)
 	}
 
+	app.logger.Debug().
+		Str("relay_response_payload", string(relayResponse.Payload)).
+		Msg("writing relay response payload")
+
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponse.Payload))
 	if _, err := writer.Write(relayResponse.Payload); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}

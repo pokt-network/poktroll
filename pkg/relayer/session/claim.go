@@ -2,13 +2,14 @@ package session
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 )
@@ -70,6 +71,8 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	ctx context.Context,
 	sessionEndHeight int64,
 ) {
+	logger := polylog.Ctx(ctx)
+
 	// TODO_TECHDEBT: refactor this logic to a shared package.
 
 	createClaimWindowStartHeight := sessionEndHeight
@@ -78,15 +81,24 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 
 	// we wait for createClaimWindowStartHeight to be received before proceeding since we need its hash
 	// to know where this servicer's claim submission window starts.
-	log.Printf("waiting & blocking for global earliest claim submission createClaimWindowStartBlock height: %d", createClaimWindowStartHeight)
+	logger.Info().
+		Int64("create_claim_window_start_height", createClaimWindowStartHeight).
+		Msg("waiting & blocking for global earliest claim submission height")
 	createClaimWindowStartBlock := rs.waitForBlock(ctx, createClaimWindowStartHeight)
 
-	log.Printf("received earliest claim submission createClaimWindowStartBlock height: %d, use its hash to have a random submission for the servicer", createClaimWindowStartBlock.Height())
+	logger.Info().
+		Int64("create_claim_window_start_height", createClaimWindowStartBlock.Height()).
+		Str("hash", fmt.Sprintf("%x", createClaimWindowStartBlock.Hash())).
+		Msg("received global earliest claim submission height")
 
 	earliestCreateClaimHeight :=
-		protocol.GetEarliestCreateClaimHeight(createClaimWindowStartBlock)
+		protocol.GetEarliestCreateClaimHeight(ctx, createClaimWindowStartBlock)
 
-	log.Printf("earliest claim submission createClaimWindowStartBlock height for this supplier: %d", earliestCreateClaimHeight)
+	logger.Info().
+		Int64("earliest_create_claim_height", earliestCreateClaimHeight).
+		Str("hash", fmt.Sprintf("%x", createClaimWindowStartBlock.Hash())).
+		Msg("waiting & blocking for earliest claim creation height for this supplier")
+
 	_ = rs.waitForBlock(ctx, earliestCreateClaimHeight)
 }
 
@@ -100,6 +112,8 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		logger := polylog.Ctx(ctx)
+
 		// this session should no longer be updated
 		claimRoot, err := session.Flush()
 		if err != nil {
@@ -107,7 +121,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		}
 
 		latestBlock := rs.blockClient.LatestBlock(ctx)
-		log.Printf("INFO: currentBlock: %d, submitting claim", latestBlock.Height()+1)
+		logger.Info().
+			Int64("current_block", latestBlock.Height()+1).
+			Msg("submitting claim")
 
 		sessionHeader := session.GetSessionHeader()
 		if err := rs.supplierClient.CreateClaim(ctx, *sessionHeader, claimRoot); err != nil {

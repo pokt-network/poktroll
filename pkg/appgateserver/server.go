@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -20,6 +19,7 @@ import (
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -48,6 +48,8 @@ type SigningInformation struct {
 // is running their own instance of the appGateServer or they are sending requests to a gateway running an
 // instance of the appGateServer, they will need to either include the application address in the request or not.
 type appGateServer struct {
+	logger polylog.Logger
+
 	// signing information holds the signing key and application address for the server
 	signingInformation *SigningInformation
 
@@ -97,6 +99,12 @@ type appGateServer struct {
 	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
+// NewAppGateServer constructs a new appGateServer.
+//
+// Required dependencies:
+// - polylog.Logger
+// - sdkclient.Context
+// - blocktypes.BlockClient
 func NewAppGateServer(
 	deps depinject.Config,
 	opts ...appGateServerOption,
@@ -110,6 +118,7 @@ func NewAppGateServer(
 
 	if err := depinject.Inject(
 		deps,
+		&app.logger,
 		&app.clientCtx,
 		&app.blockClient,
 	); err != nil {
@@ -188,7 +197,7 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 // and the other (possible) path segments are the JSON RPC request path.
 // TODO_TECHDEBT: Revisit the requestPath above based on the SDK that'll be exposed in the future.
 func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
+	ctx := app.logger.WithContext(request.Context())
 
 	// Extract the serviceId from the request path.
 	path := request.URL.Path
@@ -198,14 +207,19 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	payloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		app.replyWithError(
+			ctx,
 			payloadBz,
 			writer,
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
-		log.Printf("ERROR: failed reading relay request body: %s", err)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Err(err).Msg("failed reading relay request body")
 		return
 	}
-	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
+	app.logger.Debug().
+		Str("service_id", serviceId).
+		Str("payload", string(payloadBz)).
+		Msg("handling relay")
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -213,8 +227,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(payloadBz, writer, ErrAppGateMissingAppAddress)
-		log.Print("ERROR: no application address provided")
+		app.replyWithError(ctx, payloadBz, writer, ErrAppGateMissingAppAddress)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Msg("no application address provided")
 	}
 
 	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
@@ -223,12 +238,14 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// concurrent requests from numerous applications?
 	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(payloadBz, writer, err)
-		log.Printf("ERROR: failed handling relay: %s", err)
+		app.replyWithError(ctx, payloadBz, writer, err)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Err(err).Msg("failed handling relay")
 		return
 	}
 
-	log.Print("INFO: request serviced successfully")
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Info().Msg("request serviced successfully")
 }
 
 // validateConfig validates the appGateServer configuration.

@@ -6,7 +6,6 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"log"
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
@@ -14,7 +13,8 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	ring "github.com/noot/ring-go"
+	"github.com/noot/ring-go"
+
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -31,10 +31,14 @@ func (rp *relayerProxy) getRingForAppAddress(ctx context.Context, appAddress str
 	var err error
 	if !ok {
 		// if the ring is not in the cache, get it from the application module
-		log.Printf("DEBUG: Ring not found in cache for %s, fetching from application module...", appAddress)
+		rp.logger.Debug().
+			Str("application_address", appAddress).
+			Msg("ring not found in cache for application, fetching from on-chain state")
 		points, err = rp.getDelegatedPubKeysForAddress(ctx, appAddress)
 	} else {
-		log.Printf("DEBUG: Ring found in cache for %s", appAddress)
+		rp.logger.Debug().
+			Str("application_address", appAddress).
+			Msg("ring found in cache for application")
 	}
 	if err != nil {
 		return nil, err

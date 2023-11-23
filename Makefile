@@ -164,7 +164,9 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
-	go generate ./pkg/...
+	go generate ./pkg/client/interface.go
+	go generate ./pkg/miner/interface.go
+	go generate ./pkg/relayer/interface.go
 
 .PHONY: go_fixturegen
 go_fixturegen: ## Generate fixture data for unit tests

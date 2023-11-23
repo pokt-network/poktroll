@@ -6,7 +6,6 @@ package appgateserver
 import (
 	"context"
 	"fmt"
-	"log"
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
@@ -14,7 +13,7 @@ import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	ring "github.com/noot/ring-go"
+	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/signer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -35,15 +34,21 @@ func (app *appGateServer) getRingSingerForAppAddress(ctx context.Context, appAdd
 	points, ok := app.ringCache[appAddress]
 	if !ok {
 		// if the ring is not in the cache, get it from the application module
-		log.Printf("DEBUG: No ring cached for address: %s", appAddress)
+		app.logger.Debug().
+			Str("application_address", appAddress).
+			Msg("no cached ring for application")
 		ring, err = app.getRingForAppAddress(ctx, appAddress)
 	} else {
 		// if the ring is in the cache, create it from the points
-		log.Printf("DEBUG: Ring cached for address: %s", appAddress)
+		app.logger.Debug().
+			Str("application_address", appAddress).
+			Msg("cached ring for application")
 		ring, err = newRingFromPoints(points)
 	}
 	if err != nil {
-		log.Printf("ERROR: Unable to get ring for address: %s [%v]", appAddress, err)
+		app.logger.Error().
+			Str("application_address", appAddress).
+			Msg("unable to get ring for application")
 		return nil, err
 	}
 

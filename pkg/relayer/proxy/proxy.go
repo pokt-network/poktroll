@@ -14,6 +14,7 @@ import (
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -35,6 +36,8 @@ type (
 // when the miner enters the claim/proof phase.
 // TODO_TEST: Have tests for the relayer proxy.
 type relayerProxy struct {
+	logger polylog.Logger
+
 	// signingKeyName is the supplier's key name in the Cosmos's keybase. It is used along with the keyring to
 	// get the supplier address and sign the relay responses.
 	signingKeyName string
@@ -106,6 +109,7 @@ func NewRelayerProxy(
 
 	if err := depinject.Inject(
 		deps,
+		&rp.logger,
 		&rp.clientCtx,
 		&rp.blockClient,
 	); err != nil {

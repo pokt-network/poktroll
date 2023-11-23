@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"log"
 
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -20,8 +19,15 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	relayRequest *types.RelayRequest,
 	service *sharedtypes.Service,
 ) error {
+	rp.logger.Debug().
+		Fields(map[string]any{
+			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
+			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
+			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+		}).
+		Msg("verifying relay request signature")
+
 	// extract the relay request's ring signature
-	log.Printf("DEBUG: Verifying relay request signature...")
 	if relayRequest.Meta == nil {
 		return ErrRelayerProxyEmptyRelayRequestSignature.Wrapf(
 			"request payload: %s", relayRequest.Payload,
@@ -80,7 +86,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
-	log.Printf("DEBUG: Verifying relay request session...")
+	rp.logger.Debug().
+		Fields(map[string]any{
+			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
+			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
+			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+		}).
+		Msg("verifying relay request session")
+
 	currentBlock := rp.blockClient.LatestBlock(ctx)
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,

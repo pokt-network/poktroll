@@ -1,10 +1,11 @@
 package payloads
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"log"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -21,7 +22,9 @@ type PartialJSONPayload struct {
 // JSON payload.
 // It uses a non-pointer receiver to ensure the default values of unset fields
 // are present
-func (j PartialJSONPayload) ValidateBasic() error {
+func (j PartialJSONPayload) ValidateBasic(ctx context.Context) error {
+	logger := polylog.Ctx(ctx)
+
 	var err error
 	if j.Id == 0 {
 		err = errors.Join(err, errors.New("id field is zero"))
@@ -32,7 +35,7 @@ func (j PartialJSONPayload) ValidateBasic() error {
 	if j.Method == "" {
 		err = errors.Join(err, errors.New("method field is empty"))
 	}
-	log.Printf("DEBUG: Validating basic JSON payload: %v", err)
+	logger.Debug().Err(err).Msg("Validating basic JSON payload")
 	return err
 }
 
@@ -73,7 +76,7 @@ func (j *PartialJSONPayload) GenerateErrorPayload(err error) ([]byte, error) {
 }
 
 // GetRPCComputeUnits returns the compute units for the RPC request
-func (j *PartialJSONPayload) GetRPCComputeUnits() (uint64, error) {
+func (j *PartialJSONPayload) GetRPCComputeUnits(ctx context.Context) (uint64, error) {
 	// TODO(@h5law): Implement this method
 	return 0, nil
 }
