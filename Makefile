@@ -166,6 +166,10 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/session/types/
 	go generate ./pkg/...
 
+.PHONY: go_fixturegen
+go_fixturegen: ## Generate fixture data for unit tests
+	go generate ./pkg/relayer/miner/miner_test.go
+
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen ## Generate protos and mocks
 
@@ -189,6 +193,7 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 
 # Inspired by @goldinguy_ in this post: https://goldin.io/blog/stop-using-todo ###
 # TODO                        - General Purpose catch-all.
+# TODO_COMMUNITY              - A TODO that may be a candidate for outsourcing to the community.
 # TODO_DECIDE                 - A TODO indicating we need to make a decision and document it using an ADR in the future; https://github.com/pokt-network/pocket-network-protocol/tree/main/ADRs
 # TODO_TECHDEBT               - Not a great implementation, but we need to fix it later.
 # TODO_BLOCKER                - Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
@@ -210,7 +215,7 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 # TODO_NB                     - An important note to reference later
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
-TODO_KEYWORDS = -e "TODO" -e "TODO_DECIDE" -e "TODO_TECHDEBT" -e "TODO_IMPROVE" -e "TODO_OPTIMIZE" -e "TODO_DISCUSS" -e "TODO_INCOMPLETE" -e "TODO_INVESTIGATE" -e "TODO_CLEANUP" -e "TODO_HACK" -e "TODO_REFACTOR" -e "TODO_CONSIDERATION" -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_CONSOLIDATE" -e "TODO_DEPRECATE" -e "TODO_ADDTEST" -e "TODO_RESEARCH" -e "TODO_BUG" -e "TODO_NB" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_IN_THIS_COMMIT"
+TODO_KEYWORDS = -e "TODO" -e "TODO_COMMUNITY" -e "TODO_DECIDE" -e "TODO_TECHDEBT" -e "TODO_IMPROVE" -e "TODO_OPTIMIZE" -e "TODO_DISCUSS" -e "TODO_INCOMPLETE" -e "TODO_INVESTIGATE" -e "TODO_CLEANUP" -e "TODO_HACK" -e "TODO_REFACTOR" -e "TODO_CONSIDERATION" -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_CONSOLIDATE" -e "TODO_DEPRECATE" -e "TODO_ADDTEST" -e "TODO_RESEARCH" -e "TODO_BUG" -e "TODO_NB" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_IN_THIS_COMMIT"
 
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
@@ -280,20 +285,20 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
-	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
+	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	APP=app2 SERVICES=anvil,svc2,svc3 make app_stake
+	APP=app2 SERVICES=application2_stake_config.yaml make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	APP=app3 SERVICES=anvil,svc3,svc4 make app_stake
+	APP=app3 SERVICES=application3_stake_config.yaml make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
@@ -357,13 +362,10 @@ app3_undelegate_gateway3: ## Undelegate trust to gateway3
 supplier_list: ## List all the staked supplier
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
-# TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
-# TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
-# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.

@@ -1,0 +1,14 @@
+# tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events
+query_node_url: tcp://localhost:26657
+# tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer)
+network_node_url: tcp://127.0.0.1:36657
+# Name of the key (in the keyring) to sign transactions
+signing_key_name: servicer1
+# TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
+# is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
+# multiple services is already in place but currently (as seen below) is hardcoded.
+# TODO_UPNEXT(@okdas): this hostname should be updated to match that of the in-tilt anvil service.
+proxied_service_endpoints:
+  anvil: http://anvil:8080
+# Path to where the data backing SMT KV store exists on disk
+smt_store_path: smt_stores

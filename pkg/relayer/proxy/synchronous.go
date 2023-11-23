@@ -43,7 +43,7 @@ type synchronousRPCServer struct {
 func NewSynchronousServer(
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
-	proxiedServiceEndpoint url.URL,
+	proxiedServiceEndpoint *url.URL,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
@@ -51,7 +51,7 @@ func NewSynchronousServer(
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
-		proxiedServiceEndpoint: proxiedServiceEndpoint,
+		proxiedServiceEndpoint: *proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
