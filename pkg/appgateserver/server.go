@@ -3,6 +3,7 @@ package appgateserver
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -20,7 +21,6 @@ import (
 
 	blocktypes "github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -194,61 +194,41 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
 
+	// Read the request body bytes.
+	payloadBz, err := io.ReadAll(request.Body)
+	if err != nil {
+		app.replyWithError(
+			payloadBz,
+			writer,
+			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
+		)
+		log.Printf("ERROR: failed reading relay request body: %s", err)
+		return
+	}
+	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
+
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
 	if appAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(writer, ErrAppGateMissingAppAddress)
+		app.replyWithError(payloadBz, writer, ErrAppGateMissingAppAddress)
 		log.Print("ERROR: no application address provided")
 	}
 
-	// TODO_TECHDEBT: Currently, there is no information about the RPC type requested. It should
-	// be extracted from the request and used to determine the RPC type to handle. handle*Relay()
-	// calls should be wrapped into a switch statement to handle different types of relays.
-	err := app.handleJSONRPCRelay(ctx, appAddress, serviceId, request, writer)
-	if err != nil {
+	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
+	// the request type here.
+	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
+	// concurrent requests from numerous applications?
+	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(writer, err)
+		app.replyWithError(payloadBz, writer, err)
 		log.Printf("ERROR: failed handling relay: %s", err)
 		return
 	}
 
 	log.Print("INFO: request serviced successfully")
-}
-
-// replyWithError replies to the application with an error response.
-// TODO_TECHDEBT: This method should be aware of the nature of the error to use the appropriate JSONRPC
-// Code, Message and Data. Possibly by augmenting the passed in error with the adequate information.
-func (app *appGateServer) replyWithError(writer http.ResponseWriter, err error) {
-	relayResponse := &types.RelayResponse{
-		Payload: &types.RelayResponse_JsonRpcPayload{
-			JsonRpcPayload: &types.JSONRPCResponsePayload{
-				// TODO_BLOCKER(@red-0ne): This MUST match the Id provided by the request.
-				// If JSON-RPC request is not unmarshaled yet (i.e. can't extract ID), it SHOULD be a random ID.
-				Id:      0,
-				Jsonrpc: "2.0",
-				Error: &types.JSONRPCResponseError{
-					// Using conventional error code indicating internal server error.
-					Code:    -32000,
-					Message: err.Error(),
-					Data:    nil,
-				},
-			},
-		},
-	}
-
-	relayResponseBz, err := relayResponse.Marshal()
-	if err != nil {
-		log.Printf("ERROR: failed marshaling relay response: %s", err)
-		return
-	}
-
-	if _, err = writer.Write(relayResponseBz); err != nil {
-		log.Printf("ERROR: failed writing relay response: %s", err)
-		return
-	}
 }
 
 // validateConfig validates the appGateServer configuration.
