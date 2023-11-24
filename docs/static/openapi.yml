@@ -46480,7 +46480,7 @@ paths:
                           service:
                             title: >-
                               The Service for which the application is
-                              configured for
+                              configured
                             type: object
                             properties:
                               id:
@@ -46660,9 +46660,7 @@ paths:
                       type: object
                       properties:
                         service:
-                          title: >-
-                            The Service for which the application is configured
-                            for
+                          title: The Service for which the application is configured
                           type: object
                           properties:
                             id:
@@ -47178,7 +47176,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured for
+                                configured
                               type: object
                               properties:
                                 id:
@@ -47245,7 +47243,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured for
+                                  configured
                                 type: object
                                 properties:
                                   id:
@@ -47671,6 +47669,193 @@ paths:
                   additionalProperties: {}
       tags:
         - Query
+  /pocket/supplier/proof:
+    get:
+      operationId: PocketSupplierAllProofs
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              proof:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    index:
+                      type: string
+                    supplier_address:
+                      type: string
+                    session_id:
+                      type: string
+                    merkle_proof:
+                      type: string
+                  description: >-
+                    TODO_UPNEXT(@Olshansk): The structure below is the default
+                    (untouched) scaffolded type. Update
+
+                    and productionize it for our use case.
+              pagination:
+                type: object
+                properties:
+                  next_key:
+                    type: string
+                    format: byte
+                    description: |-
+                      next_key is the key to be passed to PageRequest.key to
+                      query the next page most efficiently. It will be empty if
+                      there are no more results.
+                  total:
+                    type: string
+                    format: uint64
+                    title: >-
+                      total is total number of results available if
+                      PageRequest.count_total
+
+                      was set, its value is undefined otherwise
+                description: >-
+                  PageResponse is to be embedded in gRPC response messages where
+                  the
+
+                  corresponding request message has used PageRequest.
+
+                   message SomeResponse {
+                           repeated Bar results = 1;
+                           PageResponse page = 2;
+                   }
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: pagination.key
+          description: |-
+            key is a value returned in PageResponse.next_key to begin
+            querying the next page most efficiently. Only one of offset or key
+            should be set.
+          in: query
+          required: false
+          type: string
+          format: byte
+        - name: pagination.offset
+          description: >-
+            offset is a numeric offset that can be used when key is unavailable.
+
+            It is less efficient than using key. Only one of offset or key
+            should
+
+            be set.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.limit
+          description: >-
+            limit is the total number of results to be returned in the result
+            page.
+
+            If left empty it will default to a value to be set by each app.
+          in: query
+          required: false
+          type: string
+          format: uint64
+        - name: pagination.count_total
+          description: >-
+            count_total is set to true  to indicate that the result set should
+            include
+
+            a count of the total number of items available for pagination in
+            UIs.
+
+            count_total is only respected when offset is used. It is ignored
+            when key
+
+            is set.
+          in: query
+          required: false
+          type: boolean
+        - name: pagination.reverse
+          description: >-
+            reverse is set to true if results are to be returned in the
+            descending order.
+
+
+            Since: cosmos-sdk 0.43
+          in: query
+          required: false
+          type: boolean
+      tags:
+        - Query
+  /pocket/supplier/proof/{index}:
+    get:
+      summary: >-
+        TODO_UPNEXT(@Olshansk): Update these endpoints after implementing proof
+        persistence
+
+        Queries a list of Proof items.
+      operationId: PocketSupplierProof
+      responses:
+        '200':
+          description: A successful response.
+          schema:
+            type: object
+            properties:
+              proof:
+                type: object
+                properties:
+                  index:
+                    type: string
+                  supplier_address:
+                    type: string
+                  session_id:
+                    type: string
+                  merkle_proof:
+                    type: string
+                description: >-
+                  TODO_UPNEXT(@Olshansk): The structure below is the default
+                  (untouched) scaffolded type. Update
+
+                  and productionize it for our use case.
+        default:
+          description: An unexpected error response.
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                format: int32
+              message:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@type':
+                      type: string
+                  additionalProperties: {}
+      parameters:
+        - name: index
+          in: path
+          required: true
+          type: string
+      tags:
+        - Query
   /pocket/supplier/supplier/{address}:
     get:
       summary: Queries a list of Supplier items.
@@ -47746,12 +47931,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
+                                  - REST_RPC
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
+                                   - REST_RPC: REST-RPC
                               configs:
                                 type: array
                                 items:
@@ -47895,12 +48082,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
+                                    - REST_RPC
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
+                                     - REST_RPC: REST-RPC
                                 configs:
                                   type: array
                                   items:
@@ -76814,7 +77003,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the application is configured for
+              title: The Service for which the application is configured
               type: object
               properties:
                 id:
@@ -76898,7 +77087,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the application is configured for
+                    title: The Service for which the application is configured
                     type: object
                     properties:
                       id:
@@ -76992,7 +77181,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77043,7 +77232,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the application is configured for
+        title: The Service for which the application is configured
         type: object
         properties:
           id:
@@ -77311,7 +77500,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured for
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
@@ -77375,7 +77564,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured for
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
@@ -77565,7 +77754,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77627,7 +77816,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured for
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
@@ -77807,6 +77996,7 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
+      - REST_RPC
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
@@ -77841,7 +78031,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured for
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
@@ -77874,6 +78064,7 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
+                      - REST_RPC
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
@@ -77931,6 +78122,7 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
+          - REST_RPC
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
@@ -77970,7 +78162,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured for
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:
@@ -78002,6 +78194,7 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
+                - REST_RPC
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
@@ -78072,6 +78265,22 @@ definitions:
   pocket.supplier.Params:
     type: object
     description: Params defines the parameters for the module.
+  pocket.supplier.Proof:
+    type: object
+    properties:
+      index:
+        type: string
+      supplier_address:
+        type: string
+      session_id:
+        type: string
+      merkle_proof:
+        type: string
+    description: >-
+      TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+      scaffolded type. Update
+
+      and productionize it for our use case.
   pocket.supplier.QueryAllClaimsResponse:
     type: object
     properties:
@@ -78097,6 +78306,53 @@ definitions:
           title: >-
             Claim is the serialized object stored on-chain for claims pending to
             be proven
+      pagination:
+        type: object
+        properties:
+          next_key:
+            type: string
+            format: byte
+            description: |-
+              next_key is the key to be passed to PageRequest.key to
+              query the next page most efficiently. It will be empty if
+              there are no more results.
+          total:
+            type: string
+            format: uint64
+            title: >-
+              total is total number of results available if
+              PageRequest.count_total
+
+              was set, its value is undefined otherwise
+        description: |-
+          PageResponse is to be embedded in gRPC response messages where the
+          corresponding request message has used PageRequest.
+
+           message SomeResponse {
+                   repeated Bar results = 1;
+                   PageResponse page = 2;
+           }
+  pocket.supplier.QueryAllProofsResponse:
+    type: object
+    properties:
+      proof:
+        type: array
+        items:
+          type: object
+          properties:
+            index:
+              type: string
+            supplier_address:
+              type: string
+            session_id:
+              type: string
+            merkle_proof:
+              type: string
+          description: >-
+            TODO_UPNEXT(@Olshansk): The structure below is the default
+            (untouched) scaffolded type. Update
+
+            and productionize it for our use case.
       pagination:
         type: object
         properties:
@@ -78193,12 +78449,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST_RPC
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST_RPC: REST-RPC
                         configs:
                           type: array
                           items:
@@ -78288,6 +78546,25 @@ definitions:
         title: >-
           Claim is the serialized object stored on-chain for claims pending to
           be proven
+  pocket.supplier.QueryGetProofResponse:
+    type: object
+    properties:
+      proof:
+        type: object
+        properties:
+          index:
+            type: string
+          supplier_address:
+            type: string
+          session_id:
+            type: string
+          merkle_proof:
+            type: string
+        description: >-
+          TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
+          scaffolded type. Update
+
+          and productionize it for our use case.
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
@@ -78354,12 +78631,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
+                          - REST_RPC
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
+                           - REST_RPC: REST-RPC
                       configs:
                         type: array
                         items:

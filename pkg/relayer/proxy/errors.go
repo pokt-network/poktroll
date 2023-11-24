@@ -1,6 +1,8 @@
 package proxy
 
-import sdkerrors "cosmossdk.io/errors"
+import (
+	sdkerrors "cosmossdk.io/errors"
+)
 
 var (
 	codespace                                        = "relayer_proxy"
@@ -12,4 +14,5 @@ var (
 	ErrRelayerProxyUndefinedProxiedServicesEndpoints = sdkerrors.Register(codespace, 6, "undefined proxied services endpoints for relayer proxy")
 	ErrRelayerProxyInvalidRelayRequest               = sdkerrors.Register(codespace, 7, "invalid relay request")
 	ErrRelayerProxyInvalidRelayResponse              = sdkerrors.Register(codespace, 8, "invalid relay response")
+	ErrRelayerProxyEmptyRelayRequestSignature        = sdkerrors.Register(codespace, 9, "empty relay response signature")
 )

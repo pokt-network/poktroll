@@ -47,6 +47,7 @@ enum RPCType {
     GRPC = 1; // gRPC
     WEBSOCKET = 2; // WebSocket
     JSON_RPC = 3; // JSON-RPC
+    REST = 4; // REST
     // Add new RPC types here as needed
 }
 

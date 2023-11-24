@@ -1,3 +1,17 @@
+// NB: Since this repostiory was scaffolded using `ignite s chain pocket`
+// but the module was later renamed to github.com/pokt-network/poktroll, we
+// need to swap the two lines below only during the scaffolding operation.
+// NOTE that the operation is expected to error out but all the necesary
+// types and functions will be scaffolded correctly.
+// Ref: https://github.com/ignite/cli/issues/3737
+//
+// The following will need to be done manually after the scaffold:
+// - Reverting the module name in go.mod (this file)
+// - Manually updating imports in .go files: "pocket/x/" => "github.com/pokt-network/pocket/x/"
+// - Manually `option go_package` in .proto files: `option go_package = "pocket` =>  `option go_package = "github.com/pokt-network/poktroll`
+// - If an empty `service Msg {}` is generated in a `tx.proto` file, remove it
+
+// module pocket
 module github.com/pokt-network/poktroll
 
 go 1.20

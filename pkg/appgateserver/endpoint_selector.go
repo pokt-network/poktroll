@@ -10,7 +10,8 @@ import (
 )
 
 // TODO_IMPROVE: This implements a naive greedy approach that defaults to the
-// first available supplier. Future optimizations (e.g. Quality-of-Service) can be introduced here.
+// first available supplier.
+// Future optimizations (e.g. Quality-of-Service) can be introduced here.
 // TODO(@h5law): Look into different endpoint selection depending on their suitability.
 // getRelayerUrl gets the URL of the relayer for the given service.
 func (app *appGateServer) getRelayerUrl(
@@ -27,7 +28,7 @@ func (app *appGateServer) getRelayerUrl(
 			}
 
 			for _, endpoint := range service.Endpoints {
-				// Return the first endpoint url that matches the JSON RPC RpcType.
+				// Return the first endpoint url that matches the request's RpcType.
 				if endpoint.RpcType == rpcType {
 					supplierUrl, err := url.Parse(endpoint.Url)
 					if err != nil {
