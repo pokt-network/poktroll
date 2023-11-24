@@ -50,7 +50,7 @@ type mappedClient[T any, U observable.ReplayObservable[T]] struct {
 	// queryString is the query string used to subscribe to events of the
 	// desired type.
 	// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
-	// and: https://docs.cosmos.network/main/learn/advanced/events#default-events
+	// And: https://docs.cosmos.network/main/learn/advanced/events#default-events
 	queryString string
 	// eventsClient is the events query client which is used to subscribe to
 	// newly committed block events. It emits an either value which may contain
