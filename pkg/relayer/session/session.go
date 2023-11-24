@@ -35,7 +35,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient client.MappedClient[client.Block]
+	blockClient client.BlockClient
 
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient

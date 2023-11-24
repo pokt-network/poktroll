@@ -17,7 +17,7 @@ func (app *appGateServer) getCurrentSession(
 	app.sessionMu.RLock()
 	defer app.sessionMu.RUnlock()
 
-	latestBlock := app.blockClient.LatestEvent(ctx)
+	latestBlock := app.blockClient.LastNEvents(ctx, 1)[0]
 	if currentSession, ok := app.currentSessions[serviceId]; ok {
 		sessionEndBlockHeight := currentSession.Header.SessionStartBlockHeight + currentSession.NumBlocksPerSession
 

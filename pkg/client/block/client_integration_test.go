@@ -18,13 +18,13 @@ import (
 
 const blockIntegrationSubTimeout = 5 * time.Second
 
-func TestBlockClient_LatestEvent(t *testing.T) {
+func TestBlockClient_LastNEvents(t *testing.T) {
 	ctx := context.Background()
 
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	block := blockClient.LatestEvent(ctx)
+	block := blockClient.LastNEvents(ctx, 1)
 	require.NotEmpty(t, block)
 }
 

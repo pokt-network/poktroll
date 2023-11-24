@@ -22,8 +22,8 @@ func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (client.MappedClient[client.DelegateeChange], error) {
-	client, err := mappedclient.NewMappedClient[client.DelegateeChange](
+) (client.MappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]], error) {
+	client, err := mappedclient.NewMappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]](
 		ctx,
 		deps,
 		cometWebsocketURL,

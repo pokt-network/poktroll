@@ -117,11 +117,11 @@ type EventsObservable[T any] observable.ReplayObservable[T]
 
 // MappedClient is an interface which provides notifications about newly received
 // events as well as direct access to the latest event via some blockchain API.
-type MappedClient[T any] interface {
+type MappedClient[T any, R observable.ReplayObservable[T]] interface {
 	// EventsSequence returns an observable which emits new events.
-	EventsSequence(context.Context) EventsObservable[T]
-	// LatestEvent returns the latest event that has been received.
-	LatestEvent(context.Context) T
+	EventsSequence(context.Context) R
+	// LastNEvents returns the latest N events that has been received.
+	LastNEvents(ctx context.Context, n int) []T
 	// Close unsubscribes all observers of the events sequence observable
 	// and closes the events query client.
 	Close()

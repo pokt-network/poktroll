@@ -21,8 +21,8 @@ func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (client.MappedClient[client.Block], error) {
-	client, err := mappedclient.NewMappedClient[client.Block](
+) (client.MappedClient[client.Block, client.EventsObservable[client.Block]], error) {
+	client, err := mappedclient.NewMappedClient[client.Block, client.EventsObservable[client.Block]](
 		ctx,
 		deps,
 		cometWebsocketURL,

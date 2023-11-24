@@ -62,9 +62,9 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LatestEvent successfully returns latest block",
+			name: "LastNEvents(1) successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LatestEvent(ctx)
+				lastBlock := blockClient.LastNEvents(ctx, 1)[0]
 				return lastBlock
 			},
 		},

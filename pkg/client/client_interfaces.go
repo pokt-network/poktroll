@@ -17,18 +17,27 @@ import (
 // (i.e. type BlockClient MappedClient[Block])
 // This is a limitation of gomock, and other mocking tools should be considered
 
-type BlockObservable observable.ReplayObservable[Block]
+type (
+	// BlockObservable wraps the generic
+	// observable.ReplayObservable[Block] type
+	BlockObservable observable.ReplayObservable[Block]
 
-type BlockClient interface {
-	EventsSequence(context.Context) BlockObservable
-	LatestEvent(context.Context) Block
-	Close()
-}
+	// BlockClient is an interface that wraops the
+	// MappedClient[Block] interface
+	BlockClient interface {
+		EventsSequence(context.Context) BlockObservable
+		LastNEvents(context.Context, int) []Block
+		Close()
+	}
 
-type DelegateeChangeObservable observable.ReplayObservable[DelegateeChange]
-
-type DelegationClient interface {
-	EventsSequence(context.Context) DelegateeChangeObservable
-	LatestEvent(context.Context) DelegateeChange
-	Close()
-}
+	// DelegateeChangeObservable wraps the generic
+	// observable.ReplayObservable[DelegateeChange] type
+	DelegateeChangeObservable observable.ReplayObservable[DelegateeChange]
+	// DelegationClient is an interface that wraops the
+	// MappedClient[DelegateeChange] interface
+	DelegationClient interface {
+		EventsSequence(context.Context) DelegateeChangeObservable
+		LastNEvents(context.Context, int) []DelegateeChange
+		Close()
+	}
+)

@@ -81,7 +81,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	log.Printf("DEBUG: Verifying relay request session...")
-	currentBlock := rp.blockClient.LatestEvent(ctx)
+	currentBlock := rp.blockClient.LastNEvents(ctx, 1)[0]
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,
 		Service:            service,

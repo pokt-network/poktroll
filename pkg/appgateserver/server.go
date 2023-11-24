@@ -79,7 +79,7 @@ type appGateServer struct {
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
-	blockClient client.MappedClient[client.Block]
+	blockClient client.BlockClient
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL

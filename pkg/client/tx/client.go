@@ -65,7 +65,7 @@ type txClient struct {
 	eventsQueryClient client.EventsQueryClient
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
-	blockClient client.MappedClient[client.Block]
+	blockClient client.BlockClient
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
 	txsMutex sync.Mutex
@@ -198,7 +198,7 @@ func (tClient *txClient) SignAndBroadcast(
 	}
 
 	// Calculate timeout height
-	timeoutHeight := tClient.blockClient.LatestEvent(ctx).
+	timeoutHeight := tClient.blockClient.LastNEvents(ctx, 1)[0].
 		Height() + tClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable

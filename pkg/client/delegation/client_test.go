@@ -54,9 +54,9 @@ func TestDelegationClient(t *testing.T) {
 		fn   func() client.DelegateeChange
 	}{
 		{
-			name: "LatestEvent successfully returns latest delegatee change",
+			name: "LastNEvent successfully returns latest delegatee change",
 			fn: func() client.DelegateeChange {
-				lastDelegateeChange := delegationClient.LatestEvent(ctx)
+				lastDelegateeChange := delegationClient.LastNEvents(ctx, 1)[0]
 				return lastDelegateeChange
 			},
 		},
