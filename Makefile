@@ -285,20 +285,20 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt $(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
-	APP=app1 SERVICES=anvil,svc1,svc2 make app_stake
+	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
 
 .PHONY: app2_stake
 app2_stake: ## Stake app2
-	APP=app2 SERVICES=anvil,svc2,svc3 make app_stake
+	APP=app2 SERVICES=application2_stake_config.yaml make app_stake
 
 .PHONY: app3_stake
 app3_stake: ## Stake app3
-	APP=app3 SERVICES=anvil,svc3,svc4 make app_stake
+	APP=app3 SERVICES=application3_stake_config.yaml make app_stake
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
@@ -362,13 +362,10 @@ app3_undelegate_gateway3: ## Undelegate trust to gateway3
 supplier_list: ## List all the staked supplier
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-supplier --node $(POCKET_NODE)
 
-# TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
-# TODO_TECHDEBT: svc1, svc2 and svc3 below are only in place to make GetSession testable
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
-# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
 	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.

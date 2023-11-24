@@ -22,7 +22,7 @@ var (
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
-		Use:   "stake-supplier <upokt_amount> [--config config_file]",
+		Use:   "stake-supplier <upokt_amount> --config <config_file.yaml>",
 		Short: "Stake a supplier",
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
