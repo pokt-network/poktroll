@@ -25,7 +25,7 @@ func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (client.MappedClient[client.Block, client.EventsObservable[client.Block]], error) {
+) (client.BlockClient, error) {
 	client, err := mappedclient.NewMappedClient[client.Block, client.EventsObservable[client.Block]](
 		ctx,
 		deps,
@@ -36,7 +36,7 @@ func NewBlockClient(
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &blockClient{mappedClient: client}, nil
 }
 
 // blockClient is a wrapper around a mapped client that implements the same

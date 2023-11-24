@@ -28,7 +28,7 @@ func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (client.MappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]], error) {
+) (client.DelegationClient, error) {
 	client, err := mappedclient.NewMappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]](
 		ctx,
 		deps,
@@ -39,7 +39,7 @@ func NewDelegationClient(
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &delegationClient{mappedClient: client}, nil
 }
 
 // delegationClient is a wrapper around a mapped client that implements the same
