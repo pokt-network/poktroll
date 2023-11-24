@@ -125,6 +125,28 @@ type Block interface {
 	Hash() []byte
 }
 
+// DelegateeChangesObserver is an observer for DelegateeChange events.
+type DelegateeChangesObserver observable.Observer[DelegateeChange]
+
+// DelegationClient is an interface which provides notifications when an
+// application changes it's delegatees. This client listens for the
+// "pocket.application.EventDelegateeChange" event emitted by the application
+// module on both Delegation and Undelegation transactions.
+type DelegationClient interface {
+	// DelegateeChangesObserver returns an observer that emits delegatee
+	// change events, when received by the publisher of the observable.
+	DelegateeChangesObserver(context.Context) DelegateeChangesObserver
+	// Close unsubscribes all observers of the delegatee changes observable
+	// and closes the events query client.
+	Close()
+}
+
+// DelegateeChange is an interface which wraps the EventDelegateeChange event
+// emitted by the application module.
+type DelegateeChange interface {
+	AppAddress() string
+}
+
 // EventsBytesObservable is an observable which is notified with an either
 // value which contains either an error or the event message bytes.
 //
