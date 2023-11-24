@@ -62,16 +62,16 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LatestBlock successfully returns latest block",
+			name: "LatestEvent successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LatestBlock(ctx)
+				lastBlock := blockClient.LatestEvent(ctx)
 				return lastBlock
 			},
 		},
 		{
-			name: "CommittedBlocksSequence successfully returns latest block",
+			name: "EventsSequence successfully returns latest block",
 			fn: func() client.Block {
-				blockObservable := blockClient.CommittedBlocksSequence(ctx)
+				blockObservable := blockClient.EventsSequence(ctx)
 				require.NotNil(t, blockObservable)
 
 				// Ensure that the observable is replayable via Last.
@@ -86,7 +86,7 @@ func TestBlockClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var actualBlockCh = make(chan client.Block, 10)
+			actualBlockCh := make(chan client.Block, 10)
 
 			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,

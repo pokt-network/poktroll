@@ -1,5 +1,6 @@
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
+//go:generate mockgen -destination=../../testutil/mockclient/block_type_mock.go -package=mockclient . Block
+//go:generate mockgen -destination=../../testutil/mockclient/delegatee_change_type_mock.go -package=mockclient . DelegateeChange
 //go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
 //go:generate mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
@@ -98,26 +99,6 @@ type TxContext interface {
 	) (*comettypes.ResultTx, error)
 }
 
-// BlocksObservable is an observable which is notified with an either
-// value which contains either an error or the event message bytes.
-//
-// TODO_HACK: The purpose of this type is to work around gomock's lack of
-// support for generic types. For the same reason, this type cannot be an
-// alias (i.e. EventsBytesObservable = observable.Observable[either.Either[[]byte]]).
-type BlocksObservable observable.ReplayObservable[Block]
-
-// BlockClient is an interface which provides notifications about newly committed
-// blocks as well as direct access to the latest block via some blockchain API.
-type BlockClient interface {
-	// CommittedBlocksSequence returns an observable which emits newly committed blocks.
-	CommittedBlocksSequence(context.Context) BlocksObservable
-	// LatestBlock returns the latest block that has been committed.
-	LatestBlock(context.Context) Block
-	// Close unsubscribes all observers of the committed blocks sequence observable
-	// and closes the events query client.
-	Close()
-}
-
 // Block is an interface which abstracts the details of a block to its minimal
 // necessary components.
 type Block interface {
@@ -125,26 +106,25 @@ type Block interface {
 	Hash() []byte
 }
 
-// DelegateeChangesObserver is an observer for DelegateeChange events.
-type DelegateeChangesObserver observable.Observer[DelegateeChange]
-
-// DelegationClient is an interface which provides notifications when an
-// application changes it's delegatees. This client listens for the
-// "pocket.application.EventDelegateeChange" event emitted by the application
-// module on both Delegation and Undelegation transactions.
-type DelegationClient interface {
-	// DelegateeChangesObserver returns an observer that emits delegatee
-	// change events, when received by the publisher of the observable.
-	DelegateeChangesObserver(context.Context) DelegateeChangesObserver
-	// Close unsubscribes all observers of the delegatee changes observable
-	// and closes the events query client.
-	Close()
-}
-
 // DelegateeChange is an interface which wraps the EventDelegateeChange event
 // emitted by the application module.
 type DelegateeChange interface {
 	AppAddress() string
+}
+
+// EventsObservable is a replay observable for events of some type T.
+type EventsObservable[T any] observable.ReplayObservable[T]
+
+// MappedClient is an interface which provides notifications about newly received
+// events as well as direct access to the latest event via some blockchain API.
+type MappedClient[T any] interface {
+	// EventsSequence returns an observable which emits new events.
+	EventsSequence(context.Context) EventsObservable[T]
+	// LatestEvent returns the latest event that has been received.
+	LatestEvent(context.Context) T
+	// Close unsubscribes all observers of the events sequence observable
+	// and closes the events query client.
+	Close()
 }
 
 // EventsBytesObservable is an observable which is notified with an either

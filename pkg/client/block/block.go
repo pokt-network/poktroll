@@ -6,6 +6,7 @@ import (
 	"github.com/cometbft/cometbft/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	mappedclient "github.com/pokt-network/poktroll/pkg/client/mapped_client"
 )
 
 // cometBlockEvent is used to deserialize incoming committed block event messages
@@ -37,7 +38,8 @@ func newCometBlockEvent(blockMsgBz []byte) (client.Block, error) {
 
 	// If msg does not match the expected format then the block's height has a zero value.
 	if blockMsg.Block.Header.Height == 0 {
-		return nil, ErrUnmarshalBlockEvent.Wrap(string(blockMsgBz))
+		return nil, mappedclient.ErrMappedClientUnmarshalEvent.
+			Wrapf("unable to unmarshal block: %s", string(blockMsgBz))
 	}
 
 	return blockMsg, nil

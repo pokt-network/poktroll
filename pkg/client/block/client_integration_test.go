@@ -18,13 +18,13 @@ import (
 
 const blockIntegrationSubTimeout = 5 * time.Second
 
-func TestBlockClient_LatestBlock(t *testing.T) {
+func TestBlockClient_LatestEvent(t *testing.T) {
 	ctx := context.Background()
 
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	block := blockClient.LatestBlock(ctx)
+	block := blockClient.LatestEvent(ctx)
 	require.NotEmpty(t, block)
 }
 
@@ -34,7 +34,7 @@ func TestBlockClient_BlocksObservable(t *testing.T) {
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	blockSub := blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
+	blockSub := blockClient.EventsSequence(ctx).Subscribe(ctx)
 
 	var (
 		blockMu      sync.Mutex

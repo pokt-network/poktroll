@@ -65,7 +65,7 @@ type txClient struct {
 	eventsQueryClient client.EventsQueryClient
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
-	blockClient client.BlockClient
+	blockClient client.MappedClient[client.Block]
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
 	txsMutex sync.Mutex
@@ -198,7 +198,7 @@ func (tClient *txClient) SignAndBroadcast(
 	}
 
 	// Calculate timeout height
-	timeoutHeight := tClient.blockClient.LatestBlock(ctx).
+	timeoutHeight := tClient.blockClient.LatestEvent(ctx).
 		Height() + tClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable
@@ -442,7 +442,7 @@ func (tClient *txClient) goHandleTxEvents(
 // from the txTimeoutPool.
 func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	// Subscribe to a sequence of committed blocks.
-	blockCh := tClient.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
+	blockCh := tClient.blockClient.EventsSequence(ctx).Subscribe(ctx).Ch()
 
 	// Iterate over each incoming block.
 	for block := range blockCh {
@@ -506,7 +506,6 @@ func (tClient *txClient) txEventFromEventBz(
 	_ context.Context,
 	eitherEventBz either.Bytes,
 ) (eitherTxEvent either.Either[*TxEvent], skip bool) {
-
 	// Extract byte data from the given event. In case of failure, wrap the error
 	// and denote the event for skipping.
 	eventBz, err := eitherEventBz.ValueOrError()
@@ -556,7 +555,6 @@ func (tClient *txClient) unmarshalTxEvent(eventBz []byte) (*TxEvent, error) {
 // transaction using the byte hash. If any error occurs during this process,
 // appropriate wrapped errors are returned for easier debugging.
 func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string) error {
-
 	// Decode the provided hex hash into bytes.
 	txHash, err := hex.DecodeString(txHashHex)
 	if err != nil {

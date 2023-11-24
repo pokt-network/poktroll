@@ -1,5 +1,5 @@
-// Package delegation contains the client implementation to listen for
-// delegation events from the application module. This client listens for all
-// events emitted by the application module and filters for delegation events,
-// those where the event type is "pocket.application.EventDelegateeChange"
+// Package delegation contains the client implementation of the MappedClient
+// generic which listens for delegation change events on chain and emits them
+// through a ReplayObservable. This enables consumers to listen for on-chain
+// application delegation changes and react to them asynchronously.
 package delegation

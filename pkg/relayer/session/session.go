@@ -35,7 +35,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient client.BlockClient
+	blockClient client.MappedClient[client.Block]
 
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
@@ -80,7 +80,7 @@ func NewRelayerSessions(
 
 	rs.sessionsToClaimObs = channel.MapExpand[client.Block, relayer.SessionTree](
 		ctx,
-		rs.blockClient.CommittedBlocksSequence(ctx),
+		rs.blockClient.EventsSequence(ctx),
 		rs.mapBlockToSessionsToClaim,
 	)
 
@@ -215,7 +215,7 @@ func (rp *relayerSessionsManager) validateConfig() error {
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
-	subscription := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
+	subscription := rs.blockClient.EventsSequence(ctx).Subscribe(ctx)
 	defer subscription.Unsubscribe()
 
 	for block := range subscription.Ch() {

@@ -27,8 +27,7 @@ func (rs *relayerSessionsManager) createClaims(ctx context.Context) observable.O
 		rs.mapWaitForEarliestCreateClaimHeight,
 	)
 
-	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
-		channel.NewObservable[relayer.SessionTree]()
+	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh := channel.NewObservable[relayer.SessionTree]()
 
 	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -81,10 +80,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	log.Printf("waiting & blocking for global earliest claim submission createClaimWindowStartBlock height: %d", createClaimWindowStartHeight)
 	createClaimWindowStartBlock := rs.waitForBlock(ctx, createClaimWindowStartHeight)
 
-	log.Printf("received earliest claim submission createClaimWindowStartBlock height: %d, use its hash to have a random submission for the servicer", createClaimWindowStartBlock.Height())
+	log.Printf(
+		"received earliest claim submission createClaimWindowStartBlock height: %d, use its hash to have a random submission for the servicer",
+		createClaimWindowStartBlock.Height(),
+	)
 
-	earliestCreateClaimHeight :=
-		protocol.GetEarliestCreateClaimHeight(createClaimWindowStartBlock)
+	earliestCreateClaimHeight := protocol.GetEarliestCreateClaimHeight(createClaimWindowStartBlock)
 
 	log.Printf("earliest claim submission createClaimWindowStartBlock height for this supplier: %d", earliestCreateClaimHeight)
 	_ = rs.waitForBlock(ctx, earliestCreateClaimHeight)
@@ -106,7 +107,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		latestBlock := rs.blockClient.LatestBlock(ctx)
+		latestBlock := rs.blockClient.LatestEvent(ctx)
 		log.Printf("INFO: currentBlock: %d, submitting claim", latestBlock.Height()+1)
 
 		sessionHeader := session.GetSessionHeader()
