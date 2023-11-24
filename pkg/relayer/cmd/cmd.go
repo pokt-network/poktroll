@@ -11,7 +11,9 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
+	"github.com/pokt-network/poktroll/cmd/flags"
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
@@ -25,11 +27,6 @@ import (
 
 // We're `explicitly omitting default` so the relayer crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
-
-// TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
-var (
-	flagRelayMinerConfig string
-)
 
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -50,8 +47,47 @@ via an SMT KV store. The miner will monitor the current block height and periodi
 submit claim and proof messages according to the protocol as sessions become eligible
 for such operations.`,
 		RunE: runRelayer,
+		PreRun: func(_ *cobra.Command, _ []string) {
+			relayerconfig.ReadConfig(viper.GetString(relayerconfig.KeyRelayMinerConfigPath))
+		},
 	}
 
+	if err := flags.BindFlags(cmd); err != nil {
+		panic(err)
+	}
+
+	relayMinerFlags := []flags.FlagDescriptor{
+		{
+			FlagName:    FlagRelayMinerConfigPath,
+			ConfigKey:   relayerconfig.KeyRelayMinerConfigPath,
+			Description: "Path to the relay miner relayerconfig file",
+		},
+		{
+			FlagName:    FlagQueryNodeUrl,
+			ConfigKey:   relayerconfig.KeyQueryNodeUrl,
+			Description: "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events",
+		},
+		{
+			FlagName:    FlagNetworkNodeUrl,
+			ConfigKey:   relayerconfig.KeyNetworkNodeUrl,
+			Description: "tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer)",
+		},
+		{
+			FlagName:    FlagSigningKeyName,
+			ConfigKey:   relayerconfig.KeySigningKeyName,
+			Description: "Name of the key (in the keyring) to sign transactions",
+		},
+		{
+			FlagName:    FlagSmtStorePath,
+			ConfigKey:   relayerconfig.KeySmtStorePath,
+			Description: "Path to where the data backing SMT KV store exists on disk",
+		},
+	}
+	if err := flags.BindFlags(cmd, relayMinerFlags...); err != nil {
+		panic(err)
+	}
+
+	// TODO_IN_THIS_COMMIT: default config path?
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
@@ -66,7 +102,8 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Handle interrupt and kill signals asynchronously.
 	signals.GoOnExitSignal(cancelCtx)
 
-	configContent, err := os.ReadFile(flagRelayMinerConfig)
+	// TODO: come back to this... needs to be overridden by flags...
+	configContent, err := os.ReadFile(viper.GetString(relayerconfig.KeyRelayMinerConfigPath))
 	if err != nil {
 		return err
 	}
