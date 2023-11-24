@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
-	"github.com/pokt-network/poktroll/x/supplier/client/config"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -251,7 +251,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			require.NoError(t, net.WaitForNextBlock())
 
 			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, config.NormalizeYAMLIndentation(tt.config)).Name()
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.config)).Name()
 
 			// Prepare the arguments for the CLI command
 			args := []string{

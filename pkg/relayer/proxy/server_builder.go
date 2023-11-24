@@ -55,10 +55,13 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				service.Id, endpoint.Url,
 			)
 
-			// Switch to the RPC type to create the appropriate RelayServer
+			// Switch to the RPC type
+			// TODO(@h5law): Implement a switch that handles all synchronous
+			// RPC types in one server type and asynchronous RPC types in another
+			// to create the appropriate RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
-				server = NewJSONRPCServer(
+				server = NewSynchronousServer(
 					service,
 					supplierEndpointHost,
 					proxiedServicesEndpoints,
