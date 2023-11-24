@@ -261,11 +261,6 @@ func TestZerologLogger_With(t *testing.T) {
 	require.Contains(t, logOutput.String(), `"key":"value"`)
 }
 
-// TODO_TEST/TODO_COMMUNITY: add test coverage around `polyzero.Logger#WithContext()`.
-func TestZerologLogger_WithContext(t *testing.T) {
-	t.SkipNow()
-}
-
 func TestZerologLogger_WithLevel(t *testing.T) {
 	logger, logOutput := newTestLogger(t, polyzero.DebugLevel)
 	logger.WithLevel(polyzero.DebugLevel).Msg("WithLevel()")

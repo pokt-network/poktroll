@@ -87,7 +87,9 @@ func (ze *zerologLogger) WithLevel(level polylog.Level) polylog.Event {
 //
 // TODO_TEST/TODO_COMMUNITY: add coverage for `polyzero.Logger#WithContext()`.
 func (ze *zerologLogger) WithContext(ctx context.Context) context.Context {
-	return ze.Logger.WithContext(ctx)
+	ctx = context.WithValue(ctx, polylog.CtxKey, ze)
+	ctx = ze.Logger.WithContext(ctx)
+	return ctx
 }
 
 // Write implements io.Writer. This is useful to set as a writer for the
