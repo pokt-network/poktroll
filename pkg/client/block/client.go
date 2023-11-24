@@ -9,15 +9,17 @@ import (
 	mappedclient "github.com/pokt-network/poktroll/pkg/client/mapped_client"
 )
 
-// committedBlocksQuery is the query used to subscribe to new block evnets.
+// committedBlocksQuery is the query used to subscribe to new committed block
+// events used by the EventsQueryClient to subscribe to new block events from
+// the chain.
 // See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
 const committedBlocksQuery = "tm.event='NewBlock'"
 
-var _ client.BlockClient = (*blockClient)(nil)
-
 // NewBlockClient creates a new block client from the given dependencies and
 // cometWebsocketURL. It uses the defined committedBlocksQuery to subscribe to
-// newly committed block events and maps them to Block objects.
+// newly committed block events and maps them to Block objects. This is a
+// wrapper around the MappedClient[Block] generic type in order for gomock to
+// correctly mock the interface.
 //
 // Required dependencies:
 //   - client.EventsQueryClient

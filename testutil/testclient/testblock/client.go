@@ -19,7 +19,7 @@ import (
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) client.MappedClient[client.Block, client.EventsObservable[client.Block]] {
+func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)

@@ -9,18 +9,17 @@ import (
 	mappedclient "github.com/pokt-network/poktroll/pkg/client/mapped_client"
 )
 
-// delegationEventQuery is the query used to subscribe to new delegatee change
-// events emmitted whenever an application changes its delegatee gateways,
+// delegationEventQuery is the query used by the EventsQueryClien to subscribe
+// to new delegation events from the the application module on chain.
 // See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
 // And: https://docs.cosmos.network/main/learn/advanced/events#default-events
 const delegationEventQuery = "tm.event='Tx' AND message.action='pocket.application.EventDelegateeChange'"
 
-var _ client.DelegationClient = (*delegationClient)(nil)
-
 // NewDelegationClient creates a new delegation client from the given
 // dependencies and cometWebsocketURL. It uses the defined delegationEventQuery
 // to subscribe to new delegation events and maps them to DelegateeChange
-// objects.
+// objects. This is an implementation of the MappedClient[DelegateeChange]
+// generic type wrapped in order for gomock to correctly mock the interface.
 //
 // Required dependencies:
 //   - client.EventsQueryClient
