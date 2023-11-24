@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
@@ -37,24 +38,40 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
+	// TODO_IN_THIS_COMMIT: fix comment...
+	// Check if the --query-node flag was set and use it if so.
 	// Check that the query node URL is provided
-	if yamlRelayMinerConfig.QueryNodeUrl == "" {
+	queryNodeUrlString := viper.GetString(KeyQueryNodeUrl)
+	switch {
+	case queryNodeUrlString != "":
+		yamlRelayMinerConfig.QueryNodeUrl = queryNodeUrlString
+	case yamlRelayMinerConfig.QueryNodeUrl != "":
+		queryNodeUrlString = yamlRelayMinerConfig.QueryNodeUrl
+	default:
 		return nil, ErrRelayMinerConfigInvalidQueryNodeUrl.Wrapf("query node url is required")
 	}
 
 	// Parse the query node URL
-	queryNodeUrl, err := url.Parse(yamlRelayMinerConfig.QueryNodeUrl)
+	queryNodeUrl, err := url.Parse(queryNodeUrlString)
 	if err != nil {
 		return nil, ErrRelayMinerConfigInvalidQueryNodeUrl.Wrapf("%s", err)
 	}
 
+	// TODO_IN_THIS_COMMIT: fix comment...
+	// Check if the --network-node flag was set and use it if so.
 	// Check that the network node URL is provided
-	if yamlRelayMinerConfig.NetworkNodeUrl == "" {
+	networkNodeUrlString := viper.GetString(KeyNetworkNodeUrl)
+	switch {
+	case networkNodeUrlString != "":
+		yamlRelayMinerConfig.NetworkNodeUrl = networkNodeUrlString
+	case yamlRelayMinerConfig.NetworkNodeUrl != "":
+		networkNodeUrlString = yamlRelayMinerConfig.NetworkNodeUrl
+	default:
 		return nil, ErrRelayMinerConfigInvalidNetworkNodeUrl.Wrapf("network node url is required")
 	}
 
 	// Parse the network node URL
-	networkNodeUrl, err := url.Parse(yamlRelayMinerConfig.NetworkNodeUrl)
+	networkNodeUrl, err := url.Parse(networkNodeUrlString)
 	if err != nil {
 		return nil, ErrRelayMinerConfigInvalidNetworkNodeUrl.Wrapf("%s", err)
 	}
@@ -62,12 +79,25 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	// Parse the websocket URL of the Pocket Node to connect to for subscribing to on-chain events.
 	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", queryNodeUrl.Host)
 
-	if yamlRelayMinerConfig.SigningKeyName == "" {
+	signingKeyName := viper.GetString(KeySigningKeyName)
+	switch {
+	case signingKeyName != "":
+		yamlRelayMinerConfig.SigningKeyName = signingKeyName
+	case yamlRelayMinerConfig.SigningKeyName != "":
+		signingKeyName = yamlRelayMinerConfig.SigningKeyName
+	default:
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName
 	}
 
-	if yamlRelayMinerConfig.SmtStorePath == "" {
+	smtStorePath := viper.GetString(KeySmtStorePath)
+	switch {
+	case smtStorePath != "":
+		yamlRelayMinerConfig.SmtStorePath = smtStorePath
+	case yamlRelayMinerConfig.SmtStorePath != "":
+		smtStorePath = yamlRelayMinerConfig.SmtStorePath
+	default:
 		return nil, ErrRelayMinerConfigInvalidSmtStorePath
+
 	}
 
 	if yamlRelayMinerConfig.ProxiedServiceEndpoints == nil {
