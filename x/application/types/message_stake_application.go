@@ -17,17 +17,8 @@ var _ sdk.Msg = (*MsgStakeApplication)(nil)
 func NewMsgStakeApplication(
 	address string,
 	stake types.Coin,
-	serviceIds []string,
+	appServiceConfigs []*sharedtypes.ApplicationServiceConfig,
 ) *MsgStakeApplication {
-	// Convert the serviceIds to the proper ApplicationServiceConfig type (enables future expansion)
-	appServiceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(serviceIds))
-	for idx, serviceId := range serviceIds {
-		appServiceConfigs[idx] = &sharedtypes.ApplicationServiceConfig{
-			Service: &sharedtypes.Service{
-				Id: serviceId,
-			},
-		}
-	}
 
 	return &MsgStakeApplication{
 		Address:  address,

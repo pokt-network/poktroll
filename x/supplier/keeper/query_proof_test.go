@@ -20,7 +20,7 @@ var _ = strconv.IntSize
 func TestProofQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNProof(keeper, ctx, 2)
+	msgs := createNProofs(keeper, ctx, 2)
 	tests := []struct {
 		desc     string
 		request  *types.QueryGetProofRequest
@@ -72,7 +72,7 @@ func TestProofQuerySingle(t *testing.T) {
 func TestProofQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-	msgs := createNProof(keeper, ctx, 5)
+	msgs := createNProofs(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllProofsRequest {
 		return &types.QueryAllProofsRequest{

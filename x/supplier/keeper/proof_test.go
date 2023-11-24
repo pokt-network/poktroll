@@ -15,7 +15,7 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNProof(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof {
+func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof {
 	items := make([]types.Proof, n)
 	for i := range items {
 		items[i].Index = strconv.Itoa(i)
@@ -27,7 +27,7 @@ func createNProof(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof {
 
 func TestProofGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
+	items := createNProofs(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetProof(ctx,
 			item.Index,
@@ -41,7 +41,7 @@ func TestProofGet(t *testing.T) {
 }
 func TestProofRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
+	items := createNProofs(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveProof(ctx,
 			item.Index,
@@ -55,9 +55,9 @@ func TestProofRemove(t *testing.T) {
 
 func TestProofGetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
+	items := createNProofs(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllProof(ctx)),
+		nullify.Fill(keeper.GetAllProofs(ctx)),
 	)
 }
