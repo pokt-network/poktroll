@@ -139,7 +139,7 @@ test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	go test -v ./e2e/tests/... -tags=e2e
+	go test -v ./e2e/tests/... -tags=e2e,test
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests
