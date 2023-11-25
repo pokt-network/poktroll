@@ -9,15 +9,16 @@ import (
 )
 
 type (
-	// Observable wraps the generic observable.ReplayObservable[DelegateeChange] type
-	Observable observable.ReplayObservable[client.DelegateeChange]
+	// DelegateeChangeReplayObservable wraps the generic
+	// observable.ReplayObservable[DelegateeChange] type
+	DelegateeChangeReplayObservable observable.ReplayObservable[client.DelegateeChange]
 
 	// Client is an interface that wraps the EventsReplayClient interface
 	// specific for the EventsReplayClient[DelegateeChange] implementation
 	Client interface {
 		// DelegateeChangesSequence returns a Observable of DelegateeChanges that
 		// emits the latest delegatee change that has occured on chain.
-		DelegateeChangesSequence(context.Context) Observable
+		DelegateeChangesSequence(context.Context) DelegateeChangeReplayObservable
 		// LastNBlocks returns the latest N blocks that have been committed to
 		// the chain.
 		LastNDelegateeChanges(context.Context, int) []client.DelegateeChange

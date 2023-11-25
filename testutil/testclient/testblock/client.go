@@ -77,7 +77,7 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 	// blocks sent on the given blocksPublishCh.
 	blockClientMock.EXPECT().CommittedBlocksSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) block.Observable {
+	).DoAndReturn(func(ctx context.Context) block.BlockReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1. Blocks
 		// are published to this observable via the provided blocksPublishCh.
 		withPublisherOpt := channel.WithPublisher(blocksPublishCh)

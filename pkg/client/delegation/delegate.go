@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	replayclient "github.com/pokt-network/poktroll/pkg/client/events_replay_client"
+	"github.com/pokt-network/poktroll/pkg/client/event"
 )
 
 var _ client.DelegateeChange = (*delegate)(nil)
@@ -31,8 +31,8 @@ func newDelegateeChangeEvent(delegateeChangeEventBz []byte) (client.DelegateeCha
 	}
 
 	if delegateeChange.Address == "" {
-		return nil, replayclient.ErrEventsReplayClientUnmarshalEvent.
-			Wrapf("unable to unmarshal block: %s", string(delegateeChangeEventBz))
+		return nil, event.ErrEventUnmarshalEvent.
+			Wrapf("unable to unmarshal delegatee change: %s", string(delegateeChangeEventBz))
 	}
 
 	return delegateeChange, nil

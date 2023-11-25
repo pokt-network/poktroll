@@ -9,15 +9,16 @@ import (
 )
 
 type (
-	// Observable wraps the generic observable.ReplayObservable[Block] type
-	Observable observable.ReplayObservable[client.Block]
+	// BlockReplayObservable wraps the generic
+	// observable.ReplayObservable[Block] type
+	BlockReplayObservable observable.ReplayObservable[client.Block]
 
 	// Client is an interface that wraps the EventsReplayClient interface
 	// specific for the EventsReplayClient[Block] implementation
 	Client interface {
 		// CommittedBlocksSequence returns a BlockObservable that emits the
 		// latest block that has been committed to the chain.
-		CommittedBlocksSequence(context.Context) Observable
+		CommittedBlocksSequence(context.Context) BlockReplayObservable
 		// LastNBlocks returns the latest N blocks that have been committed to
 		// the chain.
 		LastNBlocks(context.Context, int) []client.Block

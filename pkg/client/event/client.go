@@ -1,4 +1,4 @@
-package eventsreplayclient
+package event
 
 import (
 	"context"
@@ -229,7 +229,7 @@ func (mClient *replayClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error)
 		// during the EventsReplayClient's construction.
 		event, err := mClient.eventBytesToTypeDecoder(eventBz)
 		if err != nil {
-			if ErrEventsReplayClientUnmarshalEvent.Is(err) {
+			if ErrEventUnmarshalEvent.Is(err) {
 				// Don't publish (skip) if the message was not the correct event.
 				return *new(T), true
 			}

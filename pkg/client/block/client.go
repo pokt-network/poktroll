@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	replayclient "github.com/pokt-network/poktroll/pkg/client/events_replay_client"
+	"github.com/pokt-network/poktroll/pkg/client/event"
 )
 
 // committedBlocksQuery is the query used to subscribe to new committed block
@@ -30,7 +30,7 @@ func NewBlockClient(
 	deps depinject.Config,
 	cometWebsocketURL string,
 ) (Client, error) {
-	client, err := replayclient.NewEventsReplayClient[
+	client, err := event.NewEventsReplayClient[
 		client.Block,
 		client.EventsObservable[client.Block],
 	](
@@ -54,8 +54,8 @@ type blockClient struct {
 
 // CommittedBlocksSequence returns a replay observable of observables for Block events
 // from the BlockClient.
-func (b *blockClient) CommittedBlocksSequence(ctx context.Context) Observable {
-	return b.mappedClient.EventsSequence(ctx).(Observable)
+func (b *blockClient) CommittedBlocksSequence(ctx context.Context) BlockReplayObservable {
+	return b.mappedClient.EventsSequence(ctx).(BlockReplayObservable)
 }
 
 // LatestsNEvents returns the latest n blocks from the BockClient.

@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	replayclient "github.com/pokt-network/poktroll/pkg/client/events_replay_client"
+	"github.com/pokt-network/poktroll/pkg/client/event"
 )
 
 // delegationEventQuery is the query used by the EventsQueryClien to subscribe
@@ -29,7 +29,7 @@ func NewDelegationClient(
 	deps depinject.Config,
 	cometWebsocketURL string,
 ) (Client, error) {
-	client, err := replayclient.NewEventsReplayClient[
+	client, err := event.NewEventsReplayClient[
 		client.DelegateeChange,
 		client.EventsObservable[client.DelegateeChange],
 	](
@@ -54,8 +54,8 @@ type delegationClient struct {
 
 // DelegateeChangesSequence returns a replay observable of observables for
 // delegation events from the DelegationClient.
-func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) Observable {
-	return b.mappedClient.EventsSequence(ctx).(Observable)
+func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) DelegateeChangeReplayObservable {
+	return b.mappedClient.EventsSequence(ctx).(DelegateeChangeReplayObservable)
 }
 
 // LastNDelegateeChanges returns the latest n delegatee change events from the
