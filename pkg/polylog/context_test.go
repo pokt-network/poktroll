@@ -18,8 +18,14 @@ func TestWithContext_Ctx(t *testing.T) {
 	)
 
 	// Ensure that no logger is associated with the context.
-	// TODO_TECHDEBT: refactor once Ctx() no longer panics.
-	require.Panics(t, func() { polylog.Ctx(ctx) })
+	existingLogger, ok := ctx.Value(polylog.CtxKey).(polylog.Logger)
+	require.False(t, ok)
+	require.Nil(t, existingLogger)
+
+	// Retrieve the default logger from the context using polylog and assert
+	// that it matches the default context logger.
+	defaultLogger := polylog.Ctx(ctx)
+	require.Equal(t, polylog.DefaultContextLogger, defaultLogger)
 
 	// Associate a logger with a context.
 	ctx = expectedLogger.WithContext(ctx)

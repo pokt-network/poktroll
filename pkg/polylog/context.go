@@ -26,9 +26,7 @@ var DefaultContextLogger Logger
 func Ctx(ctx context.Context) Logger {
 	logger, ok := ctx.Value(CtxKey).(Logger)
 	if !ok {
-		// TODO_IMPROVE: support configuration of default logger implementation.
-		// TODO_TECHDEBT: return disabled logger once available.
-		panic("no logger associated with context; disabled logger not yet supported")
+		return DefaultContextLogger
 	}
 	return logger
 }
