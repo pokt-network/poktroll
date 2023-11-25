@@ -167,6 +167,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
+	go generate ./pkg/crypto/rings/interface.go
 
 .PHONY: go_fixturegen
 go_fixturegen: ## Generate fixture data for unit tests
