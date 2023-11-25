@@ -1,5 +1,5 @@
 # tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events
-query_node_url: tcp://localhost:26657
+query_node_url: tcp://localhost:36657
 # tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer)
 network_node_url: tcp://127.0.0.1:36657
 # Name of the key (in the keyring) to sign transactions
