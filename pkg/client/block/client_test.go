@@ -62,16 +62,16 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LastNEvents(1) successfully returns latest block",
+			name: "LastNBlocks(1) successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LastNEvents(ctx, 1)[0]
+				lastBlock := blockClient.LastNBlocks(ctx, 1)[0]
 				return lastBlock
 			},
 		},
 		{
-			name: "EventsSequence successfully returns latest block",
+			name: "CommittedBlockSequence successfully returns latest block",
 			fn: func() client.Block {
-				blockObservable := blockClient.EventsSequence(ctx)
+				blockObservable := blockClient.CommittedBlockSequence(ctx)
 				require.NotNil(t, blockObservable)
 
 				// Ensure that the observable is replayable via Last.

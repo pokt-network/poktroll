@@ -32,7 +32,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
-	blockClient := testblock.NewAnyTimesEventsSequenceBlockClient(t, blocksObs)
+	blockClient := testblock.NewAnyTimesCommittedBlockSequenceBlockClient(t, blocksObs)
 	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
 
 	deps := depinject.Supply(blockClient, supplierClient)

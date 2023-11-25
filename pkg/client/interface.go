@@ -115,9 +115,9 @@ type DelegateeChange interface {
 // EventsObservable is a replay observable for events of some type T.
 type EventsObservable[T any] observable.ReplayObservable[T]
 
-// MappedClient is an interface which provides notifications about newly received
+// EventsReplayClient is an interface which provides notifications about newly received
 // events as well as direct access to the latest event via some blockchain API.
-type MappedClient[T any, R observable.ReplayObservable[T]] interface {
+type EventsReplayClient[T any, R observable.ReplayObservable[T]] interface {
 	// EventsSequence returns an observable which emits new events.
 	EventsSequence(context.Context) R
 	// LastNEvents returns the latest N events that has been received.

@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
@@ -35,7 +36,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient client.BlockClient
+	blockClient block.Client
 
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
@@ -47,7 +48,7 @@ type relayerSessionsManager struct {
 // NewRelayerSessions creates a new relayerSessions.
 //
 // Required dependencies:
-//   - client.BlockClient
+//   - block.Client
 //   - client.SupplierClient
 //
 // Available options:
@@ -80,7 +81,7 @@ func NewRelayerSessions(
 
 	rs.sessionsToClaimObs = channel.MapExpand[client.Block, relayer.SessionTree](
 		ctx,
-		rs.blockClient.EventsSequence(ctx),
+		rs.blockClient.CommittedBlockSequence(ctx),
 		rs.mapBlockToSessionsToClaim,
 	)
 
@@ -215,7 +216,7 @@ func (rp *relayerSessionsManager) validateConfig() error {
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
-	subscription := rs.blockClient.EventsSequence(ctx).Subscribe(ctx)
+	subscription := rs.blockClient.CommittedBlockSequence(ctx).Subscribe(ctx)
 	defer subscription.Unsubscribe()
 
 	for block := range subscription.Ch() {

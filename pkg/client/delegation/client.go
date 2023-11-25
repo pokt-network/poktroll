@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	mappedclient "github.com/pokt-network/poktroll/pkg/client/mapped_client"
+	replayclient "github.com/pokt-network/poktroll/pkg/client/events_replay_client"
 )
 
 // delegationEventQuery is the query used by the EventsQueryClien to subscribe
@@ -18,8 +18,9 @@ const delegationEventQuery = "tm.event='Tx' AND message.action='pocket.applicati
 // NewDelegationClient creates a new delegation client from the given
 // dependencies and cometWebsocketURL. It uses the defined delegationEventQuery
 // to subscribe to new delegation events and maps them to DelegateeChange
-// objects. This is an implementation of the MappedClient[DelegateeChange]
-// generic type wrapped in order for gomock to correctly mock the interface.
+// objects, using the newDelegateeChangeEvent function as the mapping function.
+//
+// This is an implementation of the EventsReplayClient[DelegateeChange] generic
 //
 // Required dependencies:
 //   - client.EventsQueryClient
@@ -27,8 +28,11 @@ func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (client.DelegationClient, error) {
-	client, err := mappedclient.NewMappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]](
+) (Client, error) {
+	client, err := replayclient.NewEventsReplayClient[
+		client.DelegateeChange,
+		client.EventsObservable[client.DelegateeChange],
+	](
 		ctx,
 		deps,
 		cometWebsocketURL,
@@ -45,20 +49,22 @@ func NewDelegationClient(
 // interface for use in network. This is due to the lack of support from
 // gomock for generic types.
 type delegationClient struct {
-	mappedClient client.MappedClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]]
+	mappedClient client.EventsReplayClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]]
 }
 
-// EventsSequence returns a replay observable of observables for delegation events
-// from the DelegationClient.
-func (b *delegationClient) EventsSequence(ctx context.Context) client.DelegateeChangeObservable {
-	return b.mappedClient.EventsSequence(ctx).(client.DelegateeChangeObservable)
+// DelegateeChangesSequence returns a replay observable of observables for
+// delegation events from the DelegationClient.
+func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) Observable {
+	return b.mappedClient.EventsSequence(ctx).(Observable)
 }
 
-// LatestsNEvents returns the latest n delegatee change events from the DelegationClient.
-func (b *delegationClient) LastNEvents(ctx context.Context, n int) []client.DelegateeChange {
+// LastNDelegateeChanges returns the latest n delegatee change events from the
+// DelegationClient.
+func (b *delegationClient) LastNDelegateeChanges(ctx context.Context, n int) []client.DelegateeChange {
 	events := b.mappedClient.LastNEvents(ctx, n)
 	for _, event := range events {
-		// Casting here is safe as this is the generic type of the MappedClient
+		// Casting here is safe as this is the generic type of
+		// the EventsReplayClient
 		event = event.(client.DelegateeChange)
 	}
 	return events

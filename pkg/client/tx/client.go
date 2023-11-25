@@ -16,6 +16,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -65,7 +66,7 @@ type txClient struct {
 	eventsQueryClient client.EventsQueryClient
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
-	blockClient client.BlockClient
+	blockClient block.Client
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
 	txsMutex sync.Mutex
@@ -109,7 +110,7 @@ type TxEvent struct {
 // Required dependencies:
 //   - client.TxContext
 //   - client.EventsQueryClient
-//   - client.BlockClient
+//   - block.Client
 //
 // Available options:
 //   - WithSigningKeyName
@@ -198,7 +199,7 @@ func (tClient *txClient) SignAndBroadcast(
 	}
 
 	// Calculate timeout height
-	timeoutHeight := tClient.blockClient.LastNEvents(ctx, 1)[0].
+	timeoutHeight := tClient.blockClient.LastNBlocks(ctx, 1)[0].
 		Height() + tClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable
@@ -442,7 +443,7 @@ func (tClient *txClient) goHandleTxEvents(
 // from the txTimeoutPool.
 func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	// Subscribe to a sequence of committed blocks.
-	blockCh := tClient.blockClient.EventsSequence(ctx).Subscribe(ctx).Ch()
+	blockCh := tClient.blockClient.CommittedBlockSequence(ctx).Subscribe(ctx).Ch()
 
 	// Iterate over each incoming block.
 	for block := range blockCh {

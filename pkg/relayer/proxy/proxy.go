@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -38,9 +38,9 @@ type relayerProxy struct {
 	signingKeyName string
 	keyring        keyring.Keyring
 
-	// blocksClient is the client used to get the block at the latest height from the blockchain
+	// block.Client is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
-	blockClient client.BlockClient
+	blockClient block.Client
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
@@ -80,7 +80,7 @@ type relayerProxy struct {
 //
 // Required dependencies:
 //   - cosmosclient.Context
-//   - client.BlockClient
+//   - block.Client
 //
 // Available options:
 //   - WithSigningKeyName

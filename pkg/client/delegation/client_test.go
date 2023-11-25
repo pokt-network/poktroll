@@ -56,14 +56,14 @@ func TestDelegationClient(t *testing.T) {
 		{
 			name: "LastNEvent successfully returns latest delegatee change",
 			fn: func() client.DelegateeChange {
-				lastDelegateeChange := delegationClient.LastNEvents(ctx, 1)[0]
+				lastDelegateeChange := delegationClient.LastNDelegateeChanges(ctx, 1)[0]
 				return lastDelegateeChange
 			},
 		},
 		{
-			name: "EventsSequence successfully returns latest delegatee change",
+			name: "DelegateeChangesSequence successfully returns latest delegatee change",
 			fn: func() client.DelegateeChange {
-				delegateeChangeObs := delegationClient.EventsSequence(ctx)
+				delegateeChangeObs := delegationClient.DelegateeChangesSequence(ctx)
 				require.NotNil(t, delegateeChangeObs)
 
 				// Ensure that the observable is replayable via Last.

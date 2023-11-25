@@ -1,4 +1,4 @@
-package mappedclient
+package eventsreplayclient
 
 import (
 	"context"
@@ -35,15 +35,15 @@ const (
 	latestReplayBufferSize = 1
 )
 
-// Enforece the MappedClient interface is implemented by the mappedClient type.
-var _ client.MappedClient[
+// Enforece the EventsReplayClient interface is implemented by the replayClient type.
+var _ client.EventsReplayClient[
 	any,
 	observable.ReplayObservable[any],
-] = (*mappedClient[any, observable.ReplayObservable[any]])(nil)
+] = (*replayClient[any, observable.ReplayObservable[any]])(nil)
 
-// mappedClient implements the MappedClient interface for a generic type T,
+// replayClient implements the EventsReplayClient interface for a generic type T,
 // and replay observable for type T.
-type mappedClient[T any, U observable.ReplayObservable[T]] struct {
+type replayClient[T any, U observable.ReplayObservable[T]] struct {
 	// endpointURL is the URL of RPC endpoint which eventsClient subscription
 	// requests will be sent.
 	endpointURL string
@@ -57,7 +57,7 @@ type mappedClient[T any, U observable.ReplayObservable[T]] struct {
 	// an error, at most, once and closes immediately after if it does.
 	eventsClient client.EventsQueryClient
 	// eventBytesToTypeDecoder is a function which decodes event subscription
-	// message bytes into the type defined by the MappedClient's generic type
+	// message bytes into the type defined by the EventsReplayClient's generic type
 	// parameter.
 	eventBytesToTypeDecoder func([]byte) (T, error)
 	// latestObsvbls is a replay observable with replay buffer size 1,
@@ -73,19 +73,22 @@ type mappedClient[T any, U observable.ReplayObservable[T]] struct {
 	latestObsvblsReplayPublishCh chan<- U
 }
 
-// NewMappedClient creates a new mapped client from the given dependencies and cometWebsocketURL.
+// NewEventsReplayClient creates a new EventsReplayClient from the given
+// dependencies, cometWebsocketURL and subscription query string. It requires a
+// decoder function to be provided which decodes event subscription message
+// bytes into the type defined by the EventsReplayClient's generic type parameter.
 //
 // Required dependencies:
 //   - client.EventsQueryClient
-func NewMappedClient[T any, U observable.ReplayObservable[T]](
+func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
 	queryString string,
 	eventBytesToTypeDecoder func([]byte) (T, error),
-) (client.MappedClient[T, U], error) {
+) (client.EventsReplayClient[T, U], error) {
 	// Initialise the mapped client
-	mClient := &mappedClient[T, U]{
+	mClient := &replayClient[T, U]{
 		endpointURL:             cometWebsocketURL,
 		queryString:             queryString,
 		eventBytesToTypeDecoder: eventBytesToTypeDecoder,
@@ -111,7 +114,7 @@ func NewMappedClient[T any, U observable.ReplayObservable[T]](
 
 // EventsSequence returns a ReplayObservable, with a replay buffer size of 1,
 // which is notified when new events are received by the events query subscription.
-func (mClient *mappedClient[T, R]) EventsSequence(ctx context.Context) R {
+func (mClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 	// Get the latest events observable from the replay observable. We only ever
 	// want the last 1 as any prior latest events observable values are closed.
 	// Directly accessing the zeroth index here is safe because the call to Last
@@ -123,13 +126,13 @@ func (mClient *mappedClient[T, R]) EventsSequence(ctx context.Context) R {
 // LastNEvents returns the latest typed event that's been received by the
 // corresponding events query subscription.
 // It blocks until at least one event has been received.
-func (mClient *mappedClient[T, R]) LastNEvents(ctx context.Context, n int) []T {
+func (mClient *replayClient[T, R]) LastNEvents(ctx context.Context, n int) []T {
 	return mClient.EventsSequence(ctx).Last(ctx, n)
 }
 
 // Close unsubscribes all observers of the committed blocks sequence observable
 // and closes the events query client.
-func (mClient *mappedClient[T, R]) Close() {
+func (mClient *replayClient[T, R]) Close() {
 	// Closing eventsClient will cascade unsubscribe and close downstream observers.
 	mClient.eventsClient.Close()
 }
@@ -138,7 +141,7 @@ func (mClient *mappedClient[T, R]) Close() {
 // re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
 // This function is intended to be called in a goroutine.
-func (mClient *mappedClient[T, R]) goPublishEvents(ctx context.Context) {
+func (mClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to latestObsvblsReplayPublishCh such that
 	// latestObsvbls.Last(ctx, 1) will return it.
@@ -155,7 +158,7 @@ func (mClient *mappedClient[T, R]) goPublishEvents(ctx context.Context) {
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
 	if publishErr != nil {
-		panic(fmt.Errorf("MappedClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
+		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
 	}
 }
 
@@ -163,7 +166,7 @@ func (mClient *mappedClient[T, R]) goPublishEvents(ctx context.Context) {
 // to retry.OnError. The returned function pipes event bytes from the events
 // query client, maps them to block events, and publishes them to the
 // latestObsvbls replay observable.
-func (mClient *mappedClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
+func (mClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
 		errCh := make(chan error, 1)
 		eventsBzObsvbl, err := mClient.eventsClient.EventsBytes(ctx, mClient.queryString)
@@ -197,14 +200,14 @@ func (mClient *mappedClient[T, R]) retryPublishEventsFactory(ctx context.Context
 // map function, and handling from the Map call context.
 //
 // The map function itself attempts to deserialize the given byte slice as a
-// the MappedClient's generic typed event, using the decoder function provided.
+// the EventsReplayClient's generic typed event, using the decoder function provided.
 // If the events bytes observable contained an error, this value is not emitted
 // (skipped) on the destination observable of the map operation.
 //
 // If deserialisation failed because the event bytes were for a different event
 // type, this value is also skipped. If deserialisation failed for some other
 // reason, this function panics.
-func (mClient *mappedClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error) func(
+func (mClient *replayClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error) func(
 	context.Context,
 	either.Bytes,
 ) (T, bool) {
@@ -223,10 +226,10 @@ func (mClient *mappedClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error)
 		}
 
 		// attempt to decode the event bytes using the decoder function provided
-		// during the MappedClient's construction.
+		// during the EventsReplayClient's construction.
 		event, err := mClient.eventBytesToTypeDecoder(eventBz)
 		if err != nil {
-			if ErrMappedClientUnmarshalEvent.Is(err) {
+			if ErrEventsReplayClientUnmarshalEvent.Is(err) {
 				// Don't publish (skip) if the message was not the correct event.
 				return *new(T), true
 			}

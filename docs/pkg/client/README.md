@@ -17,7 +17,6 @@
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
 
-
 ## Overview
 
 The `client` package exposes go APIs to facilitate interactions with the Pocket network.
@@ -26,7 +25,7 @@ It includes lower-level interfaces for working with transactions and subscribing
 ## Features
 
 | Interface               | Description                                                                                        |
-|-------------------------|----------------------------------------------------------------------------------------------------|
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
 | **`SupplierClient`**    | A high-level client for use by the "supplier" actor.                                               |
 | **`TxClient`**          | A high-level client used to build, sign, and broadcast transaction from cosmos-sdk messages.       |
 | **`TxContext`**         | Abstracts and encapsulates the transaction building, signing, encoding, and broadcasting concerns. |
@@ -42,7 +41,7 @@ It includes lower-level interfaces for working with transactions and subscribing
 title: Component Diagram Legend
 ---
 flowchart
-    
+
 c[Component]
 d[Dependency Component]
 s[[Subcomponent]]
@@ -71,7 +70,7 @@ dial[[Dialer]]
 
 sup --"#SignAndBroadcast()"--> tx
 
-tx --"#EventsSequence()"--> bl
+tx --"#CommittedBlockSequence()"--> bl
 tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
 bl --"#EventsBytes()"--> evt

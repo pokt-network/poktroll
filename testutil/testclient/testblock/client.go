@@ -13,13 +13,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	mockblockclient "github.com/pokt-network/poktroll/testutil/mockclient/block"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
+func NewLocalnetClient(ctx context.Context, t *testing.T) block.Client {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
@@ -32,23 +33,23 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	return bClient
 }
 
-// NewAnyTimesEventsSequenceBlockClient creates a new mock BlockClient.
-// This mock BlockClient will expect any number of calls to EventsSequence,
+// NewAnyTimesCommittedBlockSequenceBlockClient creates a new mock BlockClient.
+// This mock BlockClient will expect any number of calls to CommittedBlockSequence,
 // and when that call is made, it returns the given EventsObservable[Block].
-func NewAnyTimesEventsSequenceBlockClient(
+func NewAnyTimesCommittedBlockSequenceBlockClient(
 	t *testing.T,
 	blocksObs observable.Observable[client.Block],
-) *mockclient.MockBlockClient {
+) *mockblockclient.MockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LastNEvent method to be called any number of times.
-	blockClientMock := NewAnyTimeLastNEventBlockClient(t, nil, 0)
+	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
+	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
 
-	// Set up the mock expectation for the EventsSequence method. When
+	// Set up the mock expectation for the CommittedBlockSequence method. When
 	// the method is called, it returns a new replay observable that publishes
 	// blocks sent on the given blocksPublishCh.
 	blockClientMock.EXPECT().
-		EventsSequence(
+		CommittedBlockSequence(
 			gomock.AssignableToTypeOf(context.Background()),
 		).
 		Return(blocksObs).
@@ -57,26 +58,26 @@ func NewAnyTimesEventsSequenceBlockClient(
 	return blockClientMock
 }
 
-// NewOneTimeEventsSequenceBlockClient creates a new mock BlockClient.
-// This mock BlockClient will expect a call to EventsSequence, and
+// NewOneTimeCommittedBlockSequenceBlockClient creates a new mock BlockClient.
+// This mock BlockClient will expect a call to CommittedBlockSequence, and
 // when that call is made, it returns a new BlocksObservable that is notified of
 // blocks sent on the given blocksPublishCh.
 // blocksPublishCh is the channel the caller can use to publish blocks the observable.
-func NewOneTimeEventsSequenceBlockClient(
+func NewOneTimeCommittedBlockSequenceBlockClient(
 	t *testing.T,
 	blocksPublishCh chan client.Block,
-) *mockclient.MockBlockClient {
+) *mockblockclient.MockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LastNEvent method to be called any number of times.
-	blockClientMock := NewAnyTimeLastNEventBlockClient(t, nil, 0)
+	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
+	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
 
-	// Set up the mock expectation for the EventsSequence method. When
+	// Set up the mock expectation for the CommittedBlockSequence method. When
 	// the method is called, it returns a new replay observable that publishes
 	// blocks sent on the given blocksPublishCh.
-	blockClientMock.EXPECT().EventsSequence(
+	blockClientMock.EXPECT().CommittedBlockSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) client.BlockObservable {
+	).DoAndReturn(func(ctx context.Context) block.Observable {
 		// Create a new replay observable with a replay buffer size of 1. Blocks
 		// are published to this observable via the provided blocksPublishCh.
 		withPublisherOpt := channel.WithPublisher(blocksPublishCh)
@@ -89,23 +90,23 @@ func NewOneTimeEventsSequenceBlockClient(
 	return blockClientMock
 }
 
-// NewAnyTimeLastNEventBlockClient creates a mock BlockClient that expects
-// calls to the LastNEvents method any number of times. When the LastNEvent
+// NewAnyTimeLastNBlocksBlockClient creates a mock BlockClient that expects
+// calls to the LastNBlocks method any number of times. When the LastNBlocks
 // method is called, it returns a mock Block with the provided hash and height.
-func NewAnyTimeLastNEventBlockClient(
+func NewAnyTimeLastNBlocksBlockClient(
 	t *testing.T,
 	hash []byte,
 	height int64,
-) *mockclient.MockBlockClient {
+) *mockblockclient.MockClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	// Create a mock block that returns the provided hash and height.
 	blockMock := NewAnyTimesBlock(t, hash, height)
-	// Create a mock block client that expects calls to LastNEvent method and
+	// Create a mock block client that expects calls to LastNBlocks method and
 	// returns the mock block.
-	blockClientMock := mockclient.NewMockBlockClient(ctrl)
-	blockClientMock.EXPECT().LastNEvents(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
+	blockClientMock := mockblockclient.NewMockClient(ctrl)
+	blockClientMock.EXPECT().LastNBlocks(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
 
 	return blockClientMock
 }

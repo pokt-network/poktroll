@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	mockblockclient "github.com/pokt-network/poktroll/testutil/mockclient/block"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
@@ -67,7 +68,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeEventsSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -162,7 +163,7 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 
 			// Construct a new mock block client. Since we expect the NewTxClient
 			// call to fail, we don't need to set any expectations on this mock.
-			blockClientMock := mockclient.NewMockBlockClient(ctrl)
+			blockClientMock := mockblockclient.NewMockClient(ctrl)
 
 			// Construct a new depinject config with the mocks we created above.
 			txClientDeps := depinject.Supply(
@@ -191,7 +192,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		eventsBzPublishCh chan<- either.Bytes
 		// blocksPublishCh is the channel that the mock block client will use
 		// to publish the latest block. It is not used in this test but is
-		// required to use the NewOneTimeEventsSequenceBlockClient
+		// required to use the NewOneTimeCommittedBlockSequenceBlockClient
 		// helper.
 		blocksPublishCh chan client.Block
 		ctx             = context.Background()
@@ -213,7 +214,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeEventsSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -278,7 +279,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeEventsSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -341,7 +342,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	// Since we're not exercising transaction timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeEventsSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
