@@ -4,5 +4,5 @@
     rpc_type: json_rpc
 - service_id: svc1
   endpoints:
-  - url: http://lovalhost:8082
+  - url: http://localhost:8082
     rpc_type: json_rpc
