@@ -60,7 +60,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "This flag is present to register the cosmos node flag, which is needed to initialise the comsos query context correctly. Ultimately the QueryNodeUrl field in the config file is used to build this context and this flag's value isn't used.")
 
 	return cmd
 }
