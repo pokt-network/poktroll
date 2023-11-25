@@ -70,7 +70,7 @@ dial[[Dialer]]
 
 sup --"#SignAndBroadcast()"--> tx
 
-tx --"#CommittedBlockSequence()"--> bl
+tx --"#CommittedBlocksSequence()"--> bl
 tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
 bl --"#EventsBytes()"--> evt

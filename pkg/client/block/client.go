@@ -52,9 +52,9 @@ type blockClient struct {
 	mappedClient client.EventsReplayClient[client.Block, client.EventsObservable[client.Block]]
 }
 
-// CommittedBlockSequence returns a replay observable of observables for Block events
+// CommittedBlocksSequence returns a replay observable of observables for Block events
 // from the BlockClient.
-func (b *blockClient) CommittedBlockSequence(ctx context.Context) Observable {
+func (b *blockClient) CommittedBlocksSequence(ctx context.Context) Observable {
 	return b.mappedClient.EventsSequence(ctx).(Observable)
 }
 

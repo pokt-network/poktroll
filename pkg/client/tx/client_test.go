@@ -68,7 +68,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -192,7 +192,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		eventsBzPublishCh chan<- either.Bytes
 		// blocksPublishCh is the channel that the mock block client will use
 		// to publish the latest block. It is not used in this test but is
-		// required to use the NewOneTimeCommittedBlockSequenceBlockClient
+		// required to use the NewOneTimeCommittedBlocksSequenceBlockClient
 		// helper.
 		blocksPublishCh chan client.Block
 		ctx             = context.Background()
@@ -214,7 +214,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -279,7 +279,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	// Since we're not exercising transactions timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 
@@ -342,7 +342,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	// Since we're not exercising transaction timeouts in this test, we don't need to
 	// set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
-	blockClientMock := testblock.NewOneTimeCommittedBlockSequenceBlockClient(
+	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
 	)
 

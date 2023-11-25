@@ -443,7 +443,7 @@ func (tClient *txClient) goHandleTxEvents(
 // from the txTimeoutPool.
 func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	// Subscribe to a sequence of committed blocks.
-	blockCh := tClient.blockClient.CommittedBlockSequence(ctx).Subscribe(ctx).Ch()
+	blockCh := tClient.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	// Iterate over each incoming block.
 	for block := range blockCh {
