@@ -20,7 +20,7 @@ import (
 const (
 	testTimeoutDuration = 100 * time.Millisecond
 
-	// duplicates pkg/client/delegation/client.go's del for testing purposes
+	// duplicates pkg/client/delegation/client.go's delegationEventQuery for testing purposes.
 	delegationEventQuery = "tm.event='Tx' AND message.action='pocket.application.EventDelegateeChange'"
 )
 
@@ -54,7 +54,7 @@ func TestDelegationClient(t *testing.T) {
 		fn   func() client.DelegateeChange
 	}{
 		{
-			name: "LastNEvent successfully returns latest delegatee change",
+			name: "LastNDelegateeChanges successfully returns latest delegatee change",
 			fn: func() client.DelegateeChange {
 				lastDelegateeChange := delegationClient.LastNDelegateeChanges(ctx, 1)[0]
 				return lastDelegateeChange
@@ -91,7 +91,7 @@ func TestDelegationClient(t *testing.T) {
 			case actualDelegateeChange := <-actualDelegateeChangeCh:
 				require.Equal(t, expectedAddress, actualDelegateeChange.AppAddress())
 			case <-time.After(testTimeoutDuration):
-				t.Fatal("timed out waiting for block event")
+				t.Fatal("timed out waiting for delegatee change event")
 			}
 		})
 	}
