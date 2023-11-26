@@ -26,7 +26,7 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type (
 	serviceId            = string
 	relayServersMap      = map[serviceId][]relayer.RelayServer
-	servicesEndpointsMap = map[serviceId]url.URL
+	servicesEndpointsMap = map[serviceId]*url.URL
 )
 
 // relayerProxy is the main relayer proxy that takes relay requests of supported services from the client

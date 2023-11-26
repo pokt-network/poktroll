@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/url"
+	"os"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
@@ -27,10 +28,7 @@ const omittedDefaultFlagValue = "explicitly omitting default"
 
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
-	flagSigningKeyName string
-	flagSmtStorePath   string
-	flagNetworkNodeUrl string
-	flagQueryNodeUrl   string
+	flagRelayMinerConfig string
 )
 
 func RelayerCmd() *cobra.Command {
@@ -55,15 +53,6 @@ for such operations.`,
 	}
 
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-
-	// TODO_TECHDEBT: integrate these flags with the client context (i.e. cosmosflags, config, viper, etc.)
-	// This is simpler to do with server-side configs (see rootCmd#PersistentPreRunE) and requires more effort than currently justifiable.
-	cmd.Flags().StringVar(&flagSigningKeyName, "signing-key", "", "Name of the key to sign transactions")
-	// TODO_TECHDEBT(#137): This, alongside other flags, should be part of a config file suppliers provide.
-	cmd.Flags().StringVar(&flagSmtStorePath, "smt-store", "smt", "Path to where the data backing SMT KV store exists on disk")
-	// Communication flags
-	cmd.Flags().StringVar(&flagNetworkNodeUrl, "network-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer")
-	cmd.Flags().StringVar(&flagQueryNodeUrl, "query-node", omittedDefaultFlagValue, "tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events")
 	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
@@ -77,10 +66,20 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Handle interrupt and kill signals asynchronously.
 	signals.GoOnExitSignal(cancelCtx)
 
+	configContent, err := os.ReadFile(flagRelayMinerConfig)
+	if err != nil {
+		return err
+	}
+
+	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
+	if err != nil {
+		return err
+	}
+
 	// Sets up the following dependencies:
 	// Miner, EventsQueryClient, BlockClient, cosmosclient.Context, TxFactory,
 	// TxContext, TxClient, SupplierClient, RelayerProxy, RelayerSessionsManager.
-	deps, err := setupRelayerDependencies(ctx, cmd)
+	deps, err := setupRelayerDependencies(ctx, cmd, relayMinerConfig)
 	if err != nil {
 		return err
 	}
@@ -108,42 +107,30 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 func setupRelayerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
+	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	pocketNodeWebsocketUrl, err := getPocketNodeWebsocketUrl()
-	if err != nil {
-		return nil, err
-	}
+	pocketNodeWebsocketUrl := relayMinerConfig.PocketNodeWebsocketUrl
+	queryNodeUrl := relayMinerConfig.QueryNodeUrl.String()
+	networkNodeUrl := relayMinerConfig.NetworkNodeUrl.String()
+	signingKeyName := relayMinerConfig.SigningKeyName
+	proxiedServiceEndpoints := relayMinerConfig.ProxiedServiceEndpoints
+	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		supplyMiner,              // leaf
-		supplyQueryClientContext, // leaf
-		supplyTxClientContext,    // leaf
+		supplyMiner, // leaf
+		newSupplyQueryClientContextFn(queryNodeUrl), // leaf
+		newSupplyTxClientContextFn(networkNodeUrl),  // leaf
 		supplyTxFactory,
 		supplyTxContext,
-		supplyTxClient,
-		supplySupplierClient,
-		supplyRelayerProxy,
-		supplyRelayerSessionsManager,
+		newSupplyTxClientFn(signingKeyName),
+		newSupplySupplierClientFn(signingKeyName),
+		newSupplyRelayerProxyFn(signingKeyName, proxiedServiceEndpoints),
+		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)
-}
-
-// getPocketNodeWebsocketUrl returns the websocket URL of the Pocket Node to
-// connect to for subscribing to on-chain events.
-func getPocketNodeWebsocketUrl() (string, error) {
-	if flagQueryNodeUrl == omittedDefaultFlagValue {
-		return "", fmt.Errorf("--query-node flag is required")
-	}
-
-	pocketNodeURL, err := url.Parse(flagQueryNodeUrl)
-	if err != nil {
-		return "", err
-	}
-
-	return fmt.Sprintf("ws://%s/websocket", pocketNodeURL.Host), nil
 }
 
 // supplyMiner constructs a Miner instance and returns a new depinject.Config
@@ -161,66 +148,70 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-// supplyQueryClientContext returns a function with constructs a ClientContext
+// newSupplyQueryClientContextFn returns a function which constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func supplyQueryClientContext(
-	_ context.Context,
-	deps depinject.Config,
-	cmd *cobra.Command,
-) (depinject.Config, error) {
-	// Set --node flag to the --query-node for the client context
-	// This flag is read by cosmosclient.GetClientQueryContext.
-	err := cmd.Flags().Set(cosmosflags.FlagNode, flagQueryNodeUrl)
-	if err != nil {
-		return nil, err
-	}
+func newSupplyQueryClientContextFn(queryNodeUrl string) config.SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		cmd *cobra.Command,
+	) (depinject.Config, error) {
+		// Set --node flag to the relayerConfig.QueryNodeUrl config for the client context
+		// This flag is read by cosmosclient.GetClientQueryContext.
+		err := cmd.Flags().Set(cosmosflags.FlagNode, queryNodeUrl)
+		if err != nil {
+			return nil, err
+		}
 
-	// NB: Currently, the implementations of GetClientTxContext() and
-	// GetClientQueryContext() are identical, allowing for their interchangeable
-	// use in both querying and transaction operations. However, in order to support
-	// independent configuration of client contexts for distinct querying and
-	// transacting purposes. E.g.: transactions are dispatched to the sequencer
-	// while queries are handled by a trusted full-node.
-	queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
-	if err != nil {
-		return nil, err
+		// NB: Currently, the implementations of GetClientTxContext() and
+		// GetClientQueryContext() are identical, allowing for their interchangeable
+		// use in both querying and transaction operations. However, in order to support
+		// independent configuration of client contexts for distinct querying and
+		// transacting purposes. E.g.: transactions are dispatched to the sequencer
+		// while queries are handled by a trusted full-node.
+		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+		if err != nil {
+			return nil, err
+		}
+		deps = depinject.Configs(deps, depinject.Supply(
+			relayer.QueryClientContext(queryClientCtx),
+		))
+		return deps, nil
 	}
-	deps = depinject.Configs(deps, depinject.Supply(
-		relayer.QueryClientContext(queryClientCtx),
-	))
-	return deps, nil
 }
 
-// supplyTxClientContext constructs a cosmosclient.Context instance and returns a
-// new depinject.Config which is supplied with the given deps and the new
-// cosmosclient.Context.
-func supplyTxClientContext(
-	_ context.Context,
-	deps depinject.Config,
-	cmd *cobra.Command,
-) (depinject.Config, error) {
-	// Set --node flag to the --network-node for this client context.
-	// This flag is read by cosmosclient.GetClientTxContext.
-	err := cmd.Flags().Set(cosmosflags.FlagNode, flagNetworkNodeUrl)
-	if err != nil {
-		return nil, err
-	}
+// newSupplyTxClientContextFn returns a function which constructs a
+// cosmosclient.Context instance and returns a new depinject.Config
+// which is supplied with the given deps and the new cosmosclient.Context.
+func newSupplyTxClientContextFn(networkNodeUrl string) config.SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		cmd *cobra.Command,
+	) (depinject.Config, error) {
+		// Set --node flag to relayerConfig.NetworkNodeUrl for this client context.
+		// This flag is read by cosmosclient.GetClientTxContext.
+		err := cmd.Flags().Set(cosmosflags.FlagNode, networkNodeUrl)
+		if err != nil {
+			return nil, err
+		}
 
-	// NB: Currently, the implementations of GetClientTxContext() and
-	// GetClientQueryContext() are identical, allowing for their interchangeable
-	// use in both querying and transaction operations. However, in order to support
-	// independent configuration of client contexts for distinct querying and
-	// transacting purposes. E.g.: transactions are dispatched to the sequencer
-	// while queries are handled by a trusted full-node.
-	txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
-	if err != nil {
-		return nil, err
+		// NB: Currently, the implementations of GetClientTxContext() and
+		// GetClientQueryContext() are identical, allowing for their interchangeable
+		// use in both querying and transaction operations. However, in order to support
+		// independent configuration of client contexts for distinct querying and
+		// transacting purposes. E.g.: transactions are dispatched to the sequencer
+		// while queries are handled by a trusted full-node.
+		txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
+		if err != nil {
+			return nil, err
+		}
+		deps = depinject.Configs(deps, depinject.Supply(
+			relayer.TxClientContext(txClientCtx),
+		))
+		return deps, nil
 	}
-	deps = depinject.Configs(deps, depinject.Supply(
-		relayer.TxClientContext(txClientCtx),
-	))
-	return deps, nil
 }
 
 // supplyTxFactory constructs a cosmostx.Factory instance and returns a new
@@ -258,96 +249,93 @@ func supplyTxContext(
 	return depinject.Configs(deps, depinject.Supply(txContext)), nil
 }
 
-// supplyTxClient constructs a TxClient instance and returns a new
-// depinject.Config which is supplied with the given deps and the new TxClient.
-func supplyTxClient(
-	ctx context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	txClient, err := tx.NewTxClient(
-		ctx,
-		deps,
-		tx.WithSigningKeyName(flagSigningKeyName),
-		// TODO_TECHDEBT: populate this from some config.
-		tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
-	)
-	if err != nil {
-		return nil, err
-	}
+// newSupplyTxClientFn returns a function which constructs a TxClient
+// instance and returns a new depinject.Config which is supplied with
+// the given deps and the new TxClient.
+func newSupplyTxClientFn(signingKeyName string) config.SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		txClient, err := tx.NewTxClient(
+			ctx,
+			deps,
+			tx.WithSigningKeyName(signingKeyName),
+			// TODO_TECHDEBT: populate this from some config.
+			tx.WithCommitTimeoutBlocks(tx.DefaultCommitTimeoutHeightOffset),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	return depinject.Configs(deps, depinject.Supply(txClient)), nil
+		return depinject.Configs(deps, depinject.Supply(txClient)), nil
+	}
 }
 
-// supplySupplierClient constructs a SupplierClient instance and returns a new
-// depinject.Config which is supplied with the given deps and the new
-// SupplierClient.
-func supplySupplierClient(
-	_ context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	supplierClient, err := supplier.NewSupplierClient(
-		deps,
-		supplier.WithSigningKeyName(flagSigningKeyName),
-	)
-	if err != nil {
-		return nil, err
-	}
+// newSupplySupplierClientFn returns a function which constructs a
+// SupplierClient instance and returns a new depinject.Config which is
+// supplied with the given deps and the new SupplierClient.
+func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		supplierClient, err := supplier.NewSupplierClient(
+			deps,
+			supplier.WithSigningKeyName(signingKeyName),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
+		return depinject.Configs(deps, depinject.Supply(supplierClient)), nil
+	}
 }
 
-// supplyRelayerProxy constructs a RelayerProxy instance and returns a new
-// depinject.Config which is supplied with the given deps and the new
-// RelayerProxy.
-func supplyRelayerProxy(
-	_ context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	// TODO_BLOCKER:(#137, @red-0ne): This MUST be populated via the `relayer.json` config file
-	proxyServiceURL, err := url.Parse("http://anvil:8547/")
-	if err != nil {
-		return nil, err
-	}
+// newSupplyRelayerProxyFn returns a function which constructs a
+// RelayerProxy instance and returns a new depinject.Config which
+// is supplied with the given deps and the new RelayerProxy.
+func newSupplyRelayerProxyFn(
+	signingKeyName string,
+	proxiedServiceEndpoints map[string]*url.URL,
+) config.SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerProxy, err := proxy.NewRelayerProxy(
+			deps,
+			proxy.WithSigningKeyName(signingKeyName),
+			proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	// TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
-	// is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
-	// multiple services is already in place but currently (as seen below) is hardcoded.
-	proxiedServiceEndpoints := map[string]url.URL{
-		"anvil": *proxyServiceURL,
+		return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
 	}
-
-	relayerProxy, err := proxy.NewRelayerProxy(
-		deps,
-		proxy.WithSigningKeyName(flagSigningKeyName),
-		proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return depinject.Configs(deps, depinject.Supply(relayerProxy)), nil
 }
 
-// supplyRelayerSessionsManager constructs a RelayerSessionsManager instance
-// and returns a new depinject.Config which is supplied with the given deps and
-// the new RelayerSessionsManager.
-// See the comment next to `flagQueryNodeUrl` (if it still exists) on how/why
-// we have multiple flags pointing to different node types.
-func supplyRelayerSessionsManager(
-	ctx context.Context,
-	deps depinject.Config,
-	_ *cobra.Command,
-) (depinject.Config, error) {
-	relayerSessionsManager, err := session.NewRelayerSessions(
-		ctx, deps,
-		session.WithStoresDirectory(flagSmtStorePath),
-	)
-	if err != nil {
-		return nil, err
-	}
+// newSupplyRelayerSessionsManagerFn returns a function which constructs a
+// RelayerSessionsManager instance and returns a new depinject.Config which
+// is supplied with the given deps and the new RelayerSessionsManager.
+func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		relayerSessionsManager, err := session.NewRelayerSessions(
+			ctx, deps,
+			session.WithStoresDirectory(smtStorePath),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
+		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
+	}
 }
