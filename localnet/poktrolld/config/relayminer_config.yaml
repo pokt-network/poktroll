@@ -9,7 +9,7 @@ signing_key_name: supplier2
 # multiple services is already in place but currently (as seen below) is hardcoded.
 # TODO_UPNEXT(@okdas): this hostname should be updated to match that of the in-tilt anvil service.
 proxied_service_endpoints:
-  anvil: http://localhost:8080
+  anvil: http://localhost:8547
   svc1: http://localhost:8082
 # Path to where the data backing SMT KV store exists on disk
 smt_store_path: smt_stores
