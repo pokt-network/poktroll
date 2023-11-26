@@ -3,7 +3,7 @@
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 - service_id: anvil
   endpoints:
-    - url: http://anvil:8545
+    - url: http://anvil.supplier1:8545
       rpc_type: json_rpc
 - service_id: svc1
   endpoints:
