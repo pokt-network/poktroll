@@ -51,9 +51,13 @@ submit claim and proof messages according to the protocol as sessions become eli
 for such operations.`,
 		RunE: runRelayer,
 	}
+	// Custom flags
+	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "path to the relay miner config file")
 
+	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+	cmd.Flags().
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
