@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -95,11 +97,12 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Start the relay miner
 	log.Println("INFO: Starting relay miner...")
-	if err := relayMiner.Start(ctx); err != nil {
+	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
+	} else if errors.Is(err, http.ErrServerClosed) {
+		log.Println("INFO: Relay miner stopped; exiting")
 	}
 
-	log.Println("INFO: Relay miner stopped; exiting")
 	return nil
 }
 
