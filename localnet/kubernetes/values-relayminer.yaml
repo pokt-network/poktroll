@@ -1,2 +1,4 @@
 config:
   query_node_url: tcp://sequencer-poktroll-sequencer:36657
+  network_node_url: tcp://sequencer-poktroll-sequencer:36657
+  
