@@ -125,11 +125,12 @@ func setupAppGateServerDependencies(
 	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (depinject.Config, error) {
 	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", appGateConfig.QueryNodeUrl.Host)
+	queryNodeURL := appGateConfig.QueryNodeUrl.String()
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		config.NewSupplyQueryClientContextFn(appGateConfig.QueryNodeUrl.Host),
+		config.NewSupplyQueryClientContextFn(queryNodeURL),
 		config.NewAccountQuerierFn(),
 		config.NewApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),
