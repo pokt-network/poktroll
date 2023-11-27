@@ -6,5 +6,5 @@ import (
 
 var (
 	codespace          = "rings"
-	ErrRingsWrongCurve = sdkerrors.Register(codespace, 3, "key is not a secp256k1 public key")
+	ErrRingsWrongCurve = sdkerrors.Register(codespace, 1, "key is not a secp256k1 public key")
 )
