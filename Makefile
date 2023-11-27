@@ -145,6 +145,10 @@ test_e2e: ## Run all E2E tests
 go_test: check_go_version ## Run all go tests
 	go test -v -race -tags test ./...
 
+.PHONY: go_test_quiet
+go_test_quiet: check_go_version ## Run all go tests quietly
+	go test -race -tags test ./...
+
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
 	go test -v -race -tags test,integration ./...
