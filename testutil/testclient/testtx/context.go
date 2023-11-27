@@ -19,7 +19,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 )
@@ -264,7 +264,7 @@ func NewAnyTimesTxTxContext(
 	require.NoError(t, err)
 	require.NotEmpty(t, txFactory)
 
-	txClientCtx := relayer.TxClientContext(clientCtx)
+	txClientCtx := txtypes.Context(clientCtx)
 	txCtxDeps := depinject.Supply(txFactory, txClientCtx)
 	txCtx, err := tx.NewTxContext(txCtxDeps)
 	require.NoError(t, err)

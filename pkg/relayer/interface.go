@@ -7,7 +7,6 @@ package relayer
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -15,12 +14,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-// TxClientContext is used to distinguish a cosmosclient.Context intended for use
-// in transactions from others.
-// This type is intentionally not an alias in order to make this distinction clear
-// to the dependency injector
-type TxClientContext client.Context
 
 // RelaysObservable is an observable which is notified with Relay values.
 //

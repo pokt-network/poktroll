@@ -15,6 +15,7 @@ import (
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -125,7 +126,7 @@ func setupRelayerDependencies(
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
 		supplyMiner, // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeUrl), // leaf
-		newSupplyTxClientContextFn(networkNodeUrl),         // leaf
+		config.NewSupplyTxClientContextFn(networkNodeUrl),  // leaf
 		config.NewAccountQuerierFn(),
 		config.NewApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),
@@ -155,39 +156,6 @@ func supplyMiner(
 	return depinject.Configs(deps, depinject.Supply(mnr)), nil
 }
 
-// supplyTxClientContext constructs a cosmosclient.Context instance and returns a
-// new depinject.Config which is supplied with the given deps and the new
-// cosmosclient.Context.
-func newSupplyTxClientContextFn(networkNodeUrl string) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		cmd *cobra.Command,
-	) (depinject.Config, error) {
-		// Set --node flag to the --network-node for this client context.
-		// This flag is read by cosmosclient.GetClientTxContext.
-		err := cmd.Flags().Set(cosmosflags.FlagNode, networkNodeUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		// NB: Currently, the implementations of GetClientTxContext() and
-		// GetClientQueryContext() are identical, allowing for their interchangeable
-		// use in both querying and transaction operations. However, in order to support
-		// independent configuration of client contexts for distinct querying and
-		// transacting purposes. E.g.: transactions are dispatched to the sequencer
-		// while queries are handled by a trusted full-node.
-		txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
-		if err != nil {
-			return nil, err
-		}
-		deps = depinject.Configs(deps, depinject.Supply(
-			relayer.TxClientContext(txClientCtx),
-		))
-		return deps, nil
-	}
-}
-
 // supplyTxFactory constructs a cosmostx.Factory instance and returns a new
 // depinject.Config which is supplied with the given deps and the new
 // cosmostx.Factory.
@@ -196,7 +164,7 @@ func supplyTxFactory(
 	deps depinject.Config,
 	cmd *cobra.Command,
 ) (depinject.Config, error) {
-	var txClientCtx relayer.TxClientContext
+	var txClientCtx txtypes.Context
 	if err := depinject.Inject(deps, &txClientCtx); err != nil {
 		return nil, err
 	}
