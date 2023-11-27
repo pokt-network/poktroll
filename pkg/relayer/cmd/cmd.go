@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"log"
-	"net/http"
 	"net/url"
 	"os"
 
@@ -53,13 +51,12 @@ submit claim and proof messages according to the protocol as sessions become eli
 for such operations.`,
 		RunE: runRelayer,
 	}
-	// Custom flags
-	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "path to the relay miner config file")
 
-	// Cosmos flags
+	// Custom flags
+	cmd.Flags().StringVar(&flagRelayMinerConfig, "config", "", "The path to the relayminer config file")
+
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
 
 	return cmd
 }
@@ -97,12 +94,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Start the relay miner
 	log.Println("INFO: Starting relay miner...")
-	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := relayMiner.Start(ctx); err != nil {
 		return err
-	} else if errors.Is(err, http.ErrServerClosed) {
-		log.Println("INFO: Relay miner stopped; exiting")
 	}
 
+	log.Println("INFO: Relay miner stopped; exiting")
 	return nil
 }
 
