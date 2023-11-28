@@ -297,7 +297,6 @@ require (
 )
 
 replace github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-
 // TODO_DOCUMENT(@okdas): Updating this line alone bumps the rest of the dependencies
 replace github.com/cosmos/cosmos-sdk => github.com/rollkit/cosmos-sdk v0.47.3-rollkit-v0.10.6-no-fraud-proofs
 
