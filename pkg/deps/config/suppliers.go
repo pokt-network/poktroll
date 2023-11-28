@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
@@ -56,7 +56,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
 		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
+		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}

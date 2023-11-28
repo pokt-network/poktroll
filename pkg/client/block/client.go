@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/event"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 )
 
 // committedBlocksQuery is the query used to subscribe to new committed block
@@ -30,7 +30,7 @@ func NewBlockClient(
 	deps depinject.Config,
 	cometWebsocketURL string,
 ) (Client, error) {
-	client, err := event.NewEventsReplayClient[
+	client, err := events.NewEventsReplayClient[
 		client.Block,
 		client.EventsObservable[client.Block],
 	](
@@ -43,28 +43,28 @@ func NewBlockClient(
 	if err != nil {
 		return nil, err
 	}
-	return &blockClient{mappedClient: client}, nil
+	return &blockClient{eventsReplayClient: client}, nil
 }
 
 // blockClient is a wrapper around an EventsReplayClient that implements the
 // interface for use in network.
 type blockClient struct {
-	mappedClient client.EventsReplayClient[client.Block, client.EventsObservable[client.Block]]
+	eventsReplayClient client.EventsReplayClient[client.Block, client.EventsObservable[client.Block]]
 }
 
 // CommittedBlocksSequence returns a replay observable of observables for Block events
 // from the BlockClient.
 func (b *blockClient) CommittedBlocksSequence(ctx context.Context) BlockReplayObservable {
-	return b.mappedClient.EventsSequence(ctx).(BlockReplayObservable)
+	return b.eventsReplayClient.EventsSequence(ctx).(BlockReplayObservable)
 }
 
 // LatestsNEvents returns the latest n blocks from the BockClient.
 func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
-	events := b.mappedClient.LastNEvents(ctx, n)
+	events := b.eventsReplayClient.LastNEvents(ctx, n)
 	for _, event := range events {
 		// Casting here is safe as this is the generic type of
 		// the EventsReplayClient
-		event = event.(client.Block)
+		event = event
 	}
 	return events
 }
@@ -72,5 +72,5 @@ func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all subsequent connections.
 func (b *blockClient) Close() {
-	b.mappedClient.Close()
+	b.eventsReplayClient.Close()
 }

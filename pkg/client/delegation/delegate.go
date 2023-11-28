@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/event"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 )
 
 var _ client.DelegateeChange = (*delegate)(nil)
@@ -31,7 +31,7 @@ func newDelegateeChangeEvent(delegateeChangeEventBz []byte) (client.DelegateeCha
 	}
 
 	if delegateeChange.Address == "" {
-		return nil, event.ErrEventUnmarshalEvent.
+		return nil, events.ErrEventsUnmarshalEvent.
 			Wrapf("unable to unmarshal delegatee change: %s", string(delegateeChangeEventBz))
 	}
 

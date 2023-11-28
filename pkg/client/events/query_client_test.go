@@ -1,4 +1,4 @@
-package eventsquery_test
+package events_test
 
 import (
 	"context"
@@ -13,12 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
-	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testchannel"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testerrors"
@@ -48,8 +47,8 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 		Times(queryLimit)
 
 	// Set up events query client.
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
+	dialerOpt := events.WithDialer(dialerMock)
+	queryClient := events.NewEventsQueryClient("", dialerOpt)
 	t.Cleanup(queryClient.Close)
 
 	for queryIdx := 0; queryIdx < queryLimit; queryIdx++ {
@@ -93,7 +92,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 					// Simulate ErrConnClosed if connection is isClosed.
 					if connClosed.Load() {
-						return nil, eventsquery.ErrConnClosed
+						return nil, events.ErrConnClosed
 					}
 
 					event := testEvent(int32(readEventCounter))
@@ -129,7 +128,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 			behavesLikeEitherObserver(
 				t, eventObserver,
 				handleEventsLimit,
-				eventsquery.ErrConnClosed,
+				events.ErrConnClosed,
 				readObserverEventsTimeout,
 				onLimit,
 			)
@@ -160,7 +159,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 			delayFirstEvent.Do(func() { time.Sleep(firstEventDelay) })
 
 			if connClosed.Load() {
-				return nil, eventsquery.ErrConnClosed
+				return nil, events.ErrConnClosed
 			}
 
 			event := testEvent(int32(readEventCounter))
@@ -173,8 +172,8 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 		}).
 		MinTimes(handleEventsLimit)
 
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
+	dialerOpt := events.WithDialer(dialerMock)
+	queryClient := events.NewEventsQueryClient("", dialerOpt)
 
 	// set up query observer
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
@@ -194,7 +193,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventsLimit,
-		eventsquery.ErrConnClosed,
+		events.ErrConnClosed,
 		readAllEventsTimeout,
 		onLimit,
 	)
@@ -203,14 +202,14 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 func TestEventsQueryClient_Subscribe_DialError(t *testing.T) {
 	ctx := context.Background()
 
-	eitherErrDial := either.Error[*mockclient.MockConnection](eventsquery.ErrDial)
+	eitherErrDial := either.Error[*mockclient.MockConnection](events.ErrDial)
 	dialerMock := testeventsquery.NewOneTimeMockDialer(t, eitherErrDial)
 
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
+	dialerOpt := events.WithDialer(dialerMock)
+	queryClient := events.NewEventsQueryClient("", dialerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-	require.True(t, errors.Is(err, eventsquery.ErrDial))
+	require.True(t, errors.Is(err, events.ErrDial))
 }
 
 func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
@@ -221,11 +220,11 @@ func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
 		Return(fmt.Errorf("mock send error")).
 		Times(1)
 
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	queryClient := eventsquery.NewEventsQueryClient("url_ignored", dialerOpt)
+	dialerOpt := events.WithDialer(dialerMock)
+	queryClient := events.NewEventsQueryClient("url_ignored", dialerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-	require.True(t, errors.Is(err, eventsquery.ErrSubscribe))
+	require.True(t, errors.Is(err, events.ErrSubscribe))
 
 	// cancelling the context should close the connection
 	cancel()
@@ -253,7 +252,7 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			if readEventCounter >= handleEventLimit {
-				return nil, websocket.ErrReceive
+				return nil, websocket.ErrEventsWebsocketReceive
 			}
 
 			event := testEvent(int32(readEventCounter))
@@ -264,8 +263,8 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 		}).
 		MinTimes(handleEventLimit)
 
-	dialerOpt := eventsquery.WithDialer(dialerMock)
-	queryClient := eventsquery.NewEventsQueryClient("", dialerOpt)
+	dialerOpt := events.WithDialer(dialerMock)
+	queryClient := events.NewEventsQueryClient("", dialerOpt)
 
 	// set up query observer
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
@@ -276,7 +275,7 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventLimit,
-		websocket.ErrReceive,
+		websocket.ErrEventsWebsocketReceive,
 		readAllEventsTimeout,
 		nil,
 	)

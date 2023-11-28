@@ -1,4 +1,4 @@
-package eventsquery
+package events
 
 import "github.com/pokt-network/poktroll/pkg/client"
 

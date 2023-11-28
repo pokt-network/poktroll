@@ -1,4 +1,4 @@
-package event
+package events
 
 import (
 	"context"
@@ -88,7 +88,7 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	eventBytesToTypeDecoder func([]byte) (T, error),
 ) (client.EventsReplayClient[T, U], error) {
 	// Initialise the mapped client
-	mClient := &replayClient[T, U]{
+	rClient := &replayClient[T, U]{
 		endpointURL:             cometWebsocketURL,
 		queryString:             queryString,
 		eventBytesToTypeDecoder: eventBytesToTypeDecoder,
@@ -98,50 +98,50 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 		ctx,
 		latestReplayBufferSize,
 	)
-	mClient.latestObsvbls = observable.ReplayObservable[U](latestObsvbls)
-	mClient.latestObsvblsReplayPublishCh = latestObsvblsReplayPublishCh
+	rClient.latestObsvbls = observable.ReplayObservable[U](latestObsvbls)
+	rClient.latestObsvblsReplayPublishCh = latestObsvblsReplayPublishCh
 
 	// Inject dependencies
-	if err := depinject.Inject(deps, &mClient.eventsClient); err != nil {
+	if err := depinject.Inject(deps, &rClient.eventsClient); err != nil {
 		return nil, err
 	}
 
 	// Concurrently publish blocks to the observable emitted by latestObsvbls.
-	go mClient.goPublishEvents(ctx)
+	go rClient.goPublishEvents(ctx)
 
-	return mClient, nil
+	return rClient, nil
 }
 
 // EventsSequence returns a ReplayObservable, with a replay buffer size of 1,
 // which is notified when new events are received by the events query subscription.
-func (mClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
+func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 	// Get the latest events observable from the replay observable. We only ever
 	// want the last 1 as any prior latest events observable values are closed.
 	// Directly accessing the zeroth index here is safe because the call to Last
 	// is guaranteed to return a slice with at least 1 element.
-	replayObs := observable.ReplayObservable[R](mClient.latestObsvbls)
+	replayObs := observable.ReplayObservable[R](rClient.latestObsvbls)
 	return replayObs.Last(ctx, 1)[0]
 }
 
 // LastNEvents returns the latest typed event that's been received by the
 // corresponding events query subscription.
 // It blocks until at least one event has been received.
-func (mClient *replayClient[T, R]) LastNEvents(ctx context.Context, n int) []T {
-	return mClient.EventsSequence(ctx).Last(ctx, n)
+func (rClient *replayClient[T, R]) LastNEvents(ctx context.Context, n int) []T {
+	return rClient.EventsSequence(ctx).Last(ctx, n)
 }
 
 // Close unsubscribes all observers of the committed blocks sequence observable
 // and closes the events query client.
-func (mClient *replayClient[T, R]) Close() {
+func (rClient *replayClient[T, R]) Close() {
 	// Closing eventsClient will cascade unsubscribe and close downstream observers.
-	mClient.eventsClient.Close()
+	rClient.eventsClient.Close()
 }
 
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,
 // re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
 // This function is intended to be called in a goroutine.
-func (mClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
+func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to latestObsvblsReplayPublishCh such that
 	// latestObsvbls.Last(ctx, 1) will return it.
@@ -151,7 +151,7 @@ func (mClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 		eventsBytesRetryDelay,
 		eventsBytesRetryResetTimeout,
 		"goPublishEvents",
-		mClient.retryPublishEventsFactory(ctx),
+		rClient.retryPublishEventsFactory(ctx),
 	)
 
 	// If we get here, the retry limit was reached and the retry loop exited.
@@ -166,10 +166,10 @@ func (mClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 // to retry.OnError. The returned function pipes event bytes from the events
 // query client, maps them to block events, and publishes them to the
 // latestObsvbls replay observable.
-func (mClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
+func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
 		errCh := make(chan error, 1)
-		eventsBzObsvbl, err := mClient.eventsClient.EventsBytes(ctx, mClient.queryString)
+		eventsBzObsvbl, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
 		if err != nil {
 			errCh <- err
 			return errCh
@@ -183,11 +183,11 @@ func (mClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 			ctx,
 			latestReplayBufferSize,
 			eventsBz,
-			mClient.newEventsBytesToTypeMapFn(errCh),
+			rClient.newEventsBytesToTypeMapFn(errCh),
 		)
 
 		// Initially set latestObsvbls and update if after retrying on error.
-		mClient.latestObsvblsReplayPublishCh <- typedObsrvbl.(R)
+		rClient.latestObsvblsReplayPublishCh <- typedObsrvbl.(R)
 
 		return errCh
 	}
@@ -207,7 +207,7 @@ func (mClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 // If deserialisation failed because the event bytes were for a different event
 // type, this value is also skipped. If deserialisation failed for some other
 // reason, this function panics.
-func (mClient *replayClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error) func(
+func (rClient *replayClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error) func(
 	context.Context,
 	either.Bytes,
 ) (T, bool) {
@@ -227,9 +227,9 @@ func (mClient *replayClient[T, R]) newEventsBytesToTypeMapFn(errCh chan<- error)
 
 		// attempt to decode the event bytes using the decoder function provided
 		// during the EventsReplayClient's construction.
-		event, err := mClient.eventBytesToTypeDecoder(eventBz)
+		event, err := rClient.eventBytesToTypeDecoder(eventBz)
 		if err != nil {
-			if ErrEventUnmarshalEvent.Is(err) {
+			if ErrEventsUnmarshalEvent.Is(err) {
 				// Don't publish (skip) if the message was not the correct event.
 				return *new(T), true
 			}

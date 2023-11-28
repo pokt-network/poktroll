@@ -1,4 +1,4 @@
-package eventsquery
+package events
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"

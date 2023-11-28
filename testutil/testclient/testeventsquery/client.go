@@ -10,12 +10,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
@@ -24,7 +23,7 @@ import (
 func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
-	return eventsquery.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
+	return events.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
 }
 
 // NewOneTimeEventsQuery creates a mock of the EventsQueryClient which expects

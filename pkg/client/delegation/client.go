@@ -6,7 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/event"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 )
 
 // delegationEventQuery is the query used by the EventsQueryClien to subscribe
@@ -29,7 +29,7 @@ func NewDelegationClient(
 	deps depinject.Config,
 	cometWebsocketURL string,
 ) (Client, error) {
-	client, err := event.NewEventsReplayClient[
+	client, err := events.NewEventsReplayClient[
 		client.DelegateeChange,
 		client.EventsObservable[client.DelegateeChange],
 	](
@@ -42,30 +42,30 @@ func NewDelegationClient(
 	if err != nil {
 		return nil, err
 	}
-	return &delegationClient{mappedClient: client}, nil
+	return &delegationClient{eventsReplayClient: client}, nil
 }
 
 // delegationClient is a wrapper around a mapped client that implements the same
 // interface for use in network. This is due to the lack of support from
 // gomock for generic types.
 type delegationClient struct {
-	mappedClient client.EventsReplayClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]]
+	eventsReplayClient client.EventsReplayClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]]
 }
 
 // DelegateeChangesSequence returns a replay observable of observables for
 // delegation events from the DelegationClient.
 func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) DelegateeChangeReplayObservable {
-	return b.mappedClient.EventsSequence(ctx).(DelegateeChangeReplayObservable)
+	return b.eventsReplayClient.EventsSequence(ctx).(DelegateeChangeReplayObservable)
 }
 
 // LastNDelegateeChanges returns the latest n delegatee change events from the
 // DelegationClient.
 func (b *delegationClient) LastNDelegateeChanges(ctx context.Context, n int) []client.DelegateeChange {
-	events := b.mappedClient.LastNEvents(ctx, n)
+	events := b.eventsReplayClient.LastNEvents(ctx, n)
 	for _, event := range events {
 		// Casting here is safe as this is the generic type of
 		// the EventsReplayClient
-		event = event.(client.DelegateeChange)
+		event = event
 	}
 	return events
 }
@@ -73,5 +73,5 @@ func (b *delegationClient) LastNDelegateeChanges(ctx context.Context, n int) []c
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all subsequent connections.
 func (b *delegationClient) Close() {
-	b.mappedClient.Close()
+	b.eventsReplayClient.Close()
 }
