@@ -25,7 +25,7 @@ The godocs for this repository can be found at [pkg.go.dev/github.com/pokt-netwo
 
 ### Pocket V1 (Shannon) Docs
 
-It is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE](https://grove.city/) documented [here](https://www.pokt.network/why-pokt-network-is-rolling-with-rollkit-a-technical-deep-dive/) (deep dive) and [here](https://www.pokt.network/a-sovereign-rollup-and-a-modular-future/) (summary).
+It is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE](https://grove.city/) documented [here](https://www.pokt.network/why-pokt-network-is-rolling-with-rollkit-a-technical-deep-dive/) (deep dive) and [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (summary).
 
 For now, we recommend visiting the links in [pokt-network/pocket/README.md](https://github.com/pokt-network/pocket/blob/main/README.md) as a starting point.
 
