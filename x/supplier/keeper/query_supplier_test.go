@@ -19,7 +19,7 @@ import (
 var _ = strconv.IntSize
 
 func TestSupplierQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNSupplier(keeper, ctx, 2)
 	tests := []struct {
@@ -71,7 +71,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 }
 
 func TestSupplierQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNSupplier(keeper, ctx, 5)
 

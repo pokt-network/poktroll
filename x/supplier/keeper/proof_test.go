@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
@@ -26,7 +27,7 @@ func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof 
 }
 
 func TestProofGet(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	items := createNProofs(keeper, ctx, 10)
 	for _, item := range items {
 		rst, found := keeper.GetProof(ctx,
@@ -40,7 +41,7 @@ func TestProofGet(t *testing.T) {
 	}
 }
 func TestProofRemove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	items := createNProofs(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveProof(ctx,
@@ -54,7 +55,7 @@ func TestProofRemove(t *testing.T) {
 }
 
 func TestProofGetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	items := createNProofs(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(items),
