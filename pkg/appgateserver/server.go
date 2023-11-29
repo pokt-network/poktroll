@@ -19,7 +19,6 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/block"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -80,7 +79,7 @@ type appGateServer struct {
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
-	blockClient block.Client
+	blockClient client.BlockClient
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL

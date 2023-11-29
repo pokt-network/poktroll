@@ -1,6 +1,6 @@
 //go:generate mockgen -destination=../../testutil/mockclient/events_query_client_mock.go -package=mockclient . Dialer,Connection,EventsQueryClient
-//go:generate mockgen -destination=../../testutil/mockclient/block_type_mock.go -package=mockclient . Block
-//go:generate mockgen -destination=../../testutil/mockclient/delegatee_change_type_mock.go -package=mockclient . DelegateeChange
+//go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
+//go:generate mockgen -destination=../../testutil/mockclient/delegation_client_mock.go -package=mockclient . DelegateeChange,DelegationClient
 //go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
 //go:generate mockgen -destination=../../testutil/mockclient/account_query_client_mock.go -package=mockclient . AccountQueryClient
@@ -124,6 +124,42 @@ type EventsReplayClient[T any, R observable.ReplayObservable[T]] interface {
 	LastNEvents(ctx context.Context, n int) []T
 	// Close unsubscribes all observers of the events sequence observable
 	// and closes the events query client.
+	Close()
+}
+
+// BlockReplayObservable wraps the generic
+// observable.ReplayObservable[Block] type
+type BlockReplayObservable observable.ReplayObservable[Block]
+
+// BlockClient is an interface that wraps the EventsReplayClient interface
+// specific for the EventsReplayClient[Block] implementation
+type BlockClient interface {
+	// CommittedBlocksSequence returns a BlockObservable that emits the
+	// latest block that has been committed to the chain.
+	CommittedBlocksSequence(context.Context) BlockReplayObservable
+	// LastNBlocks returns the latest N blocks that have been committed to
+	// the chain.
+	LastNBlocks(context.Context, int) []Block
+	// Close unsubscribes all observers of the committed block sequence
+	// observable and closes the events query client.
+	Close()
+}
+
+// DelegateeChangeReplayObservable wraps the generic
+// observable.ReplayObservable[DelegateeChange] type
+type DelegateeChangeReplayObservable observable.ReplayObservable[DelegateeChange]
+
+// DelegationClient is an interface that wraps the EventsReplayClient interface
+// specific for the EventsReplayClient[DelegateeChange] implementation
+type DelegationClient interface {
+	// DelegateeChangesSequence returns a Observable of DelegateeChanges that
+	// emits the latest delegatee change that has occured on chain.
+	DelegateeChangesSequence(context.Context) DelegateeChangeReplayObservable
+	// LastNBlocks returns the latest N blocks that have been committed to
+	// the chain.
+	LastNDelegateeChanges(context.Context, int) []DelegateeChange
+	// Close unsubscribes all observers of the committed block sequence
+	// observable and closes the events query client.
 	Close()
 }
 

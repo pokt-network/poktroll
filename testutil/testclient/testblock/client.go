@@ -13,14 +13,13 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	mockblockclient "github.com/pokt-network/poktroll/testutil/mockclient/block"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) block.Client {
+func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
@@ -39,7 +38,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) block.Client {
 func NewAnyTimesCommittedBlocksSequenceBlockClient(
 	t *testing.T,
 	blocksObs observable.Observable[client.Block],
-) *mockblockclient.MockClient {
+) *mockclient.MockBlockClient {
 	t.Helper()
 
 	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
@@ -66,7 +65,7 @@ func NewAnyTimesCommittedBlocksSequenceBlockClient(
 func NewOneTimeCommittedBlocksSequenceBlockClient(
 	t *testing.T,
 	blocksPublishCh chan client.Block,
-) *mockblockclient.MockClient {
+) *mockclient.MockBlockClient {
 	t.Helper()
 
 	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
@@ -77,7 +76,7 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 	// blocks sent on the given blocksPublishCh.
 	blockClientMock.EXPECT().CommittedBlocksSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) block.BlockReplayObservable {
+	).DoAndReturn(func(ctx context.Context) client.BlockReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1. Blocks
 		// are published to this observable via the provided blocksPublishCh.
 		withPublisherOpt := channel.WithPublisher(blocksPublishCh)
@@ -97,7 +96,7 @@ func NewAnyTimeLastNBlocksBlockClient(
 	t *testing.T,
 	hash []byte,
 	height int64,
-) *mockblockclient.MockClient {
+) *mockclient.MockBlockClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -105,7 +104,7 @@ func NewAnyTimeLastNBlocksBlockClient(
 	blockMock := NewAnyTimesBlock(t, hash, height)
 	// Create a mock block client that expects calls to LastNBlocks method and
 	// returns the mock block.
-	blockClientMock := mockblockclient.NewMockClient(ctrl)
+	blockClientMock := mockclient.NewMockBlockClient(ctrl)
 	blockClientMock.EXPECT().LastNBlocks(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
 
 	return blockClientMock

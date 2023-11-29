@@ -29,7 +29,7 @@ func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (Client, error) {
+) (client.BlockClient, error) {
 	client, err := events.NewEventsReplayClient[
 		client.Block,
 		client.EventsObservable[client.Block],
@@ -54,19 +54,13 @@ type blockClient struct {
 
 // CommittedBlocksSequence returns a replay observable of observables for Block events
 // from the BlockClient.
-func (b *blockClient) CommittedBlocksSequence(ctx context.Context) BlockReplayObservable {
-	return b.eventsReplayClient.EventsSequence(ctx).(BlockReplayObservable)
+func (b *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
+	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
 // LatestsNEvents returns the latest n blocks from the BockClient.
 func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
-	events := b.eventsReplayClient.LastNEvents(ctx, n)
-	for _, event := range events {
-		// Casting here is safe as this is the generic type of
-		// the EventsReplayClient
-		event = event
-	}
-	return events
+	return b.eventsReplayClient.LastNEvents(ctx, n)
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient

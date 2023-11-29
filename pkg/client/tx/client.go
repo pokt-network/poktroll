@@ -16,7 +16,6 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -66,7 +65,7 @@ type txClient struct {
 	eventsQueryClient client.EventsQueryClient
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
-	blockClient block.Client
+	blockClient client.BlockClient
 
 	// txsMutex protects txErrorChans and txTimeoutPool maps.
 	txsMutex sync.Mutex
@@ -110,7 +109,7 @@ type TxEvent struct {
 // Required dependencies:
 //   - client.TxContext
 //   - client.EventsQueryClient
-//   - block.Client
+//   - client.BlockClient
 //
 // Available options:
 //   - WithSigningKeyName

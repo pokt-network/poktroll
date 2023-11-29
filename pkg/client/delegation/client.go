@@ -28,7 +28,7 @@ func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
 	cometWebsocketURL string,
-) (Client, error) {
+) (client.DelegationClient, error) {
 	client, err := events.NewEventsReplayClient[
 		client.DelegateeChange,
 		client.EventsObservable[client.DelegateeChange],
@@ -54,20 +54,14 @@ type delegationClient struct {
 
 // DelegateeChangesSequence returns a replay observable of observables for
 // delegation events from the DelegationClient.
-func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) DelegateeChangeReplayObservable {
-	return b.eventsReplayClient.EventsSequence(ctx).(DelegateeChangeReplayObservable)
+func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) client.DelegateeChangeReplayObservable {
+	return b.eventsReplayClient.EventsSequence(ctx).(client.DelegateeChangeReplayObservable)
 }
 
 // LastNDelegateeChanges returns the latest n delegatee change events from the
 // DelegationClient.
 func (b *delegationClient) LastNDelegateeChanges(ctx context.Context, n int) []client.DelegateeChange {
-	events := b.eventsReplayClient.LastNEvents(ctx, n)
-	for _, event := range events {
-		// Casting here is safe as this is the generic type of
-		// the EventsReplayClient
-		event = event
-	}
-	return events
+	return b.eventsReplayClient.LastNEvents(ctx, n)
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient

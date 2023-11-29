@@ -18,7 +18,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	mockblockclient "github.com/pokt-network/poktroll/testutil/mockclient/block"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
@@ -163,7 +162,7 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 
 			// Construct a new mock block client. Since we expect the NewTxClient
 			// call to fail, we don't need to set any expectations on this mock.
-			blockClientMock := mockblockclient.NewMockClient(ctrl)
+			blockClientMock := mockclient.NewMockBlockClient(ctrl)
 
 			// Construct a new depinject config with the mocks we created above.
 			txClientDeps := depinject.Supply(

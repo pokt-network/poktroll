@@ -13,14 +13,13 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	mockdelegationclient "github.com/pokt-network/poktroll/testutil/mockclient/delegation"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new DelegationClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) delegation.Client {
+func NewLocalnetClient(ctx context.Context, t *testing.T) client.DelegationClient {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
@@ -39,7 +38,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) delegation.Client {
 func NewAnyTimesDelegateeChangesSequence(
 	t *testing.T,
 	delegateeChangeObs observable.Observable[client.DelegateeChange],
-) *mockdelegationclient.MockClient {
+) *mockclient.MockDelegationClient {
 	t.Helper()
 
 	// Create a mock for the delegation client which expects the
@@ -69,7 +68,7 @@ func NewAnyTimesDelegateeChangesSequence(
 func NewOneTimeDelegateeChangesSequenceDelegationClient(
 	t *testing.T,
 	delegateeChangesPublishCh chan client.DelegateeChange,
-) *mockdelegationclient.MockClient {
+) *mockclient.MockDelegationClient {
 	t.Helper()
 
 	// Create a mock for the delegation client which expects the
@@ -81,7 +80,7 @@ func NewOneTimeDelegateeChangesSequenceDelegationClient(
 	// delegation changes sent on the given delegateeChangesPublishCh.
 	delegationClientMock.EXPECT().DelegateeChangesSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) delegation.DelegateeChangeReplayObservable {
+	).DoAndReturn(func(ctx context.Context) client.DelegateeChangeReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1.
 		// DelegateeChange events are published to this observable via the
 		// provided delegateeChangesPublishCh.
@@ -102,7 +101,7 @@ func NewOneTimeDelegateeChangesSequenceDelegationClient(
 func NewAnyTimeLastNDelegateeChangesClient(
 	t *testing.T,
 	appAddress string,
-) *mockdelegationclient.MockClient {
+) *mockclient.MockDelegationClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -110,7 +109,7 @@ func NewAnyTimeLastNDelegateeChangesClient(
 	delegateeChange := NewAnyTimesDelegateeChange(t, appAddress)
 	// Create a mock delegation client that expects calls to
 	// LastNDelegateeChanges method and returns the mock delegateeChange.
-	delegationClientMock := mockdelegationclient.NewMockClient(ctrl)
+	delegationClientMock := mockclient.NewMockDelegationClient(ctrl)
 	delegationClientMock.EXPECT().
 		LastNDelegateeChanges(gomock.Any(), gomock.Any()).
 		Return([]client.DelegateeChange{delegateeChange}).AnyTimes()

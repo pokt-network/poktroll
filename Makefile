@@ -169,8 +169,6 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
 	go generate ./pkg/client/interface.go
-	go generate ./pkg/client/block/interface.go
-	go generate ./pkg/client/delegation/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
 	go generate ./pkg/crypto/rings/interface.go

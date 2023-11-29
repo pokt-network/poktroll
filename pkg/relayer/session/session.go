@@ -8,7 +8,6 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
@@ -36,7 +35,7 @@ type relayerSessionsManager struct {
 	sessionsTreesMu *sync.Mutex
 
 	// blockClient is used to get the notifications of committed blocks.
-	blockClient block.Client
+	blockClient client.BlockClient
 
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
@@ -48,7 +47,7 @@ type relayerSessionsManager struct {
 // NewRelayerSessions creates a new relayerSessions.
 //
 // Required dependencies:
-//   - block.Client
+//   - client.BlockClient
 //   - client.SupplierClient
 //
 // Available options:
