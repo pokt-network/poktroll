@@ -2,6 +2,8 @@
 //go:generate mockgen -destination=../../testutil/mockclient/block_client_mock.go -package=mockclient . Block,BlockClient
 //go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
+//go:generate mockgen -destination=../../testutil/mockclient/account_query_client.go -package=mockclient . AccountQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/application_query_client.go -package=mockclient . ApplicationQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
@@ -15,10 +17,12 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
+	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -177,3 +181,17 @@ type TxClientOption func(TxClient)
 
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
+
+// AccountQueryClient defines an interface that enables the querying of the
+// on-chain account information
+type AccountQueryClient interface {
+	// GetAccount queries the chain for the details of the account provided
+	GetAccount(ctx context.Context, address string) (accounttypes.AccountI, error)
+}
+
+// ApplicationQueryClient defines an interface that enables the querying of the
+// on-chain application information
+type ApplicationQueryClient interface {
+	// GetApplication queries the chain for the details of the application provided
+	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
+}

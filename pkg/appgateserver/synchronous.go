@@ -9,35 +9,28 @@ import (
 
 	"github.com/cometbft/cometbft/crypto"
 
+	"github.com/pokt-network/poktroll/pkg/partials"
+	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// handleJSONRPCRelay handles JSON RPC relay requests.
+// handleSynchronousRelay handles relay requests for synchronous protocols, where
+// there is a one-to-one correspondance between the request and response.
 // It does everything from preparing, signing and sending the request.
 // It then blocks on the response to come back and forward it to the provided writer.
-func (app *appGateServer) handleJSONRPCRelay(
+func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
+	payloadBz []byte,
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
-	// Read the request body bytes.
-	payloadBz, err := io.ReadAll(request.Body)
+	// Get the type of the request by doing a partial unmarshal of the payload
+	log.Printf("DEBUG: Determining request type...")
+	requestType, err := partials.GetRequestType(payloadBz)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err)
+		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
-	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
-
-	// Create the relay request payload.
-	relayRequestPayload := &types.RelayRequest_JsonRpcPayload{}
-	jsonPayload := &types.JSONRPCRequestPayload{}
-	cdc := types.ModuleCdc
-	if err := cdc.UnmarshalJSON(payloadBz, jsonPayload); err != nil {
-		return err
-	}
-	relayRequestPayload.JsonRpcPayload = jsonPayload
-
 	session, err := app.getCurrentSession(ctx, appAddress, serviceId)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
@@ -45,7 +38,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	log.Printf("DEBUG: Current session ID: %s", session.SessionId)
 
 	// Get a supplier URL and address for the given service and session.
-	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, sharedtypes.RPCType_JSON_RPC, session)
+	supplierUrl, supplierAddress, err := app.getRelayerUrl(ctx, serviceId, requestType, session)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
@@ -56,14 +49,15 @@ func (app *appGateServer) handleJSONRPCRelay(
 			SessionHeader: session.Header,
 			Signature:     nil, // signature added below
 		},
-		Payload: relayRequestPayload,
+		Payload: payloadBz,
 	}
 
 	// Get the application's signer.
-	signer, err := app.getRingSingerForAppAddress(ctx, appAddress)
+	appRing, err := app.ringCache.GetRingForAddress(ctx, appAddress)
 	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("getting signer: %s", err)
+		return ErrAppGateHandleRelay.Wrapf("getting app ring: %s", err)
 	}
+	signer := signer.NewRingSigner(appRing, app.signingInformation.SigningKey)
 
 	// Hash and sign the request's signable bytes.
 	signableBz, err := relayRequest.GetSignableBytes()
@@ -79,6 +73,7 @@ func (app *appGateServer) handleJSONRPCRelay(
 	relayRequest.Meta.Signature = signature
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
+	cdc := types.ModuleCdc
 	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("marshaling relay request: %s", err)
@@ -126,15 +121,9 @@ func (app *appGateServer) handleJSONRPCRelay(
 		return ErrAppGateHandleRelay.Wrapf("verifying relay response signature: %s", err)
 	}
 
-	// Marshal the response payload to bytes to be sent back to the application.
-	relayResponsePayloadBz, err := cdc.MarshalJSON(relayResponse.GetJsonRpcPayload())
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("unmarshallig relay response: %s", err)
-	}
-
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponsePayloadBz))
-	if _, err := writer.Write(relayResponsePayloadBz); err != nil {
+	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponse.Payload))
+	if _, err := writer.Write(relayResponse.Payload); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
 

@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 	"log"
-	"net/url"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -42,23 +41,29 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			url, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			supplierEndpointHost := url.Host
+			// url, err := url.Parse(endpoint.Url)
+			// if err != nil {
+			// 	return err
+			// }
+			// supplierEndpointHost := url.Host
+
+			// This will throw an error if we have more than one endpoint
+			supplierEndpointHost := "0.0.0.0:8545"
 
 			var server relayer.RelayServer
 
 			log.Printf(
-				"INFO: starting relay server for service %s at endpoint %s",
-				service.Id, endpoint.Url,
+				"INFO: starting relay server for service %s at endpoint %s (listening for connections on %s)",
+				service.Id, endpoint.Url, supplierEndpointHost,
 			)
 
-			// Switch to the RPC type to create the appropriate RelayServer
+			// Switch to the RPC type
+			// TODO(@h5law): Implement a switch that handles all synchronous
+			// RPC types in one server type and asynchronous RPC types in another
+			// to create the appropriate RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
-				server = NewJSONRPCServer(
+				server = NewSynchronousServer(
 					service,
 					supplierEndpointHost,
 					proxiedServicesEndpoints,

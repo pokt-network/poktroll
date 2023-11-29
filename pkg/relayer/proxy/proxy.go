@@ -3,18 +3,16 @@ package proxy
 import (
 	"context"
 	"net/url"
-	"sync"
 
 	"cosmossdk.io/depinject"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"golang.org/x/sync/errgroup"
 
-	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -41,11 +39,7 @@ type relayerProxy struct {
 
 	// blocksClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
-	blockClient blocktypes.BlockClient
-
-	// accountsQuerier is the querier used to get account data (e.g. app publicKey) from the blockchain,
-	// which, in the context of the RelayerProxy, is used to verify the relay request signatures.
-	accountsQuerier accounttypes.QueryClient
+	blockClient client.BlockClient
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
@@ -54,10 +48,6 @@ type relayerProxy struct {
 	// sessionQuerier is the querier used to get the current session from the blockchain,
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier sessiontypes.QueryClient
-
-	// applicationQuerier is the querier for the application module.
-	// It is used to get the ring for a given application address.
-	applicationQuerier apptypes.QueryClient
 
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
@@ -74,14 +64,11 @@ type relayerProxy struct {
 	// servedRelays observable can fan out the notifications to its subscribers.
 	servedRelaysPublishCh chan<- *types.Relay
 
-	// ringCache is a cache of the public keys used to create the ring for a given application
-	// they are stored in a map of application address to a slice of points on the secp256k1 curve
-	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
-	ringCache      map[string][]ringtypes.Point
-	ringCacheMutex *sync.RWMutex
+	// ringCache is used to obtain and store the ring for the application.
+	ringCache rings.RingCache
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx relayer.QueryClientContext
+	clientCtx querytypes.Context
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -107,11 +94,7 @@ func NewRelayerProxy(
 		deps,
 		&rp.clientCtx,
 		&rp.blockClient,
-		&rp.accountsQuerier,
-		&rp.supplierQuerier,
-		&rp.sessionQuerier,
-		&rp.applicationQuerier,
-		&rp.keyring,
+		&rp.ringCache,
 	); err != nil {
 		return nil, err
 	}
@@ -120,8 +103,9 @@ func NewRelayerProxy(
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.ringCache = make(map[string][]ringtypes.Point) // the key is the appAddress
-	rp.ringCacheMutex = &sync.RWMutex{}
+	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
+	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
+	rp.keyring = rp.clientCtx.Keyring
 
 	for _, opt := range opts {
 		opt(rp)

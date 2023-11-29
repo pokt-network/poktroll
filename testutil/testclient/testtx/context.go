@@ -17,11 +17,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
@@ -265,7 +264,7 @@ func NewAnyTimesTxTxContext(
 	require.NoError(t, err)
 	require.NotEmpty(t, txFactory)
 
-	txClientCtx := relayer.TxClientContext(clientCtx)
+	txClientCtx := txtypes.Context(clientCtx)
 	txCtxDeps := depinject.Supply(txFactory, txClientCtx)
 	txCtx, err := tx.NewTxContext(txCtxDeps)
 	require.NoError(t, err)

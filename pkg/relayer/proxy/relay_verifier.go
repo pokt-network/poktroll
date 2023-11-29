@@ -22,6 +22,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 ) error {
 	// extract the relay request's ring signature
 	log.Printf("DEBUG: Verifying relay request signature...")
+	if relayRequest.Meta == nil {
+		return ErrRelayerProxyEmptyRelayRequestSignature.Wrapf(
+			"request payload: %s", relayRequest.Payload,
+		)
+	}
 	signature := relayRequest.Meta.Signature
 	if signature == nil {
 		return sdkerrors.Wrapf(
@@ -47,7 +52,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// get the ring for the application address of the relay request
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
-	appRing, err := rp.getRingForAppAddress(ctx, appAddress)
+	appRing, err := rp.ringCache.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return sdkerrors.Wrapf(
 			ErrRelayerProxyInvalidRelayRequest,

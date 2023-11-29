@@ -11,7 +11,7 @@ import (
 )
 
 // newRelayRequest builds a RelayRequest from an http.Request.
-func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
+func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types.RelayRequest, error) {
 	requestBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, err
@@ -35,8 +35,8 @@ func (jsrv *jsonRPCServer) newRelayRequest(request *http.Request) (*types.RelayR
 
 // newRelayResponse builds a RelayResponse from an http.Response and a SessionHeader.
 // It also signs the RelayResponse and assigns it to RelayResponse.Meta.SupplierSignature.
-// If the response has a non-nil body, it will be parsed as a JSONRPCResponsePayload.
-func (jsrv *jsonRPCServer) newRelayResponse(
+// The response's Body is passed directly into the RelayResponse.Payload field.
+func (sync *synchronousRPCServer) newRelayResponse(
 	response *http.Response,
 	sessionHeader *sessiontypes.SessionHeader,
 ) (*types.RelayResponse, error) {
@@ -49,19 +49,10 @@ func (jsrv *jsonRPCServer) newRelayResponse(
 		return nil, err
 	}
 
-	log.Printf("DEBUG: Unmarshaling relay response...")
-	relayResponsePayload := &types.RelayResponse_JsonRpcPayload{}
-	jsonPayload := &types.JSONRPCResponsePayload{}
-	cdc := types.ModuleCdc
-	if err := cdc.UnmarshalJSON(responseBz, jsonPayload); err != nil {
-		return nil, err
-	}
-	relayResponsePayload.JsonRpcPayload = jsonPayload
-
-	relayResponse.Payload = &types.RelayResponse_JsonRpcPayload{JsonRpcPayload: jsonPayload}
+	relayResponse.Payload = responseBz
 
 	// Sign the relay response and add the signature to the relay response metadata
-	if err = jsrv.relayerProxy.SignRelayResponse(relayResponse); err != nil {
+	if err = sync.relayerProxy.SignRelayResponse(relayResponse); err != nil {
 		return nil, err
 	}
 

@@ -145,6 +145,10 @@ test_e2e: ## Run all E2E tests
 go_test: check_go_version ## Run all go tests
 	go test -v -race -tags test ./...
 
+.PHONY: go_test_quiet
+go_test_quiet: check_go_version ## Run all go tests quietly
+	go test -race -tags test ./...
+
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
 	go test -v -race -tags test,integration ./...
@@ -164,7 +168,10 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
-	go generate ./pkg/...
+	go generate ./pkg/client/interface.go
+	go generate ./pkg/miner/interface.go
+	go generate ./pkg/relayer/interface.go
+	go generate ./pkg/crypto/rings/interface.go
 
 .PHONY: go_fixturegen
 go_fixturegen: ## Generate fixture data for unit tests
@@ -215,7 +222,7 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 # TODO_NB                     - An important note to reference later
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
-TODO_KEYWORDS = -e "TODO" -e "TODO_COMMUNITY" -e "TODO_DECIDE" -e "TODO_TECHDEBT" -e "TODO_IMPROVE" -e "TODO_OPTIMIZE" -e "TODO_DISCUSS" -e "TODO_INCOMPLETE" -e "TODO_INVESTIGATE" -e "TODO_CLEANUP" -e "TODO_HACK" -e "TODO_REFACTOR" -e "TODO_CONSIDERATION" -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_CONSOLIDATE" -e "TODO_DEPRECATE" -e "TODO_ADDTEST" -e "TODO_RESEARCH" -e "TODO_BUG" -e "TODO_NB" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_IN_THIS_COMMIT"
+TODO_KEYWORDS = -e "TODO" -e "TODO_COMMUNITY" -e "TODO_DECIDE" -e "TODO_TECHDEBT" -e "TODO_IMPROVE" -e "TODO_OPTIMIZE" -e "TODO_DISCUSS" -e "TODO_INCOMPLETE" -e "TODO_INVESTIGATE" -e "TODO_CLEANUP" -e "TODO_HACK" -e "TODO_REFACTOR" -e "TODO_CONSIDERATION" -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_CONSOLIDATE" -e "TODO_DEPRECATE" -e "TODO_ADDTEST" -e "TODO_RESEARCH" -e "TODO_BUG" -e "TODO_NB"
 
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
@@ -233,7 +240,7 @@ todo_count: ## Print a count of all the TODOs in the project
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "DISCUSS_IN_THIS_COMMIT"
+	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT"
 
 ####################
 ###   Gateways   ###
@@ -368,20 +375,14 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the SUP
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake
