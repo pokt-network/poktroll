@@ -59,7 +59,7 @@ for such operations.`,
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "This flag is present to register the cosmos node flag, which is needed to initialise the comsos transaction and query context correctly. Ultimately the NetworkNodeUrl and QueryNodeUrl fields in the config file are used to build these contexts, and this flag's value isn't used.")
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
 
 	return cmd
 }
@@ -115,21 +115,20 @@ func setupRelayerDependencies(
 	cmd *cobra.Command,
 	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	pocketNodeWebsocketUrl := relayMinerConfig.PocketNodeWebsocketUrl
-	queryNodeUrl := relayMinerConfig.QueryNodeUrl.String()
-	networkNodeUrl := relayMinerConfig.NetworkNodeUrl.String()
+	queryNodeURL := relayMinerConfig.QueryNodeUrl.String()
+	networkNodeURL := relayMinerConfig.NetworkNodeUrl.String()
 	signingKeyName := relayMinerConfig.SigningKeyName
 	proxiedServiceEndpoints := relayMinerConfig.ProxiedServiceEndpoints
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL), // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL),
 		supplyMiner, // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeUrl), // leaf
-		config.NewSupplyTxClientContextFn(networkNodeUrl),  // leaf
-		config.NewAccountQuerierFn(),
-		config.NewApplicationQuerierFn(),
+		config.NewSupplyQueryClientContextFn(queryNodeURL), // leaf
+		config.NewSupplyTxClientContextFn(networkNodeURL),  // leaf
+		config.NewSupplyAccountQuerierFn(),
+		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,

@@ -146,7 +146,7 @@ go_test: check_go_version ## Run all go tests
 	go test -v -race -tags test ./...
 
 .PHONY: go_test_quiet
-go_test_quiet: check_go_version ## Run all go tests quietly
+go_test_quiet: check_go_version ## Run all go tests quietly showing only output on failed tests
 	go test -race -tags test ./...
 
 .PHONY: go_test_integration

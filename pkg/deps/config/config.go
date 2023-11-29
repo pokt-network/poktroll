@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
@@ -16,12 +17,25 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 )
 
+// omittedDefaultFlagValue is the default value assignesd to the cosmosflag.FlagNode
+// and can be used to overwrite the provided urls when creating the cosmos
+// query and tx client contntexts.
+const omittedDefaultFlagValue = "explicitly omitting default"
+
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
 	context.Context,
 	depinject.Config,
 	*cobra.Command,
 ) (depinject.Config, error)
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func hostToWebsocketURL(host string) string {
+	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
+	return websocketURL
+}
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
 // supplier functions in order and passing the result of each supplier to the
@@ -45,30 +59,32 @@ func SupplyConfig(
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
 // EventsQueryClient instance and returns a new depinject.Config which is
 // supplied with the given deps and the new EventsQueryClient.
-func NewSupplyEventsQueryClientFn(
-	pocketNodeWebsocketUrl string,
-) SupplierFn {
+func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketUrl)
+		// Convert the host to a websocket URL
+		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
+		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
 }
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
-// instance with the given nodeUrl and returns a new depinject.Config which
+// instance with the given nodeURL and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
-func NewSupplyBlockClientFn(pocketNodeWebsocketUrl string) SupplierFn {
+func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketUrl)
+		// Convert the host to a websocket URL
+		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
+		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketURL)
 		if err != nil {
 			return nil, err
 		}
@@ -80,17 +96,20 @@ func NewSupplyBlockClientFn(pocketNodeWebsocketUrl string) SupplierFn {
 // NewSupplyQueryClientContextFn returns a function with constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func NewSupplyQueryClientContextFn(pocketQueryNodeUrl string) SupplierFn {
+func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
 		tmp := cosmosflags.FlagNode
+		if tmp != omittedDefaultFlagValue {
+			pocketQueryNodeURL = tmp
+		}
 
-		// Set --node flag to the --pocket-node for the client context
+		// Set --node flag to the pocketQueryNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
-		if err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryNodeUrl); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryNodeURL); err != nil {
 			return nil, err
 		}
 
@@ -121,17 +140,20 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeUrl string) SupplierFn {
 // NewSupplyTxClientContextFn returns a function with constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func NewSupplyTxClientContextFn(pocketQueryNodeUrl string) SupplierFn {
+func NewSupplyTxClientContextFn(pocketTxNodeURL string) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
 		tmp := cosmosflags.FlagNode
+		if tmp != omittedDefaultFlagValue {
+			pocketTxNodeURL = tmp
+		}
 
-		// Set --node flag to the --pocket-node for the client context
+		// Set --node flag to the pocketTxNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientTxContext.
-		if err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryNodeUrl); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, pocketTxNodeURL); err != nil {
 			return nil, err
 		}
 
@@ -162,7 +184,7 @@ func NewSupplyTxClientContextFn(pocketQueryNodeUrl string) SupplierFn {
 // NewSupplyAccountQuerierFn returns a function with constructs an AccountQuerier
 // instance with the required dependencies and returns a new depinject.Config which
 // is supplied with the given deps and the new AccountQuerier.
-func NewAccountQuerierFn() SupplierFn {
+func NewSupplyAccountQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
@@ -183,7 +205,7 @@ func NewAccountQuerierFn() SupplierFn {
 // ApplicationQuerier instance with the required dependencies and returns a new
 // instance with the required dependencies and returns a new depinject.Config
 // which is supplied with the given deps and the new ApplicationQuerier.
-func NewApplicationQuerierFn() SupplierFn {
+func NewSupplyApplicationQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,

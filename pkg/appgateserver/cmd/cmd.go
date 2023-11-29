@@ -60,7 +60,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "This flag is present to register the cosmos node flag, which is needed to initialise the comsos query context correctly. Ultimately the QueryNodeUrl field in the config file is used to build this context and this flag's value isn't used.")
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the` QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -124,15 +124,14 @@ func setupAppGateServerDependencies(
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", appGateConfig.QueryNodeUrl.Host)
 	queryNodeURL := appGateConfig.QueryNodeUrl.String()
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL),
+		config.NewSupplyBlockClientFn(queryNodeURL),
 		config.NewSupplyQueryClientContextFn(queryNodeURL),
-		config.NewAccountQuerierFn(),
-		config.NewApplicationQuerierFn(),
+		config.NewSupplyAccountQuerierFn(),
+		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 	}
 

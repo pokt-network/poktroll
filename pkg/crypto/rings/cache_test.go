@@ -15,7 +15,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-// account is a struct used to define an address public key pairing
+// account is an internal struct used to define an (address, public_key) pairing
 type account struct {
 	address string
 	pubKey  cryptotypes.PubKey
