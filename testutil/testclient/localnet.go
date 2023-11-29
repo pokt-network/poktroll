@@ -1,11 +1,10 @@
 package testclient
 
 import (
-	"testing"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/regen-network/gocuke"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
@@ -35,7 +34,9 @@ func init() {
 //
 // Returns:
 // - A pointer to a populated client.Context instance suitable for localnet usage.
-func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context {
+func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Context {
+	t.Helper()
+
 	homedir := app.DefaultNodeHome
 	clientCtx := client.Context{}.
 		WithCodec(EncodingConfig.Marshaler).
@@ -57,7 +58,9 @@ func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context 
 //
 // Returns:
 // - A flag set populated with flags tailored for localnet environments.
-func NewLocalnetFlagSet(t *testing.T) *pflag.FlagSet {
+func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
+	t.Helper()
+
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	mockFlagSet.String(flags.FlagNode, "tcp://127.0.0.1:36657", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
