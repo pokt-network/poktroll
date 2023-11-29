@@ -52,8 +52,9 @@ func SupplyConfig(
 }
 
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
-// EventsQueryClient instance and returns a new depinject.Config which is
-// supplied with the given deps and the new EventsQueryClient.
+// EventsQueryClient instance, with the given hostname converted into a websocket
+// URL to subscribe to, and returns a new depinject.Config which is supplied
+// with the given deps and the new EventsQueryClient.
 func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 	return func(
 		_ context.Context,
@@ -69,7 +70,8 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 }
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
-// instance with the given nodeURL and returns a new depinject.Config which
+// instance with the given hostname, which is converted into a websocket URL,
+// to listen for block events on, and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
 func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(

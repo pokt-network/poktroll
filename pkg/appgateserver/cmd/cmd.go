@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"cosmossdk.io/depinject"
@@ -21,8 +22,12 @@ import (
 // We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
 
-var flagAppGateConfig string
+var (
+	flagAppGateConfig string
+	flagCosmosNodeURL string
+)
 
+// AppGateServerCmd returns the Cobra command for running the AppGate server.
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "appgate-server",
@@ -60,7 +65,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It cannot override the `QueryNodeUrl` field in the config file if specified.")
+		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -123,8 +128,16 @@ func setupAppGateServerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
-) (depinject.Config, error) {
+) (_ depinject.Config, err error) {
 	queryNodeURL := appGateConfig.QueryNodeUrl
+	// Override the config file's `QueryNodeUrl` fields
+	// with the `--node` flag if it was specified.
+	if flagCosmosNodeURL != omittedDefaultFlagValue {
+		queryNodeURL, err = url.Parse(flagCosmosNodeURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+		}
+	}
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
