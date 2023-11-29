@@ -17,11 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 )
 
-// omittedDefaultFlagValue is the default value assignesd to the cosmosflag.FlagNode
-// and can be used to overwrite the provided urls when creating the cosmos
-// query and tx client contntexts.
-const omittedDefaultFlagValue = "explicitly omitting default"
-
 // SupplierFn is a function that is used to supply a depinject config.
 type SupplierFn func(
 	context.Context,
@@ -103,9 +98,6 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
 		tmp := cosmosflags.FlagNode
-		if tmp != omittedDefaultFlagValue {
-			pocketQueryNodeURL = tmp
-		}
 
 		// Set --node flag to the pocketQueryNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
@@ -147,9 +139,6 @@ func NewSupplyTxClientContextFn(pocketTxNodeURL string) SupplierFn {
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
 		tmp := cosmosflags.FlagNode
-		if tmp != omittedDefaultFlagValue {
-			pocketTxNodeURL = tmp
-		}
 
 		// Set --node flag to the pocketTxNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientTxContext.

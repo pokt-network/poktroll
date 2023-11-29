@@ -59,7 +59,7 @@ for such operations.`,
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query and tx contexts correctly. It cannnot override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
 
 	return cmd
 }
@@ -115,18 +115,18 @@ func setupRelayerDependencies(
 	cmd *cobra.Command,
 	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	queryNodeURL := relayMinerConfig.QueryNodeUrl.String()
-	networkNodeURL := relayMinerConfig.NetworkNodeUrl.String()
+	queryNodeURL := relayMinerConfig.QueryNodeUrl
+	networkNodeURL := relayMinerConfig.NetworkNodeUrl
 	signingKeyName := relayMinerConfig.SigningKeyName
 	proxiedServiceEndpoints := relayMinerConfig.ProxiedServiceEndpoints
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(queryNodeURL), // leaf
-		config.NewSupplyBlockClientFn(queryNodeURL),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		supplyMiner, // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeURL), // leaf
-		config.NewSupplyTxClientContextFn(networkNodeURL),  // leaf
+		config.NewSupplyTxClientContextFn(networkNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),

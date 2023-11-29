@@ -60,7 +60,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the` QueryNodeUrl` field in the config file if specified.")
+		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It cannot override the `QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -124,14 +124,14 @@ func setupAppGateServerDependencies(
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (depinject.Config, error) {
-	queryNodeURL := appGateConfig.QueryNodeUrl.String()
+	queryNodeURL := appGateConfig.QueryNodeUrl
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(queryNodeURL),
-		config.NewSupplyBlockClientFn(queryNodeURL),
-		config.NewSupplyQueryClientContextFn(queryNodeURL),
-		config.NewSupplyAccountQuerierFn(),
-		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
+		config.NewSupplyAccountQuerierFn(),                          // leaf
+		config.NewSupplyApplicationQuerierFn(),                      // leaf
 		config.NewSupplyRingCacheFn(),
 	}
 
