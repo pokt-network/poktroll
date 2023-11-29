@@ -15,12 +15,24 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
+type SessionMetaFixturesByAppAddr map[string]SessionMetaFixture
+type SessionMetaFixture struct {
+	SessionId    string
+	AppAddr      string
+	SupplierAddr string
+}
+
+func SupplierKeeper(t testing.TB, sessionFixtures SessionMetaFixturesByAppAddr) (*keeper.Keeper, sdk.Context) {
+	t.Helper()
+
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
 
@@ -38,6 +50,40 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
 
+	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
+	mockSessionKeeper.EXPECT().
+		GetSession(gomock.AssignableToTypeOf(sdk.Context{}), gomock.Any()).
+		DoAndReturn(
+			func(
+				ctx sdk.Context,
+				req *sessiontypes.QueryGetSessionRequest,
+			) (*sessiontypes.QueryGetSessionResponse, error) {
+				sessionMock, ok := sessionFixtures[req.GetApplicationAddress()]
+				require.Truef(t, ok, "application address not provided during mock construction: %q", req.ApplicationAddress)
+
+				return &sessiontypes.QueryGetSessionResponse{
+					Session: &sessiontypes.Session{
+						Header: &sessiontypes.SessionHeader{
+							ApplicationAddress:      sessionMock.AppAddr,
+							Service:                 req.GetService(),
+							SessionStartBlockHeight: 1,
+							SessionId:               sessionMock.SessionId,
+							SessionEndBlockHeight:   5,
+						},
+						SessionId:           sessionMock.SessionId,
+						SessionNumber:       1,
+						NumBlocksPerSession: 4,
+						Application: &apptypes.Application{
+							Address: sessionMock.AppAddr,
+						},
+						Suppliers: []*sharedtypes.Supplier{{
+							Address: sessionMock.SupplierAddr,
+						}},
+					},
+				}, nil
+			},
+		).AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -52,6 +98,7 @@ func SupplierKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 
 		mockBankKeeper,
 	)
+	k.SupplySessionKeeper(mockSessionKeeper)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())
 

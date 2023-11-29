@@ -606,7 +606,7 @@ func New(
 	// Order of operations:
 	// 1. Construct supplier keeper
 	// 2. Construct session keeper
-	// 3. Provide session keeper to supplier keeper via custom #ProvideSessionKeeper method.
+	// 3. Provide session keeper to supplier keeper via custom #SupplySessionKeeper method.
 	// 4. Construct supplier module
 	// 5. Construct session module
 	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
@@ -628,7 +628,7 @@ func New(
 		app.SupplierKeeper,
 	)
 
-	app.SupplierKeeper.ProvideSessionKeeper(app.SessionKeeper)
+	app.SupplierKeeper.SupplySessionKeeper(app.SessionKeeper)
 
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
