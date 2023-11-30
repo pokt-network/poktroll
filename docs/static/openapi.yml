@@ -47931,14 +47931,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
-                                  - REST_RPC
+                                  - REST
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
-                                   - REST_RPC: REST-RPC
+                                   - REST: REST
                               configs:
                                 type: array
                                 items:
@@ -48082,14 +48082,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
-                                    - REST_RPC
+                                    - REST
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
-                                     - REST_RPC: REST-RPC
+                                     - REST: REST
                                 configs:
                                   type: array
                                   items:
@@ -77996,7 +77996,7 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
-      - REST_RPC
+      - REST
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
@@ -78064,7 +78064,7 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
-                      - REST_RPC
+                      - REST
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
@@ -78122,7 +78122,7 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
-          - REST_RPC
+          - REST
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
@@ -78194,7 +78194,7 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
-                - REST_RPC
+                - REST
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
@@ -78449,14 +78449,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
-                            - REST_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
-                             - REST_RPC: REST-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78631,14 +78631,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
-                          - REST_RPC
+                          - REST
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
-                           - REST_RPC: REST-RPC
+                           - REST: REST
                       configs:
                         type: array
                         items:

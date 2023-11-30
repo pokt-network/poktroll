@@ -1,2 +1,2 @@
-pocket:
-  node: sequencer-poktroll-sequencer
+config:
+  query_node_url: tcp://sequencer-poktroll-sequencer:36657

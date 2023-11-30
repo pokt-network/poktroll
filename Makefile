@@ -141,9 +141,13 @@ test_e2e: ## Run all E2E tests
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests
+.PHONY: go_test_verbose
+go_test_verbose: check_go_version ## Run all go tests verbosely
 	go test -v -race -tags test ./...
+
+.PHONY: go_test
+go_test: check_go_version ## Run all go tests showing detailed output only on failures
+	go test -race -tags test ./...
 
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
@@ -164,7 +168,10 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
-	go generate ./pkg/...
+	go generate ./pkg/client/interface.go
+	go generate ./pkg/miner/interface.go
+	go generate ./pkg/relayer/interface.go
+	go generate ./pkg/crypto/rings/interface.go
 
 .PHONY: go_fixturegen
 go_fixturegen: ## Generate fixture data for unit tests
@@ -368,20 +375,14 @@ supplier_stake: ## Stake tokens for the supplier specified (must specify the SUP
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier1 SERVICES=supplier1_stake_config.yaml make supplier_stake
 
 .PHONY: supplier2_stake
 supplier2_stake: ## Stake supplier2
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier2 SERVICES=supplier2_stake_config.yaml make supplier_stake
 
 .PHONY: supplier3_stake
 supplier3_stake: ## Stake supplier3
-	# TODO_UPNEXT(@okdas): once `relayminer` service is added to tilt, this hostname should point to that service.
-	# I.e.: replace `localhost` with `relayminer` (or whatever the service's hostname is).
 	SUPPLIER=supplier3 SERVICES=supplier3_stake_config.yaml make supplier_stake
 
 .PHONY: supplier_unstake
