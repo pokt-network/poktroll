@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/testutil"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -21,7 +22,8 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
@@ -31,15 +33,20 @@ import (
 // TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable
 const numBlocksPerSession = 4
 
-func encodeSessionHeader(t *testing.T, sessionId string, sessionEndHeight int64) string {
+func encodeSessionHeader(
+	t *testing.T,
+	appAddr string,
+	sessionId string,
+	sessionStartHeight int64,
+) string {
 	t.Helper()
 
 	argSessionHeader := &sessiontypes.SessionHeader{
-		ApplicationAddress:      sample.AccAddress(),
-		SessionStartBlockHeight: sessionEndHeight - numBlocksPerSession,
+		ApplicationAddress:      appAddr,
+		SessionStartBlockHeight: sessionStartHeight,
 		SessionId:               sessionId,
-		SessionEndBlockHeight:   sessionEndHeight,
-		Service:                 &sharedtypes.Service{Id: "anvil"}, // hardcoded for simplicity
+		SessionEndBlockHeight:   sessionStartHeight + numBlocksPerSession,
+		Service:                 &sharedtypes.Service{Id: "svc1"},
 	}
 	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
@@ -51,13 +58,17 @@ func createClaim(
 	net *network.Network,
 	ctx client.Context,
 	supplierAddr string,
-	sessionId string,
 	sessionEndHeight int64,
+	appAddress string,
 ) *types.Claim {
 	t.Helper()
 
+	//appAddr := sample.AccAddress()
 	rootHash := []byte("root_hash")
-	sessionHeaderEncoded := encodeSessionHeader(t, sessionId, sessionEndHeight)
+	sessionStartHeight := sessionEndHeight - numBlocksPerSession
+	sessionId, err := getSessionId(t, net, appAddress, supplierAddr, sessionStartHeight)
+	require.NoError(t, err)
+	sessionHeaderEncoded := encodeSessionHeader(t, appAddress, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
 
 	args := []string{
@@ -84,6 +95,35 @@ func createClaim(
 	}
 }
 
+func getSessionId(
+	t *testing.T,
+	net *network.Network,
+	appAddr string,
+	supplierAddr string,
+	sessionStartHeight int64,
+) (string, error) {
+	t.Helper()
+	ctx := context.TODO()
+
+	sessionQueryClient := sessiontypes.NewQueryClient(net.Validators[0].ClientCtx)
+	res, err := sessionQueryClient.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: appAddr,
+		Service:            &sharedtypes.Service{Id: "svc1"}, // hardcoded for simplicity
+		BlockHeight:        sessionStartHeight,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if res.GetSession().GetSuppliers()[0].GetAddress() != supplierAddr {
+		return "", fmt.Errorf("supplier address %s not found in session", supplierAddr)
+	}
+
+	return res.Session.SessionId, nil
+}
+
+// TODO_CONSIDERATION: perhaps this (and/or other similar helpers) can be refactored
+// into something more generic and moved into a shared testutil package.
 func networkWithClaimObjects(
 	t *testing.T,
 	numSessions int,
@@ -91,43 +131,82 @@ func networkWithClaimObjects(
 ) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
-	// Prepare the network
+	// Initialize a network config.
 	cfg := network.DefaultConfig()
-	net = network.New(t, cfg)
-	ctx := net.Validators[0].ClientCtx
 
-	// Prepare the keyring for the supplier account
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, numClaimsPerSession)
+	// Construct an in-memory keyring so that it can be populated and used prior
+	// to network start.
+	kr := keyring.NewInMemory(cfg.Codec)
+	// Populate the in-memmory keyring with as many pre-generated accounts as
+	// we expect to need for the test.
+	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, 20)
+
+	// Use the pre-generated accounts iterator to populate the supplier and
+	// application accounts and addresses lists for use in genesis state construction.
+	preGeneratedAccts := testkeyring.PreGeneratedAccounts().Clone()
+
+	// Create a supplier for each session in numSessions and an app for each
+	// claim in numClaimsPerSession.
+	supplierAccts := make([]*testkeyring.PreGeneratedAccount, numSessions)
+	supplierAddrs := make([]string, numSessions)
+	for i := range supplierAccts {
+		account := preGeneratedAccts.MustNext()
+		supplierAccts[i] = account
+		supplierAddrs[i] = account.Address.String()
+	}
+	appAccts := make([]*testkeyring.PreGeneratedAccount, numClaimsPerSession)
+	appAddrs := make([]string, numClaimsPerSession)
+	for i := range appAccts {
+		account := preGeneratedAccts.MustNext()
+		appAccts[i] = account
+		appAddrs[i] = account.Address.String()
+	}
+
+	// Construct supplier and application module genesis states given the account addresses.
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAccounts(t, supplierAddrs)
+	supplierGenesisBuffer, err := cfg.Codec.MarshalJSON(supplierGenesisState)
+	require.NoError(t, err)
+	appGenesisState := network.ApplicationModuleGenesisStateWithAccounts(t, appAddrs)
+	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
+	require.NoError(t, err)
+
+	// Add supplier and application module genesis states to the network config.
+	cfg.GenesisState[types.ModuleName] = supplierGenesisBuffer
+	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
+
+	// Construct the network with the configuration.
+	net = network.New(t, cfg)
+	// Only the first validator's client context is populated.
+	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
+	ctx := net.Validators[0].ClientCtx
+	// Overwrite the client context's keyring with the in-memory one that contains
+	// our pre-generated accounts.
 	ctx = ctx.WithKeyring(kr)
 
 	// Initialize all the accounts
-	for i, account := range accounts {
-		signatureSequenceNumber := i + 1
-		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
+	sequenceIndex := 1
+	for _, supplierAcct := range supplierAccts {
+		network.InitAccountWithSequence(t, net, supplierAcct.Address, sequenceIndex)
+		sequenceIndex++
+	}
+	for _, appAcct := range appAccts {
+		network.InitAccountWithSequence(t, net, appAcct.Address, sequenceIndex)
+		sequenceIndex++
 	}
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	addresses := make([]string, len(accounts))
-	for i, account := range accounts {
-		addresses[i] = account.Address.String()
-	}
-
-	// Create one supplier
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAccounts(t, addresses)
-	buf, err := cfg.Codec.MarshalJSON(supplierGenesisState)
-	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-
 	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
-	for sessionNum := 0; sessionNum < numSessions; sessionNum++ {
+	for _, supplierAcct := range supplierAccts {
 		sessionEndHeight += numBlocksPerSession
-		sessionId := fmt.Sprintf("session_id%d", sessionNum)
-		for claimNum := 0; claimNum < numClaimsPerSession; claimNum++ {
-			supplierAddr := addresses[claimNum]
-			claim := createClaim(t, net, ctx, supplierAddr, sessionId, sessionEndHeight)
+		for _, appAcct := range appAccts {
+			claim := createClaim(
+				t, net, ctx,
+				supplierAcct.Address.String(),
+				sessionEndHeight,
+				appAcct.Address.String(),
+			)
 			claims = append(claims, *claim)
 			// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
 			require.NoError(t, net.WaitForNextBlock())
