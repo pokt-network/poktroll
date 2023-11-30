@@ -67,8 +67,8 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 	// when the events bytes observable returns an error and is updated with a
 	// new "active" observable after a new events query subscription is created.
 	latestObsvbls observable.ReplayObservable[U]
-	// latestObsvblsReplayPublishCh is the publish channel for latestBlockObsvbls.
-	// It's used to set blockObsvbl initially and subsequently update it, for
+	// latestObsvblsReplayPublishCh is the publish channel for latestObsvbls.
+	// It's used to set latestObsvbls initially and subsequently update it, for
 	// example, when the connection is re-established after erroring.
 	latestObsvblsReplayPublishCh chan<- U
 }

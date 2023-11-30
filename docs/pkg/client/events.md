@@ -12,14 +12,18 @@
   - [Subscriptions](#subscriptions)
 - [Installation](#installation)
 - [Features](#features)
-- [Usage](#usage)
+- [Usage (`EventsQueryClient`)](#usage-eventsqueryclient)
   - [Basic Example](#basic-example)
   - [Advanced Usage](#advanced-usage)
   - [Configuration](#configuration)
+- [Usage (`EventsReplayClient`)](#usage-eventsreplayclient)
+  - [Basic Usage](#basic-usage)
+  - [Advanced Usage](#advanced-usage-1)
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
   - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
   - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
+  - [Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?](#why-use-the-eventsreplayclient-over-directly-maintaining-an-eventsqueryclient)
 
 <!-- tocstop -->
 
@@ -92,6 +96,47 @@ flowchart
   q1_conn -.-> sub
 ```
 
+```mermaid
+---
+title: EventsReplayClient Components
+---
+
+flowchart
+  subgraph chain[Pocket Network]
+    c1_md[Action]
+  end
+
+  subgraph erc[EventsReplayClient]
+    subgraph eqc[EventsQueryClient]
+      r1_qs[Event Query String]
+      r1_qe[Websocket URL]
+    end
+    r1_rt[Publish Events Factory]
+    subgraph dec[EventBytesDecoder]
+      r1_df[Decoder Function]
+    end
+    r1_ob[LatestReplayObservable]
+    r1_pb[LatestReplayObservablePublisher]
+  end
+
+  subgraph con[Consumer]
+    c1_ob[Replay Observable]
+    c1_ev[Events]
+  end
+
+  c1_md -."#EmitTypedEvent".-> eqc
+
+  eqc --"retry.OnError"--> r1_rt
+  r1_df --"Decoded Event"--> r1_rt
+  r1_rt -."#EventBytes".-> eqc
+  r1_rt --"LatestReplayObservable"-->r1_pb
+  r1_pb --> r1_ob
+
+  eqc --"Serialised Event"--> r1_df
+  r1_ob --"#EventsSequence"--> c1_ob
+  r1_ob --"#LastNEvents"--> c1_ev
+```
+
 ### Subscriptions
 
 ```mermaid
@@ -101,37 +146,37 @@ title: Event Subscription Data Flow
 
 flowchart
 
-subgraph comet[Cometbft Node]
-    subgraph rpc[JSON-RPC]
-        sub[subscribe endpoint]
-    end
-end
+  subgraph comet[Cometbft Node]
+      subgraph rpc[JSON-RPC]
+          sub[subscribe endpoint]
+      end
+  end
 
-subgraph eqc[EventsQueryClient]
-    subgraph q1[Query 1]
-        q1_eb[EventsBytesObservable]
-        q1_conn[Connection]
-    end
-    subgraph q2[Query 2]
-        q2_conn[Connection]
-        q2_eb[EventsBytesObservable]
-    end
-end
+  subgraph eqc[EventsQueryClient]
+      subgraph q1[Query 1]
+          q1_eb[EventsBytesObservable]
+          q1_conn[Connection]
+      end
+      subgraph q2[Query 2]
+          q2_conn[Connection]
+          q2_eb[EventsBytesObservable]
+      end
+  end
 
-q1_obsvr1[Query 1 Observer 1]
-q1_obsvr2[Query 1 Observer 2]
-q2_obsvr[Query 2 Observer]
+  q1_obsvr1[Query 1 Observer 1]
+  q1_obsvr2[Query 1 Observer 2]
+  q2_obsvr[Query 2 Observer]
 
-q1_eb -.-> q1_obsvr1
-q1_eb -.-> q1_obsvr2
-q2_eb -.-> q2_obsvr
+  q1_eb -.-> q1_obsvr1
+  q1_eb -.-> q1_obsvr2
+  q2_eb -.-> q2_obsvr
 
 
-q1_conn -.-> q1_eb
-q2_conn -.-> q2_eb
+  q1_conn -.-> q1_eb
+  q2_conn -.-> q2_eb
 
-sub -.-> q1_conn
-sub -.-> q2_conn
+  sub -.-> q1_conn
+  sub -.-> q2_conn
 ```
 
 ## Installation
@@ -151,8 +196,11 @@ go get github.com/pokt-network/poktroll/pkg/client/events
   which can be easily mocked for tests.
 - **Observable Pattern**: Integrates the observable pattern, making it easier to
   react to chain events.
+- **Generic Replay Client**: Offers a generic typed replay client to listen for
+  specifc events on chain, and handles reconnection and subscription on error,
+  if the `EventsQueryClient` returns an error/is closed.
 
-## Usage
+## Usage (`EventsQueryClient`)
 
 ### Basic Example
 
@@ -207,6 +255,96 @@ grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 
 - **WithDialer**: Configure the client to use a custom dialer for connections.
 
+## Usage (`EventsReplayClient`)
+
+### Basic Usage
+
+```go
+// Define a query string to provide to the EventsQueryClient
+// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
+// And: https://docs.cosmos.network/main/learn/advanced/events#default-events
+const eventQueryString = "tm.event='Tx' AND message.action='eventType'"
+
+// Define the websocket URL the EventsQueryClient will subscribe to
+const cometWebsocketURL = "ws://example.com:36657"
+
+// Define an interface to represent the onchain event
+type EventType interface {
+  GetName() string
+}
+
+// Define the event type that implements the interface
+type eventType struct {
+  Name string `json:"name"`
+}
+
+func (e *eventType) GetName() string { return e.Name }
+
+// Define a decoder function that can take the raw event bytes
+// received from the EventsQueryClient and convert them into
+// the desired type for the EventsReplayClient
+func newEventType(eventBz []byte) EventType {
+  eventMsg := new(eventType)
+  if err := json.Unmarshal(eventBz, eventMsg); err != nil {
+    return nil, err
+  }
+
+  // Confirm the event is correct by checking its fields
+  if eventMsg.Name == "" {
+    return nil, events.ErrEventsUnmarshalEvent.
+      Wrapf("unable to unmarshal eventType: %s", string(eventBz))
+  }
+
+  return eventMsg, nil
+}
+
+// Create the events query client and a depinject config to supply
+// it into the EventsReplayClient
+evtClient := events.NewEventsQueryClient(cometWebsocketURL)
+depConfig := depinject.Supply(evtClient)
+
+// Create a context (this should be cancellable to close the EventsReplayClient)
+ctx, cancel := context.WithCancel(context.Background)
+
+// Create a new instance of the EventsReplayClient
+client, err := events.NewEventsReplayClient[
+  EventType,
+  observable.ReplayObservable[EventType],
+](
+  ctx,
+  depConfig,
+  cometWebsocketURL,
+  eventQueryString,
+  newEventType,
+)
+if err != nil {
+  return nil, fmt.Errorf("unable to create EventsReplayClient %w", err)
+}
+
+// Retrieve the latest emmitted event
+lastEventType := client.LastNEvents(ctx, 1)[0]
+
+// Get the latest replay observable
+latestEventsObsvbl := client.EventsSequence(ctx)
+// Get the latest events from the sequence
+lastEventType := latestEventsObsvbl.Last(ctx, 1)[0]
+
+// Cancel the context which will call client.Close and close all
+// subscriptions and the EventsQueryClient
+cancel()
+```
+
+### Advanced Usage
+
+The `EventsReplayClient` can be lightly wrapped to define a custom client for
+a respective type. Examples of these include the `client.BlockClient` and
+`client.DelegationClient` interfaces which under-the-hood are wrappers for the
+`EventsReplayClient`.
+
+See: [BlockClient](../../../pkg/client/block/) and
+[DelegationClient](../../../pkg/client/delegation/) for more detailed examples
+on how to wrap and use the `EventsReplayClient` in a more advanced setting.
+
 ## Best Practices
 
 - **Connection Handling**: Ensure to close the `EventsQueryClient` when done to
@@ -226,3 +364,13 @@ pattern and provides mockable interfaces for better testing.
 
 You can implement the `Dialer` and `Connection` interfaces and use the
 `WithDialer` configuration to provide your custom dialer.
+
+#### Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?
+
+The `EventsReplayClient` will automatically attempt to reconnect to the
+underlying `EventsQueryClient` in the event that it closes and publish the most
+recent `observable.ReplayObservable` that can be used to retrieve events. This
+means that the consumer does not need to maintain their own connection to the
+`EventsQueryClient` and can always call the `EventsSequence` and `LastNEvents`
+methods to retrieve the latest observable and slice of decoded events from an
+active `EventsQueryClient`.
