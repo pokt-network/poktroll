@@ -12,9 +12,10 @@ import (
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 )
 
-var _ RingCache = (*ringCache)(nil)
+var _ crypto.RingCache = (*ringCache)(nil)
 
 type ringCache struct {
 	// ringPointsCache maintains a map of application addresses to the points
@@ -34,7 +35,7 @@ type ringCache struct {
 
 // NewRingCache returns a new RingCache instance. It requires a depinject.Config
 // to be passed in, which is used to inject the dependencies of the RingCache.
-func NewRingCache(deps depinject.Config) (RingCache, error) {
+func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	rc := &ringCache{
 		ringPointsCache: make(map[string][]ringtypes.Point),
 		ringPointsMu:    &sync.RWMutex{},

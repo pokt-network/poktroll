@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
@@ -26,7 +27,7 @@ func NewRingCacheWithMockQueriers(
 	t *testing.T,
 	accQuerier *mockclient.MockAccountQueryClient,
 	appQuerier *mockclient.MockApplicationQueryClient,
-) rings.RingCache {
+) crypto.RingCache {
 	t.Helper()
 
 	// Create the dependency injector with the mock queriers

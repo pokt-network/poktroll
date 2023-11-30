@@ -11,7 +11,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -66,7 +66,7 @@ type relayerProxy struct {
 	servedRelaysPublishCh chan<- *types.Relay
 
 	// ringCache is used to obtain and store the ring for the application.
-	ringCache rings.RingCache
+	ringCache crypto.RingCache
 
 	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
 	clientCtx querytypes.Context

@@ -1,5 +1,5 @@
-//go:generate mockgen -destination=../../../testutil/mockcrypto/ring_cache_mock.go -package=mockcrypto . RingCache
-package rings
+//go:generate mockgen -destination=../../testutil/mockcrypto/ring_cache_mock.go -package=mockcrypto . RingCache
+package crypto
 
 import (
 	"context"

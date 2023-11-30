@@ -20,7 +20,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -55,7 +55,7 @@ type appGateServer struct {
 	signingInformation *SigningInformation
 
 	// ringCache is used to obtain and store the ring for the application.
-	ringCache rings.RingCache
+	ringCache crypto.RingCache
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
