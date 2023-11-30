@@ -12,7 +12,7 @@ import (
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/relayer"
+	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 )
 
 var _ client.TxContext = (*cosmosTxContext)(nil)
@@ -22,7 +22,7 @@ var _ client.TxContext = (*cosmosTxContext)(nil)
 type cosmosTxContext struct {
 	// Holds cosmos-sdk client context.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client#Context)
-	clientCtx relayer.TxClientContext
+	clientCtx txtypes.Context
 	// Holds the cosmos-sdk transaction factory.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk@v0.47.5/client/tx#Factory)
 	txFactory cosmostx.Factory

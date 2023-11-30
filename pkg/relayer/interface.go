@@ -7,7 +7,6 @@ package relayer
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -15,18 +14,6 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-// TxClientContext is used to distinguish a cosmosclient.Context intended for use
-// in transactions from others.
-// This type is intentionally not an alias in order to make this distinction clear
-// to the dependency injector
-type TxClientContext client.Context
-
-// QueryClientContext is used to distinguish a cosmosclient.Context intended for use
-// in queries from others.
-// This type is intentionally not an alias in order to make this distinction clear
-// to the dependency injector
-type QueryClientContext client.Context
 
 // RelaysObservable is an observable which is notified with Relay values.
 //
@@ -59,7 +46,6 @@ type MinerOption func(Miner)
 // While handling requests and responding in a closed loop, it also notifies
 // the miner about the relays that have been served.
 type RelayerProxy interface {
-
 	// Start starts all advertised relay servers and returns an error if any of them fail to start.
 	Start(ctx context.Context) error
 

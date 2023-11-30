@@ -141,9 +141,13 @@ test_e2e: ## Run all E2E tests
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests
+.PHONY: go_test_verbose
+go_test_verbose: check_go_version ## Run all go tests verbosely
 	go test -v -race -tags test ./...
+
+.PHONY: go_test
+go_test: check_go_version ## Run all go tests showing detailed output only on failures
+	go test -race -tags test ./...
 
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
@@ -167,6 +171,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
+	go generate ./pkg/crypto/rings/interface.go
 
 .PHONY: go_fixturegen
 go_fixturegen: ## Generate fixture data for unit tests
