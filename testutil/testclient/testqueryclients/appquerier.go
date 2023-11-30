@@ -82,3 +82,10 @@ func AddAddressToApplicationMap(
 		delete(appToGatewayMap, address)
 	})
 }
+
+// RemoveAddressFromApplicationMap removes the given address from the
+// addressApplicationMap.
+func RemoveAddressFromApplicationMap(t *testing.T, address string) {
+	t.Helper()
+	delete(appToGatewayMap, address)
+}

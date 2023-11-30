@@ -173,7 +173,7 @@ func (rc *ringCache) addressesToPoints(
 		key := acc.GetPubKey()
 		// Check if the key is a secp256k1 public key
 		if _, ok := key.(*secp256k1.PubKey); !ok {
-			return nil, ErrRingsWrongCurve.Wrapf("got %T", key)
+			return nil, ErrRingsNotSecp256k1Curve.Wrapf("got %T", key)
 		}
 		// Convert the public key to the point on the secp256k1 curve
 		point, err := curve.DecodeToPoint(key.Bytes())

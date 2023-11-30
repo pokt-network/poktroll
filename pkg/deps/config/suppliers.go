@@ -17,13 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 )
 
-// SupplierFn is a function that is used to supply a depinject config.
-type SupplierFn func(
-	context.Context,
-	depinject.Config,
-	*cobra.Command,
-) (depinject.Config, error)
-
 // hostToWebsocketURL converts the provided host into a websocket URL that can
 // be used to subscribe to onchain events and query the chain via a client
 // context or send transactions via a tx client context.
