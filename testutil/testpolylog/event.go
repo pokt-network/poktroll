@@ -93,11 +93,11 @@ func RunEventMethodTests(
 		// Ensure that calls to #Msg(), #Msgf(), and #Send() are mutually exclusive.
 		switch {
 		case tt.Msg != "":
-			// Set up call args for polylog.Event#Msg() if tt.msg is not emtpy.
+			// Set up call args for polylog.Event#Msg() if tt.msg is not empty.
 			doneMethodName = "Msg"
 			doneMethodArgs = append(doneMethodArgs, reflect.ValueOf(tt.Msg))
 		case tt.MsgFmt != "":
-			// Set up call args for polylog.Event#Msgf() if tt.msgFmt is not emtpy.
+			// Set up call args for polylog.Event#Msgf() if tt.msgFmt is not empty.
 			doneMethodName = "Msgf"
 			doneMethodArgs = append(
 				doneMethodArgs,
