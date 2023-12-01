@@ -59,7 +59,9 @@ func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context 
 // - A flag set populated with flags tailored for localnet environments.
 func NewLocalnetFlagSet(t *testing.T) *pflag.FlagSet {
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	mockFlagSet.String(flags.FlagNode, "tcp://127.0.0.1:36657", "use localnet poktrolld node")
+	// TODO_IMPROVE: It would be nice if the value could be set correctly based
+	// on whether the test using it is running in tilt or not.
+	mockFlagSet.String(flags.FlagNode, "tcp://poktroll-sequencer:36657", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	err := mockFlagSet.Parse([]string{})
