@@ -128,7 +128,7 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 
 // TODO_IN_THIS_COMMIT: fix comment...
 // ApplicationModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
-func ApplicationModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *apptypes.GenesisState {
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
 	t.Helper()
 	state := apptypes.DefaultGenesis()
 	for _, addr := range addresses {
@@ -195,7 +195,7 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 }
 
 // SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
-func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {

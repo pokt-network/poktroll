@@ -115,9 +115,14 @@ func getSessionId(
 		return "", err
 	}
 
-	if res.GetSession().GetSuppliers()[0].GetAddress() != supplierAddr {
-		return "", fmt.Errorf("supplier address %s not found in session", supplierAddr)
+	var found bool
+	for _, supplier := range res.GetSession().GetSuppliers() {
+		if supplier.GetAddress() == supplierAddr {
+			found = true
+			break
+		}
 	}
+	require.Truef(t, found, "supplier address %s not found in session", supplierAddr)
 
 	return res.Session.SessionId, nil
 }
@@ -163,10 +168,10 @@ func networkWithClaimObjects(
 	}
 
 	// Construct supplier and application module genesis states given the account addresses.
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAccounts(t, supplierAddrs)
+	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierAddrs)
 	supplierGenesisBuffer, err := cfg.Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
-	appGenesisState := network.ApplicationModuleGenesisStateWithAccounts(t, appAddrs)
+	appGenesisState := network.ApplicationModuleGenesisStateWithAddresses(t, appAddrs)
 	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
@@ -366,11 +371,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, numSessions, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
+		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -391,11 +396,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
+		require.Equal(t, 1, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {
