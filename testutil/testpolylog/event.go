@@ -45,15 +45,40 @@ func (m *FnMethodSpy) Fn(event polylog.Event) {
 	m.Called(event)
 }
 
-// EventMethodsTest is a test case for expressing and exercising polylog.Event
+// EventMethodTestCase is a test case for expressing and exercising polylog.Event
 // methods in a concise way.
-type EventMethodsTest struct {
-	Msg                    string
-	MsgFmt                 string
-	MsgFmtArgs             []any
-	Key                    string
-	Value                  any
-	EventMethodName        string
+type EventMethodTestCase struct {
+	// Msg is the string to pass to polylog.Event#Msg(), which will be called
+	// after the event method under test. Usage of Msg is mutually exclusive
+	// with MsgFmt. If neither are provided, then polylog.Event#Send() is called
+	// after the event method instead.
+	Msg string
+
+	// MsgFmt is the format string to pass to polylog.Event#Msgf(), which will
+	// be called on the event returned from the event method under test. Usage
+	// of MsgFmt is mutually exclusive with Msg. If neither are provided, then
+	// polylog.Event#Send() is called after the event method instead.
+	MsgFmt string
+
+	// MsgFmtArgs are the args to pass to polylog.Event#Msgf(). It is an error
+	// to provide MsgFmtArgs without also providing MsgFmt or while providing
+	// Msg.
+	MsgFmtArgs []any
+
+	// Key is the key to pass to the event method under test. If EventMethodName
+	// is empty, then Key is used as the event method name.
+	Key string
+
+	// Value is the value to pass to the event method under test.
+	Value any
+
+	// EventMethodName is the name of the event method to call on the logger.
+	// If no event method name is specified, then the test case's key is used
+	// as the event method name.
+	EventMethodName string
+
+	// ExpectedOutputContains is the string that is expected to be contained
+	// in the log output.
 	ExpectedOutputContains string
 }
 
@@ -61,10 +86,9 @@ type EventMethodsTest struct {
 func RunEventMethodTests(
 	t *testing.T,
 	level polylog.Level,
-	tests []EventMethodsTest,
+	tests []EventMethodTestCase,
 	newLoggerAndOutput NewLoggerAndOutputFn,
 	newEventWithLevel NewEventWithLevelFn,
-	funcMethodEventTypeName string,
 	getExpectedLevelOutputContains func(level polylog.Level) string,
 ) {
 	t.Helper()
@@ -75,7 +99,7 @@ func RunEventMethodTests(
 	//
 	// TODO_TECHDEBT/TODO_COMMUNITY: `strings.Title()` is deprecated. Follow
 	// migration guidance in godocs: https://pkg.go.dev/strings@go1.21.4#Title.
-	levelMethodStr := strings.Title(level.String())
+	levelMethodName := strings.Title(level.String())
 
 	for _, tt := range tests {
 		// If the test case does not specify an event method name, use the test
@@ -93,11 +117,14 @@ func RunEventMethodTests(
 		// Ensure that calls to #Msg(), #Msgf(), and #Send() are mutually exclusive.
 		switch {
 		case tt.Msg != "":
-			// Set up call args for polylog.Event#Msg() if tt.msg is not emtpy.
+			require.Emptyf(t, tt.MsgFmt, "Msg and MsgFmt are mutually exclusive but MsgFmt was not empty: %s", tt.MsgFmt)
+			require.Emptyf(t, tt.MsgFmtArgs, "Msg and MsgFmt are mutually exclusive but MsgFmtArgs was not empty: %v", tt.MsgFmtArgs)
+
+			// Set up call args for polylog.Event#Msg() if tt.msg is not empty.
 			doneMethodName = "Msg"
 			doneMethodArgs = append(doneMethodArgs, reflect.ValueOf(tt.Msg))
 		case tt.MsgFmt != "":
-			// Set up call args for polylog.Event#Msgf() if tt.msgFmt is not emtpy.
+			// Set up call args for polylog.Event#Msgf() if tt.msgFmt is not empty.
 			doneMethodName = "Msgf"
 			doneMethodArgs = append(
 				doneMethodArgs,
@@ -110,13 +137,19 @@ func RunEventMethodTests(
 			doneMethodName = "Send"
 		}
 
-		// If tt.EventMethodName and tt.Key are both empty, then use the done
-		// method name for the test description instead of the event method name.
+		// Test description for this sub-test is interpolated based on the logger
+		// level, event, and "done" method names (e.g. `Debug().Msg()` or `Info().Str()`).
+		// If the event method name is not empty, the done method name is omitted.
+		// This is done for brevity as not every permutation of event method and done
+		// method is exercised (nor need they be).
+		// If the event method name is empty, then the test description is interpolated
+		// using the level method name and the "done" method name (e.g. `Error().Msg()`
+		// or `Warn().Send()`).
 		descMethodName := tt.EventMethodName
 		if tt.EventMethodName == "" {
 			descMethodName = doneMethodName
 		}
-		testDesc := fmt.Sprintf("%s().%s()", levelMethodStr, descMethodName)
+		testDesc := fmt.Sprintf("%s().%s()", levelMethodName, descMethodName)
 
 		// Run this sub-test for the current level.
 		t.Run(testDesc, func(t *testing.T) {

@@ -61,7 +61,6 @@ func (gs GenesisState) Validate() error {
 			return sdkerrors.Wrapf(ErrSupplierInvalidServiceConfig, err.Error())
 		}
 	}
-
 	// this line is used by starport scaffolding # genesis/types/validate
 
 	return gs.Params.Validate()
