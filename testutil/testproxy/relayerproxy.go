@@ -3,6 +3,7 @@ package testproxy
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,6 +28,7 @@ import (
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -45,19 +47,18 @@ type TestBehavior struct {
 	proxiedServices map[string]*http.Server
 }
 
+// JSONRpcError is the error struct for the JSON RPC response
 type JSONRpcError struct {
 	Code    int32  `json:"code"`
 	Message string `json:"message"`
 }
 
+// JSONRpcErrorReply is the error reply struct for the JSON RPC response
 type JSONRpcErrorReply struct {
 	Id      int32  `json:"id"`
 	Jsonrpc string `json:"jsonrpc"`
 	Error   *JSONRpcError
 }
-
-// ValidPayload is a helper variable for tests that need a valid payload
-var ValidPayload = []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)
 
 // NewRelayerProxyTestBehavior creates a TestBehavior with the provided config
 func NewRelayerProxyTestBehavior(
@@ -107,6 +108,8 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 	}
 }
 
+// WithRelayerProxiedServices creates the services that the relayer proxy will
+// proxy requests to.
 func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		for serviceId, endpoint := range proxiedServices {
@@ -126,7 +129,14 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 	}
 }
 
-func WithDefaultActors(supplierKeyName string, appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
+// WithDefaultApplications creates the default actors (application and supplier)
+// for the test. And mock they are staked on-chain.
+// If the supplierKeyName is empty, the supplier will not be staked so we can
+// test the case where the supplier is not in the application's session's supplier list.
+func WithDefaultActors(
+	supplierKeyName string,
+	appPrivateKey *secp256k1.PrivKey,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		var keyring keyringtypes.Keyring
 
@@ -167,7 +177,10 @@ func WithDefaultActors(supplierKeyName string, appPrivateKey *secp256k1.PrivKey)
 	}
 }
 
-func WithDefaultSessionSupplier(supplierKeyName string, appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
+func WithDefaultSessionSupplier(
+	supplierKeyName string,
+	appPrivateKey *secp256k1.PrivKey,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
 
@@ -240,7 +253,8 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	return payload.Error.Code, payload.Error.Message
 }
 
-// GetRelayResponseResult crafts a ring signer for test purposes and uses it to sign the relay request
+// GetRelayResponseResult crafts a ring signer for test purposes and uses it to
+// sign the relay request
 func GetApplicationRingSignature(
 	t *testing.T,
 	req *servicetypes.RelayRequest,
@@ -282,4 +296,28 @@ func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) st
 	applicationAddress, err := record.GetAddress()
 	require.NoError(test.t, err)
 	return applicationAddress.String()
+}
+
+// GenerateRelayRequest generates a relay request with the provided parameters
+func GenerateRelayRequest(
+	test *TestBehavior,
+	privKey *secp256k1.PrivKey,
+	serviceId string,
+	blockHeight int64,
+	payload []byte,
+) *servicetypes.RelayRequest {
+	appAddress := GetAddressFromPrivateKey(test, privKey)
+	sessionId := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", appAddress, serviceId, blockHeight)))
+
+	return &servicetypes.RelayRequest{
+		Meta: &servicetypes.RelayRequestMetadata{
+			SessionHeader: &sessiontypes.SessionHeader{
+				ApplicationAddress: appAddress,
+				SessionId:          string(sessionId[:]),
+				Service:            &sharedtypes.Service{Id: serviceId},
+			},
+			Signature: []byte(""),
+		},
+		Payload: payload,
+	}
 }
