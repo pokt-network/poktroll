@@ -42,7 +42,7 @@ var (
 )
 
 func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
-	tests := []testpolylog.EventMethodsTest{
+	tests := []testpolylog.EventMethodTestCase{
 		{
 			Msg:                    "Msg",
 			ExpectedOutputContains: "Msg",
@@ -166,7 +166,6 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 			tests,
 			newTestLogger,
 			newTestEventWithLevel,
-			"*polyzero.zerologEvent",
 			getExpectedLevelOutputContains,
 		)
 	}
