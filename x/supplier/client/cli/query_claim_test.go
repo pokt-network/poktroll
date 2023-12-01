@@ -131,8 +131,11 @@ func getSessionId(
 // into something more generic and moved into a shared testutil package.
 func networkWithClaimObjects(
 	t *testing.T,
-	numSessions int,
-	numClaimsPerSession int,
+	sessionCount int,
+	supplierCount int,
+	appCount int,
+	// TODO_THIS_COMMIT: hook up to genesis state generation...
+	serviceCount int,
 ) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
@@ -150,17 +153,17 @@ func networkWithClaimObjects(
 	// application accounts and addresses lists for use in genesis state construction.
 	preGeneratedAccts := testkeyring.PreGeneratedAccounts().Clone()
 
-	// Create a supplier for each session in numSessions and an app for each
+	// Create a supplier for each session in numClaimsSessions and an app for each
 	// claim in numClaimsPerSession.
-	supplierAccts := make([]*testkeyring.PreGeneratedAccount, numSessions)
-	supplierAddrs := make([]string, numSessions)
+	supplierAccts := make([]*testkeyring.PreGeneratedAccount, supplierCount)
+	supplierAddrs := make([]string, supplierCount)
 	for i := range supplierAccts {
 		account := preGeneratedAccts.MustNext()
 		supplierAccts[i] = account
 		supplierAddrs[i] = account.Address.String()
 	}
-	appAccts := make([]*testkeyring.PreGeneratedAccount, numClaimsPerSession)
-	appAddrs := make([]string, numClaimsPerSession)
+	appAccts := make([]*testkeyring.PreGeneratedAccount, appCount)
+	appAddrs := make([]string, appCount)
 	for i := range appAccts {
 		account := preGeneratedAccts.MustNext()
 		appAccts[i] = account
@@ -201,20 +204,23 @@ func networkWithClaimObjects(
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	// Create numSessions * numClaimsPerSession claims for the supplier
+	// Create sessionCount * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
-	for _, supplierAcct := range supplierAccts {
+	for sessionIdx := 0; sessionIdx < sessionCount; sessionIdx++ {
 		sessionEndHeight += numBlocksPerSession
-		for _, appAcct := range appAccts {
-			claim := createClaim(
-				t, net, ctx,
-				supplierAcct.Address.String(),
-				sessionEndHeight,
-				appAcct.Address.String(),
-			)
-			claims = append(claims, *claim)
-			// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
-			require.NoError(t, net.WaitForNextBlock())
+		// TODO_IN_THIS_COMMIT: numClaimsPerSession == supplierCount * appCount
+		for _, supplierAcct := range supplierAccts {
+			for _, appAcct := range appAccts {
+				claim := createClaim(
+					t, net, ctx,
+					supplierAcct.Address.String(),
+					sessionEndHeight,
+					appAcct.Address.String(),
+				)
+				claims = append(claims, *claim)
+				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
+				require.NoError(t, net.WaitForNextBlock())
+			}
 		}
 	}
 
@@ -222,10 +228,18 @@ func networkWithClaimObjects(
 }
 
 func TestClaim_Show(t *testing.T) {
-	numSessions := 1
-	numClaimsPerSession := 2
+	sessionCount := 1
+	supplierCount := 3
+	appCount := 3
+	serviceCount := 1
+	//numClaimsPerSession := supplierCount * appCount * serviceCount
 
-	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
+	net, claims := networkWithClaimObjects(
+		t, sessionCount,
+		appCount,
+		supplierCount,
+		serviceCount,
+	)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -292,11 +306,20 @@ func TestClaim_Show(t *testing.T) {
 }
 
 func TestClaim_List(t *testing.T) {
-	numSessions := 2
-	numClaimsPerSession := 5
-	totalClaims := numSessions * numClaimsPerSession
+	sessionCount := 2
+	supplierCount := 4
+	appCount := 3
+	serviceCount := 1
+	// Each supplier will submit a claim for each app x service combination (per session).
+	numClaimsPerSession := supplierCount * appCount * serviceCount
+	totalClaims := sessionCount * numClaimsPerSession
 
-	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
+	net, claims := networkWithClaimObjects(
+		t, sessionCount,
+		supplierCount,
+		appCount,
+		serviceCount,
+	)
 
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
@@ -375,7 +398,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
+		require.Equal(t, sessionCount*appCount, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -400,7 +423,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, 1, int(resp.Pagination.Total))
+		require.Equal(t, supplierCount, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {
