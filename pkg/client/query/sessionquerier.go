@@ -40,16 +40,17 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 	return sessq, nil
 }
 
-// GetSupplier returns an sessiontypes.Session struct for a given address
+// GetSession returns an sessiontypes.Session struct for a given appAddress,
+// serviceId and blockHeight
 func (sessq *sessionQuerier) GetSession(
 	ctx context.Context,
-	address string,
+	appAddress string,
 	serviceId string,
 	blockHeight int64,
 ) (*sessiontypes.Session, error) {
 	service := &sharedtypes.Service{Id: serviceId}
 	req := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: address,
+		ApplicationAddress: appAddress,
 		Service:            service,
 		BlockHeight:        blockHeight,
 	}
@@ -57,7 +58,7 @@ func (sessq *sessionQuerier) GetSession(
 	if err != nil {
 		return nil, ErrQueryInvalidSession.Wrapf(
 			"address: %s,serviceId %s, block height %d [%v]",
-			address, serviceId, blockHeight, err,
+			appAddress, serviceId, blockHeight, err,
 		)
 	}
 	return res.Session, nil

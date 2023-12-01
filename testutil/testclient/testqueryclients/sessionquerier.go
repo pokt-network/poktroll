@@ -79,7 +79,8 @@ func AddToExistingSessions(
 	}
 
 	for _, supplierAddress := range suppliersAddress {
-		session.Suppliers = append(session.Suppliers, &sharedtypes.Supplier{Address: supplierAddress})
+		supplier := &sharedtypes.Supplier{Address: supplierAddress}
+		session.Suppliers = append(session.Suppliers, supplier)
 	}
 
 	sessionsMap[string(sessionId[:])] = &session

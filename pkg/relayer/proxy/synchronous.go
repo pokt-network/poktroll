@@ -106,7 +106,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 			"missing meta from relay request: %v", relayRequest,
 		)
 		sync.replyWithError(relayRequest.Payload, writer, err)
-		log.Printf("WARN: failed serving relay request: %s", err)
+		log.Printf("WARN: failed unmarshaling relay request: %s", err)
 		return
 	}
 
