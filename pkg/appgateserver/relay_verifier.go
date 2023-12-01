@@ -4,10 +4,7 @@ import (
 	"context"
 
 	"github.com/cometbft/cometbft/crypto"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -60,18 +57,8 @@ func (app *appGateServer) getSupplierPubKeyFromAddress(
 
 	// Query for the supplier account to get the application's public key
 	// to verify the relay request signature.
-	accQueryReq := &accounttypes.QueryAccountRequest{Address: supplierAddress}
-	accQueryRes, err := app.accountQuerier.Account(ctx, accQueryReq)
+	acc, err := app.accountQuerier.GetAccount(ctx, supplierAddress)
 	if err != nil {
-		return nil, err
-	}
-
-	// Unmarshal the query response into a BaseAccount.
-	var acc accounttypes.AccountI
-	reg := codectypes.NewInterfaceRegistry()
-	accounttypes.RegisterInterfaces(reg)
-	cdc := codec.NewProtoCodec(reg)
-	if err := cdc.UnpackAny(accQueryRes.Account, &acc); err != nil {
 		return nil, err
 	}
 
