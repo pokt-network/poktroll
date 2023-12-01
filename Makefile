@@ -140,6 +140,7 @@ test_e2e: ## Run all E2E tests
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
+	go test -v ./e2e/pkg/... -tags=e2e
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
