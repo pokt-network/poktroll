@@ -141,12 +141,12 @@ test_e2e: ## Run all E2E tests
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e
 
-.PHONY: go_test
-go_test: check_go_version ## Run all go tests
+.PHONY: go_test_verbose
+go_test_verbose: check_go_version ## Run all go tests verbosely
 	go test -v -race -tags test ./...
 
-.PHONY: go_test_quiet
-go_test_quiet: check_go_version ## Run all go tests quietly
+.PHONY: go_test
+go_test: check_go_version ## Run all go tests showing detailed output only on failures
 	go test -race -tags test ./...
 
 .PHONY: go_test_integration

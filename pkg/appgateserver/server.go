@@ -20,10 +20,13 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
+// SigningInformation is a struct that holds information related to the signing
+// of relay requests, used by the appGateServer to determine how they will sign
+// relay requests (with either their own ring or the rign of the application).
 type SigningInformation struct {
 	// SelfSigning indicates whether the server is running in self-signing mode
 	SelfSigning bool
@@ -52,7 +55,7 @@ type appGateServer struct {
 	signingInformation *SigningInformation
 
 	// ringCache is used to obtain and store the ring for the application.
-	ringCache rings.RingCache
+	ringCache crypto.RingCache
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
@@ -90,6 +93,7 @@ type appGateServer struct {
 	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
+// NewAppGateServer creates a new appGateServer instance with the given dependencies.
 func NewAppGateServer(
 	deps depinject.Config,
 	opts ...appGateServerOption,

@@ -9,7 +9,6 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -38,10 +37,10 @@ func NewTestApplicationQueryClient(
 		DoAndReturn(func(
 			_ context.Context,
 			appAddress string,
-		) (application types.Application, err error) {
+		) (application apptypes.Application, err error) {
 			delegateeAddresses, ok := appToGatewayMap[appAddress]
 			if !ok {
-				return types.Application{}, apptypes.ErrAppNotFound
+				return apptypes.Application{}, apptypes.ErrAppNotFound
 			}
 			return apptypes.Application{
 				Address: appAddress,
@@ -81,4 +80,11 @@ func AddAddressToApplicationMap(
 	t.Cleanup(func() {
 		delete(appToGatewayMap, address)
 	})
+}
+
+// RemoveAddressFromApplicationMap removes the given address from the
+// addressApplicationMap.
+func RemoveAddressFromApplicationMap(t *testing.T, address string) {
+	t.Helper()
+	delete(appToGatewayMap, address)
 }

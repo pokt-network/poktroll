@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 
 	"cosmossdk.io/depinject"
@@ -21,8 +22,12 @@ import (
 // We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
 const omittedDefaultFlagValue = "explicitly omitting default"
 
-var flagAppGateConfig string
+var (
+	flagAppGateConfig string
+	flagCosmosNodeURL string
+)
 
+// AppGateServerCmd returns the Cobra command for running the AppGate server.
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "appgate-server",
@@ -60,7 +65,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "This flag is present to register the cosmos node flag, which is needed to initialise the comsos query context correctly. Ultimately the QueryNodeUrl field in the config file is used to build this context and this flag's value isn't used.")
+		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -123,16 +128,23 @@ func setupAppGateServerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
-) (depinject.Config, error) {
-	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", appGateConfig.QueryNodeUrl.Host)
-	queryNodeURL := appGateConfig.QueryNodeUrl.String()
+) (_ depinject.Config, err error) {
+	queryNodeURL := appGateConfig.QueryNodeUrl
+	// Override the config file's `QueryNodeUrl` fields
+	// with the `--node` flag if it was specified.
+	if flagCosmosNodeURL != omittedDefaultFlagValue {
+		queryNodeURL, err = url.Parse(flagCosmosNodeURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+		}
+	}
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		config.NewSupplyQueryClientContextFn(queryNodeURL),
-		config.NewSupplyAccountQuerierFn(),
-		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
+		config.NewSupplyAccountQuerierFn(),                          // leaf
+		config.NewSupplyApplicationQuerierFn(),                      // leaf
 		config.NewSupplyRingCacheFn(),
 	}
 

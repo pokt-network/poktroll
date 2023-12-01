@@ -9,7 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -62,7 +62,7 @@ type relayerProxy struct {
 	servedRelaysPublishCh chan<- *types.Relay
 
 	// ringCache is used to obtain and store the ring for the application.
-	ringCache rings.RingCache
+	ringCache crypto.RingCache
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string

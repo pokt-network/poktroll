@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -31,8 +34,10 @@ const omittedDefaultFlagValue = "explicitly omitting default"
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
 	flagRelayMinerConfig string
+	flagCosmosNodeURL    string
 )
 
+// RelayerCmd returns the Cobra command for running the relay miner.
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
@@ -60,7 +65,7 @@ for such operations.`,
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		String(cosmosflags.FlagNode, omittedDefaultFlagValue, "This flag is present to register the cosmos node flag, which is needed to initialise the comsos transaction and query context correctly. Ultimately the NetworkNodeUrl and QueryNodeUrl fields in the config file are used to build these contexts, and this flag's value isn't used.")
+		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
 
 	return cmd
 }
@@ -98,11 +103,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Start the relay miner
 	log.Println("INFO: Starting relay miner...")
-	if err := relayMiner.Start(ctx); err != nil {
-		return err
+	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("failed to start relay miner: %w", err)
+	} else if errors.Is(err, http.ErrServerClosed) {
+		log.Println("INFO: RelayMiner stopped; exiting")
 	}
-
-	log.Println("INFO: Relay miner stopped; exiting")
 	return nil
 }
 
@@ -116,23 +121,30 @@ func setupRelayerDependencies(
 	cmd *cobra.Command,
 	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	pocketNodeWebsocketUrl := relayMinerConfig.PocketNodeWebsocketUrl
-	queryNodeUrl := relayMinerConfig.QueryNodeUrl.String()
-	networkNodeUrl := relayMinerConfig.NetworkNodeUrl.String()
+	queryNodeURL := relayMinerConfig.QueryNodeUrl
+	networkNodeURL := relayMinerConfig.NetworkNodeUrl
+	// Override the config file's `QueryNodeUrl` and `NetworkNodeUrl` fields
+	// with the `--node` flag if it was specified.
+	if flagCosmosNodeURL != omittedDefaultFlagValue {
+		cosmosParsedURL, err := url.Parse(flagCosmosNodeURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+		}
+		queryNodeURL = cosmosParsedURL
+		networkNodeURL = cosmosParsedURL
+	}
 	signingKeyName := relayMinerConfig.SigningKeyName
 	proxiedServiceEndpoints := relayMinerConfig.ProxiedServiceEndpoints
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl), // leaf
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		supplyMiner, // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeUrl), // leaf
-		config.NewSupplyTxClientContextFn(networkNodeUrl),  // leaf
+		config.NewSupplyTxClientContextFn(networkNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
-		config.NewSupplySupplierQuerierFn(),
-		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
