@@ -107,7 +107,8 @@ func (s *suite) TheClaimCreatedBySupplierShouldBePersistedOnchain(supplierName s
 
 func (s *suite) TheSupplierHasServicedASessionOfRelaysForApplication(supplierName string, appName string) {
 	// TODO_IN_THIS_COMMIT: use consts or something
-	pocketNodeWebsocketUrl := "ws://pocket-sequencer:36657/websocket"
+	// TODO_IN_THIS_COMMIT: use testclient.CometLocalWebsocketURL instead.
+	pocketNodeWebsocketUrl := "ws://poktroll-sequencer:36657/websocket"
 	msgClaimSenderQueryFmt := "tm.event='Tx' AND message.sender='%s'"
 	msgSenderQuery := fmt.Sprintf(msgClaimSenderQueryFmt, accNameToAddrMap[supplierName])
 	s.Logf("msgSenderQuery: %s", msgSenderQuery)
