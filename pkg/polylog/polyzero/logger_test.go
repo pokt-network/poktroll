@@ -20,6 +20,10 @@ const polyzeroEventTypeName = "*polyzero.zerologEvent"
 var (
 	expectedErr  = fmt.Errorf("%d", 42)
 	expectedTime = time.Now()
+	// expectedTimestampDayPrecisionLayout is a "layout" which is described using
+	// the "reference time", as per the time package usage convention.
+	// See: https://golang.org/pkg/time/#pkg-constants for more details on "layouts" and the "reference time".
+	//
 	// NB: #Timestamp() uses time.Now() internally. If the test is run around the
 	// rollover of a second, minute, or hour, the expected timestamp time may not
 	// match the actual time precisely enough. While this is still a possibility
