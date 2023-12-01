@@ -13,7 +13,7 @@ var (
 //
 // To regenerate this file, use make go_test_accountgen or go generate ./testutil/network/keyring.go.
 
-package testaccounts
+package testkeyring
 
 var (
 	preGeneratedAccounts = NewPreGeneratedAccountIterator(

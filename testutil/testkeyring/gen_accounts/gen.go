@@ -16,6 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
+
 	"github.com/pokt-network/poktroll/app"
 )
 
