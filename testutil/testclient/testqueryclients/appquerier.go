@@ -36,7 +36,7 @@ func NewTestApplicationQueryClient(
 	applicationQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
 	applicationQuerier.EXPECT().GetApplication(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
-			ctx context.Context,
+			_ context.Context,
 			appAddress string,
 		) (application types.Application, err error) {
 			delegateeAddresses, ok := appToGatewayMap[appAddress]

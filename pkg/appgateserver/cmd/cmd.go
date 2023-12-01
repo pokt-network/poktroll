@@ -131,8 +131,8 @@ func setupAppGateServerDependencies(
 		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
 		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
 		config.NewSupplyQueryClientContextFn(queryNodeURL),
-		config.NewAccountQuerierFn(),
-		config.NewApplicationQuerierFn(),
+		config.NewSupplyAccountQuerierFn(),
+		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 	}
 

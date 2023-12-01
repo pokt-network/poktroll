@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -94,6 +95,16 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	log.Printf("DEBUG: Extracting relay request from request body...")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
+		sync.replyWithError([]byte{}, writer, err)
+		log.Printf("WARN: failed serving relay request: %s", err)
+		return
+	}
+
+	if relayRequest.Meta == nil {
+		err = sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing meta from relay request: %v", relayRequest,
+		)
 		sync.replyWithError(relayRequest.Payload, writer, err)
 		log.Printf("WARN: failed serving relay request: %s", err)
 		return
@@ -160,7 +171,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &sync.proxiedServiceEndpoint,
+		URL:    sync.proxiedServiceEndpoint,
 		Host:   sync.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	sdkerrors "cosmossdk.io/errors"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -24,12 +23,6 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 		return nil, err
 	}
 
-	if relayReq.Meta == nil {
-		return nil, sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
-			"missing meta from relay request: %v", relayReq,
-		)
-	}
 	return &relayReq, nil
 }
 

@@ -3,6 +3,8 @@
 //go:generate mockgen -destination=../../testutil/mockclient/tx_client_mock.go -package=mockclient . TxContext,TxClient
 //go:generate mockgen -destination=../../testutil/mockclient/supplier_client_mock.go -package=mockclient . SupplierClient
 //go:generate mockgen -destination=../../testutil/mockclient/account_query_client.go -package=mockclient . AccountQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/session_client_mock.go -package=mockclient . SessionQueryClient
+//go:generate mockgen -destination=../../testutil/mockclient/supplier_query_client.go -package=mockclient . SupplierQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/application_query_client.go -package=mockclient . ApplicationQueryClient
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
@@ -24,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // SupplierClient is an interface for sufficient for a supplier operator to be
@@ -194,4 +197,23 @@ type AccountQueryClient interface {
 type ApplicationQueryClient interface {
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
+}
+
+// SupplierQueryClient defines an interface that enables the querying of the
+// on-chain supplier information
+type SupplierQueryClient interface {
+	// GetSupplier queries the chain for the details of the supplier provided
+	GetSupplier(ctx context.Context, supplierAddress string) (sharedtypes.Supplier, error)
+}
+
+// SessionQueryClient defines an interface that enables the querying of the
+// on-chain session information
+type SessionQueryClient interface {
+	// GetSession queries the chain for the details of the session provided
+	GetSession(
+		ctx context.Context,
+		address string,
+		serviceId string,
+		blockHeight int64,
+	) (*sessiontypes.Session, error)
 }

@@ -11,7 +11,6 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -24,9 +23,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // We're `explicitly omitting default` so the relayer crashes if these aren't specified.
@@ -133,8 +129,10 @@ func setupRelayerDependencies(
 		supplyMiner, // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeUrl), // leaf
 		config.NewSupplyTxClientContextFn(networkNodeUrl),  // leaf
-		config.NewAccountQuerierFn(),
-		config.NewApplicationQuerierFn(),
+		config.NewSupplyAccountQuerierFn(),
+		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplySupplierQuerierFn(),
+		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
@@ -254,23 +252,9 @@ func newSupplyRelayerProxyFn(
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		var (
-			queryClientCtx relayer.QueryClientContext
-			keyring        keyring.Keyring
-		)
-		if err := depinject.Inject(deps, &queryClientCtx); err != nil {
-			return nil, err
-		}
+		var keyring keyring.Keyring
 
-		clientCtx := cosmosclient.Context(queryClientCtx)
-
-		deps = depinject.Configs(deps, depinject.Supply(
-			accounttypes.NewQueryClient(clientCtx),
-			suppliertypes.NewQueryClient(clientCtx),
-			sessiontypes.NewQueryClient(clientCtx),
-			apptypes.NewQueryClient(clientCtx),
-			keyring,
-		))
+		deps = depinject.Configs(deps, depinject.Supply(keyring))
 
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,

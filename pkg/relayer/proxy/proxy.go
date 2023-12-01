@@ -9,13 +9,10 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
@@ -23,7 +20,7 @@ var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 type (
 	serviceId            = string
 	relayServersMap      = map[serviceId][]relayer.RelayServer
-	ServicesEndpointsMap = map[serviceId]*url.URL
+	servicesEndpointsMap = map[serviceId]*url.URL
 )
 
 // relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
@@ -43,11 +40,11 @@ type relayerProxy struct {
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
-	supplierQuerier suppliertypes.QueryClient
+	supplierQuerier client.SupplierQueryClient
 
 	// sessionQuerier is the querier used to get the current session from the blockchain,
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
-	sessionQuerier sessiontypes.QueryClient
+	sessionQuerier client.SessionQueryClient
 
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
@@ -55,7 +52,7 @@ type relayerProxy struct {
 	advertisedRelayServers relayServersMap
 
 	// proxiedServicesEndpoints is a map of the proxied services endpoints that the relayer proxy supports.
-	proxiedServicesEndpoints ServicesEndpointsMap
+	proxiedServicesEndpoints servicesEndpointsMap
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays relayer.RelaysObservable
@@ -66,9 +63,6 @@ type relayerProxy struct {
 
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache rings.RingCache
-
-	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx querytypes.Context
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -92,9 +86,11 @@ func NewRelayerProxy(
 
 	if err := depinject.Inject(
 		deps,
-		&rp.clientCtx,
 		&rp.blockClient,
 		&rp.ringCache,
+		&rp.supplierQuerier,
+		&rp.sessionQuerier,
+		&rp.keyring,
 	); err != nil {
 		return nil, err
 	}
@@ -103,9 +99,6 @@ func NewRelayerProxy(
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
-	rp.keyring = rp.clientCtx.Keyring
 
 	for _, opt := range opts {
 		opt(rp)

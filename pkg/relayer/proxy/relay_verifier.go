@@ -10,7 +10,6 @@ import (
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -89,17 +88,10 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	log.Printf("DEBUG: Verifying relay request session...")
 	currentBlock := rp.blockClient.LatestBlock(ctx)
-	sessionQuery := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: appAddress,
-		Service:            service,
-		BlockHeight:        currentBlock.Height(),
-	}
-	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
+	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
 	if err != nil {
 		return err
 	}
-
-	session := sessionResponse.Session
 
 	// Since the retrieved sessionId was in terms of:
 	// - the current block height (which is not provided by the relayRequest)
@@ -109,7 +101,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return ErrRelayerProxyInvalidSession.Wrapf("%+v", session)
+		return ErrRelayerProxyInvalidSession.Wrapf(
+			"session mismatch, expecting: %+v, got: %+v",
+			session.Header,
+			relayRequest.Meta.SessionHeader,
+		)
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.

@@ -35,7 +35,7 @@ func NewTestAccountQueryClient(
 	accoutQuerier := mockclient.NewMockAccountQueryClient(ctrl)
 	accoutQuerier.EXPECT().GetAccount(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
-			ctx context.Context,
+			_ context.Context,
 			address string,
 		) (account accounttypes.AccountI, err error) {
 			anyPk := (*codectypes.Any)(nil)

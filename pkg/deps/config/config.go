@@ -162,7 +162,7 @@ func NewSupplyTxClientContextFn(pocketQueryNodeUrl string) SupplierFn {
 // NewSupplyAccountQuerierFn returns a function with constructs an AccountQuerier
 // instance with the required dependencies and returns a new depinject.Config which
 // is supplied with the given deps and the new AccountQuerier.
-func NewAccountQuerierFn() SupplierFn {
+func NewSupplyAccountQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
@@ -183,7 +183,7 @@ func NewAccountQuerierFn() SupplierFn {
 // ApplicationQuerier instance with the required dependencies and returns a new
 // instance with the required dependencies and returns a new depinject.Config
 // which is supplied with the given deps and the new ApplicationQuerier.
-func NewApplicationQuerierFn() SupplierFn {
+func NewSupplyApplicationQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
@@ -217,5 +217,47 @@ func NewSupplyRingCacheFn() SupplierFn {
 
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+	}
+}
+
+// NewSupplySessionQuerierFn returns a function which constructs a
+// SessionQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new SessionQuerier.
+func NewSupplySessionQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the session querier.
+		sessionQuerier, err := query.NewSessionQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the session querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(sessionQuerier)), nil
+	}
+}
+
+// NewSupplySupplierQuerierFn returns a function which constructs a
+// SupplierQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new SupplierQuerier.
+func NewSupplySupplierQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the supplier querier.
+		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the supplier querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(supplierQuerier)), nil
 	}
 }
