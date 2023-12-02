@@ -173,7 +173,8 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
-// SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
+// SupplierModuleGenesisStateWithAccounts generates a GenesisState object with
+// a supplier list full of of suppliers with the given addresses.
 func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
@@ -199,7 +200,48 @@ func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *s
 	return state
 }
 
-// Initialize an Account by sending it some funds from the validator in the network to the address provided
+// ApplicationModuleGenesisStateWithAccounts generates a GenesisState object with
+// an application list full of applications with the given addresses.
+func ApplicationModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for i, addr := range addresses {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &stake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+				},
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+// GatewayModuleGenesisStateWithAccounts generates a GenesisState object with
+// a gateway list full of gateways with the given addresses.
+func GatewayModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for i, addr := range addresses {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
+		gateway := gatewaytypes.Gateway{
+			Address: addr,
+			Stake:   &stake,
+		}
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
+// InitAccount initialises an Account by sending it some funds from the validator
+// in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
 	val := net.Validators[0]
@@ -219,7 +261,8 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 }
 
-// Initialize an Account by sending it some funds from the validator in the network to the address provided
+// InitAccountWithSequence initialises an Account by sending it some funds from
+// the validator in the network to the address provided
 func InitAccountWithSequence(
 	t *testing.T,
 	net *Network,
@@ -247,4 +290,26 @@ func InitAccountWithSequence(
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+}
+
+// DelegateApplicationToGateway delegates an application to a gateway
+func DelegateApplicationToGateway(
+	t *testing.T,
+	net *Network,
+	appAddress string,
+	gatewayAddress string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=true", flags.FlagOffline),
+		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddress.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
 }
