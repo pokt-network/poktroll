@@ -21,7 +21,7 @@ const (
 	testTimeoutDuration = 100 * time.Millisecond
 
 	// duplicates pkg/client/delegation/client.go's delegationEventQuery for testing purposes.
-	delegationEventQuery = "tm.event='Tx' AND message.action='pocket.application.EventDelegateeChange'"
+	delegationEventQuery = "message.action='pocket.application.EventDelegateeChange'"
 )
 
 func TestDelegationClient(t *testing.T) {

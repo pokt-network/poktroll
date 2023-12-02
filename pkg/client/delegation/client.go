@@ -13,7 +13,7 @@ import (
 // to new delegation events from the the application module on chain.
 // See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
 // And: https://docs.cosmos.network/main/learn/advanced/events#default-events
-const delegationEventQuery = "tm.event='Tx' AND message.action='pocket.application.EventDelegateeChange'"
+const delegationEventQuery = "message.action='pocket.application.EventDelegateeChange'"
 
 // NewDelegationClient creates a new delegation client from the given
 // dependencies and cometWebsocketURL. It uses the defined delegationEventQuery
@@ -55,7 +55,7 @@ type delegationClient struct {
 // DelegateeChangesSequence returns a replay observable of observables for
 // delegation events from the DelegationClient.
 func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) client.DelegateeChangeReplayObservable {
-	return b.eventsReplayClient.EventsSequence(ctx).(client.DelegateeChangeReplayObservable)
+	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
 // LastNDelegateeChanges returns the latest n delegatee change events from the
