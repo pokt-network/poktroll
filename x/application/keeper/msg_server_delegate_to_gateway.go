@@ -58,7 +58,10 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	logger.Info("Successfully delegated application to gateway for app: %+v", app)
 
 	// Emit the application delegation change event
-	ctx.EventManager().EmitTypedEvent(msg.NewDelegateeChangeEvent())
+	if err := ctx.EventManager().EmitTypedEvent(msg.NewDelegateeChangeEvent()); err != nil {
+		logger.Error("Failed to emit application delegation change event: %v", err)
+		return nil, err
+	}
 
 	return &types.MsgDelegateToGatewayResponse{}, nil
 }
