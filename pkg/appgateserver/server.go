@@ -120,6 +120,7 @@ func (app *appGateServer) Start(ctx context.Context) error {
 	}()
 
 	// Start the ring cache.
+	// TODO_IN_THIS_PR: Figure out why the cache isnt being invalidated
 	app.ringCache.Start(ctx)
 
 	// Set the HTTP handler.
