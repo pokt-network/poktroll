@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -12,6 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
@@ -178,6 +180,10 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 				pubCh <- testdelegation.NewAnyTimesDelegateeChange(t, test.appAccount.address)
 			}
 
+			// Wait a tick to allow the ring cache to process asynchronously.
+			// It should have invalidated the cache for the ring, if changed.
+			time.Sleep(10 * time.Millisecond)
+
 			// Attempt to retrieve the ring for the address and cache it if
 			// the ring was updated
 			ring2, err := rc.GetRingForAddress(ctx, test.appAccount.address)
@@ -204,10 +210,10 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 // createRingCache creates the RingCache using mocked AccountQueryClient and
 // ApplicatioQueryClient instances and returns the RingCache and the delegatee
 // change replay observable.
-func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan client.DelegateeChange) {
+func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.DelegateeChange) {
 	t.Helper()
-	delegateeChangePublishCh := make(chan client.DelegateeChange)
-	delegationClient := testdelegation.NewAnyTimesDelegateeChangesSequence(ctx, t, appAddress, delegateeChangePublishCh)
+	delegateeObs, delegateePublishCh := channel.NewReplayObservable[client.DelegateeChange](ctx, 1)
+	delegationClient := testdelegation.NewAnyTimeseDelegateeChangesSequence(ctx, t, appAddress, delegateeObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
 	deps := depinject.Supply(
@@ -217,5 +223,5 @@ func createRingCache(ctx context.Context, t *testing.T, appAddress string) (cryp
 	)
 	rc, err := rings.NewRingCache(deps)
 	require.NoError(t, err)
-	return rc, delegateeChangePublishCh
+	return rc, delegateePublishCh
 }

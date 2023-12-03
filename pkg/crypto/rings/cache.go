@@ -30,10 +30,6 @@ type ringCache struct {
 	// invalidate cache entries for rings that have been updated on chain.
 	delegationClient client.DelegationClient
 
-	// delegateeChangeObsvbl is a replay observable that can be used to subscribe
-	// to delegatee change events.
-	delegateeChangeObsvbl client.DelegateeChangeReplayObservable
-
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
@@ -75,11 +71,9 @@ func (rc *ringCache) Start(ctx context.Context) {
 // cache if the delegatee change's address is stored in the cache.
 // It is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
-	// Listen for delegatee change events and invalidate the cache if the
-	// delegatee change's address is stored in the cache.
+	// Obtain the latest delegatee change replay observable and subscribe to it.
+	delegationSequence := rc.delegationClient.DelegateeChangesSequence(ctx).Subscribe(ctx)
 	for {
-		// Obtain the latest delegatee change replay observable and subscribe to it.
-		delegationSequence := rc.delegationClient.DelegateeChangesSequence(ctx).Subscribe(ctx)
 		select {
 		// If the context is done, return.
 		case <-ctx.Done():
