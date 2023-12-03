@@ -3,6 +3,7 @@ package rings
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
@@ -29,6 +31,9 @@ type ringCache struct {
 	// delegationClient is used to listen for on-chain delegation events and
 	// invalidate cache entries for rings that have been updated on chain.
 	delegationClient client.DelegationClient
+
+	// delegateeChangeObs is the observer that listens for delegatee changes
+	redelegationObs observable.Observer[client.Redelegation]
 
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
@@ -62,6 +67,9 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 
 // Start starts the ring cache by subscribing to on-chain delegation events.
 func (rc *ringCache) Start(ctx context.Context) {
+	// Subscribe to the delegatee change observable.
+	rc.redelegationObs = rc.delegationClient.RedelegationsSequence(ctx).Subscribe(ctx)
+
 	// Listen for delegatee change events and invalidate the cache if the
 	// delegatee change's address is stored in the cache.
 	go rc.goInvalidateCache(ctx)
@@ -71,8 +79,6 @@ func (rc *ringCache) Start(ctx context.Context) {
 // cache if the delegatee change's address is stored in the cache.
 // It is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
-	// Obtain the latest delegatee change replay observable and subscribe to it.
-	delegationSequence := rc.delegationClient.DelegateeChangesSequence(ctx).Subscribe(ctx)
 	for {
 		select {
 		// If the context is done, return.
@@ -80,14 +86,14 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 			// Unsubscribe from the delegatee change replay observable.
 			return
 		// If a delegatee change is received, check if it is in the cache.
-		case delegateeChange := <-delegationSequence.Ch():
+		case redelegation := <-rc.redelegationObs.Ch():
 			// Lock the cache for writing.
 			rc.ringPointsMu.Lock()
 			// Check if the delegatee change's address is in the cache.
-			if _, ok := rc.ringPointsCache[delegateeChange.AppAddress()]; ok {
+			if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
 				// If it is, invalidate the cache entry.
-				log.Printf("DEBUG: Invalidating ring cache for [%s]", delegateeChange.AppAddress())
-				delete(rc.ringPointsCache, delegateeChange.AppAddress())
+				log.Printf("DEBUG: Invalidating ring cache for [%s]", redelegation.GetAppAddress())
+				delete(rc.ringPointsCache, redelegation.GetAppAddress())
 			}
 			// Unlock the cache.
 			rc.ringPointsMu.Unlock()
