@@ -291,25 +291,3 @@ func InitAccountWithSequence(
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 }
-
-// DelegateApplicationToGateway delegates an application to a gateway
-func DelegateApplicationToGateway(
-	t *testing.T,
-	net *Network,
-	appAddress string,
-	gatewayAddress string,
-) {
-	t.Helper()
-	val := net.Validators[0]
-	ctx := val.ClientCtx
-	args := []string{
-		fmt.Sprintf("--%s=true", flags.FlagOffline),
-		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
-		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
-
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddress.String()),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
-	}
-}

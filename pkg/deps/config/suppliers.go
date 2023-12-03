@@ -25,25 +25,6 @@ func hostToWebsocketURL(host string) string {
 	return websocketURL
 }
 
-// SupplyConfig supplies a depinject config by calling each of the supplied
-// supplier functions in order and passing the result of each supplier to the
-// next supplier, chaining them together.
-func SupplyConfig(
-	ctx context.Context,
-	cmd *cobra.Command,
-	suppliers []SupplierFn,
-) (deps depinject.Config, err error) {
-	// Initialize deps to with empty depinject config.
-	deps = depinject.Configs()
-	for _, supplyFn := range suppliers {
-		deps, err = supplyFn(ctx, deps, cmd)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return deps, nil
-}
-
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
 // EventsQueryClient instance, with the given hostname converted into a websocket
 // URL to subscribe to, and returns a new depinject.Config which is supplied
@@ -64,7 +45,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
 // instance with the given hostname, which is converted into a websocket URL,
-// to listen for block events on, and returns a new depinject.Config which
+// to listen for block events on-chain, and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
 func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(

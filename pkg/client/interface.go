@@ -153,7 +153,7 @@ type DelegateeChangeReplayObservable observable.ReplayObservable[DelegateeChange
 // specific for the EventsReplayClient[DelegateeChange] implementation
 type DelegationClient interface {
 	// DelegateeChangesSequence returns a Observable of DelegateeChanges that
-	// emits the latest delegatee change that has occured on chain.
+	// emits the latest delegatee change that has occurred on chain.
 	DelegateeChangesSequence(context.Context) DelegateeChangeReplayObservable
 	// LastNBlocks returns the latest N blocks that have been committed to
 	// the chain.

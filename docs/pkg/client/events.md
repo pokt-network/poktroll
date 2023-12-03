@@ -218,7 +218,7 @@ observable := evtClient.EventsBytes(ctx, "tm.event='NewBlock'")
 // Subscribe and receive from the observer channel, typically in some other scope.
 observer := observable.Subscribe(ctx)
 
-// Observer channel closes when the context is cancelled, observer is
+// Observer channel closes when the context is canceled, observer is
 // unsubscribed, or after the subscription returns an error.
 for eitherEvent := range observer.Ch() {
     // (see either.Either: https://github.com/pokt-network/poktroll/blob/main/pkg/either/either.go#L3)
@@ -321,7 +321,7 @@ if err != nil {
   return nil, fmt.Errorf("unable to create EventsReplayClient %w", err)
 }
 
-// Retrieve the latest emmitted event
+// Retrieve the latest emitted event
 lastEventType := client.LastNEvents(ctx, 1)[0]
 
 // Get the latest replay observable
