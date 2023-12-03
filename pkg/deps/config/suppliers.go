@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
@@ -87,6 +88,28 @@ func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(blockClient)), nil
+	}
+}
+
+// NewSupplyDelegationClientFn returns a function which constructs a
+// DelegationClient instance with the given hostname, which is converted into
+// a websocket URL, to listen for delegatee change events on chain, and returns
+// a new depinject.Config which is supplied with the given deps and the new
+// DelegationClient.
+func NewSupplyDelegationClientFn(queryHost string) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Convert the host to a websocket URL
+		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
+		delegationClient, err := delegation.NewDelegationClient(ctx, deps, pocketNodeWebsocketURL)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(delegationClient)), nil
 	}
 }
 

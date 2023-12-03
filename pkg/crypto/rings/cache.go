@@ -26,6 +26,14 @@ type ringCache struct {
 	ringPointsCache map[string][]ringtypes.Point
 	ringPointsMu    *sync.RWMutex
 
+	// delegationClient is used to listen for on-chain delegation events and
+	// invalidate cache entries for rings that have been updated on chain.
+	delegationClient client.DelegationClient
+
+	// delegateeChangeObsvbl is a replay observable that can be used to subscribe
+	// to delegatee change events.
+	delegateeChangeObsvbl client.DelegateeChangeReplayObservable
+
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
@@ -46,6 +54,7 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	// Supply the account and application queriers to the RingCache.
 	if err := depinject.Inject(
 		deps,
+		&rc.delegationClient,
 		&rc.applicationQuerier,
 		&rc.accountQuerier,
 	); err != nil {
@@ -53,6 +62,48 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	}
 
 	return rc, nil
+}
+
+// Start starts the ring cache by subscribing to on-chain delegation events.
+func (rc *ringCache) Start(ctx context.Context) {
+	// Listen for delegatee change events and invalidate the cache if the
+	// delegatee change's address is stored in the cache.
+	go rc.goInvalidateCache(ctx)
+}
+
+// goInvalidateCache listens for delegatee change events and invalidates the
+// cache if the delegatee change's address is stored in the cache.
+// It is intended to be run in a goroutine.
+func (rc *ringCache) goInvalidateCache(ctx context.Context) {
+	// Listen for delegatee change events and invalidate the cache if the
+	// delegatee change's address is stored in the cache.
+	for {
+		// Obtain the latest delegatee change replay observable and subscribe to it.
+		delegationSequence := rc.delegationClient.DelegateeChangesSequence(ctx).Subscribe(ctx)
+		select {
+		// If the context is done, return.
+		case <-ctx.Done():
+			// Unsubscribe from the delegatee change replay observable.
+			return
+		// If a delegatee change is received, check if it is in the cache.
+		case delegateeChange := <-delegationSequence.Ch():
+			// Lock the cache for writing.
+			rc.ringPointsMu.Lock()
+			// Check if the delegatee change's address is in the cache.
+			if _, ok := rc.ringPointsCache[delegateeChange.AppAddress()]; ok {
+				// If it is, invalidate the cache entry.
+				log.Printf("DEBUG: Invalidating ring cache for [%s]", delegateeChange.AppAddress())
+				delete(rc.ringPointsCache, delegateeChange.AppAddress())
+			}
+			// Unlock the cache.
+			rc.ringPointsMu.Unlock()
+		}
+	}
+}
+
+// Stop stops the ring cache by unsubscribing from on-chain delegation events.
+func (rc *ringCache) Stop() {
+	rc.delegationClient.Close()
 }
 
 // GetRingForAddress returns the ring for the address provided. If it does not

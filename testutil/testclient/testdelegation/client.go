@@ -88,7 +88,9 @@ func NewOneTimeRedelegationsSequenceDelegationClient(
 			ctx, 1, withPublisherOpt,
 		)
 		return obs
-	})
+	}).AnyTimes()
+
+	delegationClientMock.EXPECT().Close().AnyTimes()
 
 	return delegationClientMock
 }

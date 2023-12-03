@@ -1,4 +1,4 @@
-package rings
+package rings_test
 
 import (
 	"context"
@@ -11,7 +11,9 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
@@ -41,7 +43,13 @@ func newAccount(curve string) account {
 }
 
 func TestRingCache_BuildRing_Uncached(t *testing.T) {
-	rc := createRingCache(t)
+	// Create and start the ring cache
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	rc, _ := createRingCache(ctx, t, "")
+	rc.Start(ctx)
+	defer rc.Stop()
+
 	tests := []struct {
 		desc              string
 		appAccount        account
@@ -68,14 +76,14 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			appAccount:        newAccount("ed25519"),
 			delegateeAccounts: []account{newAccount("secp256k1"), newAccount("secp256k1")},
 			expectedRingSize:  0,
-			expectedErr:       ErrRingsNotSecp256k1Curve,
+			expectedErr:       rings.ErrRingsNotSecp256k1Curve,
 		},
 		{
 			desc:              "failure: gateway pubkey uses wrong curve",
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{newAccount("ed25519"), newAccount("ed25519")},
 			expectedRingSize:  0,
-			expectedErr:       ErrRingsNotSecp256k1Curve,
+			expectedErr:       rings.ErrRingsNotSecp256k1Curve,
 		},
 		{
 			desc:              "failure: application not found",
@@ -85,7 +93,6 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			expectedErr:       apptypes.ErrAppNotFound,
 		},
 	}
-	ctx := context.TODO()
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			// If we expect the application to exist then add it to the test
@@ -114,7 +121,6 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 }
 
 func TestRingCache_BuildRing_Cached(t *testing.T) {
-	rc := createRingCache(t)
 	tests := []struct {
 		desc             string
 		appAccount       account
@@ -134,9 +140,25 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			expectedErr:      nil,
 		},
 	}
-	ctx := context.TODO()
+
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
+			// Create and start the ring cache
+			ctx, cancelCtx := context.WithCancel(context.Background())
+			defer cancelCtx()
+			rc, pubCh := createRingCache(ctx, t, test.appAccount.address)
+			rc.Start(ctx)
+			defer rc.Stop()
+
+			// add the application's account with no delegated gateways to the
+			// testing state
+			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, nil)
+
+			// Attempt to retrieve the ring for the address and cache it
+			ring1, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			require.NoError(t, err)
+			require.Equal(t, noDelegateesRingSize, ring1.Size())
+
 			accMap := make(map[string]cryptotypes.PubKey)
 			// if the test expects a ring > 2 we have delegated gateways
 			if test.expectedRingSize > 2 {
@@ -147,34 +169,53 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 					accMap[gatewayAcc.address] = gatewayAcc.pubKey
 				}
 			}
+
 			// add the application's account and the accounts of all its
 			// delegated gateways to the testing state simulating a change
 			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, accMap)
+			for range accMap {
+				// publish a delegatee change to the ring cache
+				pubCh <- testdelegation.NewAnyTimesDelegateeChange(t, test.appAccount.address)
+			}
 
-			// Attempt to retrieve the ring for the address and cache it
-			ring1, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			// Attempt to retrieve the ring for the address and cache it if
+			// the ring was updated
+			ring2, err := rc.GetRingForAddress(ctx, test.appAccount.address)
 			require.NoError(t, err)
-			require.Equal(t, test.expectedRingSize, ring1.Size())
+			// If the ring was updated then the rings should not be equal
+			if test.expectedRingSize != noDelegateesRingSize {
+				require.False(t, ring1.Equals(ring2))
+			} else {
+				require.True(t, ring1.Equals(ring2))
+			}
+			require.Equal(t, test.expectedRingSize, ring2.Size())
 
 			// Attempt to retrieve the ring for the address after its been cached
-			ring2, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			ring3, err := rc.GetRingForAddress(ctx, test.appAccount.address)
 			require.NoError(t, err)
 
 			// Ensure the rings are the same and have the same size
-			require.True(t, ring1.Equals(ring2))
-			require.Equal(t, test.expectedRingSize, ring2.Size())
+			require.True(t, ring2.Equals(ring3))
+			require.Equal(t, test.expectedRingSize, ring3.Size())
 		})
 	}
 }
 
 // createRingCache creates the RingCache using mocked AccountQueryClient and
-// ApplicatioQueryClient instances
-func createRingCache(t *testing.T) crypto.RingCache {
+// ApplicatioQueryClient instances and returns the RingCache and the delegatee
+// change replay observable.
+func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan client.DelegateeChange) {
 	t.Helper()
+	delegateeChangePublishCh := make(chan client.DelegateeChange)
+	delegationClient := testdelegation.NewAnyTimesDelegateeChangesSequence(ctx, t, appAddress, delegateeChangePublishCh)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
-	deps := depinject.Supply(client.AccountQueryClient(accQuerier), client.ApplicationQueryClient(appQuerier))
-	rc, err := NewRingCache(deps)
+	deps := depinject.Supply(
+		delegationClient,
+		client.AccountQueryClient(accQuerier),
+		client.ApplicationQueryClient(appQuerier),
+	)
+	rc, err := rings.NewRingCache(deps)
 	require.NoError(t, err)
-	return rc
+	return rc, delegateeChangePublishCh
 }

@@ -119,6 +119,9 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		app.server.Shutdown(ctx)
 	}()
 
+	// Start the ring cache.
+	app.ringCache.Start(ctx)
+
 	// Set the HTTP handler.
 	app.server.Handler = app
 
