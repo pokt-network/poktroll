@@ -68,16 +68,13 @@ type EventMethodTestCase struct {
 	// Msg.
 	MsgFmtArgs []any
 
-	// Key is the key to pass to the event method under test. If EventMethodName
-	// is empty, then Key is used as the event method name.
+	// Key is the key to pass to the event method under test.
 	Key string
 
 	// Value is the value to pass to the event method under test.
 	Value any
 
 	// EventMethodName is the name of the event method to call on the logger.
-	// If no event method name is specified, then the test case's key is used
-	// as the event method name.
 	EventMethodName string
 
 	// ExpectedOutputContains is the string that is expected to be contained
@@ -105,12 +102,6 @@ func RunEventMethodTests(
 	levelMethodName := strings.Title(level.String())
 
 	for _, tt := range tests {
-		// If the test case does not specify an event method name, use the test
-		// case's key as the event method name. This is done for convenience only.
-		if tt.EventMethodName == "" {
-			tt.EventMethodName = tt.Key
-		}
-
 		var (
 			eventMethodArgs []reflect.Value
 			doneMethodName  string
