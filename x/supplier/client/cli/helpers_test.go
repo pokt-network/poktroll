@@ -89,14 +89,16 @@ func networkWithClaimObjects(
 	supplierAccts := make([]*testkeyring.PreGeneratedAccount, supplierCount)
 	supplierAddrs := make([]string, supplierCount)
 	for i := range supplierAccts {
-		account := preGeneratedAccts.MustNext()
+		account, ok := preGeneratedAccts.Next()
+		require.True(t, ok)
 		supplierAccts[i] = account
 		supplierAddrs[i] = account.Address.String()
 	}
 	appAccts := make([]*testkeyring.PreGeneratedAccount, appCount)
 	appAddrs := make([]string, appCount)
 	for i := range appAccts {
-		account := preGeneratedAccts.MustNext()
+		account, ok := preGeneratedAccts.Next()
+		require.True(t, ok)
 		appAccts[i] = account
 		appAddrs[i] = account.Address.String()
 	}
