@@ -35,8 +35,8 @@ func main() {
 
 	kr := keyring.NewInMemory(app.MakeEncodingConfig().Marshaler)
 
-	preGeneratedAccountsGobHexLines := make([]string, flagAccountsLimit)
-	for i := range preGeneratedAccountsGobHexLines {
+	preGeneratedAccountLines := make([]string, flagAccountsLimit)
+	for i := range preGeneratedAccountLines {
 		record, mnemonic, err := kr.NewMnemonic(
 			fmt.Sprintf("key-%d", i),
 			keyring.English,
@@ -59,10 +59,10 @@ func main() {
 			log.Fatal(err)
 		}
 
-		preGeneratedAccountsGobHexLines[i] = fmt.Sprintf(preGeneratedAccountLineFmt, preGeneratedAccountStr)
+		preGeneratedAccountLines[i] = fmt.Sprintf(preGeneratedAccountLineFmt, preGeneratedAccountStr)
 	}
 
-	newPreGeneratedAccountIteratorArgLines := strings.Join(preGeneratedAccountsGobHexLines, "\n")
+	newPreGeneratedAccountIteratorArgLines := strings.Join(preGeneratedAccountLines, "\n")
 	outputBuffer := new(bytes.Buffer)
 	if err := accountsTableTemplate.Execute(
 		outputBuffer,

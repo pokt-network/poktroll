@@ -13,7 +13,12 @@ import (
 )
 
 // CreatePreGeneratedKeyringAccounts uses the mnemonic from limit number of
-// pre-generated accounts to populated the provided keyring, kr.
+// pre-generated accounts to populated the provided keyring, kr. It then returns
+// the pre-generated accounts which were used.
+//
+// TODO_CONSIDERATION: Returning a new PreGeneratedAccountIterator instead of
+// the slice of accounts could be more idiomatic. It would only contain keys which
+// are known to be in the keyring.
 func CreatePreGeneratedKeyringAccounts(
 	t *testing.T,
 	kr keyring.Keyring,
@@ -38,5 +43,5 @@ func CreatePreGeneratedKeyringAccounts(
 		accounts[i] = preGeneratedAccount
 	}
 
-	return accounts
+	return accounts[:limit]
 }
