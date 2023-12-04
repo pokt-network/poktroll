@@ -16,7 +16,7 @@ import (
 //
 //	supplierAddress -> {service -> []SupplierEndpoint}
 //
-// If an address is not present in the it is assumed that the supplier does
+// If an address is not present in the map it is then assumed that the supplier does
 // not exist (has not staked)
 var suppliersProvidedServicesMap map[string]map[string][]*sharedtypes.SupplierEndpoint
 

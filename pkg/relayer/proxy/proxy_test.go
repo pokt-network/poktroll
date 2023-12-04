@@ -214,7 +214,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			desc: "Invalid signature associated with relay request",
 
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
-			inputScenario:        sendRequestWithInvalidRingSignature,
+			inputScenario:        sendRequestWithInvalidSignature,
 
 			expectedErrCode: -32000,
 			expectedErrMsg:  "error deserializing ring signature",
@@ -275,7 +275,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			desc: "Relay request signature does not match the request payload",
 
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
-			inputScenario:        sendRequestWithInvalidSignature,
+			inputScenario:        sendRequestWithSignatureForDifferentPayload,
 
 			expectedErrCode: -32000,
 			expectedErrMsg:  "invalid ring signature",
@@ -353,7 +353,7 @@ func sendRequestWithMissingSignature(
 	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
 }
 
-func sendRequestWithInvalidRingSignature(
+func sendRequestWithInvalidSignature(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errorCode int32, errorMessage string) {
@@ -427,7 +427,7 @@ func sendRequestWithInvalidRelaySupplier(
 	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
 }
 
-func sendRequestWithInvalidSignature(
+func sendRequestWithSignatureForDifferentPayload(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
