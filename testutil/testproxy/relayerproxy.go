@@ -31,11 +31,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-type ProvidedServiceConfig struct {
-	Url     string
-	RpcType sharedtypes.RPCType
-}
-
 // TestBehavior is a struct that holds the test context and mocks
 // for the relayer proxy tests.
 // It is used to provide the context needed by the instrumentation functions
