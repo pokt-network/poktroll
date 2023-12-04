@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated file.")
+	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated go source of pre-generated accounts.")
 	flag.IntVar(&flagAccountsLimit, "limit", 100, "the number of accounts to generate.")
 }
 
