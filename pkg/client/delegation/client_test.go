@@ -45,6 +45,7 @@ func TestDelegationClient(t *testing.T) {
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up delegation client.
+	// NB: the URL passed to `NewDelegationClient` is irrelevant here because `eventsQueryClient` is a mock.
 	delegationClient, err := delegation.NewDelegationClient(ctx, deps, testclient.CometLocalWebsocketURL)
 	require.NoError(t, err)
 	require.NotNil(t, delegationClient)

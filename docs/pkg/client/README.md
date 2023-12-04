@@ -60,21 +60,24 @@ c --> s
 title: Clients Dependency Tree
 ---
 flowchart
-
 sup[SupplierClient]
 tx[TxClient]
 txctx[[TxContext]]
-bl[BlockClient]
+subgraph bl[BlockClient]
+    bl_evt_replay[EventsReplayClient]
+end
+subgraph del[DelegationClient]
+    del_evt_replay[EventsReplayClient]
+end
 evt[EventsQueryClient]
 conn[[Connection]]
 dial[[Dialer]]
-
 sup --"#SignAndBroadcast()"--> tx
-
 tx --"#CommittedBlocksSequence()"--> bl
 tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
-bl --"#EventsBytes()"--> evt
+bl_evt_replay --"#EventsBytes()"--> evt
+del_evt_replay --"#EventsBytes()"--> evt
 evt --> conn
 evt --"#DialContext()"--> dial
 dial --"(returns)"--> conn

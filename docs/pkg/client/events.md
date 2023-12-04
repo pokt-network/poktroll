@@ -60,7 +60,7 @@ flowchart
 
   a --"A uses B via B#MethodName()"--> b
   a =="A returns C from A#MethodName()"==> c
-  b -."A uses D via network IO".-> d
+  b -."B uses D via network IO".-> d
 ```
 
 ```mermaid
@@ -111,7 +111,7 @@ flowchart
       r1_qs[Event Query String]
       r1_qe[Websocket URL]
     end
-    r1_rt[Publish Events Factory]
+    r1_rt(retryPublishEventsFactory)
     subgraph dec[EventBytesDecoder]
       r1_df[Decoder Function]
     end
@@ -198,7 +198,7 @@ go get github.com/pokt-network/poktroll/pkg/client/events
   react to chain events.
 - **Generic Replay Client**: Offers a generic typed replay client to listen for
   specifc events on chain, and handles reconnection and subscription on error,
-  if the `EventsQueryClient` returns an error/is closed.
+  if the `EventsQueryClient` returns an error or is unexpectedly closed.
 
 ## Usage (`EventsQueryClient`)
 
@@ -261,16 +261,16 @@ grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 
 ```go
 // Define a query string to provide to the EventsQueryClient
-// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
-// And: https://docs.cosmos.network/main/learn/advanced/events#default-events
+// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
+// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 const eventQueryString = "tm.event='Tx' AND message.action='eventType'"
 
 // Define the websocket URL the EventsQueryClient will subscribe to
-const cometWebsocketURL = "ws://example.com:36657"
+const cometWebsocketURL = "ws://example.com:36657/websocket"
 
 // Define an interface to represent the onchain event
 type EventType interface {
-  GetName() string
+  GetName() string // Illustrative only; arbitrary interfaces are supported.
 }
 
 // Define the event type that implements the interface
