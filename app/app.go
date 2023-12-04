@@ -597,6 +597,7 @@ func New(
 	)
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
+	// TODO_TECHDEBT: Evaluate if this NB goes away after we upgrade to cosmos 0.5x
 	// NB: there is a circular dependency between the supplier and session keepers.
 	// Because the keepers are values (as opposed to pointers), they are copied
 	// when passed into their respective module constructor functions. For this
