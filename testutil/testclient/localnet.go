@@ -16,7 +16,7 @@ import (
 //
 // TODO_IMPROVE: It would be nice if the value could be set correctly based
 // on whether the test using it is running in tilt or not.
-const CometLocalWebsocketURL = "ws://poktroll-sequencer:36657/websocket"
+const CometLocalWebsocketURL = "ws://sequencer-poktroll-sequencer:36657/websocket"
 
 // EncodingConfig encapsulates encoding configurations for the Pocket application.
 var EncodingConfig = app.MakeEncodingConfig()
@@ -67,7 +67,7 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	mockFlagSet.String(flags.FlagNode, "tcp://poktroll-sequencer:36657", "use localnet poktrolld node")
+	mockFlagSet.String(flags.FlagNode, "tcp://sequencer-poktroll-sequencer:36657", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	err := mockFlagSet.Parse([]string{})
