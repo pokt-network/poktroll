@@ -13,7 +13,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -264,10 +263,6 @@ func newSupplyRelayerProxyFn(
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		var keyring keyring.Keyring
-
-		deps = depinject.Configs(deps, depinject.Supply(keyring))
-
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
 			proxy.WithSigningKeyName(signingKeyName),

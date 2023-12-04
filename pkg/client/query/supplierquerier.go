@@ -40,7 +40,7 @@ func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, erro
 	return supq, nil
 }
 
-// GetSupplier returns an suppliertyupes.Supplier struct for a given address
+// GetSupplier returns an suppliertypes.Supplier struct for a given address
 func (supq *supplierQuerier) GetSupplier(
 	ctx context.Context,
 	address string,

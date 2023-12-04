@@ -6,17 +6,18 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// suppliersProvidedServicesMap is a map of:
+// suppliersProvidedServicesMap is a map of maps:
 //
-//	addresses -> service -> []SupplierEndpoint.
+//	supplierAddress -> {service -> []SupplierEndpoint}
 //
-// If an address is not present in the map or if the endpoints associated
-// with an address is nil it is assumed that it does not exist on chain.
+// If an address is not present in the it is assumed that the supplier does
+// not exist (has not staked)
 var suppliersProvidedServicesMap map[string]map[string][]*sharedtypes.SupplierEndpoint
 
 func init() {
@@ -82,6 +83,8 @@ func AddSuppliersWithServiceEndpoints(
 	endpoints []*sharedtypes.SupplierEndpoint,
 ) {
 	t.Helper()
+	require.NotEmpty(t, endpoints)
+
 	supplier, ok := suppliersProvidedServicesMap[address]
 	if !ok {
 		supplier = make(map[string][]*sharedtypes.SupplierEndpoint)

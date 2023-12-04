@@ -2,23 +2,22 @@ package testqueryclients
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// sessionsMap is a map of:
-//
-//	sessionId -> Session.
-//
-// If a sessionId is not present in the map or if the Session associated
-// with a sessionId is nil it is assumed that it does not exist on chain.
+const blockHash = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
+
+// sessionsMap is a map of: sessionId -> Session.
+// If a sessionId is not present in the map, it implies we have not encountered
+// that session yet.
 var sessionsMap map[string]*sessiontypes.Session
 
 func init() {
@@ -27,7 +26,7 @@ func init() {
 
 // NewTestSessionQueryClient creates a mock of the SessionQueryClient
 // which allows the caller to call GetSession any times and will return
-// an application with the given address.
+// the session matching the app address, serviceID and the blockHeight passed.
 func NewTestSessionQueryClient(
 	t *testing.T,
 ) *mockclient.MockSessionQueryClient {
@@ -41,11 +40,11 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", address, serviceId, blockHeight)))
+			sessionId := sessionkeeper.SessionIdBzToString(address, serviceId, blockHash, blockHeight)
 
-			session, ok := sessionsMap[string(sessionId[:])]
+			session, ok := sessionsMap[sessionId]
 			if !ok {
-				return nil, fmt.Errorf("session not found")
+				return nil, fmt.Errorf("error while trying to retrieve a session")
 			}
 
 			return session, nil
@@ -66,7 +65,7 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", appAddress, serviceId, blockHeight)))
+	sessionId := sessionkeeper.SessionIdBzToString(appAddress, serviceId, blockHash, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
@@ -74,7 +73,7 @@ func AddToExistingSessions(
 			ApplicationAddress:      appAddress,
 			SessionStartBlockHeight: blockHeight,
 		},
-		SessionId: string(sessionId[:]),
+		SessionId: sessionId,
 		Suppliers: []*sharedtypes.Supplier{},
 	}
 
@@ -83,9 +82,9 @@ func AddToExistingSessions(
 		session.Suppliers = append(session.Suppliers, supplier)
 	}
 
-	sessionsMap[string(sessionId[:])] = &session
+	sessionsMap[sessionId] = &session
 
 	t.Cleanup(func() {
-		delete(sessionsMap, string(sessionId[:]))
+		delete(sessionsMap, sessionId)
 	})
 }

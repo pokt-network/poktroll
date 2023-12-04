@@ -3,9 +3,7 @@ package testproxy
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,10 +13,10 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	"github.com/cometbft/cometbft/crypto"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/noot/ring-go"
 	"github.com/stretchr/testify/require"
 
@@ -28,6 +26,7 @@ import (
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -38,29 +37,25 @@ type ProvidedServiceConfig struct {
 }
 
 // TestBehavior is a struct that holds the test context and mocks
-// for the relayer proxy tests
+// for the relayer proxy tests.
+// It is used to provide the context needed by the instrumentation functions
+// in order to isolate specific execution paths of the subject under test.
 type TestBehavior struct {
-	ctx  context.Context
-	t    *testing.T
+	ctx context.Context
+	t   *testing.T
+	// Deps is exported so it can be used by the dependency injection framework
+	// from the pkg/relayer/proxy/proxy_test.go
 	Deps depinject.Config
 
 	proxiedServices map[string]*http.Server
 }
 
-// JSONRpcError is the error struct for the JSON RPC response
-type JSONRpcError struct {
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
-}
+const blockHeight = 1
+const blockHash = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
 
-// JSONRpcErrorReply is the error reply struct for the JSON RPC response
-type JSONRpcErrorReply struct {
-	Id      int32  `json:"id"`
-	Jsonrpc string `json:"jsonrpc"`
-	Error   *JSONRpcError
-}
-
-// NewRelayerProxyTestBehavior creates a TestBehavior with the provided config
+// NewRelayerProxyTestBehavior creates a TestBehavior with the provided set of
+// behavior function that are used to instrument the tested subject's dependencies
+// and isolate specific execution pathways.
 func NewRelayerProxyTestBehavior(
 	ctx context.Context,
 	t *testing.T,
@@ -115,7 +110,7 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 		for serviceId, endpoint := range proxiedServices {
 			server := &http.Server{Addr: endpoint.Host}
 			server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				payload := fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"result":"%s"}`, serviceId)
+				payload := prepareJsonRPCPayload(serviceId)
 				w.Write([]byte(payload))
 			})
 			go func() { server.ListenAndServe() }()
@@ -129,13 +124,11 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 	}
 }
 
-// WithDefaultApplications creates the default actors (application and supplier)
-// for the test. And mock they are staked on-chain.
-// If the supplierKeyName is empty, the supplier will not be staked so we can
-// test the case where the supplier is not in the application's session's supplier list.
-func WithDefaultActors(
+// WithDefaultSupplier creates the default staked supplier for the test
+// and mock it is staked on-chain.
+func WithDefaultSupplier(
 	supplierKeyName string,
-	appPrivateKey *secp256k1.PrivKey,
+	supplierEndpoints []*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		var keyring keyringtypes.Keyring
@@ -150,23 +143,6 @@ func WithDefaultActors(
 		require.NoError(test.t, err)
 
 		supplierAddress := supplierAccAddress.String()
-		supplierEndpoints := []*sharedtypes.SupplierEndpoint{
-			{
-				Url:     "http://",
-				RpcType: sharedtypes.RPCType_JSON_RPC,
-			},
-		}
-
-		appPubKey := appPrivateKey.PubKey()
-		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
-		delegateeAccounts := map[string]cryptotypes.PubKey{}
-
-		testqueryclients.AddAddressToApplicationMap(
-			test.t,
-			appAddress,
-			appPubKey,
-			delegateeAccounts,
-		)
 
 		testqueryclients.AddSuppliersWithServiceEndpoints(
 			test.t,
@@ -177,35 +153,58 @@ func WithDefaultActors(
 	}
 }
 
+// WithDefaultApplication creates the default application actor for the test
+// and mock it is staked on-chain.
+func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		appPubKey := appPrivateKey.PubKey()
+		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+		delegateeAccounts := map[string]cryptotypes.PubKey{}
+
+		testqueryclients.AddAddressToApplicationMap(
+			test.t,
+			appAddress,
+			appPubKey,
+			delegateeAccounts,
+		)
+	}
+}
+
+// WithDefaultSessionSupplier adds the default staked supplier to the
+// application's current session
+// If the supplierKeyName is empty, the supplier will not be staked so we can
+// test the case where the supplier is not in the application's session's supplier list.
 func WithDefaultSessionSupplier(
 	supplierKeyName string,
+	serviceId string,
 	appPrivateKey *secp256k1.PrivKey,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
+		if supplierKeyName == "" {
+			return
+		}
+
 		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
 
 		sessionSuppliers := []string{}
+		var keyring keyringtypes.Keyring
+		err := depinject.Inject(test.Deps, &keyring)
+		require.NoError(test.t, err)
 
-		if supplierKeyName != "" {
-			var keyring keyringtypes.Keyring
-			err := depinject.Inject(test.Deps, &keyring)
-			require.NoError(test.t, err)
+		supplierAccount, err := keyring.Key(supplierKeyName)
+		require.NoError(test.t, err)
 
-			supplierAccount, err := keyring.Key(supplierKeyName)
-			require.NoError(test.t, err)
+		supplierAccAddress, err := supplierAccount.GetAddress()
+		require.NoError(test.t, err)
 
-			supplierAccAddress, err := supplierAccount.GetAddress()
-			require.NoError(test.t, err)
-
-			supplierAddress := supplierAccAddress.String()
-			sessionSuppliers = append(sessionSuppliers, supplierAddress)
-		}
+		supplierAddress := supplierAccAddress.String()
+		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
 		testqueryclients.AddToExistingSessions(
 			test.t,
 			appAddress,
-			"service1",
-			1,
+			serviceId,
+			blockHeight,
 			sessionSuppliers,
 		)
 	}
@@ -228,8 +227,8 @@ func MarshalAndSend(
 	return GetRelayResponseError(test.t, res)
 }
 
-// GetRelayResponseError returns the error code and message from the relay response
-// if the response is not an error, it returns 0, ""
+// GetRelayResponseError returns the error code and message from the relay response.
+// If the response is not an error, it returns `0, ""`.
 func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, errMsg string) {
 	responseBody, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
@@ -237,13 +236,13 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	relayResponse := &servicetypes.RelayResponse{}
 	err = relayResponse.Unmarshal(responseBody)
 	if err != nil {
-		return 0, "cannot unmarshal response body"
+		return 0, "cannot unmarshal request body"
 	}
 
 	var payload JSONRpcErrorReply
 	err = json.Unmarshal(relayResponse.Payload, &payload)
 	if err != nil {
-		return 0, "cannot unmarshal response payload"
+		return 0, "cannot unmarshal request payload"
 	}
 
 	if payload.Error == nil {
@@ -266,7 +265,8 @@ func GetApplicationRingSignature(
 	point, err := curve.DecodeToPoint(publicKey.Bytes())
 	require.NoError(t, err)
 
-	// At least two points are required to create a ring signer
+	// At least two points are required to create a ring signer so we are reusing
+	// the same key for it
 	points := []ringtypes.Point{point, point}
 	pointsRing, err := ring.NewFixedKeyRingFromPublicKeys(curve, points)
 	require.NoError(t, err)
@@ -288,14 +288,10 @@ func GetApplicationRingSignature(
 
 // GetAddressFromPrivateKey returns the address of the provided private key
 func GetAddressFromPrivateKey(test *TestBehavior, privKey *secp256k1.PrivKey) string {
-	applicationPublicKey, err := codectypes.NewAnyWithValue(privKey.PubKey())
-
+	addressBz := privKey.PubKey().Address()
+	address, err := bech32.ConvertAndEncode("pokt", addressBz)
 	require.NoError(test.t, err)
-	record := &keyringtypes.Record{Name: "app1", PubKey: applicationPublicKey}
-
-	applicationAddress, err := record.GetAddress()
-	require.NoError(test.t, err)
-	return applicationAddress.String()
+	return address
 }
 
 // GenerateRelayRequest generates a relay request with the provided parameters
@@ -307,7 +303,7 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%d", appAddress, serviceId, blockHeight)))
+	sessionId := sessionkeeper.SessionIdBzToString(appAddress, serviceId, blockHash, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
@@ -316,6 +312,7 @@ func GenerateRelayRequest(
 				SessionId:          string(sessionId[:]),
 				Service:            &sharedtypes.Service{Id: serviceId},
 			},
+			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),
 		},
 		Payload: payload,

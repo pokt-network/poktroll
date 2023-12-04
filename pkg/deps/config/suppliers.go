@@ -112,6 +112,7 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
 			querytypes.Context(queryClientCtx),
+			queryClientCtx.Keyring,
 		))
 
 		// Restore the flag's original value in order for other components

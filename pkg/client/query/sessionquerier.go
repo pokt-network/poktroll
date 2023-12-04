@@ -56,8 +56,8 @@ func (sessq *sessionQuerier) GetSession(
 	}
 	res, err := sessq.sessionQuerier.GetSession(ctx, req)
 	if err != nil {
-		return nil, ErrQueryInvalidSession.Wrapf(
-			"address: %s,serviceId %s, block height %d [%v]",
+		return nil, ErrQueryRetrieveSession.Wrapf(
+			"address: %s;serviceId %s; block height %d; error: [%v]",
 			appAddress, serviceId, blockHeight, err,
 		)
 	}

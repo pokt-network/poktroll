@@ -237,3 +237,15 @@ func sha3Hash(bz []byte) []byte {
 	hasher.Write(bz)
 	return hasher.Sum(nil)
 }
+
+func SessionIdBzToString(appPubKey, serviceId, blockHash string, blockHeight int64) string {
+	appPubKeyBz := []byte(appPubKey)
+	serviceIdBz := []byte(serviceId)
+	blockHashBz := []byte(blockHash)
+	sessionHeightBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight/NumBlocksPerSession))
+
+	sessionIdBz := concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+
+	return hex.EncodeToString(sha3Hash(sessionIdBz))
+}
