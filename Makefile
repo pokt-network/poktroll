@@ -173,12 +173,12 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./pkg/relayer/interface.go
 	go generate ./pkg/crypto/rings/interface.go
 
-.PHONY: go_fixturegen
+.PHONY: go_testgen_fixtures
 go_fixturegen: ## Generate fixture data for unit tests
 	go generate ./pkg/relayer/miner/miner_test.go
 
-.PHONY: go_test_accountgen
-go_test_accountgen: ## Generate test accounts for usage in test environments
+.PHONY: go_testgen_accounts
+go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop

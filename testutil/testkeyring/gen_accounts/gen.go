@@ -4,8 +4,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -56,7 +54,7 @@ func main() {
 			Mnemonic: mnemonic,
 		}
 
-		preGeneratedAccountStr, err := serializePreGeneratedAccount(preGeneratedAccount)
+		preGeneratedAccountStr, err := preGeneratedAccount.Marshal()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -78,14 +76,4 @@ func main() {
 	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0644); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func serializePreGeneratedAccount(account *testkeyring.PreGeneratedAccount) (string, error) {
-	accountJson, err := json.Marshal(account)
-	if err != nil {
-		return "", err
-	}
-
-	accountStr := base64.StdEncoding.EncodeToString(accountJson)
-	return accountStr, nil
 }
