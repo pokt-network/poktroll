@@ -74,7 +74,6 @@ func (s *suite) Before() {
 	s.buildAppMap()
 	s.buildSupplierMap()
 
-	// TODO_IN_THIS_COMMIT: set up in before hooks
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	s.supplierQueryClient = suppliertypes.NewQueryClient(clientCtx)
