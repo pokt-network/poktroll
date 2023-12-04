@@ -17,7 +17,8 @@ type (
 	// NewLoggerAndOutputFn is called in the test helper to create a new logger
 	// configured with the given level and options. It returns the logger and
 	// the buffer to which the logger writes. It is useful for decoupling test
-	// helpers from a specific logger implementation.
+	// helpers from a specific logger implementation and reducing boilerplate
+	// code in various tests.
 	NewLoggerAndOutputFn func(
 		*testing.T,
 		polylog.Level,
@@ -26,7 +27,9 @@ type (
 
 	// NewEventWithLevelFn is called in the test helper to create a new event
 	// at the given level from the given logger. It is useful for decoupling
-	// test helpers from a specific logger implementation.
+	// test helpers from a specific logger implementation so that we can
+	// call `logger.<LevelMethod>() without knowing the concrete logger
+	// type nor the level.
 	NewEventWithLevelFn func(
 		*testing.T,
 		polylog.Logger,
