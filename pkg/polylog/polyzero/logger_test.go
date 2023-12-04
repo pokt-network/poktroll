@@ -44,10 +44,14 @@ var (
 func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 	tests := []testpolylog.EventMethodTestCase{
 		{
+			// Explicitly left empty; no event method should be called.
+			EventMethodName:        "",
 			Msg:                    "Msg",
 			ExpectedOutputContains: "Msg",
 		},
 		{
+			// Explicitly left empty; no event method should be called.
+			EventMethodName:        "",
 			MsgFmt:                 "%s",
 			MsgFmtArgs:             []any{"Msgf"},
 			ExpectedOutputContains: "Msgf",
@@ -55,69 +59,83 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 		{
 			Key:                    "Str",
 			Value:                  "str_value",
+			EventMethodName:        "Str",
 			ExpectedOutputContains: `"Str":"str_value"`,
 		},
 		{
 			Key:                    "Bool",
 			Value:                  true,
+			EventMethodName:        "Bool",
 			ExpectedOutputContains: `"Bool":true`,
 		},
 		{
+			EventMethodName:        "Int",
 			Key:                    "Int",
 			Value:                  int(42),
 			ExpectedOutputContains: `"Int":42`,
 		},
 		{
+			EventMethodName:        "Int8",
 			Key:                    "Int8",
 			Value:                  int8(42),
 			ExpectedOutputContains: `"Int8":42`,
 		},
 		{
+			EventMethodName:        "Int16",
 			Key:                    "Int16",
 			Value:                  int16(42),
 			ExpectedOutputContains: `"Int16":42`,
 		},
 		{
+			EventMethodName:        "Int32",
 			Key:                    "Int32",
 			Value:                  int32(42),
 			ExpectedOutputContains: `"Int32":42`,
 		},
 		{
+			EventMethodName:        "Int64",
 			Key:                    "Int64",
 			Value:                  int64(42),
 			ExpectedOutputContains: `"Int64":42`,
 		},
 		{
+			EventMethodName:        "Uint",
 			Key:                    "Uint",
 			Value:                  uint(42),
 			ExpectedOutputContains: `"Uint":42`,
 		},
 		{
+			EventMethodName:        "Uint8",
 			Key:                    "Uint8",
 			Value:                  uint8(42),
 			ExpectedOutputContains: `"Uint8":42`,
 		},
 		{
 			Key:                    "Uint16",
-			Value:                  uint16(42),
 			ExpectedOutputContains: `"Uint16":42`,
+			Value:                  uint16(42),
+			EventMethodName:        "Uint16",
 		},
 		{
+			EventMethodName:        "Uint32",
 			Key:                    "Uint32",
 			Value:                  uint32(42),
 			ExpectedOutputContains: `"Uint32":42`,
 		},
 		{
+			EventMethodName:        "Uint64",
 			Key:                    "Uint64",
 			Value:                  uint64(42),
 			ExpectedOutputContains: `"Uint64":42`,
 		},
 		{
+			EventMethodName:        "Float32",
 			Key:                    "Float32",
 			Value:                  float32(420.69),
 			ExpectedOutputContains: `"Float32":420.69`,
 		},
 		{
+			EventMethodName:        "Float64",
 			Key:                    "Float64",
 			Value:                  float64(420.69),
 			ExpectedOutputContains: `"Float64":420.69`,
@@ -135,11 +153,13 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 		// (even with `make itest 500 10 ./pkg/polylog/... -- -run=ZeroLogger_AllLevels_AllEventTypeMethods`).
 		//
 		//{
+		//  EventMethodName:        "Time",
 		//	Key:                    "Time",
 		//	Value:                  expectedTime,
 		//	ExpectedOutputContains: expectedTimeEventContains,
 		//},
 		{
+			EventMethodName:        "Dur",
 			Key:                    "Dur",
 			Value:                  expectedDuration,
 			ExpectedOutputContains: expectedDurationEventContains,
