@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -17,14 +18,23 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		return nil, err
 	}
 
-	sessionRes, err := k.Keeper.sessionKeeper.GetSession(goCtx, &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: msg.SessionHeader.ApplicationAddress,
-		Service:            msg.SessionHeader.Service,
-		BlockHeight:        msg.SessionHeader.SessionStartBlockHeight,
-	})
+	sessionReq := &sessiontypes.QueryGetSessionRequest{
+		ApplicationAddress: msg.GetSessionHeader().GetApplicationAddress(),
+		Service:            msg.GetSessionHeader().GetService(),
+		BlockHeight:        msg.GetSessionHeader().GetSessionStartBlockHeight(),
+	}
+	sessionRes, err := k.Keeper.sessionKeeper.GetSession(goCtx, sessionReq)
 	if err != nil {
 		return nil, err
 	}
+
+	logger.
+		With(
+			"session_id", sessionRes.GetSession().GetSessionId(),
+			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
+			"supplier", msg.GetSupplierAddress(),
+		).
+		Debug("got sessionId for claim")
 
 	if sessionRes.Session.SessionId != msg.SessionHeader.SessionId {
 		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
@@ -36,7 +46,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 
 	var found bool
 	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
-		if supplier.Address == msg.SupplierAddress {
+		if supplier.Address == msg.GetSupplierAddress() {
 			found = true
 			break
 		}
@@ -45,10 +55,21 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 	if !found {
 		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
 			"supplier address %q in session ID %q",
-			msg.SupplierAddress,
+			msg.GetSupplierAddress(),
 			sessionRes.GetSession().GetSessionId(),
 		)
 	}
+
+	// TODO_TECHDEBT(#181): refactor once structured logging is available.
+	log.Printf("DEBUG: validated claim with sessionId %q for supplier %q", sessionRes.Session.SessionId, msg.GetSupplierAddress())
+
+	logger.
+		With(
+			"session_id", sessionRes.GetSession().GetSessionId(),
+			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
+			"supplier", msg.GetSupplierAddress(),
+		).
+		Debug("validated claim")
 
 	/*
 		TODO_INCOMPLETE:
@@ -64,14 +85,21 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 
 	// Construct and insert claim after all validation.
 	claim := suppliertypes.Claim{
-		SupplierAddress:       msg.SupplierAddress,
-		SessionId:             msg.SessionHeader.SessionId,
-		SessionEndBlockHeight: uint64(msg.SessionHeader.SessionEndBlockHeight),
+		SupplierAddress:       msg.GetSupplierAddress(),
+		SessionId:             msg.GetSessionHeader().GetSessionId(),
+		SessionEndBlockHeight: uint64(msg.GetSessionHeader().GetSessionEndBlockHeight()),
 		RootHash:              msg.RootHash,
 	}
 	k.Keeper.InsertClaim(ctx, claim)
 
-	logger.Info("created claim for supplier %s at sessionRes ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
+	logger.
+		With(
+			"session_id", claim.GetSessionId(),
+			"session_end_height", claim.GetSessionEndBlockHeight(),
+			"supplier", claim.GetSupplierAddress(),
+		).
+		Debug("created claim")
 
+	// TODO_CONSIDERATION: perhaps it would be useful to return the claim in the response.
 	return &suppliertypes.MsgCreateClaimResponse{}, nil
 }

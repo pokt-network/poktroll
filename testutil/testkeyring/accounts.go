@@ -29,7 +29,6 @@ type PreGeneratedAccountIterator struct {
 // an error if the index is out of range.
 func PreGeneratedAccountAtIndex(index uint32) (*PreGeneratedAccount, error) {
 	if preGeneratedAccounts.nextIndex >= uint32(len(preGeneratedAccounts.accounts)) {
-		// TODO_IN_THIS_COMMIT: refactor error...
 		return nil, ErrPreGeneratedAccountIndexOutOfRange.Wrapf("%d", index)
 	}
 

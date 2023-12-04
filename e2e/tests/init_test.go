@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -59,9 +60,10 @@ func TestMain(m *testing.M) {
 
 type suite struct {
 	gocuke.TestingT
-	pocketd       *pocketdBin
-	scenarioState map[string]any // temporary state for each scenario
-	cdc           codec.Codec
+	pocketd             *pocketdBin
+	scenarioState       map[string]any // temporary state for each scenario
+	cdc                 codec.Codec
+	supplierQueryClient suppliertypes.QueryClient
 }
 
 func (s *suite) Before() {
@@ -71,6 +73,11 @@ func (s *suite) Before() {
 	s.buildAddrMap()
 	s.buildAppMap()
 	s.buildSupplierMap()
+
+	// TODO_IN_THIS_COMMIT: set up in before hooks
+	flagSet := testclient.NewLocalnetFlagSet(s)
+	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
+	s.supplierQueryClient = suppliertypes.NewQueryClient(clientCtx)
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory

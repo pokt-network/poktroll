@@ -15,22 +15,14 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/supplier"
 	"github.com/pokt-network/poktroll/testutil/supplier/mocks"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-type SessionMetaFixturesByAppAddr map[string]SessionMetaFixture
-type SessionMetaFixture struct {
-	SessionId    string
-	AppAddr      string
-	SupplierAddr string
-}
-
-func SupplierKeeper(t testing.TB, sessionFixtures SessionMetaFixturesByAppAddr) (*keeper.Keeper, sdk.Context) {
+func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress) (*keeper.Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -58,27 +50,23 @@ func SupplierKeeper(t testing.TB, sessionFixtures SessionMetaFixturesByAppAddr) 
 				ctx sdk.Context,
 				req *sessiontypes.QueryGetSessionRequest,
 			) (*sessiontypes.QueryGetSessionResponse, error) {
-				sessionMock, ok := sessionFixtures[req.GetApplicationAddress()]
+				session, ok := sessionByAppAddr[req.GetApplicationAddress()]
 				require.Truef(t, ok, "application address not provided during mock construction: %q", req.ApplicationAddress)
 
 				return &sessiontypes.QueryGetSessionResponse{
 					Session: &sessiontypes.Session{
 						Header: &sessiontypes.SessionHeader{
-							ApplicationAddress:      sessionMock.AppAddr,
+							ApplicationAddress:      session.GetApplication().GetAddress(),
 							Service:                 req.GetService(),
 							SessionStartBlockHeight: 1,
-							SessionId:               sessionMock.SessionId,
+							SessionId:               session.GetSessionId(),
 							SessionEndBlockHeight:   5,
 						},
-						SessionId:           sessionMock.SessionId,
+						SessionId:           session.GetSessionId(),
 						SessionNumber:       1,
-						NumBlocksPerSession: 4,
-						Application: &apptypes.Application{
-							Address: sessionMock.AppAddr,
-						},
-						Suppliers: []*sharedtypes.Supplier{{
-							Address: sessionMock.SupplierAddr,
-						}},
+						NumBlocksPerSession: session.GetNumBlocksPerSession(),
+						Application:         session.GetApplication(),
+						Suppliers:           session.GetSuppliers(),
 					},
 				}, nil
 			},

@@ -89,7 +89,11 @@ type (
 // the transactions subscription.
 type TxEvent struct {
 	// Tx is the binary representation of the tx hash.
-	Tx     []byte            `json:"tx"`
+	Tx     []byte   `json:"tx"`
+	Result TxResult `json:"result"`
+}
+
+type TxResult struct {
 	Events []abciTypes.Event `json:"events"`
 }
 

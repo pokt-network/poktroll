@@ -8,6 +8,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/supplier"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
@@ -15,19 +16,14 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+const testServiceId = "svc1"
+
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	appAddr, supplierAddr := sample.AccAddress(), sample.AccAddress()
+	service := &sharedtypes.Service{Id: testServiceId}
+	sessionFixturesByAddr := supplier.NewSessionFixturesWithPairings(t, service, appAddr, supplierAddr)
 
-	// TODO_IN_THIS_COMMIT: dedup & refactor to a test helper.
-	sessionMockMap := keepertest.SessionMetaFixturesByAppAddr{
-		appAddr: keepertest.SessionMetaFixture{
-			SessionId:    "mock_session_id",
-			AppAddr:      appAddr,
-			SupplierAddr: supplierAddr,
-		},
-	}
-
-	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionMockMap)
+	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
@@ -51,17 +47,11 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 }
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
+	service := &sharedtypes.Service{Id: testServiceId}
 	appAddr, supplierAddr := sample.AccAddress(), sample.AccAddress()
+	sessionFixturesByAppAddr := supplier.NewSessionFixturesWithPairings(t, service, appAddr, supplierAddr)
 
-	// TODO_IN_THIS_COMMIT: dedup & refactor to a test helper.
-	sessionMockMap := keepertest.SessionMetaFixturesByAppAddr{
-		appAddr: keepertest.SessionMetaFixture{
-			SessionId:    "mock_session_id",
-			AppAddr:      appAddr,
-			SupplierAddr: supplierAddr,
-		},
-	}
-	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionMockMap)
+	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAppAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
