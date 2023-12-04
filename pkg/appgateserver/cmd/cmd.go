@@ -145,7 +145,9 @@ func setupAppGateServerDependencies(
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),                          // leaf
 		config.NewSupplyApplicationQuerierFn(),                      // leaf
+		config.NewSupplySessionQuerierFn(),                          // leaf
 		config.NewSupplyRingCacheFn(),
+		config.NewSupplyPOKTRollSDKFn(queryNodeURL, appGateConfig.SigningKey),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

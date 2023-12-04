@@ -195,3 +195,15 @@ type ApplicationQueryClient interface {
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
 }
+
+// SessionQueryClient defines an interface that enables the querying of the
+// on-chain session information
+type SessionQueryClient interface {
+	// GetSession queries the chain for the details of the session provided
+	GetSession(
+		ctx context.Context,
+		address string,
+		serviceId string,
+		blockHeight int64,
+	) (*sessiontypes.Session, error)
+}

@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -15,7 +14,7 @@ import (
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
-	clientCtx          types.Context
+	clientCtx          grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
 }
 
@@ -34,7 +33,7 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 		return nil, err
 	}
 
-	aq.applicationQuerier = apptypes.NewQueryClient(cosmosclient.Context(aq.clientCtx))
+	aq.applicationQuerier = apptypes.NewQueryClient(aq.clientCtx)
 
 	return aq, nil
 }

@@ -2,10 +2,8 @@ package appgateserver
 
 import (
 	"context"
-	"log"
-	"net/url"
 
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/sdk"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -18,29 +16,20 @@ func (app *appGateServer) getRelayerUrl(
 	ctx context.Context,
 	serviceId string,
 	rpcType sharedtypes.RPCType,
-	session *sessiontypes.Session,
-) (supplierUrl *url.URL, supplierAddress string, err error) {
-	for _, supplier := range session.Suppliers {
-		for _, service := range supplier.Services {
-			// Skip services that don't match the requested serviceId.
-			if service.Service.Id != serviceId {
-				continue
-			}
+	suppliersEndpoints []*sdk.SupplierEndpoint,
+) (supplierEndpoint *sdk.SupplierEndpoint, err error) {
+	for _, supplierEndpoint := range suppliersEndpoints {
+		// Skip services that don't match the requested serviceId.
+		if supplierEndpoint.Header.Service.Id != serviceId {
+			continue
+		}
 
-			for _, endpoint := range service.Endpoints {
-				// Return the first endpoint url that matches the request's RpcType.
-				if endpoint.RpcType == rpcType {
-					supplierUrl, err := url.Parse(endpoint.Url)
-					if err != nil {
-						log.Printf("ERROR: error parsing url: %s", err)
-						continue
-					}
-					return supplierUrl, supplier.Address, nil
-				}
-			}
+		// Return the first endpoint url that matches the request's RpcType.
+		if supplierEndpoint.RpcType == rpcType {
+			return supplierEndpoint, nil
 		}
 	}
 
 	// Return an error if no relayer endpoints were found.
-	return nil, "", ErrAppGateNoRelayEndpoints
+	return nil, ErrAppGateNoRelayEndpoints
 }
