@@ -38,6 +38,7 @@ require (
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
 	github.com/pokt-network/smt v0.7.1
 	github.com/regen-network/gocuke v0.6.2
+	github.com/rs/zerolog v1.29.1
 	github.com/spf13/cast v1.5.1
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
@@ -246,7 +247,6 @@ require (
 	github.com/rollkit/celestia-openrpc v0.3.0 // indirect
 	github.com/rollkit/rollkit v0.10.6 // indirect
 	github.com/rs/cors v1.10.1 // indirect
-	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
