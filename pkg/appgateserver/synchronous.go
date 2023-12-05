@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/cometbft/cometbft/crypto"
-
 	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -65,8 +63,7 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting signable bytes: %s", err)
 	}
 
-	hash := crypto.Sha256(signableBz)
-	signature, err := signer.Sign(hash)
+	signature, err := signer.Sign(signableBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("signing relay: %s", err)
 	}
