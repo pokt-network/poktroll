@@ -32,60 +32,60 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.DelegationClien
 	return dClient
 }
 
-// NewAnyTimesDelegateeChangesSequence creates a new mock DelegationClient.
-// This mock DelegationClient will expect any number of calls to DelegateeChangesSequence,
-// and when that call is made, it returns the given EventsObservable[DelegateeChange].
-func NewAnyTimesDelegateeChangesSequence(
+// NewAnyTimesRedelegationsSequence creates a new mock DelegationClient.
+// This mock DelegationClient will expect any number of calls to RedelegationsSequence,
+// and when that call is made, it returns the given EventsObservable[Redelegation].
+func NewAnyTimesRedelegationsSequence(
 	t *testing.T,
-	delegateeChangeObs observable.Observable[client.DelegateeChange],
+	redelegationObs observable.Observable[client.Redelegation],
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 
 	// Create a mock for the delegation client which expects the
-	// LastNDelegateeChanges method to be called any number of times.
-	delegationClientMock := NewAnyTimeLastNDelegateeChangesClient(t, "")
+	// LastNRedelegations method to be called any number of times.
+	delegationClientMock := NewAnyTimeLastNRedelegationsClient(t, "")
 
-	// Set up the mock expectation for the DelegateeChangesSequence method. When
+	// Set up the mock expectation for the RedelegationsSequence method. When
 	// the method is called, it returns a new replay observable that publishes
-	// delegation events sent on the given delegateeChangeObs.
+	// redelegation events sent on the given redelegationObs.
 	delegationClientMock.EXPECT().
-		DelegateeChangesSequence(
+		RedelegationsSequence(
 			gomock.AssignableToTypeOf(context.Background()),
 		).
-		Return(delegateeChangeObs).
+		Return(redelegationObs).
 		AnyTimes()
 
 	return delegationClientMock
 }
 
-// NewOneTimeDelegateeChangesSequenceDelegationClient creates a new mock
+// NewOneTimeRedelegationsSequenceDelegationClient creates a new mock
 // DelegationClient. This mock DelegationClient will expect a call to
-// DelegateeChangesSequence, and when that call is made, it returns a new
-// DelegateeChangeReplayObservable that publishes DelegateeChange events sent on
-// the given delegateeChangesPublishCh.
-// delegateeChangesPublishCh is the channel the caller can use to publish
-// DelegateeChange events to the observable.
-func NewOneTimeDelegateeChangesSequenceDelegationClient(
+// RedelegationsSequence, and when that call is made, it returns a new
+// RedelegationReplayObservable that publishes Redelegation events sent on
+// the given redelegationPublishCh.
+// redelegationPublishCh is the channel the caller can use to publish
+// Redelegation events to the observable.
+func NewOneTimeRedelegationsSequenceDelegationClient(
 	t *testing.T,
-	delegateeChangesPublishCh chan client.DelegateeChange,
+	redelegationPublishCh chan client.Redelegation,
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 
 	// Create a mock for the delegation client which expects the
-	// LastNDelegateeChanges method to be called any number of times.
-	delegationClientMock := NewAnyTimeLastNDelegateeChangesClient(t, "")
+	// LastNRedelegations method to be called any number of times.
+	delegationClientMock := NewAnyTimeLastNRedelegationsClient(t, "")
 
-	// Set up the mock expectation for the DelegateeChangesSequence method. When
+	// Set up the mock expectation for the RedelegationsSequence method. When
 	// the method is called, it returns a new replay observable that publishes
-	// delegation changes sent on the given delegateeChangesPublishCh.
-	delegationClientMock.EXPECT().DelegateeChangesSequence(
+	// delegation changes sent on the given redelegationPublishCh.
+	delegationClientMock.EXPECT().RedelegationsSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) client.DelegateeChangeReplayObservable {
+	).DoAndReturn(func(ctx context.Context) client.RedelegationReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1.
-		// DelegateeChange events are published to this observable via the
-		// provided delegateeChangesPublishCh.
-		withPublisherOpt := channel.WithPublisher(delegateeChangesPublishCh)
-		obs, _ := channel.NewReplayObservable[client.DelegateeChange](
+		// Redelegation events are published to this observable via the
+		// provided redelegationPublishCh.
+		withPublisherOpt := channel.WithPublisher(redelegationPublishCh)
+		obs, _ := channel.NewReplayObservable[client.Redelegation](
 			ctx, 1, withPublisherOpt,
 		)
 		return obs
@@ -94,42 +94,42 @@ func NewOneTimeDelegateeChangesSequenceDelegationClient(
 	return delegationClientMock
 }
 
-// NewAnyTimeLastNDelegateeChangesClient creates a mock DelegationClient that
-// expects calls to the LastNDelegateeChanges method any number of times. When
-// the LastNDelegateeChanges method is called, it returns a mock DelegateeChange
+// NewAnyTimeLastNRedelegationsClient creates a mock DelegationClient that
+// expects calls to the LastNRedelegations method any number of times. When
+// the LastNRedelegations method is called, it returns a mock Redelegation
 // with the provided appAddress.
-func NewAnyTimeLastNDelegateeChangesClient(
+func NewAnyTimeLastNRedelegationsClient(
 	t *testing.T,
 	appAddress string,
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
-	// Create a mock delegateeChange that returns the provided appAddress
-	delegateeChange := NewAnyTimesDelegateeChange(t, appAddress)
+	// Create a mock redelegation that returns the provided appAddress
+	redelegation := NewAnyTimesRedelegation(t, appAddress)
 	// Create a mock delegation client that expects calls to
-	// LastNDelegateeChanges method and returns the mock delegateeChange.
+	// LastNRedelegations method and returns the mock redelegation.
 	delegationClientMock := mockclient.NewMockDelegationClient(ctrl)
 	delegationClientMock.EXPECT().
-		LastNDelegateeChanges(gomock.Any(), gomock.Any()).
-		Return([]client.DelegateeChange{delegateeChange}).AnyTimes()
+		LastNRedelegations(gomock.Any(), gomock.Any()).
+		Return([]client.Redelegation{redelegation}).AnyTimes()
 
 	return delegationClientMock
 }
 
-// NewAnyTimesDelegateeChange creates a mock DelegateeChange that expects calls
+// NewAnyTimesRedelegation creates a mock Redelegation that expects calls
 // to the AppAddress method any number of times. When the method is called, it
 // returns the provided app address.
-func NewAnyTimesDelegateeChange(
+func NewAnyTimesRedelegation(
 	t *testing.T,
 	appAddress string,
-) *mockclient.MockDelegateeChange {
+) *mockclient.MockRedelegation {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
-	// Create a mock delegateeChange that returns the provided address AnyTimes.
-	delegateeChange := mockclient.NewMockDelegateeChange(ctrl)
-	delegateeChange.EXPECT().AppAddress().Return(appAddress).AnyTimes()
+	// Create a mock redelegation that returns the provided address AnyTimes.
+	redelegation := mockclient.NewMockRedelegation(ctrl)
+	redelegation.EXPECT().AppAddress().Return(appAddress).AnyTimes()
 
-	return delegateeChange
+	return redelegation
 }

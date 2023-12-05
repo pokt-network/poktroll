@@ -50,9 +50,9 @@ func (k msgServer) UndelegateFromGateway(
 	k.SetApplication(ctx, app)
 	logger.Info("Successfully undelegated application from gateway for app: %+v", app)
 
-	// Emit the application delegation change event
-	if err := ctx.EventManager().EmitTypedEvent(msg.NewDelegateeChangeEvent()); err != nil {
-		logger.Error("Failed to emit application delegation change event: %v", err)
+	// Emit the application redelegation event
+	if err := ctx.EventManager().EmitTypedEvent(msg.NewRedelegationEvent()); err != nil {
+		logger.Error("Failed to emit application redelegation event: %v", err)
 		return nil, err
 	}
 

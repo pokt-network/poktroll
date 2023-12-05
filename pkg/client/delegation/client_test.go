@@ -21,13 +21,13 @@ const (
 	testTimeoutDuration = 100 * time.Millisecond
 
 	// duplicates pkg/client/delegation/client.go's delegationEventQuery for testing purposes.
-	delegationEventQuery = "message.action='pocket.application.EventDelegateeChange'"
+	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
 )
 
 func TestDelegationClient(t *testing.T) {
 	var (
 		expectedAddress         = sample.AccAddress()
-		expectedDelegationEvent = apptypes.EventDelegateeChange{
+		expectedDelegationEvent = apptypes.EventRedelegation{
 			AppAddress: expectedAddress,
 		}
 		ctx = context.Background()
@@ -52,47 +52,47 @@ func TestDelegationClient(t *testing.T) {
 
 	tests := []struct {
 		name string
-		fn   func() client.DelegateeChange
+		fn   func() client.Redelegation
 	}{
 		{
-			name: "LastNDelegateeChanges successfully returns latest delegatee change",
-			fn: func() client.DelegateeChange {
-				lastDelegateeChange := delegationClient.LastNDelegateeChanges(ctx, 1)[0]
-				return lastDelegateeChange
+			name: "LastNRedelegations successfully returns latest redelegation",
+			fn: func() client.Redelegation {
+				lastRedelegation := delegationClient.LastNRedelegations(ctx, 1)[0]
+				return lastRedelegation
 			},
 		},
 		{
-			name: "DelegateeChangesSequence successfully returns latest delegatee change",
-			fn: func() client.DelegateeChange {
-				delegateeChangeObs := delegationClient.DelegateeChangesSequence(ctx)
-				require.NotNil(t, delegateeChangeObs)
+			name: "RedelegationsSequence successfully returns latest redelegation",
+			fn: func() client.Redelegation {
+				redelegationObs := delegationClient.RedelegationsSequence(ctx)
+				require.NotNil(t, redelegationObs)
 
 				// Ensure that the observable is replayable via Last.
-				lastDelegateeChange := delegateeChangeObs.Last(ctx, 1)[0]
-				require.Equal(t, expectedAddress, lastDelegateeChange.AppAddress())
+				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
+				require.Equal(t, expectedAddress, lastRedelegation.AppAddress())
 
-				return lastDelegateeChange
+				return lastRedelegation
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actualDelegateeChangeCh := make(chan client.DelegateeChange, 10)
+			actualRedelegationCh := make(chan client.Redelegation, 10)
 
 			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,
 			// the test will time out in the select statement that follows.
-			go func(fn func() client.DelegateeChange) {
-				actualDelegateeChangeCh <- fn()
-				close(actualDelegateeChangeCh)
+			go func(fn func() client.Redelegation) {
+				actualRedelegationCh <- fn()
+				close(actualRedelegationCh)
 			}(tt.fn)
 
 			select {
-			case actualDelegateeChange := <-actualDelegateeChangeCh:
-				require.Equal(t, expectedAddress, actualDelegateeChange.AppAddress())
+			case actualRedelegation := <-actualRedelegationCh:
+				require.Equal(t, expectedAddress, actualRedelegation.AppAddress())
 			case <-time.After(testTimeoutDuration):
-				t.Fatal("timed out waiting for delegatee change event")
+				t.Fatal("timed out waiting for redelegation event")
 			}
 		})
 	}

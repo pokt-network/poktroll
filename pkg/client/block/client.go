@@ -9,19 +9,21 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )
 
-// committedBlocksQuery is the query used to subscribe to new committed block
-// events used by the EventsQueryClient to subscribe to new block events from
-// the chain.
-// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
-const committedBlocksQuery = "tm.event='NewBlock'"
+const (
+	// committedBlocksQuery is the query used to subscribe to new committed block
+	// events used by the EventsQueryClient to subscribe to new block events from
+	// the chain.
+	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
+	committedBlocksQuery = "tm.event='NewBlock'"
+	replayObsBufferSize  = 1 // the amount of events we want before they are emitted
+)
 
 // NewBlockClient creates a new block client from the given dependencies and
-// cometWebsocketURL. It uses the defined committedBlocksQuery to subscribe to
-// newly committed block events and maps them to Block objects, using the
-// newCometBlockEvent function as the mapping function.
+// cometWebsocketURL. It uses a pre-defined committedBlocksQuery to subscribe to
+// newly committed block events which are mapped to Block objects.
 //
-// This is an implementation of the EventsReplayClient[Block] generic.
-// correctly mock the interface.
+// This lightly wraps the EventsReplayClient[Block] generic to correctly mock
+// the interface.
 //
 // Required dependencies:
 //   - client.EventsQueryClient
@@ -38,7 +40,8 @@ func NewBlockClient(
 		deps,
 		cometWebsocketURL,
 		committedBlocksQuery,
-		newCometBlockEvent,
+		newCometBlockEventFactoryFn(ctx),
+		replayObsBufferSize,
 	)
 	if err != nil {
 		return nil, err
@@ -47,13 +50,17 @@ func NewBlockClient(
 }
 
 // blockClient is a wrapper around an EventsReplayClient that implements the
-// interface for use in network.
+// BlockClient interface for use with cosmos-sdk networks.
 type blockClient struct {
+	// eventsReplayClient is the underlying EventsReplayClient that is used to
+	// subscribe to new committed block events. It uses both the Block type
+	// and the BlockReplayObservable type as its generic types.
+	// These enable the EventsReplayClient to correctly map the raw event bytes
+	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block, client.EventsObservable[client.Block]]
 }
 
-// CommittedBlocksSequence returns a replay observable of observables for Block events
-// from the BlockClient.
+// CommittedBlocksSequence returns a replay observable of new block events.
 func (b *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
 	return b.eventsReplayClient.EventsSequence(ctx)
 }
@@ -64,7 +71,7 @@ func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient
-// and closes all subsequent connections.
+// and closes all downstream connections.
 func (b *blockClient) Close() {
 	b.eventsReplayClient.Close()
 }

@@ -1,6 +1,7 @@
 package block
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/cometbft/cometbft/types"
@@ -27,20 +28,23 @@ func (blockEvent *cometBlockEvent) Hash() []byte {
 	return blockEvent.Block.LastBlockID.Hash.Bytes()
 }
 
-// newCometBlockEvent attempts to deserialize the given bytes into a comet block.
+// newCometBlockEventFactoryFn is a factory function that returns a functon
+// that attempts to deserialize the given bytes into a comet block.
 // if the resulting block has a height of zero, assume the event was not a block
 // event and return an ErrUnmarshalBlockEvent error.
-func newCometBlockEvent(blockMsgBz []byte) (client.Block, error) {
-	blockMsg := new(cometBlockEvent)
-	if err := json.Unmarshal(blockMsgBz, blockMsg); err != nil {
-		return nil, err
-	}
+func newCometBlockEventFactoryFn(ctx context.Context) events.NewEventsFn[client.Block] {
+	return func(blockMsgBz []byte) (client.Block, error) {
+		blockMsg := new(cometBlockEvent)
+		if err := json.Unmarshal(blockMsgBz, blockMsg); err != nil {
+			return nil, err
+		}
 
-	// If msg does not match the expected format then the block's height has a zero value.
-	if blockMsg.Block.Header.Height == 0 {
-		return nil, events.ErrEventsUnmarshalEvent.
-			Wrapf("unable to unmarshal block: %s", string(blockMsgBz))
-	}
+		// If msg does not match the expected format then the block's height has a zero value.
+		if blockMsg.Block.Header.Height == 0 {
+			return nil, events.ErrEventsUnmarshalEvent.
+				Wrapf("with block data: %s", string(blockMsgBz))
+		}
 
-	return blockMsg, nil
+		return blockMsg, nil
+	}
 }

@@ -92,7 +92,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 
 					// Simulate ErrConnClosed if connection is isClosed.
 					if connClosed.Load() {
-						return nil, events.ErrConnClosed
+						return nil, events.ErrEventsConnClosed
 					}
 
 					event := testEvent(int32(readEventCounter))
@@ -128,7 +128,7 @@ func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 			behavesLikeEitherObserver(
 				t, eventObserver,
 				handleEventsLimit,
-				events.ErrConnClosed,
+				events.ErrEventsConnClosed,
 				readObserverEventsTimeout,
 				onLimit,
 			)
@@ -159,7 +159,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 			delayFirstEvent.Do(func() { time.Sleep(firstEventDelay) })
 
 			if connClosed.Load() {
-				return nil, events.ErrConnClosed
+				return nil, events.ErrEventsConnClosed
 			}
 
 			event := testEvent(int32(readEventCounter))
@@ -193,7 +193,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	behavesLikeEitherObserver(
 		t, eventsObserver,
 		handleEventsLimit,
-		events.ErrConnClosed,
+		events.ErrEventsConnClosed,
 		readAllEventsTimeout,
 		onLimit,
 	)
@@ -202,14 +202,14 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 func TestEventsQueryClient_Subscribe_DialError(t *testing.T) {
 	ctx := context.Background()
 
-	eitherErrDial := either.Error[*mockclient.MockConnection](events.ErrDial)
+	eitherErrDial := either.Error[*mockclient.MockConnection](events.ErrEventsDial)
 	dialerMock := testeventsquery.NewOneTimeMockDialer(t, eitherErrDial)
 
 	dialerOpt := events.WithDialer(dialerMock)
 	queryClient := events.NewEventsQueryClient("", dialerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-	require.True(t, errors.Is(err, events.ErrDial))
+	require.True(t, errors.Is(err, events.ErrEventsDial))
 }
 
 func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
@@ -224,7 +224,7 @@ func TestEventsQueryClient_Subscribe_RequestError(t *testing.T) {
 	queryClient := events.NewEventsQueryClient("url_ignored", dialerOpt)
 	eventsObservable, err := queryClient.EventsBytes(ctx, testQuery(0))
 	require.Nil(t, eventsObservable)
-	require.True(t, errors.Is(err, events.ErrSubscribe))
+	require.True(t, errors.Is(err, events.ErrEventsSubscribe))
 
 	// cancelling the context should close the connection
 	cancel()

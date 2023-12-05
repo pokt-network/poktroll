@@ -60,7 +60,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	events := ctx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedGateways), len(events))
 	for _, event := range events {
-		require.Equal(t, "pocket.application.EventDelegateeChange", event.Type)
+		require.Equal(t, "pocket.application.EventRedelegation", event.Type)
 		require.Equal(t, "app_address", event.Attributes[0].Key)
 		require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), event.Attributes[0].Value)
 	}
@@ -85,7 +85,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.NoError(t, err)
 	events = ctx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedGateways)+1, len(events))
-	require.Equal(t, "pocket.application.EventDelegateeChange", events[7].Type)
+	require.Equal(t, "pocket.application.EventRedelegation", events[7].Type)
 	require.Equal(t, "app_address", events[7].Attributes[0].Key)
 	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[7].Attributes[0].Value)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)
@@ -155,7 +155,7 @@ func TestMsgServer_UndelegateFromGateway_FailNotDelegated(t *testing.T) {
 	require.NoError(t, err)
 	events = ctx.EventManager().Events()
 	require.Equal(t, 1, len(events))
-	require.Equal(t, "pocket.application.EventDelegateeChange", events[0].Type)
+	require.Equal(t, "pocket.application.EventRedelegation", events[0].Type)
 	require.Equal(t, "app_address", events[0].Attributes[0].Key)
 	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
 
@@ -208,7 +208,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.NoError(t, err)
 	events := ctx.EventManager().Events()
 	require.Equal(t, 1, len(events))
-	require.Equal(t, "pocket.application.EventDelegateeChange", events[0].Type)
+	require.Equal(t, "pocket.application.EventRedelegation", events[0].Type)
 	require.Equal(t, "app_address", events[0].Attributes[0].Key)
 	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[0].Attributes[0].Value)
 
@@ -233,7 +233,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.NoError(t, err)
 	events = ctx.EventManager().Events()
 	require.Equal(t, 2, len(events))
-	require.Equal(t, "pocket.application.EventDelegateeChange", events[1].Type)
+	require.Equal(t, "pocket.application.EventRedelegation", events[1].Type)
 	require.Equal(t, "app_address", events[1].Attributes[0].Key)
 	require.Equal(t, fmt.Sprintf("\"%s\"", appAddr), events[1].Attributes[0].Value)
 	foundApp, isAppFound = k.GetApplication(ctx, appAddr)

@@ -9,18 +9,22 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )
 
-// delegationEventQuery is the query used by the EventsQueryClien to subscribe
-// to new delegation events from the the application module on chain.
-// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
-// And: https://docs.cosmos.network/main/learn/advanced/events#default-events
-const delegationEventQuery = "message.action='pocket.application.EventDelegateeChange'"
+const (
+	// delegationEventQuery is the query used by the EventsQueryClient to subscribe
+	// to new delegation events from the the application module on chain.
+	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
+	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
+	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
+	replayObsBufferSize  = 1 // the amount of events we want before they are emitted
+)
 
 // NewDelegationClient creates a new delegation client from the given
-// dependencies and cometWebsocketURL. It uses the defined delegationEventQuery
-// to subscribe to new delegation events and maps them to DelegateeChange
-// objects, using the newDelegateeChangeEvent function as the mapping function.
+// dependencies and cometWebsocketURL. It uses a pre-defined delegationEventQuery
+// to subscribe to newly emitted redelegation events which are mapped to
+// Redelegation objects.
 //
-// This is an implementation of the EventsReplayClient[DelegateeChange] generic
+// This lightly wraps the EventsReplayClient[Redelegation] generic to
+// correctly mock the interface.
 //
 // Required dependencies:
 //   - client.EventsQueryClient
@@ -30,14 +34,15 @@ func NewDelegationClient(
 	cometWebsocketURL string,
 ) (client.DelegationClient, error) {
 	client, err := events.NewEventsReplayClient[
-		client.DelegateeChange,
-		client.EventsObservable[client.DelegateeChange],
+		client.Redelegation,
+		client.EventsObservable[client.Redelegation],
 	](
 		ctx,
 		deps,
 		cometWebsocketURL,
 		delegationEventQuery,
-		newDelegateeChangeEvent,
+		newRedelegationEventFactoryFn(ctx),
+		replayObsBufferSize,
 	)
 	if err != nil {
 		return nil, err
@@ -45,27 +50,30 @@ func NewDelegationClient(
 	return &delegationClient{eventsReplayClient: client}, nil
 }
 
-// delegationClient is a wrapper around a mapped client that implements the same
-// interface for use in network. This is due to the lack of support from
-// gomock for generic types.
+// delegationClient is a wrapper around an EventsReplayClient that implements
+// the DelegationClient interface for use with cosmos-sdk networks.
 type delegationClient struct {
-	eventsReplayClient client.EventsReplayClient[client.DelegateeChange, client.EventsObservable[client.DelegateeChange]]
+	// eventsReplayClient is the underlying EventsReplayClient that is used to
+	// subscribe to new delegation events. It uses both the Redelegation type
+	// and the RedelegationReplayObservable type as its generic types.
+	// These enable the EventsReplayClient to correctly map the raw event bytes
+	// to Redelegation objects and to correctly return a RedelegationReplayObservable
+	eventsReplayClient client.EventsReplayClient[client.Redelegation, client.EventsObservable[client.Redelegation]]
 }
 
-// DelegateeChangesSequence returns a replay observable of observables for
-// delegation events from the DelegationClient.
-func (b *delegationClient) DelegateeChangesSequence(ctx context.Context) client.DelegateeChangeReplayObservable {
+// RedelegationsSequence returns a replay observable of Redelgation events
+// observed by the DelegationClient.
+func (b *delegationClient) RedelegationsSequence(ctx context.Context) client.RedelegationReplayObservable {
 	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
-// LastNDelegateeChanges returns the latest n delegatee change events from the
-// DelegationClient.
-func (b *delegationClient) LastNDelegateeChanges(ctx context.Context, n int) []client.DelegateeChange {
+// LastNRedelegations returns the latest n redelegation events from the DelegationClient.
+func (b *delegationClient) LastNRedelegations(ctx context.Context, n int) []client.Redelegation {
 	return b.eventsReplayClient.LastNEvents(ctx, n)
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient
-// and closes all subsequent connections.
+// and closes all downstream connections.
 func (b *delegationClient) Close() {
 	b.eventsReplayClient.Close()
 }

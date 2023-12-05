@@ -200,46 +200,6 @@ func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *s
 	return state
 }
 
-// ApplicationModuleGenesisStateWithAccounts generates a GenesisState object with
-// an application list full of applications with the given addresses.
-func ApplicationModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *apptypes.GenesisState {
-	t.Helper()
-	state := apptypes.DefaultGenesis()
-	for i, addr := range addresses {
-		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i+1)))
-		application := apptypes.Application{
-			Address: addr,
-			Stake:   &stake,
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
-				},
-				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
-				},
-			},
-		}
-		state.ApplicationList = append(state.ApplicationList, application)
-	}
-	return state
-}
-
-// GatewayModuleGenesisStateWithAccounts generates a GenesisState object with
-// a gateway list full of gateways with the given addresses.
-func GatewayModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
-	t.Helper()
-	state := gatewaytypes.DefaultGenesis()
-	for i, addr := range addresses {
-		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := gatewaytypes.Gateway{
-			Address: addr,
-			Stake:   &stake,
-		}
-		state.GatewayList = append(state.GatewayList, gateway)
-	}
-	return state
-}
-
 // InitAccount initialises an Account by sending it some funds from the validator
 // in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {

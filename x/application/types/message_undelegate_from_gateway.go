@@ -37,8 +37,8 @@ func (msg *MsgUndelegateFromGateway) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
-func (msg *MsgUndelegateFromGateway) NewDelegateeChangeEvent() *EventDelegateeChange {
-	return &EventDelegateeChange{
+func (msg *MsgUndelegateFromGateway) NewRedelegationEvent() *EventRedelegation {
+	return &EventRedelegation{
 		AppAddress: msg.AppAddress,
 	}
 }

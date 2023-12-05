@@ -3,7 +3,7 @@
 package delegation_test
 
 // TODO(@h5law): Figure out how to use real components of the localnet
-//	- Create app and gateway actors
+//  - Create app and gateway actors
 //  - Stake them
 //  - Delegate to the gateway
 //  - Undelegate from the gateway
@@ -33,12 +33,12 @@ const (
 	delegationIntegrationSubTimeout = 15 * time.Second
 )
 
-// TestDelegationClient_DelegateeChangesObservable tests that the DelegationClient
-// can subscribe to the DelegateeChange events and that the events contain
+// TestDelegationClient_RedelegationsObservables tests that the DelegationClient
+// can subscribe to the Redelegation events and that the events contain
 // the correct AppAddress, it does so by simulating the delegation
 // and undelegation of two applications to a gateway.
-// TODO_TEST: This test needs to use real actors and not mocked ones for it to work
-func TestDelegationClient_DelegateeChangesObservables(t *testing.T) {
+// TODO_UPNEXT(@h5law): This test needs to use real actors and not mocked ones for it to work
+func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	t.SkipNow() // TODO: remove once the test is working
 
 	k, sdkCtx := keepertest.ApplicationKeeper(t)
@@ -61,7 +61,7 @@ func TestDelegationClient_DelegateeChangesObservables(t *testing.T) {
 	})
 
 	// Subscribe to the delegation events
-	delegationSub := delegationClient.DelegateeChangesSequence(ctx).Subscribe(ctx)
+	delegationSub := delegationClient.RedelegationsSequence(ctx).Subscribe(ctx)
 
 	var (
 		delegationMu            = sync.Mutex{}        // mutext to protect delegationChangeCounter
@@ -73,20 +73,20 @@ func TestDelegationClient_DelegateeChangesObservables(t *testing.T) {
 		// The test will delegate from app1 to gateway, then from app2 to gateway
 		// and then undelegate app1 from gateway and then undelegate app2 from gateway
 		// We expect to receive 4 delegation changes where the address of the
-		// DelegateeChange event alternates between app1 and app2
-		var previousDelegateeChange client.DelegateeChange
+		// Redelegation event alternates between app1 and app2
+		var previousRedelegation client.Redelegation
 		for change := range delegationSub.Ch() {
-			// Verify that the DelegateeChange event is valid and that the address
-			// of the DelegateeChange event alternates between app1 and app2
-			if previousDelegateeChange != nil {
-				require.NotEqual(t, previousDelegateeChange.AppAddress(), change.AppAddress())
-				if previousDelegateeChange.AppAddress() == appAddr1 {
+			// Verify that the Redelegation event is valid and that the address
+			// of the Redelegation event alternates between app1 and app2
+			if previousRedelegation != nil {
+				require.NotEqual(t, previousRedelegation.AppAddress(), change.AppAddress())
+				if previousRedelegation.AppAddress() == appAddr1 {
 					require.Equal(t, appAddr2, change.AppAddress())
 				} else {
 					require.Equal(t, appAddr1, change.AppAddress())
 				}
 			}
-			previousDelegateeChange = change
+			previousRedelegation = change
 
 			require.NotEmpty(t, change)
 			delegationMu.Lock()

@@ -17,12 +17,23 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 )
 
-// hostToWebsocketURL converts the provided host into a websocket URL that can
-// be used to subscribe to onchain events and query the chain via a client
-// context or send transactions via a tx client context.
-func hostToWebsocketURL(host string) string {
-	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
-	return websocketURL
+// SupplyConfig supplies a depinject config by calling each of the supplied
+// supplier functions in order and passing the result of each supplier to the
+// next supplier, chaining them together.
+func SupplyConfig(
+	ctx context.Context,
+	cmd *cobra.Command,
+	suppliers []SupplierFn,
+) (deps depinject.Config, err error) {
+	// Initialize deps to with empty depinject config.
+	deps = depinject.Configs()
+	for _, supplyFn := range suppliers {
+		deps, err = supplyFn(ctx, deps, cmd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return deps, nil
 }
 
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
@@ -205,4 +216,12 @@ func NewSupplyRingCacheFn() SupplierFn {
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
 	}
+}
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func hostToWebsocketURL(host string) string {
+	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
+	return websocketURL
 }

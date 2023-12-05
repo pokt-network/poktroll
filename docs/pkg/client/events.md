@@ -283,19 +283,26 @@ func (e *eventType) GetName() string { return e.Name }
 // Define a decoder function that can take the raw event bytes
 // received from the EventsQueryClient and convert them into
 // the desired type for the EventsReplayClient
-func newEventType(eventBz []byte) EventType {
-  eventMsg := new(eventType)
-  if err := json.Unmarshal(eventBz, eventMsg); err != nil {
-    return nil, err
-  }
+// TODO_IN_THIS_COMMIT: godoc
+// TODO_IN_THIS_COMMIT: move to `pkg/client/events/...`
+type NewEventFn[T any] = func([]byte) (EventType, error)
 
-  // Confirm the event is correct by checking its fields
-  if eventMsg.Name == "" {
-    return nil, events.ErrEventsUnmarshalEvent.
-      Wrapf("unable to unmarshal eventType: %s", string(eventBz))
-  }
+func eventTypeFactory(ctx context.Context) NewEventFn[EventType] {
+  return function(eventBz []byte) EventType {  eventMsg := new(eventType)
+    logger := polylog.Ctx(ctx)
 
-  return eventMsg, nil
+    if err := json.Unmarshal(eventBz, eventMsg); err != nil {
+      return nil, err
+    }
+
+    // Confirm the event is correct by checking its fields
+    if eventMsg.Name == "" {
+      return nil, events.ErrEventsUnmarshalEvent.
+        Wrapf("with eventType data: %s", string(eventBz))
+    }
+
+    return eventMsg, nil
+  }
 }
 
 // Create the events query client and a depinject config to supply
@@ -315,7 +322,7 @@ client, err := events.NewEventsReplayClient[
   depConfig,
   cometWebsocketURL,
   eventQueryString,
-  newEventType,
+  eventTypeFactory(ctx),
 )
 if err != nil {
   return nil, fmt.Errorf("unable to create EventsReplayClient %w", err)
@@ -325,9 +332,9 @@ if err != nil {
 lastEventType := client.LastNEvents(ctx, 1)[0]
 
 // Get the latest replay observable
-latestEventsObsvbl := client.EventsSequence(ctx)
+latestEventsObs := client.EventsSequence(ctx)
 // Get the latest events from the sequence
-lastEventType := latestEventsObsvbl.Last(ctx, 1)[0]
+lastEventType := latestEventsObs.Last(ctx, 1)[0]
 
 // Cancel the context which will call client.Close and close all
 // subscriptions and the EventsQueryClient
