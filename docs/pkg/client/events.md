@@ -241,11 +241,15 @@ var (
 cometUrl = "tcp://example.com"
 
 // Creating new EventsQueryClients with a custom tcpDialer:
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#WithDialer
 tcpDialerOpt := events.WithDialer(tcpDialer)
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 tcpEvtClient := events.NewEventsQueryClient(cometUrl, tcpDialerOpt)
 
 // Alternatively, with a custom gRPC dialer:
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#WithDialer
 gcpDialerOpt := events.WithDialer(grcpDialer)
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 
 // ... rest follows the same as the basic example.
@@ -260,13 +264,16 @@ grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 ### Basic Usage
 
 ```go
-// Define a query string to provide to the EventsQueryClient
-// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
-// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-const eventQueryString = "message.action='eventName'"
-
-// Define the websocket URL the EventsQueryClient will subscribe to
-const cometWebsocketURL = "ws://example.com:36657/websocket"
+const (
+  // Define a query string to provide to the EventsQueryClient
+  // See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
+  // And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
+  eventQueryString = "message.action='eventName'"
+  // Define the websocket URL the EventsQueryClient will subscribe to
+  cometWebsocketURL = "ws://example.com:36657/websocket"
+	// the amount of events we want before they are emitted
+  replayObsBufferSize = 1
+)
 
 // Define an interface to represent the onchain event
 type EventType interface {
@@ -283,11 +290,8 @@ func (e *eventType) GetName() string { return e.Name }
 // Define a decoder function that can take the raw event bytes
 // received from the EventsQueryClient and convert them into
 // the desired type for the EventsReplayClient
-// TODO_IN_THIS_COMMIT: godoc
-// TODO_IN_THIS_COMMIT: move to `pkg/client/events/...`
-type NewEventFn[T any] = func([]byte) (EventType, error)
-
-func eventTypeFactory(ctx context.Context) NewEventFn[EventType] {
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsFn
+func eventTypeFactory(ctx context.Context) events.NewEventsFn[EventType] {
   return function(eventBz []byte) EventType {
     eventMsg := new(eventType)
     logger := polylog.Ctx(ctx)
@@ -308,13 +312,15 @@ func eventTypeFactory(ctx context.Context) NewEventFn[EventType] {
 
 // Create the events query client and a depinject config to supply
 // it into the EventsReplayClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsQueryClient
 evtClient := events.NewEventsQueryClient(cometWebsocketURL)
 depConfig := depinject.Supply(evtClient)
 
 // Create a context (this should be cancellable to close the EventsReplayClient)
-ctx, cancel := context.WithCancel(context.Background)
+ctx, cancel := context.WithCancel(context.Background())
 
 // Create a new instance of the EventsReplayClient
+// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsReplayClient
 client, err := events.NewEventsReplayClient[
   EventType,
   observable.ReplayObservable[EventType],
@@ -324,6 +330,7 @@ client, err := events.NewEventsReplayClient[
   cometWebsocketURL,
   eventQueryString,
   eventTypeFactory(ctx),
+  replayObsBufferSize,
 )
 if err != nil {
   return nil, fmt.Errorf("unable to create EventsReplayClient %w", err)
@@ -335,7 +342,7 @@ lastEventType := client.LastNEvents(ctx, 1)[0]
 // Get the latest replay observable
 latestEventsObs := client.EventsSequence(ctx)
 // Get the latest events from the sequence
-lastEventType := latestEventsObs.Last(ctx, 1)[0]
+lastEventType = latestEventsObs.Last(ctx, 1)[0]
 
 // Cancel the context which will call client.Close and close all
 // subscriptions and the EventsQueryClient
