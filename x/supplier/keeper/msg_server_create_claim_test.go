@@ -70,8 +70,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				msg := newTestClaimMsg(t)
-				msg.SupplierAddress = sample.AccAddress()
-				msg.SessionHeader.ApplicationAddress = sample.AccAddress()
+				msg.SupplierAddress = appSupplierPair.SupplierAddr
+				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 				msg.SessionHeader.SessionId = "invalid_session_id"
 
 				return msg
@@ -82,7 +82,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				msg := newTestClaimMsg(t)
-				msg.SessionHeader.ApplicationAddress = sample.AccAddress()
+				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
 				// Overwrite supplier address to one not included in the session fixtures.
 				msg.SupplierAddress = sample.AccAddress()
