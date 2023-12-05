@@ -57,15 +57,15 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 			ExpectedOutputContains: "Msgf",
 		},
 		{
+			EventMethodName:        "Str",
 			Key:                    "Str",
 			Value:                  "str_value",
-			EventMethodName:        "Str",
 			ExpectedOutputContains: `"Str":"str_value"`,
 		},
 		{
+			EventMethodName:        "Bool",
 			Key:                    "Bool",
 			Value:                  true,
-			EventMethodName:        "Bool",
 			ExpectedOutputContains: `"Bool":true`,
 		},
 		{
@@ -111,10 +111,10 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 			ExpectedOutputContains: `"Uint8":42`,
 		},
 		{
+			EventMethodName:        "Uint16",
 			Key:                    "Uint16",
 			ExpectedOutputContains: `"Uint16":42`,
 			Value:                  uint16(42),
-			EventMethodName:        "Uint16",
 		},
 		{
 			EventMethodName:        "Uint32",
@@ -353,8 +353,7 @@ func newTestLogger(
 
 	// Redirect standard log output to logOutput buffer.
 	logOutput := new(bytes.Buffer)
-	opts = append(
-		opts,
+	opts = append(opts,
 		polyzero.WithOutput(logOutput),
 		// NB: typically consumers would pass zerolog.<some>Level directly instead.
 		polyzero.WithLevel(zerolog.Level(level.Int())),
