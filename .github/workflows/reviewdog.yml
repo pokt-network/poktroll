@@ -24,8 +24,8 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
-  # Makes sure that comments like TODO_IN_THIS_PR or TODO_IN_THIS_COMMIT block
-  # merging to main. See https://github.com/pokt-network/action-fail-on-found
+  # Ensure that we are using polylog (via logger.) instead of the golang's default
+  # log package.
   check_polylog_in_off_chain_package:
     name: Check polylog in off-chain source code
     runs-on: ubuntu-latest
