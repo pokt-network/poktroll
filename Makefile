@@ -131,7 +131,7 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 
 .PHONY: go_lint
 go_lint: ## Run all go linters
-	golangci-lint run --timeout 5m
+	golangci-lint run --timeout 5m --build-tags test
 
 go_imports: check_go_version ## Run goimports on all go files
 	go run ./tools/scripts/goimports
@@ -145,11 +145,15 @@ test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	go test -v ./e2e/tests/... -tags=e2e
+	go test -v ./e2e/tests/... -tags=e2e,test
+
+.PHONY: go_test_verbose
+go_test_verbose: check_go_version ## Run all go tests verbosely
+	go test -v -race -tags test ./...
 
 .PHONY: go_test
-go_test: check_go_version ## Run all go tests
-	go test -v -race -tags test ./...
+go_test: check_go_version ## Run all go tests showing detailed output only on failures
+	go test -race -tags test ./...
 
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
@@ -173,10 +177,15 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
+	go generate ./pkg/crypto/rings/interface.go
 
-.PHONY: go_fixturegen
-go_fixturegen: ## Generate fixture data for unit tests
+.PHONY: go_testgen_fixtures
+go_testgen_fixtures: ## Generate fixture data for unit tests
 	go generate ./pkg/relayer/miner/miner_test.go
+
+.PHONY: go_testgen_accounts
+go_testgen_accounts: ## Generate test accounts for usage in test environments
+	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
 go_develop: proto_regen go_mockgen ## Generate protos and mocks
