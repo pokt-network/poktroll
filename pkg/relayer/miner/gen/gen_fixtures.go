@@ -72,7 +72,7 @@ func init() {
 // random bytes.
 // Output file is truncated and overwritten if it already exists.
 //
-// To regenerate all fixtures, use `make go_fixturegen`; to regenerate only this
+// To regenerate all fixtures, use `make go_testgen_fixtures`; to regenerate only this
 // test's fixtures run `go generate ./pkg/relayer/miner/miner_test.go`.
 func main() {
 	flag.Parse()
