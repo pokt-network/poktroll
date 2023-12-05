@@ -37,14 +37,14 @@ type (
 	) polylog.Event
 )
 
-// FnMethodSpy is a mock which implements a #Fn() method that is intended to be
+// EventFuncSpy is a mock which implements a #Fn() method that is intended to be
 // used in tests to assert that the function passed to polylog.Event#Func() is
 // called with the expected arg(s).
-type FnMethodSpy struct{ mock.Mock }
+type EventFuncSpy struct{ mock.Mock }
 
 // Fn is a mock method which can be asserted on via the mock.Mock API.
 // See: https://pkg.go.dev/github.com/stretchr/testify@v1.8.4/mock#Mock.
-func (m *FnMethodSpy) Fn(event polylog.Event) {
+func (m *EventFuncSpy) Fn(event polylog.Event) {
 	m.Called(event)
 }
 
