@@ -2,7 +2,7 @@ package rings
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ crypto.RingCache = (*ringCache)(nil)
@@ -61,8 +62,11 @@ func (rc *ringCache) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
 ) (*ring.Ring, error) {
-	var ring *ring.Ring
-	var err error
+	var (
+		ring   *ring.Ring
+		err    error
+		logger = polylog.Ctx(ctx)
+	)
 
 	// Lock the cache for reading.
 	rc.ringPointsMu.RLock()
@@ -73,11 +77,15 @@ func (rc *ringCache) GetRingForAddress(
 
 	if !ok {
 		// If the ring is not in the cache, get it from the application module.
-		log.Printf("DEBUG: Ring not in cache, fetching from application module [%s]", appAddress)
+		logger.Debug().
+			Str("app_address", appAddress).
+			Msg("ring cache miss; fetching from application module")
 		ring, err = rc.getRingForAppAddress(ctx, appAddress)
 	} else {
 		// If the ring is in the cache, create it from the points.
-		log.Printf("DEBUG: Ring in cache, creating from points [%s]", appAddress)
+		logger.Debug().
+			Str("app_address", appAddress).
+			Msg("ring cache hit; creating from points")
 		ring, err = newRingFromPoints(points)
 	}
 	if err != nil {
@@ -115,6 +123,8 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 ) ([]ringtypes.Point, error) {
+	logger := polylog.Ctx(ctx)
+
 	rc.ringPointsMu.Lock()
 	defer rc.ringPointsMu.Unlock()
 
@@ -147,7 +157,9 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	}
 
 	// Update the cache overwriting the previous value.
-	log.Printf("DEBUG: Updating ring cache for [%s]", appAddress)
+	logger.Debug().
+		Str("app_address", appAddress).
+		Msg("updating ring cache for app")
 	rc.ringPointsCache[appAddress] = points
 
 	// Return the public key points on the secp256k1 curve.
@@ -161,9 +173,14 @@ func (rc *ringCache) addressesToPoints(
 	ctx context.Context,
 	addresses []string,
 ) ([]ringtypes.Point, error) {
+	logger := polylog.Ctx(ctx)
+
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
-	log.Printf("DEBUG: Converting addresses to points: %v", addresses)
+	logger.Debug().
+		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)` instead of formatting here.
+		Str("addresses", fmt.Sprintf("%v", addresses)).
+		Msg("converting addresses to points")
 	for i, addr := range addresses {
 		// Retrieve the account from the auth module
 		acc, err := rc.accountQuerier.GetAccount(ctx, addr)
