@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/require"
 
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -50,7 +50,7 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 			}
 
 			// Unmarshal event data into a TxEventResponse object.
-			txEvent := &tx.TxEvent{}
+			txEvent := &abci.TxResult{}
 			err = json.Unmarshal(eventBz, txEvent)
 			require.NoError(s, err)
 

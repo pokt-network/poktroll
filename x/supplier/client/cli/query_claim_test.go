@@ -20,13 +20,11 @@ func TestClaim_Show(t *testing.T) {
 	sessionCount := 1
 	supplierCount := 3
 	appCount := 3
-	serviceCount := 1
 
 	net, claims := networkWithClaimObjects(
 		t, sessionCount,
 		appCount,
 		supplierCount,
-		serviceCount,
 	)
 
 	ctx := net.Validators[0].ClientCtx
@@ -106,7 +104,6 @@ func TestClaim_List(t *testing.T) {
 		t, sessionCount,
 		supplierCount,
 		appCount,
-		serviceCount,
 	)
 
 	ctx := net.Validators[0].ClientCtx

@@ -21,6 +21,12 @@ const (
 // application address and the value is the session fixture.
 type SessionsByAppAddress map[string]sessiontypes.Session
 
+// AppSupplierPair is a pairing of an application and a supplier address.
+type AppSupplierPair struct {
+	AppAddr      string
+	SupplierAddr string
+}
+
 // NewSessionFixturesWithPairings creates a map of session fixtures where the key
 // is the application address and the value is the session fixture. App/supplier
 // addresses are expected to be provided in alternating order (as pairs). The same
@@ -29,34 +35,27 @@ type SessionsByAppAddress map[string]sessiontypes.Session
 func NewSessionFixturesWithPairings(
 	t *testing.T,
 	service *sharedtypes.Service,
-	appAndSupplierAddrPairs ...string,
+	appSupplierPairs ...AppSupplierPair,
 ) SessionsByAppAddress {
 	t.Helper()
-
-	if len(appAndSupplierAddrPairs)%2 != 0 {
-		t.Fatalf("expected even number of app and supplier address pairs, got %d", len(appAndSupplierAddrPairs))
-	}
 
 	// Initialize the session fixtures map.
 	sessionFixturesByAppAddr := make(SessionsByAppAddress)
 
 	// Iterate over the app and supplier address pairs (two indices at a time),
 	// and create a session fixture for each app address.
-	for i := 0; i < len(appAndSupplierAddrPairs); i += 2 {
-		appAddr := appAndSupplierAddrPairs[i]
-		application := newApplication(t, appAddr, service)
+	for _, appSupplierPair := range appSupplierPairs {
+		application := newApplication(t, appSupplierPair.AppAddr, service)
+		supplier := newSupplier(t, appSupplierPair.SupplierAddr, service)
 
-		supplierAddr := appAndSupplierAddrPairs[i+1]
-		supplier := newSupplier(t, supplierAddr, service)
-
-		if session, ok := sessionFixturesByAppAddr[appAddr]; ok {
+		if session, ok := sessionFixturesByAppAddr[appSupplierPair.AppAddr]; ok {
 			session.Suppliers = append(session.Suppliers, supplier)
 			continue
 		}
 
-		sessionFixturesByAppAddr[appAddr] = sessiontypes.Session{
+		sessionFixturesByAppAddr[appSupplierPair.AppAddr] = sessiontypes.Session{
 			Header: &sessiontypes.SessionHeader{
-				ApplicationAddress:      appAddr,
+				ApplicationAddress:      appSupplierPair.AppAddr,
 				Service:                 service,
 				SessionStartBlockHeight: testBlockHeight,
 				SessionId:               testSessionId,
@@ -67,7 +66,7 @@ func NewSessionFixturesWithPairings(
 			NumBlocksPerSession: testBlocksPerSession,
 			Application:         application,
 			Suppliers: []*sharedtypes.Supplier{
-				newSupplier(t, supplierAddr, service),
+				newSupplier(t, appSupplierPair.SupplierAddr, service),
 			},
 		}
 	}

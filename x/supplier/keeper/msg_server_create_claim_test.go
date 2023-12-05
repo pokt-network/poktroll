@@ -19,17 +19,20 @@ import (
 const testServiceId = "svc1"
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
-	appAddr, supplierAddr := sample.AccAddress(), sample.AccAddress()
+	appSupplierPair := supplier.AppSupplierPair{
+		AppAddr:      sample.AccAddress(),
+		SupplierAddr: sample.AccAddress(),
+	}
 	service := &sharedtypes.Service{Id: testServiceId}
-	sessionFixturesByAddr := supplier.NewSessionFixturesWithPairings(t, service, appAddr, supplierAddr)
+	sessionFixturesByAddr := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
 	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
 	claimMsg := newTestClaimMsg(t)
-	claimMsg.SupplierAddress = supplierAddr
-	claimMsg.SessionHeader.ApplicationAddress = appAddr
+	claimMsg.SupplierAddress = appSupplierPair.SupplierAddr
+	claimMsg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
 	createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
@@ -48,8 +51,11 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	service := &sharedtypes.Service{Id: testServiceId}
-	appAddr, supplierAddr := sample.AccAddress(), sample.AccAddress()
-	sessionFixturesByAppAddr := supplier.NewSessionFixturesWithPairings(t, service, appAddr, supplierAddr)
+	appSupplierPair := supplier.AppSupplierPair{
+		AppAddr:      sample.AccAddress(),
+		SupplierAddr: sample.AccAddress(),
+	}
+	sessionFixturesByAppAddr := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
 	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAppAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
@@ -64,8 +70,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				msg := newTestClaimMsg(t)
-				msg.SupplierAddress = supplierAddr
-				msg.SessionHeader.ApplicationAddress = appAddr
+				msg.SupplierAddress = sample.AccAddress()
+				msg.SessionHeader.ApplicationAddress = sample.AccAddress()
 				msg.SessionHeader.SessionId = "invalid_session_id"
 
 				return msg
@@ -76,7 +82,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
 				msg := newTestClaimMsg(t)
-				msg.SessionHeader.ApplicationAddress = appAddr
+				msg.SessionHeader.ApplicationAddress = sample.AccAddress()
 
 				// Overwrite supplier address to one not included in the session fixtures.
 				msg.SupplierAddress = sample.AccAddress()
