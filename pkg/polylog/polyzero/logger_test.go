@@ -236,7 +236,7 @@ func TestZerologLogger_Func_Discard_Enabled(t *testing.T) {
 			)
 
 			for _, eventLevel := range polyzero.Levels() {
-				funcSpy := testpolylog.FnMethodSpy{}
+				funcSpy := testpolylog.EventFuncSpy{}
 				funcSpy.On("Fn", mock.AnythingOfType(polyzeroEventTypeName)).Return()
 
 				event := newTestEventWithLevel(t, logger, eventLevel)
