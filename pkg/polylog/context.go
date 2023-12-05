@@ -19,8 +19,7 @@ const CtxKey = "polylog/context"
 // be part of the build. Otherwise, the polyzero package's init function will
 // neither be included in the build nor executed. If no such import exists, the
 // polyzero package can be imported for side effects only, e.g.:
-//
-// import _ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+// 	import _ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 var DefaultContextLogger Logger
 
 // Ctx returns the Logger associated with the ctx. If no logger is associated,
