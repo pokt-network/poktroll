@@ -1,10 +1,11 @@
 package types
 
 import (
+	// this line is used by starport scaffolding # 1
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	// this line is used by starport scaffolding # 1
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
