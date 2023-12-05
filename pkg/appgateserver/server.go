@@ -141,17 +141,17 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	serviceId := strings.Split(path, "/")[1]
 
 	// Read the request body bytes.
-	payloadBz, err := io.ReadAll(request.Body)
+	requestPayloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		app.replyWithError(
-			payloadBz,
+			requestPayloadBz,
 			writer,
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
 		log.Printf("ERROR: failed reading relay request body: %s", err)
 		return
 	}
-	log.Printf("DEBUG: relay request body: %s", string(payloadBz))
+	log.Printf("DEBUG: relay request body: %s", string(requestPayloadBz))
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -159,21 +159,21 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(payloadBz, writer, ErrAppGateMissingAppAddress)
+		app.replyWithError(requestPayloadBz, writer, ErrAppGateMissingAppAddress)
 		log.Print("ERROR: no application address provided")
 		return
 	}
 
 	// Put the request body bytes back into the request body.
-	request.Body = io.NopCloser(bytes.NewBuffer(payloadBz))
+	request.Body = io.NopCloser(bytes.NewBuffer(requestPayloadBz))
 
 	// TODO(@h5law, @red0ne): Add support for asynchronous relays, and switch on
 	// the request type here.
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?
-	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, payloadBz, request, writer); err != nil {
+	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, requestPayloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(payloadBz, writer, err)
+		app.replyWithError(requestPayloadBz, writer, err)
 		log.Printf("ERROR: failed handling relay: %s", err)
 		return
 	}

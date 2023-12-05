@@ -10,11 +10,13 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
+var _ client.AccountQueryClient = (*accQuerier)(nil)
+
 // accQuerier is a wrapper around the accounttypes.QueryClient that enables the
 // querying of on-chain account information through a single exposed method
 // which returns an accounttypes.AccountI interface
 type accQuerier struct {
-	clientCtx      grpc.ClientConn
+	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
 }
 
@@ -28,12 +30,12 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 
 	if err := depinject.Inject(
 		deps,
-		&aq.clientCtx,
+		&aq.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	aq.accountQuerier = accounttypes.NewQueryClient(aq.clientCtx)
+	aq.accountQuerier = accounttypes.NewQueryClient(aq.clientConn)
 
 	return aq, nil
 }

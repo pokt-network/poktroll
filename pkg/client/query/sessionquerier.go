@@ -11,11 +11,13 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var _ client.SessionQueryClient = (*sessionQuerier)(nil)
+
 // sessionQuerier is a wrapper around the sessiontypes.QueryClient that enables the
 // querying of on-chain session information through a single exposed method
 // which returns an sessiontypes.Session struct
 type sessionQuerier struct {
-	clientCtx      grpc.ClientConn
+	clientConn     grpc.ClientConn
 	sessionQuerier sessiontypes.QueryClient
 }
 
@@ -29,18 +31,18 @@ func NewSessionQuerier(deps depinject.Config) (client.SessionQueryClient, error)
 
 	if err := depinject.Inject(
 		deps,
-		&sessq.clientCtx,
+		&sessq.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	sessq.sessionQuerier = sessiontypes.NewQueryClient(sessq.clientCtx)
+	sessq.sessionQuerier = sessiontypes.NewQueryClient(sessq.clientConn)
 
 	return sessq, nil
 }
 
 // GetSession returns an sessiontypes.Session struct for a given appAddress,
-// serviceId and blockHeight
+// serviceId and blockHeight. It implements the SessionQueryClient#GetSession function.
 func (sessq *sessionQuerier) GetSession(
 	ctx context.Context,
 	appAddress string,
@@ -55,8 +57,8 @@ func (sessq *sessionQuerier) GetSession(
 	}
 	res, err := sessq.sessionQuerier.GetSession(ctx, req)
 	if err != nil {
-		return nil, ErrQueryInvalidSession.Wrapf(
-			"address: %s,serviceId %s, block height %d [%v]",
+		return nil, ErrQueryRetrieveSession.Wrapf(
+			"address: %s; serviceId: %s; block height: %d; error: [%v]",
 			appAddress, serviceId, blockHeight, err,
 		)
 	}

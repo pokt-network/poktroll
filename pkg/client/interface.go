@@ -202,7 +202,7 @@ type SessionQueryClient interface {
 	// GetSession queries the chain for the details of the session provided
 	GetSession(
 		ctx context.Context,
-		address string,
+		appAddress string,
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)

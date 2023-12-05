@@ -28,11 +28,10 @@ type SupplierEndpoint struct {
 	Header          *sessiontypes.SessionHeader
 }
 
-// GetCurrentSession gets the current session for the given service
-// It returns the current state if it exists and is still valid, otherwise it
-// queries for the latest session, constructs the SessionSuppliers, caches and
-// returns its SupplierEndpoints.
-func (sdk *poktrollSDK) GetCurrentSession(
+// GetSessionSupplierEndpoints returns a flattened structure of the endpoints
+// from all suppliers in the session and returns them as a SupplierEndpoint slice.
+// It queries for the latest session and caches it if the cached one is outdated.
+func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
 	appAddress, serviceId string,
 ) ([]*SupplierEndpoint, error) {
@@ -51,6 +50,7 @@ func (sdk *poktrollSDK) GetCurrentSession(
 		sdk.latestSessions[serviceId][appAddress] = &sessionSuppliers{}
 	}
 
+	// currentSession is guaranteed to exist after the checks above.
 	currentSession := sdk.latestSessions[serviceId][appAddress]
 
 	// Return the current session's SuppliersEndpoints if the session is still valid.
@@ -74,15 +74,15 @@ func (sdk *poktrollSDK) GetCurrentSession(
 	currentSession.SuppliersEndpoints = []*SupplierEndpoint{}
 
 	for _, supplier := range session.Suppliers {
-		for _, services := range supplier.Services {
+		for _, service := range supplier.Services {
 			// Skip the session's services that don't match the requested serviceId.
-			if services.Service.Id != serviceId {
+			if service.Service.Id != serviceId {
 				continue
 			}
 
 			// Loop through the services' endpoints and add them to the
 			// SessionSuppliers.SuppliersEndpoints slice.
-			for _, endpoint := range services.Endpoints {
+			for _, endpoint := range service.Endpoints {
 				url, err := url.Parse(endpoint.Url)
 				if err != nil {
 					log.Printf("error parsing url: %s", err)

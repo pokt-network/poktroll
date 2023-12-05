@@ -50,19 +50,21 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	depinject.Configs(deps, depinject.Supply(grpcClient))
 
-	// Create and supply the queriers (application, account, session)
+	// Create and supply the account querier
 	accountQuerier, err := query.NewAccountQuerier(deps)
 	if err != nil {
 		return nil, err
 	}
 	depinject.Configs(deps, depinject.Supply(accountQuerier))
 
+	// Create and supply the application querier
 	applicationQuerier, err := query.NewApplicationQuerier(deps)
 	if err != nil {
 		return nil, err
 	}
 	depinject.Configs(deps, depinject.Supply(applicationQuerier))
 
+	// Create and supply the session querier
 	sessionQuerier, err := query.NewSessionQuerier(deps)
 	if err != nil {
 		return nil, err

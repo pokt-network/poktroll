@@ -26,7 +26,7 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
 
-	sessionSuppliers, err := app.sdk.GetCurrentSession(ctx, appAddress, serviceId)
+	sessionSuppliers, err := app.sdk.GetSessionSupplierEndpoints(ctx, appAddress, serviceId)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting current session: %s", err)
 	}

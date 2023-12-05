@@ -21,7 +21,7 @@ var _ POKTRollSDK = (*poktrollSDK)(nil)
 // It contains the Pocket Node URL to be used by the queriers and the private key
 // to be used for signing relay requests.
 // Deps is an optional field that can be used to provide the needed dependencies
-// for the SDK. If it is not provided, the SDK will build the dependencies.
+// for the SDK. If it is not provided, the SDK will build the dependencies itself.
 type POKTRollSDKConfig struct {
 	PocketNodeUrl *url.URL
 	PrivateKey    cryptotypes.PrivKey
@@ -32,6 +32,8 @@ type POKTRollSDKConfig struct {
 type poktrollSDK struct {
 	config *POKTRollSDKConfig
 
+	// signingKey is the scalar representation of the private key to be used
+	// for signing relay requests.
 	signingKey ringtypes.Scalar
 
 	// ringCache is used to obtain and store the ring for the application.
@@ -41,10 +43,11 @@ type poktrollSDK struct {
 	// It used to get the current session for the application given a requested service.
 	sessionQuerier client.SessionQueryClient
 
-	// sessionMu is a mutex to protect currentSession map reads and and updates.
+	// sessionMu is a mutex to protect latestSessions map reads and updates.
 	sessionMu sync.RWMutex
 
-	// latestSessions is a latest sessions map of serviceId -> appAddress -> SessionSuppliers.
+	// latestSessions is a latest sessions map of serviceId -> {appAddress -> SessionSuppliers}
+	// based on the latest block data available.
 	latestSessions map[string]map[string]*sessionSuppliers
 
 	// accountQuerier is the querier for the account module.

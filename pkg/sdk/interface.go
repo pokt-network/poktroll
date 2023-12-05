@@ -8,12 +8,11 @@ import (
 )
 
 // POKTRollSDK is the interface for the POKTRoll SDK. It is used by gateways
-// to interact with the Pocket protocol.
+// and/or applications to interact with the Pocket protocol.
 type POKTRollSDK interface {
-
 	// GetSession returns the suppliers endpoints of the current session for
 	// the given application and service.
-	GetCurrentSession(
+	GetSessionSupplierEndpoints(
 		ctx context.Context,
 		appAddress string,
 		serviceId string,

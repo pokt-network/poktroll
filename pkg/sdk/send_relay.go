@@ -60,15 +60,17 @@ func (sdk *poktrollSDK) SendRelay(
 	cdc := types.ModuleCdc
 	relayRequestBz, err := cdc.Marshal(relayRequest)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("marshaling relay request: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error marshaling relay request: %s", err)
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("unmarshaling relay response: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay request: %s", err)
 	}
 
 	// Create the HTTP request to send the request to the relayer.
+	// All the RPC protocols to be supported (JSONRPC, Rest, Websockets, gRPC, etc)
+	// use HTTP under the hood.
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
@@ -79,19 +81,19 @@ func (sdk *poktrollSDK) SendRelay(
 	log.Printf("DEBUG: Sending signed relay request to %s", supplierEndpoint.Url)
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("sending relay request: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error sending relay request: %s", err)
 	}
 
 	// Read the response body bytes.
 	relayResponseBz, err := io.ReadAll(relayHTTPResponse.Body)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("reading relay response body: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error reading relay response body: %s", err)
 	}
 
 	// Unmarshal the response bytes into a RelayResponse.
 	relayResponse := &types.RelayResponse{}
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("unmarshaling relay response: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay response: %s", err)
 	}
 
 	// Verify the response signature. We use the supplier address that we got from
@@ -101,8 +103,7 @@ func (sdk *poktrollSDK) SendRelay(
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
 	if err := sdk.verifyResponse(ctx, supplierEndpoint.SupplierAddress, relayResponse); err != nil {
-		// TODO_DISCUSS: should this be its own error type and asserted against in tests?
-		return nil, ErrSDKHandleRelay.Wrapf("verifying relay response signature: %s", err)
+		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
 	}
 
 	return relayResponse, nil
