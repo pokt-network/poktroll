@@ -105,8 +105,7 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 		for serviceId, endpoint := range proxiedServices {
 			server := &http.Server{Addr: endpoint.Host}
 			server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				payload := prepareJsonRPCPayload(serviceId)
-				w.Write([]byte(payload))
+				w.Write(prepareJsonRPCResponsePayload())
 			})
 			go func() { server.ListenAndServe() }()
 			go func() {
@@ -120,7 +119,6 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 }
 
 // WithDefaultSupplier creates the default staked supplier for the test
-// and mock it is staked on-chain.
 func WithDefaultSupplier(
 	supplierKeyName string,
 	supplierEndpoints []*sharedtypes.SupplierEndpoint,
@@ -148,8 +146,7 @@ func WithDefaultSupplier(
 	}
 }
 
-// WithDefaultApplication creates the default application actor for the test
-// and mock it is staked on-chain.
+// WithDefaultApplication creates the default staked application actor for the test
 func WithDefaultApplication(appPrivateKey *secp256k1.PrivKey) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		appPubKey := appPrivateKey.PubKey()

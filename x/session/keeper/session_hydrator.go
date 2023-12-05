@@ -34,9 +34,6 @@ type sessionHydrator struct {
 
 	// The height at which the session being request
 	blockHeight int64
-
-	// A redundant helper that maintains a hex decoded copy of `session.Id` used for session hydration
-	sessionIdBz []byte
 }
 
 func NewSessionHydrator(
@@ -52,7 +49,6 @@ func NewSessionHydrator(
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
 		blockHeight:   blockHeight,
-		sessionIdBz:   make([]byte, 0),
 	}
 }
 
@@ -109,7 +105,6 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
 	// prevHashBz := ctx.HeaderHash()
 	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
-	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
@@ -117,13 +112,13 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
 		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
 	}
-	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
 
-	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
-
-	sh.sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, prevHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
-	sh.sessionHeader.SessionId = hex.EncodeToString(sha3Hash(sh.sessionIdBz))
+	sh.sessionHeader.SessionId = SessionIdBzToString(
+		sh.sessionHeader.ApplicationAddress,
+		sh.sessionHeader.Service.Id,
+		string(prevHashBz),
+		sh.sessionHeader.SessionStartBlockHeight,
+	)
 
 	return nil
 }
@@ -176,7 +171,12 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 		logger.Info("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
+		sessionIdBz, err := hex.DecodeString(sh.session.SessionId)
+		if err != nil {
+			return sdkerrors.Wrapf(types.ErrSessionHydration, "failed to decode session ID string %s: %v", sh.session.SessionId, err)
+		}
+
+		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sessionIdBz)
 	}
 
 	return nil
@@ -238,10 +238,13 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
+// SessionIdBzToString returns a string representation of the sessionId
+// given the application public key, service ID, block hash, and block height.
 func SessionIdBzToString(appPubKey, serviceId, blockHash string, blockHeight int64) string {
 	appPubKeyBz := []byte(appPubKey)
 	serviceIdBz := []byte(serviceId)
 	blockHashBz := []byte(blockHash)
+
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight/NumBlocksPerSession))
 

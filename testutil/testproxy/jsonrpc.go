@@ -1,7 +1,5 @@
 package testproxy
 
-import "fmt"
-
 // JSONRpcError is the error struct for the JSON RPC response
 type JSONRpcError struct {
 	Code    int32  `json:"code"`
@@ -15,6 +13,12 @@ type JSONRpcErrorReply struct {
 	Error   *JSONRpcError
 }
 
-func prepareJsonRPCPayload(serviceId string) string {
-	return fmt.Sprintf(`{"jsonrpc":"2.0","id":1,"result":"%s"}`, serviceId)
+// prepareJsonRPCResponsePayload prepares a hard-coded JsonRPC payload for a specific response.
+func prepareJsonRPCResponsePayload() []byte {
+	return []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
+}
+
+// prepareJsonRPCResponsePayload prepares a hard-coded JsonRPC payload for a specific request.
+func PrepareJsonRPCRequestPayload() []byte {
+	return []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)
 }
