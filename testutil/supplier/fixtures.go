@@ -75,6 +75,7 @@ func NewSessionFixturesWithPairings(
 	return sessionFixturesByAppAddr
 }
 
+// newSuppliers configures a supplier for the services provided and nil endpoints.
 func newSupplier(t *testing.T, addr string, services ...*sharedtypes.Service) *sharedtypes.Supplier {
 	t.Helper()
 
@@ -93,6 +94,7 @@ func newSupplier(t *testing.T, addr string, services ...*sharedtypes.Service) *s
 	}
 }
 
+// newApplication configures an application for the services provided.
 func newApplication(t *testing.T, addr string, services ...*sharedtypes.Service) *apptypes.Application {
 	t.Helper()
 

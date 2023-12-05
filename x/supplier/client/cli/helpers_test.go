@@ -159,6 +159,8 @@ func networkWithClaimObjects(
 	return net, claims
 }
 
+// encodeSessionHeader returns a base64 encoded string of a json
+// serialized session header.
 func encodeSessionHeader(
 	t *testing.T,
 	appAddr string,
@@ -179,6 +181,7 @@ func encodeSessionHeader(
 	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
 }
 
+// createClaim sends a tx using the test CLI to create an on-chain claim
 func createClaim(
 	t *testing.T,
 	net *network.Network,
@@ -211,6 +214,7 @@ func createClaim(
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 
+	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &types.Claim{
 		SupplierAddress:       supplierAddr,
 		SessionId:             sessionId,
@@ -219,6 +223,9 @@ func createClaim(
 	}
 }
 
+// getSessionId sends a query using the test CLI to get a session for the inputs provided.
+// It is assumed that the supplierAddr will be in that session based on the test design, but this
+// is insured in this function before it's successfully returned.
 func getSessionId(
 	t *testing.T,
 	net *network.Network,
