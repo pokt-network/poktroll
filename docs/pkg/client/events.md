@@ -263,7 +263,7 @@ grpcEvtClient := events.NewEventsQueryClient(cometUrl, grpcDialerOpt)
 // Define a query string to provide to the EventsQueryClient
 // See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 // And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-const eventQueryString = "tm.event='Tx' AND message.action='eventType'"
+const eventQueryString = "message.action='eventName'"
 
 // Define the websocket URL the EventsQueryClient will subscribe to
 const cometWebsocketURL = "ws://example.com:36657/websocket"
@@ -288,7 +288,8 @@ func (e *eventType) GetName() string { return e.Name }
 type NewEventFn[T any] = func([]byte) (EventType, error)
 
 func eventTypeFactory(ctx context.Context) NewEventFn[EventType] {
-  return function(eventBz []byte) EventType {  eventMsg := new(eventType)
+  return function(eventBz []byte) EventType {
+    eventMsg := new(eventType)
     logger := polylog.Ctx(ctx)
 
     if err := json.Unmarshal(eventBz, eventMsg); err != nil {
