@@ -125,7 +125,7 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 
 .PHONY: go_lint
 go_lint: ## Run all go linters
-	golangci-lint run --timeout 5m
+	golangci-lint run --timeout 5m --build-tags test
 
 go_imports: check_go_version ## Run goimports on all go files
 	go run ./tools/scripts/goimports
@@ -139,7 +139,7 @@ test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	go test -v ./e2e/tests/... -tags=e2e
+	go test -v ./e2e/tests/... -tags=e2e,test
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
