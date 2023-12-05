@@ -295,7 +295,7 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId := sessionkeeper.SessionIdBzToString(appAddress, serviceId, blockHash, blockHeight)
+	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHash, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{

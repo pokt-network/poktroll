@@ -34,6 +34,9 @@ type sessionHydrator struct {
 
 	// The height at which the session being request
 	blockHeight int64
+
+	// A redundant helper that maintains a hex decoded copy of `session.Id` used for session hydration
+	sessionIdBz []byte
 }
 
 func NewSessionHydrator(
@@ -49,6 +52,7 @@ func NewSessionHydrator(
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
 		blockHeight:   blockHeight,
+		sessionIdBz:   make([]byte, 0),
 	}
 }
 
@@ -113,7 +117,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
 	}
 
-	sh.sessionHeader.SessionId = SessionIdBzToString(
+	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		string(prevHashBz),
@@ -238,9 +242,14 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
-// SessionIdBzToString returns a string representation of the sessionId
+// GetSessionId returns the string and bytes representation of the sessionId
 // given the application public key, service ID, block hash, and block height.
-func SessionIdBzToString(appPubKey, serviceId, blockHash string, blockHeight int64) string {
+func GetSessionId(
+	appPubKey,
+	serviceId,
+	blockHash string,
+	blockHeight int64,
+) (sessionId string, sessionIdBz []byte) {
 	appPubKeyBz := []byte(appPubKey)
 	serviceIdBz := []byte(serviceId)
 	blockHashBz := []byte(blockHash)
@@ -248,7 +257,7 @@ func SessionIdBzToString(appPubKey, serviceId, blockHash string, blockHeight int
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight/NumBlocksPerSession))
 
-	sessionIdBz := concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
 
-	return hex.EncodeToString(sha3Hash(sessionIdBz))
+	return hex.EncodeToString(sha3Hash(sessionIdBz)), sessionIdBz
 }

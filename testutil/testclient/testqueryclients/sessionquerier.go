@@ -40,7 +40,7 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId := sessionkeeper.SessionIdBzToString(address, serviceId, blockHash, blockHeight)
+			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHash, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
 			if !ok {
@@ -65,7 +65,7 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId := sessionkeeper.SessionIdBzToString(appAddress, serviceId, blockHash, blockHeight)
+	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHash, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{

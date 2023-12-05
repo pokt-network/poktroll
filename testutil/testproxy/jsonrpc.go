@@ -18,7 +18,7 @@ func prepareJsonRPCResponsePayload() []byte {
 	return []byte(`{"jsonrpc":"2.0","id":1,"result":"some result"}`)
 }
 
-// prepareJsonRPCResponsePayload prepares a hard-coded JsonRPC payload for a specific request.
+// PrepareJsonRPCRequestPayload prepares a hard-coded JsonRPC payload for a specific request.
 func PrepareJsonRPCRequestPayload() []byte {
 	return []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["someParam"]}`)
 }
