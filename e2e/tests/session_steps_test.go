@@ -34,7 +34,7 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 	var ctx, done = context.WithCancel(context.Background())
 
 	// TODO_CONSIDERATION: if this test suite gets more complex, it might make
-	// sense to  refactor this key into a function that takes serviceId and appName
+	// sense to refactor this key into a function that takes serviceId and appName
 	// as arguments and returns the key.
 	eitherEventsBzReplayObs := s.scenarioState[eitherEventsBzReplayObsKey].(observable.ReplayObservable[either.Bytes])
 

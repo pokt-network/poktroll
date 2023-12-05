@@ -89,7 +89,8 @@ type (
 // the transactions subscription.
 type TxEvent struct {
 	// Tx is the binary representation of the tx hash.
-	Tx     []byte   `json:"tx"`
+	Tx []byte `json:"tx"`
+	// TxResult is the CometBFT result of committing a transaction on-chain.
 	Result TxResult `json:"result"`
 }
 

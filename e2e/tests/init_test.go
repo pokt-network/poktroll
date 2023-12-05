@@ -60,6 +60,7 @@ func TestMain(m *testing.M) {
 
 type suite struct {
 	gocuke.TestingT
+	// TODO_TECHDEBT: rename to `poktrolld`.
 	pocketd             *pocketdBin
 	scenarioState       map[string]any // temporary state for each scenario
 	cdc                 codec.Codec
@@ -85,6 +86,7 @@ func TestFeatures(t *testing.T) {
 	gocuke.NewRunner(t, &suite{}).Path(flagFeaturesPath).Run()
 }
 
+// TODO_TECHDEBT: rename `pocketd` to `poktrolld`.
 func (s *suite) TheUserHasThePocketdBinaryInstalled() {
 	s.TheUserRunsTheCommand("help")
 }

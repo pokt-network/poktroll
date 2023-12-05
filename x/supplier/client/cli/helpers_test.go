@@ -13,19 +13,19 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec"
-	types3 "github.com/cosmos/cosmos-sdk/codec/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/testutil/cli"
-	types4 "github.com/cosmos/cosmos-sdk/types"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
+	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
-	types5 "github.com/pokt-network/poktroll/x/application/types"
-	types2 "github.com/pokt-network/poktroll/x/session/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	cli2 "github.com/pokt-network/poktroll/x/supplier/client/cli"
+	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -65,8 +65,6 @@ func networkWithClaimObjects(
 	sessionCount int,
 	supplierCount int,
 	appCount int,
-	// TODO_THIS_COMMIT: hook up to genesis state generation...
-	serviceCount int,
 ) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
@@ -113,7 +111,7 @@ func networkWithClaimObjects(
 
 	// Add supplier and application module genesis states to the network config.
 	cfg.GenesisState[types.ModuleName] = supplierGenesisBuffer
-	cfg.GenesisState[types5.ModuleName] = appGenesisBuffer
+	cfg.GenesisState[apptypes.ModuleName] = appGenesisBuffer
 
 	// Construct the network with the configuration.
 	net = network.New(t, cfg)
@@ -169,14 +167,14 @@ func encodeSessionHeader(
 ) string {
 	t.Helper()
 
-	argSessionHeader := &types2.SessionHeader{
+	argSessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      appAddr,
 		SessionStartBlockHeight: sessionStartHeight,
 		SessionId:               sessionId,
 		SessionEndBlockHeight:   sessionStartHeight + numBlocksPerSession,
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 	}
-	cdc := codec.NewProtoCodec(types3.NewInterfaceRegistry())
+	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
 	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
 }
@@ -204,10 +202,10 @@ func createClaim(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, types4.NewCoins(types4.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdktypes.NewCoins(sdktypes.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 
-	responseRaw, err := cli.ExecTestCLICmd(ctx, cli2.CmdCreateClaim(), args)
+	responseRaw, err := testcli.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
 	var responseJson map[string]interface{}
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
@@ -236,8 +234,8 @@ func getSessionId(
 	t.Helper()
 	ctx := context.TODO()
 
-	sessionQueryClient := types2.NewQueryClient(net.Validators[0].ClientCtx)
-	res, err := sessionQueryClient.GetSession(ctx, &types2.QueryGetSessionRequest{
+	sessionQueryClient := sessiontypes.NewQueryClient(net.Validators[0].ClientCtx)
+	res, err := sessionQueryClient.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddr,
 		Service:            &sharedtypes.Service{Id: testServiceId},
 		BlockHeight:        sessionStartHeight,

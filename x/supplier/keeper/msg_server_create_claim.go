@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -60,9 +59,6 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		)
 	}
 
-	// TODO_TECHDEBT(#181): refactor once structured logging is available.
-	log.Printf("DEBUG: validated claim with sessionId %q for supplier %q", sessionRes.Session.SessionId, msg.GetSupplierAddress())
-
 	logger.
 		With(
 			"session_id", sessionRes.GetSession().GetSessionId(),
@@ -100,6 +96,6 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		).
 		Debug("created claim")
 
-	// TODO_CONSIDERATION: perhaps it would be useful to return the claim in the response.
+	// TODO: return the claim in the response.
 	return &suppliertypes.MsgCreateClaimResponse{}, nil
 }
