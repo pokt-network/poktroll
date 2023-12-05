@@ -23,7 +23,6 @@ type relayMiner struct {
 //   - Miner
 //   - RelayerSessionsManager
 func NewRelayMiner(ctx context.Context, deps depinject.Config) (*relayMiner, error) {
-	log.Print("This should trigger a comment from reviewdog")
 	rel := &relayMiner{}
 
 	if err := depinject.Inject(
