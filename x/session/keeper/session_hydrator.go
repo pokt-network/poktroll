@@ -108,7 +108,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
 	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
 	// prevHashBz := ctx.HeaderHash()
-	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
+	prevHash := "TODO_BLOCKER: See the comment above"
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
@@ -120,7 +120,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
-		string(prevHashBz),
+		prevHash,
 		sh.sessionHeader.SessionStartBlockHeight,
 	)
 
@@ -250,9 +250,10 @@ func GetSessionId(
 	blockHashBz := []byte(blockHash)
 
 	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight/NumBlocksPerSession))
+	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight))
 
 	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 
-	return hex.EncodeToString(sha3Hash(sessionIdBz)), sessionIdBz
+	return sessionId, sessionIdBz
 }
