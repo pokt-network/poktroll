@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -41,17 +40,26 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		var serviceEndpoints []relayer.RelayServer
 
 		for _, endpoint := range serviceConfig.Endpoints {
-			url, err := url.Parse(endpoint.Url)
-			if err != nil {
-				return err
-			}
-			supplierEndpointHost := url.Host
+			// url, err := url.Parse(endpoint.Url)
+			// if err != nil {
+			// 	return err
+			// }
+			// supplierEndpointHost := url.Host
+
+			// This will throw an error if we have more than one endpoint
+			supplierEndpointHost := "0.0.0.0:8545"
 
 			var server relayer.RelayServer
 
+			log.Printf(
+				"INFO: starting relay server for service %s at endpoint %s (listening for connections on %s)",
+				service.Id, endpoint.Url, supplierEndpointHost,
+			)
 			rp.logger.Info().
-				Str("service_id", service.Id).
-				Str("endpoint_url", endpoint.Url).
+				Fields(map[string]any{
+					"service_id":   service.Id,
+					"endpoint_url": endpoint.Url,
+				}).
 				Msg("starting relay server")
 
 			// Switch to the RPC type

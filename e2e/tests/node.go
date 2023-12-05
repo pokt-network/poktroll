@@ -141,6 +141,10 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, 
 	}
 	p.result = r
 
+	if defaultDebugOutput == "true" {
+		fmt.Printf("%#v\n", r)
+	}
+
 	if err != nil {
 		// Include the command executed in the error message for context
 		err = fmt.Errorf("error running command [%s]: %v, stderr: %s", commandStr, err, stderrBuf.String())

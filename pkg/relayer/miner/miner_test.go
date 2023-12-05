@@ -27,7 +27,7 @@ const testDifficulty = 16
 // it pipes pre-mined relay fixtures. It asserts that the observable only emits
 // mined relays with difficulty equal to or greater than testDifficulty.
 //
-// To regenerate all fixtures, use `make go_fixturegen`; to regenerate only this
+// To regenerate all fixtures, use `make go_testgen_fixtures`; to regenerate only this
 // test's fixtures run `go generate ./pkg/relayer/miner/miner_test.go`.
 func TestMiner_MinedRelays(t *testing.T) {
 	var (

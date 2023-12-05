@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/spf13/cobra"
 
@@ -24,8 +24,10 @@ const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
 	flagAppGateConfig string
+	flagCosmosNodeURL string
 )
 
+// AppGateServerCmd returns the Cobra command for running the AppGate server.
 func AppGateServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "appgate-server",
@@ -62,7 +64,8 @@ provided that:
 
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().String(cosmosflags.FlagNode, omittedDefaultFlagValue, "registering the default cosmos node flag; needed to initialize the cosmostx and query contexts correctly and uses flagQueryNodeUrl underneath")
+	cmd.Flags().
+		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -132,41 +135,25 @@ func setupAppGateServerDependencies(
 	ctx context.Context,
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
-) (depinject.Config, error) {
-	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", appGateConfig.QueryNodeUrl.Host)
+) (_ depinject.Config, err error) {
+	queryNodeURL := appGateConfig.QueryNodeUrl
+	// Override the config file's `QueryNodeUrl` fields
+	// with the `--node` flag if it was specified.
+	if flagCosmosNodeURL != omittedDefaultFlagValue {
+		queryNodeURL, err = url.Parse(flagCosmosNodeURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+		}
+	}
 
 	supplierFuncs := []config.SupplierFn{
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),
-		newSupplyQueryClientContextFn(appGateConfig.QueryNodeUrl.String()),
+		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
+		config.NewSupplyAccountQuerierFn(),                          // leaf
+		config.NewSupplyApplicationQuerierFn(),                      // leaf
+		config.NewSupplyRingCacheFn(),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)
-}
-
-// newSupplyQueryClientContextFn returns a new depinject.Config which is supplied with
-// the given deps and a new cosmos ClientCtx
-func newSupplyQueryClientContextFn(pocketQueryClientUrl string) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		cmd *cobra.Command,
-	) (depinject.Config, error) {
-		// Set --node flag to the pocketQueryClientUrl for the client context
-		// This flag is read by cosmosclient.GetClientQueryContext.
-		err := cmd.Flags().Set(cosmosflags.FlagNode, pocketQueryClientUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get the client context from the command.
-		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
-		if err != nil {
-			return nil, err
-		}
-		deps = depinject.Configs(deps, depinject.Supply(
-			queryClientCtx,
-		))
-		return deps, nil
-	}
 }

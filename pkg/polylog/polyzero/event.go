@@ -103,8 +103,7 @@ func (zle *zerologEvent) Float64(key string, value float64) polylog.Event {
 // If err is nil, no field is added.
 //
 // To customize the key name, change zerolog.ErrorFieldName. This can be done
-//
-//	directly or by using the WithErrKey() option when constructing the logger.
+// directly or by using the WithErrKey() option when constructing the logger.
 //
 // If Stack() has been called before and zerolog.ErrorStackMarshaler is defined,
 // the err is passed to ErrorStackMarshaler and the result is appended to the
@@ -190,7 +189,7 @@ func (zle *zerologEvent) Msgf(format string, args ...any) {
 	zle.event.Msgf(format, args...)
 }
 
-// Send is equivalent to calling Msg("").
+// Send is equivalent to calling Msg(""). It can be thought of as a Flush.
 //
 // NOTICE: once this method is called, the Event should be disposed.
 func (zle *zerologEvent) Send() {

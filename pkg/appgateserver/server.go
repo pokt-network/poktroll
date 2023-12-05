@@ -12,18 +12,21 @@ import (
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	sdkclient "github.com/cosmos/cosmos-sdk/client"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
-	blocktypes "github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client"
+	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
+// SigningInformation is a struct that holds information related to the signing
+// of relay requests, used by the appGateServer to determine how they will sign
+// relay requests (with either their own ring or the rign of the application).
 type SigningInformation struct {
 	// SelfSigning indicates whether the server is running in self-signing mode
 	SelfSigning bool
@@ -53,16 +56,13 @@ type appGateServer struct {
 	// signing information holds the signing key and application address for the server
 	signingInformation *SigningInformation
 
-	// ringCache is a cache of the public keys used to create the ring for a given application
-	// they are stored in a map of application address to a slice of points on the secp256k1 curve
-	// TODO(@h5law): subscribe to on-chain events to update this cache as the ring changes over time
-	ringCache      map[string][]ringtypes.Point
-	ringCacheMutex *sync.RWMutex
+	// ringCache is used to obtain and store the ring for the application.
+	ringCache crypto.RingCache
 
 	// clientCtx is the client context for the application.
 	// It is used to query for the application's account to unmarshal the supplier's account
 	// and get the public key to verify the relay response signature.
-	clientCtx sdkclient.Context
+	clientCtx querytypes.Context
 
 	// sessionQuerier is the querier for the session module.
 	// It used to get the current session for the application given a requested service.
@@ -77,15 +77,11 @@ type appGateServer struct {
 
 	// accountQuerier is the querier for the account module.
 	// It is used to get the the supplier's public key to verify the relay response signature.
-	accountQuerier accounttypes.QueryClient
-
-	// applicationQuerier is the querier for the application module.
-	// It is used to get the ring for a given application address.
-	applicationQuerier apptypes.QueryClient
+	accountQuerier client.AccountQueryClient
 
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
-	blockClient blocktypes.BlockClient
+	blockClient client.BlockClient
 
 	// listeningEndpoint is the endpoint that the appGateServer will listen on.
 	listeningEndpoint *url.URL
@@ -99,19 +95,19 @@ type appGateServer struct {
 	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
-// NewAppGateServer constructs a new appGateServer.
+// NewAppGateServer creates a new appGateServer instance with the given dependencies.
 //
 // Required dependencies:
 // - polylog.Logger
 // - sdkclient.Context
-// - blocktypes.BlockClient
+// - client.BlockClient
+// - client.AccountQueryClient
+// - crypto.RingCache
 func NewAppGateServer(
 	deps depinject.Config,
 	opts ...appGateServerOption,
 ) (*appGateServer, error) {
 	app := &appGateServer{
-		ringCacheMutex:       &sync.RWMutex{},
-		ringCache:            make(map[string][]ringtypes.Point),
 		currentSessions:      make(map[string]*sessiontypes.Session),
 		supplierAccountCache: make(map[string]cryptotypes.PubKey),
 	}
@@ -121,6 +117,8 @@ func NewAppGateServer(
 		&app.logger,
 		&app.clientCtx,
 		&app.blockClient,
+		&app.accountQuerier,
+		&app.ringCache,
 	); err != nil {
 		return nil, err
 	}
@@ -155,9 +153,9 @@ func NewAppGateServer(
 	}
 	app.signingInformation.SigningKey = signingKey
 
-	app.sessionQuerier = sessiontypes.NewQueryClient(app.clientCtx)
-	app.accountQuerier = accounttypes.NewQueryClient(app.clientCtx)
-	app.applicationQuerier = apptypes.NewQueryClient(app.clientCtx)
+	clientCtx := cosmosclient.Context(app.clientCtx)
+
+	app.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil

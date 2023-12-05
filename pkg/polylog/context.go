@@ -3,7 +3,7 @@ package polylog
 import "context"
 
 // CtxKey is the key used to store the polylog.Logger in a context.Context. This
-// is **independant** of any logger-implementation-specific context key that ay
+// is **independant** of any logger-implementation-specific context key that may
 // be used internal to any of the logger implementations. Polylog attempts to
 // provide a ubiquitous interface for storing and retrieving loggers from the
 // context but also to integrate with the underlying logger implementations as
@@ -20,7 +20,7 @@ const CtxKey = "polylog/context"
 // neither be included in the build nor executed. If no such import exists, the
 // polyzero package can be imported for side effects only, e.g.:
 //
-// import _ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+//	import _ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 var DefaultContextLogger Logger
 
 // Ctx returns the Logger associated with the ctx. If no logger is associated,
