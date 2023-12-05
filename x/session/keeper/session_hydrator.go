@@ -175,12 +175,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 		logger.Info("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sessionIdBz, err := hex.DecodeString(sh.session.SessionId)
-		if err != nil {
-			return sdkerrors.Wrapf(types.ErrSessionHydration, "failed to decode session ID string %s: %v", sh.session.SessionId, err)
-		}
-
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sessionIdBz)
+		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
 	}
 
 	return nil
