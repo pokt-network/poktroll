@@ -18,7 +18,7 @@ jobs:
         run: |
           # curl https://get.ignite.com/cli! | bash
           wget https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz
-          tar -xzf ignite_0.27.1_linux_amd64.tar.gz
+          tar -xzf ignite_0.27.2_linux_amd64.tar.gz
           sudo mv ignite /usr/local/bin/ignite
           ignite version
 
