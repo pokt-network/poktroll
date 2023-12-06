@@ -53,7 +53,8 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 	currentSession := sdk.serviceSessionSuppliers[serviceId][appAddress]
 
 	// Return the current session's SuppliersEndpoints if the session is still valid.
-	if latestBlockHeight < currentSession.Session.Header.SessionEndBlockHeight {
+	if currentSession.Session != nil &&
+		latestBlockHeight < currentSession.Session.Header.SessionEndBlockHeight {
 		return currentSession, nil
 	}
 
