@@ -2,6 +2,7 @@ package polyzero
 
 import (
 	"context"
+	"os"
 
 	"github.com/rs/zerolog"
 
@@ -17,11 +18,20 @@ type zerologLogger struct {
 }
 
 // NewLogger constructs a new zerolog-backed logger which conforms to the
-// polylog.Logger interface.
+// polylog.Logger interface. By default, the logger is configured to write to
+// os.Stderr and log at the Debug level.
+//
+// TODO_IMPROVE/TODO_COMMUNITY: Add `NewProductionLogger`, `NewDevelopmentLogger`,
+// and `NewExampleLogger` functions with reasonable defaults the their respective
+// environments; conceptually similar to the respective analogues in zap.
+// See: https://pkg.go.dev/github.com/uber-go/zap#hdr-Configuring_Zap.
 func NewLogger(
 	opts ...polylog.LoggerOption,
 ) polylog.Logger {
-	ze := &zerologLogger{}
+	ze := &zerologLogger{
+		level:  zerolog.DebugLevel,
+		Logger: zerolog.New(os.Stderr),
+	}
 
 	for _, opt := range opts {
 		opt(ze)
