@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -16,7 +15,8 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 		return nil, err
 	}
 
-	log.Printf("DEBUG: Unmarshaling relay request...")
+	sync.logger.Debug().Msg("unmarshaling relay request")
+
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(requestBz); err != nil {
 		log.Printf("DEBUG: Unmarshaling relay request failed: %v", err)

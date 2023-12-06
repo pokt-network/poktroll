@@ -2,14 +2,16 @@ package relayer
 
 import (
 	"context"
-	"log"
 
 	"cosmossdk.io/depinject"
+
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
 // It starts and stops the RelayerProxy and provide the served relays observable to the miner.
 type relayMiner struct {
+	logger                 polylog.Logger
 	relayerProxy           RelayerProxy
 	miner                  Miner
 	relayerSessionsManager RelayerSessionsManager
@@ -23,7 +25,9 @@ type relayMiner struct {
 //   - Miner
 //   - RelayerSessionsManager
 func NewRelayMiner(ctx context.Context, deps depinject.Config) (*relayMiner, error) {
-	rel := &relayMiner{}
+	rel := &relayMiner{
+		logger: polylog.Ctx(ctx),
+	}
 
 	if err := depinject.Inject(
 		deps,
@@ -48,18 +52,18 @@ func NewRelayMiner(ctx context.Context, deps depinject.Config) (*relayMiner, err
 func (rel *relayMiner) Start(ctx context.Context) error {
 	// relayerSessionsManager.Start does not block.
 	// Set up the session (proof/claim) lifecycle pipeline.
-	log.Println("INFO: Starting relayer sessions manager...")
+	rel.logger.Info().Msg("starting relayer sessions manager")
 	rel.relayerSessionsManager.Start(ctx)
 
 	// Start the flow of relays by starting relayer proxy.
 	// This is a blocking call as it waits for the waitgroup in relayerProxy.Start()
 	// that starts all the relay servers to be done.
-	log.Println("INFO: Starting relayer proxy...")
+	rel.logger.Info().Msg("starting relayer proxy")
 	if err := rel.relayerProxy.Start(ctx); err != nil {
 		return err
 	}
 
-	log.Println("INFO: Relayer proxy stopped; exiting")
+	rel.logger.Info().Msg("relayer proxy stopped; exiting")
 	return nil
 }
 

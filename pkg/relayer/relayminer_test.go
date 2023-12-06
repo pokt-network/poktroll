@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -21,7 +22,7 @@ func TestRelayMiner_StartAndStop(t *testing.T) {
 	mrObs, _ := channel.NewObservable[*relayer.MinedRelay]()
 	minedRelaysObs := relayer.MinedRelaysObservable(mrObs)
 
-	ctx := context.Background()
+	ctx := polyzero.NewLogger().WithContext(context.Background())
 	relayerProxyMock := testrelayer.NewMockOneTimeRelayerProxy(
 		ctx, t,
 		servedRelaysObs,

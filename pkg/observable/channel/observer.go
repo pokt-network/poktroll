@@ -2,11 +2,12 @@ package channel
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 const (
@@ -86,14 +87,17 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 	defer obsvr.observerMu.Unlock()
 
 	if obsvr.isClosed {
+		// Get a context, eihter from the observer or from the background to get
+		// a reference to the logger.
+		ctx := obsvr.ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		logger := polylog.Ctx(ctx)
+
 		// log the fact that this case was encountered such that an extreme change
 		// in its frequency would be obvious.
-		// TODO_TECHDEBT: integrate with structured logger once available
-		// TODO_CONSIDERATION: alternative perspective:
-		//   1. this is library code; prefer fewer external dependencies, esp. I/O
-		//   2. the stdlib log pkg is pretty good, idiomatic, and globally
-		//      configurable; perhaps it is sufficient
-		log.Printf("%s", observable.ErrObserverClosed.Wrap("WARN: redundant unsubscribe"))
+		logger.Warn().Err(observable.ErrObserverClosed).Msg("redundant unsubscribe")
 		return
 	}
 
