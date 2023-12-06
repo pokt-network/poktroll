@@ -1,0 +1,90 @@
+pocket:
+  # URL of Pocket node that will be used to query the network.
+  query_node_url: tcp://localhost:36657
+  # URL of Pocket node that will be used to submit transactions.
+  network_node_url: tcp://127.0.0.1:36657
+
+# Name of the key from keyring that will be used to sign messages.
+# The key should be the same key that is staked for this RelayMiner.
+signing_key_name: servicer1
+
+# Proxies are endpoints that expose different suppliers to the internet.
+# 
+# TODO_CONSIDERATION: if there are 0 suppliers point to the proxy defined in that map, don't enable the port BUT log a warning that the endpoint is not used so port is not exposed.
+# TODO_CONSIDERATION: if supplier is referencing a proxy that has a different type, throw an error. (this should make it easier to avoid confusion/potential configuration errors if unsupported proxy is referenced) 
+# TODO_DISCUSS: I changed map for an array, with each element having a "name" field. That way, it is evident what we are referencing.
+proxies:
+    # Name of the proxy. It will be used to reference in a supplier. Must be unique.
+    # Required.
+    # 
+    # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially become handy in future. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names. Not necessary though.
+  - name: http-example
+    # Hostname to open port on. Use 0.0.0.0 in containerized env, 127.0.0.1 with reverse-proxy when there's another process on localhost that can be used as a reverse proxy (nginx, apache, traefik, etc).
+    # Required (at least for http, ws, tcp?)
+    # 
+    # TODO_IMPROVE: We can add unix sockets, in addition to host+port. That is a premature optimization as of now, but can be explored in future. 
+    host: 127.0.0.1
+    # Which port to open.
+    # Required (at least for http, ws, tcp?)
+    port: 8080
+    # Type of proxy: can be one of http, ws, tcp. MUST match type of the supplier.
+    # Required.
+    type: http 
+
+  # TODO_IMPROVE: No need to implement HTTPs, but this is how it could potentially look
+  # - name: example-how-we-can-support-https
+  #   host: 0.0.0.0
+  #   port: 8443
+  #   type: https
+  #   tls:
+  #     certificate: /path/to/crt
+  #     key: /path/to/key
+
+# Suppliers are different services that can be offered through RelayMiner. When supplier is configured to use a proxy and 
+# staked appropriately, the relays will start flowing through RelayMiner.
+suppliers:
+    # Name of the supplier offered to the network.
+    # Must be unique.
+    # Required.
+  - name: ethereum
+    # Type of how supplier offers service through the network.
+    # Must match the type of the proxy the supplier is connected to.
+    # Required.
+    type: http
+    # Configuration of the service offered through RelayMiner.
+    #
+    # TODO_CONSIDERATION: it is possible the schema of `service_config` will be different depending on the type (e.g. `tcp` won't have an authenticaion)
+    service_config:
+      # URL RelayMiner proxies the requests to.
+      # Required for http, ws... TCP? If tcp is configured via a URL (tcp://), then for tcp too.
+      url: http://anvil.servicer:8545
+      # Authentication for the service. HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+      # Optional.
+      authentication:
+        username: user
+        password: pwd
+      
+      # TODO_IMPROVE: since this is not supported in mainnet, we don't need to support this now, but some services authenticate via a header.
+      headers: {}
+        # For example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
+        # Authorization: Bearer <PASSWORD>
+    
+    # A list of hosts HTTP service is offered on. When linked to the proxy, that hostname is going to be used to route the request to the correct supplier.
+    # That hostname is what user should stake the supplier for.
+    # Required.
+    # Must be unique within a proxy/proxies it set up on. In other words, one proxy can't offer the same hostname more than once.
+    #
+    # TODO_CONSIDERATION: automatically add the `name` of the supplier to hosts for potential troubleshooting/debugging purposes. See below.
+    hosts:
+      - ethereum.devnet1.poktroll.com 
+      - ethereum # <- that is the part that can be added automatically
+    # Names of proxies that this supplier is connected to. The supplier will be reached through the proxies listed here.
+    # Required.
+    # 
+    # TODO_DISCUSS: we can make this just a string instead of array to make implementation easier. I feel like having multiple proxies can be hard~er to implement as an amount of different variables increases. We can always add an array later if needed.
+    proxy_names:
+      - frontend-one-http-endpoint # when the relayminer server builder runs
+  - name: 7b-llm-model
+    type: http
+    service_config:
+      url: http://llama-endpoint
