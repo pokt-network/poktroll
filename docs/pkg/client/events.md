@@ -9,7 +9,10 @@
 - [Overview](#overview)
 - [Architecture Diagrams](#architecture-diagrams)
   - [Components](#components)
+    - [Events Query Client](#events-query-client)
+    - [Events Replay Client](#events-replay-client)
   - [Subscriptions](#subscriptions)
+  - [Events Decoding](#events-decoding)
 - [Installation](#installation)
 - [Features](#features)
 - [Usage (`EventsQueryClient`)](#usage-eventsqueryclient)
@@ -44,7 +47,12 @@ and easy-to-use way to get events from the chain. Highlights:
 
 ## Architecture Diagrams
 
+The following section contains numerous diagrams that detail the architecture
+of the different aspects of the `events` package.
+
 ### Components
+
+The following legend describes how to read the following component diagrams.
 
 ```mermaid
 ---
@@ -62,6 +70,8 @@ flowchart
   a =="A returns C from A#MethodName()"==> c
   b -."B uses D via network IO".-> d
 ```
+
+#### Events Query Client
 
 ```mermaid
 ---
@@ -96,48 +106,41 @@ flowchart
   q1_conn -.-> sub
 ```
 
+#### Events Replay Client
+
 ```mermaid
 ---
 title: EventsReplayClient Components
 ---
 
-flowchart
-  subgraph chain[Pocket Network]
-    c1_md[Action]
-  end
-
+flowchart TD
   subgraph erc[EventsReplayClient]
-    subgraph eqc[EventsQueryClient]
-      r1_qs[Event Query String]
-      r1_qe[Websocket URL]
-    end
-    r1_rt(retryPublishEventsFactory)
-    subgraph dec[EventBytesDecoder]
-      r1_df[Decoder Function]
-    end
-    r1_ob[LatestReplayObservable]
-    r1_pb[LatestReplayObservablePublisher]
+    r1_ob[Event Replay Observable Cache]
   end
 
-  subgraph con[Consumer]
+  subgraph chain[CometBFT Node]
+    c2_md[Subscribe Endpoint]
+  end
+
+    subgraph con[Consumer]
     c1_ob[Replay Observable]
     c1_ev[Events]
   end
 
-  c1_md -."#EmitTypedEvent".-> eqc
+  eqc[Events Query Client]
 
-  eqc --"retry.OnError"--> r1_rt
-  r1_df --"Decoded Event"--> r1_rt
-  r1_rt -."#EventBytes".-> eqc
-  r1_rt --"LatestReplayObservable"-->r1_pb
-  r1_pb --> r1_ob
+  c1_ob --"#EventsSequence()"--> erc
+  c1_ev --"#LastNEvents()"--> erc
 
-  eqc --"Serialized Event"--> r1_df
-  r1_ob --"#EventsSequence"--> c1_ob
-  r1_ob --"#LastNEvents"--> c1_ev
+  erc --"LatestReplayObservable"-->r1_ob
+  erc --"#EventBytes()"--> eqc
+
+  eqc -.-> chain
 ```
 
 ### Subscriptions
+
+<!-- TODO(@bryanchriswhite): ADD LEGEND -->
 
 ```mermaid
 ---
@@ -177,6 +180,29 @@ flowchart
 
   sub -.-> q1_conn
   sub -.-> q2_conn
+```
+
+### Events Decoding
+
+<!-- TODO(@h5law): ADD LEGEND -->
+
+```mermaid
+---
+title: Event Bytes To Type Event Sequence
+---
+
+sequenceDiagram
+    participant Q as EventsQueryClient
+    participant D as EventDecoder
+    Q ->>+ D: EventBytes
+    D ->> D: DecoderFn()
+    D ->>- Q: resubscribeOnError()
+    participant P as Replay Observable Cache Publish Channel
+    participant O as Replay Observable Cache
+    destroy O
+    P ->> O: Typed Events
+    destroy P
+    D ->> P: Typed Events
 ```
 
 ## Installation
