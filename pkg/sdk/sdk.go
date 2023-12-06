@@ -13,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ POKTRollSDK = (*poktrollSDK)(nil)
@@ -30,6 +31,7 @@ type POKTRollSDKConfig struct {
 
 // poktrollSDK is the implementation of the POKTRollSDK.
 type poktrollSDK struct {
+	logger polylog.Logger
 	config *POKTRollSDKConfig
 
 	// signingKey is the scalar representation of the private key to be used
@@ -82,6 +84,7 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 
 	if err := depinject.Inject(
 		deps,
+		&sdk.logger,
 		&sdk.ringCache,
 		&sdk.sessionQuerier,
 		&sdk.accountQuerier,

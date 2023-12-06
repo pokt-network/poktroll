@@ -11,6 +11,16 @@ import (
 // TODO_INVESTIGATE: check whether the pkg dependency tree includes all logging
 // libraries.
 
+// Level is the minimal interface required to express and convert between log levels
+// of the underlying logging libraries.
+type Level interface {
+	// String returns the string representation of the underlying Level.
+	String() string
+	// Int returns the int representation of the underlying Level. Level types are
+	// typically defined as enums of a concrete type that implement #String().
+	Int() int
+}
+
 // Logger is an interface that exposes methods for each supported log level, each
 // of which returns an Event.
 type Logger interface {
@@ -47,14 +57,13 @@ type Logger interface {
 	//
 	// TODO_IMPROVE/TODO_COMMUNITY: support #UpdateContext() and  update this
 	// godoc to include #UpdateContext() usage example.
-	//
-	// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext
+	// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext.
 	WithContext(ctx context.Context) context.Context
 
 	// WithLevel starts a new message (event) with level.
 	//
 	// You must call Msg on the returned event in order to send the event.
-	WithLevel(level int) Event
+	WithLevel(level Level) Event
 
 	// Write implements the io.Writer interface. This is useful to set as a writer
 	// for the standard library log.
@@ -66,11 +75,12 @@ type Logger interface {
 // adding fields to the event which will be rendered in an encoding-appropriate
 // way in the log output.
 //
-// TODO_IMPROVE/TODO_COMMUNITY: support #Dict(), #Stack(), #Any() fields.
+// TODO_IMPROVE/TODO_COMMUNITY: support #Dict(), #Stack(), #Any() type methods.
 // See: https://pkg.go.dev/github.com/rs/zerolog#Event
 //
-// TODO_IMPROVE/TODO_COMMUNITY: support #UpdateContext() and  update #Ctx() godoc.
-// See: https://pkg.go.dev/github.com/rs/zerolog#Logger.UpdateContext
+// TODO_IMPROVE/TODO_COMMUNITY: support #Ctx() and #GetCtx() methods.
+// See: https://pkg.go.dev/github.com/rs/zerolog#Event.Ctx and
+// https://pkg.go.dev/github.com/rs/zerolog#Event.Ctx.
 type Event interface {
 	// Str adds the field key with value as a string to the Event context.
 	Str(key, value string) Event

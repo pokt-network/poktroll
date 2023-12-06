@@ -2,7 +2,6 @@ package appgateserver
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/pokt-network/poktroll/pkg/partials"
@@ -19,12 +18,19 @@ func (app *appGateServer) handleSynchronousRelay(
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Debug().Msg("determining request type")
+
 	// Get the type of the request by doing a partial unmarshal of the payload
-	log.Printf("DEBUG: Determining request type...")
-	requestType, err := partials.GetRequestType(payloadBz)
+	requestType, err := partials.GetRequestType(ctx, payloadBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
+
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Debug().
+		Str("request_type", requestType.String()).
+		Msg("got request type")
 
 	sessionSuppliers, err := app.sdk.GetSessionSupplierEndpoints(ctx, appAddress, serviceId)
 	if err != nil {
@@ -42,8 +48,11 @@ func (app *appGateServer) handleSynchronousRelay(
 		return err
 	}
 
+	app.logger.Debug().
+		Str("relay_response_payload", string(relayResponse.Payload)).
+		Msg("writing relay response payload")
+
 	// Reply with the RelayResponse payload.
-	log.Printf("DEBUG: Writing relay response payload: %s", string(relayResponse.Payload))
 	if _, err := writer.Write(relayResponse.Payload); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}

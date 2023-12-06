@@ -18,6 +18,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
 )
 
@@ -46,6 +47,18 @@ func SupplyConfig(
 		}
 	}
 	return deps, nil
+}
+
+// NewSupplyLoggerFromCtx supplies a depinject config with a polylog.Logger instance
+// populated from the given context.
+func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		return depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx))), nil
+	}
 }
 
 // NewSupplyEventsQueryClientFn returns a new function which constructs an

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net/http"
 
 	cryptocomet "github.com/cometbft/cometbft/crypto"
@@ -78,7 +77,9 @@ func (sdk *poktrollSDK) SendRelay(
 		Body:   relayRequestReader,
 	}
 
-	log.Printf("DEBUG: Sending signed relay request to %s", supplierEndpoint.Url)
+	sdk.logger.Debug().
+		Str("supplier_url", supplierEndpoint.Url.String()).
+		Msg("sending relay request")
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error sending relay request: %s", err)

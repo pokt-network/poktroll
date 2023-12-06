@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -11,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -22,6 +22,8 @@ type sessionsTreesMap = map[int64]map[string]relayer.SessionTree
 // relayerSessionsManager is an implementation of the RelayerSessions interface.
 // TODO_TEST: Add tests to the relayerSessionsManager.
 type relayerSessionsManager struct {
+	logger polylog.Logger
+
 	relayObs relayer.MinedRelaysObservable
 
 	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
@@ -58,6 +60,7 @@ func NewRelayerSessions(
 	opts ...relayer.RelayerSessionsManagerOption,
 ) (relayer.RelayerSessionsManager, error) {
 	rs := &relayerSessionsManager{
+		logger:          polylog.Ctx(ctx),
 		sessionsTrees:   make(sessionsTreesMap),
 		sessionsTreesMu: &sync.Mutex{},
 	}
@@ -189,7 +192,9 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 	sessionsTreesEndingAtBlockHeight, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 	if !ok {
-		log.Printf("DEBUG: no session tree found for sessions ending at height %d", sessionHeader.SessionEndBlockHeight)
+		rs.logger.Debug().
+			Int64("session_end_block_height", sessionHeader.SessionEndBlockHeight).
+			Msg("no session tree found for ending sessions")
 		return
 	}
 
@@ -242,12 +247,14 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
-		log.Printf("ERROR: failed to ensure session tree: %s\n", err)
+		// TODO_TECHDEBT: log additional info?
+		rs.logger.Error().Err(err).Msg("failed to ensure session tree")
 		return err, false
 	}
 
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
-		log.Printf("ERROR: failed to update smt: %s\n", err)
+		// TODO_TECHDEBT: log additional info?
+		rs.logger.Error().Err(err).Msg("failed to update smt")
 		return err, false
 	}
 

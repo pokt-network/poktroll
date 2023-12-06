@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
 )
 
@@ -39,6 +39,8 @@ type SigningInformation struct {
 // is running their own instance of the appGateServer or they are sending requests to a gateway running an
 // instance of the appGateServer, they will need to either include the application address in the request or not.
 type appGateServer struct {
+	logger polylog.Logger
+
 	// signing information holds the signing key and application address for the server
 	signingInformation *SigningInformation
 
@@ -60,6 +62,13 @@ type appGateServer struct {
 }
 
 // NewAppGateServer creates a new appGateServer instance with the given dependencies.
+//
+// Required dependencies:
+// - polylog.Logger
+// - sdkclient.Context
+// - client.BlockClient
+// - client.AccountQueryClient
+// - crypto.RingCache
 func NewAppGateServer(
 	deps depinject.Config,
 	opts ...appGateServerOption,
@@ -68,6 +77,7 @@ func NewAppGateServer(
 
 	if err := depinject.Inject(
 		deps,
+		&app.logger,
 		&app.clientCtx,
 		&app.sdk,
 	); err != nil {
@@ -134,7 +144,7 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 // and the other (possible) path segments are the JSON RPC request path.
 // TODO_TECHDEBT: Revisit the requestPath above based on the SDK that'll be exposed in the future.
 func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
+	ctx := app.logger.WithContext(request.Context())
 
 	// Extract the serviceId from the request path.
 	path := request.URL.Path
@@ -144,14 +154,19 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	requestPayloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		app.replyWithError(
+			ctx,
 			requestPayloadBz,
 			writer,
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
-		log.Printf("ERROR: failed reading relay request body: %s", err)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Err(err).Msg("failed reading relay request body")
 		return
 	}
-	log.Printf("DEBUG: relay request body: %s", string(requestPayloadBz))
+	app.logger.Debug().
+		Str("service_id", serviceId).
+		Str("payload", string(requestPayloadBz)).
+		Msg("handling relay")
 
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
@@ -159,8 +174,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(requestPayloadBz, writer, ErrAppGateMissingAppAddress)
-		log.Print("ERROR: no application address provided")
+		app.replyWithError(ctx, requestPayloadBz, writer, ErrAppGateMissingAppAddress)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Msg("no application address provided")
 		return
 	}
 
@@ -173,12 +189,14 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// concurrent requests from numerous applications?
 	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, requestPayloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(requestPayloadBz, writer, err)
-		log.Printf("ERROR: failed handling relay: %s", err)
+		app.replyWithError(ctx, requestPayloadBz, writer, err)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Err(err).Msg("failed handling relay")
 		return
 	}
 
-	log.Print("INFO: request serviced successfully")
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Info().Msg("request serviced successfully")
 }
 
 // validateConfig validates the appGateServer configuration.

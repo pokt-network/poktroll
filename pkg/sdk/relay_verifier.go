@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 
-	"github.com/cometbft/cometbft/crypto"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -30,14 +29,13 @@ func (sdk *poktrollSDK) verifyResponse(
 	supplierSignature := relayResponse.Meta.SupplierSignature
 
 	// Get the relay response signable bytes and hash them.
-	responseBz, err := relayResponse.GetSignableBytes()
+	responseSignableBz, err := relayResponse.GetSignableBytes()
 	if err != nil {
 		return err
 	}
-	hash := crypto.Sha256(responseBz)
 
 	// Verify the relay response signature.
-	if !supplierPubKey.VerifySignature(hash, supplierSignature) {
+	if !supplierPubKey.VerifySignature(responseSignableBz, supplierSignature) {
 		return ErrSDKInvalidRelayResponseSignature
 	}
 

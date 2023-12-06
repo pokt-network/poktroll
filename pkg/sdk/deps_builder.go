@@ -13,6 +13,7 @@ import (
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // buildDeps builds the dependencies for the POKTRollSDK if they are not provided
@@ -26,6 +27,9 @@ func (sdk *poktrollSDK) buildDeps(
 
 	// Have a new depinject config
 	deps := depinject.Configs()
+
+	// Supply the logger
+	deps = depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx)))
 
 	// Create and supply the events query client
 	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)

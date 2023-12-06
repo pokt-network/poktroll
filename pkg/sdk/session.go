@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"context"
-	"log"
 	"net/url"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -85,7 +84,10 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 			for _, endpoint := range service.Endpoints {
 				url, err := url.Parse(endpoint.Url)
 				if err != nil {
-					log.Printf("error parsing url: %s", err)
+					sdk.logger.Error().
+						Str("url", endpoint.Url).
+						Err(err).
+						Msg("failed to parse url")
 					continue
 				}
 
