@@ -14,9 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: install ignite
-        # If this step fails due to ignite.com failing, see #116 for a temporary workaround
+        # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
         run: |
-          curl https://get.ignite.com/cli! | bash
+          # curl https://get.ignite.com/cli! | bash
+          wget https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz
+          sudo mv ignite /usr/local/bin/ignite
+          tar -xzf ignite_0.27.1_linux_amd64.tar.gz
           ignite version
 
       - uses: actions/checkout@v3
