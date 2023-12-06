@@ -45,12 +45,12 @@ type poktrollSDK struct {
 	// It used to get the current session for the application given a requested service.
 	sessionQuerier client.SessionQueryClient
 
-	// sessionMu is a mutex to protect latestSessions map reads and updates.
-	sessionMu sync.RWMutex
+	// serviceSessionSuppliersMu is a mutex to protect latestSessions map reads and updates.
+	serviceSessionSuppliersMu sync.RWMutex
 
-	// latestSessions is a latest sessions map of serviceId -> {appAddress -> SessionSuppliers}
-	// based on the latest block data available.
-	latestSessions map[string]map[string]*sessionSuppliers
+	// serviceSessionSuppliers is a map of serviceId -> {appAddress -> SessionSuppliers}
+	// for a specific session
+	serviceSessionSuppliers map[string]map[string]*SessionSuppliers
 
 	// accountQuerier is the querier for the account module.
 	// It is used to get the the supplier's public key to verify the relay response signature.
@@ -67,9 +67,9 @@ type poktrollSDK struct {
 
 func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK, error) {
 	sdk := &poktrollSDK{
-		config:               config,
-		latestSessions:       make(map[string]map[string]*sessionSuppliers),
-		supplierAccountCache: make(map[string]cryptotypes.PubKey),
+		config:                  config,
+		serviceSessionSuppliers: make(map[string]map[string]*SessionSuppliers),
+		supplierAccountCache:    make(map[string]cryptotypes.PubKey),
 	}
 
 	var err error

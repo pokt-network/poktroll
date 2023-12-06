@@ -38,7 +38,12 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	// Get a supplier URL and address for the given service and session.
-	supplierEndpoint, err := app.getRelayerUrl(ctx, serviceId, requestType, sessionSuppliers)
+	supplierEndpoint, err := app.getRelayerUrl(
+		ctx,
+		serviceId,
+		requestType,
+		sessionSuppliers.SuppliersEndpoints,
+	)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}

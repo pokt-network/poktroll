@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	cryptocomet "github.com/cometbft/cometbft/crypto"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -17,7 +16,7 @@ import (
 // the relay request.
 func (sdk *poktrollSDK) SendRelay(
 	ctx context.Context,
-	supplierEndpoint *SupplierEndpoint,
+	supplierEndpoint *SingleSupplierEndpoint,
 	request *http.Request,
 ) (response *types.RelayResponse, err error) {
 	payloadBz, err := io.ReadAll(request.Body)
@@ -48,12 +47,11 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("getting signable bytes: %s", err)
 	}
 
-	hash := cryptocomet.Sha256(signableBz)
-	signature, err := signer.Sign(hash)
+	requestSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("signing relay: %s", err)
 	}
-	relayRequest.Meta.Signature = signature
+	relayRequest.Meta.Signature = requestSig
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	cdc := types.ModuleCdc

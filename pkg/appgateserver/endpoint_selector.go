@@ -16,8 +16,8 @@ func (app *appGateServer) getRelayerUrl(
 	ctx context.Context,
 	serviceId string,
 	rpcType sharedtypes.RPCType,
-	supplierEndpoints []*sdk.SupplierEndpoint,
-) (supplierEndpoint *sdk.SupplierEndpoint, err error) {
+	supplierEndpoints []*sdk.SingleSupplierEndpoint,
+) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
 	for _, supplierEndpoint := range supplierEndpoints {
 		// Skip services that don't match the requested serviceId.
 		if supplierEndpoint.Header.Service.Id != serviceId {

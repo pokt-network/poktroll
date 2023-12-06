@@ -8,19 +8,19 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// sessionSuppliers is the structure that represents a session's end block height
+// SessionSuppliers is the structure that represents a session's end block height
 // and its matching suppliers.
-type sessionSuppliers struct {
+type SessionSuppliers struct {
 	// SessionEndBlockHeight is the session's end block height that helps
 	// determine if the session is still valid without looking into SupplierEndpoints slice.
-	SessionEndBlockHeight int64
-	SuppliersEndpoints    []*SupplierEndpoint
+	Session            *sessiontypes.Session
+	SuppliersEndpoints []*SingleSupplierEndpoint
 }
 
-// SupplierEndpoint is the structure that represents a supplier's endpoint
+// SingleSupplierEndpoint is the structure that represents a supplier's endpoint
 // augmented with the session's header and the supplier's address for easy
 // access to the needed information when sending a relay request.
-type SupplierEndpoint struct {
+type SingleSupplierEndpoint struct {
 	Url             *url.URL
 	RpcType         sharedtypes.RPCType
 	SupplierAddress string
@@ -33,28 +33,28 @@ type SupplierEndpoint struct {
 func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 	ctx context.Context,
 	appAddress, serviceId string,
-) ([]*SupplierEndpoint, error) {
-	sdk.sessionMu.RLock()
-	defer sdk.sessionMu.RUnlock()
+) (*SessionSuppliers, error) {
+	sdk.serviceSessionSuppliersMu.RLock()
+	defer sdk.serviceSessionSuppliersMu.RUnlock()
 
 	latestBlockHeight := sdk.blockClient.LatestBlock(ctx).Height()
 
 	// Create the latestSessions map entry for the serviceId if it doesn't exist.
-	if _, ok := sdk.latestSessions[serviceId]; !ok {
-		sdk.latestSessions[serviceId] = map[string]*sessionSuppliers{}
+	if _, ok := sdk.serviceSessionSuppliers[serviceId]; !ok {
+		sdk.serviceSessionSuppliers[serviceId] = map[string]*SessionSuppliers{}
 	}
 
 	// Create the latestSessions[serviceId] map entry for the appAddress if it doesn't exist.
-	if _, ok := sdk.latestSessions[serviceId][appAddress]; !ok {
-		sdk.latestSessions[serviceId][appAddress] = &sessionSuppliers{}
+	if _, ok := sdk.serviceSessionSuppliers[serviceId][appAddress]; !ok {
+		sdk.serviceSessionSuppliers[serviceId][appAddress] = &SessionSuppliers{}
 	}
 
 	// currentSession is guaranteed to exist after the checks above.
-	currentSession := sdk.latestSessions[serviceId][appAddress]
+	currentSession := sdk.serviceSessionSuppliers[serviceId][appAddress]
 
 	// Return the current session's SuppliersEndpoints if the session is still valid.
-	if latestBlockHeight < currentSession.SessionEndBlockHeight {
-		return currentSession.SuppliersEndpoints, nil
+	if latestBlockHeight < currentSession.Session.Header.SessionEndBlockHeight {
+		return currentSession, nil
 	}
 
 	// Query for the current session.
@@ -68,9 +68,9 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 		return nil, err
 	}
 
-	// Override the old SessionSuppliers and constructs the new one.
-	currentSession.SessionEndBlockHeight = session.Header.SessionEndBlockHeight
-	currentSession.SuppliersEndpoints = []*SupplierEndpoint{}
+	// Override the old Session and SessionSuppliers and construct the new one.
+	currentSession.Session = session
+	currentSession.SuppliersEndpoints = []*SingleSupplierEndpoint{}
 
 	for _, supplier := range session.Suppliers {
 		for _, service := range supplier.Services {
@@ -93,7 +93,7 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 
 				currentSession.SuppliersEndpoints = append(
 					currentSession.SuppliersEndpoints,
-					&SupplierEndpoint{
+					&SingleSupplierEndpoint{
 						Url:             url,
 						RpcType:         endpoint.RpcType,
 						SupplierAddress: supplier.Address,
@@ -104,5 +104,5 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 		}
 	}
 
-	return currentSession.SuppliersEndpoints, nil
+	return currentSession, nil
 }
