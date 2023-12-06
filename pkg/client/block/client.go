@@ -15,7 +15,12 @@ const (
 	// the chain.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	committedBlocksQuery = "tm.event='NewBlock'"
-	replayObsBufferSize  = 1 // the amount of events we want before they are emitted
+	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the block
+	// client struct that defaults to this but can be overridden via an option
+	// in future work.
+	// defaultBlocksReplayLimit is the number of blocks that the replay
+	// observable returned by LastNBlocks() will be able to replay.
+	defaultBlocksReplayLimit = 100
 )
 
 // NewBlockClient creates a new block client from the given dependencies and
@@ -40,8 +45,8 @@ func NewBlockClient(
 		deps,
 		cometWebsocketURL,
 		committedBlocksQuery,
-		newCometBlockEventFactoryFn(ctx),
-		replayObsBufferSize,
+		newCometBlockEventFactoryFn(),
+		defaultBlocksReplayLimit,
 	)
 	if err != nil {
 		return nil, err
@@ -65,7 +70,7 @@ func (b *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlockR
 	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
-// LatestsNEvents returns the latest n blocks from the BockClient.
+// LatestsNBlocks returns the last n blocks observed by the BockClient.
 func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
 	return b.eventsReplayClient.LastNEvents(ctx, n)
 }

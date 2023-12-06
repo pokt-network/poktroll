@@ -239,7 +239,7 @@ func GatewayModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *ga
 	return state
 }
 
-// InitAccount initialises an Account by sending it some funds from the validator
+// InitAccount initializes an Account by sending it some funds from the validator
 // in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
@@ -260,7 +260,7 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 }
 
-// InitAccountWithSequence initialises an Account by sending it some funds from
+// InitAccountWithSequence initializes an Account by sending it some funds from
 // the validator in the network to the address provided
 func InitAccountWithSequence(
 	t *testing.T,

@@ -39,7 +39,8 @@ func (msg *MsgUndelegateFromGateway) GetSignBytes() []byte {
 
 func (msg *MsgUndelegateFromGateway) NewRedelegationEvent() *EventRedelegation {
 	return &EventRedelegation{
-		AppAddress: msg.AppAddress,
+		AppAddress:     msg.AppAddress,
+		GatewayAddress: msg.GatewayAddress,
 	}
 }
 

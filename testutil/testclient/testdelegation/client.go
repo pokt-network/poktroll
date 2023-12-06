@@ -129,7 +129,7 @@ func NewAnyTimesRedelegation(
 
 	// Create a mock redelegation that returns the provided address AnyTimes.
 	redelegation := mockclient.NewMockRedelegation(ctrl)
-	redelegation.EXPECT().AppAddress().Return(appAddress).AnyTimes()
+	redelegation.EXPECT().GetAppAddress().Return(appAddress).AnyTimes()
 
 	return redelegation
 }

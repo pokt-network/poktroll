@@ -73,11 +73,11 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 			// Verify that the Redelegation event is valid and that the address
 			// of the Redelegation event alternates between app1 and app2
 			if previousRedelegation != nil {
-				require.NotEqual(t, previousRedelegation.AppAddress(), change.AppAddress())
+				require.NotEqual(t, previousRedelegation.GetAppAddress(), change.GetAppAddress())
 				if previousRedelegation.AppAddress() == appAddresses[0] {
-					require.Equal(t, appAddresses[1], change.AppAddress())
+					require.Equal(t, appAddresses[1], change.GetAppAddress())
 				} else {
-					require.Equal(t, appAddresses[0], change.AppAddress())
+					require.Equal(t, appAddresses[0], change.GetAppAddress())
 				}
 			}
 			previousRedelegation = change
@@ -129,7 +129,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 }
 
 // createNetworkWithApplicationsAndGateways creates a network with 2 applications
-// and 1 gateway. It returns the network with all accoutns initialised via a
+// and 1 gateway. It returns the network with all accoutns initialized via a
 // transaction from the first validator.
 func createNetworkWithApplicationsAndGateways(
 	t *testing.T,
@@ -144,7 +144,7 @@ func createNetworkWithApplicationsAndGateways(
 	accounts := testutil.CreateKeyringAccounts(t, kr, 3)
 	ctx = ctx.WithKeyring(kr)
 
-	// Initialise all the accounts
+	// Initialize all the accounts
 	for i, account := range accounts {
 		signatureSequenceNumber := i + 1
 		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)

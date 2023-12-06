@@ -1,7 +1,6 @@
 package block
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/cometbft/cometbft/types"
@@ -32,7 +31,7 @@ func (blockEvent *cometBlockEvent) Hash() []byte {
 // that attempts to deserialize the given bytes into a comet block.
 // if the resulting block has a height of zero, assume the event was not a block
 // event and return an ErrUnmarshalBlockEvent error.
-func newCometBlockEventFactoryFn(ctx context.Context) events.NewEventsFn[client.Block] {
+func newCometBlockEventFactoryFn() events.NewEventsFn[client.Block] {
 	return func(blockMsgBz []byte) (client.Block, error) {
 		blockMsg := new(cometBlockEvent)
 		if err := json.Unmarshal(blockMsgBz, blockMsg); err != nil {

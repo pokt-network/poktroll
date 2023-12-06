@@ -108,11 +108,14 @@ type Block interface {
 
 // Redelegation is an interface which wraps the EventRedelegation event
 // emitted by the application module.
+// See: proto/pocket/application/types/event.proto#EventRedelegatio
 type Redelegation interface {
-	AppAddress() string
+	GetAppAddress() string
+	GetGatewayAddress() string
 }
 
 // EventsObservable is a replay observable for events of some type T.
+// NB: This cannot be an alias due to gomock's lack of support for generic types.
 type EventsObservable[T any] observable.ReplayObservable[T]
 
 // EventsReplayClient is an interface which provides notifications about newly received
@@ -128,7 +131,8 @@ type EventsReplayClient[T any, R observable.ReplayObservable[T]] interface {
 }
 
 // BlockReplayObservable is a defined type which is a replay observable of type Block.
-type BlockReplayObservable observable.ReplayObservable[Block]
+// NB: This cannot be an alias due to gomock's lack of support for generic types.
+type BlockReplayObservable EventsObservable[Block]
 
 // BlockClient is an interface that wraps the EventsReplayClient interface
 // specific for the EventsReplayClient[Block] implementation
@@ -146,7 +150,8 @@ type BlockClient interface {
 
 // RedelegationReplayObservable is a defined type which is a replay observable
 // of type Redelegation.
-type RedelegationReplayObservable observable.ReplayObservable[Redelegation]
+// NB: This cannot be an alias due to gomock's lack of support for generic types.
+type RedelegationReplayObservable EventsObservable[Redelegation]
 
 // DelegationClient is an interface that wraps the EventsReplayClient interface
 // specific for the EventsReplayClient[Redelegation] implementation

@@ -275,7 +275,7 @@ const (
   replayObsBufferSize = 1
 )
 
-// Define an interface to represent the onchain event
+// Define an interface to represent an arbitrary onchain event
 type EventType interface {
   GetName() string // Illustrative only; arbitrary interfaces are supported.
 }

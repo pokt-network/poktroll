@@ -92,19 +92,18 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	newEventFn NewEventsFn[T],
 	replayObsBufferSize int,
 ) (client.EventsReplayClient[T, U], error) {
-	// Initialise the mapped client
+	// Initialize the replay client
 	rClient := &replayClient[T, U]{
 		endpointURL:  cometWebsocketURL,
 		queryString:  queryString,
 		eventDecoder: newEventFn,
 	}
-	latestObsvbls,
-		latestObsvblsReplayPublishCh := channel.NewReplayObservable[U](
+	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[U](
 		ctx,
 		replayObsBufferSize,
 	)
-	rClient.replayObsCache = observable.ReplayObservable[U](latestObsvbls)
-	rClient.replayObsCachePublishCh = latestObsvblsReplayPublishCh
+	rClient.replayObsCache = observable.ReplayObservable[U](replayObsCache)
+	rClient.replayObsCachePublishCh = replayObsCachePublishCh
 
 	// Inject dependencies
 	if err := depinject.Inject(deps, &rClient.eventsClient); err != nil {

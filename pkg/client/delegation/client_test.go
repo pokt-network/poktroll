@@ -28,7 +28,8 @@ func TestDelegationClient(t *testing.T) {
 	var (
 		expectedAddress         = sample.AccAddress()
 		expectedDelegationEvent = apptypes.EventRedelegation{
-			AppAddress: expectedAddress,
+			AppAddress:     expectedAddress,
+			GatewayAddress: sample.AccAddress(),
 		}
 		ctx = context.Background()
 	)
@@ -69,7 +70,7 @@ func TestDelegationClient(t *testing.T) {
 
 				// Ensure that the observable is replayable via Last.
 				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
-				require.Equal(t, expectedAddress, lastRedelegation.AppAddress())
+				require.Equal(t, expectedAddress, lastRedelegation.GetAppAddress())
 
 				return lastRedelegation
 			},
@@ -90,7 +91,7 @@ func TestDelegationClient(t *testing.T) {
 
 			select {
 			case actualRedelegation := <-actualRedelegationCh:
-				require.Equal(t, expectedAddress, actualRedelegation.AppAddress())
+				require.Equal(t, expectedAddress, actualRedelegation.GetAppAddress())
 			case <-time.After(testTimeoutDuration):
 				t.Fatal("timed out waiting for redelegation event")
 			}

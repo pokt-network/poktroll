@@ -1,7 +1,6 @@
 package delegation
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -13,12 +12,18 @@ var _ client.Redelegation = (*redelegation)(nil)
 // redelegation wraps the EventRedelegation event emitted by the application
 // module, for use in the observable
 type redelegation struct {
-	Address string `json:"app_address"`
+	AppAddress     string `json:"app_address"`
+	GatewayAddress string `json:"gateway_address"`
 }
 
-// AppAddress returns the application address of the redelegation event
-func (d redelegation) AppAddress() string {
-	return d.Address
+// GetAppAddress returns the application address of the redelegation event
+func (d redelegation) GetAppAddress() string {
+	return d.AppAddress
+}
+
+// GetGatewayAddress returns the gateway address of the redelegation event
+func (d redelegation) GetGatewayAddress() string {
+	return d.GatewayAddress
 }
 
 // newRedelegationEventFactoryFn is a factory function that returns a
@@ -26,14 +31,14 @@ func (d redelegation) AppAddress() string {
 // struct. If the delegate struct has an empty app address then an
 // ErrUnmarshalRedelegation error is returned. Otherwise if deserialisation
 // fails then the error is returned.
-func newRedelegationEventFactoryFn(ctx context.Context) events.NewEventsFn[client.Redelegation] {
+func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 	return func(redelegationEventBz []byte) (client.Redelegation, error) {
 		redelegationEvent := new(redelegation)
 		if err := json.Unmarshal(redelegationEventBz, redelegationEvent); err != nil {
 			return nil, err
 		}
 
-		if redelegationEvent.Address == "" {
+		if redelegationEvent.AppAddress == "" || redelegationEvent.GatewayAddress == "" {
 			return nil, events.ErrEventsUnmarshalEvent.
 				Wrapf("with redelegation: %s", string(redelegationEventBz))
 		}

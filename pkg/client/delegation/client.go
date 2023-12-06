@@ -15,7 +15,12 @@ const (
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
-	replayObsBufferSize  = 1 // the amount of events we want before they are emitted
+	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the block
+	// client struct that defaults to this but can be overridden via an option
+	// in future work.
+	// defaultRedelegationsReplayLimit is the number of redelegations that the
+	// replay observable returned by LastNRedelegations() will be able to replay.
+	defaultRedelegationsReplayLimit = 100
 )
 
 // NewDelegationClient creates a new delegation client from the given
@@ -41,8 +46,8 @@ func NewDelegationClient(
 		deps,
 		cometWebsocketURL,
 		delegationEventQuery,
-		newRedelegationEventFactoryFn(ctx),
-		replayObsBufferSize,
+		newRedelegationEventFactoryFn(),
+		defaultRedelegationsReplayLimit,
 	)
 	if err != nil {
 		return nil, err
