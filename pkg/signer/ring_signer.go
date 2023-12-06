@@ -23,7 +23,7 @@ func NewRingSigner(ring *ring.Ring, privKey ringtypes.Scalar) *RingSigner {
 }
 
 // Sign uses the ring and private key to sign the message provided and returns the
-// serialised ring signature that can be deserialised and verified by the verifier
+// serialized ring signature that can be deserialized and verified by the verifier
 func (r *RingSigner) Sign(msg []byte) ([]byte, error) {
 	if len(msg) != 32 {
 		return nil, fmt.Errorf("message must be 32 bytes long, got %d", len(msg))

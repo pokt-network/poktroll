@@ -132,7 +132,7 @@ flowchart
   r1_rt --"LatestReplayObservable"-->r1_pb
   r1_pb --> r1_ob
 
-  eqc --"Serialised Event"--> r1_df
+  eqc --"Serialized Event"--> r1_df
   r1_ob --"#EventsSequence"--> c1_ob
   r1_ob --"#LastNEvents"--> c1_ev
 ```

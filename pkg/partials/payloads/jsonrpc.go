@@ -39,7 +39,7 @@ func (j PartialJSONPayload) ValidateBasic(ctx context.Context) error {
 	return err
 }
 
-// PartiallyUnmarshalJSONPayload receives a serialised payload and attempts to
+// PartiallyUnmarshalJSONPayload receives a serialized payload and attempts to
 // unmarshal it into the PartialJSONPayload struct. If successful this struct
 // is returned, if however the struct does not contain all the required fields
 // an error is returned detailing what was missing.
