@@ -87,8 +87,13 @@ suppliers:
     # 
     # TODO_DISCUSS: we can make this just a string instead of an array to make implementation easier. I feel like having multiple proxies can be harder to implement as the number of different variables increases. We can always add an array later if needed, for example in case we implement HTTPs.
     proxy_names:
-      - frontend-one-http-endpoint # when the RelayMiner server builder runs.
+      - http-example # when the RelayMiner server builder runs.
   - name: 7b-llm-model
     type: http
     service_config:
       url: http://llama-endpoint
+    hosts:
+      - 7b-llm-model.devnet1.poktroll.com 
+      - 7b-llm-model # <- this part can be added automatically.
+    proxy_names:
+      - http-example # when the RelayMiner server builder runs.
