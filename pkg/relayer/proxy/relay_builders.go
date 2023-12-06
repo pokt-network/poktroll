@@ -19,7 +19,7 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(requestBz); err != nil {
-		log.Printf("DEBUG: Unmarshaling relay request failed: %v", err)
+		sync.logger.Debug().Msg("unmarshaling relay request failed")
 		return nil, err
 	}
 
