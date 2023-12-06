@@ -24,6 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	appcli "github.com/pokt-network/poktroll/x/application/client/cli"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -97,6 +98,7 @@ func DefaultConfig() network.Config {
 		CleanupDir:      true,
 		SigningAlgo:     string(hd.Secp256k1Type),
 		KeyringOptions:  []keyring.Option{},
+		RPCAddress:      "tcp://localhost:26657",
 	}
 }
 
@@ -200,6 +202,44 @@ func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *s
 	return state
 }
 
+// ApplicationModuleGenesisStateWithAccounts generates a GenesisState object with
+// an application list full of applications with the given addresses.
+func ApplicationModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for i, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+				},
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+// GatewayModuleGenesisStateWithAccounts generates a GenesisState object with
+// a gateway list full of gateways with the given addresses.
+func GatewayModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for _, addr := range addresses {
+		gateway := gatewaytypes.Gateway{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+		}
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
 // InitAccount initialises an Account by sending it some funds from the validator
 // in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
@@ -250,4 +290,56 @@ func InitAccountWithSequence(
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+}
+
+// DelegateAppToGateway delegates the provided application to the provided gateway
+func DelegateAppToGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdDelegateToGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
+}
+
+// UndelegateAppFromGateway undelegates the provided application from the provided gateway
+func UndelegateAppFromGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdUndelegateFromGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
 }

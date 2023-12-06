@@ -17,44 +17,37 @@ import (
 	"testing"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/depinject"
+	"github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
-	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/pkg/client/delegation"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/testutil/network"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 const (
-	delegationIntegrationSubTimeout = 15 * time.Second
+	delegationIntegrationSubTimeout = 180 * time.Second
 )
 
-// TestDelegationClient_RedelegationsObservables tests that the DelegationClient
-// can subscribe to the Redelegation events and that the events contain
-// the correct AppAddress, it does so by simulating the delegation
-// and undelegation of two applications to a gateway.
-// TODO_UPNEXT(@h5law): This test needs to use real actors and not mocked ones for it to work
+// TODO_UPNEXT(@h5law): Figure out the correct way to subscribe to events on the
+// simulated localnet. Currently this test doesn't work. Although the block client
+// subscribes it doesn't receive any events.
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
-	t.SkipNow() // TODO: remove once the test is working
-
-	k, sdkCtx := keepertest.ApplicationKeeper(t)
-	srv := appkeeper.NewMsgServerImpl(*k)
-	ctx := sdk.WrapSDKContext(sdkCtx)
-
-	// Generate an address for the mock gateway and mock stake it
-	gatewayAddr := sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, gatewayAddr)
-
-	// Cretae and stake two applications
-	appAddr1 := prepareAppAndStake(t, ctx, sdkCtx, *k, srv)
-	appAddr2 := prepareAppAndStake(t, ctx, sdkCtx, *k, srv)
+	t.SkipNow()
+	// Create the network with 2 applications and 1 gateway
+	net, appAddresses, gatewayAddr := createNetworkWithApplicationsAndGateways(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Create the delegation client
-	delegationClient := testdelegation.NewLocalnetClient(ctx, t)
+	evtQueryClient := events.NewEventsQueryClient("ws://localhost:26657/websocket")
+	deps := depinject.Supply(evtQueryClient)
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps, "ws://localhost:26657/websocket")
+	require.NoError(t, err)
 	require.NotNil(t, delegationClient)
 	t.Cleanup(func() {
 		delegationClient.Close()
@@ -76,14 +69,15 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 		// Redelegation event alternates between app1 and app2
 		var previousRedelegation client.Redelegation
 		for change := range delegationSub.Ch() {
+			t.Logf("received delegation change: %+v", change)
 			// Verify that the Redelegation event is valid and that the address
 			// of the Redelegation event alternates between app1 and app2
 			if previousRedelegation != nil {
 				require.NotEqual(t, previousRedelegation.AppAddress(), change.AppAddress())
-				if previousRedelegation.AppAddress() == appAddr1 {
-					require.Equal(t, appAddr2, change.AppAddress())
+				if previousRedelegation.AppAddress() == appAddresses[0] {
+					require.Equal(t, appAddresses[1], change.AppAddress())
 				} else {
-					require.Equal(t, appAddr1, change.AppAddress())
+					require.Equal(t, appAddresses[0], change.AppAddress())
 				}
 			}
 			previousRedelegation = change
@@ -99,17 +93,34 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 		}
 	}()
 
-	// Do the delegations and undelegations
-	delegateAppToGateway(t, ctx, sdkCtx, *k, srv, appAddr1, gatewayAddr)
-	delegateAppToGateway(t, ctx, sdkCtx, *k, srv, appAddr2, gatewayAddr)
-	undelegateAppFromGateway(t, ctx, sdkCtx, *k, srv, appAddr1, gatewayAddr)
-	undelegateAppFromGateway(t, ctx, sdkCtx, *k, srv, appAddr2, gatewayAddr)
+	// Delegate from app1 to gateway
+	t.Log(time.Now().String())
+	t.Logf("delegating from app %s to gateway %s", appAddresses[0], gatewayAddr)
+	network.DelegateAppToGateway(t, net, appAddresses[0], gatewayAddr)
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
+	// Delegate from app2 to gateway
+	t.Logf("delegating from app %s to gateway %s", appAddresses[1], gatewayAddr)
+	network.DelegateAppToGateway(t, net, appAddresses[1], gatewayAddr)
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
+	// Undelegate from app1 to gateway
+	t.Logf("undelegating from app %s to gateway %s", appAddresses[0], gatewayAddr)
+	network.UndelegateAppFromGateway(t, net, appAddresses[0], gatewayAddr)
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
+	// Undelegate from app2 to gateway
+	t.Logf("undelegating from app %s to gateway %s", appAddresses[1], gatewayAddr)
+	network.UndelegateAppFromGateway(t, net, appAddresses[1], gatewayAddr)
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
 
 	select {
 	case err := <-errCh:
 		require.NoError(t, err)
 		require.Equal(t, expectedChanges, delegationChangeCounter)
 	case <-time.After(delegationIntegrationSubTimeout):
+		t.Log(time.Now().String())
 		t.Fatalf(
 			"timed out waiting for delegation subscription; expected %d delegation events, got %d",
 			expectedChanges, delegationChangeCounter,
@@ -117,74 +128,46 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	}
 }
 
-// prepareAppAndStake prepares an application and stakes it making sure that
-// the application stakes successfully and exists in the application store.
-// It returns the application address.
-func prepareAppAndStake(
+// createNetworkWithApplicationsAndGateways creates a network with 2 applications
+// and 1 gateway. It returns the network with all accoutns initialised via a
+// transaction from the first validator.
+func createNetworkWithApplicationsAndGateways(
 	t *testing.T,
-	ctx context.Context,
-	wctx sdk.Context,
-	keeper appkeeper.Keeper,
-	srv apptypes.MsgServer,
-) (appAddress string) {
-	t.Helper()
-	// Generate an address for the application
-	appAddr := sample.AccAddress()
+) (net *network.Network, appAddresses []string, gatewayAddress string) {
+	// Prepare the network
+	cfg := network.DefaultConfig()
+	net = network.New(t, cfg)
+	ctx := net.Validators[0].ClientCtx
 
-	// Prepare the stake message
-	stakeMsg := &apptypes.MsgStakeApplication{
-		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
-		Services: []*sharedtypes.ApplicationServiceConfig{
-			{
-				Service: &sharedtypes.Service{Id: "svc1"},
-			},
-		},
+	// Prepare the keyring for the 2 applications and 1 gateway account
+	kr := ctx.Keyring
+	accounts := testutil.CreateKeyringAccounts(t, kr, 3)
+	ctx = ctx.WithKeyring(kr)
+
+	// Initialise all the accounts
+	for i, account := range accounts {
+		signatureSequenceNumber := i + 1
+		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
+	}
+	// need to wait for the account to be initialized in the next block
+	require.NoError(t, net.WaitForNextBlock())
+
+	addresses := make([]string, len(accounts))
+	for i, account := range accounts {
+		addresses[i] = account.Address.String()
 	}
 
-	// Stake the application & verify that the application exists
-	_, err := srv.StakeApplication(ctx, stakeMsg)
+	// Create two applications
+	appGenesisState := network.ApplicationModuleGenesisStateWithAccounts(t, addresses[0:2])
+	buf, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
-	_, isAppFound := keeper.GetApplication(wctx, appAddr)
-	require.True(t, isAppFound)
+	cfg.GenesisState[apptypes.ModuleName] = buf
 
-	return appAddr
-}
-
-func delegateAppToGateway(
-	t *testing.T,
-	ctx context.Context,
-	wctx sdk.Context,
-	keeper appkeeper.Keeper,
-	srv apptypes.MsgServer,
-	appAddr, gatewayAddr string,
-) {
-	// Prepare the delegation message
-	delegateMsg := &apptypes.MsgDelegateToGateway{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
-	}
-
-	// Delegate the application to the gateway
-	_, err := srv.DelegateToGateway(ctx, delegateMsg)
+	// Create a single gateway
+	gatewayGenesisState := network.GatewayModuleGenesisStateWithAccounts(t, addresses[2:3])
+	buf, err = cfg.Codec.MarshalJSON(gatewayGenesisState)
 	require.NoError(t, err)
-}
+	cfg.GenesisState[gatewaytypes.ModuleName] = buf
 
-func undelegateAppFromGateway(
-	t *testing.T,
-	ctx context.Context,
-	wctx sdk.Context,
-	keeper appkeeper.Keeper,
-	srv apptypes.MsgServer,
-	appAddr, gatewayAddr string,
-) {
-	// Prepare the undelegation message
-	undelegateMsg := &apptypes.MsgUndelegateFromGateway{
-		AppAddress:     appAddr,
-		GatewayAddress: gatewayAddr,
-	}
-
-	// Undelegate the application from the gateway
-	_, err := srv.UndelegateFromGateway(ctx, undelegateMsg)
-	require.NoError(t, err)
+	return net, addresses[0:2], addresses[2]
 }
