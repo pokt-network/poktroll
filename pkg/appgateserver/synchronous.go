@@ -63,11 +63,11 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting signable bytes: %s", err)
 	}
 
-	signature, err := signer.Sign(signableBz)
+	requestSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("signing relay: %s", err)
 	}
-	relayRequest.Meta.Signature = signature
+	relayRequest.Meta.Signature = requestSig
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	cdc := types.ModuleCdc

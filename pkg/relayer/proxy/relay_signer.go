@@ -23,12 +23,12 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) er
 	}
 
 	// sign the relay response
-	sig, err := signer.Sign(signableBz)
+	responseSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayResponse, "error signing relay response: %v", err)
 	}
 
 	// set the relay response's signature
-	relayResponse.Meta.SupplierSignature = sig
+	relayResponse.Meta.SupplierSignature = responseSig
 	return nil
 }

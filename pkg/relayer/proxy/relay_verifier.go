@@ -61,13 +61,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// get and hash the signable bytes of the relay request
-	signableBz, err := relayRequest.GetSignableBytes()
+	requestSignableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
 	}
 
 	var hash32 [32]byte
-	copy(hash32[:], signableBz)
+	copy(hash32[:], requestSignableBz)
 
 	// verify the relay request's signature
 	if valid := ringSig.Verify(hash32); !valid {

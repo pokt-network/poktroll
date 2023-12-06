@@ -29,13 +29,13 @@ func (app *appGateServer) verifyResponse(
 	supplierSignature := relayResponse.Meta.SupplierSignature
 
 	// Get the relay response signable bytes and hash them.
-	signableBz, err := relayResponse.GetSignableBytes()
+	responseSignableBz, err := relayResponse.GetSignableBytes()
 	if err != nil {
 		return err
 	}
 
 	// Verify the relay response signature.
-	if !supplierPubKey.VerifySignature(signableBz, supplierSignature) {
+	if !supplierPubKey.VerifySignature(responseSignableBz, supplierSignature) {
 		return ErrAppGateInvalidRelayResponseSignature
 	}
 
