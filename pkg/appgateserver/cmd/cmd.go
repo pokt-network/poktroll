@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
 	appgateconfig "github.com/pokt-network/poktroll/pkg/appgateserver/config"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 // We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
@@ -75,6 +75,11 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx()
 
+	// Construct a logger and associate it with the command context.
+	logger := polyzero.NewLogger()
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
+
 	// Handle interrupt and kill signals asynchronously.
 	signals.GoOnExitSignal(cancelCtx)
 
@@ -94,7 +99,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to setup AppGate server dependencies: %w", err)
 	}
 
-	log.Println("INFO: Creating AppGate server...")
+	logger.Info().Msg("Creating AppGate server...")
 
 	// Create the AppGate server.
 	appGateServer, err := appgateserver.NewAppGateServer(
@@ -112,13 +117,15 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to create AppGate server: %w", err)
 	}
 
-	log.Printf("INFO: Starting AppGate server, listening on %s...", appGateConfigs.ListeningEndpoint.String())
+	logger.Info().
+		Str("listening_endpoint", appGateConfigs.ListeningEndpoint.String()).
+		Msg("Starting AppGate server...")
 
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start app gate server: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
-		log.Println("INFO: AppGate server stopped")
+		logger.Info().Msg("AppGate server stopped")
 	}
 
 	return nil

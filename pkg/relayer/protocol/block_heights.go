@@ -1,20 +1,33 @@
 package protocol
 
 import (
+	"context"
 	"encoding/binary"
-	"log"
+	"fmt"
 	"math/rand"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // GetEarliestCreateClaimHeight returns the earliest block height at which a claim
 // for a session with the given createClaimWindowStartHeight can be created.
 //
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
-func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int64 {
+func GetEarliestCreateClaimHeight(ctx context.Context, createClaimWindowStartBlock client.Block) int64 {
+	logger := polylog.Ctx(ctx)
+
 	createClaimWindowStartBlockHash := createClaimWindowStartBlock.Hash()
-	log.Printf("DEBUG: using createClaimWindowStartBlock %d's hash %x as randomness", createClaimWindowStartBlock.Height(), createClaimWindowStartBlockHash)
+	logger.Debug().
+		Int64(
+			"create_claim_window_start_block",
+			createClaimWindowStartBlock.Height(),
+		).
+		Str(
+			"create_claim_window_start_block_hash",
+			// TODO_TECHDEBT: add polylog.Event#Hex() type method.
+			fmt.Sprintf("%x", createClaimWindowStartBlockHash),
+		)
 	rngSeed, _ := binary.Varint(createClaimWindowStartBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 
@@ -30,9 +43,19 @@ func GetEarliestCreateClaimHeight(createClaimWindowStartBlock client.Block) int6
 // for a session with the given submitProofWindowStartHeight can be submitted.
 //
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
-func GetEarliestSubmitProofHeight(submitProofWindowStartBlock client.Block) int64 {
+func GetEarliestSubmitProofHeight(ctx context.Context, submitProofWindowStartBlock client.Block) int64 {
+	logger := polylog.Ctx(ctx)
+
 	earliestSubmitProofBlockHash := submitProofWindowStartBlock.Hash()
-	log.Printf("DEBUG: using submitProofWindowStartBlock %d's hash %x as randomness", submitProofWindowStartBlock.Height(), earliestSubmitProofBlockHash)
+	logger.Debug().
+		Int64(
+			"submit_proof_window_start_block",
+			submitProofWindowStartBlock.Height(),
+		).
+		Str(
+			"submit_proof_window_start_block_hash",
+			fmt.Sprintf("%x", earliestSubmitProofBlockHash),
+		)
 	rngSeed, _ := binary.Varint(earliestSubmitProofBlockHash)
 	randomNumber := rand.NewSource(rngSeed).Int63()
 

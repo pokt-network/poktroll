@@ -2,8 +2,9 @@ package retry
 
 import (
 	"context"
-	"log"
 	"time"
+
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 type RetryFunc func() chan error
@@ -38,6 +39,8 @@ func OnError(
 	workName string,
 	workFn RetryFunc,
 ) error {
+	logger := polylog.Ctx(ctx)
+
 	var retryCount int
 	errCh := workFn()
 	for {
@@ -49,10 +52,9 @@ func OnError(
 		case err, ok := <-errCh:
 			// Exit the retry loop if the error channel is closed.
 			if !ok {
-				log.Printf(
-					"WARN: error channel for %s closed, will no longer retry on error\n",
-					workName,
-				)
+				logger.Warn().
+					Str("work_name", workName).
+					Msg("error channel closed, will no longer retry on error")
 				return nil
 			}
 
@@ -66,7 +68,10 @@ func OnError(
 			// Increment retryCount and retry workFn.
 			retryCount++
 			errCh = workFn()
-			log.Printf("ERROR: retrying %s after error: %s\n", workName, err)
+			logger.Error().
+				Str("work_name", workName).
+				Err(err).
+				Msg("on final retry")
 		}
 	}
 }
