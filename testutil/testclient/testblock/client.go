@@ -48,9 +48,7 @@ func NewAnyTimesCommittedBlocksSequenceBlockClient(
 	// the method is called, it returns a new replay observable that publishes
 	// blocks sent on the given blocksPublishCh.
 	blockClientMock.EXPECT().
-		CommittedBlocksSequence(
-			gomock.AssignableToTypeOf(context.Background()),
-		).
+		CommittedBlocksSequence(gomock.Any()).
 		Return(blocksObs).
 		AnyTimes()
 

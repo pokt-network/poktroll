@@ -1,6 +1,8 @@
 package payloads
 
 import (
+	"context"
+
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -24,7 +26,7 @@ func PartiallyUnmarshalRESTPayload(payloadBz []byte) (restPayload *PartialRESTPa
 // REST payload.
 // It uses a non-pointer receiver to ensure the default values of unset fields
 // are present
-func (r PartialRESTPayload) ValidateBasic() error {
+func (r PartialRESTPayload) ValidateBasic(ctx context.Context) error {
 	// TODO(@h5law): Implement this function
 	var err error
 	return err
@@ -43,7 +45,7 @@ func (r *PartialRESTPayload) GenerateErrorPayload(err error) ([]byte, error) {
 }
 
 // GetRPCComputeUnits returns the compute units for the RPC request
-func (r *PartialRESTPayload) GetRPCComputeUnits() (uint64, error) {
+func (r *PartialRESTPayload) GetRPCComputeUnits(ctx context.Context) (uint64, error) {
 	// TODO(@h5law): Implement this method
 	return 0, nil
 }

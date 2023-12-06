@@ -2,11 +2,11 @@ package channel
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // replayPartialBufferTimeout is the duration to wait for the replay buffer to
@@ -78,6 +78,8 @@ func ToReplayObservable[V any](
 // block as long as it takes to accumulate and return them.
 // If n is greater than the replay buffer size, the entire replay buffer is returned.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
+	logger := polylog.Ctx(ctx)
+
 	// Use a temporary observer to accumulate replay values.
 	// Subscribe will always start with the replay buffer, so we can safely
 	// leverage it here for syncrhonization (i.e. blocking until at least 1
@@ -89,10 +91,10 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	// If n is greater than the replay buffer size, return the entire replay buffer.
 	if n > ro.replayBufferSize {
 		n = ro.replayBufferSize
-		log.Printf(
-			"WARN: requested replay buffer size %d is greater than replay buffer capacity %d; returning entire replay buffer",
-			n, cap(ro.replayBuffer),
-		)
+		logger.Warn().
+			Int("requested_replay_buffer_size", n).
+			Int("replay_buffer_capacity", cap(ro.replayBuffer)).
+			Msg("requested replay buffer size is greater than replay buffer capacity; returning entire replay buffer")
 	}
 
 	// accumulateReplayValues works concurrently and returns a context and cancelation

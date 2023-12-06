@@ -2,9 +2,9 @@ package appgateserver
 
 import (
 	"context"
-	"log"
 	"net/url"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -20,6 +20,8 @@ func (app *appGateServer) getRelayerUrl(
 	rpcType sharedtypes.RPCType,
 	session *sessiontypes.Session,
 ) (supplierUrl *url.URL, supplierAddress string, err error) {
+	logger := polylog.Ctx(ctx)
+
 	for _, supplier := range session.Suppliers {
 		for _, service := range supplier.Services {
 			// Skip services that don't match the requested serviceId.
@@ -32,7 +34,10 @@ func (app *appGateServer) getRelayerUrl(
 				if endpoint.RpcType == rpcType {
 					supplierUrl, err := url.Parse(endpoint.Url)
 					if err != nil {
-						log.Printf("ERROR: error parsing url: %s", err)
+						logger.Error().
+							Str("url", endpoint.Url).
+							Err(err).
+							Msg("failed to parse url")
 						continue
 					}
 					return supplierUrl, supplier.Address, nil

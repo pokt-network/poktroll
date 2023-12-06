@@ -2,11 +2,9 @@ package proxy
 
 import (
 	"context"
-	"log"
 
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	"github.com/cometbft/cometbft/crypto"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -20,8 +18,15 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	relayRequest *types.RelayRequest,
 	service *sharedtypes.Service,
 ) error {
+	rp.logger.Debug().
+		Fields(map[string]any{
+			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
+			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
+			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+		}).
+		Msg("verifying relay request signature")
+
 	// extract the relay request's ring signature
-	log.Printf("DEBUG: Verifying relay request signature...")
 	if relayRequest.Meta == nil {
 		return ErrRelayerProxyEmptyRelayRequestSignature.Wrapf(
 			"request payload: %s", relayRequest.Payload,
@@ -62,14 +67,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// get and hash the signable bytes of the relay request
-	signableBz, err := relayRequest.GetSignableBytes()
+	requestSignableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
 	}
 
-	hash := crypto.Sha256(signableBz)
 	var hash32 [32]byte
-	copy(hash32[:], hash)
+	copy(hash32[:], requestSignableBz)
 
 	// verify the relay request's signature
 	if valid := ringSig.Verify(hash32); !valid {
@@ -80,7 +84,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
-	log.Printf("DEBUG: Verifying relay request session...")
+	rp.logger.Debug().
+		Fields(map[string]any{
+			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
+			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
+			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+		}).
+		Msg("verifying relay request session")
+
 	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
 	sessionQuery := &sessiontypes.QueryGetSessionRequest{
 		ApplicationAddress: appAddress,

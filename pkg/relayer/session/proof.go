@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"log"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -73,10 +72,12 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash
-	log.Printf("INFO: waiting and blocking for global earliest proof submission submitProofWindowStartBlock height: %d", submitProofWindowStartHeight)
+	rs.logger.Info().
+		Int64("submitProofWindowStartHeight", submitProofWindowStartHeight).
+		Msg("waiting & blocking for global earliest proof submission height")
 	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
 
-	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(submitProofWindowStartBlock)
+	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofHeight)
 }
 
@@ -99,7 +100,10 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		log.Printf("INFO: currentBlock: %d, submitting proof", latestBlock.Height()+1)
+		rs.logger.Info().
+			Int64("currentBlockHeight", latestBlock.Height()+1).
+			Msg("submitting proof")
+
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProof(
 			ctx,

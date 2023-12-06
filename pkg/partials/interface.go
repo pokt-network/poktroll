@@ -1,6 +1,8 @@
 package partials
 
 import (
+	"context"
+
 	"github.com/pokt-network/poktroll/pkg/partials/payloads"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -23,8 +25,8 @@ type PartialPayload interface {
 	// compatible with the protocol of this RPC type.
 	GenerateErrorPayload(err error) ([]byte, error)
 	// GetRPCComputeUnits returns the compute units for the RPC request
-	GetRPCComputeUnits() (uint64, error)
+	GetRPCComputeUnits(ctx context.Context) (uint64, error)
 	// ValidateBasic ensures that all the required fields are set in the partial
 	// payload.
-	ValidateBasic() error
+	ValidateBasic(ctx context.Context) error
 }

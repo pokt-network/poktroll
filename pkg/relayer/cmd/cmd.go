@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,6 +12,7 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -20,6 +20,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
@@ -81,10 +83,22 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// TODO_TECHDEBT: add logger level and output options to the config.
 	relayMinerConfig, err := relayerconfig.ParseRelayMinerConfigs(configContent)
 	if err != nil {
 		return err
 	}
+
+	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
+	loggerOpts := []polylog.LoggerOption{
+		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithOutput(os.Stderr),
+	}
+
+	// Construct a logger and associate it with the command context.
+	logger := polyzero.NewLogger(loggerOpts...)
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
 
 	// Sets up the following dependencies:
 	// Miner, EventsQueryClient, BlockClient, cosmosclient.Context, TxFactory,
@@ -100,11 +114,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Start the relay miner
-	log.Println("INFO: Starting relay miner...")
+	logger.Info().Msg("Starting relay miner...")
 	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start relay miner: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
-		log.Println("INFO: RelayMiner stopped; exiting")
+		logger.Info().Msg("Relay miner stopped; exiting")
 	}
 	return nil
 }
@@ -136,6 +150,7 @@ func setupRelayerDependencies(
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
 		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
