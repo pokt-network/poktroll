@@ -39,6 +39,9 @@ func init() {
 	supplierKeyName = "supplierKeyName"
 	supplierEndpoints = []*sharedtypes.SupplierEndpoint{
 		{
+			// TODO_TECHDEBT(@red-0ne): This URL is not used by the tests until we add
+			// support for the new `RelayMiner` config
+			// see https://github.com/pokt-network/poktroll/pull/246
 			Url: "http://supplier:8545",
 			// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
 			RpcType: sharedtypes.RPCType_JSON_RPC,
