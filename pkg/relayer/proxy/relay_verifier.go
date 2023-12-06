@@ -5,7 +5,6 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	"github.com/cometbft/cometbft/crypto"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -68,14 +67,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// get and hash the signable bytes of the relay request
-	signableBz, err := relayRequest.GetSignableBytes()
+	requestSignableBz, err := relayRequest.GetSignableBytes()
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
 	}
 
-	hash := crypto.Sha256(signableBz)
 	var hash32 [32]byte
-	copy(hash32[:], hash)
+	copy(hash32[:], requestSignableBz)
 
 	// verify the relay request's signature
 	if valid := ringSig.Verify(hash32); !valid {
