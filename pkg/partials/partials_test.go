@@ -1,6 +1,7 @@
 package partials
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -8,12 +9,19 @@ import (
 	sdkerror "cosmossdk.io/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TODO(@h5law): Expand coverage with more test cases when more request types
 // are implemented in the partials package.
 func TestPartials_GetErrorReply(t *testing.T) {
+	_, logCtx := testpolylog.NewLoggerWithCtx(
+		context.Background(),
+		polyzero.DebugLevel,
+	)
+
 	tests := []struct {
 		name          string
 		err           error
@@ -51,14 +59,14 @@ func TestPartials_GetErrorReply(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// Generate the error reply
-			replyBz, err := GetErrorReply(test.payload, test.err)
+			replyBz, err := GetErrorReply(logCtx, test.payload, test.err)
 			if test.expectedErr != nil {
 				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)
 			// Unmarshal the payload to test reply equality
-			partialReq, err := PartiallyUnmarshalRequest(test.payload)
+			partialReq, err := PartiallyUnmarshalRequest(logCtx, test.payload)
 			require.NoError(t, err)
 			require.NotNil(t, partialReq)
 			switch partialReq.GetRPCType() {

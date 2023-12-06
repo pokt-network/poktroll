@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	relayerconfig "github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
@@ -74,6 +74,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	// Ensure context cancellation.
 	defer cancelCtx()
 
+	// Construct a logger and associate it with the command context.
+	logger := polyzero.NewLogger()
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
+
 	// Handle interrupt and kill signals asynchronously.
 	signals.GoOnExitSignal(cancelCtx)
 
@@ -101,11 +106,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Start the relay miner
-	log.Println("INFO: Starting relay miner...")
+	logger.Info().Msg("Starting relay miner...")
 	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start relay miner: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
-		log.Println("INFO: RelayMiner stopped; exiting")
+		logger.Info().Msg("Relay miner stopped; exiting")
 	}
 	return nil
 }
