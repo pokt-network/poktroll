@@ -189,7 +189,7 @@ flowchart
 
 _TODO_DOCUMENTATION(@bryanchriswhite,@h5law): Add Legend_
 
-_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): Seperate into seperate diagrams that detail each
+_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): separate into separate diagrams that detail each
 step of the process (reconnection, decoding, publishing, etc.)_
 
 ```mermaid
