@@ -14,7 +14,7 @@ import (
 type RingCache interface {
 	// Start starts the ring cache, it takes a cancellable context and, in a
 	// separate goroutine, listens for on-chain delegation events and invalidates
-	// the cache if the delegatee change's address is stored in the cache.
+	// the cache if the redelegation event's AppAddress is stored in the cache.
 	Start(ctx context.Context)
 	// GetCachedAddresses returns the addresses of the applications that are
 	// currently cached in the ring cache.

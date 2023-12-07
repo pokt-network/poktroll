@@ -182,7 +182,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, accMap)
 			for range accMap {
 				// publish a delegatee change to the ring cache
-				pubCh <- testdelegation.NewAnyTimesDelegateeChange(t, test.appAccount.address)
+				pubCh <- testdelegation.NewAnyTimesRedelegation(t, test.appAccount.address)
 			}
 
 			// Wait a tick to allow the ring cache to process asynchronously.
@@ -235,7 +235,7 @@ func TestRingCache_Stop(t *testing.T) {
 	// Attempt to retrieve the ring for the address and cache it
 	ring1, err := rc.GetRingForAddress(ctx, appAccount.address)
 	require.NoError(t, err)
-	require.Equal(t, 3, ring1.Size())
+	require.Equal(t, 2, ring1.Size())
 	require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 	// Retrieve the cached ring
@@ -254,10 +254,10 @@ func TestRingCache_Stop(t *testing.T) {
 // createRingCache creates the RingCache using mocked AccountQueryClient and
 // ApplicatioQueryClient instances and returns the RingCache and the delegatee
 // change replay observable.
-func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.DelegateeChange) {
+func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.Redelegation) {
 	t.Helper()
-	delegateeObs, delegateePublishCh := channel.NewReplayObservable[client.DelegateeChange](ctx, 1)
-	delegationClient := testdelegation.NewAnyTimeseDelegateeChangesSequence(ctx, t, appAddress, delegateeObs)
+	redelegationObs, redelegationPublishCh := channel.NewReplayObservable[client.Redelegation](ctx, 1)
+	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(t, ctx, appAddress, redelegationObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
 	deps := depinject.Supply(
@@ -267,5 +267,5 @@ func createRingCache(ctx context.Context, t *testing.T, appAddress string) (cryp
 	)
 	rc, err := rings.NewRingCache(deps)
 	require.NoError(t, err)
-	return rc, delegateePublishCh
+	return rc, redelegationPublishCh
 }

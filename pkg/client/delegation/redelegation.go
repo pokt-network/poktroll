@@ -27,7 +27,7 @@ func (d redelegation) GetGatewayAddress() string {
 }
 
 // newRedelegationEventFactoryFn is a factory function that returns a
-// function that attempts to deserialise the given bytes into a redelegation
+// function that attempts to deserialize the given bytes into a redelegation
 // struct. If the delegate struct has an empty app address then an
 // ErrUnmarshalRedelegation error is returned. Otherwise if deserialisation
 // fails then the error is returned.

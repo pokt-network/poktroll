@@ -19,10 +19,13 @@ import (
 	"github.com/noot/ring-go"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -85,7 +88,9 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, 1)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
-		ringDeps := depinject.Supply(accountQueryClient, applicationQueryClient)
+		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
+		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.t, test.ctx, "", redelegationObs)
+		ringDeps := depinject.Supply(accountQueryClient, applicationQueryClient, delegationClient)
 		ringCache, err := rings.NewRingCache(ringDeps)
 		require.NoError(test.t, err)
 

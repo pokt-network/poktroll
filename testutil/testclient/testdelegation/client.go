@@ -36,20 +36,22 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.DelegationClien
 // and when that call is made, it returns the given EventsObservable[Redelegation].
 func NewAnyTimesRedelegationsSequence(
 	t *testing.T,
+	ctx context.Context,
+	appAddress string,
 	redelegationObs observable.Observable[client.Redelegation],
 ) *mockclient.MockDelegationClient {
 	t.Helper()
 
 	// Create a mock for the delegation client which expects the
 	// LastNRedelegations method to be called any number of times.
-	delegationClientMock := NewAnyTimeLastNRedelegationsClient(t, "")
+	delegationClientMock := NewAnyTimeLastNRedelegationsClient(t, appAddress)
 
 	// Set up the mock expectation for the RedelegationsSequence method. When
 	// the method is called, it returns a new replay observable that publishes
 	// redelegation events sent on the given redelegationObs.
 	delegationClientMock.EXPECT().
 		RedelegationsSequence(
-			gomock.AssignableToTypeOf(context.Background()),
+			ctx,
 		).
 		Return(redelegationObs).
 		AnyTimes()
@@ -66,6 +68,7 @@ func NewAnyTimesRedelegationsSequence(
 // Redelegation events to the observable.
 func NewOneTimeRedelegationsSequenceDelegationClient(
 	t *testing.T,
+	ctx context.Context,
 	redelegationPublishCh chan client.Redelegation,
 ) *mockclient.MockDelegationClient {
 	t.Helper()
@@ -78,7 +81,7 @@ func NewOneTimeRedelegationsSequenceDelegationClient(
 	// the method is called, it returns a new replay observable that publishes
 	// delegation changes sent on the given redelegationPublishCh.
 	delegationClientMock.EXPECT().RedelegationsSequence(
-		gomock.AssignableToTypeOf(context.Background()),
+		ctx,
 	).DoAndReturn(func(ctx context.Context) client.RedelegationReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1.
 		// Redelegation events are published to this observable via the
@@ -114,6 +117,7 @@ func NewAnyTimeLastNRedelegationsClient(
 	delegationClientMock.EXPECT().
 		LastNRedelegations(gomock.Any(), gomock.Any()).
 		Return([]client.Redelegation{redelegation}).AnyTimes()
+	delegationClientMock.EXPECT().Close().AnyTimes()
 
 	return delegationClientMock
 }

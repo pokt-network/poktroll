@@ -152,11 +152,11 @@ func setupRelayerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
-		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyBlockClientFn(),                             // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(networkNodeURL.String()), // leaf
-		config.NewSupplyDelegationClientFn(queryNodeURL.Host),      // leaf
+		config.NewSupplyDelegationClientFn(),                       // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),

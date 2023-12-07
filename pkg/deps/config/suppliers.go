@@ -58,14 +58,14 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 // EventsQueryClient instance, with the given hostname converted into a websocket
 // URL to subscribe to, and returns a new depinject.Config which is supplied
 // with the given deps and the new EventsQueryClient.
-func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
+func NewSupplyEventsQueryClientFn(queryHostname string) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
+		pocketNodeWebsocketURL := hostToWebsocketURL(queryHostname)
 		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -75,7 +75,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
 // instance and returns a new depinject.Config which is supplied with the
 // given deps and the new BlockClient.
-func NewSupplyBlockClientFn(queryHost string) SupplierFn {
+func NewSupplyBlockClientFn() SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -92,19 +92,16 @@ func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 }
 
 // NewSupplyDelegationClientFn returns a function which constructs a
-// DelegationClient instance with the given hostname, which is converted into
-// a websocket URL, to listen for delegatee change events on chain, and returns
-// a new depinject.Config which is supplied with the given deps and the new
-// DelegationClient.
-func NewSupplyDelegationClientFn(queryHost string) SupplierFn {
+// DelegationClient instance and returns a new depinject.Config which is
+// supplied with the given deps and the new DelegationClient.
+func NewSupplyDelegationClientFn() SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Convert the host to a websocket URL
-		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
-		delegationClient, err := delegation.NewDelegationClient(ctx, deps, pocketNodeWebsocketURL)
+		// Requires a query client to be supplied to the deps
+		delegationClient, err := delegation.NewDelegationClient(ctx, deps)
 		if err != nil {
 			return nil, err
 		}

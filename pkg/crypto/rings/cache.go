@@ -32,7 +32,9 @@ type ringCache struct {
 	// invalidate cache entries for rings that have been updated on chain.
 	delegationClient client.DelegationClient
 
-	// delegateeChangeObs is the observer that listens for delegatee changes
+	// redelegationObs is an observable of the type Redelegation, which is used
+	// to listen for on-chain redelegation events and invalidate cache entries
+	// for any addresses that have changed their delegatees.
 	redelegationObs observable.Observer[client.Redelegation]
 
 	// applicationQuerier is the querier for the application module, and is
@@ -65,7 +67,7 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	return rc, nil
 }
 
-// Start starts the ring cache by subscribing to on-chain delegation events.
+// Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
 	// Subscribe to the delegatee change observable.
 	rc.redelegationObs = rc.delegationClient.RedelegationsSequence(ctx).Subscribe(ctx)
@@ -104,7 +106,9 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 // Stop stops the ring cache by unsubscribing from on-chain delegation events.
 func (rc *ringCache) Stop() {
 	// Clear the cache.
+	rc.ringPointsMu.Lock()
 	rc.ringPointsCache = make(map[string][]ringtypes.Point)
+	rc.ringPointsMu.Unlock()
 	// Unsubscribe from the delegatee change replay observable.
 	rc.delegationClient.Close()
 }

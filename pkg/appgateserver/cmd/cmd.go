@@ -158,9 +158,9 @@ func setupAppGateServerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
-		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyBlockClientFn(),                             // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
-		config.NewSupplyDelegationClientFn(queryNodeURL.Host),       // leaf
+		config.NewSupplyDelegationClientFn(),                        // leaf
 		config.NewSupplyAccountQuerierFn(),                          // leaf
 		config.NewSupplyApplicationQuerierFn(),                      // leaf
 		config.NewSupplySessionQuerierFn(),                          // leaf

@@ -60,9 +60,15 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 
 	// Emit the application delegation change event
 	event := msg.NewRedelegationEvent()
+<<<<<<< HEAD
 	logger.Info(fmt.Sprintf("Emitting application delegation change event %v", event))
 	if err := ctx.EventManager().EmitTypedEvent(event); err != nil {
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
+=======
+	logger.Debug("Emitting application delegation change event %v", event)
+	if err := ctx.EventManager().EmitTypedEvent(event); err != nil {
+		logger.Debug("Failed to emit application delegation change event: %v", err)
+>>>>>>> b2f9f3ba (feat: fix tests)
 		return nil, err
 	}
 
