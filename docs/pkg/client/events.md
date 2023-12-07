@@ -199,10 +199,8 @@ sequenceDiagram
     D ->>- Q: resubscribeOnError()
     participant P as Replay Observable Cache Publish Channel
     participant O as Replay Observable Cache
-    destroy O
-    P ->> O: Typed Events
-    destroy P
     D ->> P: Typed Events
+    P ->> O: Typed Events
 ```
 
 ## Installation
