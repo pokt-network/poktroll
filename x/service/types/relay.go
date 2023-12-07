@@ -1,46 +1,51 @@
 package types
 
-import "github.com/cometbft/cometbft/crypto"
+import "crypto/sha256"
 
-// GetSignableBytes returns the signable bytes for the relay request
-// this involves setting the signature to nil and marshaling the message
-// then hashing it to guarantee that the signable bytes are always of a
-// constant and expected length.
+// getSignableBytes returns the bytes resulting from marshaling the relay request
 // A value receiver is used to avoid overwriting any pre-existing signature
-func (req RelayRequest) GetSignableBytes() ([]byte, error) {
+func (req RelayRequest) getSignableBytes() ([]byte, error) {
 	// set signature to nil
 	req.Meta.Signature = nil
 
-	// return the marshaled message
-	requestBz, err := req.Marshal()
+	return req.Marshal()
+}
+
+// GetSignableBytesHash returns the hash of the signable bytes of the relay request
+// Hashing the marshaled request message guarantees that the signable bytes are
+// always of a constant and expected length.
+func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
+	requestBz, err := req.getSignableBytes()
 	if err != nil {
-		return nil, err
+		return [32]byte{}, err
 	}
 
 	// return the marshaled request hash to guarantee that the signable bytes are
 	// always of a constant and expected length
-	hash := crypto.Sha256(requestBz)
-	return hash, nil
+	return sha256.Sum256(requestBz), nil
 }
 
-// GetSignableBytes returns the signable bytes for the relay response
-// this involves setting the signature to nil and marshaling the message
-// then hashing it to guarantee that the signable bytes are always of a
-// constant and expected length.
+// getSignableBytes returns the bytes resulting from marshaling the relay response
 // A value receiver is used to avoid overwriting any pre-existing signature
-func (res RelayResponse) GetSignableBytes() ([]byte, error) {
+func (res RelayResponse) getSignableBytes() ([]byte, error) {
 	// set signature to nil
 	res.Meta.SupplierSignature = nil
 
-	responseBz, err := res.Marshal()
+	return res.Marshal()
+}
+
+// GetSignableBytesHash returns the hash of the signable bytes of the relay response
+// Hashing the marshaled response message guarantees that the signable bytes are
+// always of a constant and expected length.
+func (res *RelayResponse) GetSignableBytesHash() ([32]byte, error) {
+	responseBz, err := res.getSignableBytes()
 	if err != nil {
-		return nil, err
+		return [32]byte{}, err
 	}
 
 	// return the marshaled response hash to guarantee that the signable bytes are
 	// always of a constant and expected length
-	hash := crypto.Sha256(responseBz)
-	return hash, nil
+	return sha256.Sum256(responseBz), nil
 }
 
 func (res *RelayResponse) ValidateBasic() error {

@@ -99,7 +99,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.replyWithError(ctx, []byte{}, writer, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}

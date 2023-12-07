@@ -12,7 +12,6 @@ import (
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
-	"github.com/cometbft/cometbft/crypto"
 	keyringtypes "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	secp256k1 "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -21,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
@@ -74,6 +74,7 @@ func NewRelayerProxyTestBehavior(
 // used by the dependency injection framework.
 func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 	return func(test *TestBehavior) {
+		logger := polylog.Ctx(test.ctx)
 		accountQueryClient := testqueryclients.NewTestAccountQueryClient(test.t)
 		applicationQueryClient := testqueryclients.NewTestApplicationQueryClient(test.t)
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
@@ -87,6 +88,7 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		require.NoError(test.t, err)
 
 		deps := depinject.Configs(ringDeps, depinject.Supply(
+			logger,
 			ringCache,
 			blockClient,
 			sessionQueryClient,
@@ -268,11 +270,10 @@ func GetApplicationRingSignature(
 
 	signer := signer.NewRingSigner(pointsRing, scalar)
 
-	signableBz, err := req.GetSignableBytes()
+	signableBz, err := req.GetSignableBytesHash()
 	require.NoError(t, err)
 
-	hash := crypto.Sha256(signableBz)
-	signature, err := signer.Sign(hash)
+	signature, err := signer.Sign(signableBz)
 	require.NoError(t, err)
 
 	return signature
