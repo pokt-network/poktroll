@@ -12,7 +12,6 @@
     - [Events Query Client](#events-query-client)
     - [Events Replay Client](#events-replay-client)
   - [Subscriptions](#subscriptions)
-  - [Events Decoding](#events-decoding)
 - [Installation](#installation)
 - [Features](#features)
 - [Usage (`EventsQueryClient`)](#usage-eventsqueryclient)
@@ -183,30 +182,6 @@ flowchart
 
   sub -.-> q1_conn
   sub -.-> q2_conn
-```
-
-### Events Decoding
-
-_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): Add Legend_
-
-_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): separate into separate diagrams that detail each
-step of the process (reconnection, decoding, publishing, etc.)_
-
-```mermaid
----
-title: Event Bytes To Type Event Sequence
----
-
-sequenceDiagram
-    participant Q as EventsQueryClient
-    participant D as EventDecoder
-    Q ->>+ D: EventBytes
-    D ->> D: DecoderFn()
-    D ->>- Q: resubscribeOnError()
-    participant P as Replay Observable Cache Publish Channel
-    participant O as Replay Observable Cache
-    D ->> P: Typed Events
-    P ->> O: Typed Events
 ```
 
 ## Installation
