@@ -63,7 +63,7 @@ func (app *appGateServer) handleSynchronousRelay(
 	signer := signer.NewRingSigner(appRing, app.signingInformation.SigningKey)
 
 	// Hash and sign the request's signable bytes.
-	signableBz, err := relayRequest.GetSignableBytes()
+	signableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting signable bytes: %s", err)
 	}

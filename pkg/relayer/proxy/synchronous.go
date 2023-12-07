@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	sdkerrors "cosmossdk.io/errors"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -25,7 +26,7 @@ type synchronousRPCServer struct {
 	service *sharedtypes.Service
 
 	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
-	proxiedServiceEndpoint url.URL
+	proxiedServiceEndpoint *url.URL
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -55,7 +56,7 @@ func NewSynchronousServer(
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
-		proxiedServiceEndpoint: *proxiedServiceEndpoint,
+		proxiedServiceEndpoint: proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
@@ -98,8 +99,18 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.replyWithError(ctx, []byte{}, writer, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
+		return
+	}
+
+	if relayRequest.Meta == nil {
+		err = sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing meta from relay request: %v", relayRequest,
+		)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.logger.Warn().Err(err).Msg("relay request metadata is nil which could be a result of failed unmashaling")
 		return
 	}
 
@@ -164,7 +175,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &sync.proxiedServiceEndpoint,
+		URL:    sync.proxiedServiceEndpoint,
 		Host:   sync.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}

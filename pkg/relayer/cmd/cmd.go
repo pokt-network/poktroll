@@ -159,6 +159,8 @@ func setupRelayerDependencies(
 		config.NewSupplyTxClientContextFn(networkNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
+		config.NewSupplySupplierQuerierFn(),
+		config.NewSupplySessionQuerierFn(),
 		config.NewSupplyRingCacheFn(),
 		supplyTxFactory,
 		supplyTxContext,
