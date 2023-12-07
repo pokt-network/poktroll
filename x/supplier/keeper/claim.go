@@ -9,9 +9,9 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// InsertClaim adds a claim to the store
-func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
-	logger := k.Logger(ctx).With("method", "InsertClaim")
+// UpsertClaim inserts or updates a specific claim in the store by index.
+func (k Keeper) UpsertClaim(ctx sdk.Context, claim types.Claim) {
+	logger := k.Logger(ctx).With("method", "UpsertClaim")
 
 	claimBz := k.cdc.MustMarshal(&claim)
 	parentStore := ctx.KVStore(k.storeKey)
@@ -22,7 +22,7 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 	primaryKey := types.ClaimPrimaryKey(sessionId, claim.SupplierAddress)
 	primaryStore.Set(primaryKey, claimBz)
 
-	logger.Info("inserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
+	logger.Info("upserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
 	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSupplierAddressPrefix))

@@ -7,8 +7,8 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetProof set a specific proof in the store from its index
-func (k Keeper) SetProof(ctx sdk.Context, proof types.Proof) {
+// UpsertProof inserts or updates a specific proof in the store by index.
+func (k Keeper) UpsertProof(ctx sdk.Context, proof types.Proof) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	b := k.cdc.MustMarshal(&proof)
 	store.Set(types.ProofKey(

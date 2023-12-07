@@ -36,7 +36,7 @@ func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof 
 			MerkleProof: nil,
 		}
 
-		keeper.SetProof(ctx, proofs[i])
+		keeper.UpsertProof(ctx, proofs[i])
 	}
 	return proofs
 }

@@ -28,7 +28,7 @@ func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim 
 			SessionEndBlockHeight: int64(i),
 		}
 		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
-		keeper.InsertClaim(ctx, claims[i])
+		keeper.UpsertClaim(ctx, claims[i])
 	}
 	return claims
 }

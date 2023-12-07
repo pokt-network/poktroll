@@ -85,7 +85,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		SessionHeader:   msg.GetSessionHeader(),
 		RootHash:        msg.RootHash,
 	}
-	k.Keeper.InsertClaim(ctx, claim)
+	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.
 		With(
