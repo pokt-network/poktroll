@@ -1,147 +1,31 @@
 package cli_test
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/testutil/sample"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable
-const numBlocksPerSession = 4
-
-func encodeSessionHeader(t *testing.T, sessionId string, sessionEndHeight int64) string {
-	t.Helper()
-
-	argSessionHeader := &sessiontypes.SessionHeader{
-		ApplicationAddress:      sample.AccAddress(),
-		SessionStartBlockHeight: sessionEndHeight - numBlocksPerSession,
-		SessionId:               sessionId,
-		SessionEndBlockHeight:   sessionEndHeight,
-		Service:                 &sharedtypes.Service{Id: "anvil"}, // hardcoded for simplicity
-	}
-	cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
-	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
-	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
-}
-
-func createClaim(
-	t *testing.T,
-	net *network.Network,
-	ctx client.Context,
-	supplierAddr string,
-	sessionId string,
-	sessionEndHeight int64,
-) *types.Claim {
-	t.Helper()
-
-	rootHash := []byte("root_hash")
-	sessionHeaderEncoded := encodeSessionHeader(t, sessionId, sessionEndHeight)
-	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
-
-	args := []string{
-		sessionHeaderEncoded,
-		rootHashEncoded,
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
-	}
-
-	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)
-	require.NoError(t, err)
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
-	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
-
-	return &types.Claim{
-		SupplierAddress:       supplierAddr,
-		SessionId:             sessionId,
-		SessionEndBlockHeight: uint64(sessionEndHeight),
-		RootHash:              rootHash,
-	}
-}
-
-func networkWithClaimObjects(
-	t *testing.T,
-	numSessions int,
-	numClaimsPerSession int,
-) (net *network.Network, claims []types.Claim) {
-	t.Helper()
-
-	// Prepare the network
-	cfg := network.DefaultConfig()
-	net = network.New(t, cfg)
-	ctx := net.Validators[0].ClientCtx
-
-	// Prepare the keyring for the supplier account
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, numClaimsPerSession)
-	ctx = ctx.WithKeyring(kr)
-
-	// Initialize all the accounts
-	for i, account := range accounts {
-		signatureSequenceNumber := i + 1
-		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
-	}
-	// need to wait for the account to be initialized in the next block
-	require.NoError(t, net.WaitForNextBlock())
-
-	addresses := make([]string, len(accounts))
-	for i, account := range accounts {
-		addresses[i] = account.Address.String()
-	}
-
-	// Create one supplier
-	supplierGenesisState := network.SupplierModuleGenesisStateWithAccounts(t, addresses)
-	buf, err := cfg.Codec.MarshalJSON(supplierGenesisState)
-	require.NoError(t, err)
-	cfg.GenesisState[types.ModuleName] = buf
-
-	// Create numSessions * numClaimsPerSession claims for the supplier
-	sessionEndHeight := int64(1)
-	for sessionNum := 0; sessionNum < numSessions; sessionNum++ {
-		sessionEndHeight += numBlocksPerSession
-		sessionId := fmt.Sprintf("session_id%d", sessionNum)
-		for claimNum := 0; claimNum < numClaimsPerSession; claimNum++ {
-			supplierAddr := addresses[claimNum]
-			claim := createClaim(t, net, ctx, supplierAddr, sessionId, sessionEndHeight)
-			claims = append(claims, *claim)
-			// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
-			require.NoError(t, net.WaitForNextBlock())
-		}
-	}
-
-	return net, claims
-}
-
 func TestClaim_Show(t *testing.T) {
-	numSessions := 1
-	numClaimsPerSession := 2
+	sessionCount := 1
+	supplierCount := 3
+	appCount := 3
 
-	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
+	net, claims := networkWithClaimObjects(
+		t, sessionCount,
+		appCount,
+		supplierCount,
+	)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -208,11 +92,19 @@ func TestClaim_Show(t *testing.T) {
 }
 
 func TestClaim_List(t *testing.T) {
-	numSessions := 2
-	numClaimsPerSession := 5
-	totalClaims := numSessions * numClaimsPerSession
+	sessionCount := 2
+	supplierCount := 4
+	appCount := 3
+	serviceCount := 1
+	// Each supplier will submit a claim for each app x service combination (per session).
+	numClaimsPerSession := supplierCount * appCount * serviceCount
+	totalClaims := sessionCount * numClaimsPerSession
 
-	net, claims := networkWithClaimObjects(t, numSessions, numClaimsPerSession)
+	net, claims := networkWithClaimObjects(
+		t, sessionCount,
+		supplierCount,
+		appCount,
+	)
 
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
@@ -287,11 +179,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, numSessions, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
+		require.Equal(t, sessionCount*appCount, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -312,11 +204,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
+		require.Equal(t, supplierCount, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {

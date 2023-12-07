@@ -9,7 +9,6 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/x/application/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -36,12 +35,12 @@ func NewTestApplicationQueryClient(
 	applicationQuerier := mockclient.NewMockApplicationQueryClient(ctrl)
 	applicationQuerier.EXPECT().GetApplication(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(
-			ctx context.Context,
+			_ context.Context,
 			appAddress string,
-		) (application types.Application, err error) {
+		) (application apptypes.Application, err error) {
 			delegateeAddresses, ok := appToGatewayMap[appAddress]
 			if !ok {
-				return types.Application{}, apptypes.ErrAppNotFound
+				return apptypes.Application{}, apptypes.ErrAppNotFound
 			}
 			return apptypes.Application{
 				Address: appAddress,

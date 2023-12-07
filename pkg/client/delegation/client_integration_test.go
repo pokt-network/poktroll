@@ -158,13 +158,13 @@ func createNetworkWithApplicationsAndGateways(
 	}
 
 	// Create two applications
-	appGenesisState := network.ApplicationModuleGenesisStateWithAccounts(t, addresses[0:2])
+	appGenesisState := network.ApplicationModuleGenesisStateWithAddresses(t, addresses[0:2])
 	buf, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 	cfg.GenesisState[apptypes.ModuleName] = buf
 
 	// Create a single gateway
-	gatewayGenesisState := network.GatewayModuleGenesisStateWithAccounts(t, addresses[2:3])
+	gatewayGenesisState := network.GatewayModuleGenesisStateWithAddresses(t, addresses[2:3])
 	buf, err = cfg.Codec.MarshalJSON(gatewayGenesisState)
 	require.NoError(t, err)
 	cfg.GenesisState[gatewaytypes.ModuleName] = buf

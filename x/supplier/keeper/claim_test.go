@@ -31,7 +31,7 @@ func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim 
 }
 
 func TestClaim_Get(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		foundClaim, isClaimFound := keeper.GetClaim(ctx,
@@ -46,7 +46,7 @@ func TestClaim_Get(t *testing.T) {
 	}
 }
 func TestClaim_Remove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		keeper.RemoveClaim(ctx,
@@ -62,7 +62,7 @@ func TestClaim_Remove(t *testing.T) {
 }
 
 func TestClaim_GetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all the claims and check if they match
@@ -74,7 +74,7 @@ func TestClaim_GetAll(t *testing.T) {
 }
 
 func TestClaim_GetAll_ByAddress(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all claims for a given address
@@ -86,7 +86,7 @@ func TestClaim_GetAll_ByAddress(t *testing.T) {
 }
 
 func TestClaim_GetAll_ByHeight(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all claims for a given ending session block height
@@ -98,7 +98,7 @@ func TestClaim_GetAll_ByHeight(t *testing.T) {
 }
 
 func TestClaim_GetAll_BySession(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all claims for a given ending session block height

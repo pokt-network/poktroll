@@ -50,7 +50,7 @@ func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtype
 }
 
 func TestSupplierGet(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	suppliers := createNSupplier(keeper, ctx, 10)
 	for _, supplier := range suppliers {
 		supplierFound, isSupplierFound := keeper.GetSupplier(ctx,
@@ -64,7 +64,7 @@ func TestSupplierGet(t *testing.T) {
 	}
 }
 func TestSupplierRemove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	suppliers := createNSupplier(keeper, ctx, 10)
 	for _, supplier := range suppliers {
 		keeper.RemoveSupplier(ctx,
@@ -78,7 +78,7 @@ func TestSupplierRemove(t *testing.T) {
 }
 
 func TestSupplierGetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	suppliers := createNSupplier(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(suppliers),

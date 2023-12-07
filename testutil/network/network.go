@@ -127,6 +127,27 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	return state
 }
 
+// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
+// a single application for each of the given addresses.
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for _, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+
+	return state
+}
+
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
 // It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
@@ -174,9 +195,9 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
-// SupplierModuleGenesisStateWithAccounts generates a GenesisState object with
-// a supplier list full of of suppliers with the given addresses.
-func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+// SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
+// a single supplier for each of the given addresses.
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {
@@ -201,32 +222,9 @@ func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *s
 	return state
 }
 
-// ApplicationModuleGenesisStateWithAccounts generates a GenesisState object with
-// an application list full of applications with the given addresses.
-func ApplicationModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *apptypes.GenesisState {
-	t.Helper()
-	state := apptypes.DefaultGenesis()
-	for i, addr := range addresses {
-		application := apptypes.Application{
-			Address: addr,
-			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
-			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
-				},
-				{
-					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
-				},
-			},
-		}
-		state.ApplicationList = append(state.ApplicationList, application)
-	}
-	return state
-}
-
-// GatewayModuleGenesisStateWithAccounts generates a GenesisState object with
+// GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
 // a gateway list full of gateways with the given addresses.
-func GatewayModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
 	t.Helper()
 	state := gatewaytypes.DefaultGenesis()
 	for _, addr := range addresses {
@@ -254,10 +252,10 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
 // InitAccountWithSequence initializes an Account by sending it some funds from
@@ -285,10 +283,10 @@ func InitAccountWithSequence(
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
 // DelegateAppToGateway delegates the provided application to the provided gateway

@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"sync"
 
+	"cosmossdk.io/api/tendermint/abci"
 	"cosmossdk.io/depinject"
-	abciTypes "github.com/cometbft/cometbft/abci/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/multierr"
@@ -89,11 +89,10 @@ type (
 
 // TxEvent is used to deserialize incoming websocket messages from
 // the transactions subscription.
-type TxEvent struct {
-	// Tx is the binary representation of the tx hash.
-	Tx     []byte            `json:"tx"`
-	Events []abciTypes.Event `json:"events"`
-}
+//
+// TODO_CONSIDERATION: either expose this via an interface and unexport this type,
+// or remove it altogether.
+type TxEvent = abci.TxResult
 
 // NewTxClient attempts to construct a new TxClient using the given dependencies
 // and options.

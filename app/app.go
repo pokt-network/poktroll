@@ -575,16 +575,6 @@ func New(
 	)
 	serviceModule := servicemodule.NewAppModule(appCodec, app.ServiceKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
-		appCodec,
-		keys[suppliermoduletypes.StoreKey],
-		keys[suppliermoduletypes.MemStoreKey],
-		app.GetSubspace(suppliermoduletypes.ModuleName),
-
-		app.BankKeeper,
-	)
-	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
-
 	app.GatewayKeeper = *gatewaymodulekeeper.NewKeeper(
 		appCodec,
 		keys[gatewaymoduletypes.StoreKey],
@@ -607,6 +597,28 @@ func New(
 	)
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
+	// TODO_TECHDEBT: Evaluate if this NB goes away after we upgrade to cosmos 0.5x
+	// NB: there is a circular dependency between the supplier and session keepers.
+	// Because the keepers are values (as opposed to pointers), they are copied
+	// when passed into their respective module constructor functions. For this
+	// reason, the existing pattern of ignite-generated keeper/module construction
+	// must be broken for these keepers and modules.
+	//
+	// Order of operations:
+	// 1. Construct supplier keeper
+	// 2. Construct session keeper
+	// 3. Provide session keeper to supplier keeper via custom #SupplySessionKeeper method.
+	// 4. Construct supplier module
+	// 5. Construct session module
+	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
+		appCodec,
+		keys[suppliermoduletypes.StoreKey],
+		keys[suppliermoduletypes.MemStoreKey],
+		app.GetSubspace(suppliermoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+
 	app.SessionKeeper = *sessionmodulekeeper.NewKeeper(
 		appCodec,
 		keys[sessionmoduletypes.StoreKey],
@@ -616,6 +628,10 @@ func New(
 		app.ApplicationKeeper,
 		app.SupplierKeeper,
 	)
+
+	app.SupplierKeeper.SupplySessionKeeper(app.SessionKeeper)
+
+	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition

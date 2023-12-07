@@ -1,11 +1,10 @@
 package testclient
 
 import (
-	"testing"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/regen-network/gocuke"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
 
@@ -13,8 +12,19 @@ import (
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 )
 
-// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
-const CometLocalWebsocketURL = "ws://localhost:36657/websocket"
+const (
+	// CometLocalTCPURL provides a default URL pointing to the localnet TCP endpoint.
+	//
+	// TODO_IMPROVE: It would be nice if the value could be set correctly based
+	// on whether the test using it is running in tilt or not.
+	CometLocalTCPURL = "tcp://sequencer-poktroll-sequencer:36657"
+
+	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
+	//
+	// TODO_IMPROVE: It would be nice if the value could be set correctly based
+	// on whether the test using it is running in tilt or not.
+	CometLocalWebsocketURL = "ws://sequencer-poktroll-sequencer:36657/websocket"
+)
 
 // EncodingConfig encapsulates encoding configurations for the Pocket application.
 var EncodingConfig = app.MakeEncodingConfig()
@@ -35,7 +45,9 @@ func init() {
 //
 // Returns:
 // - A pointer to a populated client.Context instance suitable for localnet usage.
-func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context {
+func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Context {
+	t.Helper()
+
 	homedir := app.DefaultNodeHome
 	clientCtx := client.Context{}.
 		WithCodec(EncodingConfig.Marshaler).
@@ -57,9 +69,13 @@ func NewLocalnetClientCtx(t *testing.T, flagSet *pflag.FlagSet) *client.Context 
 //
 // Returns:
 // - A flag set populated with flags tailored for localnet environments.
-func NewLocalnetFlagSet(t *testing.T) *pflag.FlagSet {
+func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
+	t.Helper()
+
 	mockFlagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	mockFlagSet.String(flags.FlagNode, "tcp://127.0.0.1:36657", "use localnet poktrolld node")
+	// TODO_IMPROVE: It would be nice if the value could be set correctly based
+	// on whether the test using it is running in tilt or not.
+	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	err := mockFlagSet.Parse([]string{})
