@@ -21,7 +21,7 @@ func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof 
 	for i := range items {
 		items[i].Index = strconv.Itoa(i)
 
-		keeper.SetProof(ctx, items[i])
+		keeper.UpsertProof(ctx, items[i])
 	}
 	return items
 }

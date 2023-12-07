@@ -9,9 +9,9 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// InsertClaim adds a claim to the store
-func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
-	logger := k.Logger(ctx).With("method", "InsertClaim")
+// UpsertClaim inserts or updates a specific claim in the store by index.
+func (k Keeper) UpsertClaim(ctx sdk.Context, claim types.Claim) {
+	logger := k.Logger(ctx).With("method", "UpsertClaim")
 
 	claimBz := k.cdc.MustMarshal(&claim)
 	parentStore := ctx.KVStore(k.storeKey)
