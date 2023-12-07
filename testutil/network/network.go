@@ -126,6 +126,27 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	return state
 }
 
+// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
+// a single application for each of the given addresses.
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for _, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+
+	return state
+}
+
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
 // It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
@@ -173,8 +194,9 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
-// SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
-func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+// SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
+// a single supplier for each of the given addresses.
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {

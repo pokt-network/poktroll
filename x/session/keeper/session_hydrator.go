@@ -156,7 +156,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
-	for _, supplier := range suppliers {
+	for _, s := range suppliers {
+		// NB: Allocate a new heap variable as s is a value and we're appending
+		// to a slice of  pointers; otherwise, we'd be appending new pointers to
+		// the same memory address containing the last supplier in the loop.
+		supplier := s
 		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
 			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {

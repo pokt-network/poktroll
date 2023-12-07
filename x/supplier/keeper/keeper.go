@@ -19,7 +19,8 @@ type (
 		memKey     storetypes.StoreKey
 		paramstore paramtypes.Subspace
 
-		bankKeeper types.BankKeeper
+		bankKeeper    types.BankKeeper
+		sessionKeeper types.SessionKeeper
 	}
 )
 
@@ -48,4 +49,12 @@ func NewKeeper(
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// TODO_TECHDEBT: Evaluate if this is still necessary after the upgrade to cosmos 0.5x
+// SupplySessionKeeper assigns the session keeper dependency of this supplier
+// keeper. This MUST be done as a separate step from construction because there
+// is a circular dependency between the supplier and session keepers.
+func (k *Keeper) SupplySessionKeeper(sessionKeeper types.SessionKeeper) {
+	k.sessionKeeper = sessionKeeper
 }

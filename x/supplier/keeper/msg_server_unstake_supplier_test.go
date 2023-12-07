@@ -14,7 +14,7 @@ import (
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
@@ -68,7 +68,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
