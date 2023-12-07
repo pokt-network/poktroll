@@ -5,11 +5,9 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	"github.com/cometbft/cometbft/crypto"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -49,6 +47,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		)
 	}
 
+	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
+		return sdkerrors.Wrap(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing application address from relay request",
+		)
+	}
+
 	// get the ring for the application address of the relay request
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
 	appRing, err := rp.ringCache.GetRingForAddress(ctx, appAddress)
@@ -68,17 +73,13 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	// get and hash the signable bytes of the relay request
-	signableBz, err := relayRequest.GetSignableBytes()
+	requestSignableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayRequest, "error getting signable bytes: %v", err)
 	}
 
-	hash := crypto.Sha256(signableBz)
-	var hash32 [32]byte
-	copy(hash32[:], hash)
-
 	// verify the relay request's signature
-	if valid := ringSig.Verify(hash32); !valid {
+	if valid := ringSig.Verify(requestSignableBz); !valid {
 		return sdkerrors.Wrapf(
 			ErrRelayerProxyInvalidRelayRequestSignature,
 			"invalid ring signature",
@@ -95,17 +96,10 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		Msg("verifying relay request session")
 
 	currentBlock := rp.blockClient.LatestBlock(ctx)
-	sessionQuery := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: appAddress,
-		Service:            service,
-		BlockHeight:        currentBlock.Height(),
-	}
-	sessionResponse, err := rp.sessionQuerier.GetSession(ctx, sessionQuery)
+	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
 	if err != nil {
 		return err
 	}
-
-	session := sessionResponse.Session
 
 	// Since the retrieved sessionId was in terms of:
 	// - the current block height (which is not provided by the relayRequest)
@@ -115,7 +109,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
 	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
-		return ErrRelayerProxyInvalidSession.Wrapf("%+v", session)
+		return ErrRelayerProxyInvalidSession.Wrapf(
+			"session mismatch, expecting: %+v, got: %+v",
+			session.Header,
+			relayRequest.Meta.SessionHeader,
+		)
 	}
 
 	// Check if the relayRequest is allowed to be served by the relayer proxy.

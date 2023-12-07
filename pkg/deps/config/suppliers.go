@@ -15,6 +15,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // hostToWebsocketURL converts the provided host into a websocket URL that can
@@ -42,6 +43,18 @@ func SupplyConfig(
 		}
 	}
 	return deps, nil
+}
+
+// NewSupplyLoggerFromCtx supplies a depinject config with a polylog.Logger instance
+// populated from the given context.
+func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		return depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx))), nil
+	}
 }
 
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
@@ -112,6 +125,7 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
 			querytypes.Context(queryClientCtx),
+			queryClientCtx.Keyring,
 		))
 
 		// Restore the flag's original value in order for other components
@@ -223,5 +237,47 @@ func NewSupplyRingCacheFn() SupplierFn {
 
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+	}
+}
+
+// NewSupplySessionQuerierFn returns a function which constructs a
+// SessionQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new SessionQuerier.
+func NewSupplySessionQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the session querier.
+		sessionQuerier, err := query.NewSessionQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the session querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(sessionQuerier)), nil
+	}
+}
+
+// NewSupplySupplierQuerierFn returns a function which constructs a
+// SupplierQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new SupplierQuerier.
+func NewSupplySupplierQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the supplier querier.
+		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the supplier querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(supplierQuerier)), nil
 	}
 }

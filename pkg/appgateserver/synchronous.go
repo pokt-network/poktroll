@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/cometbft/cometbft/crypto"
-
 	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -65,17 +63,16 @@ func (app *appGateServer) handleSynchronousRelay(
 	signer := signer.NewRingSigner(appRing, app.signingInformation.SigningKey)
 
 	// Hash and sign the request's signable bytes.
-	signableBz, err := relayRequest.GetSignableBytes()
+	signableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("getting signable bytes: %s", err)
 	}
 
-	hash := crypto.Sha256(signableBz)
-	signature, err := signer.Sign(hash)
+	requestSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return ErrAppGateHandleRelay.Wrapf("signing relay: %s", err)
 	}
-	relayRequest.Meta.Signature = signature
+	relayRequest.Meta.Signature = requestSig
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
 	cdc := types.ModuleCdc

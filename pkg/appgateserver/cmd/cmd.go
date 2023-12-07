@@ -10,12 +10,14 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
 	appgateconfig "github.com/pokt-network/poktroll/pkg/appgateserver/config"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
@@ -75,11 +77,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	ctx, cancelCtx := context.WithCancel(cmd.Context())
 	defer cancelCtx()
 
-	// Construct a logger and associate it with the command context.
-	logger := polyzero.NewLogger()
-	ctx = logger.WithContext(ctx)
-	cmd.SetContext(ctx)
-
 	// Handle interrupt and kill signals asynchronously.
 	signals.GoOnExitSignal(cancelCtx)
 
@@ -88,10 +85,22 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// TODO_TECHDEBT: add logger level and output options to the config.
 	appGateConfigs, err := appgateconfig.ParseAppGateServerConfigs(configContent)
 	if err != nil {
 		return err
 	}
+
+	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
+	loggerOpts := []polylog.LoggerOption{
+		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithOutput(os.Stderr),
+	}
+
+	// Construct a logger and associate it with the command context.
+	logger := polyzero.NewLogger(loggerOpts...)
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
 
 	// Setup the AppGate server dependencies.
 	appGateServerDeps, err := setupAppGateServerDependencies(ctx, cmd, appGateConfigs)
@@ -147,6 +156,7 @@ func setupAppGateServerDependencies(
 	}
 
 	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
 		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
