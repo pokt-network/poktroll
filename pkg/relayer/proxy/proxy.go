@@ -128,7 +128,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 	}
 
 	// Start the ring cache.
-	// TODO_IN_THIS_COMMIT: Figure out why the cache isnt being invalidated
+	// TODO_IN_THIS_PR: Figure out why the cache isnt being invalidated
 	rp.ringCache.Start(ctx)
 
 	startGroup, ctx := errgroup.WithContext(ctx)
