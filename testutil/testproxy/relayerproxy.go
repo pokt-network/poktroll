@@ -45,8 +45,10 @@ type TestBehavior struct {
 	proxiedServices map[string]*http.Server
 }
 
-const blockHeight = 1
-const blockHash = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
+const (
+	blockHeight = 1
+	blockHash   = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
+)
 
 // NewRelayerProxyTestBehavior creates a TestBehavior with the provided set of
 // behavior function that are used to instrument the tested subject's dependencies
@@ -80,7 +82,7 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
 
-		blockClient := testblock.NewAnyTimeLatestBlockBlockClient(test.t, []byte{}, 1)
+		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, 1)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		ringDeps := depinject.Supply(accountQueryClient, applicationQueryClient)
@@ -246,8 +248,8 @@ func GetRelayResponseError(t *testing.T, res *http.Response) (errCode int32, err
 	return payload.Error.Code, payload.Error.Message
 }
 
-// GetRelayResponseResult crafts a ring signer for test purposes and uses it to
-// sign the relay request
+// GetApplicationRingSignature crafts a ring signer for test purposes and uses
+// it to sign the relay request
 func GetApplicationRingSignature(
 	t *testing.T,
 	req *servicetypes.RelayRequest,

@@ -17,13 +17,14 @@ type RingSigner struct {
 	privKey ringtypes.Scalar
 }
 
-// NewRingSigner creates a new RingSigner instance with the ring and private key provided
+// NewRingSigner creates a new RingSigner instance with the ring and private
+// key provided
 func NewRingSigner(ring *ring.Ring, privKey ringtypes.Scalar) *RingSigner {
 	return &RingSigner{ring: ring, privKey: privKey}
 }
 
 // Sign uses the ring and private key to sign the message provided and returns the
-// serialised ring signature that can be deserialised and verified by the verifier
+// serialized ring signature that can be deserialized and verified by the verifier
 func (r *RingSigner) Sign(msg [32]byte) ([]byte, error) {
 	ringSig, err := r.ring.Sign(msg, r.privKey)
 	if err != nil {

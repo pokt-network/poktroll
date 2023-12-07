@@ -10,21 +10,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
-
-// hostToWebsocketURL converts the provided host into a websocket URL that can
-// be used to subscribe to onchain events and query the chain via a client
-// context or send transactions via a tx client context.
-func hostToWebsocketURL(host string) string {
-	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
-	return websocketURL
-}
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
 // supplier functions in order and passing the result of each supplier to the
@@ -69,7 +61,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
 		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
+		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
@@ -77,7 +69,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
 // instance with the given hostname, which is converted into a websocket URL,
-// to listen for block events on, and returns a new depinject.Config which
+// to listen for block events on-chain, and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
 func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(
@@ -220,26 +212,6 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplyRingCacheFn returns a function with constructs a RingCache instance
-// with the required dependencies and returns a new depinject.Config which is
-// supplied with the given deps and the new RingCache.
-func NewSupplyRingCacheFn() SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		// Create the ring cache.
-		ringCache, err := rings.NewRingCache(deps)
-		if err != nil {
-			return nil, err
-		}
-
-		// Supply the ring cache to the provided deps
-		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
-	}
-}
-
 // NewSupplySessionQuerierFn returns a function which constructs a
 // SessionQuerier instance with the required dependencies and returns a new
 // instance with the required dependencies and returns a new depinject.Config
@@ -280,4 +252,32 @@ func NewSupplySupplierQuerierFn() SupplierFn {
 		// Supply the supplier querier to the provided deps
 		return depinject.Configs(deps, depinject.Supply(supplierQuerier)), nil
 	}
+}
+
+// NewSupplyRingCacheFn returns a function with constructs a RingCache instance
+// with the required dependencies and returns a new depinject.Config which is
+// supplied with the given deps and the new RingCache.
+func NewSupplyRingCacheFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the ring cache.
+		ringCache, err := rings.NewRingCache(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the ring cache to the provided deps
+		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+	}
+}
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func hostToWebsocketURL(host string) string {
+	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
+	return websocketURL
 }

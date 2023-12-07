@@ -37,7 +37,7 @@ type relayerProxy struct {
 	signingKeyName string
 	keyring        keyring.Keyring
 
-	// blocksClient is the client used to get the block at the latest height from the blockchain
+	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
 	blockClient client.BlockClient
 

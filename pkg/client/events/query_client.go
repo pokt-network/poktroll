@@ -1,4 +1,4 @@
-package eventsquery
+package events
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/events_query/websocket"
+	"github.com/pokt-network/poktroll/pkg/client/events/websocket"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -185,12 +185,12 @@ func (eqc *eventsQueryClient) openEventsBytesAndConn(
 	// Get a connection from the dialer.
 	conn, err := eqc.dialer.DialContext(ctx, eqc.cometWebsocketURL)
 	if err != nil {
-		return nil, ErrDial.Wrapf("%s", err)
+		return nil, ErrEventsDial.Wrapf("%s", err)
 	}
 
 	// Send the event subscription request on the connection.
 	if err := conn.Send(req); err != nil {
-		subscribeErr := ErrSubscribe.Wrapf("%s", err)
+		subscribeErr := ErrEventsSubscribe.Wrapf("%s", err)
 		// assume the connection is bad
 		closeErr := conn.Close()
 		return nil, multierr.Combine(subscribeErr, closeErr)

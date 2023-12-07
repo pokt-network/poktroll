@@ -8,12 +8,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
@@ -35,15 +34,15 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 
 // NewAnyTimesCommittedBlocksSequenceBlockClient creates a new mock BlockClient.
 // This mock BlockClient will expect any number of calls to CommittedBlocksSequence,
-// and when that call is made, it returns the given BlocksObservable.
+// and when that call is made, it returns the given EventsObservable[Block].
 func NewAnyTimesCommittedBlocksSequenceBlockClient(
 	t *testing.T,
 	blocksObs observable.Observable[client.Block],
 ) *mockclient.MockBlockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LatestBlock method to be called any number of times.
-	blockClientMock := NewAnyTimeLatestBlockBlockClient(t, nil, 0)
+	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
+	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
 
 	// Set up the mock expectation for the CommittedBlocksSequence method. When
 	// the method is called, it returns a new replay observable that publishes
@@ -67,15 +66,15 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 ) *mockclient.MockBlockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LatestBlock method to be called any number of times.
-	blockClientMock := NewAnyTimeLatestBlockBlockClient(t, nil, 0)
+	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
+	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
 
 	// Set up the mock expectation for the CommittedBlocksSequence method. When
 	// the method is called, it returns a new replay observable that publishes
 	// blocks sent on the given blocksPublishCh.
 	blockClientMock.EXPECT().CommittedBlocksSequence(
 		gomock.AssignableToTypeOf(context.Background()),
-	).DoAndReturn(func(ctx context.Context) client.BlocksObservable {
+	).DoAndReturn(func(ctx context.Context) client.BlockReplayObservable {
 		// Create a new replay observable with a replay buffer size of 1. Blocks
 		// are published to this observable via the provided blocksPublishCh.
 		withPublisherOpt := channel.WithPublisher(blocksPublishCh)
@@ -88,10 +87,10 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 	return blockClientMock
 }
 
-// NewAnyTimeLatestBlockBlockClient creates a mock BlockClient that expects
-// calls to the LatestBlock method any number of times. When the LatestBlock
+// NewAnyTimeLastNBlocksBlockClient creates a mock BlockClient that expects
+// calls to the LastNBlocks method any number of times. When the LastNBlocks
 // method is called, it returns a mock Block with the provided hash and height.
-func NewAnyTimeLatestBlockBlockClient(
+func NewAnyTimeLastNBlocksBlockClient(
 	t *testing.T,
 	hash []byte,
 	height int64,
@@ -101,10 +100,10 @@ func NewAnyTimeLatestBlockBlockClient(
 
 	// Create a mock block that returns the provided hash and height.
 	blockMock := NewAnyTimesBlock(t, hash, height)
-	// Create a mock block client that expects calls to LatestBlock method and
+	// Create a mock block client that expects calls to LastNBlocks method and
 	// returns the mock block.
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
-	blockClientMock.EXPECT().LatestBlock(gomock.Any()).Return(blockMock).AnyTimes()
+	blockClientMock.EXPECT().LastNBlocks(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
 
 	return blockClientMock
 }

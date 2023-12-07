@@ -13,7 +13,7 @@ import (
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/require"
 
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -31,7 +31,7 @@ const (
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
-	var ctx, done = context.WithCancel(context.Background())
+	ctx, done := context.WithCancel(context.Background())
 
 	// TODO_CONSIDERATION: if this test suite gets more complex, it might make
 	// sense to refactor this key into a function that takes serviceId and appName
@@ -126,7 +126,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	msgSenderQuery := fmt.Sprintf(msgClaimSenderQueryFmt, accNameToAddrMap[supplierName])
 
 	// TODO_TECHDEBT(#220): refactor to use EventsReplayClient once available.
-	eventsQueryClient := eventsquery.NewEventsQueryClient(testclient.CometLocalWebsocketURL)
+	eventsQueryClient := events.NewEventsQueryClient(testclient.CometLocalWebsocketURL)
 	eitherEventsBzObs, err := eventsQueryClient.EventsBytes(ctx, msgSenderQuery)
 	require.NoError(s, err)
 

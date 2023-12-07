@@ -28,8 +28,7 @@ func (rs *relayerSessionsManager) createClaims(ctx context.Context) observable.O
 		rs.mapWaitForEarliestCreateClaimHeight,
 	)
 
-	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
-		channel.NewObservable[relayer.SessionTree]()
+	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh := channel.NewObservable[relayer.SessionTree]()
 
 	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -91,8 +90,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 		Str("hash", fmt.Sprintf("%x", createClaimWindowStartBlock.Hash())).
 		Msg("received global earliest claim submission height")
 
-	earliestCreateClaimHeight :=
-		protocol.GetEarliestCreateClaimHeight(ctx, createClaimWindowStartBlock)
+	earliestCreateClaimHeight := protocol.GetEarliestCreateClaimHeight(ctx, createClaimWindowStartBlock)
 
 	logger.Info().
 		Int64("earliest_create_claim_height", earliestCreateClaimHeight).
@@ -120,7 +118,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		latestBlock := rs.blockClient.LatestBlock(ctx)
+		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
 		logger.Info().
 			Int64("current_block", latestBlock.Height()+1).
 			Msg("submitting claim")

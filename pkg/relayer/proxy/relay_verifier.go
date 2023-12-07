@@ -95,7 +95,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	currentBlock := rp.blockClient.LatestBlock(ctx)
+	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
 	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
 	if err != nil {
 		return err

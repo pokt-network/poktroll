@@ -1,6 +1,6 @@
 //go:build integration
 
-package eventsquery_test
+package events_test
 
 import (
 	"context"

@@ -18,7 +18,7 @@ type websocketConn struct {
 func (wsConn *websocketConn) Receive() ([]byte, error) {
 	_, msg, err := wsConn.conn.ReadMessage()
 	if err != nil {
-		return nil, ErrReceive.Wrapf("%s", err)
+		return nil, ErrEventsWebsocketReceive.Wrapf("%s", err)
 	}
 	return msg, nil
 }

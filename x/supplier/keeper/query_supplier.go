@@ -34,7 +34,6 @@ func (k Keeper) SupplierAll(goCtx context.Context, req *types.QueryAllSupplierRe
 		suppliers = append(suppliers, supplier)
 		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
