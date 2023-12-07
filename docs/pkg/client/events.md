@@ -113,34 +113,37 @@ flowchart
 title: EventsReplayClient Components
 ---
 
-flowchart TD
-  subgraph erc[EventsReplayClient]
-    r1_ob[Event Replay Observable Cache]
-  end
+flowchart
+    slice_cons[Events Slice Consumer]
 
-  subgraph chain[CometBFT Node]
-    c2_md[Subscribe Endpoint]
-  end
+    subgraph obs_cons[Events Observable Consumer]
+        evt_obs[Events Observer]
+    end
 
-    subgraph con[Consumer]
-    c1_ob[Replay Observable]
-    c1_ev[Events]
-  end
+    subgraph erc[EventsReplayClient]
+        cache[Events Replay Observable Cache]
+    end
 
-  eqc[Events Query Client]
+    chain[CometBFT Node]
 
-  c1_ob --"#EventsSequence()"--> erc
-  c1_ev --"#LastNEvents()"--> erc
+    evt_re_obs[Events Replay Observable]
 
-  erc --"LatestReplayObservable"-->r1_ob
-  erc --"#EventBytes()"--> eqc
+    eqc[Events Query Client]
 
-  eqc -.-> chain
+
+    slice_cons --"#LastNEvents()"--> erc
+    obs_cons --"#EventsSequence()"--> erc
+    erc =="#EventsSequence()"==> evt_re_obs
+    evt_obs --"#Subscribe()"--> evt_re_obs
+
+    erc --"#EventBytes()"--> eqc
+
+    eqc -.-> chain
 ```
 
 ### Subscriptions
 
-<!-- TODO(@bryanchriswhite): ADD LEGEND -->
+_TODO_DOCUMENTATION(@bryanchriswhite): Add Legend_
 
 ```mermaid
 ---
@@ -184,7 +187,10 @@ flowchart
 
 ### Events Decoding
 
-<!-- TODO(@h5law): ADD LEGEND -->
+_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): Add Legend_
+
+_TODO_DOCUMENTATION(@bryanchriswhite,@h5law): Seperate into seperate diagrams that detail each
+step of the process (reconnection, decoding, publishing, etc.)_
 
 ```mermaid
 ---
