@@ -54,6 +54,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 
 	tests := []struct {
 		desc              string
+		index             int
 		appAccount        account
 		delegateeAccounts []account
 		expectedRingSize  int
@@ -61,6 +62,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 	}{
 		{
 			desc:              "success: un-cached application without delegated gateways",
+			index:             1,
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{},
 			expectedRingSize:  noDelegateesRingSize,
@@ -68,6 +70,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 		},
 		{
 			desc:              "success: un-cached application with delegated gateways",
+			index:             2,
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{newAccount("secp256k1"), newAccount("secp256k1")},
 			expectedRingSize:  3,
@@ -118,6 +121,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			require.NoError(t, err)
 			// Ensure the ring is the correct size.
 			require.Equal(t, test.expectedRingSize, ring.Size())
+			require.Equal(t, test.index, len(rc.GetCachedAddresses()))
 		})
 	}
 }
@@ -160,6 +164,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			ring1, err := rc.GetRingForAddress(ctx, test.appAccount.address)
 			require.NoError(t, err)
 			require.Equal(t, noDelegateesRingSize, ring1.Size())
+			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 			accMap := make(map[string]cryptotypes.PubKey)
 			// if the test expects a ring > 2 we have delegated gateways
@@ -195,16 +200,55 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 				require.True(t, ring1.Equals(ring2))
 			}
 			require.Equal(t, test.expectedRingSize, ring2.Size())
+			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 			// Attempt to retrieve the ring for the address after its been cached
 			ring3, err := rc.GetRingForAddress(ctx, test.appAccount.address)
 			require.NoError(t, err)
+			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 			// Ensure the rings are the same and have the same size
 			require.True(t, ring2.Equals(ring3))
 			require.Equal(t, test.expectedRingSize, ring3.Size())
+			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 		})
 	}
+}
+
+func TestRingCache_Stop(t *testing.T) {
+	// Create and start the ring cache
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+	rc, _ := createRingCache(ctx, t, "")
+	rc.Start(ctx)
+
+	// Insert an application into the testing state
+	appAccount := newAccount("secp256k1")
+	gatewayAccount := newAccount("secp256k1")
+	testqueryclients.AddAddressToApplicationMap(
+		t, appAccount.address,
+		appAccount.pubKey,
+		map[string]cryptotypes.PubKey{
+			gatewayAccount.address: gatewayAccount.pubKey,
+		})
+
+	// Attempt to retrieve the ring for the address and cache it
+	ring1, err := rc.GetRingForAddress(ctx, appAccount.address)
+	require.NoError(t, err)
+	require.Equal(t, 3, ring1.Size())
+	require.Equal(t, 1, len(rc.GetCachedAddresses()))
+
+	// Retrieve the cached ring
+	ring2, err := rc.GetRingForAddress(ctx, appAccount.address)
+	require.NoError(t, err)
+	require.True(t, ring1.Equals(ring2))
+	require.Equal(t, 1, len(rc.GetCachedAddresses()))
+
+	// Stop the ring cache
+	rc.Stop()
+
+	// Retrieve the ring again
+	require.Equal(t, 0, len(rc.GetCachedAddresses()))
 }
 
 // createRingCache creates the RingCache using mocked AccountQueryClient and

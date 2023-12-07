@@ -16,10 +16,14 @@ type RingCache interface {
 	// separate goroutine, listens for on-chain delegation events and invalidates
 	// the cache if the delegatee change's address is stored in the cache.
 	Start(ctx context.Context)
+	// GetCachedAddresses returns the addresses of the applications that are
+	// currently cached in the ring cache.
+	GetCachedAddresses() []string
 	// GetRingForAddress returns the ring for the given application address. If
 	// it does not exist in the cache, it will be created by querying the on-chain
 	// state, otherwise it will be returned from the cache.
 	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
 	// Stop stops the ring cache by unsubscribing from on-chain delegation events.
+	// And clears the cache, so that it no longer contains any rings,
 	Stop()
 }

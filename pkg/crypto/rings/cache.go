@@ -103,7 +103,22 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 
 // Stop stops the ring cache by unsubscribing from on-chain delegation events.
 func (rc *ringCache) Stop() {
+	// Clear the cache.
+	rc.ringPointsCache = make(map[string][]ringtypes.Point)
+	// Unsubscribe from the delegatee change replay observable.
 	rc.delegationClient.Close()
+}
+
+// GetCachedAddresses returns the addresses of the applications that are
+// currently cached in the ring cache.
+func (rc *ringCache) GetCachedAddresses() []string {
+	rc.ringPointsMu.RLock()
+	defer rc.ringPointsMu.RUnlock()
+	keys := make([]string, 0, len(rc.ringPointsCache))
+	for k := range rc.ringPointsCache {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // GetRingForAddress returns the ring for the address provided. If it does not
