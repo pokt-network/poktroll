@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -197,6 +200,7 @@ var (
 		applicationmodule.AppModuleBasic{},
 		suppliermodule.AppModuleBasic{},
 		gatewaymodule.AppModuleBasic{},
+		tokenomicsmodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
@@ -283,6 +287,8 @@ type App struct {
 	SupplierKeeper    suppliermodulekeeper.Keeper
 
 	GatewayKeeper gatewaymodulekeeper.Keeper
+
+	TokenomicsKeeper tokenomicsmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -335,6 +341,7 @@ func New(
 		applicationmoduletypes.StoreKey,
 		suppliermoduletypes.StoreKey,
 		gatewaymoduletypes.StoreKey,
+		tokenomicsmoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -634,6 +641,14 @@ func New(
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
+	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
+		appCodec,
+		keys[tokenomicsmoduletypes.StoreKey],
+		keys[tokenomicsmoduletypes.MemStoreKey],
+		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+	)
+	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
+
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
 	/**** IBC Routing ****/
@@ -701,6 +716,7 @@ func New(
 		applicationModule,
 		supplierModule,
 		gatewayModule,
+		tokenomicsModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
@@ -739,6 +755,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -770,6 +787,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -806,6 +824,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
@@ -1036,6 +1055,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
 	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
 	paramsKeeper.Subspace(gatewaymoduletypes.ModuleName)
+	paramsKeeper.Subspace(tokenomicsmoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
