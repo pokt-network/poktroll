@@ -50,3 +50,25 @@ make go_test
 ### LocalNet
 
 Please check out the [LocalNet documentation](./localnet/README.md).
+
+
+
+
+
+
+
+--------
+
+- You can pull https://github.com/pokt-network/helm-charts locally, and in your localnet_config.yaml you can configure tilt to use that repo instead of downloading Helm charts. Once you've set it up, you can modify the arguments here: https://github.com/pokt-network/helm-charts/blob/main/charts/poktroll-sequencer/templates/scripts.yaml#L37!
+
+- How do I contribute?
+- How do I run the tests?
+- How do I run an E2E Relay?
+- How do I deploy a testnet locally?
+- How do I run E2E Tests?
+- Reminder that helm_chart_local_repo needs to be configured in poktroll/localnet_config.yaml
+  - Make sure this is part of localnet configs
+
+
+- Explore ignite
+- Explore poktrolld
