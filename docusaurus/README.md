@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # Website
 
 This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
