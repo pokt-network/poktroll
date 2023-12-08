@@ -11,9 +11,14 @@ import (
 // SessionSuppliers is the structure that represents a session's end block height
 // and its matching suppliers.
 type SessionSuppliers struct {
-	// SessionEndBlockHeight is the session's end block height that helps
-	// determine if the session is still valid without looking into SupplierEndpoints slice.
-	Session            *sessiontypes.Session
+	// Session is the fully hydrated session object returned by the query.
+	Session *sessiontypes.Session
+
+	// SuppliersEndpoints is a slice of the session's suppliers endpoints each
+	// item representing a single supplier endpoint augmented with the session
+	// header and the supplier's address.
+	// An item from this slice is what needs to be passed to the `SendRelay`
+	// function so it has all the information needed to send the relay request.
 	SuppliersEndpoints []*SingleSupplierEndpoint
 }
 
