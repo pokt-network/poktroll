@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"context"
-	"fmt"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
@@ -10,7 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	block "github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
