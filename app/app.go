@@ -7,9 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
-	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -113,8 +110,6 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
-	"github.com/spf13/cast"
-
 	appparams "github.com/pokt-network/poktroll/app/params"
 	"github.com/pokt-network/poktroll/docs"
 	applicationmodule "github.com/pokt-network/poktroll/x/application"
@@ -135,6 +130,10 @@ import (
 	suppliermodule "github.com/pokt-network/poktroll/x/supplier"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/spf13/cast"
 )
 
 const (
