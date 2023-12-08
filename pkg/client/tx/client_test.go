@@ -13,12 +13,11 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"

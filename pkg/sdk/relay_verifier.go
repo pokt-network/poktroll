@@ -29,13 +29,13 @@ func (sdk *poktrollSDK) verifyResponse(
 	supplierSignature := relayResponse.Meta.SupplierSignature
 
 	// Get the relay response signable bytes and hash them.
-	responseSignableBz, err := relayResponse.GetSignableBytes()
+	responseSignableBz, err := relayResponse.GetSignableBytesHash()
 	if err != nil {
 		return err
 	}
 
 	// Verify the relay response signature.
-	if !supplierPubKey.VerifySignature(responseSignableBz, supplierSignature) {
+	if !supplierPubKey.VerifySignature(responseSignableBz[:], supplierSignature) {
 		return ErrSDKInvalidRelayResponseSignature
 	}
 

@@ -42,14 +42,14 @@ func (sdk *poktrollSDK) SendRelay(
 	signer := signer.NewRingSigner(appRing, sdk.signingKey)
 
 	// Hash and sign the request's signable bytes.
-	signableBz, err := relayRequest.GetSignableBytes()
+	signableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("getting signable bytes: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error getting signable bytes: %s", err)
 	}
 
 	requestSig, err := signer.Sign(signableBz)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("signing relay: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error signing relay: %s", err)
 	}
 	relayRequest.Meta.Signature = requestSig
 

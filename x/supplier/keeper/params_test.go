@@ -10,7 +10,7 @@ import (
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx := testkeeper.SupplierKeeper(t)
+	k, ctx := testkeeper.SupplierKeeper(t, nil)
 	params := types.DefaultParams()
 
 	k.SetParams(ctx, params)

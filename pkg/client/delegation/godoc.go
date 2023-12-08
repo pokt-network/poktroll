@@ -1,0 +1,5 @@
+// Package delegation contains a light wrapper of the EventsReplayClient[DeelgateeChange]
+// generic which listens for redelegation events on chain and emits them
+// through a ReplayObservable. This enables consumers to listen for on-chain
+// application redelegation events and react to them asynchronously.
+package delegation

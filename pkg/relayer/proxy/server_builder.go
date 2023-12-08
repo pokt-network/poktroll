@@ -5,7 +5,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
@@ -24,13 +23,12 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Get the supplier's advertised information from the blockchain
-	supplierQuery := &suppliertypes.QueryGetSupplierRequest{Address: supplierAddress.String()}
-	supplierQueryResponse, err := rp.supplierQuerier.Supplier(ctx, supplierQuery)
+	supplier, err := rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
 	if err != nil {
 		return err
 	}
 
-	services := supplierQueryResponse.Supplier.Services
+	services := supplier.Services
 
 	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
 	providedServices := make(relayServersMap)
@@ -82,7 +80,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	rp.advertisedRelayServers = providedServices
-	rp.supplierAddress = supplierQueryResponse.Supplier.Address
+	rp.supplierAddress = supplier.Address
 
 	return nil
 }

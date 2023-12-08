@@ -17,7 +17,7 @@ message Relay {
 // RelayRequestMetadata contains the metadata for a RelayRequest.
 message RelayRequestMetadata {
   session.SessionHeader session_header = 1; // Session header associated with the relay.
-  // The request signature is a serialised ring signature that may have been
+  // The request signature is a serialized ring signature that may have been
   // by either the application itself or one of the gateways that the
   // application has delegated to. The signature is made using the ring of the
   // application in both cases.
@@ -27,7 +27,7 @@ message RelayRequestMetadata {
 // RelayRequest holds the request details for a relay.
 message RelayRequest {
   RelayRequestMetadata meta = 1;
-  // payload is the serialised payload for the request.
+  // payload is the serialized payload for the request.
   // The payload is passed directly to the service and as such can be any
   // format that the service supports: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;
@@ -36,7 +36,7 @@ message RelayRequest {
 // RelayResponse contains the response details for a RelayRequest.
 message RelayResponse {
   RelayResponseMetadata meta = 1;
-  // payload is the serialised payload for the response.
+  // payload is the serialized payload for the response.
   // The payload is passed directly from the service and as such can be any
   // format the the service responds with: JSON-RPC, REST, gRPC, etc.
   bytes payload = 2;

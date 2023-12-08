@@ -21,12 +21,14 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// StakedGatewayMap is used to mock whether a gateway is staked or not for use
+// stakedGatewayMap is used to mock whether a gateway is staked or not for use
 // in the application's mocked gateway keeper. This enables the tester to
 // control whether a gateway is "staked" or not and whether it can be delegated to
 // WARNING: Using this map may cause issues if running multiple tests in parallel
-var StakedGatewayMap = make(map[string]struct{})
+var stakedGatewayMap = make(map[string]struct{})
 
+// ApplicationKeeper returns a mocked application keeper and context for testing
+// it mocks the chain having staked gateways via the use of the stakedGatewayMap
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
@@ -51,7 +53,7 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
 	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
-			if _, ok := StakedGatewayMap[addr]; !ok {
+			if _, ok := stakedGatewayMap[addr]; !ok {
 				return gatewaytypes.Gateway{}, false
 			}
 			stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
@@ -84,4 +86,22 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	k.SetParams(ctx, types.DefaultParams())
 
 	return k, ctx
+}
+
+// AddGatewayToStakedGatewayMap adds the given gateway address to the staked
+// gateway map for use in the application's mocked gateway keeper and ensures
+// that it is removed from the map when the test is complete
+func AddGatewayToStakedGatewayMap(t *testing.T, gatewayAddr string) {
+	t.Helper()
+	stakedGatewayMap[gatewayAddr] = struct{}{}
+	t.Cleanup(func() {
+		delete(stakedGatewayMap, gatewayAddr)
+	})
+}
+
+// RemoveGatewayFromStakedGatewayMap removes the given gateway address from the
+// staked gateway map for use in the application's mocked gateway keeper
+func RemoveGatewayFromStakedGatewayMap(t *testing.T, gatewayAddr string) {
+	t.Helper()
+	delete(stakedGatewayMap, gatewayAddr)
 }

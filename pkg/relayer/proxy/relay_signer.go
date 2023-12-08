@@ -17,7 +17,7 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) er
 	signer := signer.NewSimpleSigner(rp.keyring, rp.signingKeyName)
 
 	// extract and hash the relay response's signable bytes
-	signableBz, err := relayResponse.GetSignableBytes()
+	signableBz, err := relayResponse.GetSignableBytesHash()
 	if err != nil {
 		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayResponse, "error getting signable bytes: %v", err)
 	}

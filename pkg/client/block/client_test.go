@@ -62,9 +62,9 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LatestBlock successfully returns latest block",
+			name: "LastNBlocks(1) successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LatestBlock(ctx)
+				lastBlock := blockClient.LastNBlocks(ctx, 1)[0]
 				return lastBlock
 			},
 		},
@@ -86,7 +86,7 @@ func TestBlockClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var actualBlockCh = make(chan client.Block, 10)
+			actualBlockCh := make(chan client.Block, 10)
 
 			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,

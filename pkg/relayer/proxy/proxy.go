@@ -5,19 +5,15 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
@@ -41,17 +37,17 @@ type relayerProxy struct {
 	signingKeyName string
 	keyring        keyring.Keyring
 
-	// blocksClient is the client used to get the block at the latest height from the blockchain
+	// blockClient is the client used to get the block at the latest height from the blockchain
 	// and be notified of new incoming blocks. It is used to update the current session data.
 	blockClient client.BlockClient
 
 	// supplierQuerier is the querier used to get the supplier's advertised information from the blockchain,
 	// which contains the supported services, RPC types, and endpoints, etc...
-	supplierQuerier suppliertypes.QueryClient
+	supplierQuerier client.SupplierQueryClient
 
 	// sessionQuerier is the querier used to get the current session from the blockchain,
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
-	sessionQuerier sessiontypes.QueryClient
+	sessionQuerier client.SessionQueryClient
 
 	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
 	// has the necessary information to start the server that listens for incoming relay requests and
@@ -70,9 +66,6 @@ type relayerProxy struct {
 
 	// ringCache is used to obtain and store the ring for the application.
 	ringCache crypto.RingCache
-
-	// clientCtx is the Cosmos' client context used to build the needed query clients and unmarshal their replies.
-	clientCtx querytypes.Context
 
 	// supplierAddress is the address of the supplier that the relayer proxy is running for.
 	supplierAddress string
@@ -97,21 +90,19 @@ func NewRelayerProxy(
 	if err := depinject.Inject(
 		deps,
 		&rp.logger,
-		&rp.clientCtx,
 		&rp.blockClient,
 		&rp.ringCache,
+		&rp.supplierQuerier,
+		&rp.sessionQuerier,
+		&rp.keyring,
 	); err != nil {
 		return nil, err
 	}
 
-	clientCtx := cosmosclient.Context(rp.clientCtx)
 	servedRelays, servedRelaysProducer := channel.NewObservable[*types.Relay]()
 
 	rp.servedRelays = servedRelays
 	rp.servedRelaysPublishCh = servedRelaysProducer
-	rp.supplierQuerier = suppliertypes.NewQueryClient(clientCtx)
-	rp.sessionQuerier = sessiontypes.NewQueryClient(clientCtx)
-	rp.keyring = rp.clientCtx.Keyring
 
 	for _, opt := range opts {
 		opt(rp)
@@ -177,7 +168,7 @@ func (rp *relayerProxy) validateConfig() error {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
-	if rp.proxiedServicesEndpoints == nil {
+	if rp.proxiedServicesEndpoints == nil || len(rp.proxiedServicesEndpoints) == 0 {
 		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
 	}
 

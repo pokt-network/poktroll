@@ -13,7 +13,7 @@ type PartialRESTPayload struct {
 	Headers map[string]string `json:"headers"`
 }
 
-// PartiallyUnmarshalRESTPayload receives a serialised payload and attempts to
+// PartiallyUnmarshalRESTPayload receives a serialized payload and attempts to
 // unmarshal it into the PartialRESTPayload struct. If successful this struct
 // is returned, if however the struct does not contain all the required fields
 // the success return value is false and a nil payload is returned.
