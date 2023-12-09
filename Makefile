@@ -527,6 +527,14 @@ go_docs: check_godoc ## Generate documentation for the project
 openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 	ignite generate openapi --yes
 
+
+.PHONY: docusaurus_start
+docusaurus_start: ## Start the Docusaurus server
+	cp README.md docusaurus/docs/README.md
+	(cd docusaurus && npm run start)
+
+
+
 ######################
 ### Ignite Helpers ###
 ######################

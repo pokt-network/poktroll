@@ -1,3 +1,7 @@
+---
+title: Roadmap Changelog
+---
+
 # Roadmap Changelog <!-- omit in toc -->
 
 The purpose of this doc is to keep track of the changes made to the [Shannon roadmap](https://github.com/orgs/pokt-network/projects/144).

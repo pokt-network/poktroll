@@ -1,4 +1,9 @@
-# Package `pocket/pkg/client/events` <!-- omit in toc -->
+---
+title: Client Events
+sidebar_position: 2
+---
+
+# Package `pkg/client/events` <!-- omit in toc -->
 
 > An event query package for interfacing with [CometBFT](https://cometbft.com/)
 > and the [Cosmos SDK](https://v1.cosmos.network/sdk), facilitating subscriptions
