@@ -1,4 +1,4 @@
-package appgateserver
+package sdk
 
 import (
 	"context"
@@ -9,20 +9,20 @@ import (
 )
 
 // verifyResponse verifies the relay response signature.
-func (app *appGateServer) verifyResponse(
+func (sdk *poktrollSDK) verifyResponse(
 	ctx context.Context,
 	supplierAddress string,
 	relayResponse *types.RelayResponse,
 ) error {
 	// Get the supplier's public key.
-	supplierPubKey, err := app.getSupplierPubKeyFromAddress(ctx, supplierAddress)
+	supplierPubKey, err := sdk.getSupplierPubKeyFromAddress(ctx, supplierAddress)
 	if err != nil {
 		return err
 	}
 
 	// Extract the supplier's signature
 	if relayResponse.Meta == nil {
-		return ErrAppGateEmptyRelayResponseSignature.Wrapf(
+		return ErrSDKEmptyRelayResponseSignature.Wrapf(
 			"response payload: %s", relayResponse.Payload,
 		)
 	}
@@ -36,7 +36,7 @@ func (app *appGateServer) verifyResponse(
 
 	// Verify the relay response signature.
 	if !supplierPubKey.VerifySignature(responseSignableBz[:], supplierSignature) {
-		return ErrAppGateInvalidRelayResponseSignature
+		return ErrSDKInvalidRelayResponseSignature
 	}
 
 	return nil
@@ -44,25 +44,25 @@ func (app *appGateServer) verifyResponse(
 
 // getSupplierPubKeyFromAddress gets the supplier's public key from the cache or
 // queries if it is not found. The public key is then cached before being returned.
-func (app *appGateServer) getSupplierPubKeyFromAddress(
+func (sdk *poktrollSDK) getSupplierPubKeyFromAddress(
 	ctx context.Context,
 	supplierAddress string,
 ) (cryptotypes.PubKey, error) {
-	supplierPubKey, ok := app.supplierAccountCache[supplierAddress]
+	supplierPubKey, ok := sdk.supplierAccountCache[supplierAddress]
 	if ok {
 		return supplierPubKey, nil
 	}
 
 	// Query for the supplier account to get the application's public key
 	// to verify the relay request signature.
-	acc, err := app.accountQuerier.GetAccount(ctx, supplierAddress)
+	acc, err := sdk.accountQuerier.GetAccount(ctx, supplierAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	fetchedPubKey := acc.GetPubKey()
 	// Cache the retrieved public key.
-	app.supplierAccountCache[supplierAddress] = fetchedPubKey
+	sdk.supplierAccountCache[supplierAddress] = fetchedPubKey
 
 	return fetchedPubKey, nil
 }

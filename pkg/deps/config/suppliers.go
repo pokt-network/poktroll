@@ -3,10 +3,13 @@ package config
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	grpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -16,6 +19,7 @@ import (
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/sdk"
 )
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
@@ -117,6 +121,7 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
 			querytypes.Context(queryClientCtx),
+			grpc.ClientConn(queryClientCtx),
 			queryClientCtx.Keyring,
 		))
 
@@ -214,8 +219,7 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 
 // NewSupplySessionQuerierFn returns a function which constructs a
 // SessionQuerier instance with the required dependencies and returns a new
-// instance with the required dependencies and returns a new depinject.Config
-// which is supplied with the given deps and the new SessionQuerier.
+// depinject.Config which is supplied with the given deps and the new SessionQuerier.
 func NewSupplySessionQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -271,6 +275,52 @@ func NewSupplyRingCacheFn() SupplierFn {
 
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
+	}
+}
+
+// NewSupplyPOKTRollSDKFn returns a function which constructs a
+// POKTRollSDK instance with the required dependencies and returns a new
+// depinject.Config which is supplied with the given deps and the new POKTRollSDK.
+func NewSupplyPOKTRollSDKFn(
+	queryNodeURL *url.URL,
+	signingKeyName string,
+) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		var clientCtx cosmosclient.Context
+
+		// On a Cosmos environment we get the private key from the keyring
+		// Inject the client context, get the keyring from it then get the private key
+		if err := depinject.Inject(deps, &clientCtx); err != nil {
+			return nil, err
+		}
+
+		keyRecord, err := clientCtx.Keyring.Key(signingKeyName)
+		if err != nil {
+			return nil, err
+		}
+
+		privateKey, ok := keyRecord.GetLocal().PrivKey.GetCachedValue().(cryptotypes.PrivKey)
+		if !ok {
+			return nil, err
+		}
+
+		config := &sdk.POKTRollSDKConfig{
+			PrivateKey:    privateKey,
+			PocketNodeUrl: queryNodeURL,
+			Deps:          deps,
+		}
+
+		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the session querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
 	}
 }
 

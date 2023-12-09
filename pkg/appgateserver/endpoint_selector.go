@@ -2,10 +2,8 @@ package appgateserver
 
 import (
 	"context"
-	"net/url"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/pokt-network/poktroll/pkg/sdk"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -18,34 +16,20 @@ func (app *appGateServer) getRelayerUrl(
 	ctx context.Context,
 	serviceId string,
 	rpcType sharedtypes.RPCType,
-	session *sessiontypes.Session,
-) (supplierUrl *url.URL, supplierAddress string, err error) {
-	logger := polylog.Ctx(ctx)
+	supplierEndpoints []*sdk.SingleSupplierEndpoint,
+) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
+	for _, supplierEndpoint := range supplierEndpoints {
+		// Skip services that don't match the requested serviceId.
+		if supplierEndpoint.Header.Service.Id != serviceId {
+			continue
+		}
 
-	for _, supplier := range session.Suppliers {
-		for _, service := range supplier.Services {
-			// Skip services that don't match the requested serviceId.
-			if service.Service.Id != serviceId {
-				continue
-			}
-
-			for _, endpoint := range service.Endpoints {
-				// Return the first endpoint url that matches the request's RpcType.
-				if endpoint.RpcType == rpcType {
-					supplierUrl, err := url.Parse(endpoint.Url)
-					if err != nil {
-						logger.Error().
-							Str("url", endpoint.Url).
-							Err(err).
-							Msg("failed to parse url")
-						continue
-					}
-					return supplierUrl, supplier.Address, nil
-				}
-			}
+		// Return the first endpoint url that matches the request's RpcType.
+		if supplierEndpoint.RpcType == rpcType {
+			return supplierEndpoint, nil
 		}
 	}
 
 	// Return an error if no relayer endpoints were found.
-	return nil, "", ErrAppGateNoRelayEndpoints
+	return nil, ErrAppGateNoRelayEndpoints
 }
