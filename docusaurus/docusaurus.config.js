@@ -12,19 +12,25 @@ const config = {
   tagline: "Roll the POKT",
   favicon: "img/logo.png",
 
-  // Set the production url of your site here
-  url: "https://docs.poktroll.com",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+
+  // GitHub pages deployment config.
+  url: "https://pokt-network.github.io/",
+  baseUrl: "/poktroll/",
+  // Custom domain config.
+  // url: "https://docs.poktroll.com",
+  // baseUrl: "/",
 
   markdown: { mermaid: true },
   themes: ["@docusaurus/theme-mermaid"],
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: "pokt-network", // Usually your GitHub org/user name.
-  projectName: "poktroll", // Usually your repo name.
+  organizationName: "pokt-network", // Usually your GitHub org/user name (ORGANIZATION_NAME)
+  projectName: "poktroll", // Usually your repo name. (PROJECT_NAME)
+  deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
+  trailingSlash: false,
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -39,20 +45,15 @@ const config = {
 
   presets: [
     [
-      "classic",
+      // "classic",
+      "@docusaurus/preset-classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          routeBasePath: "/",
           sidebarPath: "./sidebars.js",
         },
-        // blog: {
-        //   showReadingTime: true,
-        //   editUrl:
-        //     "https://github.com/pokt-network/poktroll/tree/main/packages/create-docusaurus/templates/shared/",
-        // },
-        theme: {
-          customCss: "./src/css/custom.css",
-        },
+        theme: {},
       }),
     ],
   ],
@@ -69,21 +70,7 @@ const config = {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
         },
-        items: [
-          // {
-          //   type: "docSidebar",
-          //   sidebarId: "docsSidebar",
-          //   position: "left",
-          //   label: "Docs",
-          // },
-          // TODO: For when we have a blog
-          // { to: "/blog", label: "Blog", position: "left" },
-          // {
-          //   href: "https://github.com/facebook/docusaurus",
-          //   label: "GitHub",
-          //   position: "right",
-          // },
-        ],
+        items: [],
       },
       footer: {
         style: "dark",
@@ -113,11 +100,6 @@ const config = {
           {
             title: "More",
             items: [
-              // TODO: For then we have a blog
-              // {
-              //   label: "Blog",
-              //   to: "/blog",
-              // },
               {
                 label: "GitHub",
                 href: "https://github.com/pokt-network/poktroll",

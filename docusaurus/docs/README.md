@@ -1,6 +1,8 @@
 ---
 sidebar_position: 1
 title: Poktroll
+id: home-doc
+slug: /
 ---
 
 <div align="center">
@@ -62,7 +64,6 @@ If you want to contribute to this repository at this stage, you know where to fi
 ### Makefile
 
 Run `make` to see all the available commands
-
 
 ###
 
