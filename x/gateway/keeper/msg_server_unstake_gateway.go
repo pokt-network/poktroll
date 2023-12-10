@@ -2,9 +2,9 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
@@ -17,7 +17,7 @@ func (k msgServer) UnstakeGateway(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "UnstakeGateway")
-	logger.Info("About to unstake gateway with msg: %v", msg)
+	logger.Info(fmt.Sprintf("About to unstake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -27,27 +27,27 @@ func (k msgServer) UnstakeGateway(
 	var err error
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info("Gateway not found. Cannot unstake address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Gateway not found. Cannot unstake address %s", msg.Address))
 		return nil, types.ErrGatewayNotFound
 	}
-	logger.Info("Gateway found. Unstaking gateway for address %s", msg.Address)
+	logger.Info(fmt.Sprintf("Gateway found. Unstaking gateway for address %s", msg.Address))
 
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error("could not parse address %s", msg.Address)
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, err
 	}
 
 	// Send the coins from the gateway pool back to the gateway
 	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
 	if err != nil {
-		logger.Error("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err)
+		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
-	logger.Info("Successfully removed the gateway: %+v", gateway)
+	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
 	return &types.MsgUnstakeGatewayResponse{}, nil
 }

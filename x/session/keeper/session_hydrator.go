@@ -9,11 +9,10 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	_ "golang.org/x/crypto/sha3"
-
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	_ "golang.org/x/crypto/sha3"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()
@@ -69,7 +68,7 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session ID: %v", err)
 	}
-	logger.Info("Finished hydrating session ID: %s", sh.sessionHeader.SessionId)
+	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate application for session: %v", err)
@@ -171,12 +170,12 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	}
 
 	if len(candidateSuppliers) == 0 {
-		logger.Error("[ERROR] no suppliers found for session")
+		logger.Error(fmt.Sprintf("[ERROR] no suppliers found for session"))
 		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession)
+		logger.Info(fmt.Sprintf("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession))
 		sh.session.Suppliers = candidateSuppliers
 	} else {
 		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
