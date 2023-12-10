@@ -11,14 +11,13 @@ import (
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -58,6 +57,10 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 			for _, event := range txEvent.Result.Events {
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
+						// if attribute.Value == "/pocket.supplier.MsgSubmitProof" {
+						// 	continue
+						// }
+
 						require.Equal(
 							s, "/pocket.supplier.MsgCreateClaim",
 							attribute.Value,
