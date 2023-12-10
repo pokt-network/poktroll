@@ -4,12 +4,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/regen-network/gocuke"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 )
 
 const (
@@ -17,13 +16,13 @@ const (
 	//
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	CometLocalTCPURL = "tcp://sequencer-poktroll-sequencer:36657"
+	CometLocalTCPURL = "tcp://localhost:36657"
 
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
 	//
 	// TODO_IMPROVE: It would be nice if the value could be set correctly based
 	// on whether the test using it is running in tilt or not.
-	CometLocalWebsocketURL = "ws://sequencer-poktroll-sequencer:36657/websocket"
+	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
 )
 
 // EncodingConfig encapsulates encoding configurations for the Pocket application.

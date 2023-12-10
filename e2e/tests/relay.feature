@@ -1,5 +1,6 @@
 Feature: Relay Namespace
 
+    # TODO_TECHDEBT(@Olshansk, #180): This test requires you to run `make supplier1_stake && make app1_stake` first
     Scenario: App can send relay to Supplier
         Given the user has the pocketd binary installed
         And the application "app1" is staked for service "anvil"

@@ -33,6 +33,7 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
 
+
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
     files = listdir(directory)
