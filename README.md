@@ -31,45 +31,56 @@ slug: /
 
 **poktroll** is a rollup built using [Rollkit](https://rollkit.dev/), [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
 
-- [Announcements](#announcements)
+This R&D effort It is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE Inc.](https://grove.city/). We have documented our research journey [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
+
+- [Learn about Pocket Network](#learn-about-pocket-network)
 - [Roadmap](#roadmap)
-  - [Godoc](#godoc)
-  - [Pocket V1 (Shannon) Docs](#pocket-v1-shannon-docs)
 - [Getting Started](#getting-started)
-  - [Makefile](#makefile)
-  - [](#)
+  - [Quickstart](#quickstart)
+  - [Godoc](#godoc)
+- [Ask An AI](#ask-an-ai)
+  - [PNYX](#pnyx)
   - [GPokT](#gpokt)
 - [License](#license)
 
-## Announcements
+## Learn about Pocket Network
 
-It is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE](https://grove.city/) documented [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
+User friendly documentation on the Shannon upgrade is still a WIP, but there are
+a handful of resources you can reference in the meantime:
+
+- [Pocket Network official documentation](https://docs.pokt.network).
+- [Pocket Network Morse; aka v0 (current mainnet)](https://github.com/pokt-network/pocket-core)
+- [Pocket Network Protocol (outdated)](https://github.com/pokt-network/pocket-network-protocol)
+- [Pocket Network V1 (deprecated)](https://github.com/pokt-network/pocket)
 
 ## Roadmap
 
-You can find our Roadmap [here](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc) and the roadmap changelog [here](https://github.com/pokt-network/poktroll/blob/main/docs/roadmap_changelog.md).
-
-### Godoc
-
-The godocs for this repository can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
-
-### Pocket V1 (Shannon) Docs
-
-For now, we recommend visiting the links in [pokt-network/poktroll/README.md](https://github.com/pokt-network/poktroll/blob/main/README.md) as a starting point.
-
-If you want to contribute to this repository at this stage, you know where to find us.
+You can find our Roadmap [here](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc) and the roadmap changelog [here](./roadmap/roadmap_changelog.md).
 
 ## Getting Started
 
-### Makefile
+### Quickstart
 
-Run `make` to see all the available commands
+The best way to get involved is by following the instructions [here](./d)
 
-###
+### Godoc
+
+The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
+
+## Ask An AI
+
+### PNYX
+
+You can use [PNYX](https://pnyxai.com/), an AI-powered search engine that has been
+trained and indexed on the Pocket Network documentation, community calls, forums
+and much more!
 
 ### GPokT
 
-You can also use our chatbot, [GPokT](https://gpoktn.streamlit.app), to ask questions about Pocket Network. As of updating this documentation, please note that it may require you to provide your own LLM API token. If the deployed version of GPokT is down, you can deploy your own version by following the instructions [here](https://github.com/pokt-network/gpokt).
+You can use our chatbot, [GPokT](https://gpoktn.streamlit.app), to ask questions
+about Pocket Network. Please note that it may require you to provide your own
+LLM API token. If the deployed version of GPokT is down, you can deploy your own
+version by following the instructions [here](https://github.com/pokt-network/gpokt).
 
 ---
 

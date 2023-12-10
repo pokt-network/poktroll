@@ -10,6 +10,7 @@ title: Quickstart
 - [Tools](#tools)
   - [poktrolld](#poktrolld)
   - [Makefile](#makefile)
+  - [Ignite](#ignite)
   - [LocalNet](#localnet)
 
 The goal of this document is to get you up and running with the project, a
@@ -38,6 +39,8 @@ Run `poktrolld --help`
 ### Makefile
 
 Run `make` to see all the helpers we're working on
+
+### Ignite
 
 ### LocalNet
 
