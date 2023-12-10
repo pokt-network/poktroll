@@ -5,12 +5,12 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/smt"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)
@@ -66,6 +66,8 @@ func (sClient *supplierClient) SubmitProof(
 	sessionHeader sessiontypes.SessionHeader,
 	proof *smt.SparseMerkleClosestProof,
 ) error {
+	logger := polylog.Ctx(ctx)
+
 	proofBz, err := proof.Marshal()
 	if err != nil {
 		return err
@@ -82,6 +84,14 @@ func (sClient *supplierClient) SubmitProof(
 		return err
 	}
 
+	// TODO_IMPROVE: log details related to what & how much is being proven
+	logger.Info().
+		Str("supplier_addr", sClient.signingKeyAddr.String()).
+		Str("app_addr", sessionHeader.ApplicationAddress).
+		Str("session_id", sessionHeader.SessionId).
+		Str("service", sessionHeader.Service.Id).
+		Msg("created a new proof")
+
 	return <-errCh
 }
 
@@ -93,6 +103,8 @@ func (sClient *supplierClient) CreateClaim(
 	sessionHeader sessiontypes.SessionHeader,
 	rootHash []byte,
 ) error {
+	logger := polylog.Ctx(ctx)
+
 	msg := &suppliertypes.MsgCreateClaim{
 		SupplierAddress: sClient.signingKeyAddr.String(),
 		SessionHeader:   &sessionHeader,
@@ -104,8 +116,15 @@ func (sClient *supplierClient) CreateClaim(
 		return err
 	}
 
-	err = <-errCh
-	return err
+	// TODO_IMPROVE: log details related to how much is claimed
+	logger.Info().
+		Str("supplier_addr", sClient.signingKeyAddr.String()).
+		Str("app_addr", sessionHeader.ApplicationAddress).
+		Str("session_id", sessionHeader.SessionId).
+		Str("service", sessionHeader.Service.Id).
+		Msg("created a new claim")
+
+	return <-errCh
 }
 
 // validateConfigAndSetDefaults attempts to get the address from the keyring

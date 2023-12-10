@@ -17,8 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
@@ -27,6 +25,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/stretchr/testify/require"
 )
 
 // TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable.

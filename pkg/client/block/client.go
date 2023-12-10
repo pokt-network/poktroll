@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )
@@ -15,11 +14,11 @@ const (
 	// the chain.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	committedBlocksQuery = "tm.event='NewBlock'"
-	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the block
-	// client struct that defaults to this but can be overridden via an option
-	// in future work.
+
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
+	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
+	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
 )
 
