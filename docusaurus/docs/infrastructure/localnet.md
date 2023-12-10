@@ -1,17 +1,27 @@
-# Poktroll LocalNet <!-- omit in toc -->
+---
+sidebar_position: 1
+title: LocalNet
+---
 
-<!-- TODO(@olshansk, @okdas): Add a video showing how to use & run LocalNet. -->
+# LocalNet <!-- omit in toc -->
+
+<!--
+  TODO_IMPROVE(@olshansk, @okdas):
+  - Add a video showing how to use & run LocalNet
+  - Add a component diagram outlining the infrastructure
+  -  -->
 
 ## Background <!-- omit in toc -->
 
-Poktroll comes with a LocalNet that can be used for development and testing on a local machine. As a rollup, it requires an underlying Data Availability layer, which is provisioned by the locally running celestia node.
-
-## Table of Contents <!-- omit in toc -->
+This document walks you through launching a LocalNet that brings up a k8s cluster
+with a Data Availability network, a sequencer, Pocket actors and everything else
+needed to send an end-to-end relay.
 
 - [Run Poktroll locally](#run-poktroll-locally)
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
-- [Develop on the LocalNet](#develop-on-the-localnet)
+- [Developing with LocalNet](#developing-with-localnet)
+  - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
 
@@ -19,7 +29,7 @@ Poktroll comes with a LocalNet that can be used for development and testing on a
 
 ### Report issues
 
-If you encounter a problem using this guide, please create a new [GitHub Issue](https://github.com/pokt-network/pocket/issues/new/choose).
+If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
 
 ### TL;DR
 
@@ -32,7 +42,13 @@ If you encounter a problem using this guide, please create a new [GitHub Issue](
 2. Run `make localnet_up` to start the network
 3. When prompted, click `space` to see the web UI with logs and current status of the network. Alternatively, you can go directly to [localhost:10350](http://localhost:10350)
 
-## Develop on the LocalNet
+:::note
+You might already have these installed if you've followed the [localnet instructions](./infrastructure/localnet.md).
+:::
+
+## Developing with LocalNet
+
+### localnet_config.yaml
 
 Once LocalNet is started, a new file `localnet_config.yaml` is generated in the root directory of the repository. This file contains the configuration of the network. It looks like this:
 
