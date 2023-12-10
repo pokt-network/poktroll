@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/cometbft/cometbft/types"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )
@@ -27,9 +26,9 @@ func (blockEvent *cometBlockEvent) Hash() []byte {
 	return blockEvent.Block.LastBlockID.Hash.Bytes()
 }
 
-// newCometBlockEventFactoryFn is a factory function that returns a functon
+// newCometBlockEventFactoryFn is a factory function that returns a function
 // that attempts to deserialize the given bytes into a comet block.
-// if the resulting block has a height of zero, assume the event was not a block
+// If the resulting block has a height of zero, assume the event was not a block
 // event and return an ErrUnmarshalBlockEvent error.
 func newCometBlockEventFactoryFn() events.NewEventsFn[client.Block] {
 	return func(blockMsgBz []byte) (client.Block, error) {
@@ -38,7 +37,9 @@ func newCometBlockEventFactoryFn() events.NewEventsFn[client.Block] {
 			return nil, err
 		}
 
-		// If msg does not match the expected format then the block's height has a zero value.
+		// The header height should never be zero. If it is, it means that blockMsg
+		// does not match the expected format which led unmarshaling to fail,
+		// and blockHeader.height to have a default value.
 		if blockMsg.Block.Header.Height == 0 {
 			return nil, events.ErrEventsUnmarshalEvent.
 				Wrapf("with block data: %s", string(blockMsgBz))
