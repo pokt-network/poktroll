@@ -24,10 +24,10 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
-  # Ensure that we are using polylog (via logger.) instead of the golang's default
+  # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
   # log package.
-  check_polylog_in_off_chain_package:
-    name: Check polylog in off-chain source code
+  check_stdlog_in_off_chain_package:
+    name: Check stdlog in off-chain source code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
