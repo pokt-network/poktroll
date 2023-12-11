@@ -1,6 +1,23 @@
-## `pocket/pkg/observable` Package
+---
+title: Observable Package
+sidebar_position: 1
+---
+
+## `pocket/pkg/observable` Package <!-- omit in toc -->
 
 The `pocket/pkg/observable` package provides a lightweight and straightforward mechanism to handle asynchronous notifications using the Observer pattern. This is achieved through two primary interfaces: `Observable` and `Observer`.
+
+- [Overview](#overview)
+- [Interfaces and Structures](#interfaces-and-structures)
+  - [`Observable` Interface](#observable-interface)
+  - [`Observer` Interface](#observer-interface)
+- [Architecture Diagrams](#architecture-diagrams)
+  - [Observable Synchronization](#observable-synchronization)
+  - [Observable Buffering](#observable-buffering)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+- [Considerations](#considerations)
+- [Conclusion](#conclusion)
 
 ## Overview
 

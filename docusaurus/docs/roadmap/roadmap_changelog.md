@@ -1,5 +1,6 @@
 ---
 title: Roadmap Changelog
+sidebar_position: 2
 ---
 
 # Roadmap Changelog <!-- omit in toc -->

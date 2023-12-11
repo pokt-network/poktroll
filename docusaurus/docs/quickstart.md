@@ -15,9 +15,9 @@ title: Quickstart
 - [Interact with the chain](#interact-with-the-chain)
   - [Create a new Account](#create-a-new-account)
   - [Fund your account](#fund-your-account)
-  - [Send a relay](#send-a-relay)
   - [Stake Shannon as an Application](#stake-shannon-as-an-application)
-  - [Send a relay](#send-a-relay-1)
+  - [Send a relay](#send-a-relay)
+  - [Send a relay a shannon](#send-a-relay-a-shannon)
 - [Explore the tools](#explore-the-tools)
   - [poktrolld](#poktrolld)
   - [Makefile](#makefile)
@@ -84,7 +84,7 @@ Visit [localhost:10350](http://localhost:10350) and wait until all the container
 List all the accounts we get out of the box by running:
 
 ```bash
-ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+ignite account list --keyring-dir=./localnet/poktrolld --keyring-backend test --address-prefix pokt
 ```
 
 And create a new account named `shannon` by running:
@@ -106,7 +106,9 @@ export SHANNON_ADDRESS=pokt1mczm7xste7ckrwrmerda7m5ze89gyd9rzvxztr
 Query your account's balance by running:
 
 ```bash
-poktrolld --home=./localnet/poktrolld q bank balances $SHANNON_ADDRESS --node tcp://127.0.0.1:36657
+poktrolld --home=./localnet/poktrolld \
+  q bank balances $SHANNON_ADDRESS \
+  --node tcp://127.0.0.1:36657
 ```
 
 And you should see an empty balance:
@@ -121,7 +123,10 @@ pagination:
 But our sequencer has a lot of pokt from the genesis.json file (found at `localnet/poktrolld/config/genesis.json`)
 
 ```bash
-poktrolld --home=./localnet/poktrolld tx bank send sequencer1 $SHANNON_ADDRESS 199999100000000upokt --node tcp://127.0.0.1:36657
+poktrolld --home=./localnet/poktrolld \
+  tx bank send \
+  sequencer1 $SHANNON_ADDRESS 199999100000000upokt \
+  --node tcp://127.0.0.1:36657
 ```
 
 And you'll find that Shannon is now rolling in POKT:
@@ -133,12 +138,6 @@ balances:
 pagination:
   next_key: null
   total: "0"
-```
-
-### Send a relay
-
-```bash
-curl -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:42069/anvil
 ```
 
 ### Stake Shannon as an Application
@@ -163,12 +162,47 @@ We already have a supplier pre-configured to supply services for anvil
 Next, run the stake command:
 
 ```bash
-poktrolld --home=./localnet/poktrolld tx application stake-application 1000upokt --config shannon_app_config.yaml --keyring-backend test --from shannon --node tcp://127.0.0.1:36657
+poktrolld --home=./localnet/poktrolld \
+  tx application stake-application 1000upokt \
+  --config shannon_app_config.yaml \
+  --keyring-backend test --from shannon --node tcp://127.0.0.1:36657
 ```
 
 If you re-run, `make app_list` you should see that `SHANNON_ADDRESS` is now staked as an app.
 
 ### Send a relay
+
+:::danger
+Please run `make supplier1_stake && make app1_stake` before sending a relay.
+This is related to some techdebt(#180) that will be fixed soon.
+:::
+
+If you look in `localnet/poktrolld/config/appgate_server_config.yaml`, you'll find
+the configurations for an appgate server that is listening on port `42069`.
+
+Afterwards, you can send a relay to the `anvil` service (i.e. locally running
+ethereum node) like so:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+  http://localhost:42069/anvil
+```
+
+If everything worked as expected, you should see output similar to the following:
+
+```json
+{"jsonrpc":"2.0","id":1,"result":"0x61"}%
+```
+
+### Send a relay a shannon
+
+```yaml
+self_signing: true
+signing_key: shannon
+listening_endpoint: http://localhost:42042
+query_node_url: tcp://127.0.0.1:36657
+```
 
 ## Explore the tools
 
@@ -178,37 +212,23 @@ There are three primary tools you'll use to develop and interact with the networ
 2. `make` - a collection of helpers to make your life easier
 3. `ignite` - a tool to manage the local k8s cluster
 
-### poktrolld
+:::tip
 
-### Makefile
-
-### Ignite
-
-```
-
-1. Mint som new tokens
-2. Stake an application
-3. Send some funds
-4. Send a relay
-
-## Develop
-
-## Tools
+All of these are extensive and you will likely only need a small subset of their
+functionality in your day-to-day development. However, knowing of their existence
+will help you when you need to do something that you haven't done before.
+:::
 
 ### poktrolld
 
-Run `poktrolld --help`
+Run `poktrolld --help` in order to explore all the different. You will likely
+spend most of your time with either `poktrolld query --help` or `poktrolld tx --help`.
 
 ### Makefile
 
-Run `make` to see all the helpers we're working on
+Run `make` in order to see all the helpers our team has developed to
+improve our development experience.
 
 ### Ignite
 
-### LocalNe
-
-```
-
-```
-
-```
+Run `ignite --help` in order to explore all the different commands.
