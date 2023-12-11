@@ -180,7 +180,7 @@ This is related to some techdebt(#180) that will be fixed soon.
 If you look in `localnet/poktrolld/config/appgate_server_config.yaml`, you'll find
 the configurations for an appgate server that is listening on port `42069`.
 
-Afterwards, you can send a relay to the `anvil` service (i.e. locally running
+You can send a relay to the `anvil` service (i.e. locally running
 ethereum node) like so:
 
 ```bash
@@ -197,11 +197,38 @@ If everything worked as expected, you should see output similar to the following
 
 ### Send a relay a shannon
 
+:::danger
+TODO(@Olshansk, @red-0ne, @okdas): This part is still a WIP and the last sentence
+will likely throw an error.
+:::
+
+However, the appgate server above is not configured to sign relays on behalf of Shannon.
+
+To do so, you'll need to create a similar configuration like so:
+
 ```yaml
+cat <<EOF >> shannon_appgate_config.yaml
 self_signing: true
 signing_key: shannon
 listening_endpoint: http://localhost:42042
 query_node_url: tcp://127.0.0.1:36657
+EOF
+```
+
+And the start the appgate server locally:
+
+```bash
+poktrolld --home=./localnet/poktrolld  appgate-server \
+  --config shannon_appgate_config.yaml --keyring-backend test \
+  --node tcp://127.0.0.1:36657
+```
+
+Repeat sending the relay to the new port:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+  http://localhost:42042/anvil
 ```
 
 ## Explore the tools
@@ -232,3 +259,7 @@ improve our development experience.
 ### Ignite
 
 Run `ignite --help` in order to explore all the different commands.
+
+```
+
+```

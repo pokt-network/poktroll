@@ -5,6 +5,11 @@ sidebar_position: 1
 
 # Pocket Nodes in the Celestia Network <!-- omit in toc -->
 
+:::danger
+TODO(@Olshansk): This file was copied over from the `poktroll-alpha` repo and has
+not been updated to reflect recent changse & learnings.
+:::
+
 - [Dependant Node](#dependant-node)
 - [Sovereign Node](#sovereign-node)
 
