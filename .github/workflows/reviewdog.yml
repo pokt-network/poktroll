@@ -7,10 +7,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
-  
+
 jobs:
-  # Makes sure that comments like TODO_IN_THIS_PR or TODO_IN_THIS_COMMIT block merging to main
-  # More info: https://github.com/pokt-network/action-fail-on-found
+  # Makes sure that comments like TODO_IN_THIS_PR or TODO_IN_THIS_COMMIT block
+  # merging to main. See https://github.com/pokt-network/action-fail-on-found
   check_todo_in_this:
     name: Check TODO_IN_THIS_
     runs-on: ubuntu-latest
@@ -24,6 +24,23 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
+  # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
+  # log package.
+  check_stdlog_in_off_chain_package:
+    name: Check stdlog in off-chain source code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pokt-network/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          pattern: log\..*
+
+  # There are multiple ways to validate (at compile time) that a struct
+  # implements a certain interface. This check enforces a common practice.
   check_non_standard_interface_implementations:
     name: Check for non-standard interface implementation statements
     runs-on: ubuntu-latest
