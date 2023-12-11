@@ -25,8 +25,9 @@ import (
 const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
-	flagAppGateConfig string
-	flagCosmosNodeURL string
+	flagAppGateConfig     string
+	flagCosmosNodeURL     string
+	flagCosmosNodeGRPCURL string
 )
 
 // AppGateServerCmd returns the Cobra command for running the AppGate server.
@@ -66,8 +67,9 @@ provided that:
 
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().
-		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
+	cmd.Flags().StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
+	cmd.Flags().StringVar(&flagCosmosNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialise the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCUrl` field in the config file if specified.")
+	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialise the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	return cmd
 }
@@ -145,11 +147,22 @@ func setupAppGateServerDependencies(
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (_ depinject.Config, err error) {
-	queryNodeURL := appGateConfig.QueryNodeUrl
-	// Override the config file's `QueryNodeUrl` fields
+	pocketNodeWebsocketURL := appGateConfig.PocketNodeWebsocketUrl
+	queryNodeGRPCURL := appGateConfig.QueryNodeGRPCUrl
+
+	// Override the config file's `QueryNodeGRPCUrl` fields
+	// with the `--grpc-addr` flag if it was specified.
+	if flagCosmosNodeGRPCURL != omittedDefaultFlagValue {
+		queryNodeGRPCURL, err = url.Parse(flagCosmosNodeGRPCURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+		}
+	}
+
+	// Override the config file's `PocketNodeWebsocketUrl` fields
 	// with the `--node` flag if it was specified.
 	if flagCosmosNodeURL != omittedDefaultFlagValue {
-		queryNodeURL, err = url.Parse(flagCosmosNodeURL)
+		pocketNodeWebsocketURL, err = url.Parse(flagCosmosNodeURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
 		}
@@ -157,14 +170,18 @@ func setupAppGateServerDependencies(
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
-		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
-		config.NewSupplyAccountQuerierFn(),                          // leaf
-		config.NewSupplyApplicationQuerierFn(),                      // leaf
-		config.NewSupplySessionQuerierFn(),                          // leaf
+		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketURL),                        // leaf
+		config.NewSupplyBlockClientFn(pocketNodeWebsocketURL),                              // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL, appGateConfig.GRPCInsecure), // leaf
+		config.NewSupplyAccountQuerierFn(),                                                 // leaf
+		config.NewSupplyApplicationQuerierFn(),                                             // leaf
+		config.NewSupplySessionQuerierFn(),                                                 // leaf
 		config.NewSupplyRingCacheFn(),
-		config.NewSupplyPOKTRollSDKFn(queryNodeURL, appGateConfig.SigningKey),
+		config.NewSupplyPOKTRollSDKFn(
+			queryNodeGRPCURL,
+			pocketNodeWebsocketURL,
+			appGateConfig.SigningKey,
+		),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

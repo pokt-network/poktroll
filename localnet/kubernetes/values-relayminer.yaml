@@ -1,4 +1,4 @@
 config:
-  query_node_url: tcp://sequencer-poktroll-sequencer:36657
-  network_node_url: tcp://sequencer-poktroll-sequencer:36657
-  
+  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+  network_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+  pocket_node_websocket_url: tcp://sequencer-poktroll-sequencer:36657

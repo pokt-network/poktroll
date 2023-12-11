@@ -26,8 +26,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			desc: "valid: relay miner config",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -37,9 +39,39 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
-				QueryNodeUrl:   &url.URL{Scheme: "tcp", Host: "localhost:26657"},
-				NetworkNodeUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-				SigningKeyName: "servicer1",
+				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:26658"},
+				NetworkNodeGRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				GRPCInsecure:           true,
+				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				SigningKeyName:         "servicer1",
+				ProxiedServiceEndpoints: map[string]*url.URL{
+					"anvil": {Scheme: "http", Host: "anvil:8080"},
+					"svc1":  {Scheme: "http", Host: "svc1:8080"},
+				},
+				SmtStorePath: "smt_stores",
+			},
+		},
+		{
+			desc: "valid: relay miner config with undefined grpc insecure",
+
+			inputConfig: `
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: tcp://127.0.0.1:36658
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				signing_key_name: servicer1
+				proxied_service_endpoints:
+				  anvil: http://anvil:8080
+				  svc1: http://svc1:8080
+				smt_store_path: smt_stores
+				`,
+
+			expectedError: nil,
+			expectedConfig: &config.RelayMinerConfig{
+				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:26658"},
+				NetworkNodeGRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				GRPCInsecure:           false,
+				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				SigningKeyName:         "servicer1",
 				ProxiedServiceEndpoints: map[string]*url.URL{
 					"anvil": {Scheme: "http", Host: "anvil:8080"},
 					"svc1":  {Scheme: "http", Host: "svc1:8080"},
@@ -52,8 +84,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			desc: "invalid: invalid network node url",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -61,13 +95,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing network node url",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -75,14 +111,16 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid query node url",
 
 			inputConfig: `
-				query_node_url: &tcp://localhost:26657
-				network_node_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: &tcp://127.0.0.1:26658
+				network_node_grpc_url: tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -90,13 +128,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing query node url",
 
 			inputConfig: `
-				network_node_url: tcp://127.0.0.1:36657
+				network_node_grpc_url: tcp://128.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -104,14 +144,16 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing signing key name",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name:
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -119,41 +161,47 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing smt store path",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: empty proxied service endpoints",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid proxied service endpoint",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: &http://anvil:8080
@@ -161,14 +209,16 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid network node url",
 
 			inputConfig: `
-				query_node_url: tcp://localhost:26657
-				network_node_url: &tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:26658
+				network_node_grpc_url: &tcp://127.0.0.1:36658
+				grpc_insecure: true
+				pocket_node_websocket_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				`,
@@ -201,8 +251,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.QueryNodeUrl.String(), config.QueryNodeUrl.String())
-			require.Equal(t, tt.expectedConfig.NetworkNodeUrl.String(), config.NetworkNodeUrl.String())
+			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
+			require.Equal(t, tt.expectedConfig.NetworkNodeGRPCUrl.String(), config.NetworkNodeGRPCUrl.String())
 			require.Equal(t, tt.expectedConfig.SigningKeyName, config.SigningKeyName)
 			require.Equal(t, tt.expectedConfig.SmtStorePath, config.SmtStorePath)
 			require.Equal(t, len(tt.expectedConfig.ProxiedServiceEndpoints), len(config.ProxiedServiceEndpoints))

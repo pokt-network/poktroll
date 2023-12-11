@@ -23,7 +23,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := fmt.Sprintf("ws://%s/websocket", config.PocketNodeUrl.Host)
+	pocketNodeWebsocketURL := HostToWebsocketURL(config.PocketNodeWebsocketUrl.Host)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
@@ -46,7 +46,7 @@ func (sdk *poktrollSDK) buildDeps(
 	// TODO_TECHDEBT: Configure the grpc client options from the config
 	var grpcClient grpctypes.ClientConn
 	grpcClient, err = grpc.Dial(
-		config.PocketNodeUrl.Host,
+		config.PocketNodeGRPCUrl.Host,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
@@ -83,4 +83,12 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(ringCache))
 
 	return deps, nil
+}
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func HostToWebsocketURL(host string) string {
+	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
+	return websocketURL
 }

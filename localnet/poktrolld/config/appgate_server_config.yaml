@@ -4,5 +4,9 @@ self_signing: true
 signing_key: app1
 # The host and port that the appgate server will listen on
 listening_endpoint: http://localhost:42069
-# tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events
-query_node_url: tcp://127.0.0.1:36657
+# tcp://<host>:<port> to a full pocket node for reading data
+query_node_grpc_url: tcp://127.0.0.1:36658
+# grpc client insecure flag
+grpc_insecure: true
+# tcp://<host>:<port> to a full pocket node websocket endpoint for listening for on-chain events
+pocket_node_websocket_url: tcp://127.0.0.1:36657
