@@ -1,5 +1,4 @@
-<!-- DELETE THIS COMMENT BLOCK
-  After completing the following:
+<!-- README: DELETE THIS COMMENT BLOCK after:
     1. Add a descriptive title `[<Tag>] <DESCRIPTION>`
     2. Update _Assignee(s)_
     3. Add _Label(s)_
@@ -10,7 +9,7 @@
 
 ## Summary
 
-<!-- DELETE THIS COMMENT BLOCK
+<!-- README: DELETE THIS COMMENT BLOCK after
       - Provide a quick summary of the changes yourself
       - Let reviewpad summarize your PR under AI summary
       - You can leave a `/reviewpad summarize` comment at any time to trigger it manually.
@@ -18,19 +17,19 @@
 
 ### Human Summary
 
+<!-- README: delete this section if your PR is very large --> 
 ### AI Summary
 
 reviewpad:summary
 
 ## Issue
 
-<!-- DELETE THIS COMMENT BLOCK
-     Specify the ticket number below if there is a relevant issue. Keep the `-` so the full issue is referenced.
+<!-- README: DELETE THIS COMMENT BLOCK after:
+     - Explain the reasoning for the PR in 1-2 sentences. Adding a screenshot is fair game.
+     - If applicable: specifying the ticket number below if there is a relevant issue. Keep the `-` so the full issue is referenced.
 -->
 
 - #{ISSUE_NUMBER}
-
-[Explain the reasoning for the PR in 1-2 sentences. Consider adding a link or a screenshot.]
 
 ## Type of change
 
@@ -45,7 +44,8 @@ Select one or more:
 ## Testing
 
 - [ ] **Run all unit tests**: `make go_develop_and_test`
-- [ ] **Verify Localnet manually**: See the instructions [here](TODO: add link to instructions)
+- [ ] **Run E2E tests locally**: `make test_e2e`
+- [ ] **Run E2E tests on DevNet`: Add the `devnet-test-e2e` label to the PR. This is VERY expensive, o only do it after all the reviews are complete.
 
 ## Sanity Checklist
 
