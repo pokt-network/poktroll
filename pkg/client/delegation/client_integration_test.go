@@ -8,7 +8,7 @@ package delegation_test
 //  - Delegate to the gateway
 //  - Undelegate from the gateway
 // Currently this test doesn't work, because (I think) it is using a mock
-// keeper etc and this isnt actually interacting with the localnet where
+// keeper etc and this isn't actually interacting with the localnet where
 // the DelegationClient is listening for events from.
 
 import (
@@ -34,8 +34,8 @@ const (
 )
 
 // TODO_UPNEXT(@h5law): Figure out the correct way to subscribe to events on the
-// simulated localnet. Currently this test doesn't work. Although the block client
-// subscribes it doesn't receive any events.
+// simulated localnet. Currently this test doesn't work. Although the delegation
+// client subscribes it doesn't receive any events.
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	t.SkipNow()
 	// Create the network with 2 applications and 1 gateway
