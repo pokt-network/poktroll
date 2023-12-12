@@ -57,15 +57,15 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 // EventsQueryClient instance, with the given hostname converted into a websocket
 // URL to subscribe to, and returns a new depinject.Config which is supplied
 // with the given deps and the new EventsQueryClient.
-func NewSupplyEventsQueryClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
+func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		_ context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		nodeWebsocketURL := queryNodeToWebsocketURL(pocketNodeWebsocketURL)
-		eventsQueryClient := events.NewEventsQueryClient(nodeWebsocketURL)
+		queryNodeWebsocketURL := queryNodeToWebsocketURL(queryNodeRPCURL)
+		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
@@ -75,15 +75,15 @@ func NewSupplyEventsQueryClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
 // instance with the given hostname, which is converted into a websocket URL,
 // to listen for block events on-chain, and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
-func NewSupplyBlockClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
+func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		nodeWebsocketURL := queryNodeToWebsocketURL(pocketNodeWebsocketURL)
-		blockClient, err := block.NewBlockClient(ctx, deps, nodeWebsocketURL)
+		queryNodeWebsocketURL := queryNodeToWebsocketURL(queryNodeRPCURL)
+		blockClient, err := block.NewBlockClient(ctx, deps, queryNodeWebsocketURL)
 		if err != nil {
 			return nil, err
 		}
@@ -95,29 +95,17 @@ func NewSupplyBlockClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
 // NewSupplyQueryClientContextFn returns a function with constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func NewSupplyQueryClientContextFn(
-	pocketQueryNodeGRPCURL *url.URL,
-	pocketQueryNodeGRPCInsecure bool,
-) SupplierFn {
+func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
-		tmp := cosmosflags.FlagGRPC
+		tmpGRPC := cosmosflags.FlagGRPC
 
 		// Set --grpc-addr flag to the pocketQueryNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, pocketQueryNodeGRPCURL.Host); err != nil {
-			return nil, err
-		}
-
-		grpcInscureFlagValue := "false"
-		if pocketQueryNodeGRPCInsecure {
-			grpcInscureFlagValue = "true"
-		}
-
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, grpcInscureFlagValue); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
 
@@ -139,7 +127,7 @@ func NewSupplyQueryClientContextFn(
 
 		// Restore the flag's original value in order for other components
 		// to use the flag as expected.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, tmp); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, tmpGRPC); err != nil {
 			return nil, err
 		}
 
@@ -150,28 +138,17 @@ func NewSupplyQueryClientContextFn(
 // NewSupplyTxClientContextFn returns a function with constructs a ClientContext
 // instance with the given cmd and returns a new depinject.Config which is
 // supplied with the given deps and the new ClientContext.
-func NewSupplyTxClientContextFn(
-	pocketTxNodeGRPCURL *url.URL,
-	pocketTxNodeGRPCInsecure bool,
-) SupplierFn {
+func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
-		tmp := cosmosflags.FlagGRPC
+		tmpGRPC := cosmosflags.FlagGRPC
 
 		// Set --node flag to the pocketTxNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientTxContext.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, pocketTxNodeGRPCURL.Host); err != nil {
-			return nil, err
-		}
-
-		grpcInscureFlagValue := "false"
-		if pocketTxNodeGRPCInsecure {
-			grpcInscureFlagValue = "true"
-		}
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPCInsecure, grpcInscureFlagValue); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, txNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
 
@@ -191,7 +168,7 @@ func NewSupplyTxClientContextFn(
 
 		// Restore the flag's original value in order for other components
 		// to use the flag as expected.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, tmp); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, tmpGRPC); err != nil {
 			return nil, err
 		}
 
@@ -304,11 +281,7 @@ func NewSupplyRingCacheFn() SupplierFn {
 // NewSupplyPOKTRollSDKFn returns a function which constructs a
 // POKTRollSDK instance with the required dependencies and returns a new
 // depinject.Config which is supplied with the given deps and the new POKTRollSDK.
-func NewSupplyPOKTRollSDKFn(
-	queryNodeGRPCURL *url.URL,
-	queryNodeWebsocketURL *url.URL,
-	signingKeyName string,
-) SupplierFn {
+func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -332,11 +305,7 @@ func NewSupplyPOKTRollSDKFn(
 			return nil, err
 		}
 
-		config := &sdk.POKTRollSDKConfig{
-			PrivateKey: privateKey,
-			Deps:       deps,
-		}
-
+		config := &sdk.POKTRollSDKConfig{PrivateKey: privateKey, Deps: deps}
 		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
 		if err != nil {
 			return nil, err

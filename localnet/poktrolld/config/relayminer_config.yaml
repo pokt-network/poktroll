@@ -1,11 +1,11 @@
-# tcp://<host>:<port> to a full pocket node for reading data
-query_node_grpc_url: tcp://127.0.0.1:36658
-# tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer)
-network_node_grpc_url: tcp://127.0.0.1:36658
-# grpc client insecure flag
-grpc_insecure: true
-# tcp://<host>:<port> to a full pocket node websocket endpoint for listening for on-chain events
-pocket_node_websocket_url: tcp://127.0.0.1:36657
+# Pocket node URL that exposes CometBFT JSON-RPC API.
+# This can be used by the Cosmos client SDK, event subscriptions, etc...
+query_node_rpc_url: tcp://poktroll-sequencer:36657
+# Pocket node URL that exposes the Cosmos gRPC service.
+tx_node_grpc_url: tcp://poktroll-sequencer:36658
+# Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
+# If unspecified, defaults to `tx_node_grpc_url`.
+query_node_grpc_url: tcp://poktroll-sequencer:36658
 # Name of the key (in the keyring) to sign transactions
 signing_key_name: supplier1
 # TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service

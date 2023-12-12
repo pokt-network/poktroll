@@ -34,9 +34,9 @@ const omittedDefaultFlagValue = "explicitly omitting default"
 
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
-	flagRelayMinerConfig  string
-	flagCosmosNodeURL     string
-	flagCosmosNodeGRPCURL string
+	flagRelayMinerConfig string
+	flagNodeRPCUrl       string
+	flagNodeGRPCUrl      string
 )
 
 // RelayerCmd returns the Cobra command for running the relay miner.
@@ -65,9 +65,9 @@ for such operations.`,
 
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
-	cmd.Flags().StringVar(&flagCosmosNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialise the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCUrl` field in the config file if specified.")
-	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialise the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeRPCUrl, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeUrl` and `NetworkNodeUrl` fields in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeGRPCUrl, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCUrl` field in the config file if specified.")
+	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	return cmd
 }
@@ -135,25 +135,27 @@ func setupRelayerDependencies(
 	cmd *cobra.Command,
 	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	pocketNodeWebsocketUrl := relayMinerConfig.PocketNodeWebsocketUrl
-	queryNodeGRPCURL := relayMinerConfig.QueryNodeGRPCUrl
-	networkNodeGRPCURL := relayMinerConfig.NetworkNodeGRPCUrl
+	parsedFlagNodeRPCUrl := relayMinerConfig.QueryNodeRPCUrl
+	queryNodeGRPCUrl := relayMinerConfig.QueryNodeGRPCUrl
+	txNodeGRPCUrl := relayMinerConfig.TxNodeGRPCUrl
 
 	// Override the config file's `QueryNodeGRPCUrl` and `NetworkNodeGRPCUrl` fields
 	// with the `--grpc-addr` flag if it was specified.
-	if flagCosmosNodeGRPCURL != omittedDefaultFlagValue {
-		cosmosParsedGRPCURL, err := url.Parse(flagCosmosNodeGRPCURL)
+	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
+	if flagNodeGRPCUrl != omittedDefaultFlagValue {
+		parsedFlagNodeGRPCUrl, err := url.Parse(flagNodeGRPCUrl)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
 		}
-		queryNodeGRPCURL = cosmosParsedGRPCURL
-		networkNodeGRPCURL = cosmosParsedGRPCURL
+		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
+		txNodeGRPCUrl = parsedFlagNodeGRPCUrl
 	}
 
 	// Override the config file's `QueryNodeUrl` fields
 	// with the `--node` flag if it was specified.
-	if flagCosmosNodeURL != omittedDefaultFlagValue {
-		pocketNodeWebsocketUrl, err = url.Parse(flagCosmosNodeURL)
+	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
+	if flagNodeRPCUrl != omittedDefaultFlagValue {
+		parsedFlagNodeRPCUrl, err = url.Parse(flagNodeRPCUrl)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
 		}
@@ -165,11 +167,11 @@ func setupRelayerDependencies(
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(pocketNodeWebsocketUrl),                           // leaf
-		config.NewSupplyBlockClientFn(pocketNodeWebsocketUrl),                                 // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL, relayMinerConfig.GRPCInsecure), // leaf
+		config.NewSupplyEventsQueryClientFn(parsedFlagNodeRPCUrl), // leaf
+		config.NewSupplyBlockClientFn(parsedFlagNodeRPCUrl),       // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl),    // leaf
 		supplyMiner, // leaf
-		config.NewSupplyTxClientContextFn(networkNodeGRPCURL, relayMinerConfig.GRPCInsecure), // leaf
+		config.NewSupplyTxClientContextFn(txNodeGRPCUrl), // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),

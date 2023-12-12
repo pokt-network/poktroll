@@ -10,9 +10,8 @@ import (
 // TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files.
 type YAMLRelayMinerConfig struct {
 	QueryNodeGRPCUrl        string            `yaml:"query_node_grpc_url"`
-	NetworkNodeGRPCUrl      string            `yaml:"network_node_grpc_url"`
-	GRPCInsecure            bool              `yaml:"grpc_insecure"`
-	PocketNodeWebsocketUrl  string            `yaml:"pocket_node_websocket_url"`
+	TxNodeGRPCUrl           string            `yaml:"tx_node_grpc_url"`
+	QueryNodeRPCUrl         string            `yaml:"query_node_rpc_url"`
 	SigningKeyName          string            `yaml:"signing_key_name"`
 	ProxiedServiceEndpoints map[string]string `yaml:"proxied_service_endpoints"`
 	SmtStorePath            string            `yaml:"smt_store_path"`
@@ -21,9 +20,8 @@ type YAMLRelayMinerConfig struct {
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
 	QueryNodeGRPCUrl        *url.URL
-	NetworkNodeGRPCUrl      *url.URL
-	GRPCInsecure            bool
-	PocketNodeWebsocketUrl  *url.URL
+	TxNodeGRPCUrl           *url.URL
+	QueryNodeRPCUrl         *url.URL
 	SigningKeyName          string
 	ProxiedServiceEndpoints map[string]*url.URL
 	SmtStorePath            string
@@ -38,9 +36,20 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	// Check that the query node GRPC URL is provided
+	// Check that the tx node GRPC URL is provided
+	if yamlRelayMinerConfig.TxNodeGRPCUrl == "" {
+		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrapf("tx node grpc url is required")
+	}
+
+	// Parse the tx node GRPC URL
+	txNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.TxNodeGRPCUrl)
+	if err != nil {
+		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrapf("%s", err)
+	}
+
+	// Check that the query node GRPC URL is provided and default to the tx node GRPC URL if not
 	if yamlRelayMinerConfig.QueryNodeGRPCUrl == "" {
-		return nil, ErrRelayMinerConfigInvalidQueryNodeGRPCUrl.Wrapf("query node url is required")
+		yamlRelayMinerConfig.QueryNodeGRPCUrl = yamlRelayMinerConfig.TxNodeGRPCUrl
 	}
 
 	// Parse the query node GRPC URL
@@ -49,26 +58,15 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigInvalidQueryNodeGRPCUrl.Wrapf("%s", err)
 	}
 
-	// Check that the network node GRPC URL is provided
-	if yamlRelayMinerConfig.NetworkNodeGRPCUrl == "" {
-		return nil, ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl.Wrapf("network node url is required")
-	}
-
-	// Parse the network node GRPC URL
-	networkNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.NetworkNodeGRPCUrl)
-	if err != nil {
-		return nil, ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl.Wrapf("%s", err)
-	}
-
 	// Check that the network node websocket URL is provided
-	if yamlRelayMinerConfig.PocketNodeWebsocketUrl == "" {
-		return nil, ErrRelayMinerConfigInvalidPocketNodeWebsocketUrl.Wrapf("pocket node websocket url is required")
+	if yamlRelayMinerConfig.QueryNodeRPCUrl == "" {
+		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrapf("node rpc url is required")
 	}
 
-	// Parse the websocket URL of the Pocket Node to connect to for subscribing to on-chain events.
-	pocketNodeWebsocketUrl, err := url.Parse(yamlRelayMinerConfig.PocketNodeWebsocketUrl)
+	// Parse the rpc URL of the Pocket Node to connect to for subscribing to on-chain events.
+	queryNodeRPCUrl, err := url.Parse(yamlRelayMinerConfig.QueryNodeRPCUrl)
 	if err != nil {
-		return nil, ErrRelayMinerConfigInvalidPocketNodeWebsocketUrl.Wrapf("%s", err)
+		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrapf("%s", err)
 	}
 
 	if yamlRelayMinerConfig.SigningKeyName == "" {
@@ -99,9 +97,8 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	relayMinerCMDConfig := &RelayMinerConfig{
 		QueryNodeGRPCUrl:        queryNodeGRPCUrl,
-		NetworkNodeGRPCUrl:      networkNodeGRPCUrl,
-		GRPCInsecure:            yamlRelayMinerConfig.GRPCInsecure,
-		PocketNodeWebsocketUrl:  pocketNodeWebsocketUrl,
+		TxNodeGRPCUrl:           txNodeGRPCUrl,
+		QueryNodeRPCUrl:         queryNodeRPCUrl,
 		SigningKeyName:          yamlRelayMinerConfig.SigningKeyName,
 		ProxiedServiceEndpoints: proxiedServiceEndpoints,
 		SmtStorePath:            yamlRelayMinerConfig.SmtStorePath,

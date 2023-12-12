@@ -26,10 +26,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			desc: "valid: relay miner config",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -39,11 +38,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
-				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:26658"},
-				NetworkNodeGRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				GRPCInsecure:           true,
-				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-				SigningKeyName:         "servicer1",
+				QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				SigningKeyName:   "servicer1",
 				ProxiedServiceEndpoints: map[string]*url.URL{
 					"anvil": {Scheme: "http", Host: "anvil:8080"},
 					"svc1":  {Scheme: "http", Host: "svc1:8080"},
@@ -52,12 +50,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid: relay miner config with undefined grpc insecure",
+			desc: "valid: relay miner config with query node grpc url defaulting to tx node grpc url",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: tcp://127.0.0.1:36658
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				tx_node_grpc_url: tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -67,11 +64,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
-				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:26658"},
-				NetworkNodeGRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				GRPCInsecure:           false,
-				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-				SigningKeyName:         "servicer1",
+				QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				SigningKeyName:   "servicer1",
 				ProxiedServiceEndpoints: map[string]*url.URL{
 					"anvil": {Scheme: "http", Host: "anvil:8080"},
 					"svc1":  {Scheme: "http", Host: "svc1:8080"},
@@ -81,13 +77,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		},
 		// Invalid Configs
 		{
-			desc: "invalid: invalid network node url",
+			desc: "invalid: invalid tx node grpc url",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -95,15 +90,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: missing network node url",
+			desc: "invalid: missing tx node grpc url",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -111,16 +105,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: invalid query node url",
+			desc: "invalid: invalid query node grpc url",
 
 			inputConfig: `
-				query_node_grpc_url: &tcp://127.0.0.1:26658
-				network_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: &tcp://127.0.0.1:36658
+				tx_node_grpc_url: tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -128,15 +121,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: missing query node url",
+			desc: "invalid: missing query node rpc url",
 
 			inputConfig: `
-				network_node_grpc_url: tcp://128.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://128.0.0.1:36658
+				tx_node_grpc_url: tcp://128.0.0.1:36658
+				// explicitly missing query_node_rpc_url
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -144,16 +137,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing signing key name",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name:
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -161,47 +153,44 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing smt store path",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: empty proxied service endpoints",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid proxied service endpoint",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: &http://anvil:8080
@@ -209,16 +198,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNetworkNodeGRPCUrl,
+			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: invalid network node url",
+			desc: "invalid: invalid tx node grpc url",
 
 			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:26658
-				network_node_grpc_url: &tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				tx_node_grpc_url: &tcp://127.0.0.1:36658
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				`,
@@ -251,8 +239,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.NoError(t, err)
 
+			require.Equal(t, tt.expectedConfig.QueryNodeRPCUrl.String(), config.QueryNodeRPCUrl.String())
 			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
-			require.Equal(t, tt.expectedConfig.NetworkNodeGRPCUrl.String(), config.NetworkNodeGRPCUrl.String())
+			require.Equal(t, tt.expectedConfig.TxNodeGRPCUrl.String(), config.TxNodeGRPCUrl.String())
 			require.Equal(t, tt.expectedConfig.SigningKeyName, config.SigningKeyName)
 			require.Equal(t, tt.expectedConfig.SmtStorePath, config.SmtStorePath)
 			require.Equal(t, len(tt.expectedConfig.ProxiedServiceEndpoints), len(config.ProxiedServiceEndpoints))

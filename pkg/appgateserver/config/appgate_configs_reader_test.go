@@ -30,18 +30,16 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.AppGateServerConfig{
-				SelfSigning:            true,
-				SigningKey:             "app1",
-				ListeningEndpoint:      &url.URL{Scheme: "http", Host: "localhost:42069"},
-				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				GRPCInsecure:           true,
-				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657", Path: "webcosket"},
+				SelfSigning:       true,
+				SigningKey:        "app1",
+				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
+				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 			},
 		},
 		{
@@ -51,39 +49,16 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.AppGateServerConfig{
-				SelfSigning:            false,
-				SigningKey:             "app1",
-				ListeningEndpoint:      &url.URL{Scheme: "http", Host: "localhost:42069"},
-				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				GRPCInsecure:           true,
-				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657", Path: "webcosket"},
-			},
-		},
-		{
-			desc: "valid: AppGateServer config with undefined grpc insecure",
-
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
-				`,
-
-			expectedError: nil,
-			expectedConfig: &config.AppGateServerConfig{
-				SelfSigning:            true,
-				SigningKey:             "app1",
-				ListeningEndpoint:      &url.URL{Scheme: "http", Host: "localhost:42069"},
-				QueryNodeGRPCUrl:       &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				GRPCInsecure:           false,
-				PocketNodeWebsocketUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657", Path: "webcosket"},
+				SelfSigning:       false,
+				SigningKey:        "app1",
+				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
+				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 			},
 		},
 		// Invalid Configs
@@ -99,11 +74,10 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 
 			inputConfig: `
 				self_signing: true
-				signing_key:
+				// explicitly missing signing key
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: config.ErrAppGateConfigEmptySigningKey,
@@ -116,8 +90,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				signing_key: app1
 				listening_endpoint: &localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidListeningEndpoint,
@@ -130,38 +103,49 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: &127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: tcp://127.0.0.1:36657
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: invalid pocket node websocket",
+			desc: "invalid: missing query node grpc url",
 
 			inputConfig: `
 				self_signing: true
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
-				pocket_node_websocket_url: &127.0.0.1:36657
+				// explicitly missing query_node_grpc_url
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidPocketNodeWebsocketUrl,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
-			desc: "invalid: missing pocket node websocket url",
+			desc: "invalid: invalid query node rpc url",
 
 			inputConfig: `
 				self_signing: true
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				grpc_insecure: true
+				query_node_rpc_url: &127.0.0.1:36657
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidPocketNodeWebsocketUrl,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
+		},
+		{
+			desc: "invalid: missing query node rpc url",
+
+			inputConfig: `
+				self_signing: true
+				signing_key: app1
+				listening_endpoint: http://localhost:42069
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				// explicitly missing query_node_rpc_url
+				`,
+
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
 		},
 	}
 
