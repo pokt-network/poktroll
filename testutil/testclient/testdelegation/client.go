@@ -110,7 +110,7 @@ func NewAnyTimeLastNRedelegationsClient(
 	ctrl := gomock.NewController(t)
 
 	// Create a mock redelegation that returns the provided appAddress
-	redelegation := NewAnyTimesRedelegation(t, appAddress)
+	redelegation := NewAnyTimesRedelegation(t, appAddress, "")
 	// Create a mock delegation client that expects calls to
 	// LastNRedelegations method and returns the mock redelegation.
 	delegationClientMock := mockclient.NewMockDelegationClient(ctrl)
@@ -128,6 +128,7 @@ func NewAnyTimeLastNRedelegationsClient(
 func NewAnyTimesRedelegation(
 	t *testing.T,
 	appAddress string,
+	gatewayAddress string,
 ) *mockclient.MockRedelegation {
 	t.Helper()
 	ctrl := gomock.NewController(t)
@@ -135,6 +136,7 @@ func NewAnyTimesRedelegation(
 	// Create a mock redelegation that returns the provided address AnyTimes.
 	redelegation := mockclient.NewMockRedelegation(ctrl)
 	redelegation.EXPECT().GetAppAddress().Return(appAddress).AnyTimes()
+	redelegation.EXPECT().GetGatewayAddress().Return(gatewayAddress).AnyTimes()
 
 	return redelegation
 }

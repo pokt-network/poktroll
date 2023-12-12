@@ -66,6 +66,7 @@ type poktrollSDK struct {
 	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
+// NewPOKTRollSDK creates a new POKTRollSDK instance with the given configuration.
 func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK, error) {
 	sdk := &poktrollSDK{
 		config:                  config,
@@ -100,6 +101,9 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode private key: %w", err)
 	}
+
+	// Start the ring cache.
+	sdk.ringCache.Start(ctx)
 
 	return sdk, nil
 }

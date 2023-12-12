@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"cosmossdk.io/depinject"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/stretchr/testify/require"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
+	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
@@ -156,6 +156,9 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			rc.Start(ctx)
 			defer rc.Stop()
 
+			// Check that the ring cache is empty
+			require.Equal(t, 0, len(rc.GetCachedAddresses()))
+
 			// add the application's account with no delegated gateways to the
 			// testing state
 			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, nil)
@@ -168,7 +171,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 
 			accMap := make(map[string]cryptotypes.PubKey)
 			// if the test expects a ring > 2 we have delegated gateways
-			if test.expectedRingSize > 2 {
+			if test.expectedRingSize != noDelegateesRingSize {
 				// create accounts for all the expected delegated gateways
 				// and add them to the map
 				for i := 0; i < test.expectedRingSize-1; i++ {
@@ -180,14 +183,15 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			// add the application's account and the accounts of all its
 			// delegated gateways to the testing state simulating a change
 			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, accMap)
-			for range accMap {
-				// publish a delegatee change to the ring cache
-				pubCh <- testdelegation.NewAnyTimesRedelegation(t, test.appAccount.address)
+			for k := range accMap {
+				t.Log(accMap)
+				// publish a redelegation event
+				pubCh <- testdelegation.NewAnyTimesRedelegation(t, test.appAccount.address, k)
 			}
 
 			// Wait a tick to allow the ring cache to process asynchronously.
 			// It should have invalidated the cache for the ring, if changed.
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(15 * time.Millisecond)
 
 			// Attempt to retrieve the ring for the address and cache it if
 			// the ring was updated
@@ -260,12 +264,6 @@ func createRingCache(ctx context.Context, t *testing.T, appAddress string) (cryp
 	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(t, ctx, appAddress, redelegationObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
-	deps := depinject.Supply(
-		delegationClient,
-		client.AccountQueryClient(accQuerier),
-		client.ApplicationQueryClient(appQuerier),
-	)
-	rc, err := rings.NewRingCache(deps)
-	require.NoError(t, err)
+	rc := testrings.NewRingCacheWithMockDependencies(ctx, t, accQuerier, appQuerier, delegationClient)
 	return rc, redelegationPublishCh
 }

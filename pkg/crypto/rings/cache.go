@@ -3,7 +3,6 @@ package rings
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -14,14 +13,15 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 var _ crypto.RingCache = (*ringCache)(nil)
 
 type ringCache struct {
+	// logger is the logger for the ring cache.
+	logger polylog.Logger
+
 	// ringPointsCache maintains a map of application addresses to the points
 	// on the secp256k1 curve that correspond to the public keys of the gateways
 	// the application is delegated to. These are used to build the app's ring.
@@ -31,11 +31,6 @@ type ringCache struct {
 	// delegationClient is used to listen for on-chain delegation events and
 	// invalidate cache entries for rings that have been updated on chain.
 	delegationClient client.DelegationClient
-
-	// redelegationObs is an observable of the type Redelegation, which is used
-	// to listen for on-chain redelegation events and invalidate cache entries
-	// for any addresses that have changed their delegatees.
-	redelegationObs observable.Observer[client.Redelegation]
 
 	// applicationQuerier is the querier for the application module, and is
 	// used to get the addresses of the gateways an application is delegated to.
@@ -48,6 +43,12 @@ type ringCache struct {
 
 // NewRingCache returns a new RingCache instance. It requires a depinject.Config
 // to be passed in, which is used to inject the dependencies of the RingCache.
+//
+// Required dependencies:
+// - polylog.Logger
+// - client.DelegationClient
+// - client.ApplicationQueryClient
+// - client.AccountQueryClient
 func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	rc := &ringCache{
 		ringPointsCache: make(map[string][]ringtypes.Point),
@@ -57,6 +58,7 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 	// Supply the account and application queriers to the RingCache.
 	if err := depinject.Inject(
 		deps,
+		&rc.logger,
 		&rc.delegationClient,
 		&rc.applicationQuerier,
 		&rc.accountQuerier,
@@ -69,9 +71,6 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
-	// Subscribe to the delegatee change observable.
-	rc.redelegationObs = rc.delegationClient.RedelegationsSequence(ctx).Subscribe(ctx)
-
 	// Listen for delegatee change events and invalidate the cache if the
 	// delegatee change's address is stored in the cache.
 	go rc.goInvalidateCache(ctx)
@@ -81,25 +80,29 @@ func (rc *ringCache) Start(ctx context.Context) {
 // cache if the delegatee change's address is stored in the cache.
 // It is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
-	for {
+	// TODO: Use ForEach
+	redelegationCh := rc.delegationClient.RedelegationsSequence(ctx).Subscribe(ctx).Ch()
+
+	for redelegation := range redelegationCh {
 		select {
-		// If the context is done, return.
 		case <-ctx.Done():
-			// Unsubscribe from the delegatee change replay observable.
+			// If the context is done, stop the RingCache.
+			rc.Stop()
 			return
-		// If a delegatee change is received, check if it is in the cache.
-		case redelegation := <-rc.redelegationObs.Ch():
-			// Lock the cache for writing.
-			rc.ringPointsMu.Lock()
-			// Check if the delegatee change's address is in the cache.
-			if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
-				// If it is, invalidate the cache entry.
-				log.Printf("DEBUG: Invalidating ring cache for [%s]", redelegation.GetAppAddress())
-				delete(rc.ringPointsCache, redelegation.GetAppAddress())
-			}
-			// Unlock the cache.
-			rc.ringPointsMu.Unlock()
+		default:
 		}
+		// Lock the cache for writing.
+		rc.ringPointsMu.Lock()
+		// Check if the delegatee change's address is in the cache.
+		if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
+			// If it is, invalidate the cache entry.
+			rc.logger.Debug().
+				Str("app_address", redelegation.GetAppAddress()).
+				Msg("redelegation event received; invalidating cache entry")
+			delete(rc.ringPointsCache, redelegation.GetAppAddress())
+		}
+		// Unlock the cache.
+		rc.ringPointsMu.Unlock()
 	}
 }
 
@@ -134,27 +137,26 @@ func (rc *ringCache) GetRingForAddress(
 	appAddress string,
 ) (*ring.Ring, error) {
 	var (
-		ring   *ring.Ring
-		err    error
-		logger = polylog.Ctx(ctx)
+		ring *ring.Ring
+		err  error
 	)
 
 	// Lock the cache for reading.
 	rc.ringPointsMu.RLock()
 	// Check if the ring is in the cache.
 	points, ok := rc.ringPointsCache[appAddress]
-	// Unlock the cache incase it was not cached.
+	// Unlock the cache in case it was not cached.
 	rc.ringPointsMu.RUnlock()
 
 	if !ok {
 		// If the ring is not in the cache, get it from the application module.
-		logger.Debug().
+		rc.logger.Debug().
 			Str("app_address", appAddress).
 			Msg("ring cache miss; fetching from application module")
 		ring, err = rc.getRingForAppAddress(ctx, appAddress)
 	} else {
 		// If the ring is in the cache, create it from the points.
-		logger.Debug().
+		rc.logger.Debug().
 			Str("app_address", appAddress).
 			Msg("ring cache hit; creating from points")
 		ring, err = newRingFromPoints(points)
@@ -178,6 +180,13 @@ func (rc *ringCache) getRingForAppAddress(
 	if err != nil {
 		return nil, err
 	}
+	// Cache the ring's points for future use
+	rc.logger.Debug().
+		Str("app_address", appAddress).
+		Msg("updating ring cache for app")
+	rc.ringPointsMu.Lock()
+	defer rc.ringPointsMu.Unlock()
+	rc.ringPointsCache[appAddress] = points
 	return newRingFromPoints(points)
 }
 
@@ -194,8 +203,6 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 ) ([]ringtypes.Point, error) {
-	logger := polylog.Ctx(ctx)
-
 	rc.ringPointsMu.Lock()
 	defer rc.ringPointsMu.Unlock()
 
@@ -227,12 +234,6 @@ func (rc *ringCache) getDelegatedPubKeysForAddress(
 		return nil, err
 	}
 
-	// Update the cache overwriting the previous value.
-	logger.Debug().
-		Str("app_address", appAddress).
-		Msg("updating ring cache for app")
-	rc.ringPointsCache[appAddress] = points
-
 	// Return the public key points on the secp256k1 curve.
 	return points, nil
 }
@@ -244,11 +245,9 @@ func (rc *ringCache) addressesToPoints(
 	ctx context.Context,
 	addresses []string,
 ) ([]ringtypes.Point, error) {
-	logger := polylog.Ctx(ctx)
-
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
-	logger.Debug().
+	rc.logger.Debug().
 		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)` instead of formatting here.
 		Str("addresses", fmt.Sprintf("%v", addresses)).
 		Msg("converting addresses to points")
