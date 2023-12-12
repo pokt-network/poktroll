@@ -3,7 +3,6 @@
 package testkeyring
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -11,8 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // CreatePreGeneratedKeyringAccounts uses the mnemonic from limit number of
@@ -28,9 +25,6 @@ func CreatePreGeneratedKeyringAccounts(
 	limit int,
 ) []*PreGeneratedAccount {
 	t.Helper()
-
-	logger := polylog.Ctx(context.TODO())
-	logger.Debug().Msg("LEAVE ME ALONE!")
 
 	accounts := make([]*PreGeneratedAccount, limit)
 	for i := range accounts {
