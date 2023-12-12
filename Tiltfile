@@ -152,7 +152,7 @@ k8s_resource(
     "sequencer",
     labels=["blockchains"],
     resource_deps=["celestia-rollkit"],
-    port_forwards=["36657", "40004", "36658"],
+    port_forwards=["36657", "36658", "40004"],
 )
 k8s_resource(
     "relayminers",

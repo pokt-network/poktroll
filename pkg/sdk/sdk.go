@@ -24,10 +24,10 @@ var _ POKTRollSDK = (*poktrollSDK)(nil)
 // Deps is an optional field that can be used to provide the needed dependencies
 // for the SDK. If it is not provided, the SDK will build the dependencies itself.
 type POKTRollSDKConfig struct {
-	PocketNodeGRPCUrl      *url.URL
-	PocketNodeWebsocketUrl *url.URL
-	PrivateKey             cryptotypes.PrivKey
-	Deps                   depinject.Config
+	QueryNodeGRPCUrl *url.URL
+	QueryNodeUrl     *url.URL
+	PrivateKey       cryptotypes.PrivKey
+	Deps             depinject.Config
 }
 
 // poktrollSDK is the implementation of the POKTRollSDK.

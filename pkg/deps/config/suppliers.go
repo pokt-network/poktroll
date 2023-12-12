@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
@@ -63,7 +64,7 @@ func NewSupplyEventsQueryClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		nodeWebsocketURL := sdk.HostToWebsocketURL(pocketNodeWebsocketURL.Host)
+		nodeWebsocketURL := queryNodeToWebsocketURL(pocketNodeWebsocketURL)
 		eventsQueryClient := events.NewEventsQueryClient(nodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -81,7 +82,7 @@ func NewSupplyBlockClientFn(pocketNodeWebsocketURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		nodeWebsocketURL := sdk.HostToWebsocketURL(pocketNodeWebsocketURL.Host)
+		nodeWebsocketURL := queryNodeToWebsocketURL(pocketNodeWebsocketURL)
 		blockClient, err := block.NewBlockClient(ctx, deps, nodeWebsocketURL)
 		if err != nil {
 			return nil, err
@@ -332,10 +333,8 @@ func NewSupplyPOKTRollSDKFn(
 		}
 
 		config := &sdk.POKTRollSDKConfig{
-			PrivateKey:             privateKey,
-			PocketNodeGRPCUrl:      queryNodeGRPCURL,
-			PocketNodeWebsocketUrl: queryNodeWebsocketURL,
-			Deps:                   deps,
+			PrivateKey: privateKey,
+			Deps:       deps,
 		}
 
 		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
@@ -346,4 +345,8 @@ func NewSupplyPOKTRollSDKFn(
 		// Supply the session querier to the provided deps
 		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
 	}
+}
+
+func queryNodeToWebsocketURL(queryNode *url.URL) string {
+	return fmt.Sprintf("ws://%s/websocket", queryNode.Host)
 }
