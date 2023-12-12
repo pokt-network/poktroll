@@ -114,7 +114,7 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 		return nil, err
 	}
 
-	// Concurrently publish blocks to the observable emitted by latestObsvbls.
+	// Concurrently publish events to the observable emitted by replayObsCache.
 	go rClient.goPublishEvents(ctx)
 
 	return rClient, nil
@@ -127,7 +127,10 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 	// Create a new replay observable and publish channel for event type T with
 	// a buffer size matching that provided during the EventsReplayClient
 	// construction.
-	eventTypeObs, replayEventTypeObsPublishCh := channel.NewReplayObservable[T](ctx, rClient.replayObsBufferSize)
+	eventTypeObs, replayEventTypeObsPublishCh := channel.NewReplayObservable[T](
+		ctx,
+		rClient.replayObsBufferSize,
+	)
 
 	// Ensure that the subscribers of the returned eventTypeObs receive
 	// notifications from the latest open replay observable.
@@ -141,9 +144,14 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		cachedEventTypeObs := rClient.replayObsCache.Last(ctx, 1)[0]
-		eventObserver := cachedEventTypeObs.Subscribe(ctx)
-		for event := range eventObserver.Ch() {
+		eventObserver := cachedEventTypeObs.Subscribe(ctx).Ch()
+		for event := range eventObserver {
 			publishCh <- event
 		}
 	}
@@ -169,8 +177,8 @@ func (rClient *replayClient[T, R]) Close() {
 // This function is intended to be called in a goroutine.
 func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
-	// and send it to latestObsvblsReplayPublishCh such that
-	// latestObsvbls.Last(ctx, 1) will return it.
+	// and send it to replayObsCachePublishCh such that
+	// replayObsCache.Last(ctx, 1) will return it.
 	publishErr := retry.OnError(
 		ctx,
 		eventsBytesRetryLimit,
@@ -190,8 +198,8 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 
 // retryPublishEventsFactory returns a function which is intended to be passed
 // to retry.OnError. The returned function pipes event bytes from the events
-// query client, maps them to block events, and publishes them to the
-// latestObsvbls replay observable.
+// query client, maps them to typed events, and publishes them to the
+// replayObsCache replay observable.
 func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
 		errCh := make(chan error, 1)
@@ -212,7 +220,7 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 			rClient.newMapEventsBytesToTFn(errCh),
 		)
 
-		// Initially set latestObsvbls and update if after retrying on error.
+		// Initially set replayObsCache and update if after retrying on error.
 		rClient.replayObsCachePublishCh <- typedObs.(R)
 
 		return errCh
