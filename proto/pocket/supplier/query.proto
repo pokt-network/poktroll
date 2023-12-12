@@ -77,7 +77,7 @@ message QueryAllSupplierResponse {
 
 message QueryGetClaimRequest {
   string session_id = 1;
-  string supplier_address = 2;
+  string supplier_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 message QueryGetClaimResponse {

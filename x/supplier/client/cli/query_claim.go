@@ -82,14 +82,14 @@ func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show-claim <session_id> <supplier_addr>",
 		Short: "shows a specific claim",
-		Long: `List a specific claim that the node being queried has access to (if it still exists)
+		Long: `List a specific claim that the node being queried has access to (if it still exists).
 
-A unique claim can be defined via a session_id that a supplier participated in
+A unique claim can be defined via a session_id that a given supplier participated in.
 
 Example:
 $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_address> --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) (err error) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			sessionId := args[0]
 			supplierAddr := args[1]
 
