@@ -87,10 +87,12 @@ func (sClient *supplierClient) SubmitProof(
 
 	// TODO_IMPROVE: log details related to what & how much is being proven
 	logger.Info().
-		Str("supplier_addr", sClient.signingKeyAddr.String()).
-		Str("app_addr", sessionHeader.ApplicationAddress).
-		Str("session_id", sessionHeader.SessionId).
-		Str("service", sessionHeader.Service.Id).
+		Fields(map[string]any{
+			"supplier_addr": sClient.signingKeyAddr.String(),
+			"app_addr":      sessionHeader.ApplicationAddress,
+			"session_id":    sessionHeader.SessionId,
+			"service":       sessionHeader.Service.Id,
+		}).
 		Msg("created a new proof")
 
 	return <-errCh
