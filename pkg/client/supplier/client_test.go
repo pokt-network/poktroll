@@ -20,7 +20,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testSigningKeyName = "test_signer"
+const (
+	testSigningKeyName = "test_signer"
+	testService = "test_service"
+)
 
 func TestNewSupplierClient(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -103,7 +106,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		SessionStartBlockHeight: 0,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
-			Id: "test_service",
+			Id: testService,
 		},
 	}
 
@@ -161,7 +164,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		SessionStartBlockHeight: 0,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
-			Id: "test_service",
+			Id: testService,
 		},
 	}
 
