@@ -1,6 +1,9 @@
 package testclient
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -11,26 +14,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
+var (
 	// CometLocalTCPURL provides a default URL pointing to the localnet TCP endpoint.
-	//
-	// TODO_IMPROVE: It would be nice if the value could be set correctly based
-	// on whether the test using it is running in tilt or not.
 	CometLocalTCPURL = "tcp://localhost:36657"
 
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
-	//
-	// TODO_IMPROVE: It would be nice if the value could be set correctly based
-	// on whether the test using it is running in tilt or not.
 	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
-)
 
-// EncodingConfig encapsulates encoding configurations for the Pocket application.
-var EncodingConfig = app.MakeEncodingConfig()
+	// EncodingConfig encapsulates encoding configurations for the Pocket application.
+	EncodingConfig = app.MakeEncodingConfig()
+)
 
 // init initializes the SDK configuration upon package import.
 func init() {
 	cmd.InitSDKConfig()
+
+	// If SEQUENCER_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
+	if endpoint := os.Getenv("SEQUENCER_RPC_ENDPOINT"); endpoint != "" {
+		CometLocalTCPURL = fmt.Sprintf("tcp://%s", endpoint)
+		CometLocalWebsocketURL = fmt.Sprintf("ws://%s/websocket", endpoint)
+	}
 }
 
 // NewLocalnetClientCtx creates a client context specifically tailored for localnet
