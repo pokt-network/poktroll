@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/cometbft/cometbft/types"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )

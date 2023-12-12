@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )

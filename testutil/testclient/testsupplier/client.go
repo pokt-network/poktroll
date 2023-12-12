@@ -6,14 +6,15 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
+	"github.com/pokt-network/smt"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	"github.com/pokt-network/smt"
-	"github.com/stretchr/testify/require"
 )
 
 // NewLocalnetClient creates and returns a new supplier client that connects to

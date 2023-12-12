@@ -9,10 +9,11 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	_ "golang.org/x/crypto/sha3"
+
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	_ "golang.org/x/crypto/sha3"
 )
 
 var SHA3HashLen = crypto.SHA3_256.Size()

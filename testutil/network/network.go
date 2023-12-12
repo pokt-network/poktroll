@@ -20,6 +20,8 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appcli "github.com/pokt-network/poktroll/x/application/client/cli"
@@ -27,7 +29,6 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 type (
