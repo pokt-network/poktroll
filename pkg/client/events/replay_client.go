@@ -61,6 +61,9 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 	// message bytes into the type defined by the EventsReplayClient's generic type
 	// parameter.
 	eventDecoder NewEventsFn[T]
+	// replayObsBufferSize is the buffer size for the replay observable returned
+	// by EventsSequence
+	replayObsBufferSize int
 	// replayObsCache is a replay observable with replay buffer size 1,
 	// which holds the "active latest observable" which is notified when
 	// new events are received by the events query client subscription
@@ -94,9 +97,10 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 ) (client.EventsReplayClient[T, U], error) {
 	// Initialize the replay client
 	rClient := &replayClient[T, U]{
-		endpointURL:  cometWebsocketURL,
-		queryString:  queryString,
-		eventDecoder: newEventFn,
+		endpointURL:         cometWebsocketURL,
+		queryString:         queryString,
+		eventDecoder:        newEventFn,
+		replayObsBufferSize: replayObsBufferSize,
 	}
 	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[U](
 		ctx,
@@ -120,12 +124,29 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 // which is notified when new events are received by the encapsulated
 // EventsQueryClient.
 func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
-	// Get the active event replay observable from replayObsCache. Only the last
-	// element is useful as any prior elements are closed replay observables.
-	// Directly accessing the zeroth index here is safe because the call to Last
-	// is guaranteed to return a slice with at least 1 element.
-	replayObs := observable.ReplayObservable[R](rClient.replayObsCache)
-	return replayObs.Last(ctx, 1)[0]
+	// Create a new replay observable and publish channel for event type T with
+	// a buffer size matching that provided during the EventsReplayClient
+	// construction.
+	eventTypeObs, replayEventTypeObsPublishCh := channel.NewReplayObservable[T](ctx, rClient.replayObsBufferSize)
+
+	// Ensure that the subscribers of the returned eventTypeObs receive
+	// notifications from the latest open replay observable.
+	go rClient.goRemapEventsSequence(ctx, replayEventTypeObsPublishCh)
+
+	// Return the event type observable.
+	return eventTypeObs.(R)
+}
+
+// goRemapEventsSequence publishes events observed by the most recent cached
+// events type replay observable to the given publishCh
+func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
+	for {
+		cachedEventTypeObs := rClient.replayObsCache.Last(ctx, 1)[0]
+		eventObserver := cachedEventTypeObs.Subscribe(ctx)
+		for event := range eventObserver.Ch() {
+			publishCh <- event
+		}
+	}
 }
 
 // LastNEvents returns the last N typed events that have been received by the
