@@ -44,7 +44,7 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(blockClient))
 
 	// Create and supply the grpc client used by the queriers
-	// TODO_TECHDEBT: Configure the grpc client options from the config
+	// TODO_TECHDEBT: Configure the grpc client options from the config.
 	var grpcClient grpctypes.ClientConn
 	grpcClient, err = grpc.Dial(
 		config.QueryNodeGRPCUrl.Host,
