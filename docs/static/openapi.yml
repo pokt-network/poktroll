@@ -47176,7 +47176,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured for
+                                configured
                               type: object
                               properties:
                                 id:
@@ -47243,7 +47243,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured for
+                                  configured
                                 type: object
                                 properties:
                                   id:
@@ -47931,12 +47931,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
+                                  - REST
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
+                                   - REST: REST
                               configs:
                                 type: array
                                 items:
@@ -48080,12 +48082,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
+                                    - REST
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
+                                     - REST: REST
                                 configs:
                                   type: array
                                   items:
@@ -77536,7 +77540,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured for
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
@@ -77600,7 +77604,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured for
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
@@ -77790,7 +77794,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77852,7 +77856,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured for
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
@@ -78032,6 +78036,7 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
+      - REST
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
@@ -78066,7 +78071,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured for
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
@@ -78099,6 +78104,7 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
+                      - REST
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
@@ -78156,6 +78162,7 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
+          - REST
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
@@ -78195,7 +78202,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured for
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:
@@ -78227,6 +78234,7 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
+                - REST
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
@@ -78481,12 +78489,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78661,12 +78671,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
+                          - REST
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
+                           - REST: REST
                       configs:
                         type: array
                         items:
