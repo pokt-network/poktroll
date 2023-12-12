@@ -117,3 +117,39 @@ func NewAnyTimesEventsBytesEventsQueryClient(
 
 	return eventsQueryClient
 }
+
+// NewAnyTimesClosableEventsQueryClient returns a new events query client which
+// is configured to return the expected event bytes when queried with the expected
+// query, any number of times. The returned client also expects to be closed any
+// number of times.
+func NewAnyTimesClosableEventsQueryClient(
+	ctx context.Context,
+	t *testing.T,
+	expectedQuery string,
+	expectedEventBytes []byte,
+) client.EventsQueryClient {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
+	eventsQueryClient.EXPECT().Close().AnyTimes()
+	eventsQueryClient.EXPECT().
+		EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.Eq(expectedQuery)).
+		DoAndReturn(
+			func(ctx context.Context, query string) (client.EventsBytesObservable, error) {
+				bytesObsvbl, bytesPublishCh := channel.NewReplayObservable[either.Bytes](ctx, 1)
+
+				// Now that the observable is set up, publish the expected event bytes.
+				// Only need to send once because it's a ReplayObservable.
+				bytesPublishCh <- either.Success(expectedEventBytes)
+
+				// Wait a tick for the observables to be set up. This isn't strictly
+				// necessary but is done to mitigate test flakiness.
+				time.Sleep(10 * time.Millisecond)
+
+				return bytesObsvbl, nil
+			},
+		).
+		AnyTimes()
+
+	return eventsQueryClient
+}

@@ -19,7 +19,7 @@ import (
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
+func NewLocalnetClient(ctx context.Context, t *testing.T) (client.BlockClient, client.EventsQueryClient) {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
@@ -29,7 +29,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	bClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
 	require.NoError(t, err)
 
-	return bClient
+	return bClient, queryClient
 }
 
 // NewAnyTimesCommittedBlocksSequenceBlockClient creates a new mock BlockClient.

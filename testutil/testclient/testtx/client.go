@@ -10,11 +10,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
@@ -32,7 +31,7 @@ func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxCli
 	ctx := context.Background()
 	txCtx := NewLocalnetContext(t)
 	eventsQueryClient := testeventsquery.NewLocalnetClient(t)
-	blockClient := testblock.NewLocalnetClient(ctx, t)
+	blockClient, _ := testblock.NewLocalnetClient(ctx, t)
 
 	deps := depinject.Supply(
 		txCtx,
@@ -67,7 +66,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 ) *mockclient.MockTxClient {
 	t.Helper()
 
-	var ctrl = gomock.NewController(t)
+	ctrl := gomock.NewController(t)
 
 	txClient := mockclient.NewMockTxClient(ctrl)
 	txClient.EXPECT().SignAndBroadcast(
