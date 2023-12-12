@@ -43,9 +43,9 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof list-proofs --supplier-address <sup
 			if err := updateProofsFilter(cmd, req); err != nil {
 				return err
 			}
-			//if err := req.ValidateBasic(); err != nil {
-			//	return err
-			//}
+			if err := req.ValidateBasic(); err != nil {
+				return err
+			}
 
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
