@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -152,6 +153,8 @@ func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string
 // It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
 	t.Helper()
+	log.Printf("CATCH ME IF YOU CAN!")
+
 	state := gatewaytypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
