@@ -4,18 +4,19 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	grpc "github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query/types"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
+
+var _ client.ApplicationQueryClient = (*appQuerier)(nil)
 
 // appQuerier is a wrapper around the apptypes.QueryClient that enables the
 // querying of on-chain application information through a single exposed method
 // which returns an apptypes.Application interface
 type appQuerier struct {
-	clientCtx          types.Context
+	clientConn         grpc.ClientConn
 	applicationQuerier apptypes.QueryClient
 }
 
@@ -29,12 +30,12 @@ func NewApplicationQuerier(deps depinject.Config) (client.ApplicationQueryClient
 
 	if err := depinject.Inject(
 		deps,
-		&aq.clientCtx,
+		&aq.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	aq.applicationQuerier = apptypes.NewQueryClient(cosmosclient.Context(aq.clientCtx))
+	aq.applicationQuerier = apptypes.NewQueryClient(aq.clientConn)
 
 	return aq, nil
 }

@@ -110,8 +110,6 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
-	"github.com/spf13/cast"
-
 	appparams "github.com/pokt-network/poktroll/app/params"
 	"github.com/pokt-network/poktroll/docs"
 	applicationmodule "github.com/pokt-network/poktroll/x/application"
@@ -132,6 +130,10 @@ import (
 	suppliermodule "github.com/pokt-network/poktroll/x/supplier"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -197,6 +199,7 @@ var (
 		applicationmodule.AppModuleBasic{},
 		suppliermodule.AppModuleBasic{},
 		gatewaymodule.AppModuleBasic{},
+		tokenomicsmodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
@@ -283,6 +286,8 @@ type App struct {
 	SupplierKeeper    suppliermodulekeeper.Keeper
 
 	GatewayKeeper gatewaymodulekeeper.Keeper
+
+	TokenomicsKeeper tokenomicsmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -335,6 +340,7 @@ func New(
 		applicationmoduletypes.StoreKey,
 		suppliermoduletypes.StoreKey,
 		gatewaymoduletypes.StoreKey,
+		tokenomicsmoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -575,16 +581,6 @@ func New(
 	)
 	serviceModule := servicemodule.NewAppModule(appCodec, app.ServiceKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
-		appCodec,
-		keys[suppliermoduletypes.StoreKey],
-		keys[suppliermoduletypes.MemStoreKey],
-		app.GetSubspace(suppliermoduletypes.ModuleName),
-
-		app.BankKeeper,
-	)
-	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
-
 	app.GatewayKeeper = *gatewaymodulekeeper.NewKeeper(
 		appCodec,
 		keys[gatewaymoduletypes.StoreKey],
@@ -607,6 +603,28 @@ func New(
 	)
 	applicationModule := applicationmodule.NewAppModule(appCodec, app.ApplicationKeeper, app.AccountKeeper, app.BankKeeper)
 
+	// TODO_TECHDEBT: Evaluate if this NB goes away after we upgrade to cosmos 0.5x
+	// NB: there is a circular dependency between the supplier and session keepers.
+	// Because the keepers are values (as opposed to pointers), they are copied
+	// when passed into their respective module constructor functions. For this
+	// reason, the existing pattern of ignite-generated keeper/module construction
+	// must be broken for these keepers and modules.
+	//
+	// Order of operations:
+	// 1. Construct supplier keeper
+	// 2. Construct session keeper
+	// 3. Provide session keeper to supplier keeper via custom #SupplySessionKeeper method.
+	// 4. Construct supplier module
+	// 5. Construct session module
+	app.SupplierKeeper = *suppliermodulekeeper.NewKeeper(
+		appCodec,
+		keys[suppliermoduletypes.StoreKey],
+		keys[suppliermoduletypes.MemStoreKey],
+		app.GetSubspace(suppliermoduletypes.ModuleName),
+
+		app.BankKeeper,
+	)
+
 	app.SessionKeeper = *sessionmodulekeeper.NewKeeper(
 		appCodec,
 		keys[sessionmoduletypes.StoreKey],
@@ -616,7 +634,19 @@ func New(
 		app.ApplicationKeeper,
 		app.SupplierKeeper,
 	)
+
+	app.SupplierKeeper.SupplySessionKeeper(app.SessionKeeper)
+
+	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
+
+	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
+		appCodec,
+		keys[tokenomicsmoduletypes.StoreKey],
+		keys[tokenomicsmoduletypes.MemStoreKey],
+		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+	)
+	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
@@ -685,6 +715,7 @@ func New(
 		applicationModule,
 		supplierModule,
 		gatewayModule,
+		tokenomicsModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 
 		crisis.NewAppModule(app.CrisisKeeper, skipGenesisInvariants, app.GetSubspace(crisistypes.ModuleName)), // always be last to make sure that it checks for all invariants and not only part of them
@@ -723,6 +754,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -754,6 +786,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -790,6 +823,7 @@ func New(
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		gatewaymoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 	app.mm.SetOrderInitGenesis(genesisModuleOrder...)
@@ -1020,6 +1054,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(applicationmoduletypes.ModuleName)
 	paramsKeeper.Subspace(suppliermoduletypes.ModuleName)
 	paramsKeeper.Subspace(gatewaymoduletypes.ModuleName)
+	paramsKeeper.Subspace(tokenomicsmoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper

@@ -14,7 +14,7 @@ import (
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
@@ -92,7 +92,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
@@ -173,7 +173,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 }
 
 func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 

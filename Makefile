@@ -526,7 +526,7 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 
 .PHONY: go_docs
 go_docs: check_godoc ## Generate documentation for the project
-	echo "Visit http://localhost:6060/pkg/pocket/"
+	echo "Visit http://localhost:6060/pkg/github.com/pokt-network/poktroll/"
 	godoc -http=:6060
 
 .PHONY: openapi_gen

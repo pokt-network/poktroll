@@ -2,11 +2,9 @@ package proxy
 
 import (
 	"context"
-	"log"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
@@ -25,13 +23,12 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Get the supplier's advertised information from the blockchain
-	supplierQuery := &suppliertypes.QueryGetSupplierRequest{Address: supplierAddress.String()}
-	supplierQueryResponse, err := rp.supplierQuerier.Supplier(ctx, supplierQuery)
+	supplier, err := rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
 	if err != nil {
 		return err
 	}
 
-	services := supplierQueryResponse.Supplier.Services
+	services := supplier.Services
 
 	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
 	providedServices := make(relayServersMap)
@@ -50,20 +47,22 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			// This will throw an error if we have more than one endpoint
 			supplierEndpointHost := "0.0.0.0:8545"
 
-			var server relayer.RelayServer
-
-			log.Printf(
-				"INFO: starting relay server for service %s at endpoint %s (listening for connections on %s)",
-				service.Id, endpoint.Url, supplierEndpointHost,
-			)
+			rp.logger.Info().
+				Fields(map[string]any{
+					"service_id":   service.Id,
+					"endpoint_url": endpoint.Url,
+				}).
+				Msg("starting relay server")
 
 			// Switch to the RPC type
 			// TODO(@h5law): Implement a switch that handles all synchronous
 			// RPC types in one server type and asynchronous RPC types in another
 			// to create the appropriate RelayServer
+			var server relayer.RelayServer
 			switch endpoint.RpcType {
 			case sharedtypes.RPCType_JSON_RPC:
 				server = NewSynchronousServer(
+					rp.logger,
 					service,
 					supplierEndpointHost,
 					proxiedServicesEndpoints,
@@ -81,7 +80,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	rp.advertisedRelayServers = providedServices
-	rp.supplierAddress = supplierQueryResponse.Supplier.Address
+	rp.supplierAddress = supplier.Address
 
 	return nil
 }

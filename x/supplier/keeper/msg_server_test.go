@@ -13,7 +13,7 @@ import (
 )
 
 func setupMsgServer(t testing.TB) (types.MsgServer, context.Context) {
-	k, ctx := keepertest.SupplierKeeper(t)
+	k, ctx := keepertest.SupplierKeeper(t, nil)
 	return keeper.NewMsgServerImpl(*k), sdk.WrapSDKContext(ctx)
 }
 

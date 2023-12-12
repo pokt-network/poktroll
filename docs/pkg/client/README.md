@@ -17,7 +17,6 @@
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
 
-
 ## Overview
 
 The `client` package exposes go APIs to facilitate interactions with the Pocket network.
@@ -26,11 +25,12 @@ It includes lower-level interfaces for working with transactions and subscribing
 ## Features
 
 | Interface               | Description                                                                                        |
-|-------------------------|----------------------------------------------------------------------------------------------------|
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
 | **`SupplierClient`**    | A high-level client for use by the "supplier" actor.                                               |
 | **`TxClient`**          | A high-level client used to build, sign, and broadcast transaction from cosmos-sdk messages.       |
 | **`TxContext`**         | Abstracts and encapsulates the transaction building, signing, encoding, and broadcasting concerns. |
 | **`BlockClient`**       | Exposes methods for receiving notifications about newly committed blocks.                          |
+| **`DelegationClient`**  | Exposes methods for receiving notifications about new delegation changes from application.         |
 | **`EventsQueryClient`** | Encapsulates blockchain event subscriptions.                                                       |
 | **`Connection`**        | A transport agnostic communication channel for sending and receiving messages.                     |
 | **`Dialer`**            | Abstracts the establishment of connections.                                                        |
@@ -42,7 +42,7 @@ It includes lower-level interfaces for working with transactions and subscribing
 title: Component Diagram Legend
 ---
 flowchart
-    
+
 c[Component]
 d[Dependency Component]
 s[[Subcomponent]]
@@ -60,21 +60,24 @@ c --> s
 title: Clients Dependency Tree
 ---
 flowchart
-
 sup[SupplierClient]
 tx[TxClient]
 txctx[[TxContext]]
-bl[BlockClient]
+subgraph bl[BlockClient]
+    bl_evt_replay[EventsReplayClient]
+end
+subgraph del[DelegationClient]
+    del_evt_replay[EventsReplayClient]
+end
 evt[EventsQueryClient]
 conn[[Connection]]
 dial[[Dialer]]
-
 sup --"#SignAndBroadcast()"--> tx
-
 tx --"#CommittedBlocksSequence()"--> bl
 tx --"#BroadcastTx"--> txctx
 tx --"#EventsBytes()"--> evt
-bl --"#EventsBytes()"--> evt
+bl_evt_replay --"#EventsBytes()"--> evt
+del_evt_replay --"#EventsBytes()"--> evt
 evt --> conn
 evt --"#DialContext()"--> dial
 dial --"(returns)"--> conn

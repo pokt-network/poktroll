@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 
+	sdkerrors "cosmossdk.io/errors"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -19,11 +20,13 @@ var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 // RPC server. It is used to listen for and respond to relay requests where
 // there is a one-to-one correspondence between relay requests and relay responses.
 type synchronousRPCServer struct {
+	logger polylog.Logger
+
 	// service is the service that the server is responsible for.
 	service *sharedtypes.Service
 
 	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
-	proxiedServiceEndpoint url.URL
+	proxiedServiceEndpoint *url.URL
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -41,6 +44,7 @@ type synchronousRPCServer struct {
 // It takes the serviceId, endpointUrl, and the main RelayerProxy as arguments
 // and returns a RelayServer that listens to incoming RelayRequests.
 func NewSynchronousServer(
+	logger polylog.Logger,
 	service *sharedtypes.Service,
 	supplierEndpointHost string,
 	proxiedServiceEndpoint *url.URL,
@@ -48,10 +52,11 @@ func NewSynchronousServer(
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
+		logger:                 logger,
 		service:                service,
 		server:                 &http.Server{Addr: supplierEndpointHost},
 		relayerProxy:           proxy,
-		proxiedServiceEndpoint: *proxiedServiceEndpoint,
+		proxiedServiceEndpoint: proxiedServiceEndpoint,
 		servedRelaysProducer:   servedRelaysProducer,
 	}
 }
@@ -88,14 +93,24 @@ func (sync *synchronousRPCServer) Service() *sharedtypes.Service {
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	log.Printf("DEBUG: Serving synchronous relay request...")
+	sync.logger.Debug().Msg("serving synchronous relay request")
 
 	// Extract the relay request from the request body.
-	log.Printf("DEBUG: Extracting relay request from request body...")
+	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		sync.replyWithError(relayRequest.Payload, writer, err)
-		log.Printf("WARN: failed serving relay request: %s", err)
+		sync.replyWithError(ctx, []byte{}, writer, err)
+		sync.logger.Warn().Err(err).Msg("failed serving relay request")
+		return
+	}
+
+	if relayRequest.Meta == nil {
+		err = sdkerrors.Wrapf(
+			ErrRelayerProxyInvalidRelayRequest,
+			"missing meta from relay request: %v", relayRequest,
+		)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.logger.Warn().Err(err).Msg("relay request metadata is nil which could be a result of failed unmashaling")
 		return
 	}
 
@@ -103,25 +118,24 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relay, err := sync.serveHTTP(ctx, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(relayRequest.Payload, writer, err)
-		log.Printf("WARN: failed serving relay request: %s", err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(relayRequest.Payload, writer, err)
-		log.Printf("WARN: failed sending relay response: %s", err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}
 
-	log.Printf(
-		"INFO: relay request served successfully for application %s, service %s, session start block height %d, proxied service %s",
-		relay.Res.Meta.SessionHeader.ApplicationAddress,
-		relay.Res.Meta.SessionHeader.Service.Id,
-		relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
-		sync.server.Addr,
-	)
+	sync.logger.Info().Fields(map[string]any{
+		"application_address":  relay.Res.Meta.SessionHeader.ApplicationAddress,
+		"service_id":           relay.Res.Meta.SessionHeader.Service.Id,
+		"session_start_height": relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
+		"server_addr":          sync.server.Addr,
+	}).Msg("relay request served successfully")
 
 	// Emit the relay to the servedRelays observable.
 	sync.servedRelaysProducer <- relay
@@ -148,19 +162,20 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// that will be sent to the proxied (i.e. staked for) service.
 	// (see https://pkg.go.dev/net/http#Request) Body field type.
 	requestBodyReader := io.NopCloser(bytes.NewBuffer(relayRequest.Payload))
-	log.Printf("DEBUG: Relay request payload: %s", string(relayRequest.Payload))
+	sync.logger.Debug().
+		Str("request_payload", string(relayRequest.Payload)).
+		Msg("serving relay request")
 
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
-	log.Printf(
-		"DEBUG: Building relay request to native service %s...",
-		sync.proxiedServiceEndpoint.String(),
-	)
+	sync.logger.Debug().
+		Str("destination_url", sync.proxiedServiceEndpoint.String()).
+		Msg("building relay request payload to service")
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    &sync.proxiedServiceEndpoint,
+		URL:    sync.proxiedServiceEndpoint,
 		Host:   sync.proxiedServiceEndpoint.Host,
 		Body:   requestBodyReader,
 	}
@@ -174,7 +189,10 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Build the relay response from the native service response
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
 	// and has to be the same as the relayResponse session header.
-	log.Printf("DEBUG: Building relay response from native service response...")
+	sync.logger.Debug().
+		Str("relay_request_session_header", relayRequest.Meta.SessionHeader.String()).
+		Msg("building relay response protobuf from service response")
+
 	relayResponse, err := sync.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err

@@ -4,19 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 
 	"cosmossdk.io/depinject"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/appgateserver"
 	appgateconfig "github.com/pokt-network/poktroll/pkg/appgateserver/config"
 	"github.com/pokt-network/poktroll/pkg/deps/config"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 // We're `explicitly omitting default` so that the appgateserver crashes if these aren't specified.
@@ -65,7 +67,7 @@ provided that:
 	// Cosmos flags
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialise the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
+		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
 
 	return cmd
 }
@@ -83,10 +85,22 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// TODO_TECHDEBT: add logger level and output options to the config.
 	appGateConfigs, err := appgateconfig.ParseAppGateServerConfigs(configContent)
 	if err != nil {
 		return err
 	}
+
+	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
+	loggerOpts := []polylog.LoggerOption{
+		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithOutput(os.Stderr),
+	}
+
+	// Construct a logger and associate it with the command context.
+	logger := polyzero.NewLogger(loggerOpts...)
+	ctx = logger.WithContext(ctx)
+	cmd.SetContext(ctx)
 
 	// Setup the AppGate server dependencies.
 	appGateServerDeps, err := setupAppGateServerDependencies(ctx, cmd, appGateConfigs)
@@ -94,7 +108,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to setup AppGate server dependencies: %w", err)
 	}
 
-	log.Println("INFO: Creating AppGate server...")
+	logger.Info().Msg("Creating AppGate server...")
 
 	// Create the AppGate server.
 	appGateServer, err := appgateserver.NewAppGateServer(
@@ -112,13 +126,15 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("failed to create AppGate server: %w", err)
 	}
 
-	log.Printf("INFO: Starting AppGate server, listening on %s...", appGateConfigs.ListeningEndpoint.String())
+	logger.Info().
+		Str("listening_endpoint", appGateConfigs.ListeningEndpoint.String()).
+		Msg("Starting AppGate server...")
 
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start app gate server: %w", err)
 	} else if errors.Is(err, http.ErrServerClosed) {
-		log.Println("INFO: AppGate server stopped")
+		logger.Info().Msg("AppGate server stopped")
 	}
 
 	return nil
@@ -140,12 +156,15 @@ func setupAppGateServerDependencies(
 	}
 
 	supplierFuncs := []config.SupplierFn{
+		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
 		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),                          // leaf
 		config.NewSupplyApplicationQuerierFn(),                      // leaf
+		config.NewSupplySessionQuerierFn(),                          // leaf
 		config.NewSupplyRingCacheFn(),
+		config.NewSupplyPOKTRollSDKFn(queryNodeURL, appGateConfig.SigningKey),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

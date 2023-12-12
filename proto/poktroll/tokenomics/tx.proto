@@ -1,0 +1,7 @@
+syntax = "proto3";
+package poktroll.tokenomics;
+
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+
+// Msg defines the Msg service.
+service Msg {}

@@ -21,7 +21,6 @@ func (k Keeper) SetSupplier(ctx sdk.Context, supplier sharedtypes.Supplier) {
 func (k Keeper) GetSupplier(
 	ctx sdk.Context,
 	supplierAddr string,
-
 ) (supplier sharedtypes.Supplier, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
 
@@ -40,7 +39,6 @@ func (k Keeper) GetSupplier(
 func (k Keeper) RemoveSupplier(
 	ctx sdk.Context,
 	supplierAddr string,
-
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.SupplierKeyPrefix))
 	store.Delete(types.SupplierKey(

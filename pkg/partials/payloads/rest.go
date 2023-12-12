@@ -1,6 +1,8 @@
 package payloads
 
 import (
+	"context"
+
 	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -11,7 +13,7 @@ type PartialRESTPayload struct {
 	Headers map[string]string `json:"headers"`
 }
 
-// PartiallyUnmarshalRESTPayload receives a serialised payload and attempts to
+// PartiallyUnmarshalRESTPayload receives a serialized payload and attempts to
 // unmarshal it into the PartialRESTPayload struct. If successful this struct
 // is returned, if however the struct does not contain all the required fields
 // the success return value is false and a nil payload is returned.
@@ -24,7 +26,7 @@ func PartiallyUnmarshalRESTPayload(payloadBz []byte) (restPayload *PartialRESTPa
 // REST payload.
 // It uses a non-pointer receiver to ensure the default values of unset fields
 // are present
-func (r PartialRESTPayload) ValidateBasic() error {
+func (r PartialRESTPayload) ValidateBasic(ctx context.Context) error {
 	// TODO(@h5law): Implement this function
 	var err error
 	return err
@@ -43,7 +45,7 @@ func (r *PartialRESTPayload) GenerateErrorPayload(err error) ([]byte, error) {
 }
 
 // GetRPCComputeUnits returns the compute units for the RPC request
-func (r *PartialRESTPayload) GetRPCComputeUnits() (uint64, error) {
+func (r *PartialRESTPayload) GetRPCComputeUnits(ctx context.Context) (uint64, error) {
 	// TODO(@h5law): Implement this method
 	return 0, nil
 }

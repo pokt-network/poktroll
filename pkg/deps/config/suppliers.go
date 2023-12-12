@@ -3,27 +3,24 @@ package config
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	grpc "github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	eventsquery "github.com/pokt-network/poktroll/pkg/client/events_query"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/sdk"
 )
-
-// hostToWebsocketURL converts the provided host into a websocket URL that can
-// be used to subscribe to onchain events and query the chain via a client
-// context or send transactions via a tx client context.
-func hostToWebsocketURL(host string) string {
-	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
-	return websocketURL
-}
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
 // supplier functions in order and passing the result of each supplier to the
@@ -44,6 +41,18 @@ func SupplyConfig(
 	return deps, nil
 }
 
+// NewSupplyLoggerFromCtx supplies a depinject config with a polylog.Logger instance
+// populated from the given context.
+func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		return depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx))), nil
+	}
+}
+
 // NewSupplyEventsQueryClientFn returns a new function which constructs an
 // EventsQueryClient instance, with the given hostname converted into a websocket
 // URL to subscribe to, and returns a new depinject.Config which is supplied
@@ -56,7 +65,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
 		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
-		eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
+		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
 	}
@@ -64,7 +73,7 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
 // instance with the given hostname, which is converted into a websocket URL,
-// to listen for block events on, and returns a new depinject.Config which
+// to listen for block events on-chain, and returns a new depinject.Config which
 // is supplied with the given deps and the new BlockClient.
 func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(
@@ -112,6 +121,8 @@ func NewSupplyQueryClientContextFn(pocketQueryNodeURL string) SupplierFn {
 		}
 		deps = depinject.Configs(deps, depinject.Supply(
 			querytypes.Context(queryClientCtx),
+			grpc.ClientConn(queryClientCtx),
+			queryClientCtx.Keyring,
 		))
 
 		// Restore the flag's original value in order for other components
@@ -206,6 +217,47 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 	}
 }
 
+// NewSupplySessionQuerierFn returns a function which constructs a
+// SessionQuerier instance with the required dependencies and returns a new
+// depinject.Config which is supplied with the given deps and the new SessionQuerier.
+func NewSupplySessionQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the session querier.
+		sessionQuerier, err := query.NewSessionQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the session querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(sessionQuerier)), nil
+	}
+}
+
+// NewSupplySupplierQuerierFn returns a function which constructs a
+// SupplierQuerier instance with the required dependencies and returns a new
+// instance with the required dependencies and returns a new depinject.Config
+// which is supplied with the given deps and the new SupplierQuerier.
+func NewSupplySupplierQuerierFn() SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Create the supplier querier.
+		supplierQuerier, err := query.NewSupplierQuerier(deps)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the supplier querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(supplierQuerier)), nil
+	}
+}
+
 // NewSupplyRingCacheFn returns a function with constructs a RingCache instance
 // with the required dependencies and returns a new depinject.Config which is
 // supplied with the given deps and the new RingCache.
@@ -224,4 +276,58 @@ func NewSupplyRingCacheFn() SupplierFn {
 		// Supply the ring cache to the provided deps
 		return depinject.Configs(deps, depinject.Supply(ringCache)), nil
 	}
+}
+
+// NewSupplyPOKTRollSDKFn returns a function which constructs a
+// POKTRollSDK instance with the required dependencies and returns a new
+// depinject.Config which is supplied with the given deps and the new POKTRollSDK.
+func NewSupplyPOKTRollSDKFn(
+	queryNodeURL *url.URL,
+	signingKeyName string,
+) SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		var clientCtx cosmosclient.Context
+
+		// On a Cosmos environment we get the private key from the keyring
+		// Inject the client context, get the keyring from it then get the private key
+		if err := depinject.Inject(deps, &clientCtx); err != nil {
+			return nil, err
+		}
+
+		keyRecord, err := clientCtx.Keyring.Key(signingKeyName)
+		if err != nil {
+			return nil, err
+		}
+
+		privateKey, ok := keyRecord.GetLocal().PrivKey.GetCachedValue().(cryptotypes.PrivKey)
+		if !ok {
+			return nil, err
+		}
+
+		config := &sdk.POKTRollSDKConfig{
+			PrivateKey:    privateKey,
+			PocketNodeUrl: queryNodeURL,
+			Deps:          deps,
+		}
+
+		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
+		if err != nil {
+			return nil, err
+		}
+
+		// Supply the session querier to the provided deps
+		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
+	}
+}
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func hostToWebsocketURL(host string) string {
+	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
+	return websocketURL
 }

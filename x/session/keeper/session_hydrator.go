@@ -108,8 +108,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
 	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
 	// prevHashBz := ctx.HeaderHash()
-	prevHashBz := []byte("TODO_BLOCKER: See the comment above")
-	appPubKeyBz := []byte(sh.sessionHeader.ApplicationAddress)
+	prevHash := "TODO_BLOCKER: See the comment above"
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
@@ -117,13 +116,13 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
 		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
 	}
-	serviceIdBz := []byte(sh.sessionHeader.Service.Id)
 
-	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sh.sessionHeader.SessionStartBlockHeight))
-
-	sh.sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, prevHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
-	sh.sessionHeader.SessionId = hex.EncodeToString(sha3Hash(sh.sessionIdBz))
+	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
+		sh.sessionHeader.ApplicationAddress,
+		sh.sessionHeader.Service.Id,
+		prevHash,
+		sh.sessionHeader.SessionStartBlockHeight,
+	)
 
 	return nil
 }
@@ -157,7 +156,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
-	for _, supplier := range suppliers {
+	for _, s := range suppliers {
+		// NB: Allocate a new heap variable as s is a value and we're appending
+		// to a slice of  pointers; otherwise, we'd be appending new pointers to
+		// the same memory address containing the last supplier in the loop.
+		supplier := s
 		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
 			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
@@ -236,4 +239,25 @@ func sha3Hash(bz []byte) []byte {
 	hasher := crypto.SHA3_256.New()
 	hasher.Write(bz)
 	return hasher.Sum(nil)
+}
+
+// GetSessionId returns the string and bytes representation of the sessionId
+// given the application public key, service ID, block hash, and block height.
+func GetSessionId(
+	appPubKey,
+	serviceId,
+	blockHash string,
+	blockHeight int64,
+) (sessionId string, sessionIdBz []byte) {
+	appPubKeyBz := []byte(appPubKey)
+	serviceIdBz := []byte(serviceId)
+	blockHashBz := []byte(blockHash)
+
+	sessionHeightBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight))
+
+	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
+
+	return sessionId, sessionIdBz
 }

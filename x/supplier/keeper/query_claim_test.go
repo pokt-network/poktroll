@@ -16,7 +16,7 @@ import (
 )
 
 func TestClaim_QuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	claims := createNClaims(keeper, ctx, 2)
 	tests := []struct {
@@ -105,7 +105,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 }
 
 func TestClaim_QueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	claims := createNClaims(keeper, ctx, 10)
 

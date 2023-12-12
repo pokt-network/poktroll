@@ -24,6 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	appcli "github.com/pokt-network/poktroll/x/application/client/cli"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -126,6 +127,27 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	return state
 }
 
+// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
+// a single application for each of the given addresses.
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for _, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+
+	return state
+}
+
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
 // It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
@@ -173,8 +195,9 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 	return state
 }
 
-// SupplierModuleGenesisStateWithAccount generates a GenesisState object with a single supplier with the given address.
-func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+// SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
+// a single supplier for each of the given addresses.
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
 	t.Helper()
 	state := suppliertypes.DefaultGenesis()
 	for _, addr := range addresses {
@@ -199,7 +222,23 @@ func SupplierModuleGenesisStateWithAccounts(t *testing.T, addresses []string) *s
 	return state
 }
 
-// Initialize an Account by sending it some funds from the validator in the network to the address provided
+// GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
+// a gateway list full of gateways with the given addresses.
+func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for _, addr := range addresses {
+		gateway := gatewaytypes.Gateway{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(10000)},
+		}
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
+// InitAccount initializes an Account by sending it some funds from the validator
+// in the network to the address provided
 func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	t.Helper()
 	val := net.Validators[0]
@@ -213,13 +252,14 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
-// Initialize an Account by sending it some funds from the validator in the network to the address provided
+// InitAccountWithSequence initializes an Account by sending it some funds from
+// the validator in the network to the address provided
 func InitAccountWithSequence(
 	t *testing.T,
 	net *Network,
@@ -243,8 +283,60 @@ func InitAccountWithSequence(
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
+// DelegateAppToGateway delegates the provided application to the provided gateway
+func DelegateAppToGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdDelegateToGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
+}
+
+// UndelegateAppFromGateway undelegates the provided application from the provided gateway
+func UndelegateAppFromGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdUndelegateFromGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
 }

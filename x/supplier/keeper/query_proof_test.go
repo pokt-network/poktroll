@@ -6,19 +6,20 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
 func TestProofQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNProofs(keeper, ctx, 2)
 	tests := []struct {
@@ -70,7 +71,7 @@ func TestProofQuerySingle(t *testing.T) {
 }
 
 func TestProofQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	msgs := createNProofs(keeper, ctx, 5)
 
