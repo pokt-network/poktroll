@@ -13,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
@@ -71,8 +72,8 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
-	// Listen for delegatee change events and invalidate the cache if the
-	// delegatee change's address is stored in the cache.
+	// Listen for redelegation events and invalidate the cache if the
+	// redelegation event's address is stored in the cache.
 	go rc.goInvalidateCache(ctx)
 }
 
@@ -80,39 +81,35 @@ func (rc *ringCache) Start(ctx context.Context) {
 // cache if the delegatee change's address is stored in the cache.
 // It is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
-	// TODO: Use ForEach
-	redelegationCh := rc.delegationClient.RedelegationsSequence(ctx).Subscribe(ctx).Ch()
-
-	for redelegation := range redelegationCh {
-		select {
-		case <-ctx.Done():
-			// If the context is done, stop the RingCache.
-			rc.Stop()
-			return
-		default:
-		}
-		// Lock the cache for writing.
-		rc.ringPointsMu.Lock()
-		// Check if the delegatee change's address is in the cache.
-		if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
-			// If it is, invalidate the cache entry.
-			rc.logger.Debug().
-				Str("app_address", redelegation.GetAppAddress()).
-				Msg("redelegation event received; invalidating cache entry")
-			delete(rc.ringPointsCache, redelegation.GetAppAddress())
-		}
-		// Unlock the cache.
-		rc.ringPointsMu.Unlock()
-	}
+	// Get the latest redelegation replay observable.
+	redelegationObs := rc.delegationClient.RedelegationsSequence(ctx)
+	// For each redelegation event, check if the redelegation events's
+	// app address is in the cache. If it is, invalidate the cache entry.
+	channel.ForEach[client.Redelegation](
+		ctx, redelegationObs,
+		func(ctx context.Context, redelegation client.Redelegation) {
+			// Lock the cache for writing.
+			rc.ringPointsMu.Lock()
+			// Check if the redelegation event's app address is in the cache.
+			if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
+				rc.logger.Debug().
+					Str("app_address", redelegation.GetAppAddress()).
+					Msg("redelegation event received; invalidating cache entry")
+				// Invalidate the cache entry.
+				delete(rc.ringPointsCache, redelegation.GetAppAddress())
+			}
+			// Unlock the cache.
+			rc.ringPointsMu.Unlock()
+		})
 }
 
-// Stop stops the ring cache by unsubscribing from on-chain delegation events.
+// Stop stops the ring cache by unsubscribing from on-chain redelegation events.
 func (rc *ringCache) Stop() {
 	// Clear the cache.
 	rc.ringPointsMu.Lock()
 	rc.ringPointsCache = make(map[string][]ringtypes.Point)
 	rc.ringPointsMu.Unlock()
-	// Unsubscribe from the delegatee change replay observable.
+	// Close the delegation client.
 	rc.delegationClient.Close()
 }
 
