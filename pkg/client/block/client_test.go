@@ -44,7 +44,7 @@ func TestBlockClient(t *testing.T) {
 	expectedEventBz, err := json.Marshal(expectedBlockEvent)
 	require.NoError(t, err)
 
-	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
+	eventsQueryClient := testeventsquery.NewAnyTimesClosableEventsQueryClient(
 		ctx, t,
 		committedBlocksQuery,
 		expectedEventBz,
@@ -71,6 +71,23 @@ func TestBlockClient(t *testing.T) {
 		{
 			name: "CommittedBlocksSequence successfully returns latest block",
 			fn: func() client.Block {
+				blockObservable := blockClient.CommittedBlocksSequence(ctx)
+				require.NotNil(t, blockObservable)
+
+				// Ensure that the observable is replayable via Last.
+				lastBlock := blockObservable.Last(ctx, 1)[0]
+				require.Equal(t, expectedHeight, lastBlock.Height())
+				require.Equal(t, expectedHash, lastBlock.Hash())
+
+				return lastBlock
+			},
+		},
+		{
+			name: "CommittedBlocksSequence successfully remaps closure",
+			fn: func() client.Block {
+				// Close the events query client to force a reconnection.
+				eventsQueryClient.Close()
+
 				blockObservable := blockClient.CommittedBlocksSequence(ctx)
 				require.NotNil(t, blockObservable)
 

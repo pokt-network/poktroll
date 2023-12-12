@@ -10,20 +10,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
-
-	"github.com/pokt-network/poktroll/pkg/client"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test depends on some setup which is currently not implemented in this test: staked application and servicer with matching services")
+	t.Skip(
+		"TODO_TECHDEBT: this test depends on some setup which is currently not implemented in this test: staked application and servicer with matching services",
+	)
 
-	var ctx = context.Background()
+	ctx := context.Background()
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
@@ -35,7 +36,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	// we're not exercising transactions timeouts in this test, we don't need to set any
 	// particular expectations on it, nor do we care about the value of blockHash
 	// argument.
-	blockClientMock := testblock.NewLocalnetClient(ctx, t)
+	blockClientMock, _ := testblock.NewLocalnetClient(ctx, t)
 
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(

@@ -74,7 +74,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 			// of the Redelegation event alternates between app1 and app2
 			if previousRedelegation != nil {
 				require.NotEqual(t, previousRedelegation.GetAppAddress(), change.GetAppAddress())
-				if previousRedelegation.AppAddress() == appAddresses[0] {
+				if previousRedelegation.GetAppAddress() == appAddresses[0] {
 					require.Equal(t, appAddresses[1], change.GetAppAddress())
 				} else {
 					require.Equal(t, appAddresses[0], change.GetAppAddress())
@@ -129,7 +129,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 }
 
 // createNetworkWithApplicationsAndGateways creates a network with 2 applications
-// and 1 gateway. It returns the network with all accoutns initialized via a
+// and 1 gateway. It returns the network with all accounts initialized via a
 // transaction from the first validator.
 func createNetworkWithApplicationsAndGateways(
 	t *testing.T,

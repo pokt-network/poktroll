@@ -21,7 +21,7 @@ const blockIntegrationSubTimeout = 5 * time.Second
 func TestBlockClient_LastNBlocks(t *testing.T) {
 	ctx := context.Background()
 
-	blockClient := testblock.NewLocalnetClient(ctx, t)
+	blockClient, _ := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
 	block := blockClient.LastNBlocks(ctx, 1)
@@ -31,10 +31,16 @@ func TestBlockClient_LastNBlocks(t *testing.T) {
 func TestBlockClient_BlocksObservable(t *testing.T) {
 	ctx := context.Background()
 
-	blockClient := testblock.NewLocalnetClient(ctx, t)
+	blockClient, queryClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
 	blockSub := blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
+
+	// Simulate the connection closing
+	go func() {
+		time.Sleep(1 * time.Second)
+		queryClient.Close()
+	}()
 
 	var (
 		blockMu      sync.Mutex

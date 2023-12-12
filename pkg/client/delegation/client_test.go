@@ -37,7 +37,7 @@ func TestDelegationClient(t *testing.T) {
 	expectedEventBz, err := json.Marshal(expectedDelegationEvent)
 	require.NoError(t, err)
 
-	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
+	eventsQueryClient := testeventsquery.NewAnyTimesClosableEventsQueryClient(
 		ctx, t,
 		delegationEventQuery,
 		expectedEventBz,
@@ -65,6 +65,22 @@ func TestDelegationClient(t *testing.T) {
 		{
 			name: "RedelegationsSequence successfully returns latest redelegation",
 			fn: func() client.Redelegation {
+				redelegationObs := delegationClient.RedelegationsSequence(ctx)
+				require.NotNil(t, redelegationObs)
+
+				// Ensure that the observable is replayable via Last.
+				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
+				require.Equal(t, expectedAddress, lastRedelegation.GetAppAddress())
+
+				return lastRedelegation
+			},
+		},
+		{
+			name: "RedelegationsSequence successfully remaps closure",
+			fn: func() client.Redelegation {
+				// Close the events query client to force a reconnection.
+				eventsQueryClient.Close()
+
 				redelegationObs := delegationClient.RedelegationsSequence(ctx)
 				require.NotNil(t, redelegationObs)
 
