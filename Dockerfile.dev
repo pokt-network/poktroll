@@ -23,6 +23,5 @@ RUN ignite chain init --skip-proto
 EXPOSE 8545
 EXPOSE 8546
 EXPOSE 8547
-EXPOSE 8548
 
 ENTRYPOINT ["ignite"]

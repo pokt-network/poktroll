@@ -262,4 +262,18 @@ Run `ignite --help` in order to explore all the different commands.
 
 ```
 
+Things to add:
+
 ```
+flow:   curl (client) -> AppGateServer   ->  Supplier -> Anvil
+defaut:     localhost  ->     k8s        ->    k8s   -> k8s
+quickstart: localhost  ->     localhost  -.->  k8s   -> k8s
+```
+
+1. Update /etc/hosts
+127.0.0.1       anvil
+127.0.0.1       relayminers
+
+
+TODO(@okdas): avoid restarting celestia when restarting localnet
+TODO(@Olshansk): A script that runs all the things at once
