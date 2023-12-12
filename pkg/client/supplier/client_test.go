@@ -10,7 +10,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -22,7 +21,7 @@ import (
 
 const (
 	testSigningKeyName = "test_signer"
-	testService = "test_service"
+	testService        = "test_service"
 )
 
 func TestNewSupplierClient(t *testing.T) {
@@ -79,7 +78,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	var (
 		signAndBroadcastDelay = 50 * time.Millisecond
 		doneCh                = make(chan struct{}, 1)
-		ctx                   = polyzero.NewLogger().WithContext(context.Background())
+		ctx                   = context.Background()
 	)
 
 	keyring, testAppKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
@@ -138,7 +137,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	var (
 		signAndBroadcastDelay = 50 * time.Millisecond
 		doneCh                = make(chan struct{}, 1)
-		ctx                   = polyzero.NewLogger().WithContext(context.Background())
+		ctx                   = context.Background()
 	)
 
 	keyring, testAppKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)

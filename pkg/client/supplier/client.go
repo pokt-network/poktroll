@@ -93,7 +93,7 @@ func (sClient *supplierClient) SubmitProof(
 			"session_id":    sessionHeader.SessionId,
 			"service":       sessionHeader.Service.Id,
 		}).
-		Msg("created a new proof")
+		Msg("submitted a new proof")
 
 	return <-errCh
 }
@@ -121,10 +121,12 @@ func (sClient *supplierClient) CreateClaim(
 
 	// TODO_IMPROVE: log details related to how much is claimed
 	logger.Info().
-		Str("supplier_addr", sClient.signingKeyAddr.String()).
-		Str("app_addr", sessionHeader.ApplicationAddress).
-		Str("session_id", sessionHeader.SessionId).
-		Str("service", sessionHeader.Service.Id).
+		Fields(map[string]any{
+			"supplier_addr": sClient.signingKeyAddr.String(),
+			"app_addr":      sessionHeader.ApplicationAddress,
+			"session_id":    sessionHeader.SessionId,
+			"service":       sessionHeader.Service.Id,
+		}).
 		Msg("created a new claim")
 
 	return <-errCh
