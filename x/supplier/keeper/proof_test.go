@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -9,6 +10,10 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -17,25 +22,35 @@ import (
 var _ = strconv.IntSize
 
 func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof {
-	items := make([]types.Proof, n)
-	for i := range items {
-		items[i].Index = strconv.Itoa(i)
+	proofs := make([]types.Proof, n)
+	for i := range proofs {
+		proofs[i] = types.Proof{
+			SupplierAddress: sample.AccAddress(),
+			SessionHeader: &sessiontypes.SessionHeader{
+				ApplicationAddress:      sample.AccAddress(),
+				Service:                 &sharedtypes.Service{Id: testServiceId},
+				SessionId:               fmt.Sprintf("session-%d", i),
+				SessionStartBlockHeight: 1,
+				SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			},
+			MerkleProof: nil,
+		}
 
-		keeper.SetProof(ctx, items[i])
+		keeper.SetProof(ctx, proofs[i])
 	}
-	return items
+	return proofs
 }
 
 func TestProofGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
-	items := createNProofs(keeper, ctx, 10)
-	for _, item := range items {
+	proofs := createNProofs(keeper, ctx, 10)
+	for _, proof := range proofs {
 		rst, found := keeper.GetProof(ctx,
-			item.Index,
+			proof.GetSessionHeader().GetSessionId(),
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&proof),
 			nullify.Fill(&rst),
 		)
 	}
@@ -45,10 +60,10 @@ func TestProofRemove(t *testing.T) {
 	items := createNProofs(keeper, ctx, 10)
 	for _, item := range items {
 		keeper.RemoveProof(ctx,
-			item.Index,
+			item.GetSessionHeader().GetSessionId(),
 		)
 		_, found := keeper.GetProof(ctx,
-			item.Index,
+			item.GetSessionHeader().GetSessionId(),
 		)
 		require.False(t, found)
 	}

@@ -18,7 +18,8 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 
 	// Update the primary store: ClaimPrimaryKey -> ClaimObject
 	primaryStore := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
-	primaryKey := types.ClaimPrimaryKey(claim.SessionId, claim.SupplierAddress)
+	sessionId := claim.GetSessionHeader().GetSessionId()
+	primaryKey := types.ClaimPrimaryKey(sessionId, claim.SupplierAddress)
 	primaryStore.Set(primaryKey, claimBz)
 
 	logger.Info("inserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
@@ -32,10 +33,11 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
-	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
+	sessionEndBlockHeight := uint64(claim.GetSessionHeader().GetSessionEndBlockHeight())
+	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
 	sessionHeightStoreIndex.Set(heightKey, primaryKey)
 
-	logger.Info("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
+	logger.Info("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, sessionEndBlockHeight)
 }
 
 // RemoveClaim removes a claim from the store
@@ -58,7 +60,8 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
-	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
+	sessionEndBlockHeight := uint64(claim.GetSessionHeader().GetSessionEndBlockHeight())
+	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
 
 	// Delete all the entries (primary store and secondary indices)
 	primaryStore.Delete(primaryKey)

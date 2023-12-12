@@ -12,20 +12,20 @@ func (k Keeper) SetProof(ctx sdk.Context, proof types.Proof) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	b := k.cdc.MustMarshal(&proof)
 	store.Set(types.ProofKey(
-		proof.Index,
+		proof.GetSessionHeader().GetSessionId(),
 	), b)
 }
 
 // GetProof returns a proof from its index
 func (k Keeper) GetProof(
 	ctx sdk.Context,
-	index string,
+	sessionId string,
 
 ) (val types.Proof, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 
 	b := store.Get(types.ProofKey(
-		index,
+		sessionId,
 	))
 	if b == nil {
 		return val, false

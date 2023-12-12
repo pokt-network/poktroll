@@ -2,9 +2,10 @@ syntax = "proto3";
 
 package pocket.supplier;
 
+import "cosmos_proto/cosmos.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/supplier/params.proto";
 import "pocket/shared/supplier.proto";
 import "pocket/supplier/claim.proto";
