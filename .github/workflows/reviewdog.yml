@@ -37,6 +37,8 @@ jobs:
           reporter: github-pr-review
           level: error
           fail_on_error: true
+          # Go stdlib `log` package import detector regex.
+          # See: https://regex101.com/r/CBEq1U/2.
           pattern: import\s+(\(\n\s+)?[^\)]*"log"
 
   # There are multiple ways to validate (at compile time) that a struct
