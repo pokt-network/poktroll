@@ -2,6 +2,7 @@ package testdelegation
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -139,4 +140,18 @@ func NewAnyTimesRedelegation(
 	redelegation.EXPECT().GetGatewayAddress().Return(gatewayAddress).AnyTimes()
 
 	return redelegation
+}
+
+// NewRedelegationEventBytes returns a byte slice containing a JSON string
+// that mocks the event bytes returned from the events query client for a
+// Redelegation event.
+func NewRedelegationEventBytes(
+	t *testing.T,
+	appAddress string,
+	gatewayAddress string,
+) []byte {
+	t.Helper()
+	jsonTemplate := `{"result":{"log":"[{\"msg_index\":0,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/pocket.application.MsgDelegateToGateway\"},{\"key\":\"sender\",\"value\":\"pokt1exampleaddress\"},{\"key\":\"module\",\"value\":\"application\"}]},{\"type\":\"pocket.application.EventRedelegation\",\"attributes\":[{\"key\":\"app_address\",\"value\":\"\\\"%s\\\"\"},{\"key\":\"gateway_address\",\"value\":\"\\\"%s\\\"\"}]}]}]"}}`
+	json := fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)
+	return []byte(json)
 }
