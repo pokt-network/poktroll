@@ -5,54 +5,69 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) SubmitProof(goCtx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubmitProof) (*suppliertypes.MsgSubmitProofResponse, error) {
 	// TODO_BLOCKER: Prevent Proof upserts after the tokenomics module has processes the respective session.
 	// TODO_BLOCKER: Validate the signature on the Proof message corresponds to the supplier before Upserting.
-
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := k.Logger(ctx).With("method", "SubmitProof")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
+	if _, err := k.ValidateSessionHeader(
+		goCtx,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	); err != nil {
+		return nil, err
+	}
+
 	/*
-		INCOMPLETE: Handling the message
+			INCOMPLETE: Handling the message
 
-		## Validation
+		## Actions (error if anything fails)
+		1. Retrieve a fully hydrated `session` from on-chain store using `msg` metadata
+		2. Retrieve a fully hydrated `claim` from on-chain store using `msg` metadata
+		3. Retrieve `relay.Req` and `relay.Res` from deserializing `proof.ClosestValueHash`
 
-		### Session validation
-		1. [ ] claimed session ID == retrieved session ID
-		2. [ ] this supplier is in the session's suppliers list
-		3. [ ] proof signer addr == session application addr
+		## Basic Validations (metadata only)
+		1. claim.sessionId == retrievedClaim.sessionId
+		2. proof.sessionId == claim.sessionId
+		3. msg.supplier in session.suppliers
+		4. relay.Req.signer == session.appAddr
+		5. relay.Res.signer == msg.supplier
 
-		### Msg distribution validation (depends on session validation)
-		1. [ ] pseudo-randomize earliest block offset
-		2. [ ] governance-based earliest block offset
+		## Msg distribution validation (governance based params)
+		1. Validate Proof submission is not too early; governance-based param + pseudo-random variation
+		2. Validate Proof submission is not too late; governance-based param + pseudo-random variation
 
-		### Proof validation
-		1. [ ] session validation
-		2. [ ] msg distribution validation
-		3. [ ] claim with matching session ID exists
-		4. [ ] proof path matches last committed block hash at claim height - 1
-		5. [ ] proof validates with claimed root hash
-
-		## Persistence
-		1. [ ] submit proof message
-			- supplier address
-			- session header
-			- proof
-
-		## Accounting
-		1. [ ] extract work done from root hash
-		2. [ ] calculate reward/burn token with governance-based multiplier
-		3. [ ] reward supplier
-		4. [ ] burn application tokens
+		## Relay Mining validation
+		1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
+		2. verify(proof.ValueHash, expectedDiffictul); governance based
+		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
 
-	_ = ctx
+	//_ = ctx
 
-	return &types.MsgSubmitProofResponse{}, nil
+	// Construct and insert proof after all validation.
+	proof := suppliertypes.Proof{
+		SupplierAddress: msg.GetSupplierAddress(),
+		SessionHeader:   msg.GetSessionHeader(),
+		MerkleProof:     msg.Proof,
+	}
+	k.Keeper.UpsertProof(ctx, proof)
+
+	logger.
+		With(
+			"session_id", proof.GetSessionHeader().GetSessionId(),
+			"session_end_height", proof.GetSessionHeader().GetSessionEndBlockHeight(),
+			"supplier", proof.GetSupplierAddress(),
+		).
+		Debug("created proof")
+
+	return &suppliertypes.MsgSubmitProofResponse{}, nil
 }
