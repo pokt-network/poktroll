@@ -31,51 +31,56 @@ slug: /
 
 **poktroll** is a rollup built using [Rollkit](https://rollkit.dev/), [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
 
-This R&D effort It is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE Inc.](https://grove.city/). We have documented our research journey [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
+This R&D effort is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE Inc.](https://grove.city/). We have documented our research journey [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
 
 - [Learn about Pocket Network](#learn-about-pocket-network)
 - [Roadmap](#roadmap)
 - [Getting Started](#getting-started)
   - [Quickstart](#quickstart)
   - [Godoc](#godoc)
-- [Ask An AI](#ask-an-ai)
-  - [PNYX](#pnyx)
-  - [GPokT](#gpokt)
+- [Have questions? Ask An AI](#have-questions-ask-an-ai)
+  - [PNYX (Search Engine)](#pnyx-search-engine)
+  - [GPokT (Chatbot)](#gpokt-chatbot)
 - [License](#license)
 
 ## Learn about Pocket Network
 
-User friendly documentation on the Shannon upgrade is still a WIP, but there are
-a handful of resources you can reference in the meantime:
+User friendly documentation of the Shannon upgrade is still a WIP, but there are
+a handful of (potentially outdated) resources you can reference in the meantime
+to build a better understanding of Pocket Network:
 
-- [Pocket Network official documentation](https://docs.pokt.network).
+- [Pocket Network official documentation](https://docs.pokt.network)
 - [Pocket Network Morse; aka v0 (current mainnet)](https://github.com/pokt-network/pocket-core)
 - [Pocket Network Protocol (outdated)](https://github.com/pokt-network/pocket-network-protocol)
 - [Pocket Network V1 (deprecated)](https://github.com/pokt-network/pocket)
 
 ## Roadmap
 
-You can find our Roadmap [here](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc) and the roadmap changelog [here](./roadmap/roadmap_changelog.md).
+You can details related to our roadmap [here](./roadmap/roadmap.md) and the
+roadmap changelog [here](./roadmap/roadmap_changelog.md).
 
 ## Getting Started
 
 ### Quickstart
 
-The best way to get involved is by following the instructions [here](./d)
+The best way to get involved is by following the instructions [here](./quickstart.md).
 
 ### Godoc
 
 The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
-## Ask An AI
+## Have questions? Ask An AI
 
-### PNYX
+The fastest and easiest way to get answers to your questions is by one of our
+several AI-powered tools.
+
+### PNYX (Search Engine)
 
 You can use [PNYX](https://pnyxai.com/), an AI-powered search engine that has been
 trained and indexed on the Pocket Network documentation, community calls, forums
 and much more!
 
-### GPokT
+### GPokT (Chatbot)
 
 You can use our chatbot, [GPokT](https://gpoktn.streamlit.app), to ask questions
 about Pocket Network. Please note that it may require you to provide your own

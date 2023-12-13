@@ -24,6 +24,8 @@ needed to send an end-to-end relay.
   - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
+- [Troubleshooting](#troubleshooting)
+  - [Clean Slate (Nuclear Option)](#clean-slate-nuclear-option)
 
 ## Run Poktroll locally
 
@@ -93,4 +95,19 @@ git clone git@github.com:pokt-network/helm-charts.git
 cd ~/src/pocket/poktroll
 sed -i.bak "s/helm_chart_local_repo\.enabled: false.*/helm_chart_local_repo.enabled: true/" localnet_config.yaml
 sed -i.bak "s#path: .*#path: ../helm-charts#" localnet_config.yaml
+```
+
+## Troubleshooting
+
+### Clean Slate (Nuclear Option)
+
+If you're encountering weird issues and just need to start over, follow these steps:
+
+```bash
+make localnet_down
+kind delete cluster
+make docker_wipe
+make go_develop_and_test
+kind create cluster
+make localnet_up
 ```

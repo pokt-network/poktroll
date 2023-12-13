@@ -5,13 +5,12 @@ title: Quickstart
 
 # Quickstart <!-- omit in toc -->
 
-- [Report issues](#report-issues)
 - [Install Dependencies](#install-dependencies)
 - [Launch LocalNet](#launch-localnet)
   - [Clone the repository](#clone-the-repository)
   - [Prepare your environment](#prepare-your-environment)
   - [Create a k8s cluster](#create-a-k8s-cluster)
-  - [Start the LocalNet](#start-the-localnet)
+  - [Start up LocalNet](#start-up-localnet)
 - [Interact with the chain](#interact-with-the-chain)
   - [Create a new Account](#create-a-new-account)
   - [Fund your account](#fund-your-account)
@@ -23,28 +22,33 @@ title: Quickstart
   - [Makefile](#makefile)
   - [Ignite](#ignite)
 
-The goal of this document is to get you up and running with a LocalNet and end-to-end relay.
+:::tip
+The goal of this document is to get you up and running with a LocalNet and
+end-to-end relay.
 
-## Report issues
-
-If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+**If you encounter any problems**, the best way to get support
+from the team is by creating a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+:::
 
 ## Install Dependencies
 
-Install the following:
+Install the following dependencies:
 
-1. [Golang](https://go.dev/doc/install)
-2. [Docker](https://docs.docker.com/get-docker/)
-3. [Ignite](https://docs.ignite.com/welcome/install)
-4. [Kind](https://kind.sigs.k8s.io/#installation-and-usage)
-5. [Helm](https://helm.sh/docs/intro/install/#through-package-managers)
-6. [Tilt](https://docs.tilt.dev/install.html)
+1. [Golang](https://go.dev/doc/install) - The language we use to implement the protocol
+2. [Docker](https://docs.docker.com/get-docker/) - Containerization tool
+3. [Ignite](https://docs.ignite.com/welcome/install) - Cosmos SDK CLI for building and deploying blockchains
+4. [Kind](https://kind.sigs.k8s.io/#installation-and-usage) - k8s local cluster manager
+5. [Helm](https://helm.sh/docs/intro/install/#through-package-managers) - k8s configuration and automation tool
+6. [Tilt](https://docs.tilt.dev/install.html) - k8s local development tool & environment manager
 
 :::note
 You might already have these installed if you've followed the [localnet instructions](./infrastructure/localnet.md).
 :::
 
 ## Launch LocalNet
+
+This section will help you deploy a Celestia cluster, Pocket LocalNet in a k8s
+cluster on your machine.
 
 ### Clone the repository
 
@@ -67,7 +71,7 @@ make go_develop_and_test
 kind create cluster
 ```
 
-### Start the LocalNet
+### Start up LocalNet
 
 ```bash
 make localnet_up
@@ -75,22 +79,31 @@ make localnet_up
 
 Visit [localhost:10350](http://localhost:10350) and wait until all the containers are 🟢.
 
+If everything worked as expected, your screen should look similar to the following:
+
 ![LocalNet](./img/quickstart_localnet.png)
 
 ## Interact with the chain
+
+This section is an opinionated walkthrough of a small number of interactions you
+can have with the network so you get a feel of how to interact with the chain.
 
 ### Create a new Account
 
 List all the accounts we get out of the box by running:
 
 ```bash
-ignite account list --keyring-dir=./localnet/poktrolld --keyring-backend test --address-prefix pokt
+ignite account list \
+  --keyring-dir=./localnet/poktrolld \
+  --keyring-backend test --address-prefix pokt
 ```
 
 And create a new account named `shannon` by running:
 
 ```bash
-ignite account create shannon --keyring-dir=./localnet/poktrolld --keyring-backend test
+ignite account create shannon \
+  --keyring-dir=./localnet/poktrolld \
+  --keyring-backend test
 ```
 
 If you re-run the command above, it should show up in the list.
@@ -98,8 +111,10 @@ Make sure to note its address under the `Address` column and export it as an
 environment variable for convenience. For example:
 
 ```bash
-export SHANNON_ADDRESS=pokt1mczm7xste7ckrwrmerda7m5ze89gyd9rzvxztr
+export SHANNON_ADDRESS=pokt1skun4qy6z0cvac4fc37kcqcjsyr3qe9thhlzkv
 ```
+
+![Accounts](./img/quickstart_accounts.png)
 
 ### Fund your account
 
@@ -120,12 +135,13 @@ pagination:
   total: "0"
 ```
 
-But our sequencer has a lot of pokt from the genesis.json file (found at `localnet/poktrolld/config/genesis.json`)
+But if you look in our genesis file (found at `localnet/poktrolld/config/genesis.json`)
+you'll find that our sequencer has a lot of POKT, so we can use some of that.
 
 ```bash
 poktrolld --home=./localnet/poktrolld \
   tx bank send \
-  sequencer1 $SHANNON_ADDRESS 199999100000000upokt \
+  sequencer1 $SHANNON_ADDRESS 420000000000069upokt \
   --node tcp://127.0.0.1:36657
 ```
 
@@ -133,7 +149,7 @@ And you'll find that Shannon is now rolling in POKT:
 
 ```yaml
 balances:
-  - amount: "199999100000000"
+  - amount: "420000000000069"
     denom: upokt
 pagination:
   next_key: null
@@ -142,22 +158,27 @@ pagination:
 
 ### Stake Shannon as an Application
 
-Run `make app_list` (a helper our team created) to see all the apps staked on the network.
-You should see that `SHANNON_ADDRESS` is not staked as an app yet.
+Run `make app_list` (a helper our team created) to see all the apps staked on the
+network. There will be a default application, but `SHANNON_ADDRESS` won't be there.
 
 In order to stake shannon as an app, we need to create a new config file and run
 the stake command.
 
 ```bash
-touch shannon_app_config.yaml
 cat <<EOF >> shannon_app_config.yaml
 service_ids:
  - anvil
 EOF
 ```
 
-We already have a supplier pre-configured to supply services for anvil
-(an local ethereum testing node), so we simply reused that for simplicity.
+:::note
+Details on all the available configurations are still in progress and will be linked here once ready.
+TODO(@red-0ne): Link to the document for all the config files once ready.
+:::
+
+We already have a supplier pre-configured (try running `make supplier_list`) to
+supply services for anvil (an local ethereum testing node), so we can simply
+reused that for simplicity.
 
 Next, run the stake command:
 
@@ -169,6 +190,8 @@ poktrolld --home=./localnet/poktrolld \
 ```
 
 If you re-run, `make app_list` you should see that `SHANNON_ADDRESS` is now staked as an app.
+
+![Apps](./img/quickstart_applist.png)
 
 ### Send a relay
 
@@ -265,9 +288,11 @@ Run `ignite --help` in order to explore all the different commands.
 Things to add:
 
 ```
-flow:   curl (client) -> AppGateServer   ->  Supplier -> Anvil
-defaut:     localhost  ->     k8s        ->    k8s   -> k8s
-quickstart: localhost  ->     localhost  -.->  k8s   -> k8s
+
+flow: curl (client) -> AppGateServer -> Supplier -> Anvil
+defaut: localhost -> k8s -> k8s -> k8s
+quickstart: localhost -> localhost -.-> k8s -> k8s
+
 ```
 
 1. Update /etc/hosts
@@ -277,3 +302,4 @@ quickstart: localhost  ->     localhost  -.->  k8s   -> k8s
 
 TODO(@okdas): avoid restarting celestia when restarting localnet
 TODO(@Olshansk): A script that runs all the things at once
+```
