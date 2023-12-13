@@ -118,9 +118,9 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, 
 	dataStr := fmt.Sprintf("%s", data)
 	urlStr := fmt.Sprintf("%s/%s", rpcUrl, service)
 	base := []string{
-		"-v",                                   // verbose output
-		"-sS",                                  // silent with error
-		"POST",                                 // HTTP method
+		"-v",         // verbose output
+		"-sS",        // silent with error
+		"-X", "POST", // HTTP method
 		"-H", "Content-Type: application/json", // HTTP headers
 		"--data", dataStr, urlStr, // POST data
 	}

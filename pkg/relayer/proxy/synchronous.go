@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	sdkerrors "cosmossdk.io/errors"
+
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/x/service/types"
