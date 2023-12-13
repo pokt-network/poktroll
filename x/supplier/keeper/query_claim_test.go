@@ -134,7 +134,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 				actualStatus, ok := status.FromError(err)
 				require.True(t, ok)
 
-				require.ErrorIs(t, tc.expectedErr, actualStatus.Err())
+				require.ErrorIs(t, actualStatus.Err(), tc.expectedErr)
 				require.ErrorContains(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
