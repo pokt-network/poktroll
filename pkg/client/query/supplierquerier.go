@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-
 	"github.com/cosmos/gogoproto/grpc"
+
 	"github.com/pokt-network/poktroll/pkg/client"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
