@@ -67,7 +67,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 
 			inputConfig: ``,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigEmpty,
 		},
 		{
 			desc: "invalid: no signing key",
@@ -80,7 +80,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
-			expectedError: config.ErrAppGateConfigEmptySigningKey,
+			expectedError: config.ErrAppGateConfigUnmarshalYAML,
 		},
 		{
 			desc: "invalid: invalid listening endpoint",
@@ -88,7 +88,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 			inputConfig: `
 				self_signing: true
 				signing_key: app1
-				listening_endpoint: &localhost:42069
+				listening_endpoint: l&ocalhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
@@ -102,7 +102,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				self_signing: true
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: &127.0.0.1:36658
+				query_node_grpc_url: 1&27.0.0.1:36658
 				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
@@ -119,7 +119,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
+			expectedError: config.ErrAppGateConfigUnmarshalYAML,
 		},
 		{
 			desc: "invalid: invalid query node rpc url",
@@ -129,7 +129,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: &127.0.0.1:36657
+				query_node_rpc_url: 1&27.0.0.1:36657
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
@@ -145,7 +145,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				// explicitly missing query_node_rpc_url
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
+			expectedError: config.ErrAppGateConfigUnmarshalYAML,
 		},
 	}
 
@@ -155,7 +155,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 			config, err := config.ParseAppGateServerConfigs([]byte(normalizedConfig))
 
 			if tt.expectedError != nil {
-				require.Error(t, err)
+				require.ErrorIs(t, err, tt.expectedError)
 				require.Nil(t, config)
 				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)

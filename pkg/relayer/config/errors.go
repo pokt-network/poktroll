@@ -11,4 +11,5 @@ var (
 	ErrRelayMinerConfigInvalidServiceEndpoint  = sdkerrors.Register(codespace, 5, "invalid service endpoint in RelayMiner config")
 	ErrRelayMinerConfigInvalidSigningKeyName   = sdkerrors.Register(codespace, 6, "invalid signing key name in RelayMiner config")
 	ErrRelayMinerConfigInvalidSmtStorePath     = sdkerrors.Register(codespace, 7, "invalid smt store path in RelayMiner config")
+	ErrRelayMinerConfigEmpty                   = sdkerrors.Register(codespace, 8, "empty RelayMiner config")
 )

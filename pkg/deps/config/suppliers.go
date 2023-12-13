@@ -105,6 +105,8 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 
 		// Set --grpc-addr flag to the pocketQueryNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
+		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
+		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
 		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
@@ -144,10 +146,16 @@ func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
-		tmpGRPC := cosmosflags.FlagGRPC
+		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
+		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
+		if err != nil {
+			return nil, err
+		}
 
 		// Set --node flag to the pocketTxNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientTxContext.
+		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
+		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
 		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, txNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
@@ -316,6 +324,9 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 	}
 }
 
+// queryNodeToWebsocketURL converts a query node URL to a CometBFT websocket URL.
+// It takes the Host property of the queryNode URL and returns it as a websocket URL
+// formatted as ws://<hostname>:<port>/websocket.
 func queryNodeToWebsocketURL(queryNode *url.URL) string {
 	return fmt.Sprintf("ws://%s/websocket", queryNode.Host)
 }

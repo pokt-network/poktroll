@@ -9,4 +9,5 @@ var (
 	ErrAppGateConfigInvalidListeningEndpoint = sdkerrors.Register(codespace, 3, "invalid listening endpoint in AppGateServer config")
 	ErrAppGateConfigInvalidQueryNodeGRPCUrl  = sdkerrors.Register(codespace, 4, "invalid query node grpc url in AppGateServer config")
 	ErrAppGateConfigInvalidQueryNodeRPCUrl   = sdkerrors.Register(codespace, 5, "invalid query node rpc url in AppGateServer config")
+	ErrAppGateConfigEmpty                    = sdkerrors.Register(codespace, 6, "empty AppGateServer config")
 )

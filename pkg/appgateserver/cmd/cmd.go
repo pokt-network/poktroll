@@ -66,6 +66,7 @@ provided that:
 	cmd.Flags().StringVar(&flagAppGateConfig, "config", "", "The path to the appgate config file")
 
 	// Cosmos flags
+	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
 	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCUrl` field in the config file if specified.")
@@ -152,7 +153,7 @@ func setupAppGateServerDependencies(
 
 	// Override the config file's `QueryNodeGRPCUrl` field
 	// with the `--grpc-addr` flag if it was specified.
-	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
+	// TODO_TECHDEBT(#223) Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeGRPCURL != omittedDefaultFlagValue {
 		queryNodeGRPCURL, err = url.Parse(flagNodeGRPCURL)
 		if err != nil {
@@ -162,7 +163,7 @@ func setupAppGateServerDependencies(
 
 	// Override the config file's `QueryNodeRPCURL` field
 	// with the `--node` flag if it was specified.
-	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
+	// TODO_TECHDEBT(#223) Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeRPCURL != omittedDefaultFlagValue {
 		queryNodeRPCURL, err = url.Parse(flagNodeRPCURL)
 		if err != nil {

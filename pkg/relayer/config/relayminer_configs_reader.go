@@ -31,20 +31,24 @@ type RelayMinerConfig struct {
 func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	var yamlRelayMinerConfig YAMLRelayMinerConfig
 
+	if len(configContent) == 0 {
+		return nil, ErrRelayMinerConfigEmpty
+	}
+
 	// Unmarshal the stake config file into a yamlAppGateConfig
 	if err := yaml.Unmarshal(configContent, &yamlRelayMinerConfig); err != nil {
-		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrapf("%s", err)
+		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
 	// Check that the tx node GRPC URL is provided
 	if yamlRelayMinerConfig.TxNodeGRPCUrl == "" {
-		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrapf("tx node grpc url is required")
+		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrap("tx node grpc url is required")
 	}
 
 	// Parse the tx node GRPC URL
 	txNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.TxNodeGRPCUrl)
 	if err != nil {
-		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrapf("%s", err)
+		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrap(err.Error())
 	}
 
 	// Check that the query node GRPC URL is provided and default to the tx node GRPC URL if not
@@ -55,18 +59,18 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	// Parse the query node GRPC URL
 	queryNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.QueryNodeGRPCUrl)
 	if err != nil {
-		return nil, ErrRelayMinerConfigInvalidQueryNodeGRPCUrl.Wrapf("%s", err)
+		return nil, ErrRelayMinerConfigInvalidQueryNodeGRPCUrl.Wrap(err.Error())
 	}
 
 	// Check that the network node websocket URL is provided
 	if yamlRelayMinerConfig.QueryNodeRPCUrl == "" {
-		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrapf("node rpc url is required")
+		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrap("query node rpc url is required")
 	}
 
 	// Parse the rpc URL of the Pocket Node to connect to for subscribing to on-chain events.
 	queryNodeRPCUrl, err := url.Parse(yamlRelayMinerConfig.QueryNodeRPCUrl)
 	if err != nil {
-		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrapf("%s", err)
+		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrap(err.Error())
 	}
 
 	if yamlRelayMinerConfig.SigningKeyName == "" {
@@ -78,11 +82,11 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	if yamlRelayMinerConfig.ProxiedServiceEndpoints == nil {
-		return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrapf("proxied service endpoints are required")
+		return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrap("proxied service endpoints are required")
 	}
 
 	if len(yamlRelayMinerConfig.ProxiedServiceEndpoints) == 0 {
-		return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrapf("no proxied service endpoints provided")
+		return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrap("no proxied service endpoints provided")
 	}
 
 	// Parse the proxied service endpoints
@@ -90,7 +94,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	for serviceId, endpointUrl := range yamlRelayMinerConfig.ProxiedServiceEndpoints {
 		endpoint, err := url.Parse(endpointUrl)
 		if err != nil {
-			return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrapf("%s", err)
+			return nil, ErrRelayMinerConfigInvalidServiceEndpoint.Wrap(err.Error())
 		}
 		proxiedServiceEndpoints[serviceId] = endpoint
 	}

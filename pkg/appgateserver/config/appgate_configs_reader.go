@@ -30,9 +30,13 @@ type AppGateServerConfig struct {
 func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, error) {
 	var yamlAppGateServerConfig YAMLAppGateServerConfig
 
+	if len(configContent) == 0 {
+		return nil, ErrAppGateConfigEmpty
+	}
+
 	// Unmarshal the stake config file into a yamlAppGateConfig
 	if err := yaml.Unmarshal(configContent, &yamlAppGateServerConfig); err != nil {
-		return nil, ErrAppGateConfigUnmarshalYAML.Wrapf("%s", err)
+		return nil, ErrAppGateConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
 	if yamlAppGateServerConfig.SigningKey == "" {
@@ -45,7 +49,7 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 
 	listeningEndpoint, err := url.Parse(yamlAppGateServerConfig.ListeningEndpoint)
 	if err != nil {
-		return nil, ErrAppGateConfigInvalidListeningEndpoint.Wrapf("%s", err)
+		return nil, ErrAppGateConfigInvalidListeningEndpoint.Wrap(err.Error())
 	}
 
 	if yamlAppGateServerConfig.QueryNodeGRPCUrl == "" {
@@ -54,7 +58,7 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 
 	queryNodeGRPCUrl, err := url.Parse(yamlAppGateServerConfig.QueryNodeGRPCUrl)
 	if err != nil {
-		return nil, ErrAppGateConfigInvalidQueryNodeGRPCUrl.Wrapf("%s", err)
+		return nil, ErrAppGateConfigInvalidQueryNodeGRPCUrl.Wrap(err.Error())
 	}
 
 	if yamlAppGateServerConfig.QueryNodeRPCUrl == "" {
@@ -63,7 +67,7 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 
 	queryNodeRPCUrl, err := url.Parse(yamlAppGateServerConfig.QueryNodeRPCUrl)
 	if err != nil {
-		return nil, ErrAppGateConfigInvalidQueryNodeRPCUrl.Wrapf("%s", err)
+		return nil, ErrAppGateConfigInvalidQueryNodeRPCUrl.Wrap(err.Error())
 	}
 
 	// Populate the appGateServerConfig with the values from the yamlAppGateServerConfig
