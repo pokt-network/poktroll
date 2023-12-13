@@ -111,7 +111,7 @@ type Block interface {
 
 // Redelegation is an interface which wraps the EventRedelegation event
 // emitted by the application module.
-// See: proto/pocket/application/types/event.proto#EventRedelegatio
+// See: proto/pocket/application/types/event.proto#EventRedelegation
 type Redelegation interface {
 	GetAppAddress() string
 	GetGatewayAddress() string
