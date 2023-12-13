@@ -5,7 +5,6 @@ package delegation
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -79,27 +78,16 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 		}
 
 		logger := polylog.Ctx(context.Background())
-		logger.Debug().
-			Str("log_entries", fmt.Sprintf("%+v", logEntries)).
-			Msg("log entries deserialised")
-
 		// Iterate through the log entries to find EventRedelegation
 		for _, entry := range logEntries {
 			for _, event := range entry.Events {
 				if event.Type == "pocket.application.EventRedelegation" {
-					logger.Debug().
-						Str("event_type", event.Type).
-						Msg("redelegation event found")
 					var redelegationEvent redelegation
 					for _, attr := range event.Attributes {
 						switch attr.Key {
 						case "app_address":
 							appAddress, err := unescape(attr.Value)
 							if err != nil {
-								logger.Error().
-									Str("app_address", attr.Value).
-									Err(err).
-									Msg("unable to unescape app address string")
 								return nil, events.ErrEventsUnmarshalEvent.
 									Wrapf("unable to unescape app address string: %v", err)
 							}
@@ -107,10 +95,6 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 						case "gateway_address":
 							gatewayAddr, err := unescape(attr.Value)
 							if err != nil {
-								logger.Error().
-									Str("gateway_address", attr.Value).
-									Err(err).
-									Msg("unable to unescape gateway address string")
 								return nil, events.ErrEventsUnmarshalEvent.
 									Wrapf("unable to unescape gateway address string: %v", err)
 							}
