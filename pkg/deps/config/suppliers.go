@@ -101,7 +101,11 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value
-		tmpGRPC := cosmosflags.FlagGRPC
+		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
+		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
+		if err != nil {
+			return nil, err
+		}
 
 		// Set --grpc-addr flag to the pocketQueryNodeURL for the client context
 		// This flag is read by cosmosclient.GetClientQueryContext.
