@@ -72,6 +72,7 @@ func NewRingCache(deps depinject.Config) (crypto.RingCache, error) {
 
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
+	rc.logger.Info().Msg("starting ring cache")
 	// Listen for redelegation events and invalidate the cache if the
 	// redelegation event's address is stored in the cache.
 	go rc.goInvalidateCache(ctx)
@@ -88,6 +89,10 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 	channel.ForEach[client.Redelegation](
 		ctx, redelegationObs,
 		func(ctx context.Context, redelegation client.Redelegation) {
+			rc.logger.Debug().
+				Str("app_address", redelegation.GetAppAddress()).
+				Str("gateway_address", redelegation.GetGatewayAddress()).
+				Msg("redelegation event received")
 			// Lock the cache for writing.
 			rc.ringPointsMu.Lock()
 			// Check if the redelegation event's app address is in the cache.
