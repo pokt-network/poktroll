@@ -1,6 +1,6 @@
 package delegation
 
-// TODO_HACK(@h5law): This is disgusting get this piece of shit out the codebase
+// TODO_TECHDEBT(@h5law): This is disgusting get this piece of shit out the codebase
 
 import (
 	"context"
