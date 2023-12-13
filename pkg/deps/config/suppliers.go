@@ -309,9 +309,8 @@ func NewSupplyPOKTRollSDKFn(
 		}
 
 		config := &sdk.POKTRollSDKConfig{
-			PrivateKey:    privateKey,
-			PocketNodeUrl: queryNodeURL,
-			Deps:          deps,
+			PrivateKey: privateKey,
+			Deps:       deps,
 		}
 
 		poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, config)
