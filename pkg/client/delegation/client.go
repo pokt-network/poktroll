@@ -11,15 +11,22 @@ import (
 
 const (
 	// delegationEventQuery is the query used by the EventsQueryClient to subscribe
-	// to new delegation events from the the application module on chain.
+	// to all application module events in order to filter for redelegation events.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
+	// TODO_HACK(@h5law): Instead of listening to all events and doing a verbose
+	// filter, look into each application address that gets cached having its
+	// own delegation client and using a query like:
+	// delegationEventQuery = "tm.event='Tx' AND pocket.application.EventRedelegation.app_address='%s'"
+	// NB: I was unable to get this to work in testing so the exact query **will**
+	// need to be discovered.
+	delegationEventQuery = "tm.event='Tx' AND message.module='application'"
 
 	// defaultRedelegationsReplayLimit is the number of redelegations that the
 	// replay observable returned by LastNRedelegations() will be able to replay.
-	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the `delegationClient`
-	// struct that defaults to this but can be overridden via an option.
+	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the
+	// delegation client struct that defaults to this but can be overridden via
+	// an option in future work.
 	defaultRedelegationsReplayLimit = 100
 )
 
