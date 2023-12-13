@@ -45,7 +45,7 @@ Select one or more:
 
 - [ ] **Run all unit tests**: `make go_develop_and_test`
 - [ ] **Run E2E tests locally**: `make test_e2e`
-- [ ] **Run E2E tests on DevNet`: Add the `devnet-test-e2e` label to the PR. This is VERY expensive, o only do it after all the reviews are complete.
+- [ ] **Run E2E tests on DevNet**: Add the `devnet-test-e2e` label to the PR. This is VERY expensive, o only do it after all the reviews are complete.
 
 ## Sanity Checklist
 
