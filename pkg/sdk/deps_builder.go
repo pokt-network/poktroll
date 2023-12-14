@@ -78,7 +78,7 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
 
 	// Create and supply the delegation client
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps, pocketNodeWebsocketURL)
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
 	if err != nil {
 		return nil, err
 	}

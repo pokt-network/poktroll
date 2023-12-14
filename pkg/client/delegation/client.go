@@ -15,11 +15,14 @@ const (
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	// TODO_HACK(@h5law): Instead of listening to all events and doing a verbose
-	// filter, look into each application address that gets cached having its
-	// own delegation client and using a query like:
-	// delegationEventQuery = "tm.event='Tx' AND pocket.application.EventRedelegation.app_address='%s'"
-	// NB: I was unable to get this to work in testing so the exact query **will**
-	// need to be discovered.
+	// filter, we should subscribe to both MsgDelegateToGateway and MsgUndelegateFromGateway
+	// messages directly, and filter those for the EventRedelegation event types.
+	// This would save the delegation client from listening to a lot of unnecessary
+	// events, that it filters out.
+	// NB: This is not currently possible because the observer pattern does not
+	// support multiplexing multiple observables into a single observable, that
+	// can supply the EventsReplayClient with both the MsgDelegateToGateway and
+	// MsgUndelegateFromGateway events.
 	delegationEventQuery = "tm.event='Tx' AND message.module='application'"
 
 	// defaultRedelegationsReplayLimit is the number of redelegations that the

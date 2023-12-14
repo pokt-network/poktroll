@@ -151,7 +151,7 @@ func NewRedelegationEventBytes(
 	gatewayAddress string,
 ) []byte {
 	t.Helper()
-	jsonTemplate := `{"result":{"log":"[{\"msg_index\":0,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/pocket.application.MsgDelegateToGateway\"},{\"key\":\"sender\",\"value\":\"pokt1exampleaddress\"},{\"key\":\"module\",\"value\":\"application\"}]},{\"type\":\"pocket.application.EventRedelegation\",\"attributes\":[{\"key\":\"app_address\",\"value\":\"\\\"%s\\\"\"},{\"key\":\"gateway_address\",\"value\":\"\\\"%s\\\"\"}]}]}]"}}`
+	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/pocket.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"pocket.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
 	json := fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)
 	return []byte(json)
 }

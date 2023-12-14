@@ -3,36 +3,21 @@ package delegation
 // TODO_TECHDEBT(@h5law): This is disgusting get this piece of shit out the codebase
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"strconv"
-	"strings"
+
+	"cosmossdk.io/api/tendermint/abci"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.Redelegation = (*redelegation)(nil)
 
-// Define the structure of a response from the application module query
-type response struct {
-	Result result `json:"result"`
-}
-type result struct {
-	Log string `json:"log"`
-}
-type logEntry struct {
-	Events []event `json:"events"`
-}
-type event struct {
-	Type       string      `json:"type"`
-	Attributes []attribute `json:"attributes"`
-}
-type attribute struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
+// TxEvent is an alias for the CometBFT TxResult type used to decode the
+// response bytes from the EventsQueryClient's subscription
+type TxEvent = abci.TxResult
 
 // redelegation wraps the EventRedelegation event emitted by the application
 // module, for use in the observable, it is one of the log entries embedded
@@ -58,69 +43,49 @@ func (d redelegation) GetGatewayAddress() string {
 // ErrUnmarshalRedelegation error is returned. Otherwise if deserialisation
 // fails then the error is returned.
 func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
-	return func(redelegationEventBz []byte) (client.Redelegation, error) {
-		var response response
-		err := json.Unmarshal(redelegationEventBz, &response)
-		if err != nil {
-			return nil, events.ErrEventsUnmarshalEvent.
-				Wrapf("unable to unmarshal subscription response: %v", err)
+	return func(eventBz []byte) (client.Redelegation, error) {
+		txEvent := new(TxEvent)
+		// Try to deserialize the provided bytes into a TxEvent.
+		if err := json.Unmarshal(eventBz, txEvent); err != nil {
+			return nil, err
 		}
-		if response.Result.Log == "" {
-			return nil, events.ErrEventsUnmarshalEvent.Wrap("no log field in response")
+		// Check if the TxEvent has empty transaction bytes, which indicates
+		// the message might not be a valid transaction event.
+		if bytes.Equal(txEvent.Tx, []byte{}) {
+			return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
 		}
-
-		// Unmarshal the log field
-		var logEntries []logEntry
-		err = json.Unmarshal([]byte(response.Result.Log), &logEntries)
-		if err != nil {
-			return nil, events.ErrEventsUnmarshalEvent.
-				Wrapf("unable to unmarshal log field in response: %v", err)
-		}
-
-		logger := polylog.Ctx(context.Background())
 		// Iterate through the log entries to find EventRedelegation
-		for _, entry := range logEntries {
-			for _, event := range entry.Events {
-				if event.Type == "pocket.application.EventRedelegation" {
-					var redelegationEvent redelegation
-					for _, attr := range event.Attributes {
-						switch attr.Key {
-						case "app_address":
-							appAddress, err := unescape(attr.Value)
-							if err != nil {
-								return nil, events.ErrEventsUnmarshalEvent.
-									Wrapf("unable to unescape app address string: %v", err)
-							}
-							redelegationEvent.AppAddress = appAddress
-						case "gateway_address":
-							gatewayAddr, err := unescape(attr.Value)
-							if err != nil {
-								return nil, events.ErrEventsUnmarshalEvent.
-									Wrapf("unable to unescape gateway address string: %v", err)
-							}
-							redelegationEvent.GatewayAddress = gatewayAddr
+		for _, event := range txEvent.Result.Events {
+			if event.GetType_() == "pocket.application.EventRedelegation" {
+				var redelegationEvent redelegation
+				for _, attr := range event.Attributes {
+					switch attr.Key {
+					case "app_address":
+						appAddr, err := unescape(attr.Value)
+						if err != nil {
+							return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
 						}
+						redelegationEvent.AppAddress = appAddr
+					case "gateway_address":
+						gatewayAddr, err := unescape(attr.Value)
+						if err != nil {
+							return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
+						}
+						redelegationEvent.GatewayAddress = gatewayAddr
 					}
-					// Handle the redelegation event
-					if redelegationEvent.AppAddress == "" || redelegationEvent.GatewayAddress == "" {
-						return nil, events.ErrEventsUnmarshalEvent.
-							Wrapf("with redelegation: %s", string(redelegationEventBz))
-					}
-					logger.Debug().
-						Str("app_address", redelegationEvent.GetAppAddress()).
-						Str("gateway_address", redelegationEvent.GetGatewayAddress()).
-						Msg("redelegation event received")
-					return redelegationEvent, nil
 				}
+				// Handle the redelegation event
+				if redelegationEvent.AppAddress == "" || redelegationEvent.GatewayAddress == "" {
+					return nil, events.ErrEventsUnmarshalEvent.
+						Wrapf("%s", string(eventBz))
+				}
+				return redelegationEvent, nil
 			}
 		}
-		return nil, events.ErrEventsUnmarshalEvent.Wrap("no redelegation event found in log")
+		return nil, events.ErrEventsUnmarshalEvent.Wrap("no redelegation event found")
 	}
 }
 
-func unescape(str string) (string, error) {
-	// Convert the doubly-escaped string into a standard Go string literal
-	processedStr := strings.Replace(str, `\\`, `\`, -1)
-	// Use strconv.Unquote to unescape the string
-	return strconv.Unquote(processedStr)
+func unescape(s string) (string, error) {
+	return strconv.Unquote(s)
 }

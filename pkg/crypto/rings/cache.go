@@ -89,10 +89,6 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 	channel.ForEach[client.Redelegation](
 		ctx, redelegationObs,
 		func(ctx context.Context, redelegation client.Redelegation) {
-			rc.logger.Debug().
-				Str("app_address", redelegation.GetAppAddress()).
-				Str("gateway_address", redelegation.GetGatewayAddress()).
-				Msg("redelegation event received")
 			// Lock the cache for writing.
 			rc.ringPointsMu.Lock()
 			// Check if the redelegation event's app address is in the cache.
