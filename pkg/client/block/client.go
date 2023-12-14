@@ -35,7 +35,6 @@ const (
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-	cometWebsocketURL string,
 ) (client.BlockClient, error) {
 	client, err := events.NewEventsReplayClient[
 		client.Block,
@@ -43,7 +42,6 @@ func NewBlockClient(
 	](
 		ctx,
 		deps,
-		cometWebsocketURL,
 		committedBlocksQuery,
 		newCometBlockEventFactoryFn(),
 		defaultBlocksReplayLimit,

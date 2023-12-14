@@ -13,23 +13,22 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the localnet sequencer.
-func NewLocalnetClient(ctx context.Context, t *testing.T) (client.BlockClient, client.EventsQueryClient) {
+func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
 	require.NotNil(t, queryClient)
 
 	deps := depinject.Supply(queryClient)
-	bClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
+	bClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 
-	return bClient, queryClient
+	return bClient
 }
 
 // NewAnyTimesCommittedBlocksSequenceBlockClient creates a new mock BlockClient.

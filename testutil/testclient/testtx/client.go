@@ -31,7 +31,7 @@ func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxCli
 	ctx := context.Background()
 	txCtx := NewLocalnetContext(t)
 	eventsQueryClient := testeventsquery.NewLocalnetClient(t)
-	blockClient, _ := testblock.NewLocalnetClient(ctx, t)
+	blockClient := testblock.NewLocalnetClient(ctx, t)
 
 	deps := depinject.Supply(
 		txCtx,

@@ -77,7 +77,6 @@ func ExampleNewEventsReplayClient() {
 	](
 		ctx,
 		depConfig,
-		cometWebsocketURL,
 		eventQueryString,
 		eventTypeFactory(ctx),
 		replayObsBufferSize,

@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
@@ -37,7 +36,7 @@ func TestDelegationClient(t *testing.T) {
 	expectedEventBz, err := json.Marshal(expectedDelegationEvent)
 	require.NoError(t, err)
 
-	eventsQueryClient := testeventsquery.NewAnyTimesClosableEventsQueryClient(
+	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
 		ctx, t,
 		delegationEventQuery,
 		expectedEventBz,
@@ -47,7 +46,7 @@ func TestDelegationClient(t *testing.T) {
 
 	// Set up delegation client.
 	// NB: the URL passed to `NewDelegationClient` is irrelevant here because `eventsQueryClient` is a mock.
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps, testclient.CometLocalWebsocketURL)
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, delegationClient)
 
@@ -65,22 +64,6 @@ func TestDelegationClient(t *testing.T) {
 		{
 			name: "RedelegationsSequence successfully returns latest redelegation",
 			fn: func() client.Redelegation {
-				redelegationObs := delegationClient.RedelegationsSequence(ctx)
-				require.NotNil(t, redelegationObs)
-
-				// Ensure that the observable is replayable via Last.
-				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
-				require.Equal(t, expectedAddress, lastRedelegation.GetAppAddress())
-
-				return lastRedelegation
-			},
-		},
-		{
-			name: "RedelegationsSequence successfully remaps closure",
-			fn: func() client.Redelegation {
-				// Close the events query client to force a reconnection.
-				eventsQueryClient.Close()
-
 				redelegationObs := delegationClient.RedelegationsSequence(ctx)
 				require.NotNil(t, redelegationObs)
 

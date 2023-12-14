@@ -37,7 +37,7 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 
 	// Create and supply the block client that depends on the events query client
-	blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketURL)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	if err != nil {
 		return nil, err
 	}

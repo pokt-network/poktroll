@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -45,9 +46,6 @@ type NewEventsFn[T any] func([]byte) (T, error)
 // replayClient implements the EventsReplayClient interface for a generic type T,
 // and replay observable for type T.
 type replayClient[T any, U observable.ReplayObservable[T]] struct {
-	// endpointURL is the URL of RPC endpoint which eventsClient subscription
-	// requests will be sent.
-	endpointURL string
 	// queryString is the query string used to subscribe to events of the
 	// desired type.
 	// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
@@ -90,14 +88,12 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	ctx context.Context,
 	deps depinject.Config,
-	cometWebsocketURL string,
 	queryString string,
 	newEventFn NewEventsFn[T],
 	replayObsBufferSize int,
 ) (client.EventsReplayClient[T, U], error) {
 	// Initialize the replay client
 	rClient := &replayClient[T, U]{
-		endpointURL:         cometWebsocketURL,
 		queryString:         queryString,
 		eventDecoder:        newEventFn,
 		replayObsBufferSize: replayObsBufferSize,
@@ -202,6 +198,9 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 // replayObsCache replay observable.
 func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
+		logger := polylog.Ctx(ctx)
+		logger.Debug().
+			Msg("retryPublishEventsFactory: creating new events bytes observable")
 		errCh := make(chan error, 1)
 		eventsBzObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
 		if err != nil {
@@ -210,8 +209,6 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 		}
 
 		// NB: must cast back to generic observable type to use with Map.
-		// client.BlocksObservable cannot be an alias due to gomock's lack of
-		// support for generic types.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObs)
 		typedObs := channel.MapReplay(
 			ctx,

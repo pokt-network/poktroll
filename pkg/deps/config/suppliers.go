@@ -72,18 +72,16 @@ func NewSupplyEventsQueryClientFn(queryHost string) SupplierFn {
 }
 
 // NewSupplyBlockClientFn returns a function which constructs a BlockClient
-// instance with the given hostname, which is converted into a websocket URL,
-// to listen for block events on-chain, and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockClient.
+// instance and returns a new depinject.Config which is supplied with the
+// given deps and the new BlockClient.
 func NewSupplyBlockClientFn(queryHost string) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Convert the host to a websocket URL
-		pocketNodeWebsocketURL := hostToWebsocketURL(queryHost)
-		blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketURL)
+		// Requires a query client to be supplied to the deps
+		blockClient, err := block.NewBlockClient(ctx, deps)
 		if err != nil {
 			return nil, err
 		}

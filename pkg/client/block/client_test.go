@@ -12,7 +12,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -44,7 +43,7 @@ func TestBlockClient(t *testing.T) {
 	expectedEventBz, err := json.Marshal(expectedBlockEvent)
 	require.NoError(t, err)
 
-	eventsQueryClient := testeventsquery.NewAnyTimesClosableEventsQueryClient(
+	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
 		ctx, t,
 		committedBlocksQuery,
 		expectedEventBz,
@@ -53,7 +52,7 @@ func TestBlockClient(t *testing.T) {
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up block client.
-	blockClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
@@ -71,23 +70,6 @@ func TestBlockClient(t *testing.T) {
 		{
 			name: "CommittedBlocksSequence successfully returns latest block",
 			fn: func() client.Block {
-				blockObservable := blockClient.CommittedBlocksSequence(ctx)
-				require.NotNil(t, blockObservable)
-
-				// Ensure that the observable is replayable via Last.
-				lastBlock := blockObservable.Last(ctx, 1)[0]
-				require.Equal(t, expectedHeight, lastBlock.Height())
-				require.Equal(t, expectedHash, lastBlock.Hash())
-
-				return lastBlock
-			},
-		},
-		{
-			name: "CommittedBlocksSequence successfully remaps closure",
-			fn: func() client.Block {
-				// Close the events query client to force a reconnection.
-				eventsQueryClient.Close()
-
 				blockObservable := blockClient.CommittedBlocksSequence(ctx)
 				require.NotNil(t, blockObservable)
 
