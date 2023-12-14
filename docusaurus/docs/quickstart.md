@@ -18,6 +18,7 @@ title: Quickstart
   - [Send a relay](#send-a-relay)
   - [Send a relay a shannon](#send-a-relay-a-shannon)
 - [Explore the tools](#explore-the-tools)
+  - [E2E Tests](#e2e-tests)
   - [poktrolld](#poktrolld)
   - [Makefile](#makefile)
   - [Ignite](#ignite)
@@ -177,7 +178,7 @@ TODO(@red-0ne): Link to the document for all the config files once ready.
 :::
 
 We already have a supplier pre-configured (try running `make supplier_list`) to
-supply services for anvil (an local ethereum testing node), so we can simply
+supply services for `anvil` (an local ethereum testing node), so we can simply
 reused that for simplicity.
 
 Next, run the stake command:
@@ -225,7 +226,7 @@ TODO(@Olshansk, @red-0ne, @okdas): This part is still a WIP and the last sentenc
 will likely throw an error.
 :::
 
-However, the appgate server above is not configured to sign relays on behalf of Shannon.
+However, the appgate server above is not configured to sign relays on behalf of `SHANNON_ADDRESS`.
 
 To do so, you'll need to create a similar configuration like so:
 
@@ -245,6 +246,12 @@ poktrolld --home=./localnet/poktrolld  appgate-server \
   --config shannon_appgate_config.yaml --keyring-backend test \
   --node tcp://127.0.0.1:36657
 ```
+
+:::warning
+You might need to add the following to your `/etc/hosts` file:
+127.0.0.1 anvil
+127.0.0.1 relayminers
+:::
 
 Repeat sending the relay to the new port:
 
@@ -269,6 +276,16 @@ functionality in your day-to-day development. However, knowing of their existenc
 will help you when you need to do something that you haven't done before.
 :::
 
+### E2E Tests
+
+The `e2e` package contains a collection of end-to-end tests that leverage
+[Cucumber & Gherkin](https://cucumber.io/docs/gherkin/). You can execute all of
+them with:
+
+```bash
+make test_e2e
+```
+
 ### poktrolld
 
 Run `poktrolld --help` in order to explore all the different. You will likely
@@ -282,24 +299,3 @@ improve our development experience.
 ### Ignite
 
 Run `ignite --help` in order to explore all the different commands.
-
-```
-
-Things to add:
-
-```
-
-flow: curl (client) -> AppGateServer -> Supplier -> Anvil
-defaut: localhost -> k8s -> k8s -> k8s
-quickstart: localhost -> localhost -.-> k8s -> k8s
-
-```
-
-1. Update /etc/hosts
-127.0.0.1       anvil
-127.0.0.1       relayminers
-
-
-TODO(@okdas): avoid restarting celestia when restarting localnet
-TODO(@Olshansk): A script that runs all the things at once
-```

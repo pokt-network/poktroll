@@ -94,10 +94,11 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	// TODO_IN_THIS_PR: Slow down blocks OR/AND increase numBlocksPerSession AND/OR make the following change:
-	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
-	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
-	// session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, relayRequest.Meta.SessionHeader.SessionStartBlockHeight)
+	// TODO_IN_THIS_PR: Either slow down blocks, or increase numBlocksPerSession,
+	// or create a ticket related to session rollovers and link to it here.
+	// currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
+	// session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, relayRequest.Meta.SessionHeader.SessionStartBlockHeight)
 
 	if err != nil {
 		return err
