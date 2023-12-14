@@ -3,8 +3,9 @@ package config
 import (
 	"net/url"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"gopkg.in/yaml.v2"
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
