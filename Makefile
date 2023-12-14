@@ -117,7 +117,10 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	mkdir -p $(POKTROLLD_HOME)/config/
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+# TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
+# cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
+# cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
+# cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
 
 ###############
 ### Linting ###

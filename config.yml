@@ -6,7 +6,7 @@ accounts:
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
     coins:
       - 999999999999999999upokt
-  - name: sequencer2
+  - name: sequencer1
     mnemonic: "creek path rule retire evolve vehicle bargain champion roof whisper prize endorse unknown anchor fashion energy club sauce elder parent cotton old affair visa"
     coins:
       - 900000000000000upokt
@@ -58,13 +58,10 @@ client:
   openapi:
     path: docs/static/openapi.yml
 validators:
-  - name: sequencer2
+  - name: sequencer1
     bonded: 900000000upokt
     config:
-      moniker: "sequencer2"
-      consensus:
-        timeout_commit: "5s"
-        timeout_propose: "5s"
+      moniker: "sequencer1"
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
