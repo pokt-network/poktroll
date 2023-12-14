@@ -1,10 +1,11 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/pokt-network/poktroll/pkg/sdk"
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
@@ -60,7 +61,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Parse the websocket URL of the Pocket Node to connect to for subscribing to on-chain events.
-	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", queryNodeUrl.Host)
+	pocketNodeWebsocketUrl := sdk.HostToWebsocketURL(queryNodeUrl.Host)
 
 	if yamlRelayMinerConfig.SigningKeyName == "" {
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName
