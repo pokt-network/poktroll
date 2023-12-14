@@ -6,7 +6,6 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	"github.com/noot/ring-go"
-
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -95,8 +94,12 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
-	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+	// TODO_IN_THIS_PR: Either slow down blocks, or increase numBlocksPerSession,
+	// or create a ticket related to session rollovers and link to it here.
+	// currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
+	// session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, relayRequest.Meta.SessionHeader.SessionStartBlockHeight)
+
 	if err != nil {
 		return err
 	}
