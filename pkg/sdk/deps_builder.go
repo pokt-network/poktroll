@@ -2,16 +2,19 @@ package sdk
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
+	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	block "github.com/pokt-network/poktroll/pkg/client/block"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	grpc "google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // buildDeps builds the dependencies for the POKTRollSDK if they are not provided
@@ -21,7 +24,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
+	pocketNodeWebsocketURL := queryNodeToWebsocketURL(config.QueryNodeUrl)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
@@ -81,4 +84,11 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(ringCache))
 
 	return deps, nil
+}
+
+// hostToWebsocketURL converts the provided host into a websocket URL that can
+// be used to subscribe to onchain events and query the chain via a client
+// context or send transactions via a tx client context.
+func queryNodeToWebsocketURL(queryNode *url.URL) string {
+	return fmt.Sprintf("ws://%s/websocket", queryNode.Host)
 }

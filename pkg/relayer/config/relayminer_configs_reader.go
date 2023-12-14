@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"net/url"
 
-	"github.com/pokt-network/poktroll/pkg/sdk"
 	"gopkg.in/yaml.v2"
 )
 
@@ -60,7 +60,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Parse the websocket URL of the Pocket Node to connect to for subscribing to on-chain events.
-	pocketNodeWebsocketUrl := sdk.HostToWebsocketURL(queryNodeUrl.Host)
+	pocketNodeWebsocketUrl := fmt.Sprintf("ws://%s/websocket", queryNodeUrl.Host)
 
 	if yamlRelayMinerConfig.SigningKeyName == "" {
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName

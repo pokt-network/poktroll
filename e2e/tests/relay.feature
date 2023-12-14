@@ -10,8 +10,6 @@ Feature: Relay Namespace
         When the application "app1" sends the supplier "supplier1" a request for service "anvil" with data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
         Then the application "app1" receives a successful relay response signed by "supplier1"
 
-# data := 
-
     # TODO_TEST(@Olshansk):
     # - Successful relay if using a gateway to proxy the relay
     # - Succeedful relays when using multiple suppliers for app in some session
