@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"cosmossdk.io/depinject"
-
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -22,6 +21,8 @@ const (
 	// the amount of events we want before they are emitted
 	replayObsBufferSize = 1
 )
+
+var _ EventType = (*eventType)(nil)
 
 // Define an interface to represent the onchain event
 type EventType interface {
