@@ -120,9 +120,7 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	# Note: validator and sequencer are used interchangeably here
 	ADDRESS=$$(jq -r '.address' ${HOME}/.poktroll/config/priv_validator_key.json); \
 	PUB_KEY=$$(jq -r '.pub_key' ${HOME}/.poktroll/config/priv_validator_key.json); \
-	jq --argjson pubKey "$$PUB_KEY" '. + {"validators": [{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "1000000000000000", "name": "Rollkit Sequencer"}]}' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json; \
-	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "1000000000000000", "name": "Rollkit Sequencer"}]' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json; \
-	jq --argjson pubKey "$$PUB_KEY" '.staking["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "1000000000000000", "name": "Rollkit Sequencer"}]' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json; \
+	jq --argjson pubKey "$$PUB_KEY" '. + {"validators": [{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "900", "name": "Rollkit Sequencer"}]}' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json; \
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ; \
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ; \
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ; \

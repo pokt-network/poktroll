@@ -22,7 +22,7 @@ RUN ignite chain init --skip-proto
 # Stolen from https://github.com/rollkit/docs/pull/269/files
 # copy centralized sequencer address into genesis.json
 # Note: validator and sequencer are used interchangeably here
-RUN jq --argjson pubKey "$(jq -r '.pub_key' ${HOME}/.poktroll/config/priv_validator_key.json)" --arg address "$(jq -r '.address' ${HOME}/.poktroll/config/priv_validator_key.json)" '. + {"validators": [{"address": $address, "pub_key": $pubKey, "power": "1000000000000000", "name": "Rollkit Sequencer"}]}' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json
+RUN jq --argjson pubKey "$(jq -r '.pub_key' ${HOME}/.poktroll/config/priv_validator_key.json)" --arg address "$(jq -r '.address' ${HOME}/.poktroll/config/priv_validator_key.json)" '. + {"validators": [{"address": $address, "pub_key": $pubKey, "power": "900", "name": "Rollkit Sequencer"}]}' ${HOME}/.poktroll/config/genesis.json > temp.json && mv temp.json ${HOME}/.poktroll/config/genesis.json
 
 # TODO_TECHDEBT(@okdas): Ports are not documented as they will soon be changed with a document to follow
 EXPOSE 8545
