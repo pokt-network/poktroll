@@ -10,10 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-env:
-  GKE_CLUSTER: protocol-us-central1
-  GKE_ZONE: us-central1
-
 jobs:
   deploy:
     environment:
@@ -23,24 +19,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       # 👇 Build steps
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 16.x
-          cache: yarn
+          cache: 'npm'
+
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --non-interactive
+        run: |
+          cd docusaurus
+          npm ci
+
       - name: Build
-        run: yarn build
+        run: |
+          cd docusaurus
+          npm run build
+
       # 👆 Build steps
+
       - name: Setup Pages
         uses: actions/configure-pages@v3
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          # 👇 Specify build output path
-          path: build
+          # 👇 Specify build output path relative to the subdirectory
+          path: docusaurus/build
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+
