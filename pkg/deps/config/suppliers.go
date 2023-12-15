@@ -2,13 +2,14 @@ package config
 
 import (
 	"context"
-	"net/url"
 
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/spf13/cobra"
+
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -18,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"github.com/spf13/cobra"
 )
 
 // SupplierFn is a function that is used to supply a depinject config.
@@ -70,7 +70,7 @@ func NewSupplyEventsQueryClientFn(queryHostname string) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		pocketNodeWebsocketURL := sdk.HostToWebsocketURL(queryHost)
+		pocketNodeWebsocketURL := sdk.HostToWebsocketURL(queryHostname)
 		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -305,7 +305,6 @@ func NewSupplyRingCacheFn() SupplierFn {
 // POKTRollSDK instance with the required dependencies and returns a new
 // depinject.Config which is supplied with the given deps and the new POKTRollSDK.
 func NewSupplyPOKTRollSDKFn(
-	queryNodeURL *url.URL,
 	signingKeyName string,
 ) SupplierFn {
 	return func(
