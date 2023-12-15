@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
@@ -10,8 +9,6 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
-	"github.com/spf13/cobra"
-
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -21,7 +18,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/spf13/cobra"
 )
+
+// SupplierFn is a function that is used to supply a depinject config.
+type SupplierFn func(
+	context.Context,
+	depinject.Config,
+	*cobra.Command,
+) (depinject.Config, error)
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
 // supplier functions in order and passing the result of each supplier to the
@@ -65,7 +70,7 @@ func NewSupplyEventsQueryClientFn(queryHostname string) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		pocketNodeWebsocketURL := hostToWebsocketURL(queryHostname)
+		pocketNodeWebsocketURL := sdk.HostToWebsocketURL(queryHost)
 		eventsQueryClient := events.NewEventsQueryClient(pocketNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -339,12 +344,4 @@ func NewSupplyPOKTRollSDKFn(
 		// Supply the session querier to the provided deps
 		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
 	}
-}
-
-// hostToWebsocketURL converts the provided host into a websocket URL that can
-// be used to subscribe to onchain events and query the chain via a client
-// context or send transactions via a tx client context.
-func hostToWebsocketURL(host string) string {
-	websocketURL := fmt.Sprintf("ws://%s/websocket", host)
-	return websocketURL
 }
