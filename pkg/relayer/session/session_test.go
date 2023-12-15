@@ -12,14 +12,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
@@ -54,7 +51,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	minedRelay := newMinedRelay(t, sessionStartHeight, sessionEndHeight)
+	minedRelay := testrelayer.NewMinedRelay(t, sessionStartHeight, sessionEndHeight)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
@@ -81,36 +78,4 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.
 	time.Sleep(250 * time.Millisecond)
-}
-
-// newMinedRelay returns a new mined relay with the given session start and end
-// heights on the session header, and the bytes and hash fields populated.
-func newMinedRelay(
-	t *testing.T,
-	sessionStartHeight int64,
-	sessionEndHeight int64,
-) *relayer.MinedRelay {
-	relay := servicetypes.Relay{
-		Req: &servicetypes.RelayRequest{
-			Meta: &servicetypes.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{
-					SessionStartBlockHeight: sessionStartHeight,
-					SessionEndBlockHeight:   sessionEndHeight,
-				},
-			},
-		},
-		Res: &servicetypes.RelayResponse{},
-	}
-
-	// TODO_BLOCKER: use canonical codec to serialize the relay
-	relayBz, err := relay.Marshal()
-	require.NoError(t, err)
-
-	relayHash := testrelayer.HashBytes(t, miner.DefaultRelayHasher, relayBz)
-
-	return &relayer.MinedRelay{
-		Relay: relay,
-		Bytes: relayBz,
-		Hash:  relayHash,
-	}
 }

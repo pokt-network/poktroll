@@ -3,7 +3,7 @@ package config
 import (
 	"net/url"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file

@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"cosmossdk.io/depinject"
@@ -10,8 +9,6 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
-	"github.com/spf13/cobra"
-
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -20,7 +17,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/spf13/cobra"
 )
+
+// SupplierFn is a function that is used to supply a depinject config.
+type SupplierFn func(
+	context.Context,
+	depinject.Config,
+	*cobra.Command,
+) (depinject.Config, error)
 
 // SupplyConfig supplies a depinject config by calling each of the supplied
 // supplier functions in order and passing the result of each supplier to the
@@ -64,7 +69,7 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := queryNodeToWebsocketURL(queryNodeRPCURL)
+		queryNodeWebsocketURL := sdk.HostToWebsocketURL(queryNodeRPCURL.Host)
 		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
@@ -82,7 +87,7 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := queryNodeToWebsocketURL(queryNodeRPCURL)
+		queryNodeWebsocketURL := sdk.HostToWebsocketURL(queryNodeRPCURL.Host)
 		blockClient, err := block.NewBlockClient(ctx, deps, queryNodeWebsocketURL)
 		if err != nil {
 			return nil, err
@@ -326,11 +331,4 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 		// Supply the session querier to the provided deps
 		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
 	}
-}
-
-// queryNodeToWebsocketURL converts a query node URL to a CometBFT websocket URL.
-// It takes the Host property of the queryNode URL and returns it as a websocket URL
-// formatted as ws://<hostname>:<port>/websocket.
-func queryNodeToWebsocketURL(queryNode *url.URL) string {
-	return fmt.Sprintf("ws://%s/websocket", queryNode.Host)
 }

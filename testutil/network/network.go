@@ -101,6 +101,9 @@ func DefaultConfig() network.Config {
 	}
 }
 
+// TODO_CLEANUP: Refactor the genesis state helpers below to consolidate usage
+// and reduce the code footprint.
+
 // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
 func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
@@ -145,24 +148,6 @@ func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
 
-	return state
-}
-
-// DefaultGatewayModuleGenesisState generates a GenesisState object with a given number of gateways.
-// It returns the populated GenesisState object.
-func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
-	t.Helper()
-	state := gatewaytypes.DefaultGenesis()
-	for i := 0; i < n; i++ {
-		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
-		gateway := gatewaytypes.Gateway{
-			Address: sample.AccAddress(),
-			Stake:   &stake,
-		}
-		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
-		// nullify.Fill(&gateway)
-		state.GatewayList = append(state.GatewayList, gateway)
-	}
 	return state
 }
 
@@ -222,8 +207,27 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	return state
 }
 
+// DefaultGatewayModuleGenesisState generates a GenesisState object with a given
+// number of gateways. It returns the populated GenesisState object.
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(i)))
+		gateway := gatewaytypes.Gateway{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&gateway)
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
 // GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
 // a gateway list full of gateways with the given addresses.
+// It returns the populated GenesisState object.
 func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
 	t.Helper()
 	state := gatewaytypes.DefaultGenesis()
@@ -236,6 +240,9 @@ func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *g
 	}
 	return state
 }
+
+// TODO_CLEANUP: Consolidate all of the helpers below to use shared business
+// logic and move into its own helpers file.
 
 // InitAccount initializes an Account by sending it some funds from the validator
 // in the network to the address provided
