@@ -28,58 +28,59 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		return err
 	}
 
-	services := supplier.Services
-
-	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
-	providedServices := make(relayServersMap)
-	for _, serviceConfig := range services {
-		service := serviceConfig.Service
-		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
-		var serviceEndpoints []relayer.RelayServer
-
-		for _, endpoint := range serviceConfig.Endpoints {
-			// url, err := url.Parse(endpoint.Url)
-			// if err != nil {
-			// 	return err
-			// }
-			// supplierEndpointHost := url.Host
-
-			// This will throw an error if we have more than one endpoint
-			supplierEndpointHost := "0.0.0.0:8545"
-
-			rp.logger.Info().
-				Fields(map[string]any{
-					"service_id":   service.Id,
-					"endpoint_url": endpoint.Url,
-				}).
-				Msg("starting relay server")
-
-			// Switch to the RPC type
-			// TODO(@h5law): Implement a switch that handles all synchronous
-			// RPC types in one server type and asynchronous RPC types in another
-			// to create the appropriate RelayServer
-			var server relayer.RelayServer
-			switch endpoint.RpcType {
-			case sharedtypes.RPCType_JSON_RPC:
-				server = NewSynchronousServer(
-					rp.logger,
-					service,
-					supplierEndpointHost,
-					proxiedServicesEndpoints,
-					rp.servedRelaysPublishCh,
-					rp,
-				)
-			default:
-				return ErrRelayerProxyUnsupportedRPCType
-			}
-
-			serviceEndpoints = append(serviceEndpoints, server)
-		}
-
-		providedServices[service.Id] = serviceEndpoints
+	supplierServiceMap := make(map[string]*sharedtypes.Service)
+	for _, service := range supplier.Services {
+		supplierServiceMap[service.Service.Id] = service.Service
 	}
 
-	rp.advertisedRelayServers = providedServices
+	// Check that the supplier's advertised services' endpoints are present in
+	// the proxy config and handled by a proxy host
+	// Iterate over the supplier's advertised services then iterate over each
+	// service's endpoint
+	for _, service := range supplier.Services {
+		for _, endpoint := range service.Endpoints {
+			found := false
+			// Iterate over the proxy configs and check if `endpoint.Url` is present
+			// and corresponds to the right service id
+			for _, proxyConfig := range rp.proxyConfigs {
+				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
+				if ok && endpoint.Url == supplierService.ServiceConfig.Url.String() {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return ErrRelayerProxyServiceEndpointNotHandled
+			}
+		}
+	}
+
+	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
+	providedServices := make(map[string]relayer.RelayServer)
+	for _, proxyConfig := range rp.proxyConfigs {
+		rp.logger.Info().Str("proxy host", proxyConfig.Host).Msg("starting relay proxy server")
+
+		// Switch to the RPC type
+		// TODO(@h5law): Implement a switch that handles all synchronous
+		// RPC types in one server type and asynchronous RPC types in another
+		// to create the appropriate RelayServer
+		var server relayer.RelayServer
+		switch proxyConfig.Type {
+		case "http":
+			server = NewSynchronousServer(
+				rp.logger,
+				proxyConfig,
+				supplierServiceMap,
+				rp.servedRelaysPublishCh,
+				rp,
+			)
+		default:
+			return ErrRelayerProxyUnsupportedTransportType
+		}
+
+		providedServices[proxyConfig.Name] = server
+	}
+
 	rp.supplierAddress = supplier.Address
 
 	return nil

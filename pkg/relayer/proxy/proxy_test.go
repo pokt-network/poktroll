@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
@@ -22,37 +23,72 @@ import (
 const blockHeight = 1
 
 var (
-	// TODO_TECHDEBT(@okdas, @red-0ne): Source relayerProxyUrl from its config file once
-	// RelayerProxy is building its servers from the provided config file
-	relayerProxyUrl string
-
 	// helpers used for tests that are initialized in init()
 	supplierKeyName   string
 	supplierEndpoints []*sharedtypes.SupplierEndpoint
 	appPrivateKey     *secp256k1.PrivKey
-	proxiedServices   map[string]*url.URL
+	// proxiedServices is the parsed configuration of the RelayMinerProxyConfig
+	proxiedServices map[string]*config.RelayMinerProxyConfig
 
 	defaultRelayerProxyBehavior []func(*testproxy.TestBehavior)
 )
 
 func init() {
 	supplierKeyName = "supplierKeyName"
+	appPrivateKey = secp256k1.GenPrivKey()
+
 	supplierEndpoints = []*sharedtypes.SupplierEndpoint{
 		{
-			// TODO_TECHDEBT(@red-0ne): This URL is not used by the tests until we add
-			// support for the new `RelayMiner` config
-			// see https://github.com/pokt-network/poktroll/pull/246
 			Url: "http://supplier:8545",
 			// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
 			RpcType: sharedtypes.RPCType_JSON_RPC,
 		},
+		{
+			Url:     "http://supplier:8546",
+			RpcType: sharedtypes.RPCType_GRPC,
+		},
+		{
+			Url:     "http://supplier:8547",
+			RpcType: sharedtypes.RPCType_GRPC,
+		},
 	}
-	appPrivateKey = secp256k1.GenPrivKey()
-	relayerProxyUrl = "http://127.0.0.1:8545/"
 
-	proxiedServices = map[string]*url.URL{
-		"service1": {Scheme: "http", Host: "localhost:8180", Path: "/"},
-		"service2": {Scheme: "http", Host: "localhost:8181", Path: "/"},
+	proxiedServices = map[string]*config.RelayMinerProxyConfig{
+		"server1": {
+			Name: "server1",
+			Type: "http",
+			Host: "localhost:8080",
+			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+				"service1": {
+					Name: "service1",
+					Type: "http",
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						Url: &url.URL{Scheme: "http", Host: "supplier:8545", Path: "/"},
+					},
+				},
+				"service2": {
+					Name: "service2",
+					Type: "http",
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						Url: &url.URL{Scheme: "http", Host: "supplier:8546", Path: "/"},
+					},
+				},
+			},
+		},
+		"server2": {
+			Name: "server2",
+			Type: "http",
+			Host: "localhost:8081",
+			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+				"service3": {
+					Name: "service3",
+					Type: "http",
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						Url: &url.URL{Scheme: "http", Host: "supplier:8547", Path: "/"},
+					},
+				},
+			},
+		},
 	}
 
 	defaultRelayerProxyBehavior = []func(*testproxy.TestBehavior){
@@ -84,7 +120,12 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
-	res, err := http.DefaultClient.Get(relayerProxyUrl)
+	res, err := http.DefaultClient.Get(proxiedServices["server1"].Host)
+	require.NoError(t, err)
+	require.NotNil(t, res)
+
+	// Test that RelayerProxy is handling requests from the other server
+	res, err = http.DefaultClient.Get(proxiedServices["server2"].Host)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -131,7 +172,7 @@ func TestRelayerProxy_NoProxiedServices(t *testing.T) {
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName(supplierKeyName),
-		proxy.WithProxiedServicesEndpoints(make(map[string]*url.URL)),
+		proxy.WithProxiedServicesEndpoints(make(map[string]*config.RelayMinerProxyConfig)),
 	)
 	require.Error(t, err)
 }
@@ -176,6 +217,11 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	err = rp.Start(ctx)
 	require.Error(t, err)
 }
+
+// TODO_THIS_COMMIT: Test non configured advertised services
+// TODO_THIS_COMMIT: Test unsupported transport type
+// TODO_THIS_COMMIT: Test X-Forwarded-Host header is set
+// TODO_THIS_COMMIT: Test unsupported host
 
 // Test different RelayRequest scenarios
 func TestRelayerProxy_Relays(t *testing.T) {
@@ -337,7 +383,7 @@ func sendRequestWithUnparsableBody(
 	// Send non JSONRpc payload when the post request specifies json
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
-	res, err := http.DefaultClient.Post(relayerProxyUrl, "application/json", reader)
+	res, err := http.DefaultClient.Post(proxiedServices["server1"].Host, "application/json", reader)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -354,7 +400,7 @@ func sendRequestWithMissingMeta(
 		Payload: testproxy.PrepareJsonRPCRequestPayload(),
 	}
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithMissingSignature(
@@ -369,7 +415,7 @@ func sendRequestWithMissingSignature(
 		testproxy.PrepareJsonRPCRequestPayload(),
 	)
 	req.Meta.Signature = nil
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithInvalidSignature(
@@ -385,7 +431,7 @@ func sendRequestWithInvalidSignature(
 	)
 	req.Meta.Signature = []byte("invalid signature")
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithMissingSessionHeaderApplicationAddress(
@@ -408,7 +454,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 	// before looking at the application address
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithNonStakedApplicationAddress(
@@ -427,7 +473,7 @@ func sendRequestWithNonStakedApplicationAddress(
 	// Have a valid signature from the non staked key
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithRingSignatureMismatch(
@@ -446,7 +492,7 @@ func sendRequestWithRingSignatureMismatch(
 	randomPrivKey := secp256k1.GenPrivKey()
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithDifferentSession(
@@ -463,7 +509,7 @@ func sendRequestWithDifferentSession(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithInvalidRelaySupplier(
@@ -479,7 +525,7 @@ func sendRequestWithInvalidRelaySupplier(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithSignatureForDifferentPayload(
@@ -497,7 +543,7 @@ func sendRequestWithSignatureForDifferentPayload(
 	// Alter the request payload so the hash doesn't match the one used by the signature
 	req.Payload = []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["alteredParam"]}`)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }
 
 func sendRequestWithSuccessfulReply(
@@ -513,5 +559,5 @@ func sendRequestWithSuccessfulReply(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, relayerProxyUrl, req)
+	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
 }

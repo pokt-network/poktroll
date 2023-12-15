@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"net/url"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
@@ -104,7 +104,9 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 
 // WithRelayerProxiedServices creates the services that the relayer proxy will
 // proxy requests to.
-func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestBehavior) {
+func WithRelayerProxiedServices(
+	proxiedServices map[string]*config.RelayMinerProxyConfig,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		for serviceId, endpoint := range proxiedServices {
 			server := &http.Server{Addr: endpoint.Host}

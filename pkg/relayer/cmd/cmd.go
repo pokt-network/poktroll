@@ -136,9 +136,9 @@ func setupRelayerDependencies(
 	cmd *cobra.Command,
 	relayMinerConfig *relayerconfig.RelayMinerConfig,
 ) (deps depinject.Config, err error) {
-	parsedFlagNodeRPCUrl := relayMinerConfig.QueryNodeRPCUrl
-	queryNodeGRPCUrl := relayMinerConfig.QueryNodeGRPCUrl
-	txNodeGRPCUrl := relayMinerConfig.TxNodeGRPCUrl
+	parsedFlagNodeRPCUrl := relayMinerConfig.Pocket.QueryNodeRPCUrl
+	queryNodeGRPCUrl := relayMinerConfig.Pocket.QueryNodeGRPCUrl
+	txNodeGRPCUrl := relayMinerConfig.Pocket.TxNodeGRPCUrl
 
 	// Override the config file's `QueryNodeGRPCUrl` and `NetworkNodeGRPCUrl` fields
 	// with the `--grpc-addr` flag if it was specified.
@@ -163,7 +163,7 @@ func setupRelayerDependencies(
 	}
 
 	signingKeyName := relayMinerConfig.SigningKeyName
-	proxiedServiceEndpoints := relayMinerConfig.ProxiedServiceEndpoints
+	proxiedServiceEndpoints := relayMinerConfig.Proxies
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
@@ -289,7 +289,7 @@ func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
 	signingKeyName string,
-	proxiedServiceEndpoints map[string]*url.URL,
+	proxiedServiceEndpoints map[string]*relayerconfig.RelayMinerProxyConfig,
 ) config.SupplierFn {
 	return func(
 		_ context.Context,

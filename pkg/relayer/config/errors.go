@@ -3,13 +3,12 @@ package config
 import sdkerrors "cosmossdk.io/errors"
 
 var (
-	codespace                                  = "relayminer_config"
-	ErrRelayMinerConfigUnmarshalYAML           = sdkerrors.Register(codespace, 1, "config reader cannot unmarshal yaml content")
-	ErrRelayMinerConfigInvalidQueryNodeGRPCUrl = sdkerrors.Register(codespace, 2, "invalid query node grpc url in RelayMiner config")
-	ErrRelayMinerConfigInvalidTxNodeGRPCUrl    = sdkerrors.Register(codespace, 3, "invalid tx node grpc url in RelayMiner config")
-	ErrRelayMinerConfigInvalidQueryNodeRPCUrl  = sdkerrors.Register(codespace, 4, "invalid query node rpc url in RelayMiner config")
-	ErrRelayMinerConfigInvalidServiceEndpoint  = sdkerrors.Register(codespace, 5, "invalid service endpoint in RelayMiner config")
-	ErrRelayMinerConfigInvalidSigningKeyName   = sdkerrors.Register(codespace, 6, "invalid signing key name in RelayMiner config")
-	ErrRelayMinerConfigInvalidSmtStorePath     = sdkerrors.Register(codespace, 7, "invalid smt store path in RelayMiner config")
-	ErrRelayMinerConfigEmpty                   = sdkerrors.Register(codespace, 8, "empty RelayMiner config")
+	codespace                                = "relayminer_config"
+	ErrRelayMinerConfigUnmarshalYAML         = sdkerrors.Register(codespace, 1, "config reader cannot unmarshal yaml content")
+	ErrRelayMinerConfigInvalidNodeUrl        = sdkerrors.Register(codespace, 2, "invalid node url in RelayMiner config")
+	ErrRelayMinerConfigInvalidSigningKeyName = sdkerrors.Register(codespace, 3, "invalid signing key name in RelayMiner config")
+	ErrRelayMinerConfigInvalidSmtStorePath   = sdkerrors.Register(codespace, 4, "invalid smt store path in RelayMiner config")
+	ErrRelayMinerConfigEmpty                 = sdkerrors.Register(codespace, 5, "empty RelayMiner config")
+	ErrRelayMinerConfigInvalidSupplier       = sdkerrors.Register(codespace, 6, "invalid supplier in RelayMiner config")
+	ErrRelayMinerConfigInvalidProxy          = sdkerrors.Register(codespace, 7, "invalid proxy in RelayMiner config")
 )
