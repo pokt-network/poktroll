@@ -1,12 +1,9 @@
-//go:build integration
-
 package events_test
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -56,17 +53,15 @@ func newMessageEventBz(eventNum int32) []byte {
 }
 
 func TestReplayClient_Remapping(t *testing.T) {
-	t.SkipNow("Not working yet...")
 	var (
 		ctx              = context.Background()
 		connClosed       atomic.Bool
 		delayEvent       atomic.Bool
 		readEventCounter int
-		eventsMu         = &sync.Mutex{}
-		eventsReceived   int
-		eventsToRecv     = 10
+		eventsReceived   atomic.Int32
+		eventsToRecv     = int32(10)
 		errCh            = make(chan error, 1)
-		timeoutAfter     = 2 * time.Second // 1 second delay on retry.OnError
+		timeoutAfter     = 3 * time.Second // 1 second delay on retry.OnError
 	)
 
 	// Setup the mock connection and dialer
@@ -85,24 +80,28 @@ func TestReplayClient_Remapping(t *testing.T) {
 		DoAndReturn(func(eventBz []byte) error {
 			t.Log("connecting")
 			if connClosed.Load() {
+				t.Log("opening connection")
 				connClosed.CompareAndSwap(true, false)
-				delayEvent.CompareAndSwap(true, false)
 			}
+			t.Log("delaying next event")
+			delayEvent.CompareAndSwap(true, false)
 			return nil
 		}).
 		AnyTimes()
 	// Mock the connection receiving events
+	// TODO_IN_THIS_PR: Why do the calls after reconncetion not get received
+	// by the replay client?
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
-			t.Log("receive called")
 			// Simulate ErrConnClosed if connection is isClosed.
 			if connClosed.Load() {
-				t.Logf("connection closed")
+				t.Log("connection closed")
 				return nil, events.ErrEventsConnClosed
 			}
 
 			// Delay the event if needed
 			if !delayEvent.Load() {
+				t.Log("delaying event")
 				time.Sleep(50 * time.Millisecond)
 				delayEvent.CompareAndSwap(false, true)
 			}
@@ -115,15 +114,11 @@ func TestReplayClient_Remapping(t *testing.T) {
 
 			return event, nil
 		}).
-		// MinTimes(eventsToRecv)
-		AnyTimes()
+		MinTimes(int(eventsToRecv))
 	// Expect the dialer to be re-established any number of times
 	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ string) (client.Connection, error) {
-			t.Logf("dialing connection")
-			if connClosed.Load() {
-				return nil, events.ErrEventsDial
-			}
+			t.Log("dialing connection")
 			return connMock, nil
 		}).
 		AnyTimes()
@@ -143,12 +138,13 @@ func TestReplayClient_Remapping(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	// Subscribe to the replay clients events
-	replayObs := replayClient.EventsSequence(ctx)
-	replaySub := replayObs.Subscribe(ctx)
 	go func() {
+		// Subscribe to the replay clients events
+		replayObs := replayClient.EventsSequence(ctx)
+		replaySub := replayObs.Subscribe(ctx)
 		var previousMessage messageEvent
 		for msgEvent := range replaySub.Ch() {
+			t.Logf("received event: %s", msgEvent.EventMessage())
 			var previousNum int32
 			var currentNum int32
 			if previousMessage != nil {
@@ -163,30 +159,28 @@ func TestReplayClient_Remapping(t *testing.T) {
 			}
 			previousMessage = msgEvent
 
-			// require.NotEmpty(t, msgEvent)
-			eventsMu.Lock()
-			eventsReceived++
-			if eventsReceived >= eventsToRecv {
+			require.NotEmpty(t, msgEvent)
+			received := eventsReceived.Add(1)
+			if received >= eventsToRecv {
 				errCh <- nil
 				return
 			}
-			eventsMu.Unlock()
 		}
 	}()
 
 	// Wait for ~2 events to be received
-	time.Sleep(51 * time.Millisecond)
+	time.Sleep(51600 * time.Microsecond)
 	// Close the connection
 	connMock.Close()
 
 	select {
 	case err := <-errCh:
 		require.NoError(t, err)
-		require.Equal(t, eventsToRecv, eventsReceived)
+		require.Equalf(t, eventsToRecv, eventsReceived.Load(), "received %d events, want: %d", eventsReceived.Load(), eventsToRecv)
 	case <-time.After(timeoutAfter):
 		t.Fatalf(
 			"timed out waiting for events subscription; expected %d messages, got %d",
-			eventsToRecv, eventsReceived,
+			eventsToRecv, eventsReceived.Load(),
 		)
 	}
 }

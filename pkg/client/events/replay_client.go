@@ -175,7 +175,7 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to replayObsCachePublishCh such that
 	// replayObsCache.Last(ctx, 1) will return it.
-	publishErr := retry.OnError(
+	publishError := retry.OnError(
 		ctx,
 		eventsBytesRetryLimit,
 		eventsBytesRetryDelay,
@@ -187,8 +187,8 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 	// If we get here, the retry limit was reached and the retry loop exited.
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
-	if publishErr != nil {
-		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
+	if publishError != nil {
+		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishError))
 	}
 }
 
@@ -207,6 +207,17 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 			errCh <- err
 			return errCh
 		}
+
+		// Subscribe to the eventBzObs and block until the channel closes.
+		// Then pass this as an error to force the retry.OnError to resubscribe.
+		go func() {
+			eventBzObsSub := eventsBzObs.Subscribe(ctx)
+			for range eventBzObsSub.Ch() {
+				// Do nothing, just wait for the channel to close.
+				continue
+			}
+			errCh <- fmt.Errorf("EventsQueryClient closed")
+		}()
 
 		// NB: must cast back to generic observable type to use with Map.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObs)
