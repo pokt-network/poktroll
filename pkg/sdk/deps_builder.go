@@ -2,8 +2,6 @@ package sdk
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
@@ -24,7 +22,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := queryNodeToWebsocketURL(config.QueryNodeUrl)
+	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
