@@ -21,7 +21,7 @@ const (
 	eventsBytesRetryDelay = time.Second
 	// eventsBytesRetryLimit is the maximum number of times to attempt to
 	// re-establish the events query bytes subscription when the events bytes
-	// observable returns an error.
+	// observable returns an error or closes.
 	eventsBytesRetryLimit        = 10
 	eventsBytesRetryResetTimeout = 10 * time.Second
 	// replayObsCacheBufferSize is the replay buffer size of the
@@ -116,9 +116,9 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	return rClient, nil
 }
 
-// EventsSequence returns a ReplayObservable, with a replay buffer size of 1,
-// which is notified when new events are received by the encapsulated
-// EventsQueryClient.
+// EventsSequence returns a ReplayObservable, with the buffer size provided
+// during the EventsReplayClient construction, which is notified when new
+// events are received by the encapsulated EventsQueryClient.
 func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 	// Create a new replay observable and publish channel for event type T with
 	// a buffer size matching that provided during the EventsReplayClient
@@ -139,6 +139,7 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
+	logger := polylog.Ctx(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -146,10 +147,13 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 		default:
 		}
 		cachedEventTypeObs := rClient.replayObsCache.Last(ctx, 1)[0]
-		eventObserver := cachedEventTypeObs.Subscribe(ctx).Ch()
-		for event := range eventObserver {
+		eventObserver := cachedEventTypeObs.Subscribe(ctx)
+		for event := range eventObserver.Ch() {
 			publishCh <- event
 		}
+		logger.Debug().
+			Msg("replay observable closed, waiting for new events query subscription")
+		time.Sleep(eventsBytesRetryDelay*time.Second + 60*time.Millisecond)
 	}
 }
 
@@ -197,27 +201,14 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 // query client, maps them to typed events, and publishes them to the
 // replayObsCache replay observable.
 func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
+	logger := polylog.Ctx(ctx)
 	return func() chan error {
-		logger := polylog.Ctx(ctx)
-		logger.Debug().
-			Msg("retryPublishEventsFactory: creating new events bytes observable")
 		errCh := make(chan error, 1)
 		eventsBzObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
 		if err != nil {
 			errCh <- err
 			return errCh
 		}
-
-		// Subscribe to the eventBzObs and block until the channel closes.
-		// Then pass this as an error to force the retry.OnError to resubscribe.
-		go func() {
-			eventBzObsSub := eventsBzObs.Subscribe(ctx)
-			for range eventBzObsSub.Ch() {
-				// Do nothing, just wait for the channel to close.
-				continue
-			}
-			errCh <- fmt.Errorf("EventsQueryClient closed")
-		}()
 
 		// NB: must cast back to generic observable type to use with Map.
 		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObs)
@@ -228,7 +219,26 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 			rClient.newMapEventsBytesToTFn(errCh),
 		)
 
+		// Subscribe to the eventBzObs and block until the channel closes.
+		// Then pass this as an error to force the retry.OnError to resubscribe.
+		go func() {
+			eventsBzSub := eventsBz.Subscribe(ctx)
+			for range eventsBzSub.Ch() {
+				// Wait for the channel to close.
+				continue
+			}
+			typedObsSub := typedObs.Subscribe(ctx)
+			for range typedObsSub.Ch() {
+				// Wait for the channel to close.
+				continue
+			}
+			// Publish an error to the error channel to initiate a retry
+			errCh <- ErrEventsConsClosed
+		}()
+
 		// Initially set replayObsCache and update if after retrying on error.
+		logger.Debug().
+			Msg("updating replayObsCache with new events query subscription")
 		rClient.replayObsCachePublishCh <- typedObs.(R)
 
 		return errCh
