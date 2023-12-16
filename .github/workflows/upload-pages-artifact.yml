@@ -26,6 +26,7 @@ jobs:
         with:
           node-version: 16.x
           cache: 'npm'
+          cache-dependency-path: docusaurus/package-lock.json
 
       - name: Install dependencies
         run: |
