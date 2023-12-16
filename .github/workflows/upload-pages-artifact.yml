@@ -22,9 +22,9 @@ jobs:
 
       # 👇 Build steps
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 18
           cache: 'npm'
           cache-dependency-path: docusaurus/package-lock.json
 
