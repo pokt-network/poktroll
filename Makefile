@@ -525,7 +525,7 @@ openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 
 .PHONY: docusaurus_start
 docusaurus_start: ## Start the Docusaurus server
-	(cd docusaurus && npm run start)
+	(cd docusaurus && npm i && npm run start)
 
 ######################
 ### Ignite Helpers ###
