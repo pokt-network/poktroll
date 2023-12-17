@@ -4,23 +4,15 @@ FLAGS=(
     -rm-unused
     -use-cache
     -imports-order "std,general,company,project,blanked,dotted"
-    -project-name "github.com/pokt-network/poktroll"
+    -project-name "github.com/pokt-network/poktrolld"
 )
 
-# String to check within the import block
-EXCLUDE_STRING="this line is used by starport scaffolding"
-
-# Define a function to check for the exclusion comment within the import block and run goimports-reviser
+# Define a function to check for the exclusion comment and run goimports-reviser
 process_file() {
     local file=$1
-    echo "Checking $file"
-
-    # Extract the import block and check if it contains the exclude string
-    if ! awk '/import \(/{flag=1;next}/\)/{flag=0}flag' "$file" | grep -q "$EXCLUDE_STRING"; then
+    if ! grep -q "//go:build ignore" "$file"; then
         echo "Processing $file"
         goimports-reviser "${FLAGS[@]}" "$file"
-    else
-        echo "Skipping $file due to exclusion string within import block"
     fi
 }
 
