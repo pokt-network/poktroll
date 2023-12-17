@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	// this line is used by starport scaffolding # stargate/app/moduleImport
+
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"

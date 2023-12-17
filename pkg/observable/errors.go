@@ -1,10 +1,10 @@
 package observable
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 )
 
 var (
-	ErrObserverClosed = errorsmod.Register(codespace, 1, "observer is closed")
+	ErrObserverClosed = sdkerrors.Register(codespace, 1, "observer is closed")
 	codespace         = "observable"
 )

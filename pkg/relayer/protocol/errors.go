@@ -1,10 +1,10 @@
 package protocol
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 )
 
 var (
-	ErrDifficulty = errorsmod.New(codespace, 1, "difficulty error")
+	ErrDifficulty = sdkerrors.New(codespace, 1, "difficulty error")
 	codespace     = "relayer/protocol"
 )
