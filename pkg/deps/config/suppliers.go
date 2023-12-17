@@ -9,6 +9,8 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/spf13/cobra"
+
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -17,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"github.com/spf13/cobra"
 )
 
 // SupplierFn is a function that is used to supply a depinject config.

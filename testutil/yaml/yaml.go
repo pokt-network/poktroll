@@ -1,6 +1,8 @@
 package yaml
 
-import "strings"
+import (
+	"strings"
+)
 
 // YAML is indentation sensitive, so we need to remove the extra indentation from the test cases and make sure
 // it is space-indented instead of tab-indented, otherwise the YAML parser will fail

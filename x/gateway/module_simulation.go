@@ -3,15 +3,15 @@ package gateway
 import (
 	"math/rand"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	gatewaysimulation "github.com/pokt-network/poktroll/x/gateway/simulation"
-	"github.com/pokt-network/poktroll/x/gateway/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	gatewaysimulation "github.com/pokt-network/poktroll/x/gateway/simulation"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // avoid unused import issue

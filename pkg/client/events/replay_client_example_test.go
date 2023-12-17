@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/depinject"
+
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"

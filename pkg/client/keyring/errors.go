@@ -1,6 +1,8 @@
 package keyring
 
-import "cosmossdk.io/errors"
+import (
+	"cosmossdk.io/errors"
+)
 
 var (
 	// ErrEmptySigningKeyName represents an error which indicates that the

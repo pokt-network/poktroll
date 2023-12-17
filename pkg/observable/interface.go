@@ -1,6 +1,8 @@
 package observable
 
-import "context"
+import (
+	"context"
+)
 
 // NOTE: We explicitly decided to write a small and custom notifications package
 // to keep logic simple and minimal. If the needs & requirements of this library ever

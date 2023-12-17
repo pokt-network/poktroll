@@ -1,6 +1,8 @@
 package types
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+)
 
 // getSignableBytes returns the bytes resulting from marshaling the relay request
 // A value receiver is used to avoid overwriting any pre-existing signature

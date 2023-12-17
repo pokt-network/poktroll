@@ -3,12 +3,12 @@ package cli
 import (
 	"strconv"
 
-	"github.com/pokt-network/poktroll/x/application/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var _ = strconv.Itoa(0)

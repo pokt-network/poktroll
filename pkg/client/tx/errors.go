@@ -1,6 +1,8 @@
 package tx
 
-import errorsmod "cosmossdk.io/errors"
+import (
+	errorsmod "cosmossdk.io/errors"
+)
 
 var (
 	// ErrInvalidMsg signifies that there was an issue in validating the

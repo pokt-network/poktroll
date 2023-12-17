@@ -1,6 +1,8 @@
 package main
 
-import "text/template"
+import (
+	"text/template"
+)
 
 var (
 	relayFixtureLineFmt   = "\t\t\"%x\","

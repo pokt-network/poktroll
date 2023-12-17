@@ -1,6 +1,8 @@
 package signer
 
-import "github.com/cosmos/cosmos-sdk/crypto/keyring"
+import (
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+)
 
 var _ Signer = (*SimpleSigner)(nil)
 
