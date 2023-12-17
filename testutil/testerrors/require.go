@@ -1,6 +1,8 @@
 package testerrors
 
-import errorsmod "cosmossdk.io/errors"
+import (
+	errorsmod "cosmossdk.io/errors"
+)
 
 var (
 	// ErrAsync is returned when a test assertion fails in a goroutine other than

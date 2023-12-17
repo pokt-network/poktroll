@@ -1,6 +1,8 @@
 package polylog
 
-import "context"
+import (
+	"context"
+)
 
 // CtxKey is the key used to store the polylog.Logger in a context.Context. This
 // is **independant** of any logger-implementation-specific context key that may

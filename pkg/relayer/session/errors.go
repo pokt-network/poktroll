@@ -1,6 +1,8 @@
 package session
 
-import sdkerrors "cosmossdk.io/errors"
+import (
+	sdkerrors "cosmossdk.io/errors"
+)
 
 var (
 	codespace                              = "relayer_session"

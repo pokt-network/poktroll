@@ -1,6 +1,8 @@
 package sdk
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // HostToWebsocketURL converts the provided host into a websocket URL that can
 // be used to subscribe to onchain events and query the chain via a client

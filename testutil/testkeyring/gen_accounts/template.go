@@ -2,7 +2,9 @@
 
 package main
 
-import "text/template"
+import (
+	"text/template"
+)
 
 var (
 	preGeneratedAccountLineFmt = "\t\tmustParsePreGeneratedAccount(%q),"
