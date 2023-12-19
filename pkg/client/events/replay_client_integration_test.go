@@ -89,8 +89,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 		// Once to estabslish the connection and once to re-establish
 		Times(2)
 	// Mock the connection receiving events
-	// TODO_IN_THIS_PR: Why do the calls after reconncetion not get received
-	// by the replay client?
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			// Simulate ErrConnClosed if connection is isClosed.
