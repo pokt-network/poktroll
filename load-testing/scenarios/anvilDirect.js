@@ -8,7 +8,6 @@ export function anvilDirectScenario() {
     // Example method and parameters for the Ethereum JSON-RPC request
     const method = "eth_blockNumber";
     const params = [];
-
     const baseUrl = ENV_CONFIG.anvilBaseUrl;
 
     const tags = {
