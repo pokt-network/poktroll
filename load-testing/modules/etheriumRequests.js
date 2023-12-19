@@ -28,6 +28,11 @@ export function sendEthereumRequest(baseUrl, method, params = [], tags = {}) {
     // Basic check for HTTP 200 response
     check(response, {
         "is status 200": (r) => r.status === 200,
+        "is successful JSON-RPC response": (r) => {
+            let jsonResponse = JSON.parse(r.body);
+            // Check for 'result' and 'id', and ensure 'error' is not present
+            return jsonResponse.hasOwnProperty("result") && jsonResponse.hasOwnProperty("id") && !jsonResponse.hasOwnProperty("error");
+        }
     }, tags);
 
     return response;

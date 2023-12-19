@@ -18,13 +18,13 @@ export function anvilAppGateServerScenario() {
     // Send request and receive response
     let response = sendEthereumRequest(baseUrl, method, params);
 
-    // Additional checks specific to the scenario
-    check(response, {
-        "is the response format correct": (r) => {
-            let jsonResponse = JSON.parse(r.body);
-            return jsonResponse.hasOwnProperty("result") && jsonResponse.hasOwnProperty("id");
-        },
-    }, tags);
+    // Additional checks specific to the scenario can be written like that:
+    // check(response, {
+    //     "is the response format correct": (r) => {
+    //         let jsonResponse = JSON.parse(r.body);
+    //         return jsonResponse.hasOwnProperty("result") && jsonResponse.hasOwnProperty("id");
+    //     },
+    // }, tags);
 
     // Simulate think time
     sleep(1);
