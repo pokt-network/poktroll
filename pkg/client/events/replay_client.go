@@ -153,7 +153,7 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 		}
 		logger.Debug().
 			Msg("replay observable closed, waiting for new events query subscription")
-		time.Sleep(eventsBytesRetryDelay*time.Second + 60*time.Millisecond)
+		time.Sleep(eventsBytesRetryDelay)
 	}
 }
 
@@ -227,11 +227,8 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 				// Wait for the channel to close.
 				continue
 			}
-			typedObsSub := typedObs.Subscribe(ctx)
-			for range typedObsSub.Ch() {
-				// Wait for the channel to close.
-				continue
-			}
+			// Unsubscribe all observers of the typedObs
+			// typedObs.UnsubscribeAll()
 			// Publish an error to the error channel to initiate a retry
 			errCh <- ErrEventsConsClosed
 		}()

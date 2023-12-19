@@ -18,6 +18,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 )
 
+// Create the generic event type and decoder for the replay client
+
 var _ messageEvent = (*tEvent)(nil)
 
 type messageEvent interface {
@@ -47,6 +49,7 @@ func newDecodeEventMessageFn() events.NewEventsFn[messageEvent] {
 	}
 }
 
+// newMessageEventBz returns a new message event in JSON format
 func newMessageEventBz(eventNum int32) []byte {
 	return []byte(fmt.Sprintf(`{"message":"message_%d"}`, eventNum))
 }
@@ -113,10 +116,11 @@ func TestReplayClient_Remapping(t *testing.T) {
 			// Simulate IO delay between sequential events.
 			time.Sleep(50 * time.Microsecond)
 
+			t.Logf("sending event: %s", event)
 			return event, nil
 		}).
-		// MinTimes(int(eventsToRecv))
-		AnyTimes()
+		MinTimes(int(eventsToRecv))
+		// AnyTimes()
 	// Expect the dialer to be re-established any number of times
 	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, _ string) (client.Connection, error) {
