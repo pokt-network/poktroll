@@ -28,9 +28,9 @@ sidebar_position: 2
   - [Advanced Usage](#advanced-usage-1)
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
-  - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
-  - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
-  - [Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?](#why-use-the-eventsreplayclient-over-directly-maintaining-an-eventsqueryclient)
+    - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
+    - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
+    - [Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?](#why-use-the-eventsreplayclient-over-directly-maintaining-an-eventsqueryclient)
 
 <!-- tocstop -->
 
@@ -366,8 +366,13 @@ a respective type. Examples of these include the `client.BlockClient` and
 `client.DelegationClient` interfaces which under-the-hood are wrappers for the
 `EventsReplayClient`.
 
-See: [BlockClient](../../../pkg/client/block/) and
-[DelegationClient](../../../pkg/client/delegation/) for more detailed examples
+
+:::danger
+TODO: Update links for BlockClient and DelegationClient when they are added to the documentation.
+:::
+
+See: [BlockClient](#TODO) and
+[DelegationClient](#TODO) for more detailed examples
 on how to wrap and use the `EventsReplayClient` in a more advanced setting.
 
 ## Best Practices
