@@ -162,7 +162,7 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	// the eventsBz observable.
 	// NB: intentionally not retrying on error, leaving that to the caller.
 	// (see: https://github.com/pokt-network/poktroll/pull/64#discussion_r1373826542)
-	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh, query)
+	go eqc.goPublishEventsBz(ctx, conn, eventsBzPublishCh)
 
 	return &eventsBytesAndConn{
 		eventsBytes: eventsBzObservable,
@@ -204,7 +204,6 @@ func (eqc *eventsQueryClient) goPublishEventsBz(
 	ctx context.Context,
 	conn client.Connection,
 	eventsBzPublishCh chan<- either.Bytes,
-	query string,
 ) {
 	// Read and handle messages from the websocket. This loop will exit when the
 	// websocket connection is isClosed and/or returns an error.
