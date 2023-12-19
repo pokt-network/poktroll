@@ -1,12 +1,13 @@
 import { anvilDirectScenario } from './scenarios/anvilDirect.js';
 import { anvilAppGateServerScenario } from './scenarios/anvilAppGateServer.js';
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
+import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 
 export const options = {
   // A number specifying the number of VUs to run concurrently.
-  vus: 10,
+  vus: 100,
   // A string specifying the total duration of the test run.
-  duration: '5s',
+  duration: '60s',
 
   // The following section contains configuration options for execution of this
   // test script in Grafana Cloud.
@@ -61,8 +62,9 @@ export default function () {
   anvilAppGateServerScenario();
 }
 
-// export function handleSummary(data) {
-//   return {
-//     "summary.html": htmlReport(data),
-//   };
-// }
+export function handleSummary(data) {
+  return {
+    "summary.html": htmlReport(data),
+    stdout: textSummary(data, { indent: " ", enableColors: true }),
+  };
+}
