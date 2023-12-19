@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -20,30 +19,13 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		return nil, err
 	}
 
-	sessionReq := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: msg.GetSessionHeader().GetApplicationAddress(),
-		Service:            msg.GetSessionHeader().GetService(),
-		BlockHeight:        msg.GetSessionHeader().GetSessionStartBlockHeight(),
-	}
-	sessionRes, err := k.Keeper.sessionKeeper.GetSession(goCtx, sessionReq)
+	sessionRes, err := k.ValidateSessionHeader(
+		goCtx,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	)
 	if err != nil {
 		return nil, err
-	}
-
-	logger.
-		With(
-			"session_id", sessionRes.GetSession().GetSessionId(),
-			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
-			"supplier", msg.GetSupplierAddress(),
-		).
-		Debug("got sessionId for claim")
-
-	if sessionRes.Session.SessionId != msg.SessionHeader.SessionId {
-		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
-			"claimed sessionRes ID does not match on-chain sessionRes ID; expected %q, got %q",
-			sessionRes.Session.SessionId,
-			msg.SessionHeader.SessionId,
-		)
 	}
 
 	var found bool
