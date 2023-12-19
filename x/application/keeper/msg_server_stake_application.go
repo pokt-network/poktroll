@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,10 +17,10 @@ func (k msgServer) StakeApplication(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "StakeApplication")
-	logger.Info("About to stake application with msg: %v", msg)
+	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error("invalid MsgStakeApplication: %v", err)
+		logger.Error(fmt.Sprintf("invalid MsgStakeApplication: %v", err))
 		return nil, err
 	}
 
@@ -28,11 +29,11 @@ func (k msgServer) StakeApplication(
 	var coinsToDelegate sdk.Coin
 	app, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
-		logger.Info("Application not found. Creating new application for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %s", msg.Address))
 		app = k.createApplication(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info("Application found. Updating application for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Application found. Updating application for address %s", msg.Address))
 		currAppStake := *app.Stake
 		if err = k.updateApplication(ctx, &app, msg); err != nil {
 			return nil, err
@@ -43,7 +44,7 @@ func (k msgServer) StakeApplication(
 	// Retrieve the address of the application
 	appAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error("could not parse address %s", msg.Address)
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, err
 	}
 
@@ -51,13 +52,13 @@ func (k msgServer) StakeApplication(
 	// Send the coins from the application to the staked application pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
-		logger.Error("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err)
+		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Application in the store
 	k.SetApplication(ctx, app)
-	logger.Info("Successfully updated application stake for app: %+v", app)
+	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", app))
 
 	return &types.MsgStakeApplicationResponse{}, nil
 }

@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +17,7 @@ func (k msgServer) StakeGateway(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "StakeGateway")
-	logger.Info("About to stake gateway with msg: %v", msg)
+	logger.Info(fmt.Sprintf("About to stake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -27,11 +28,11 @@ func (k msgServer) StakeGateway(
 	var coinsToDelegate sdk.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info("Gateway not found. Creating new gateway for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Gateway not found. Creating new gateway for address %s", msg.Address))
 		gateway = k.createGateway(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info("Gateway found. Updating gateway stake for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Gateway found. Updating gateway stake for address %s", msg.Address))
 		currGatewayStake := *gateway.Stake
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
 			return nil, err
@@ -42,20 +43,20 @@ func (k msgServer) StakeGateway(
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error("could not parse address %s", msg.Address)
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, err
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
-		logger.Error("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err)
+		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Gateway in the store
 	k.SetGateway(ctx, gateway)
-	logger.Info("Successfully updated stake for gateway: %+v", gateway)
+	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
 	return &types.MsgStakeGatewayResponse{}, nil
 }

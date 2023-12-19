@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"encoding/binary"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,21 +22,21 @@ func (k Keeper) InsertClaim(ctx sdk.Context, claim types.Claim) {
 	primaryKey := types.ClaimPrimaryKey(claim.SessionId, claim.SupplierAddress)
 	primaryStore.Set(primaryKey, claimBz)
 
-	logger.Info("inserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
+	logger.Info(fmt.Sprintf("inserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
 	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
 	addressStoreIndex.Set(addressKey, primaryKey)
 
-	logger.Info("indexed claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey)
+	logger.Info(fmt.Sprintf("indexed claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 	heightKey := types.ClaimSupplierEndSessionHeightKey(claim.SessionEndBlockHeight, primaryKey)
 	sessionHeightStoreIndex.Set(heightKey, primaryKey)
 
-	logger.Info("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight)
+	logger.Info(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, claim.SessionEndBlockHeight))
 }
 
 // RemoveClaim removes a claim from the store
@@ -49,7 +50,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
 	claim, foundClaim := k.getClaimByPrimaryKey(ctx, primaryKey)
 	if !foundClaim {
-		logger.Error("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
+		logger.Error(fmt.Sprintf("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
 		return
 	}
 
@@ -65,7 +66,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	addressStoreIndex.Delete(addressKey)
 	sessionHeightStoreIndex.Delete(heightKey)
 
-	logger.Info("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId)
+	logger.Info(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
 }
 
 // GetClaim returns a Claim given a SessionId & SupplierAddr

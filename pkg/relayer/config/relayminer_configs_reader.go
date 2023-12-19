@@ -3,7 +3,7 @@ package config
 import (
 	"net/url"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
