@@ -1,19 +1,58 @@
-# Pocket node URL that exposes CometBFT JSON-RPC API.
-# This can be used by the Cosmos client SDK, event subscriptions, etc...
-query_node_rpc_url: tcp://poktroll-sequencer:36657
-# Pocket node URL that exposes the Cosmos gRPC service.
-tx_node_grpc_url: tcp://poktroll-sequencer:36658
-# Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
-# If unspecified, defaults to `tx_node_grpc_url`.
-query_node_grpc_url: tcp://poktroll-sequencer:36658
+# TODO_CONSIDERATION: We don't need this now, but it would be beneficial if the
+# logic handling this config file could be designed in such a way that it allows for
+# "soft" config changes in the future, meaning changes without restarting a process.
+# This would be useful for adding a proxy or a supplier without interrupting the service.
+
+pocket:
+  # Pocket node URL that exposes CometBFT JSON-RPC API.
+  # This can be used by the Cosmos client SDK, event subscriptions, etc...
+  query_node_url: tcp://poktroll-sequencer:36657
+  # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
+  # If unspecified, defaults to `tx_node_grpc_url`.
+  query_node_grpc_url: tcp://poktroll-sequencer:36658
+  # Pocket node URL that exposes the Cosmos gRPC service.
+  tx_node_grpc_url: tcp://poktroll-sequencer:36658
+
 # Name of the key (in the keyring) to sign transactions
-signing_key_name: supplier1
-# TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
-# is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
-# multiple services is already in place but currently (as seen below) is hardcoded.
-# TODO_UPNEXT(@okdas): this hostname should be updated to match that of the in-tilt anvil service.
-proxied_service_endpoints:
-  anvil: http://anvil:8547
-  svc1: http://localhost:8082
+signing_key_name: servicer1
 # Path to where the data backing SMT KV store exists on disk
 smt_store_path: smt_stores
+
+# Proxies are endpoints that expose different suppliers to the internet.
+proxies:
+    # Name of the proxy. It will be used to reference in a supplier. Must be unique.
+    # Required.
+    # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
+    #become handy in the future.
+    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+  - name: http-example
+    # Type of proxy: can be one of http, ws, tcp. MUST match the type of the supplier.
+    # Required.
+    type: http
+    # Hostname to open port on. Use 0.0.0.0 in containerized environments,
+    # 127.0.0.1 with a reverse-proxy when there's another process on localhost
+    # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
+    # Required
+    host: 127.0.0.1:8080
+
+# Suppliers are different services that can be offered through RelayMiner.
+# When a supplier is configured to use a proxy and staked appropriately,
+# the relays will start flowing through RelayMiner.
+suppliers:
+    # Name of the supplier offered to the network.
+    # Must be unique.
+    # Required.
+  - name: anvil
+    # Type of how the supplier offers service through the network.
+    # Must match the type of the proxy the supplier is connected to.
+    # Required.
+    type: http
+    # Configuration of the service offered through RelayMiner.
+    service_config:
+      # URL RelayMiner proxies the requests to.
+      # Required
+      url: http://anvil:8547/
+    # Names of proxies that this supplier is connected to. The supplier will be reached through the proxies listed here.
+    # Required.
+    proxy_names:
+      - http-example # when the RelayMiner server builder runs.

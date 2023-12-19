@@ -1,0 +1,91 @@
+pocket:
+  # Pocket node URL that exposes CometBFT JSON-RPC API.
+  # This can be used by the Cosmos client SDK, event subscriptions, etc...
+  query_node_url: tcp://poktroll-sequencer:36657
+  # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
+  # If unspecified, defaults to `tx_node_grpc_url`.
+  query_node_grpc_url: tcp://poktroll-sequencer:36658
+  # Pocket node URL that exposes the Cosmos gRPC service.
+  tx_node_grpc_url: tcp://poktroll-sequencer:36658
+
+# Name of the key (in the keyring) to sign transactions
+signing_key_name: servicer1
+# Path to where the data backing SMT KV store exists on disk
+smt_store_path: smt_stores
+
+# Proxies are endpoints that expose different suppliers to the internet.
+proxies:
+    # Name of the proxy. It will be used to reference in a supplier. Must be unique.
+    # Required.
+    #
+    # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially become handy in the future. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names. Not necessary though.
+  - name: http-example
+    # Hostname to open port on. Use 0.0.0.0 in containerized environments, 127.0.0.1 with a reverse-proxy when there's another process on localhost that can be used as a reverse proxy (nginx, apache, traefik, etc.).
+    # Required
+    #
+    # TODO_IMPROVE: We can add UNIX sockets, in addition to host+port. This is a premature optimization as of now, but can be explored in the future. 
+    host: 127.0.0.1:8080
+    # Type of proxy: can be one of http, ws, tcp. MUST match the type of the supplier.
+    # Required.
+    type: http
+
+  # TODO_IMPROVE: No need to implement HTTPS, but this is how it could potentially look.
+  # - name: example-how-we-can-support-https
+  #   host: 0.0.0.0:8443
+  #   type: https
+  #   tls:
+  #     enabled: true
+  #     certificate: /path/to/crt
+  #     key: /path/to/key
+
+# Suppliers are different services that can be offered through RelayMiner. When a supplier is configured to use a proxy and
+# staked appropriately, the relays will start flowing through RelayMiner.
+suppliers:
+    # Name of the supplier offered to the network.
+    # Must be unique.
+    # Required.
+  - name: ethereum
+    # Type of how the supplier offers service through the network.
+    # Must match the type of the proxy the supplier is connected to.
+    # Required.
+    type: http
+    # Configuration of the service offered through RelayMiner.
+    service_config:
+      # URL RelayMiner proxies the requests to.
+      # Required
+      url: http://anvil.servicer:8545
+      # Authentication for the service. HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+      # Optional.
+      authentication:
+        username: user
+        password: pwd
+
+      # TODO_IMPROVE: since this is not supported in the mainnet, we don't need to support this now, but some services authenticate via a header.
+      headers: {}
+        # For example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
+        # Authorization: Bearer <PASSWORD>
+
+    # A list of hosts the HTTP service is offered on. When linked to the proxy, that hostname is going to be used to route the request to the correct supplier.
+    # That hostname is what the user should stake the supplier for.
+    # Required.
+    # Must be unique within a proxy/proxies it is set up on. In other words, one proxy can't offer the same hostname more than once.
+    #
+    # TODO_CONSIDERATION: automatically add the `name` of the supplier to hosts for potential troubleshooting/debugging purposes. See below.
+    hosts:
+      - ethereum.devnet1.poktroll.com
+      # - ethereum # <- this part is be added automatically.
+    # Names of proxies that this supplier is connected to. The supplier will be reached through the proxies listed here.
+    # Required.
+    #
+    # TODO_DISCUSS: we can make this just a string instead of an array to make implementation easier. I feel like having multiple proxies can be harder to implement as the number of different variables increases. We can always add an array later if needed, for example in case we implement HTTPs.
+    proxy_names:
+      - http-example # when the RelayMiner server builder runs.
+  - name: 7b-llm-model
+    type: http
+    service_config:
+      url: http://llama-endpoint
+    hosts:
+      - 7b-llm-model.devnet1.poktroll.com
+      - 7b-llm-model # <- this part can be added automatically.
+    proxy_names:
+      - http-example # when the RelayMiner server builder runs.
