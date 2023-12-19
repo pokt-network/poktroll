@@ -71,6 +71,26 @@ check_godoc:
 	fi; \
 	}
 
+.PHONY: check_npm
+# Internal helper target - check if npm is installed
+check_npm:
+	{ \
+	if ( ! ( command -v npm >/dev/null )); then \
+		echo "Seems like you don't have npm installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_node
+# Internal helper target - check if node is installed
+check_node:
+	{ \
+	if ( ! ( command -v node >/dev/null )); then \
+		echo "Seems like you don't have node installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
@@ -117,6 +137,7 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	mkdir -p $(POKTROLLD_HOME)/config/
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
+
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
 # cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
@@ -524,7 +545,7 @@ openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 	ignite generate openapi --yes
 
 .PHONY: docusaurus_start
-docusaurus_start: ## Start the Docusaurus server
+docusaurus_start: check_npm check_node ## Start the Docusaurus server
 	(cd docusaurus && npm i && npm run start)
 
 ######################
