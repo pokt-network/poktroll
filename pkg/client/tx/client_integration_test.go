@@ -36,7 +36,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	// we're not exercising transactions timeouts in this test, we don't need to set any
 	// particular expectations on it, nor do we care about the value of blockHash
 	// argument.
-	blockClientMock, _ := testblock.NewLocalnetClient(ctx, t)
+	blockClientMock := testblock.NewLocalnetClient(ctx, t)
 
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
