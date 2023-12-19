@@ -1,6 +1,7 @@
 package testeventsquery
 
 import (
+	"sync/atomic"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -45,5 +46,68 @@ func NewOneTimeMockDialer(
 		Return(connMock, err).
 		Times(1)
 
+	return dialerMock
+}
+
+// NewTwiceMockConnAndDialer returns a new mock connection and mock dialer that
+// will return the mock connection when DialContext is called. The mock dialer
+// will expect DialContext to be called any times. The connection mock will
+// expect Close and Send to be called exactly twice.
+func NewTwiceMockConnAndDialer(
+	t *testing.T,
+	connClosed *atomic.Bool,
+	delayEvent *atomic.Bool,
+) (*mockclient.MockConnection, *mockclient.MockDialer) {
+	connMock := NewTwiceCloseSendConnectionMock(t, connClosed, delayEvent)
+	dialerMock := NewAnyTimesMockDailer(t, connMock)
+	return connMock, dialerMock
+}
+
+// NewTwiceCloseSendConnectionMock returns a mock connection that will expect
+// Close and Send to be called exactly twice. The connection mock will set the
+// connClosed atomic to true when Close is called and false when Send is called.
+// The connection mock will set the delayEvent atomic to false when Send is
+// called. This is to allow the caller to subscribe to the first event emitted
+func NewTwiceCloseSendConnectionMock(
+	t *testing.T,
+	connClosed *atomic.Bool,
+	delayEvent *atomic.Bool,
+) *mockclient.MockConnection {
+	ctrl := gomock.NewController(t)
+	connMock := mockclient.NewMockConnection(ctrl)
+	// Expect the connection to be closed and the dialer to be re-established
+	connMock.EXPECT().Close().DoAndReturn(func() error {
+		connClosed.CompareAndSwap(false, true)
+		return nil
+	}).
+		// Close once by hand and the EventQueryClient will close it again
+		Times(2)
+	// Expect the subscription to be re-established any number of times
+	connMock.EXPECT().
+		Send(gomock.Any()).
+		DoAndReturn(func(eventBz []byte) error {
+			if connClosed.Load() {
+				connClosed.CompareAndSwap(true, false)
+			}
+			delayEvent.CompareAndSwap(true, false)
+			return nil
+		}).
+		// Once to estabslish the connection and once to re-establish
+		Times(2)
+	return connMock
+}
+
+// NewAnyTimesMockDailer returns a mock dialer that will return the given
+// connection mock when DialContext is called. The mock dialer will expect
+// DialContext to be called any number of times.
+func NewAnyTimesMockDailer(
+	t *testing.T,
+	connMock *mockclient.MockConnection,
+) *mockclient.MockDialer {
+	ctrl := gomock.NewController(t)
+	dialerMock := mockclient.NewMockDialer(ctrl)
+	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
+		Return(connMock, nil).
+		AnyTimes()
 	return dialerMock
 }
