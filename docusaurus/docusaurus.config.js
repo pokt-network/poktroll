@@ -76,11 +76,15 @@ const config = {
         style: "dark",
         links: [
           {
-            title: "Documentation Homepage",
+            title: "Documentation",
             items: [
               {
-                label: "Documentation Homepage",
+                label: "Poktroll rollup",
                 to: "/",
+              },
+              {
+                label: "Pocket Network",
+                href: 'https://docs.pokt.network/'
               },
             ],
           },
