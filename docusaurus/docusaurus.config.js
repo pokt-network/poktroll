@@ -16,8 +16,8 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
 
   // GitHub pages deployment config.
-  url: "https://pokt-network.github.io/",
-  baseUrl: "/poktroll/",
+  url: "https://poktroll.com/",
+  baseUrl: "/",
   // Custom domain config.
   // url: "https://docs.poktroll.com",
   // baseUrl: "/",
