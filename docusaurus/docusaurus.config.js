@@ -32,7 +32,7 @@ const config = {
   deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
   trailingSlash: false,
 
-  onBrokenLinks: "warn",
+  onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
   // Even if you don't use internationalization, you can use this field to set

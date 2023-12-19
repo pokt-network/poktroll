@@ -21,7 +21,7 @@ needed to send an end-to-end relay.
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
-  - [localnet_config.yaml](#localnet_configyaml)
+  - [localnet\_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
 - [Troubleshooting](#troubleshooting)
@@ -43,10 +43,6 @@ If you encounter any problems, please create a new [GitHub Issue here](https://g
    5. [Tilt](https://docs.tilt.dev/install.html) (note: we recommend using Kind cluster with Tilt)
 2. Run `make localnet_up` to start the network
 3. When prompted, click `space` to see the web UI with logs and current status of the network. Alternatively, you can go directly to [localhost:10350](http://localhost:10350)
-
-:::note
-You might already have these installed if you've followed the [localnet instructions](./infrastructure/localnet.md).
-:::
 
 ## Developing with LocalNet
 
