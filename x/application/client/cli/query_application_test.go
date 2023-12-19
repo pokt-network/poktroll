@@ -7,20 +7,32 @@ import (
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/application/client/cli"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestShowApplication(t *testing.T) {
-	net, objs := networkWithApplicationObjects(t, 2)
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumApplications: 2,
+		},
+	)
+	memnet.Start(t)
 
-	ctx := net.Validators[0].ClientCtx
+	appGenesisState := sessionnet.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	applications := appGenesisState.ApplicationList
+
+	net := memnet.GetNetwork(t)
+	ctx := memnet.GetClientCtx(t)
+
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
@@ -30,14 +42,14 @@ func TestShowApplication(t *testing.T) {
 
 		args []string
 		err  error
-		obj  types.Application
+		obj  apptypes.Application
 	}{
 		{
 			desc:      "found",
-			idAddress: objs[0].Address,
+			idAddress: applications[0].Address,
 
 			args: common,
-			obj:  objs[0],
+			obj:  applications[0],
 		},
 		{
 			desc:      "not found",
@@ -53,14 +65,14 @@ func TestShowApplication(t *testing.T) {
 				tc.idAddress,
 			}
 			args = append(args, tc.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowApplication(), args)
+			out, err := testcli.ExecTestCLICmd(ctx, cli.CmdShowApplication(), args)
 			if tc.err != nil {
 				stat, ok := status.FromError(tc.err)
 				require.True(t, ok)
 				require.ErrorIs(t, stat.Err(), tc.err)
 			} else {
 				require.NoError(t, err)
-				var resp types.QueryGetApplicationResponse
+				var resp apptypes.QueryGetApplicationResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Application)
 				require.Equal(t,
@@ -73,9 +85,19 @@ func TestShowApplication(t *testing.T) {
 }
 
 func TestListApplication(t *testing.T) {
-	net, objs := networkWithApplicationObjects(t, 5)
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumApplications: 5,
+		},
+	)
+	memnet.Start(t)
 
-	ctx := net.Validators[0].ClientCtx
+	appGenesisState := sessionnet.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	applications := appGenesisState.ApplicationList
+
+	net := memnet.GetNetwork(t)
+	ctx := memnet.GetClientCtx(t)
+
 	request := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
@@ -93,15 +115,15 @@ func TestListApplication(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(applications); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
+			out, err := testcli.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationResponse
+			var resp apptypes.QueryAllApplicationResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(applications),
 				nullify.Fill(resp.Application),
 			)
 		}
@@ -109,30 +131,30 @@ func TestListApplication(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(applications); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
+			out, err := testcli.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationResponse
+			var resp apptypes.QueryAllApplicationResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(applications),
 				nullify.Fill(resp.Application),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(objs)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
+		args := request(nil, 0, uint64(len(applications)), true)
+		out, err := testcli.ExecTestCLICmd(ctx, cli.CmdListApplication(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllApplicationResponse
+		var resp apptypes.QueryAllApplicationResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
-		require.Equal(t, len(objs), int(resp.Pagination.Total))
+		require.Equal(t, len(applications), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(objs),
+			nullify.Fill(applications),
 			nullify.Fill(resp.Application),
 		)
 	})

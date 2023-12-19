@@ -7,31 +7,37 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/x/application/client/cli"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestCLI_UndelegateFromGateway(t *testing.T) {
-	net, _ := networkWithApplicationObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumApplications: 2,
+		},
+	)
+	memnet.Start(t)
 
-	// Create a keyring and add an account for the application to be delegated
-	// and the gateway to be delegated to
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 2)
-	appAccount := accounts[0]
-	gatewayAccount := accounts[1]
+	appGenesisState := sessionnet.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	applications := appGenesisState.ApplicationList
 
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	net := memnet.GetNetwork(t)
+	ctx := memnet.GetClientCtx(t)
+	appBech32 := applications[0].GetAddress()
+	//appAddr, err := sdk.AccAddressFromBech32(appBech32)
+	//require.NoError(t, err)
+
+	gatewayBech32 := applications[1].GetAddress()
+	//gatewayAddr, err := sdk.AccAddressFromBech32(gatewayBech32)
+	//require.NoError(t, err)
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -48,38 +54,38 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 	}{
 		{
 			desc:           "undelegate from gateway: valid",
-			appAddress:     appAccount.Address.String(),
-			gatewayAddress: gatewayAccount.Address.String(),
+			appAddress:     appBech32,
+			gatewayAddress: gatewayBech32,
 		},
 		{
 			desc: "invalid - missing app address",
-			// appAddress:     appAccount.Address.String(),
-			gatewayAddress: gatewayAccount.Address.String(),
-			err:            types.ErrAppInvalidAddress,
+			// appAddress:  intentionally omitted
+			gatewayAddress: gatewayBech32,
+			err:            apptypes.ErrAppInvalidAddress,
 		},
 		{
 			desc:           "invalid - invalid app address",
 			appAddress:     "invalid address",
-			gatewayAddress: gatewayAccount.Address.String(),
-			err:            types.ErrAppInvalidAddress,
+			gatewayAddress: gatewayBech32,
+			err:            apptypes.ErrAppInvalidAddress,
 		},
 		{
 			desc:       "invalid - missing gateway address",
-			appAddress: appAccount.Address.String(),
-			// gatewayAddress: gatewayAccount.Address.String(),
-			err: types.ErrAppInvalidGatewayAddress,
+			appAddress: appBech32,
+			// gatewayAddress: intentionally omitted
+			err: apptypes.ErrAppInvalidGatewayAddress,
 		},
 		{
 			desc:           "invalid - invalid gateway address",
-			appAddress:     appAccount.Address.String(),
+			appAddress:     appBech32,
 			gatewayAddress: "invalid address",
-			err:            types.ErrAppInvalidGatewayAddress,
+			err:            apptypes.ErrAppInvalidGatewayAddress,
 		},
 	}
 
-	// Initialize the App and Gateway Accounts by sending it some funds from the validator account that is part of genesis
-	network.InitAccountWithSequence(t, net, appAccount.Address, 1)
-	network.InitAccountWithSequence(t, net, gatewayAccount.Address, 2)
+	//// Initialize the App and Gateway Accounts by sending it some funds from the validator account that is part of genesis
+	//sessionnet.InitAccountWithSequence(t, net, appAddr, 1)
+	//sessionnet.InitAccountWithSequence(t, net, gatewayAddr, 2)
 
 	// Run the tests
 	for _, tt := range tests {

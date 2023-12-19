@@ -27,6 +27,8 @@ type AppSupplierPair struct {
 	SupplierAddr string
 }
 
+// TODO_IN_THIS_COMMIT: is the below applicable in the InMemoryNetwork ... context?
+
 // NewSessionFixturesWithPairings creates a map of session fixtures where the key
 // is the application address and the value is the session fixture. App/supplier
 // addresses are expected to be provided in alternating order (as pairs). The same

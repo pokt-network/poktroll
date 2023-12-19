@@ -27,9 +27,10 @@ func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof 
 		proofs[i] = types.Proof{
 			SupplierAddress: sample.AccAddress(),
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress:      sample.AccAddress(),
-				Service:                 &sharedtypes.Service{Id: testServiceId},
-				SessionId:               fmt.Sprintf("session-%d", i),
+				ApplicationAddress: sample.AccAddress(),
+				Service:            &sharedtypes.Service{Id: testServiceId},
+				SessionId:          fmt.Sprintf("session-%d", i),
+				// TODO_IN_THIS_COMMIT: increment start/end height using i.
 				SessionStartBlockHeight: 1,
 				SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 			},

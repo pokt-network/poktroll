@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
@@ -18,15 +20,19 @@ import (
 )
 
 func TestClaim_Show(t *testing.T) {
-	sessionCount := 1
-	supplierCount := 3
-	appCount := 3
-
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		appCount,
-		supplierCount,
+	// TODO_IN_THIS_COMMIT: consolidate / re-evaluate DefaultNetworkWithSessions
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumSessions:     1,
+			NumSuppliers:    3,
+			NumApplications: 3,
+		},
 	)
+	//memnet := sessionnet.DefaultNetworkWithSessions(t)
+	memnet.Start(t)
+
+	claims, _ := memnet.CreateClaims(t)
+	net := memnet.GetNetwork(t)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -125,19 +131,26 @@ func TestClaim_Show(t *testing.T) {
 }
 
 func TestClaim_List(t *testing.T) {
-	sessionCount := 2
-	supplierCount := 4
-	appCount := 3
+	numSessions := 2
+	numSuppliers := 4
+	numApps := 3
 	serviceCount := 1
 	// Each supplier will submit a claim for each app x service combination (per session).
-	numClaimsPerSession := supplierCount * appCount * serviceCount
-	totalClaims := sessionCount * numClaimsPerSession
+	numClaimsPerSession := numSuppliers * numApps * serviceCount
+	totalClaims := numSessions * numClaimsPerSession
 
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		supplierCount,
-		appCount,
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumSessions:         numSessions,
+			NumRelaysPerSession: 5,
+			NumSuppliers:        numSuppliers,
+			NumApplications:     numApps,
+		},
 	)
+	memnet.Start(t)
+
+	claims, _ := memnet.CreateClaims(t)
+	net := memnet.GetNetwork(t)
 
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
@@ -216,7 +229,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, sessionCount*appCount, int(resp.Pagination.Total))
+		require.Equal(t, numSessions*numApps, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -241,7 +254,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, supplierCount, int(resp.Pagination.Total))
+		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {

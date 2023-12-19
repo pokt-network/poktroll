@@ -10,17 +10,35 @@ import (
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/session/client/cli"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_GetSession(t *testing.T) {
 	// Prepare the network
-	net, suppliers, applications := networkWithApplicationsAndSupplier(t, 2)
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumSuppliers:    2,
+			NumApplications: 2,
+		},
+	)
+	memnet.Start(t)
+
+	net := memnet.GetNetwork(t)
+
+	// TODO_IN_THIS_COMMIT: still need this?
 	_, err := net.WaitForHeight(10) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
 	require.NoError(t, err)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+
+	appGenesisState := sessionnet.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	applications := appGenesisState.ApplicationList
+
+	supplierGenesisState := sessionnet.GetGenesisState[*suppliertypes.GenesisState](t, suppliertypes.ModuleName, memnet)
+	suppliers := supplierGenesisState.SupplierList
 
 	// Sanity check the application configs are what we expect them to be
 	appSvc0 := applications[0]
@@ -29,10 +47,10 @@ func TestCLI_GetSession(t *testing.T) {
 	require.Len(t, appSvc0.ServiceConfigs, 2)
 	require.Len(t, appSvc1.ServiceConfigs, 2)
 
-	require.Equal(t, appSvc0.ServiceConfigs[0].Service.Id, "svc0")  // svc0 has a supplier
-	require.Equal(t, appSvc0.ServiceConfigs[1].Service.Id, "svc00") // svc00 doesn't have a supplier
-	require.Equal(t, appSvc1.ServiceConfigs[0].Service.Id, "svc1")  // svc1 has a supplier
-	require.Equal(t, appSvc1.ServiceConfigs[1].Service.Id, "svc11") // svc11 doesn't have a supplier
+	require.Equal(t, appSvc0.ServiceConfigs[0].Service.Id, "svc0")   // svc0 has a supplier
+	require.Equal(t, appSvc0.ServiceConfigs[1].Service.Id, "nosvc0") // svc00 doesn't have a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[0].Service.Id, "svc1")   // svc1 has a supplier
+	require.Equal(t, appSvc1.ServiceConfigs[1].Service.Id, "nosvc1") // svc11 doesn't have a supplier
 
 	// Sanity check the supplier configs are what we expect them to be
 	supplierSvc0 := suppliers[0] // supplier for svc0
@@ -171,7 +189,7 @@ func TestCLI_GetSession(t *testing.T) {
 			args = append(args, common...)
 
 			// Execute the command
-			getSessionOut, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdGetSession(), args)
+			getSessionOut, err := clitestutil.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdGetSession(), args)
 			if tt.expectedErr != nil {
 				stat, ok := status.FromError(tt.expectedErr)
 				require.True(t, ok)

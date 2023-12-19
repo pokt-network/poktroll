@@ -7,29 +7,32 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/testutil"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/x/application/client/cli"
-	"github.com/pokt-network/poktroll/x/application/types"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 func TestCLI_UnstakeApplication(t *testing.T) {
-	net, _ := networkWithApplicationObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		&network.InMemoryNetworkConfig{
+			NumApplications: 2,
+		},
+	)
+	memnet.Start(t)
 
-	// Create a keyring and add an account for the application to be unstaked
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	appAccount := accounts[0]
+	appGenesisState := sessionnet.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	applications := appGenesisState.ApplicationList
+	appBech32 := applications[0].GetAddress()
+	appAddr, err := sdk.AccAddressFromBech32(appBech32)
+	require.NoError(t, err)
 
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	net := memnet.GetNetwork(t)
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -45,22 +48,22 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	}{
 		{
 			desc:    "unstake application: valid",
-			address: appAccount.Address.String(),
+			address: appBech32,
 		},
 		{
 			desc: "unstake application: missing address",
 			// address:     "explicitly missing",
-			err: types.ErrAppInvalidAddress,
+			err: apptypes.ErrAppInvalidAddress,
 		},
 		{
 			desc:    "unstake application: invalid address",
 			address: "invalid",
-			err:     types.ErrAppInvalidAddress,
+			err:     apptypes.ErrAppInvalidAddress,
 		},
 	}
 
 	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, appAccount.Address)
+	sessionnet.InitAccount(t, net, appAddr)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -75,7 +78,7 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeApplication(), args)
+			outUnstake, err := testcli.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdUnstakeApplication(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {

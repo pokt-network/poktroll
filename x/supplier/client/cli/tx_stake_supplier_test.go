@@ -13,14 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {
-	net, _ := networkWithSupplierObjects(t, 2)
+	net, _ := sessionnet.NetworkWithSupplierObjects(t, 2)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
@@ -242,7 +242,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 	}
 
 	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
+	sessionnet.InitAccount(t, net, supplierAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {

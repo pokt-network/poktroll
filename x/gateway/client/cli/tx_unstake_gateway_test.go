@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -60,7 +60,7 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 	}
 
 	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, gatewayAccount.Address)
+	sessionnet.InitAccount(t, net, gatewayAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {

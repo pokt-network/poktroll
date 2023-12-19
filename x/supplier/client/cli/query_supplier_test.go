@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
@@ -19,7 +20,7 @@ import (
 )
 
 func TestShowSupplier(t *testing.T) {
-	net, suppliers := networkWithSupplierObjects(t, 2)
+	net, suppliers := sessionnet.NetworkWithSupplierObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -74,7 +75,7 @@ func TestShowSupplier(t *testing.T) {
 }
 
 func TestListSupplier(t *testing.T) {
-	net, suppliers := networkWithSupplierObjects(t, 5)
+	net, suppliers := sessionnet.NetworkWithSupplierObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {

@@ -25,6 +25,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -147,7 +148,7 @@ func createNetworkWithApplicationsAndGateways(
 	// Initialize all the accounts
 	for i, account := range accounts {
 		signatureSequenceNumber := i + 1
-		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
+		sessionnet.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
 	}
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
