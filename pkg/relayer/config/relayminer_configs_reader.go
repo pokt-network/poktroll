@@ -38,6 +38,10 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	relayMinerPocketConfig := &RelayMinerPocketConfig{}
 	pocket := yamlRelayMinerConfig.Pocket
 
+	if pocket.TxNodeGRPCUrl == "" {
+		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("tx node grpc url is required")
+	}
+
 	// Check if the pocket node grpc url is a valid URL
 	relayMinerPocketConfig.TxNodeGRPCUrl, err = url.Parse(pocket.TxNodeGRPCUrl)
 	if err != nil {
@@ -59,6 +63,10 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 				err.Error(),
 			)
 		}
+	}
+
+	if pocket.QueryNodeRPCUrl == "" {
+		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("query node rpc url is required")
 	}
 
 	// Check if the query node rpc url is a valid URL
@@ -94,8 +102,9 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		}
 
 		proxyConfig := &RelayMinerProxyConfig{
-			Name:      yamlProxyConfig.Name,
-			Suppliers: make(map[string]*RelayMinerSupplierConfig),
+			Name:                 yamlProxyConfig.Name,
+			XForwardedHostLookup: yamlProxyConfig.XForwardedHostLookup,
+			Suppliers:            make(map[string]*RelayMinerSupplierConfig),
 		}
 
 		// Populate the proxy fields that are relevant to each supported proxy type
@@ -143,6 +152,11 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		// Supplier hosts sub-section
 		existingHosts := make(map[string]bool)
 		for _, host := range yamlSupplierConfig.Hosts {
+			// Check if the supplier host is empty
+			if host == "" {
+				return nil, ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier host")
+			}
+
 			// Check if the supplier host is a valid URL
 			supplierHost, err := url.Parse(host)
 			if err != nil {
@@ -193,6 +207,14 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		}
 		supplierConfig.Type = yamlSupplierConfig.Type
 
+		// Check if the supplier has proxies
+		if len(yamlSupplierConfig.ProxyNames) == 0 {
+			return nil, ErrRelayMinerConfigInvalidSupplier.Wrapf(
+				"supplier %s has no proxies",
+				supplierConfig.Name,
+			)
+		}
+
 		// Add the supplier config to the referenced proxies
 		for _, proxyName := range yamlSupplierConfig.ProxyNames {
 			// If the proxy name is referencing a non-existent proxy, fail
@@ -217,7 +239,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		}
 	}
 
-	// Check that a proxy is not referencing a host more than once
+	// Check if a proxy is referencing a host more than once
 	for _, proxyConfig := range relayMinerProxiesConfig {
 		existingHosts := make(map[string]bool)
 		for _, supplierConfig := range proxyConfig.Suppliers {

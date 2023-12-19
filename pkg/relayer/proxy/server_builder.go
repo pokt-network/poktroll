@@ -2,6 +2,9 @@ package proxy
 
 import (
 	"context"
+	"net/url"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -39,18 +42,26 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	// service's endpoint
 	for _, service := range supplier.Services {
 		for _, endpoint := range service.Endpoints {
+			endpointUrl, err := url.Parse(endpoint.Url)
+			if err != nil {
+				return err
+			}
 			found := false
-			// Iterate over the proxy configs and check if `endpoint.Url` is present
-			// and corresponds to the right service id
+			// Iterate over the proxy configs and check if `endpointUrl` is present
+			// in any of the proxy config's suppliers' service's hosts
 			for _, proxyConfig := range rp.proxyConfigs {
 				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
-				if ok && endpoint.Url == supplierService.ServiceConfig.Url.String() {
+				if ok && slices.Contains(supplierService.Hosts, endpointUrl.Host) {
 					found = true
 					break
 				}
 			}
+
 			if !found {
-				return ErrRelayerProxyServiceEndpointNotHandled
+				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+					"service endpoint %s not handled by proxy",
+					endpoint.Url,
+				)
 			}
 		}
 	}
@@ -81,6 +92,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		providedServices[proxyConfig.Name] = server
 	}
 
+	rp.proxyServers = providedServices
 	rp.supplierAddress = supplier.Address
 
 	return nil

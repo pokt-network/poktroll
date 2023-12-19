@@ -3,6 +3,7 @@ package proxy_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -25,7 +26,7 @@ const blockHeight = 1
 var (
 	// helpers used for tests that are initialized in init()
 	supplierKeyName   string
-	supplierEndpoints []*sharedtypes.SupplierEndpoint
+	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint
 	appPrivateKey     *secp256k1.PrivKey
 	// proxiedServices is the parsed configuration of the RelayMinerProxyConfig
 	proxiedServices map[string]*config.RelayMinerProxyConfig
@@ -37,19 +38,25 @@ func init() {
 	supplierKeyName = "supplierKeyName"
 	appPrivateKey = secp256k1.GenPrivKey()
 
-	supplierEndpoints = []*sharedtypes.SupplierEndpoint{
-		{
-			Url: "http://supplier:8545",
-			// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
-			RpcType: sharedtypes.RPCType_JSON_RPC,
+	supplierEndpoints = map[string][]*sharedtypes.SupplierEndpoint{
+		"service1": {
+			{
+				Url: "http://supplier:8545/",
+				// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
 		},
-		{
-			Url:     "http://supplier:8546",
-			RpcType: sharedtypes.RPCType_GRPC,
+		"service2": {
+			{
+				Url:     "http://supplier:8546/",
+				RpcType: sharedtypes.RPCType_GRPC,
+			},
 		},
-		{
-			Url:     "http://supplier:8547",
-			RpcType: sharedtypes.RPCType_GRPC,
+		"service3": {
+			{
+				Url:     "http://supplier:8547/",
+				RpcType: sharedtypes.RPCType_GRPC,
+			},
 		},
 	}
 
@@ -57,20 +64,22 @@ func init() {
 		"server1": {
 			Name: "server1",
 			Type: "http",
-			Host: "localhost:8080",
+			Host: "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
-					Name: "service1",
-					Type: "http",
+					Name:  "service1",
+					Type:  "http",
+					Hosts: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "supplier:8545", Path: "/"},
+						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
 				"service2": {
-					Name: "service2",
-					Type: "http",
+					Name:  "service2",
+					Type:  "http",
+					Hosts: []string{"supplier:8546"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "supplier:8546", Path: "/"},
+						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
 				},
 			},
@@ -78,13 +87,14 @@ func init() {
 		"server2": {
 			Name: "server2",
 			Type: "http",
-			Host: "localhost:8081",
+			Host: "127.0.0.1:8081",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service3": {
-					Name: "service3",
-					Type: "http",
+					Name:  "service3",
+					Type:  "http",
+					Hosts: []string{"supplier:8547"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "supplier:8547", Path: "/"},
+						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
 				},
 			},
@@ -120,12 +130,12 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
-	res, err := http.DefaultClient.Get(proxiedServices["server1"].Host)
+	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices["server1"].Host))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
 	// Test that RelayerProxy is handling requests from the other server
-	res, err = http.DefaultClient.Get(proxiedServices["server2"].Host)
+	res, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices["server2"].Host))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -182,16 +192,13 @@ func TestRelayerProxy_NoProxiedServices(t *testing.T) {
 func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	ctx := context.TODO()
 
-	unsupportedSupplierEndpoint := []*sharedtypes.SupplierEndpoint{
-		{
-			Url: "http://supplier:8545/jsonrpc",
-			// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
-			RpcType: sharedtypes.RPCType_JSON_RPC,
-		},
-		{
-			Url: "http://supplier:8545/grpc",
-			// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
-			RpcType: sharedtypes.RPCType_GRPC,
+	unsupportedSupplierEndpoint := map[string][]*sharedtypes.SupplierEndpoint{
+		"service1": {
+			{
+				Url: "http://unsupported:8545/jsonrpc",
+				// TODO_EXTEND: Consider adding support for non JSON RPC services in the future
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
 		},
 	}
 
@@ -218,10 +225,102 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	require.Error(t, err)
 }
 
-// TODO_THIS_COMMIT: Test non configured advertised services
-// TODO_THIS_COMMIT: Test unsupported transport type
-// TODO_THIS_COMMIT: Test X-Forwarded-Host header is set
-// TODO_THIS_COMMIT: Test unsupported host
+func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
+	ctx := context.TODO()
+
+	badTransportSupplierEndpoints := map[string][]*sharedtypes.SupplierEndpoint{
+		"service1": {
+			{
+				Url:     "xttp://supplier:8545/",
+				RpcType: sharedtypes.RPCType_JSON_RPC,
+			},
+		},
+	}
+
+	unsupportedTransportProxy := map[string]*config.RelayMinerProxyConfig{
+		"server1": {
+			Name: "server1",
+			Type: "xttp",
+			Host: "127.0.0.1:8080",
+			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+				"service1": {
+					Name:  "service1",
+					Type:  "xttp",
+					Hosts: []string{"supplier:8545"},
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
+					},
+				},
+			},
+		},
+	}
+
+	unsupportedTransportTypeBehavior := []func(*testproxy.TestBehavior){
+		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+
+		// The proxy is configured with an unsupported transport type for the proxy
+		testproxy.WithRelayerProxiedServices(unsupportedTransportProxy),
+		testproxy.WithDefaultSupplier(supplierKeyName, badTransportSupplierEndpoints),
+		testproxy.WithDefaultApplication(appPrivateKey),
+		testproxy.WithDefaultSessionSupplier(supplierKeyName, "service1", appPrivateKey),
+	}
+
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+
+	rp, err := proxy.NewRelayerProxy(
+		test.Deps,
+		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithProxiedServicesEndpoints(unsupportedTransportProxy),
+	)
+	require.NoError(t, err)
+
+	err = rp.Start(ctx)
+	require.ErrorIs(t, err, proxy.ErrRelayerProxyUnsupportedTransportType)
+}
+
+func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
+	ctx := context.TODO()
+
+	missingServicesProxy := map[string]*config.RelayMinerProxyConfig{
+		"server1": {
+			Name: "server1",
+			Type: "http",
+			Host: "127.0.0.1:8080",
+			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+				"service1": {
+					Name:  "service1",
+					Type:  "http",
+					Hosts: []string{"supplier:8545"},
+					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
+					},
+				},
+			},
+		},
+	}
+
+	unsupportedTransportTypeBehavior := []func(*testproxy.TestBehavior){
+		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+
+		// The proxy is configured with an unsupported transport type for the proxy
+		testproxy.WithRelayerProxiedServices(missingServicesProxy),
+		testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
+		testproxy.WithDefaultApplication(appPrivateKey),
+		testproxy.WithDefaultSessionSupplier(supplierKeyName, "service1", appPrivateKey),
+	}
+
+	test := testproxy.NewRelayerProxyTestBehavior(ctx, t, unsupportedTransportTypeBehavior...)
+
+	rp, err := proxy.NewRelayerProxy(
+		test.Deps,
+		proxy.WithSigningKeyName(supplierKeyName),
+		proxy.WithProxiedServicesEndpoints(missingServicesProxy),
+	)
+	require.NoError(t, err)
+
+	err = rp.Start(ctx)
+	require.ErrorIs(t, err, proxy.ErrRelayerProxyServiceEndpointNotHandled)
+}
 
 // Test different RelayRequest scenarios
 func TestRelayerProxy_Relays(t *testing.T) {
@@ -383,7 +482,11 @@ func sendRequestWithUnparsableBody(
 	// Send non JSONRpc payload when the post request specifies json
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
-	res, err := http.DefaultClient.Post(proxiedServices["server1"].Host, "application/json", reader)
+	res, err := http.DefaultClient.Post(
+		fmt.Sprintf("http://%s", proxiedServices["server1"].Host),
+		"application/json",
+		reader,
+	)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -400,7 +503,7 @@ func sendRequestWithMissingMeta(
 		Payload: testproxy.PrepareJsonRPCRequestPayload(),
 	}
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithMissingSignature(
@@ -415,7 +518,7 @@ func sendRequestWithMissingSignature(
 		testproxy.PrepareJsonRPCRequestPayload(),
 	)
 	req.Meta.Signature = nil
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithInvalidSignature(
@@ -431,7 +534,7 @@ func sendRequestWithInvalidSignature(
 	)
 	req.Meta.Signature = []byte("invalid signature")
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithMissingSessionHeaderApplicationAddress(
@@ -454,7 +557,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 	// before looking at the application address
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithNonStakedApplicationAddress(
@@ -473,7 +576,7 @@ func sendRequestWithNonStakedApplicationAddress(
 	// Have a valid signature from the non staked key
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithRingSignatureMismatch(
@@ -492,7 +595,7 @@ func sendRequestWithRingSignatureMismatch(
 	randomPrivKey := secp256k1.GenPrivKey()
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithDifferentSession(
@@ -509,7 +612,7 @@ func sendRequestWithDifferentSession(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithInvalidRelaySupplier(
@@ -525,7 +628,7 @@ func sendRequestWithInvalidRelaySupplier(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithSignatureForDifferentPayload(
@@ -543,7 +646,7 @@ func sendRequestWithSignatureForDifferentPayload(
 	// Alter the request payload so the hash doesn't match the one used by the signature
 	req.Payload = []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["alteredParam"]}`)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }
 
 func sendRequestWithSuccessfulReply(
@@ -559,5 +662,5 @@ func sendRequestWithSuccessfulReply(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices["server1"].Host, req)
+	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
 }

@@ -23,9 +23,10 @@ type YAMLRelayMinerPocketConfig struct {
 // YAMLRelayMinerProxyConfig is the structure used to unmarshal the proxy
 // section of the RelayMiner config file
 type YAMLRelayMinerProxyConfig struct {
-	Name string `yaml:"name"`
-	Host string `yaml:"host"`
-	Type string `yaml:"type"`
+	Name                 string `yaml:"name"`
+	Host                 string `yaml:"host"`
+	Type                 string `yaml:"type"`
+	XForwardedHostLookup bool   `yaml:"x_forwarded_host_lookup"`
 }
 
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
@@ -85,6 +86,10 @@ type RelayMinerProxyConfig struct {
 	Type string
 	// Suppliers is a map of serviceIds -> RelayMinerSupplierConfig
 	Suppliers map[string]*RelayMinerSupplierConfig
+	// XForwardedHostLookup is a flag that indicates whether the proxy server
+	// should lookup the host from the X-Forwarded-Host header before falling
+	// back to the Host header.
+	XForwardedHostLookup bool
 }
 
 // RelayMinerSupplierConfig is the structure resulting from parsing the supplier

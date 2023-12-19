@@ -1,6 +1,9 @@
 package config
 
-import "net/url"
+import (
+	"fmt"
+	"net/url"
+)
 
 // parseRelayMinerConfigs populates the proxy fields of the target structure that
 // are relevant to the "http" type in the proxy section of the config file.
@@ -9,12 +12,16 @@ func parseHTTPProxyConfig(
 	proxyConfig *RelayMinerProxyConfig,
 ) error {
 	// Check if the proxy host is a valid URL
-	proxyUrl, err := url.Parse(yamlProxyConfig.Host)
+	proxyUrl, err := url.Parse(fmt.Sprintf("tcp://%s", yamlProxyConfig.Host))
 	if err != nil {
 		return ErrRelayMinerConfigInvalidProxy.Wrapf(
 			"invalid proxy host %s",
 			err.Error(),
 		)
+	}
+
+	if proxyUrl.Host == "" {
+		return ErrRelayMinerConfigInvalidProxy.Wrap("empty proxy host")
 	}
 
 	proxyConfig.Host = proxyUrl.Host
@@ -28,6 +35,11 @@ func parseHTTPSupplierConfig(
 	supplierServiceConfig *RelayMinerSupplierServiceConfig,
 ) error {
 	var err error
+	// Check if the supplier url is not empty
+	if yamlSupplierServiceConfig.Url == "" {
+		return ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier url")
+	}
+
 	// Check if the supplier url is a valid URL
 	supplierServiceConfig.Url, err = url.Parse(yamlSupplierServiceConfig.Url)
 	if err != nil {

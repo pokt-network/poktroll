@@ -60,6 +60,7 @@ func NewSynchronousServer(
 		server:               &http.Server{Addr: proxyConfig.Host},
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
+		proxyConfig:          proxyConfig,
 	}
 }
 
@@ -90,10 +91,13 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	// Get the original host from X-Forwarded-Host header if present.
-	originHost := request.Header.Get("X-Forwarded-Host")
+	var originHost string
+	// Get the original host from X-Forwarded-Host header if specified in the proxy config.
+	// and fall back to the Host header if it is not specified.
+	if sync.proxyConfig.XForwardedHostLookup {
+		originHost = request.Header.Get("X-Forwarded-Host")
+	}
 
-	// If X-Forwarded-Host is not present, fallback to the Host header
 	if originHost == "" {
 		originHost = request.Host
 	}
@@ -101,13 +105,14 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	var supplierService *sharedtypes.Service
 	var serviceUrl *url.URL
 
+outer:
 	// Get the Service and serviceUrl corresponding to the originHost.
 	for _, supplierServiceConfig := range sync.proxyConfig.Suppliers {
 		for _, host := range supplierServiceConfig.Hosts {
 			if host == originHost {
 				supplierService = sync.supplierServiceMap[supplierServiceConfig.Name]
 				serviceUrl = supplierServiceConfig.ServiceConfig.Url
-				break
+				break outer
 			}
 		}
 	}

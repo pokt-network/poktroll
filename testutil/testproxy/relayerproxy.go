@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"cosmossdk.io/depinject"
@@ -108,18 +109,20 @@ func WithRelayerProxiedServices(
 	proxiedServices map[string]*config.RelayMinerProxyConfig,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		for serviceId, endpoint := range proxiedServices {
-			server := &http.Server{Addr: endpoint.Host}
-			server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Write(prepareJsonRPCResponsePayload())
-			})
-			go func() { server.ListenAndServe() }()
-			go func() {
-				<-test.ctx.Done()
-				server.Shutdown(test.ctx)
-			}()
+		for _, proxy := range proxiedServices {
+			for serviceId, service := range proxy.Suppliers {
+				server := &http.Server{Addr: service.ServiceConfig.Url.Host}
+				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.Write(prepareJsonRPCResponsePayload())
+				})
+				go func() { server.ListenAndServe() }()
+				go func() {
+					<-test.ctx.Done()
+					server.Shutdown(test.ctx)
+				}()
 
-			test.proxiedServices[serviceId] = server
+				test.proxiedServices[serviceId] = server
+			}
 		}
 	}
 }
@@ -127,7 +130,7 @@ func WithRelayerProxiedServices(
 // WithDefaultSupplier creates the default staked supplier for the test
 func WithDefaultSupplier(
 	supplierKeyName string,
-	supplierEndpoints []*sharedtypes.SupplierEndpoint,
+	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		var keyring keyringtypes.Keyring
@@ -143,12 +146,14 @@ func WithDefaultSupplier(
 
 		supplierAddress := supplierAccAddress.String()
 
-		testqueryclients.AddSuppliersWithServiceEndpoints(
-			test.t,
-			supplierAddress,
-			"service1",
-			supplierEndpoints,
-		)
+		for serviceId, endpoints := range supplierEndpoints {
+			testqueryclients.AddSuppliersWithServiceEndpoints(
+				test.t,
+				supplierAddress,
+				serviceId,
+				endpoints,
+			)
+		}
 	}
 }
 
@@ -211,14 +216,25 @@ func WithDefaultSessionSupplier(
 // MarshalAndSend marshals the request and sends it to the provided service
 func MarshalAndSend(
 	test *TestBehavior,
-	url string,
+	proxiedServices map[string]*config.RelayMinerProxyConfig,
+	server string,
+	service string,
 	request *servicetypes.RelayRequest,
 ) (errCode int32, errorMessage string) {
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)
 
 	reader := io.NopCloser(bytes.NewReader(reqBz))
-	res, err := http.DefaultClient.Post(url, "application/json", reader)
+	req := &http.Request{
+		Method: http.MethodPost,
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		URL:  &url.URL{Scheme: proxiedServices[server].Type, Host: proxiedServices[server].Host},
+		Host: proxiedServices[server].Suppliers[service].Hosts[0],
+		Body: reader,
+	}
+	res, err := http.DefaultClient.Do(req)
 	require.NoError(test.t, err)
 	require.NotNil(test.t, res)
 
