@@ -76,11 +76,11 @@ const config = {
         style: "dark",
         links: [
           {
-            title: "Docs",
+            title: "Documentation Homepage",
             items: [
               {
-                label: "Docs",
-                to: "/docs/",
+                label: "Documentation Homepage",
+                to: "/",
               },
             ],
           },
