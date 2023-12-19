@@ -12,7 +12,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
@@ -59,13 +58,13 @@ func TestReplayClient_Remapping(t *testing.T) {
 		ctx, cancel      = context.WithCancel(context.Background())
 		connClosed       atomic.Bool
 		delayEvent       atomic.Bool
-		readEventCounter int
+		readEventCounter atomic.Int32
 		eventsReceived   atomic.Int32
 		eventsToRecv     = int32(10)
 		errCh            = make(chan error, 1)
-		timeoutAfter     = 6 * time.Second // 1 second delay on retry.OnError
+		timeoutAfter     = 3 * time.Second // 1 second delay on retry.OnError
 	)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	// Setup the mock connection and dialer
 	ctrl := gomock.NewController(t)
@@ -73,7 +72,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 	dialerMock := mockclient.NewMockDialer(ctrl)
 	// Expect the connection to be closed and the dialer to be re-established
 	connMock.EXPECT().Close().DoAndReturn(func() error {
-		t.Logf("closing connection")
 		connClosed.CompareAndSwap(false, true)
 		return nil
 	}).Times(2) // Close one by hand and EQC will attempt to close again
@@ -81,12 +79,9 @@ func TestReplayClient_Remapping(t *testing.T) {
 	connMock.EXPECT().
 		Send(gomock.Any()).
 		DoAndReturn(func(eventBz []byte) error {
-			t.Log("connecting")
 			if connClosed.Load() {
-				t.Log("opening connection")
 				connClosed.CompareAndSwap(true, false)
 			}
-			t.Log("delaying next event")
 			delayEvent.CompareAndSwap(true, false)
 			return nil
 		}).
@@ -99,34 +94,27 @@ func TestReplayClient_Remapping(t *testing.T) {
 		DoAndReturn(func() (any, error) {
 			// Simulate ErrConnClosed if connection is isClosed.
 			if connClosed.Load() {
-				t.Log("connection closed")
 				return nil, events.ErrEventsConnClosed
 			}
 
 			// Delay the event if needed
 			if !delayEvent.Load() {
-				t.Log("delaying event")
 				time.Sleep(50 * time.Millisecond)
 				delayEvent.CompareAndSwap(false, true)
 			}
 
-			event := newMessageEventBz(int32(readEventCounter))
-			readEventCounter++
+			event := newMessageEventBz(readEventCounter.Add(1) - 1)
 
 			// Simulate IO delay between sequential events.
 			time.Sleep(50 * time.Microsecond)
 
-			t.Logf("sending event: %s", event)
+			// t.Logf("sending event: %s", event)
 			return event, nil
 		}).
 		MinTimes(int(eventsToRecv))
-		// AnyTimes()
 	// Expect the dialer to be re-established any number of times
 	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, _ string) (client.Connection, error) {
-			t.Log("dialing connection")
-			return connMock, nil
-		}).
+		Return(connMock, nil).
 		AnyTimes()
 
 	// Setup the events query client dependency
@@ -150,7 +138,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 		replaySub := replayObs.Subscribe(ctx)
 		var previousMessage messageEvent
 		for msgEvent := range replaySub.Ch() {
-			t.Logf("received event: %s", msgEvent.EventMessage())
 			var previousNum int32
 			var currentNum int32
 			if previousMessage != nil {
@@ -170,7 +157,8 @@ func TestReplayClient_Remapping(t *testing.T) {
 		}
 	}()
 
-	time.Sleep(51850 * time.Microsecond)
+	// Wait for ~2 events to be received before closing the connection
+	time.Sleep(51675 * time.Microsecond)
 	connMock.Close()
 
 	select {

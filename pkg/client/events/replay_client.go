@@ -68,6 +68,8 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 	// created in goPublishEvents. This observable (and the one it emits) closes
 	// when the events bytes observable returns an error and is updated with a
 	// new "active" observable after a new events query subscription is created.
+	// TODO(@h5law): consider retyping this to a Observable of ReplayObservables
+	// as it does not need to be replayable.
 	replayObsCache observable.ReplayObservable[U]
 	// replayObsCachePublishCh is the publish channel for replayObsCache.
 	// It's used to set and subsequently update replayObsCache the events replay
@@ -100,7 +102,7 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	}
 	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[U](
 		ctx,
-		replayObsBufferSize,
+		1, // replay buffer size 1
 	)
 	rClient.replayObsCache = observable.ReplayObservable[U](replayObsCache)
 	rClient.replayObsCachePublishCh = replayObsCachePublishCh
@@ -140,20 +142,19 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
 	logger := polylog.Ctx(ctx)
-	for {
+	cachedEventTypeObserver := rClient.replayObsCache.Subscribe(ctx)
+	for eventObs := range cachedEventTypeObserver.Ch() {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
-		cachedEventTypeObs := rClient.replayObsCache.Last(ctx, 1)[0]
-		eventObserver := cachedEventTypeObs.Subscribe(ctx)
+		eventObserver := eventObs.Subscribe(ctx)
 		for event := range eventObserver.Ch() {
 			publishCh <- event
 		}
 		logger.Debug().
 			Msg("replay observable closed, waiting for new events query subscription")
-		time.Sleep(eventsBytesRetryDelay)
 	}
 }
 
@@ -227,8 +228,7 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 				// Wait for the channel to close.
 				continue
 			}
-			// Unsubscribe all observers of the typedObs
-			// typedObs.UnsubscribeAll()
+			typedObs.UnsubscribeAll()
 			// Publish an error to the error channel to initiate a retry
 			errCh <- ErrEventsConsClosed
 		}()

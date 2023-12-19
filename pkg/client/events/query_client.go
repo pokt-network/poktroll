@@ -250,8 +250,8 @@ func (eqc *eventsQueryClient) goUnsubscribeOnDone(
 	// Wait for the context to be done.
 	<-ctx.Done()
 	// Only close the eventsBytes for the given query.
-	eqc.eventsBytesAndConnsMu.RLock()
-	defer eqc.eventsBytesAndConnsMu.RUnlock()
+	eqc.eventsBytesAndConnsMu.Lock()
+	defer eqc.eventsBytesAndConnsMu.Unlock()
 
 	if eventsBzConn, ok := eqc.eventsBytesAndConns[query]; ok {
 		// Unsubscribe all observers of the given query's eventsBzConn's observable
