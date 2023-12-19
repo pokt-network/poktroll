@@ -11,7 +11,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -141,7 +140,8 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
-	logger := polylog.Ctx(ctx)
+	// Subscribe to the replayObsCache to listen for changes to the "active"
+	// replay observable.
 	cachedEventTypeObserver := rClient.replayObsCache.Subscribe(ctx)
 	for eventObs := range cachedEventTypeObserver.Ch() {
 		select {
@@ -149,12 +149,12 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 			return
 		default:
 		}
+		// Publish events from the new "active" replay observable to the given
+		// publish channel.
 		eventObserver := eventObs.Subscribe(ctx)
 		for event := range eventObserver.Ch() {
 			publishCh <- event
 		}
-		logger.Debug().
-			Msg("replay observable closed, waiting for new events query subscription")
 	}
 }
 
@@ -202,7 +202,6 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 // query client, maps them to typed events, and publishes them to the
 // replayObsCache replay observable.
 func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
-	logger := polylog.Ctx(ctx)
 	return func() chan error {
 		errCh := make(chan error, 1)
 		eventsBzObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
@@ -234,8 +233,6 @@ func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context
 		}()
 
 		// Initially set replayObsCache and update if after retrying on error.
-		logger.Debug().
-			Msg("updating replayObsCache with new events query subscription")
 		rClient.replayObsCachePublishCh <- typedObs.(R)
 
 		return errCh

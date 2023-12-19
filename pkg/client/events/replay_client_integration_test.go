@@ -1,3 +1,5 @@
+//go:build integration
+
 package events_test
 
 import (
@@ -55,7 +57,7 @@ func newMessageEventBz(eventNum int32) []byte {
 
 func TestReplayClient_Remapping(t *testing.T) {
 	var (
-		ctx, cancel      = context.WithCancel(context.Background())
+		ctx              = context.Background()
 		connClosed       atomic.Bool
 		delayEvent       atomic.Bool
 		readEventCounter atomic.Int32
@@ -64,7 +66,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 		errCh            = make(chan error, 1)
 		timeoutAfter     = 3 * time.Second // 1 second delay on retry.OnError
 	)
-	t.Cleanup(cancel)
 
 	// Setup the mock connection and dialer
 	ctrl := gomock.NewController(t)

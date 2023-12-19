@@ -16,7 +16,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 var _ client.EventsQueryClient = (*eventsQueryClient)(nil)
@@ -155,9 +154,6 @@ func (eqc *eventsQueryClient) newEventsBytesAndConn(
 	if err != nil {
 		return nil, err
 	}
-	logger := polylog.Ctx(ctx)
-	logger.Debug().
-		Msg("opened events bytes and connection")
 
 	// Construct an eventsBytes for the given query.
 	eventsBzObservable, eventsBzPublishCh := channel.NewObservable[either.Bytes]()
