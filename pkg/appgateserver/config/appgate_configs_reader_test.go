@@ -80,7 +80,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigEmptySigningKey,
 		},
 		{
 			desc: "invalid: invalid listening endpoint",
@@ -119,7 +119,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid query node rpc url",
@@ -145,7 +145,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
 		},
 	}
 

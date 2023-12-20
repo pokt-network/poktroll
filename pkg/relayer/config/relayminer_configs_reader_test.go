@@ -137,7 +137,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				`,
 
-			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
+			expectedError: config.ErrRelayMinerConfigInvalidQueryNodeRPCUrl,
 		},
 		{
 			desc: "invalid: missing signing key name",
@@ -153,7 +153,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  svc1: http://svc1:8080
 				`,
 
-			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
+			expectedError: config.ErrRelayMinerConfigInvalidSigningKeyName,
 		},
 		{
 			desc: "invalid: missing smt store path",
