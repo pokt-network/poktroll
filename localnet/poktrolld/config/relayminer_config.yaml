@@ -6,7 +6,7 @@
 pocket:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
-  query_node_url: tcp://poktroll-sequencer:36657
+  query_node_rpc_url: tcp://poktroll-sequencer:36657
   # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
   # If unspecified, defaults to `tx_node_grpc_url`.
   query_node_grpc_url: tcp://poktroll-sequencer:36658
@@ -14,7 +14,7 @@ pocket:
   tx_node_grpc_url: tcp://poktroll-sequencer:36658
 
 # Name of the key (in the keyring) to sign transactions
-signing_key_name: servicer1
+signing_key_name: supplier1
 # Path to where the data backing SMT KV store exists on disk
 smt_store_path: smt_stores
 
@@ -25,7 +25,7 @@ proxies:
     # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
     #become handy in the future.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-  - name: http-example
+  - name: http-proxy
     # Type of proxy: can be one of http, ws, tcp. MUST match the type of the supplier.
     # Required.
     type: http
@@ -55,4 +55,4 @@ suppliers:
     # Names of proxies that this supplier is connected to. The supplier will be reached through the proxies listed here.
     # Required.
     proxy_names:
-      - http-example # when the RelayMiner server builder runs.
+      - http-proxy
