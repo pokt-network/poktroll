@@ -3,6 +3,12 @@
 # "hot" config changes in the future, meaning changes without restarting a process.
 # This would be useful for adding a proxy or a supplier without interrupting the service.
 
+# Name of the key (in the keyring) to sign transactions
+signing_key_name: supplier1
+# Relative path (on the relayminer's machine) to where the data backing
+# SMT KV store exists on disk
+smt_store_path: smt_stores
+
 pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
@@ -12,12 +18,6 @@ pocket_node:
   query_node_grpc_url: tcp://poktroll-sequencer:36658
   # Pocket node URL that exposes the Cosmos gRPC service.
   tx_node_grpc_url: tcp://poktroll-sequencer:36658
-
-# Name of the key (in the keyring) to sign transactions
-signing_key_name: supplier1
-# Relative path (on the relayminer's machine) to where the data backing
-# SMT KV store exists on disk
-smt_store_path: smt_stores
 
 # Proxies are endpoints that expose different suppliers to the internet.
 proxies:
