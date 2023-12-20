@@ -8,19 +8,21 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
-	"github.com/pokt-network/smt"
-	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/smt"
+	"github.com/stretchr/testify/require"
 )
 
-var testSigningKeyName = "test_signer"
+const (
+	testSigningKeyName = "test_signer"
+	testService        = "test_service"
+)
 
 func TestNewSupplierClient(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -85,7 +87,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	require.NoError(t, err)
 
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
-	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, signAndBroadcastDelay)
+	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, ctx, signAndBroadcastDelay)
 
 	signingKeyOpt := supplier.WithSigningKeyName(testAppKey.Name)
 	deps := depinject.Supply(
@@ -102,6 +104,9 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 0,
 		SessionId:               "",
+		Service: &sharedtypes.Service{
+			Id: testService,
+		},
 	}
 
 	go func() {
@@ -141,7 +146,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	require.NoError(t, err)
 
 	txCtxMock, _ := testtx.NewAnyTimesTxTxContext(t, keyring)
-	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, signAndBroadcastDelay)
+	txClientMock := testtx.NewOneTimeDelayedSignAndBroadcastTxClient(t, ctx, signAndBroadcastDelay)
 
 	signingKeyOpt := supplier.WithSigningKeyName(testAppKey.Name)
 	deps := depinject.Supply(
@@ -157,6 +162,9 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		ApplicationAddress:      testAppAddr.String(),
 		SessionStartBlockHeight: 0,
 		SessionId:               "",
+		Service: &sharedtypes.Service{
+			Id: testService,
+		},
 	}
 
 	kvStore, err := smt.NewKVStore("")

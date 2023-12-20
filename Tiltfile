@@ -33,6 +33,7 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
 
+
 # Import files into Kubernetes ConfigMap
 def read_files_from_directory(directory):
     files = listdir(directory)
@@ -152,13 +153,13 @@ k8s_resource(
     "sequencer",
     labels=["blockchains"],
     resource_deps=["celestia-rollkit"],
-    port_forwards=["36657", "40004"],
+    port_forwards=["36657", "36658", "40004"],
 )
 k8s_resource(
     "relayminers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["8548", "40005"],
+    port_forwards=["8545", "40005"],
 )
 k8s_resource(
     "appgateservers",

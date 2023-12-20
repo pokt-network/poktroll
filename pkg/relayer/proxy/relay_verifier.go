@@ -5,8 +5,7 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	"github.com/noot/ring-go"
-
+	ring "github.com/noot/ring-go"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -95,8 +94,12 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
+	// TODO_BLOCKER(#275): Need to either slow down blocks, increase num blocks
+	// per session, BlocksPerSession. See the following comment for more details:
+	// https://github.com/pokt-network/poktroll/issues/275#issuecomment-1863519333
 	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
 	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+
 	if err != nil {
 		return err
 	}

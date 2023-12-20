@@ -11,20 +11,19 @@ import (
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/stretchr/testify/require"
 )
 
 const (
 	createClaimTimeoutDuration   = 10 * time.Second
 	eitherEventsReplayBufferSize = 100
-	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s'"
+	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
 	testServiceId                = "anvil"
 	eitherEventsBzReplayObsKey   = "eitherEventsBzReplayObsKey"
 	preExistingClaimsKey         = "preExistingClaimsKey"
@@ -86,17 +85,21 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
-	claimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{
+	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{
 		Filter: &suppliertypes.QueryAllClaimsRequest_SupplierAddress{
 			SupplierAddress: accNameToAddrMap[supplierName],
 		},
 	})
 	require.NoError(s, err)
-	require.NotNil(s, claimsRes)
+	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
 	preExistingClaims := s.scenarioState[preExistingClaimsKey].([]suppliertypes.Claim)
-	require.Len(s, claimsRes.Claim, len(preExistingClaims)+1)
+	// NB: We are avoiding the use of require.Len here because it provides unreadable output
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
+	// these values are appropriately adjusted
+	require.Greater(s, len(allClaimsRes.Claim), len(preExistingClaims), "number of claims must have increased")
 
 	// TODO_IMPROVE: assert that the root hash of the claim contains the correct
 	// SMST sum. The sum can be retrieved by parsing the last 8 bytes as a
@@ -106,7 +109,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
 	// them into the scenarioState key(s).
 
-	claim := claimsRes.Claim[0]
+	claim := allClaimsRes.Claim[0]
 	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
 }
 
@@ -118,9 +121,9 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 
 	// Query for any existing claims so that we can compensate for them in the
 	// future assertions about changes in on-chain claims.
-	claimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{})
+	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{})
 	require.NoError(s, err)
-	s.scenarioState[preExistingClaimsKey] = claimsRes.Claim
+	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claim
 
 	// Construct an events query client to listen for tx events from the supplier.
 	msgSenderQuery := fmt.Sprintf(msgClaimSenderQueryFmt, accNameToAddrMap[supplierName])

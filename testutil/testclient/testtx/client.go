@@ -10,11 +10,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/testutil/mockclient"
-
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/either"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
@@ -50,12 +49,13 @@ func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxCli
 // expectation to perform a SignAndBroadcast operation with a specified delay.
 func NewOneTimeDelayedSignAndBroadcastTxClient(
 	t *testing.T,
+	ctx context.Context,
 	delay time.Duration,
 ) *mockclient.MockTxClient {
 	t.Helper()
 
 	signAndBroadcast := newSignAndBroadcastSucceedsDelayed(delay)
-	return NewOneTimeSignAndBroadcastTxClient(t, signAndBroadcast)
+	return NewOneTimeSignAndBroadcastTxClient(t, ctx, signAndBroadcast)
 }
 
 // NewOneTimeSignAndBroadcastTxClient constructs a mock TxClient with the
@@ -63,6 +63,7 @@ func NewOneTimeDelayedSignAndBroadcastTxClient(
 // the return from the given signAndBroadcast function.
 func NewOneTimeSignAndBroadcastTxClient(
 	t *testing.T,
+	ctx context.Context,
 	signAndBroadcast signAndBroadcastFn,
 ) *mockclient.MockTxClient {
 	t.Helper()
@@ -71,7 +72,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 
 	txClient := mockclient.NewMockTxClient(ctrl)
 	txClient.EXPECT().SignAndBroadcast(
-		gomock.AssignableToTypeOf(context.Background()),
+		gomock.Eq(ctx),
 		gomock.Any(),
 	).DoAndReturn(signAndBroadcast).Times(1)
 
