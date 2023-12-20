@@ -215,7 +215,12 @@ func WithDefaultSessionSupplier(
 	}
 }
 
-// MarshalAndSend marshals the request and sends it to the provided service
+// TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
+// needs to have its http.Request "Content-Type" header passed-in as a parameter
+// and take out the GetRelayResponseError function which parses JSON-RPC responses
+// to make it RPC-type agnostic.
+
+// MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
 	proxiedServices map[string]*config.RelayMinerProxyConfig,
