@@ -49,39 +49,42 @@ func NewOneTimeMockDialer(
 	return dialerMock
 }
 
-// NewTwiceMockConnAndDialer returns a new mock connection and mock dialer that
-// will return the mock connection when DialContext is called. The mock dialer
-// will expect DialContext to be called any times. The connection mock will
-// expect Close and Send to be called exactly twice.
-func NewTwiceMockConnAndDialer(
+// NewNTimesReconnectMockConnAndDialer returns a new mock connection and mock
+// dialer that will return the mock connection when DialContext is called. The
+// mock dialer will expect DialContext to be called any times. The connection
+// mock will expect Close and Send to be called exactly N times.
+func NewNTimesReconnectMockConnAndDialer(
 	t *testing.T,
+	n int,
 	connClosed *atomic.Bool,
 	delayEvent *atomic.Bool,
 ) (*mockclient.MockConnection, *mockclient.MockDialer) {
-	connMock := NewTwiceCloseSendConnectionMock(t, connClosed, delayEvent)
+	connMock := NewNTimesReconnectConnectionMock(t, n, connClosed, delayEvent)
 	dialerMock := NewAnyTimesMockDailer(t, connMock)
 	return connMock, dialerMock
 }
 
-// NewTwiceCloseSendConnectionMock returns a mock connection that will expect
-// Close and Send to be called exactly twice. The connection mock will set the
+// NewNTimesReconnectConnectionMock returns a mock connection that will expect
+// Close and Send to be called exactly N times. The connection mock will set the
 // connClosed atomic to true when Close is called and false when Send is called.
 // The connection mock will set the delayEvent atomic to false when Send is
 // called. This is to allow the caller to subscribe to the first event emitted
-func NewTwiceCloseSendConnectionMock(
+func NewNTimesReconnectConnectionMock(
 	t *testing.T,
+	n int,
 	connClosed *atomic.Bool,
 	delayEvent *atomic.Bool,
 ) *mockclient.MockConnection {
 	ctrl := gomock.NewController(t)
 	connMock := mockclient.NewMockConnection(ctrl)
 	// Expect the connection to be closed and the dialer to be re-established
-	connMock.EXPECT().Close().DoAndReturn(func() error {
-		connClosed.CompareAndSwap(false, true)
-		return nil
-	}).
-		// Close once by hand and the EventQueryClient will close it again
-		Times(2)
+	connMock.EXPECT().
+		Close().
+		DoAndReturn(func() error {
+			connClosed.CompareAndSwap(false, true)
+			return nil
+		}).
+		Times(n)
 	// Expect the subscription to be re-established any number of times
 	connMock.EXPECT().
 		Send(gomock.Any()).
@@ -92,8 +95,7 @@ func NewTwiceCloseSendConnectionMock(
 			delayEvent.CompareAndSwap(true, false)
 			return nil
 		}).
-		// Once to estabslish the connection and once to re-establish
-		Times(2)
+		Times(n)
 	return connMock
 }
 

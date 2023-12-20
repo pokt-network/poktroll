@@ -1,5 +1,3 @@
-//go:build integration
-
 package events_test
 
 import (
@@ -56,18 +54,18 @@ func newMessageEventBz(eventNum int32) []byte {
 
 func TestReplayClient_Remapping(t *testing.T) {
 	var (
-		ctx              = context.Background()
-		connClosed       atomic.Bool
-		delayEvent       atomic.Bool
-		readEventCounter atomic.Int32
-		eventsReceived   atomic.Int32
-		eventsToRecv     = int32(10)
-		errCh            = make(chan error, 1)
-		timeoutAfter     = 3 * time.Second // 1 second delay on retry.OnError
+		ctx               = context.Background()
+		connClosed        atomic.Bool
+		firstEventDelayed atomic.Bool
+		readEventCounter  atomic.Int32
+		eventsReceived    atomic.Int32
+		eventsToRecv      = int32(10)
+		errCh             = make(chan error, 1)
+		timeoutAfter      = 3 * time.Second // 1 second delay on retry.OnError
 	)
 
 	// Setup the mock connection and dialer
-	connMock, dialerMock := testeventsquery.NewTwiceMockConnAndDialer(t, &connClosed, &delayEvent)
+	connMock, dialerMock := testeventsquery.NewNTimesReconnectMockConnAndDialer(t, 2, &connClosed, &firstEventDelayed)
 	// Mock the connection receiving events
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
@@ -77,9 +75,8 @@ func TestReplayClient_Remapping(t *testing.T) {
 			}
 
 			// Delay the event if needed
-			if !delayEvent.Load() {
+			if !firstEventDelayed.CompareAndSwap(false, true) {
 				time.Sleep(50 * time.Millisecond)
-				delayEvent.CompareAndSwap(false, true)
 			}
 
 			eventNum := readEventCounter.Add(1) - 1
@@ -113,10 +110,10 @@ func TestReplayClient_Remapping(t *testing.T) {
 
 	go func() {
 		// Subscribe to the replay clients events
-		replayObs := replayClient.EventsSequence(ctx)
-		replaySub := replayObs.Subscribe(ctx)
+		eventTypeObs := replayClient.EventsSequence(ctx)
+		eventObserver := eventTypeObs.Subscribe(ctx)
 		var previousMessage messageEvent
-		for msgEvent := range replaySub.Ch() {
+		for msgEvent := range eventObserver.Ch() {
 			var previousNum int32
 			var currentNum int32
 			if previousMessage != nil {

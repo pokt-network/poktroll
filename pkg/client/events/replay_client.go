@@ -67,7 +67,8 @@ type replayClient[T any, R observable.ReplayObservable[T]] struct {
 	// goPublishEvents. This observable (and the one it emits) closes when the
 	// events bytes observable returns an error and is updated with a new
 	// "active" observable after a new events query subscription is created.
-	// TODO_REFACTOR(@h5law): Look into making this a regular observable
+	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// we no depend on it being replayable.
 	replayObsCache observable.ReplayObservable[R]
 	// replayObsCachePublishCh is the publish channel for replayObsCache.
 	// It's used to set and subsequently update replayObsCache the events replay
@@ -98,11 +99,12 @@ func NewEventsReplayClient[T any, R observable.ReplayObservable[T]](
 		eventDecoder:        newEventFn,
 		replayObsBufferSize: replayObsBufferSize,
 	}
-	// TODO_REFACTOR(@h5law): Look into making this a regular observable
+	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// we no depend on it being replayable.
 	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[R](
 		ctx,
-		// buffer size of 1 as the cache only needs to hold the latest
-		// active replay observable
+		// Buffer size of 1 as the cache only needs to hold the latest
+		// active replay observable.
 		replayObsCacheBufferSize,
 	)
 	rClient.replayObsCache = observable.ReplayObservable[R](replayObsCache)
@@ -119,7 +121,7 @@ func NewEventsReplayClient[T any, R observable.ReplayObservable[T]](
 	return rClient, nil
 }
 
-// EventsSequence returns a ReplayObservable, with the buffer size provided
+// EventsSequence returns a new ReplayObservable, with the buffer size provided
 // during the EventsReplayClient construction, which is notified when new
 // events are received by the encapsulated EventsQueryClient.
 func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
@@ -142,17 +144,19 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
-	// Subscribe to the replayObsCache to listen for changes to the "active"
-	// replay observable.
-	cachedEventTypeObserver := rClient.replayObsCache.Subscribe(ctx)
-	for eventObs := range cachedEventTypeObserver.Ch() {
-		// Publish events from the new "active" replay observable to the given
-		// publish channel.
-		eventObserver := eventObs.Subscribe(ctx)
-		for event := range eventObserver.Ch() {
-			publishCh <- event
-		}
-	}
+	channel.ForEach[R](
+		ctx,
+		rClient.replayObsCache,
+		func(ctx context.Context, eventTypeObs R) {
+			// TODO_CONSIDERATION: hold a reference to the previous event type
+			// observable and call `#UnsubscribeAll()` here in the event that it
+			// somehow starts receiving notifications again.
+			eventObserver := eventTypeObs.Subscribe(ctx)
+			for event := range eventObserver.Ch() {
+				publishCh <- event
+			}
+		},
+	)
 }
 
 // LastNEvents returns the last N typed events that have been received by the

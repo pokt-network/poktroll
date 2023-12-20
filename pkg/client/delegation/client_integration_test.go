@@ -46,7 +46,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	// Create the delegation client
 	evtQueryClient := events.NewEventsQueryClient("ws://localhost:26657/websocket")
 	deps := depinject.Supply(evtQueryClient)
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps, "ws://localhost:26657/websocket")
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, delegationClient)
 	t.Cleanup(func() {
