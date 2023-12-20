@@ -13,6 +13,6 @@ import (
 // this helper, ensure that the build tag/constraint "test" is set (e.g. `go build -tags=test`).
 // It MUST be defined in this package (as opposed to somewhere in testutils), as
 // by definition, it references unexported members of this package.
-func GetZerologLogger(polylogger polylog.Logger) *zerolog.Logger {
-	return &polylogger.(*zerologLogger).Logger
+func GetZerologLogger(logger polylog.Logger) *zerolog.Logger {
+	return &logger.(*zerologLogger).Logger
 }

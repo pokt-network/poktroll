@@ -1,47 +1,32 @@
-package polyzero_test
+package polyzap_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzap"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 )
 
-const polyzeroEventTypeName = "*polyzero.zerologEvent"
+const polyzapEventTypeName = "*polyzap.zapEvent"
 
 var (
-	expectedErr  = fmt.Errorf("%d", 42)
-	expectedTime = time.Now()
-	// expectedTimestampDayPrecisionLayout is a "layout" which is described using
-	// the "reference time", as per the time package usage convention.
-	// See: https://golang.org/pkg/time/#pkg-constants for more details on "layouts" and the "reference time".
-	//
-	// NB: #Timestamp() uses time.Now() internally. If the test is run around the
-	// rollover of a second, minute, or hour, the expected timestamp time may not
-	// match the actual time precisely enough. While this is still a possibility
-	// near the rollover of a day, this window occurs less frequently and is many
-	// multiples of the time it takes CI to run.
-	//
-	// TODO_CONSIDERATION: redesign the test helper to support regular expressions
-	// for the output expectation.
-	expectedTimestampDayPrecisionLayout = "2006-01-02T"
-	expectedTimeLayout                  = "2006-01-02T15:04:05-07:00"
-	expectedTimestampEventContains      = fmt.Sprintf(`"time":"%s`, expectedTime.Format(expectedTimestampDayPrecisionLayout))
-	expectedTimeEventContains           = fmt.Sprintf(`"Time":"%s`, expectedTime.Format(expectedTimeLayout))
-	expectedDuration                    = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
-	expectedDurationString              = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
-	expectedDurationEventContains       = fmt.Sprintf(`"Dur":%s`, expectedDurationString)
+	expectedTime                   = time.Now()
+	expectedTimestampEventContains = fmt.Sprintf(`"ts":%d.`, expectedTime.Unix())
+	expectedTimeEventContains      = fmt.Sprintf(`"Time":%d.`, expectedTime.Unix())
+	expectedDuration               = time.Millisecond + (250 * time.Nanosecond) // 1000250
+	expectedDurationEventContains  = fmt.Sprintf(`"Dur":%f`, expectedDuration.Seconds())
 )
 
-func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
+func TestZapLogger_AllLevels_AllEventMethods(t *testing.T) {
 	tests := []testpolylog.EventMethodTestCase{
 		{
 			// Explicitly left empty; no event method should be called.
@@ -113,8 +98,8 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 		{
 			EventMethodName:        "Uint16",
 			Key:                    "Uint16",
-			ExpectedOutputContains: `"Uint16":42`,
 			Value:                  uint16(42),
+			ExpectedOutputContains: `"Uint16":42`,
 		},
 		{
 			EventMethodName:        "Uint32",
@@ -142,7 +127,7 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 		},
 		{
 			EventMethodName:        "Err",
-			Value:                  expectedErr,
+			Value:                  fmt.Errorf("%d", 42),
 			ExpectedOutputContains: `"error":"42"`,
 		},
 		{
@@ -150,7 +135,7 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 			ExpectedOutputContains: expectedTimestampEventContains,
 		},
 		// TODO_TECHDEBT: figure out why this fails in CI but not locally,
-		// (even with `make itest 500 10 ./pkg/polylog/... -- -run=ZeroLogger_AllLevels_AllEventTypeMethods`).
+		// (even with `make itest 500 10 ./pkg/polylog/... -- -run=ZapLogger_AllLevels_AllEventMethods`).
 		//
 		//{
 		//  EventMethodName:        "Time",
@@ -170,16 +155,23 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 				"key1": "value1",
 				"key2": 42,
 			},
-			ExpectedOutputContains: `"key1":"value1","key2":42`,
+			// TODO_IMPROVE: assert on all key/value pairs. Zap doesn't seem to
+			// provide any guarantee around the oder of the fields. This requires
+			// changing the test and helper structure to support this.
+			ExpectedOutputContains: `"key2":42`,
 		},
 		{
-			EventMethodName:        "Fields",
-			Value:                  []any{"key1", "value1", "key2", 42},
-			ExpectedOutputContains: `"key1":"value1","key2":42`,
+			EventMethodName: "Fields",
+			Value:           []any{"key1", "value1", "key2", 42},
+			// TODO_IMPROVE: assert on all key/value pairs. Zap doesn't seem to
+			// provide any guarantee around the oder of the fields. This requires
+			// changing the test and helper structure to support this.
+			ExpectedOutputContains: `"key2":42`,
 		},
 	}
 
-	for _, level := range polyzero.Levels() {
+	// TODO_IN_THIS_COMMIT: comment...
+	for _, level := range polyzap.Levels() {
 		testpolylog.RunEventMethodTests(
 			t,
 			level,
@@ -191,17 +183,17 @@ func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {
 	}
 }
 
-func TestZerologLogger_Levels_Discard(t *testing.T) {
+func TestZapLogger_Levels_Discard(t *testing.T) {
 	// Construct a logger with each level. With each logger, log an event at each
 	// level and assert that the event is logged if and only if the event level
 	// is GTE the logger level.
-	for _, loggerLevel := range polyzero.Levels() {
+	for _, loggerLevel := range polyzap.Levels() {
 		testDesc := fmt.Sprintf("%s level logger", loggerLevel.String())
 		t.Run(testDesc, func(t *testing.T) {
 			logger, logOutput := newTestLogger(t, loggerLevel)
 
 			// Log an event for each level.
-			for _, eventLevel := range polyzero.Levels() {
+			for _, eventLevel := range polyzap.Levels() {
 				event := newTestEventWithLevel(t, logger, eventLevel)
 				// Log the event level string.
 				event.Msg(eventLevel.String())
@@ -224,7 +216,7 @@ func TestZerologLogger_Levels_Discard(t *testing.T) {
 }
 
 func TestZerologLogger_Func_Discard_Enabled(t *testing.T) {
-	for _, loggerLevel := range polyzero.Levels() {
+	for _, loggerLevel := range polyzap.Levels() {
 		testDesc := fmt.Sprintf("%s loggerLevel logger", loggerLevel.String())
 		t.Run(testDesc, func(t *testing.T) {
 			var (
@@ -235,9 +227,9 @@ func TestZerologLogger_Func_Discard_Enabled(t *testing.T) {
 				logger, logOutput = newTestLogger(t, loggerLevel)
 			)
 
-			for _, eventLevel := range polyzero.Levels() {
+			for _, eventLevel := range polyzap.Levels() {
 				funcSpy := testpolylog.EventFuncSpy{}
-				funcSpy.On("Fn", mock.AnythingOfType(polyzeroEventTypeName)).Return()
+				funcSpy.On("Fn", mock.AnythingOfType(polyzapEventTypeName)).Return()
 
 				event := newTestEventWithLevel(t, logger, eventLevel)
 				expectedEventLevelEnabled := eventLevel.Int() >= loggerLevel.Int()
@@ -250,7 +242,7 @@ func TestZerologLogger_Func_Discard_Enabled(t *testing.T) {
 					// Assert that #Func() calls `funcSpy#Fn()` method 1 time with
 					// an event whose type name matches funcMethodEventTypeName.
 					event.Func(funcSpy.Fn)
-					funcSpy.AssertCalled(t, "Fn", mock.AnythingOfType(polyzeroEventTypeName))
+					funcSpy.AssertCalled(t, "Fn", mock.AnythingOfType(polyzapEventTypeName))
 					funcSpy.AssertNumberOfCalls(t, "Fn", 1)
 
 					event.Discard()
@@ -272,7 +264,7 @@ func TestZerologLogger_Func_Discard_Enabled(t *testing.T) {
 }
 
 func TestZerologLogger_With(t *testing.T) {
-	logger, logOutput := newTestLogger(t, polyzero.DebugLevel)
+	logger, logOutput := newTestLogger(t, polyzap.DebugLevel)
 
 	logger.Debug().Msg("before")
 	require.Contains(t, logOutput.String(), "before")
@@ -280,68 +272,67 @@ func TestZerologLogger_With(t *testing.T) {
 	logger = logger.With("key", "value")
 
 	logger.Debug().Msg("after")
+
 	require.Contains(t, logOutput.String(), "after")
 	require.Contains(t, logOutput.String(), `"key":"value"`)
+
+	// Print log output for manual inspection.
+	t.Log(logOutput.String())
+}
+
+func TestZerologLogger_WithContext(t *testing.T) {
+	var (
+		expectedLogger = polyzap.NewLogger()
+		ctx            = context.Background()
+	)
+
+	// Ensure that no logger is associated with the context.
+	existingLogger, ok := ctx.Value(polylog.CtxKey).(polylog.Logger)
+	require.False(t, ok)
+	require.Nil(t, existingLogger)
+
+	// Retrieve the default logger from the context using polylog and assert
+	// that it matches the default context logger.
+	defaultLogger := polylog.Ctx(ctx)
+	require.Equal(t, polylog.DefaultContextLogger, defaultLogger)
+
+	// Associate a logger with a context.
+	ctx = expectedLogger.WithContext(ctx)
+
+	// Retrieve the associated logger from the context using polylog and assert
+	// that it matches the one constructed at the beginning of the test.
+	actualLogger := polylog.Ctx(ctx)
+	require.Equal(t, expectedLogger, actualLogger)
+}
+
+// TODO_TECHDEBT/TODO_COMMUNITY: TDD this integration with zap. See `polyzero`
+// package for comparison / starting point.
+func TestWithTimestampKey(t *testing.T) {
+	t.SkipNow()
+}
+
+// TODO_TECHDEBT/TODO_COMMUNITY: TDD this integration with zap. See `polyzero`
+// package for comparison / starting point.
+func TestWithErrorKey(t *testing.T) {
+	t.SkipNow()
 }
 
 func TestZerologLogger_WithLevel(t *testing.T) {
-	logger, logOutput := newTestLogger(t, polyzero.DebugLevel)
-	logger.WithLevel(polyzero.DebugLevel).Msg("WithLevel()")
+	logger, logOutput := newTestLogger(t, polyzap.DebugLevel)
+	logger.WithLevel(polyzap.DebugLevel).Msg("WithLevel()")
 
 	require.Contains(t, logOutput.String(), "WithLevel()")
 }
 
 func TestZerologLogger_Write(t *testing.T) {
 	testOutput := "Write()"
-	logger, logOutput := newTestLogger(t, polyzero.DebugLevel)
+	logger, logOutput := newTestLogger(t, polyzap.DebugLevel)
 
 	n, err := logger.Write([]byte(testOutput))
 	require.NoError(t, err)
 	require.Lenf(t, testOutput, n, "expected %d bytes to be written", len(testOutput))
 
 	require.Contains(t, logOutput.String(), testOutput)
-}
-
-func TestWithTimestampKey(t *testing.T) {
-	expectedTimestampKey := "custom-timestamp-key"
-
-	timestampKeyOpt := polyzero.WithTimestampKey(expectedTimestampKey)
-	// Reset zerolog timestamp key to default value after test.
-	t.Cleanup(func() {
-		zerolog.TimestampFieldName = "time"
-	})
-	logger, logOutput := newTestLogger(t, polyzero.DebugLevel, timestampKeyOpt)
-
-	logger.Debug().Timestamp().Send()
-
-	expectedCustomTimestampEventContains := fmt.Sprintf(
-		`"%s":"%s`,
-		expectedTimestampKey,
-		expectedTime.Format(expectedTimestampDayPrecisionLayout),
-	)
-	require.Contains(t, logOutput.String(), expectedCustomTimestampEventContains)
-
-	// Print log output for manual inspection.
-	t.Log(logOutput)
-}
-
-func TestWithErrorKey(t *testing.T) {
-	expectedErrKey := "custom-error-key"
-
-	errorKeyOpt := polyzero.WithErrKey(expectedErrKey)
-	// Reset zerolog error key to default value after test.
-	t.Cleanup(func() {
-		zerolog.ErrorFieldName = "error"
-	})
-	logger, logOutput := newTestLogger(t, polyzero.DebugLevel, errorKeyOpt)
-
-	logger.Debug().Err(expectedErr).Send()
-
-	require.Contains(t, logOutput.String(), expectedErr.Error())
-	require.Contains(t, logOutput.String(), expectedErrKey)
-
-	// Print log output for manual inspection.
-	t.Log(logOutput)
 }
 
 func newTestLogger(
@@ -354,12 +345,11 @@ func newTestLogger(
 	// Redirect standard log output to logOutput buffer.
 	logOutput := new(bytes.Buffer)
 	opts = append(opts,
-		polyzero.WithOutput(logOutput),
-		// NB: typically consumers would pass zerolog.<some>Level directly instead.
-		polyzero.WithLevel(zerolog.Level(level.Int())),
+		polyzap.WithOutput(logOutput),
+		polyzap.WithLevel(polyzap.Level(level.Int())),
 	)
 
-	logger := polyzero.NewLogger(opts...)
+	logger := polyzap.NewLogger(opts...)
 
 	return logger, logOutput
 }
@@ -371,15 +361,14 @@ func newTestEventWithLevel(
 ) polylog.Event {
 	t.Helper()
 
-	// Match on level string to determine which level method to call.
 	switch level.String() {
-	case zerolog.DebugLevel.String():
+	case zap.DebugLevel.String():
 		return logger.Debug()
-	case zerolog.InfoLevel.String():
+	case zap.InfoLevel.String():
 		return logger.Info()
-	case zerolog.WarnLevel.String():
+	case zap.WarnLevel.String():
 		return logger.Warn()
-	case zerolog.ErrorLevel.String():
+	case zap.ErrorLevel.String():
 		return logger.Error()
 	default:
 		panic(fmt.Errorf("level not yet supported: %s", level.String()))
