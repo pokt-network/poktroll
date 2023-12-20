@@ -1,8 +1,8 @@
 syntax = "proto3";
-package poktroll.tokenomics;
+package pocket.tokenomics;
 
 import "gogoproto/gogo.proto";
-import "poktroll/tokenomics/params.proto";
+import "pocket/tokenomics/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
