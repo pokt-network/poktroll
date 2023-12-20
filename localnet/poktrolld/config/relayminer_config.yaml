@@ -1,9 +1,9 @@
 # TODO_CONSIDERATION: We don't need this now, but it would be beneficial if the
 # logic handling this config file could be designed in such a way that it allows for
-# "soft" config changes in the future, meaning changes without restarting a process.
+# "hot" config changes in the future, meaning changes without restarting a process.
 # This would be useful for adding a proxy or a supplier without interrupting the service.
 
-pocket:
+pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
   query_node_rpc_url: tcp://poktroll-sequencer:36657
@@ -15,7 +15,8 @@ pocket:
 
 # Name of the key (in the keyring) to sign transactions
 signing_key_name: supplier1
-# Path to where the data backing SMT KV store exists on disk
+# Relative path (on the relayminer's machine) to where the data backing
+# SMT KV store exists on disk
 smt_store_path: smt_stores
 
 # Proxies are endpoints that expose different suppliers to the internet.
@@ -23,16 +24,18 @@ proxies:
     # Name of the proxy. It will be used to reference in a supplier. Must be unique.
     # Required.
     # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-    #become handy in the future.
+    # become handy in the future.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
   - name: http-proxy
-    # Type of proxy: can be one of http, ws, tcp. MUST match the type of the supplier.
+    # Type of proxy: currently only http is supported but will support more
+    # (https, tcp, quic ...) in the future.
+    # MUST match the type of the supplier.
     # Required.
     type: http
     # Hostname to open port on. Use 0.0.0.0 in containerized environments,
     # 127.0.0.1 with a reverse-proxy when there's another process on localhost
     # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
-    # Required
+    # Required.
     host: 127.0.0.1:8080
 
 # Suppliers are different services that can be offered through RelayMiner.
@@ -50,9 +53,11 @@ suppliers:
     # Configuration of the service offered through RelayMiner.
     service_config:
       # URL RelayMiner proxies the requests to.
-      # Required
+      # Required.
       url: http://anvil:8547/
-    # Names of proxies that this supplier is connected to. The supplier will be reached through the proxies listed here.
+    # Names of proxies that this supplier is connected to.
+    # This MUST correspond to the name in the `proxies` section
+    # in order for the supplier to be accessible to the external network.
     # Required.
     proxy_names:
       - http-proxy

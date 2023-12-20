@@ -43,13 +43,14 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier client.SessionQueryClient
 
-	// proxyServers is a map of the proxy server provided by the relayer proxy. Each provided service
-	// has the necessary information to start the server that listens for incoming relay requests and
-	// the client that relays the request to the supported proxied service.
+	// proxyServers is a map of proxyName -> RelayServer provided by the relayer proxy,
+	// where proxyName is the name of the proxy defined in the config file and
+	// RelayServer is the server that listens for incoming relay requests.
 	proxyServers map[string]relayer.RelayServer
 
-	// proxyConfigs is a map of the proxy servers and their corresponding supplier
-	// advertised URLs and the services they proxy to.
+	// proxyConfigs is a map of proxyName -> RelayMinerProxyConfig where proxyName
+	// is the name of the proxy defined in the config file and RelayMinerProxyConfig
+	// is the configuration of the proxy.
 	proxyConfigs map[string]*config.RelayMinerProxyConfig
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
@@ -138,7 +139,8 @@ func (rp *relayerProxy) Stop(ctx context.Context) error {
 	stopGroup, ctx := errgroup.WithContext(ctx)
 
 	for _, relayServer := range rp.proxyServers {
-		server := relayServer // create a new variable scoped to the anonymous function
+		// Create a new object (i.e. deep copy) variable scoped to the anonymous function below
+		server := relayServer
 		stopGroup.Go(func() error { return server.Stop(ctx) })
 	}
 

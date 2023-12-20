@@ -7,6 +7,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -29,11 +30,6 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	supplier, err := rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
 	if err != nil {
 		return err
-	}
-
-	supplierServiceMap := make(map[string]*sharedtypes.Service)
-	for _, service := range supplier.Services {
-		supplierServiceMap[service.Service.Id] = service.Service
 	}
 
 	// Check that the supplier's advertised services' endpoints are present in
@@ -66,19 +62,38 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		}
 	}
 
-	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
-	providedServices := make(map[string]relayer.RelayServer)
+	if rp.proxyServers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+		return err
+	}
+
+	rp.supplierAddress = supplier.Address
+
+	return nil
+}
+
+// initializeProxyServers initializes the proxy servers for each proxy config.
+func (rp *relayerProxy) initializeProxyServers(
+	supplierServices []*sharedtypes.SupplierServiceConfig,
+) (proxyServerMap map[string]relayer.RelayServer, err error) {
+	// Build a map of serviceId -> service for the supplier's advertised services
+	supplierServiceMap := make(map[string]*sharedtypes.Service)
+	for _, service := range supplierServices {
+		supplierServiceMap[service.Service.Id] = service.Service
+	}
+
+	// Build a map of proxyName -> RelayServer for each proxy defined in the config file
+	proxyServers := make(map[string]relayer.RelayServer)
+
 	for _, proxyConfig := range rp.proxyConfigs {
 		rp.logger.Info().Str("proxy host", proxyConfig.Host).Msg("starting relay proxy server")
 
-		// Switch to the RPC type
 		// TODO(@h5law): Implement a switch that handles all synchronous
 		// RPC types in one server type and asynchronous RPC types in another
-		// to create the appropriate RelayServer
-		var server relayer.RelayServer
+		// to create the appropriate RelayServer.
+		// Initialize the proxy server according to the proxy type defined in the config file
 		switch proxyConfig.Type {
-		case "http":
-			server = NewSynchronousServer(
+		case config.ProxyTypeHTTP:
+			proxyServers[proxyConfig.Name] = NewSynchronousServer(
 				rp.logger,
 				proxyConfig,
 				supplierServiceMap,
@@ -86,14 +101,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				rp,
 			)
 		default:
-			return ErrRelayerProxyUnsupportedTransportType
+			return nil, ErrRelayerProxyUnsupportedTransportType
 		}
-
-		providedServices[proxyConfig.Name] = server
 	}
 
-	rp.proxyServers = providedServices
-	rp.supplierAddress = supplier.Address
-
-	return nil
+	return proxyServers, nil
 }

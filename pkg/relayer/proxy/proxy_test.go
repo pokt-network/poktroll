@@ -25,12 +25,25 @@ const blockHeight = 1
 
 var (
 	// helpers used for tests that are initialized in init()
-	supplierKeyName   string
+	supplierKeyName string
+
+	// supplierEndpoints is the map of serviceName -> []SupplierEndpoint
+	// where serviceName is the name of the service the supplier staked for
+	// and SupplierEndpoint is the endpoint of the service advertised on-chain
+	// by the supplier
 	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint
-	appPrivateKey     *secp256k1.PrivKey
+
+	// appPrivateKey is the private key of the application that is used to sign
+	// relay responses.
+	// It is also used in these tests to derive the public key and address of the
+	// application.
+	appPrivateKey *secp256k1.PrivKey
+
 	// proxiedServices is the parsed configuration of the RelayMinerProxyConfig
 	proxiedServices map[string]*config.RelayMinerProxyConfig
 
+	// defaultRelayerProxyBehavior is the list of functions that are used to
+	// define the behavior of the RelayerProxy in the tests.
 	defaultRelayerProxyBehavior []func(*testproxy.TestBehavior)
 )
 
@@ -63,12 +76,12 @@ func init() {
 	proxiedServices = map[string]*config.RelayMinerProxyConfig{
 		"server1": {
 			Name: "server1",
-			Type: "http",
+			Type: config.ProxyTypeHTTP,
 			Host: "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
 					Name:  "service1",
-					Type:  "http",
+					Type:  config.ProxyTypeHTTP,
 					Hosts: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
@@ -76,7 +89,7 @@ func init() {
 				},
 				"service2": {
 					Name:  "service2",
-					Type:  "http",
+					Type:  config.ProxyTypeHTTP,
 					Hosts: []string{"supplier:8546"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
@@ -86,12 +99,12 @@ func init() {
 		},
 		"server2": {
 			Name: "server2",
-			Type: "http",
+			Type: config.ProxyTypeHTTP,
 			Host: "127.0.0.1:8081",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service3": {
 					Name:  "service3",
-					Type:  "http",
+					Type:  config.ProxyTypeHTTP,
 					Hosts: []string{"supplier:8547"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
@@ -240,12 +253,14 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 	unsupportedTransportProxy := map[string]*config.RelayMinerProxyConfig{
 		"server1": {
 			Name: "server1",
-			Type: "xttp",
+			// The proxy is configured with an unsupported transport type
+			Type: config.ProxyType(100),
 			Host: "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
-					Name:  "service1",
-					Type:  "xttp",
+					Name: "service1",
+					// The proxy is configured with an unsupported transport type
+					Type:  config.ProxyType(100),
 					Hosts: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
@@ -284,12 +299,12 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 	missingServicesProxy := map[string]*config.RelayMinerProxyConfig{
 		"server1": {
 			Name: "server1",
-			Type: "http",
+			Type: config.ProxyTypeHTTP,
 			Host: "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
 					Name:  "service1",
-					Type:  "http",
+					Type:  config.ProxyTypeHTTP,
 					Hosts: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},

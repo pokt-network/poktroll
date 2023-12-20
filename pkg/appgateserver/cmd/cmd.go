@@ -161,7 +161,7 @@ func setupAppGateServerDependencies(
 	if flagNodeGRPCURL != omittedDefaultFlagValue {
 		queryNodeGRPCURL, err = url.Parse(flagNodeGRPCURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
 		}
 	}
 
@@ -171,7 +171,7 @@ func setupAppGateServerDependencies(
 	if flagNodeRPCURL != omittedDefaultFlagValue {
 		queryNodeRPCURL, err = url.Parse(flagNodeRPCURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
 		}
 	}
 

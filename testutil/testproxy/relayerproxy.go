@@ -105,6 +105,8 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 
 // WithRelayerProxiedServices creates the services that the relayer proxy will
 // proxy requests to.
+// It creates an HTTP server for each service and starts listening on the
+// provided host.
 func WithRelayerProxiedServices(
 	proxiedServices map[string]*config.RelayMinerProxyConfig,
 ) func(*TestBehavior) {
@@ -217,12 +219,20 @@ func WithDefaultSessionSupplier(
 func MarshalAndSend(
 	test *TestBehavior,
 	proxiedServices map[string]*config.RelayMinerProxyConfig,
-	server string,
-	service string,
+	proxyServeName string,
+	serviceId string,
 	request *servicetypes.RelayRequest,
 ) (errCode int32, errorMessage string) {
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)
+
+	var scheme string
+	switch proxiedServices[proxyServeName].Type {
+	case config.ProxyTypeHTTP:
+		scheme = "http"
+	default:
+		require.FailNow(test.t, "unsupported proxy type")
+	}
 
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
@@ -230,8 +240,8 @@ func MarshalAndSend(
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},
 		},
-		URL:  &url.URL{Scheme: proxiedServices[server].Type, Host: proxiedServices[server].Host},
-		Host: proxiedServices[server].Suppliers[service].Hosts[0],
+		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].Host},
+		Host: proxiedServices[proxyServeName].Suppliers[serviceId].Hosts[0],
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)

@@ -35,48 +35,50 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Pocket node urls section
-	relayMinerPocketConfig := &RelayMinerPocketConfig{}
-	pocket := yamlRelayMinerConfig.Pocket
+	relayMinerPocketConfig := &RelayMinerPocketNodeConfig{}
 
-	if len(pocket.TxNodeGRPCUrl) == 0 {
+	if len(yamlRelayMinerConfig.PocketNode.TxNodeGRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("tx node grpc url is required")
 	}
 
 	// Check if the pocket node grpc url is a valid URL
-	relayMinerPocketConfig.TxNodeGRPCUrl, err = url.Parse(pocket.TxNodeGRPCUrl)
+	txNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.PocketNode.TxNodeGRPCUrl)
 	if err != nil {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
 			"invalid tx node grpc url %s",
 			err.Error(),
 		)
 	}
+	relayMinerPocketConfig.TxNodeGRPCUrl = txNodeGRPCUrl
 
 	// If the query node grpc url is empty, use the tx node grpc url
-	if len(pocket.QueryNodeGRPCUrl) == 0 {
+	if len(yamlRelayMinerConfig.PocketNode.QueryNodeGRPCUrl) == 0 {
 		relayMinerPocketConfig.QueryNodeGRPCUrl = relayMinerPocketConfig.TxNodeGRPCUrl
 	} else {
 		// If the query node grpc url is not empty, make sure it is a valid URL
-		relayMinerPocketConfig.QueryNodeGRPCUrl, err = url.Parse(pocket.QueryNodeGRPCUrl)
+		queryNodeGRPCUrl, err := url.Parse(yamlRelayMinerConfig.PocketNode.QueryNodeGRPCUrl)
 		if err != nil {
 			return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
 				"invalid query node grpc url %s",
 				err.Error(),
 			)
 		}
+		relayMinerPocketConfig.QueryNodeGRPCUrl = queryNodeGRPCUrl
 	}
 
-	if len(pocket.QueryNodeRPCUrl) == 0 {
+	if len(yamlRelayMinerConfig.PocketNode.QueryNodeRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("query node rpc url is required")
 	}
 
 	// Check if the query node rpc url is a valid URL
-	relayMinerPocketConfig.QueryNodeRPCUrl, err = url.Parse(pocket.QueryNodeRPCUrl)
+	queryNodeRPCUrl, err := url.Parse(yamlRelayMinerConfig.PocketNode.QueryNodeRPCUrl)
 	if err != nil {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
 			"invalid query node rpc url %s",
 			err.Error(),
 		)
 	}
+	relayMinerPocketConfig.QueryNodeRPCUrl = queryNodeRPCUrl
 
 	// Proxies section
 	// At least one proxy is required
@@ -84,10 +86,9 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigInvalidProxy.Wrap("no proxies provided")
 	}
 
-	proxies := yamlRelayMinerConfig.Proxies
 	relayMinerProxiesConfig := make(map[string]*RelayMinerProxyConfig)
 
-	for _, yamlProxyConfig := range proxies {
+	for _, yamlProxyConfig := range yamlRelayMinerConfig.Proxies {
 		// Proxy name is required
 		if len(yamlProxyConfig.Name) == 0 {
 			return nil, ErrRelayMinerConfigInvalidProxy.Wrap("proxy name is required")
@@ -110,7 +111,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		// Populate the proxy fields that are relevant to each supported proxy type
 		switch yamlProxyConfig.Type {
 		case "http":
-			if err := parseHTTPProxyConfig(yamlProxyConfig, proxyConfig); err != nil {
+			if err := proxyConfig.parseHTTPProxyConfig(yamlProxyConfig); err != nil {
 				return nil, err
 			}
 		default:
@@ -120,16 +121,24 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 				yamlProxyConfig.Type,
 			)
 		}
-		proxyConfig.Type = yamlProxyConfig.Type
+
+		switch yamlProxyConfig.Type {
+		case "http":
+			proxyConfig.Type = ProxyTypeHTTP
+		default:
+			ErrRelayMinerConfigInvalidProxy.Wrapf(
+				"invalid proxy type %s",
+				yamlProxyConfig.Type,
+			)
+		}
 
 		relayMinerProxiesConfig[proxyConfig.Name] = proxyConfig
 	}
 
 	// Suppliers section
-	suppliers := yamlRelayMinerConfig.Suppliers
 	relayMinerSuppliersConfig := make(map[string]*RelayMinerSupplierConfig)
 
-	for _, yamlSupplierConfig := range suppliers {
+	for _, yamlSupplierConfig := range yamlRelayMinerConfig.Suppliers {
 		// Supplier name is required
 		if len(yamlSupplierConfig.Name) == 0 {
 			return nil, ErrRelayMinerConfigInvalidSupplier.Wrap("supplier name is required")
@@ -192,10 +201,8 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		// by their own functions.
 		switch yamlSupplierConfig.Type {
 		case "http":
-			if err := parseHTTPSupplierConfig(
-				yamlSupplierConfig.ServiceConfig,
-				supplierConfig.ServiceConfig,
-			); err != nil {
+			if err := supplierConfig.ServiceConfig.
+				parseHTTPSupplierConfig(yamlSupplierConfig.ServiceConfig); err != nil {
 				return nil, err
 			}
 		default:
@@ -205,7 +212,16 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 				yamlSupplierConfig.Type,
 			)
 		}
-		supplierConfig.Type = yamlSupplierConfig.Type
+
+		switch yamlSupplierConfig.Type {
+		case "http":
+			supplierConfig.Type = ProxyTypeHTTP
+		default:
+			ErrRelayMinerConfigInvalidProxy.Wrapf(
+				"invalid proxy type %s",
+				yamlSupplierConfig.Type,
+			)
+		}
 
 		// Check if the supplier has proxies
 		if len(yamlSupplierConfig.ProxyNames) == 0 {
@@ -258,7 +274,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	// Populate the relay miner config
 	relayMinerCMDConfig := &RelayMinerConfig{
-		Pocket:         relayMinerPocketConfig,
+		PocketNode:     relayMinerPocketConfig,
 		SigningKeyName: yamlRelayMinerConfig.SigningKeyName,
 		SmtStorePath:   yamlRelayMinerConfig.SmtStorePath,
 		Proxies:        relayMinerProxiesConfig,

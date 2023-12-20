@@ -64,7 +64,7 @@ type RelayerProxy interface {
 	VerifyRelayRequest(
 		ctx context.Context,
 		relayRequest *servicetypes.RelayRequest,
-		service *sharedtypes.Service,
+		serviceId *sharedtypes.Service,
 	) error
 
 	// SignRelayResponse is a shared method used by RelayServers to sign

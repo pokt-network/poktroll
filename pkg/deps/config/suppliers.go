@@ -101,7 +101,8 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		// Temporarily store the flag's current value
+		// Temporarily store the flag's current value to be restored later, after
+		// the client context has been created with queryNodeGRPCURL.
 		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
@@ -151,7 +152,8 @@ func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
-		// Temporarily store the flag's current value
+		// Temporarily store the flag's current value to be restored later, after
+		// the client context has been created with txNodeGRPCURL.
 		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
