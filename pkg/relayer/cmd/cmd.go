@@ -34,9 +34,13 @@ const omittedDefaultFlagValue = "explicitly omitting default"
 
 // TODO_CONSIDERATION: Consider moving all flags defined in `/pkg` to a `flags.go` file.
 var (
+	// flagRelayMinerConfig is the variable containing the relay miner config filepath
+	// sourced from the `--config` flag.
 	flagRelayMinerConfig string
-	flagNodeRPCUrl       string
-	flagNodeGRPCUrl      string
+	// flagNodeRPCUrl is the variable containing the Cosmos node RPC URL flag value.
+	flagNodeRPCUrl string
+	// flagNodeGRPCUrl is the variable containing the Cosmos node GRPC URL flag value.
+	flagNodeGRPCUrl string
 )
 
 // RelayerCmd returns the Cobra command for running the relay miner.

@@ -16,7 +16,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		inputConfig string
+		inputConfigYAML string
 
 		expectedError  *sdkerrors.Error
 		expectedConfig *config.RelayMinerConfig
@@ -25,69 +25,69 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: relay miner config",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
+				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 				TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				SigningKeyName:   "servicer1",
+				SmtStorePath:     "smt_stores",
 				ProxiedServiceEndpoints: map[string]*url.URL{
 					"anvil": {Scheme: "http", Host: "anvil:8080"},
 					"svc1":  {Scheme: "http", Host: "svc1:8080"},
 				},
-				SmtStorePath: "smt_stores",
 			},
 		},
 		{
 			desc: "valid: relay miner config with query node grpc url defaulting to tx node grpc url",
 
-			inputConfig: `
-				tx_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				tx_node_grpc_url: tcp://127.0.0.1:36658
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
+				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 				TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-				QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				SigningKeyName:   "servicer1",
+				SmtStorePath:     "smt_stores",
 				ProxiedServiceEndpoints: map[string]*url.URL{
 					"anvil": {Scheme: "http", Host: "anvil:8080"},
 					"svc1":  {Scheme: "http", Host: "svc1:8080"},
 				},
-				SmtStorePath: "smt_stores",
 			},
 		},
 		// Invalid Configs
 		{
 			desc: "invalid: invalid tx node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: &tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
@@ -95,14 +95,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing tx node grpc url",
 
-			inputConfig: `
-				query_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigInvalidTxNodeGRPCUrl,
@@ -110,15 +110,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid query node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: &tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigInvalidQueryNodeGRPCUrl,
@@ -126,15 +126,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing query node rpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
+				# NB: explicitly missing query_node_rpc_url
 				query_node_grpc_url: tcp://128.0.0.1:36658
 				tx_node_grpc_url: tcp://128.0.0.1:36658
-				// explicitly missing query_node_rpc_url
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
@@ -142,15 +142,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing signing key name",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
-				// explicitly missing signing_key_name
+				# NB: explicitly missing signing_key_name
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigUnmarshalYAML,
@@ -158,10 +158,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing smt store path",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				proxied_service_endpoints:
 				  anvil: http://anvil:8080
@@ -173,13 +173,13 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty proxied service endpoints",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
-				proxied_service_endpoints:
 				smt_store_path: smt_stores
+				proxied_service_endpoints:
 				`,
 
 			expectedError: config.ErrRelayMinerConfigInvalidServiceEndpoint,
@@ -187,15 +187,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid proxied service endpoint",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
+				smt_store_path: smt_stores
 				proxied_service_endpoints:
 				  anvil: &http://anvil:8080
 				  svc1: http://svc1:8080
-				smt_store_path: smt_stores
 				`,
 
 			expectedError: config.ErrRelayMinerConfigInvalidServiceEndpoint,
@@ -203,10 +203,10 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid tx node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
 				query_node_grpc_url: tcp://127.0.0.1:36658
 				tx_node_grpc_url: &tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				`,
@@ -216,7 +216,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty RelayMiner config file",
 
-			inputConfig: ``,
+			inputConfigYAML: ``,
 
 			expectedError: config.ErrRelayMinerConfigEmpty,
 		},
@@ -224,7 +224,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
 			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
 
 			if tt.expectedError != nil {

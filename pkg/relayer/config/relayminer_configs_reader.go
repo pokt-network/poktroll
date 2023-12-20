@@ -9,22 +9,22 @@ import (
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
 // TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files.
 type YAMLRelayMinerConfig struct {
+	QueryNodeRPCUrl         string            `yaml:"query_node_rpc_url"`
 	QueryNodeGRPCUrl        string            `yaml:"query_node_grpc_url"`
 	TxNodeGRPCUrl           string            `yaml:"tx_node_grpc_url"`
-	QueryNodeRPCUrl         string            `yaml:"query_node_rpc_url"`
 	SigningKeyName          string            `yaml:"signing_key_name"`
-	ProxiedServiceEndpoints map[string]string `yaml:"proxied_service_endpoints"`
 	SmtStorePath            string            `yaml:"smt_store_path"`
+	ProxiedServiceEndpoints map[string]string `yaml:"proxied_service_endpoints"`
 }
 
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
+	QueryNodeRPCUrl         *url.URL
 	QueryNodeGRPCUrl        *url.URL
 	TxNodeGRPCUrl           *url.URL
-	QueryNodeRPCUrl         *url.URL
 	SigningKeyName          string
-	ProxiedServiceEndpoints map[string]*url.URL
 	SmtStorePath            string
+	ProxiedServiceEndpoints map[string]*url.URL
 }
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
@@ -41,7 +41,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Check that the tx node GRPC URL is provided
-	if yamlRelayMinerConfig.TxNodeGRPCUrl == "" {
+	if len(yamlRelayMinerConfig.TxNodeGRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidTxNodeGRPCUrl.Wrap("tx node grpc url is required")
 	}
 
@@ -52,7 +52,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Check that the query node GRPC URL is provided and default to the tx node GRPC URL if not
-	if yamlRelayMinerConfig.QueryNodeGRPCUrl == "" {
+	if len(yamlRelayMinerConfig.QueryNodeGRPCUrl) == 0 {
 		yamlRelayMinerConfig.QueryNodeGRPCUrl = yamlRelayMinerConfig.TxNodeGRPCUrl
 	}
 
@@ -63,7 +63,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Check that the network node websocket URL is provided
-	if yamlRelayMinerConfig.QueryNodeRPCUrl == "" {
+	if len(yamlRelayMinerConfig.QueryNodeRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrap("query node rpc url is required")
 	}
 
@@ -73,11 +73,11 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigInvalidQueryNodeRPCUrl.Wrap(err.Error())
 	}
 
-	if yamlRelayMinerConfig.SigningKeyName == "" {
+	if len(yamlRelayMinerConfig.SigningKeyName) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName
 	}
 
-	if yamlRelayMinerConfig.SmtStorePath == "" {
+	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSmtStorePath
 	}
 
@@ -100,12 +100,12 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	relayMinerCMDConfig := &RelayMinerConfig{
+		QueryNodeRPCUrl:         queryNodeRPCUrl,
 		QueryNodeGRPCUrl:        queryNodeGRPCUrl,
 		TxNodeGRPCUrl:           txNodeGRPCUrl,
-		QueryNodeRPCUrl:         queryNodeRPCUrl,
 		SigningKeyName:          yamlRelayMinerConfig.SigningKeyName,
-		ProxiedServiceEndpoints: proxiedServiceEndpoints,
 		SmtStorePath:            yamlRelayMinerConfig.SmtStorePath,
+		ProxiedServiceEndpoints: proxiedServiceEndpoints,
 	}
 
 	return relayMinerCMDConfig, nil

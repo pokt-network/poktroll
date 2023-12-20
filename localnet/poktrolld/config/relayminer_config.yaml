@@ -2,12 +2,14 @@
 # This can be used by the Cosmos client SDK, event subscriptions, etc...
 query_node_rpc_url: tcp://poktroll-sequencer:36657
 # Pocket node URL that exposes the Cosmos gRPC service.
+query_node_grpc_url: tcp://poktroll-sequencer:36658
+# Name of the key (in the keyring) to sign transactions
 tx_node_grpc_url: tcp://poktroll-sequencer:36658
 # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
 # If unspecified, defaults to `tx_node_grpc_url`.
-query_node_grpc_url: tcp://poktroll-sequencer:36658
-# Name of the key (in the keyring) to sign transactions
 signing_key_name: supplier1
+# Path to where the data backing SMT KV store exists on disk
+smt_store_path: smt_stores
 # TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
 # is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
 # multiple services is already in place but currently (as seen below) is hardcoded.
@@ -15,5 +17,3 @@ signing_key_name: supplier1
 proxied_service_endpoints:
   anvil: http://anvil:8547
   svc1: http://localhost:8082
-# Path to where the data backing SMT KV store exists on disk
-smt_store_path: smt_stores
