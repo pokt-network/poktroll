@@ -58,10 +58,8 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 	}
 }
 
-// NewSupplyEventsQueryClientFn returns a new function which constructs an
-// EventsQueryClient instance, with the given hostname converted into a websocket
-// URL to subscribe to, and returns a new depinject.Config which is supplied
-// with the given deps and the new EventsQueryClient.
+// NewSupplyEventsQueryClientFn supplies a depinject config with an eventsQueryClient
+// from the given queryNodeRPCURL.
 func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		_ context.Context,
@@ -76,10 +74,8 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyBlockClientFn returns a function which constructs a BlockClient
-// instance with the given hostname, which is converted into a websocket URL,
-// to listen for block events on-chain, and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockClient.
+// NewSupplyBlockClientFn supplies a depinject config with a blockClient from the
+// the given queryNodeRPCURL.
 func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		ctx context.Context,
@@ -97,9 +93,9 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyQueryClientContextFn returns a function with constructs a ClientContext
-// instance with the given cmd and returns a new depinject.Config which is
-// supplied with the given deps and the new ClientContext.
+// NewSupplyQueryClientContextFn supplies a depinject config with a query
+//
+//	ClientContext, a GRPC client connection, and a keyring from the given queryNodeGRPCURL.
 func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
@@ -146,9 +142,10 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyTxClientContextFn returns a function with constructs a ClientContext
-// instance with the given cmd and returns a new depinject.Config which is
-// supplied with the given deps and the new ClientContext.
+// NewSupplyTxClientContextFn supplies a depinject config with a TxClientContext
+// from the given txNodeGRPCURL.
+// TODO_TECHDEBT(#256): Remove this function once the as we may no longer
+// need to supply a TxClientContext to the RelayMiner.
 func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
@@ -193,9 +190,7 @@ func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyAccountQuerierFn returns a function with constructs an AccountQuerier
-// instance with the required dependencies and returns a new depinject.Config which
-// is supplied with the given deps and the new AccountQuerier.
+// NewSupplyAccountQuerierFn supplies a depinject config with an AccountQuerier.
 func NewSupplyAccountQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -213,10 +208,7 @@ func NewSupplyAccountQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplyApplicationQuerierFn returns a function with constructs an
-// ApplicationQuerier instance with the required dependencies and returns a new
-// instance with the required dependencies and returns a new depinject.Config
-// which is supplied with the given deps and the new ApplicationQuerier.
+// NewSupplyApplicationQuerierFn supplies a depinject config with an ApplicationQuerier.
 func NewSupplyApplicationQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -234,9 +226,7 @@ func NewSupplyApplicationQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplySessionQuerierFn returns a function which constructs a
-// SessionQuerier instance with the required dependencies and returns a new
-// depinject.Config which is supplied with the given deps and the new SessionQuerier.
+// NewSupplySessionQuerierFn supplies a depinject config with a SessionQuerier.
 func NewSupplySessionQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -254,10 +244,7 @@ func NewSupplySessionQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplySupplierQuerierFn returns a function which constructs a
-// SupplierQuerier instance with the required dependencies and returns a new
-// instance with the required dependencies and returns a new depinject.Config
-// which is supplied with the given deps and the new SupplierQuerier.
+// NewSupplySupplierQuerierFn supplies a depinject config with a SupplierQuerier.
 func NewSupplySupplierQuerierFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -275,9 +262,7 @@ func NewSupplySupplierQuerierFn() SupplierFn {
 	}
 }
 
-// NewSupplyRingCacheFn returns a function with constructs a RingCache instance
-// with the required dependencies and returns a new depinject.Config which is
-// supplied with the given deps and the new RingCache.
+// NewSupplyRingCacheFn supplies a depinject config with a RingCache.
 func NewSupplyRingCacheFn() SupplierFn {
 	return func(
 		_ context.Context,
@@ -295,9 +280,8 @@ func NewSupplyRingCacheFn() SupplierFn {
 	}
 }
 
-// NewSupplyPOKTRollSDKFn returns a function which constructs a
-// POKTRollSDK instance with the required dependencies and returns a new
-// depinject.Config which is supplied with the given deps and the new POKTRollSDK.
+// NewSupplyPOKTRollSDKFn supplies a depinject config with a POKTRollSDK given
+// the signing key name.
 func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 	return func(
 		ctx context.Context,

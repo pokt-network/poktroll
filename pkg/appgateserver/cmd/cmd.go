@@ -25,9 +25,13 @@ import (
 const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
+	// flagAppGateConfig is the variable containing the AppGate config filepath
+	// sourced from the `--config` flag.
 	flagAppGateConfig string
-	flagNodeRPCURL    string
-	flagNodeGRPCURL   string
+	// flagNodeRPCURL is the variable containing the Cosmos node RPC URL flag value.
+	flagNodeRPCURL string
+	// flagNodeGRPCURL is the variable containing the Cosmos node GRPC URL flag value.
+	flagNodeGRPCURL string
 )
 
 // AppGateServerCmd returns the Cobra command for running the AppGate server.

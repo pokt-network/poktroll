@@ -16,7 +16,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		inputConfig string
+		inputConfigYAML string
 
 		expectedError  *sdkerrors.Error
 		expectedConfig *config.RelayMinerConfig
@@ -25,7 +25,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: relay miner config",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -92,7 +92,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: multiple suppliers, single proxy",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -178,7 +178,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: multiple proxies for a single supplier, no auth",
 
-			inputConfig: `
+			inputConfigYAML: `
 			  pocket:
 			    query_node_rpc_url: tcp://127.0.0.1:36657
 			    query_node_grpc_url: tcp://127.0.0.1:36658
@@ -256,7 +256,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: relay miner config with query node grpc url defaulting to tx node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  tx_node_grpc_url: tcp://127.0.0.1:36659
@@ -313,7 +313,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "valid: relay miner config with x_forwarded_host_lookup set to true",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -373,7 +373,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid tx node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -400,7 +400,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing tx node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  # explicitly omitted tx node grpc url
@@ -427,7 +427,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid query node grpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: &tcp://127.0.0.1:36658
@@ -454,7 +454,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid query node rpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: &tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -481,7 +481,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing query node rpc url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  # explicitly omitted query node rpc url
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -508,7 +508,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing signing key name",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -535,7 +535,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing smt store path",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -562,7 +562,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing proxies section",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -586,7 +586,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty proxies section",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -610,7 +610,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: omitted proxy name",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -637,7 +637,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty proxy name",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -664,7 +664,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing http proxy host",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -691,7 +691,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty http proxy host",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -718,7 +718,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing proxy type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -745,7 +745,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty proxy type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -772,7 +772,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: unsupported proxy type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -799,7 +799,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing supplier name",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -826,7 +826,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty supplier name",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -853,7 +853,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: unsupported supplier type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -880,7 +880,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing supplier type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -907,7 +907,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty supplier type",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -934,7 +934,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: bad supplier service config url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -961,7 +961,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty supplier service config url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -988,7 +988,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing supplier service config url",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -1015,7 +1015,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: bad supplier host",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -1042,7 +1042,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: blank supplier host",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -1069,7 +1069,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty supplier proxy references",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -1096,7 +1096,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty supplier proxy references",
 
-			inputConfig: `
+			inputConfigYAML: `
 				pocket:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
@@ -1131,7 +1131,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		{
 			desc: "invalid: empty RelayMiner config file",
 
-			inputConfig: ``,
+			inputConfigYAML: ``,
 
 			expectedError: config.ErrRelayMinerConfigEmpty,
 		},
@@ -1141,7 +1141,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
 			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
 
 			if tt.expectedError != nil {

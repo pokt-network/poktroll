@@ -9,20 +9,20 @@ import (
 // YAMLAppGateServerConfig is the structure used to unmarshal the AppGateServer config file
 // TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files.
 type YAMLAppGateServerConfig struct {
-	SelfSigning       bool   `yaml:"self_signing"`
-	SigningKey        string `yaml:"signing_key"`
-	ListeningEndpoint string `yaml:"listening_endpoint"`
-	QueryNodeGRPCUrl  string `yaml:"query_node_grpc_url"`
 	QueryNodeRPCUrl   string `yaml:"query_node_rpc_url"`
+	QueryNodeGRPCUrl  string `yaml:"query_node_grpc_url"`
+	SigningKey        string `yaml:"signing_key"`
+	SelfSigning       bool   `yaml:"self_signing"`
+	ListeningEndpoint string `yaml:"listening_endpoint"`
 }
 
 // AppGateServerConfig is the structure describing the AppGateServer config
 type AppGateServerConfig struct {
-	SelfSigning       bool
-	SigningKey        string
-	ListeningEndpoint *url.URL
-	QueryNodeGRPCUrl  *url.URL
 	QueryNodeRPCUrl   *url.URL
+	QueryNodeGRPCUrl  *url.URL
+	SigningKey        string
+	SelfSigning       bool
+	ListeningEndpoint *url.URL
 }
 
 // ParseAppGateServerConfigs parses the stake config file into a AppGateConfig
@@ -39,11 +39,11 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 		return nil, ErrAppGateConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
-	if yamlAppGateServerConfig.SigningKey == "" {
+	if len(yamlAppGateServerConfig.SigningKey) == 0 {
 		return nil, ErrAppGateConfigEmptySigningKey
 	}
 
-	if yamlAppGateServerConfig.ListeningEndpoint == "" {
+	if len(yamlAppGateServerConfig.ListeningEndpoint) == 0 {
 		return nil, ErrAppGateConfigInvalidListeningEndpoint
 	}
 
@@ -52,7 +52,7 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 		return nil, ErrAppGateConfigInvalidListeningEndpoint.Wrap(err.Error())
 	}
 
-	if yamlAppGateServerConfig.QueryNodeGRPCUrl == "" {
+	if len(yamlAppGateServerConfig.QueryNodeGRPCUrl) == 0 {
 		return nil, ErrAppGateConfigInvalidQueryNodeGRPCUrl
 	}
 
@@ -61,7 +61,7 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 		return nil, ErrAppGateConfigInvalidQueryNodeGRPCUrl.Wrap(err.Error())
 	}
 
-	if yamlAppGateServerConfig.QueryNodeRPCUrl == "" {
+	if len(yamlAppGateServerConfig.QueryNodeRPCUrl) == 0 {
 		return nil, ErrAppGateConfigInvalidQueryNodeRPCUrl
 	}
 
@@ -72,11 +72,11 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 
 	// Populate the appGateServerConfig with the values from the yamlAppGateServerConfig
 	appGateServerConfig := &AppGateServerConfig{
-		SelfSigning:       yamlAppGateServerConfig.SelfSigning,
-		SigningKey:        yamlAppGateServerConfig.SigningKey,
-		ListeningEndpoint: listeningEndpoint,
-		QueryNodeGRPCUrl:  queryNodeGRPCUrl,
 		QueryNodeRPCUrl:   queryNodeRPCUrl,
+		QueryNodeGRPCUrl:  queryNodeGRPCUrl,
+		SigningKey:        yamlAppGateServerConfig.SigningKey,
+		SelfSigning:       yamlAppGateServerConfig.SelfSigning,
+		ListeningEndpoint: listeningEndpoint,
 	}
 
 	return appGateServerConfig, nil

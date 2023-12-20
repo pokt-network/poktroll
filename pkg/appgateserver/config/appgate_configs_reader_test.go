@@ -16,7 +16,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		inputConfig string
+		inputConfigYAML string
 
 		expectedError  *sdkerrors.Error
 		expectedConfig *config.AppGateServerConfig
@@ -25,72 +25,72 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 		{
 			desc: "valid: AppGateServer config",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.AppGateServerConfig{
-				SelfSigning:       true,
-				SigningKey:        "app1",
-				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
-				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				SigningKey:        "app1",
+				SelfSigning:       true,
+				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
 			},
 		},
 		{
 			desc: "valid: AppGateServer config with undefined self signing",
 
-			inputConfig: `
+			inputConfigYAML: `
+				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
 				signing_key: app1
 				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
-				query_node_rpc_url: tcp://127.0.0.1:36657
 				`,
 
 			expectedError: nil,
 			expectedConfig: &config.AppGateServerConfig{
-				SelfSigning:       false,
-				SigningKey:        "app1",
-				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
-				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
 				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
+				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+				SigningKey:        "app1",
+				SelfSigning:       false,
+				ListeningEndpoint: &url.URL{Scheme: "http", Host: "localhost:42069"},
 			},
 		},
 		// Invalid Configs
 		{
 			desc: "invalid: empty AppGateServer config",
 
-			inputConfig: ``,
+			inputConfigYAML: ``,
 
 			expectedError: config.ErrAppGateConfigEmpty,
 		},
 		{
 			desc: "invalid: no signing key",
 
-			inputConfig: `
-				self_signing: true
-				// explicitly missing signing key
-				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				# NB: explicitly missing signing key
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigEmptySigningKey,
 		},
 		{
 			desc: "invalid: invalid listening endpoint",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: l&ocalhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: l&ocalhost:42069
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidListeningEndpoint,
@@ -98,12 +98,12 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 		{
 			desc: "invalid: invalid query node grpc url",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: 1&27.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				query_node_grpc_url: 1&27.0.0.1:36658
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
@@ -111,25 +111,25 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing query node grpc url",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
-				// explicitly missing query_node_grpc_url
+			inputConfigYAML: `
 				query_node_rpc_url: tcp://127.0.0.1:36657
+				# NB: explicitly missing query_node_grpc_url
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid query node rpc url",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
-				query_node_grpc_url: tcp://127.0.0.1:36658
+			inputConfigYAML: `
 				query_node_rpc_url: 1&27.0.0.1:36657
+				query_node_grpc_url: tcp://127.0.0.1:36658
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
 			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
@@ -137,21 +137,21 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 		{
 			desc: "invalid: missing query node rpc url",
 
-			inputConfig: `
-				self_signing: true
-				signing_key: app1
-				listening_endpoint: http://localhost:42069
+			inputConfigYAML: `
+				# NB: explicitly missing query_node_rpc_url
 				query_node_grpc_url: tcp://127.0.0.1:36658
-				// explicitly missing query_node_rpc_url
+				signing_key: app1
+				self_signing: true
+				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigUnmarshalYAML,
+			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
 			config, err := config.ParseAppGateServerConfigs([]byte(normalizedConfig))
 
 			if tt.expectedError != nil {

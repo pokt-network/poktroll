@@ -25,12 +25,12 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	// Top level section
 	// SigningKeyName is required
-	if yamlRelayMinerConfig.SigningKeyName == "" {
+	if len(yamlRelayMinerConfig.SigningKeyName) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName
 	}
 
 	// SmtStorePath is required
-	if yamlRelayMinerConfig.SmtStorePath == "" {
+	if len(yamlRelayMinerConfig.SmtStorePath) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSmtStorePath
 	}
 
@@ -38,7 +38,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	relayMinerPocketConfig := &RelayMinerPocketConfig{}
 	pocket := yamlRelayMinerConfig.Pocket
 
-	if pocket.TxNodeGRPCUrl == "" {
+	if len(pocket.TxNodeGRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("tx node grpc url is required")
 	}
 
@@ -52,7 +52,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// If the query node grpc url is empty, use the tx node grpc url
-	if pocket.QueryNodeGRPCUrl == "" {
+	if len(pocket.QueryNodeGRPCUrl) == 0 {
 		relayMinerPocketConfig.QueryNodeGRPCUrl = relayMinerPocketConfig.TxNodeGRPCUrl
 	} else {
 		// If the query node grpc url is not empty, make sure it is a valid URL
@@ -65,7 +65,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		}
 	}
 
-	if pocket.QueryNodeRPCUrl == "" {
+	if len(pocket.QueryNodeRPCUrl) == 0 {
 		return nil, ErrRelayMinerConfigInvalidNodeUrl.Wrap("query node rpc url is required")
 	}
 
@@ -89,7 +89,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	for _, yamlProxyConfig := range proxies {
 		// Proxy name is required
-		if yamlProxyConfig.Name == "" {
+		if len(yamlProxyConfig.Name) == 0 {
 			return nil, ErrRelayMinerConfigInvalidProxy.Wrap("proxy name is required")
 		}
 
@@ -131,7 +131,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	for _, yamlSupplierConfig := range suppliers {
 		// Supplier name is required
-		if yamlSupplierConfig.Name == "" {
+		if len(yamlSupplierConfig.Name) == 0 {
 			return nil, ErrRelayMinerConfigInvalidSupplier.Wrap("supplier name is required")
 		}
 
@@ -153,7 +153,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		existingHosts := make(map[string]bool)
 		for _, host := range yamlSupplierConfig.Hosts {
 			// Check if the supplier host is empty
-			if host == "" {
+			if len(host) == 0 {
 				return nil, ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier host")
 			}
 
@@ -258,9 +258,9 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 
 	// Populate the relay miner config
 	relayMinerCMDConfig := &RelayMinerConfig{
+		Pocket:         relayMinerPocketConfig,
 		SigningKeyName: yamlRelayMinerConfig.SigningKeyName,
 		SmtStorePath:   yamlRelayMinerConfig.SmtStorePath,
-		Pocket:         relayMinerPocketConfig,
 		Proxies:        relayMinerProxiesConfig,
 	}
 
