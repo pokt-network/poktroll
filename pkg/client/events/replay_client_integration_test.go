@@ -13,6 +13,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -108,30 +109,18 @@ func TestReplayClient_Remapping(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	go func() {
-		// Subscribe to the replay clients events
-		eventTypeObs := replayClient.EventsSequence(ctx)
-		eventObserver := eventTypeObs.Subscribe(ctx)
-		var previousMessage messageEvent
-		for msgEvent := range eventObserver.Ch() {
-			var previousNum int32
-			var currentNum int32
-			if previousMessage != nil {
-				_, err := fmt.Sscanf(previousMessage.EventMessage(), "message_%d", &previousNum)
-				require.NoError(t, err)
-				_, err = fmt.Sscanf(msgEvent.EventMessage(), "message_%d", &currentNum)
-				require.NoError(t, err)
-			}
-			previousMessage = msgEvent
-
-			require.NotEmpty(t, msgEvent)
+	channel.ForEach(
+		ctx,
+		observable.Observable[messageEvent](replayClient.EventsSequence(ctx)),
+		func(ctx context.Context, event messageEvent) {
+			require.NotEmpty(t, event)
 			received := eventsReceived.Add(1)
 			if received >= eventsToRecv {
 				errCh <- nil
 				return
 			}
-		}
-	}()
+		},
+	)
 
 	select {
 	case err := <-errCh:
