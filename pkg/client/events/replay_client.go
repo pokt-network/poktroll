@@ -153,10 +153,11 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 		rClient.replayObsCache,
 		func(ctx context.Context, eventTypeObs R) {
 			if prevEventTypeObs != nil {
-				// If the assumption that receive events from the gorilla
-				// websocket package are persistent fails, unsubscribe from the
-				// previous event type observable, in the case where it may start
-				// receiving events again.
+				// Just in case the assumption that all transport errors are
+				// persistent does not hold, unsubscribe from the previous
+				// event type observable in order to prevent unexpected and/or
+				// duplicate notifications on the obsersvable returned by this
+				// function.
 				prevEventTypeObs.UnsubscribeAll()
 			} else {
 				prevEventTypeObs = eventTypeObs
