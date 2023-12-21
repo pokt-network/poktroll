@@ -1,9 +1,9 @@
 # Pocket node URL that exposes CometBFT JSON-RPC API.
 # This can be used by the Cosmos client SDK, event subscriptions, etc...
-query_node_rpc_url: tcp://poktroll-sequencer:36657
+query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
 # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
 # If unspecified, defaults to `tx_node_grpc_url`.
-query_node_grpc_url: tcp://poktroll-sequencer:36658
+query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
 # The name of the key (in the keyring) that will be used to sign relays
 signing_key: app1
 # Whether the server should sign all incoming requests with its own ring (for applications)
