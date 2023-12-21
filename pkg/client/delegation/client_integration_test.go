@@ -1,5 +1,3 @@
-//go:build integration
-
 package delegation_test
 
 // TODO(@h5law): Figure out how to use real components of the localnet
@@ -37,7 +35,7 @@ const (
 // simulated localnet. Currently this test doesn't work. Although the delegation
 // client subscribes it doesn't receive any events.
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
-	t.SkipNow()
+	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	// Create the network with 2 applications and 1 gateway
 	net, appAddresses, gatewayAddr := createNetworkWithApplicationsAndGateways(t)
 	ctx, cancel := context.WithCancel(context.Background())
