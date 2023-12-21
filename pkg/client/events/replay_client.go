@@ -44,7 +44,7 @@ type NewEventsFn[T any] func([]byte) (T, error)
 
 // replayClient implements the EventsReplayClient interface for a generic type T,
 // and replay observable for type T.
-type replayClient[T any, U observable.ReplayObservable[T]] struct {
+type replayClient[T any, R observable.ReplayObservable[T]] struct {
 	// queryString is the query string used to subscribe to events of the
 	// desired type.
 	// See: https://docs.cosmos.network/main/learn/advanced/events#subscribing-to-events
@@ -59,22 +59,25 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 	// parameter.
 	eventDecoder NewEventsFn[T]
 	// replayObsBufferSize is the buffer size for the replay observable returned
-	// by EventsSequence
+	// by EventsSequence, this can be any integer and it refers to the number of
+	// notifications the replay observable will hold in its buffer, that can be
+	// replayed to new observers.
+	// NB: This is not the buffer size of the replayObsCache
 	replayObsBufferSize int
-	// replayObsCache is a replay observable with replay buffer size 1,
-	// which holds the "active latest observable" which is notified when
-	// new events are received by the events query client subscription
-	// created in goPublishEvents. This observable (and the one it emits) closes
-	// when the events bytes observable returns an error and is updated with a
-	// new "active" observable after a new events query subscription is created.
-	// TODO(@h5law): consider retyping this to a Observable of ReplayObservables
-	// as it does not need to be replayable.
-	replayObsCache observable.ReplayObservable[U]
+	// replayObsCache is a replay observable with a buffer size of 1, which
+	// holds the "active latest replay observable" which is notified when new
+	// events are received by the events query client subscription created in
+	// goPublishEvents. This observable (and the one it emits) closes when the
+	// events bytes observable returns an error and is updated with a new
+	// "active" observable after a new events query subscription is created.
+	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// we no depend on it being replayable.
+	replayObsCache observable.ReplayObservable[R]
 	// replayObsCachePublishCh is the publish channel for replayObsCache.
 	// It's used to set and subsequently update replayObsCache the events replay
 	// observable;
 	// For example when the connection is re-established after erroring.
-	replayObsCachePublishCh chan<- U
+	replayObsCachePublishCh chan<- R
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -86,24 +89,28 @@ type replayClient[T any, U observable.ReplayObservable[T]] struct {
 //
 // Required dependencies:
 //   - client.EventsQueryClient
-func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
+func NewEventsReplayClient[T any, R observable.ReplayObservable[T]](
 	ctx context.Context,
 	deps depinject.Config,
 	queryString string,
 	newEventFn NewEventsFn[T],
 	replayObsBufferSize int,
-) (client.EventsReplayClient[T, U], error) {
+) (client.EventsReplayClient[T, R], error) {
 	// Initialize the replay client
-	rClient := &replayClient[T, U]{
+	rClient := &replayClient[T, R]{
 		queryString:         queryString,
 		eventDecoder:        newEventFn,
 		replayObsBufferSize: replayObsBufferSize,
 	}
-	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[U](
+	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
+	// we no depend on it being replayable.
+	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[R](
 		ctx,
-		1, // replay buffer size 1
+		// Buffer size of 1 as the cache only needs to hold the latest
+		// active replay observable.
+		replayObsCacheBufferSize,
 	)
-	rClient.replayObsCache = observable.ReplayObservable[U](replayObsCache)
+	rClient.replayObsCache = observable.ReplayObservable[R](replayObsCache)
 	rClient.replayObsCachePublishCh = replayObsCachePublishCh
 
 	// Inject dependencies
@@ -117,7 +124,7 @@ func NewEventsReplayClient[T any, U observable.ReplayObservable[T]](
 	return rClient, nil
 }
 
-// EventsSequence returns a ReplayObservable, with the buffer size provided
+// EventsSequence returns a new ReplayObservable, with the buffer size provided
 // during the EventsReplayClient construction, which is notified when new
 // events are received by the encapsulated EventsQueryClient.
 func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
@@ -140,22 +147,27 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
-	// Subscribe to the replayObsCache to listen for changes to the "active"
-	// replay observable.
-	cachedEventTypeObserver := rClient.replayObsCache.Subscribe(ctx)
-	for eventObs := range cachedEventTypeObserver.Ch() {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-		// Publish events from the new "active" replay observable to the given
-		// publish channel.
-		eventObserver := eventObs.Subscribe(ctx)
-		for event := range eventObserver.Ch() {
-			publishCh <- event
-		}
-	}
+	var prevEventTypeObs observable.ReplayObservable[T]
+	channel.ForEach[R](
+		ctx,
+		rClient.replayObsCache,
+		func(ctx context.Context, eventTypeObs R) {
+			if prevEventTypeObs != nil {
+				// Just in case the assumption that all transport errors are
+				// persistent does not hold, unsubscribe from the previous
+				// event type observable in order to prevent unexpected and/or
+				// duplicate notifications on the obsersvable returned by this
+				// function.
+				prevEventTypeObs.UnsubscribeAll()
+			} else {
+				prevEventTypeObs = eventTypeObs
+			}
+			eventObserver := eventTypeObs.Subscribe(ctx)
+			for event := range eventObserver.Ch() {
+				publishCh <- event
+			}
+		},
+	)
 }
 
 // LastNEvents returns the last N typed events that have been received by the
@@ -204,29 +216,31 @@ func (rClient *replayClient[T, R]) goPublishEvents(ctx context.Context) {
 func (rClient *replayClient[T, R]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
 		errCh := make(chan error, 1)
-		eventsBzObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
+		eventsBytesObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
 		if err != nil {
 			errCh <- err
 			return errCh
 		}
 
 		// NB: must cast back to generic observable type to use with Map.
-		eventsBz := observable.Observable[either.Either[[]byte]](eventsBzObs)
+		eventsBzObs := observable.Observable[either.Either[[]byte]](eventsBytesObs)
 		typedObs := channel.MapReplay(
 			ctx,
 			replayObsCacheBufferSize,
-			eventsBz,
+			eventsBzObs,
 			rClient.newMapEventsBytesToTFn(errCh),
 		)
 
 		// Subscribe to the eventBzObs and block until the channel closes.
 		// Then pass this as an error to force the retry.OnError to resubscribe.
 		go func() {
-			eventsBzSub := eventsBz.Subscribe(ctx)
-			for range eventsBzSub.Ch() {
+			eventsBzObserver := eventsBzObs.Subscribe(ctx)
+			for range eventsBzObserver.Ch() {
 				// Wait for the channel to close.
 				continue
 			}
+			// UnsubscribeAll downstream observers, as the source observable has
+			// closed and will not emit any more values.
 			typedObs.UnsubscribeAll()
 			// Publish an error to the error channel to initiate a retry
 			errCh <- ErrEventsConsClosed

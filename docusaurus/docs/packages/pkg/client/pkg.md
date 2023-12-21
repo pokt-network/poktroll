@@ -1,13 +1,13 @@
-# Package `client`
+---
+title: Client Package
+sidebar_position: 1
+---
 
-## Table of Contents
+# Package `pkg/client` <!-- omit in toc -->
 
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture Overview](#architecture-overview)
-  - [Component Diagram Legend](#component-diagram-legend)
-  - [Clients Dependency Tree](#clients-dependency-tree)
-  - [Network Interaction](#network-interaction)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Basic Example](#basic-example)
@@ -16,6 +16,8 @@
 - [API Reference](#api-reference)
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
+  - [How does the `TxClient` interface differ from `TxContext`?](#how-does-the-txclient-interface-differ-from-txcontext)
+  - [Can I extend or customize the provided interfaces?](#can-i-extend-or-customize-the-provided-interfaces)
 
 ## Overview
 

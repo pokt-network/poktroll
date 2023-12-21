@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/testutil/mockclient"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
 // Create the generic event type and decoder for the replay client
@@ -57,52 +57,44 @@ func newMessageEventBz(eventNum int32) []byte {
 
 func TestReplayClient_Remapping(t *testing.T) {
 	var (
-		ctx              = context.Background()
-		connClosed       atomic.Bool
-		delayEvent       atomic.Bool
-		readEventCounter atomic.Int32
-		eventsReceived   atomic.Int32
-		eventsToRecv     = int32(10)
-		errCh            = make(chan error, 1)
-		timeoutAfter     = 3 * time.Second // 1 second delay on retry.OnError
+		ctx               = context.Background()
+		connClosed        atomic.Bool
+		firstEventDelayed atomic.Bool
+		readEventCounter  atomic.Int32
+		eventsReceived    atomic.Int32
+		eventsToRecv      = int32(10)
+		errCh             = make(chan error, 1)
+		timeoutAfter      = 3 * time.Second // 1 second delay on retry.OnError
 	)
 
 	// Setup the mock connection and dialer
-	ctrl := gomock.NewController(t)
-	connMock := mockclient.NewMockConnection(ctrl)
-	dialerMock := mockclient.NewMockDialer(ctrl)
-	// Expect the connection to be closed and the dialer to be re-established
-	connMock.EXPECT().Close().DoAndReturn(func() error {
-		connClosed.CompareAndSwap(false, true)
-		return nil
-	}).Times(2) // Close one by hand and EQC will attempt to close again
-	// Expect the subscription to be re-established any number of times
-	connMock.EXPECT().
-		Send(gomock.Any()).
-		DoAndReturn(func(eventBz []byte) error {
-			if connClosed.Load() {
-				connClosed.CompareAndSwap(true, false)
-			}
-			delayEvent.CompareAndSwap(true, false)
-			return nil
-		}).
-		// Once to estabslish the connection and once to re-establish
-		Times(2)
+	connMock, dialerMock := testeventsquery.NewNTimesReconnectMockConnAndDialer(t, 2, &connClosed, &firstEventDelayed)
 	// Mock the connection receiving events
 	connMock.EXPECT().Receive().
+		// Receive is called in the tightest loop possible (max speed limited
+		// by a goroutine) and as such the sleep's within are used to slow down
+		// the time between events to prevent unexpected behavior. As in this
+		// test environment, there are no "rea" delays between "#Receive" calls
+		// (events being emitted) and as such the sleep's enable the publishing
+		// of notifications to observers to occur in a flake-free manner.
 		DoAndReturn(func() (any, error) {
 			// Simulate ErrConnClosed if connection is isClosed.
 			if connClosed.Load() {
 				return nil, events.ErrEventsConnClosed
 			}
 
-			// Delay the event if needed
-			if !delayEvent.Load() {
+			// Delay the event if needed, this is to allow for the events query
+			// client to subscribe and receive the first event.
+			if !firstEventDelayed.CompareAndSwap(false, true) {
 				time.Sleep(50 * time.Millisecond)
-				delayEvent.CompareAndSwap(false, true)
 			}
 
-			event := newMessageEventBz(readEventCounter.Add(1) - 1)
+			eventNum := readEventCounter.Add(1) - 1
+			event := newMessageEventBz(eventNum)
+			if eventNum == 2 {
+				// Simulate the connection closing
+				connMock.Close()
+			}
 
 			// Simulate IO delay between sequential events.
 			time.Sleep(50 * time.Microsecond)
@@ -111,10 +103,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 			return event, nil
 		}).
 		MinTimes(int(eventsToRecv))
-	// Expect the dialer to be re-established any number of times
-	dialerMock.EXPECT().DialContext(gomock.Any(), gomock.Any()).
-		Return(connMock, nil).
-		AnyTimes()
 
 	// Setup the events query client dependency
 	dialerOpt := events.WithDialer(dialerMock)
@@ -131,34 +119,18 @@ func TestReplayClient_Remapping(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	go func() {
-		// Subscribe to the replay clients events
-		replayObs := replayClient.EventsSequence(ctx)
-		replaySub := replayObs.Subscribe(ctx)
-		var previousMessage messageEvent
-		for msgEvent := range replaySub.Ch() {
-			var previousNum int32
-			var currentNum int32
-			if previousMessage != nil {
-				_, err := fmt.Sscanf(previousMessage.EventMessage(), "message_%d", &previousNum)
-				require.NoError(t, err)
-				_, err = fmt.Sscanf(msgEvent.EventMessage(), "message_%d", &currentNum)
-				require.NoError(t, err)
-			}
-			previousMessage = msgEvent
-
-			require.NotEmpty(t, msgEvent)
+	channel.ForEach(
+		ctx,
+		observable.Observable[messageEvent](replayClient.EventsSequence(ctx)),
+		func(ctx context.Context, event messageEvent) {
+			require.NotEmpty(t, event)
 			received := eventsReceived.Add(1)
 			if received >= eventsToRecv {
 				errCh <- nil
 				return
 			}
-		}
-	}()
-
-	// Wait for ~2 events to be received before closing the connection
-	time.Sleep(51675 * time.Microsecond)
-	connMock.Close()
+		},
+	)
 
 	select {
 	case err := <-errCh:
