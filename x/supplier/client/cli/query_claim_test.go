@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
@@ -18,17 +21,21 @@ import (
 )
 
 func TestClaim_Show(t *testing.T) {
-	sessionCount := 1
-	supplierCount := 3
-	appCount := 3
+	ctx := context.Background()
 
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		appCount,
-		supplierCount,
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		t, &network.InMemoryNetworkConfig{
+			NumSessions:             1,
+			NumSuppliers:            3,
+			AppSupplierPairingRatio: 2,
+		},
 	)
+	memnet.Start(ctx, t)
 
-	ctx := net.Validators[0].ClientCtx
+	claims, _ := memnet.CreateClaims(t)
+	net := memnet.GetNetwork(t)
+
+	clientCtx := memnet.GetClientCtx(t)
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
@@ -105,7 +112,7 @@ func TestClaim_Show(t *testing.T) {
 				tc.supplierAddr,
 			}
 			args = append(args, tc.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowClaim(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdShowClaim(), args)
 			if tc.expectedErr != nil {
 				require.ErrorContains(t, err, tc.expectedErr.Error())
 			} else {
@@ -123,21 +130,24 @@ func TestClaim_Show(t *testing.T) {
 }
 
 func TestClaim_List(t *testing.T) {
-	sessionCount := 2
-	supplierCount := 4
-	appCount := 3
-	serviceCount := 1
-	// Each supplier will submit a claim for each app x service combination (per session).
-	numClaimsPerSession := supplierCount * appCount * serviceCount
-	totalClaims := sessionCount * numClaimsPerSession
+	ctx := context.Background()
+	cfg := &network.InMemoryNetworkConfig{
+		NumSessions:             2,
+		NumRelaysPerSession:     5,
+		NumSuppliers:            4,
+		AppSupplierPairingRatio: 2,
+	}
 
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		supplierCount,
-		appCount,
-	)
+	numClaimsPerSession := cfg.GetNumApplications(t)
+	totalClaims := cfg.NumSessions * numClaimsPerSession
 
-	ctx := net.Validators[0].ClientCtx
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(t, cfg)
+	memnet.Start(ctx, t)
+
+	claims, _ := memnet.CreateClaims(t)
+	net := memnet.GetNetwork(t)
+
+	clientCtx := memnet.GetClientCtx(t)
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
@@ -158,7 +168,7 @@ func TestClaim_List(t *testing.T) {
 		step := 2
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
 
 			var resp types.QueryAllClaimsResponse
@@ -177,7 +187,7 @@ func TestClaim_List(t *testing.T) {
 		var next []byte
 		for i := 0; i < totalClaims; i += step {
 			args := prepareArgs(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 			require.NoError(t, err)
 
 			var resp types.QueryAllClaimsResponse
@@ -192,7 +202,7 @@ func TestClaim_List(t *testing.T) {
 		}
 	})
 
-	t.Run("ByAddress", func(t *testing.T) {
+	t.Run("BySupplierAddress", func(t *testing.T) {
 		supplierAddr := claims[0].SupplierAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
 		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSupplierAddress, supplierAddr))
@@ -204,7 +214,7 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
@@ -214,7 +224,12 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, sessionCount*appCount, int(resp.Pagination.Total))
+
+		// Test setup should create AppSupplierPairingRatio number of claims per
+		// session (height), per supplier. In this scenario, the expectation reduces
+		// the "per supplier" term to 1 (omitted below).
+		expectedNumClaims := cfg.NumSessions * cfg.AppSupplierPairingRatio
+		require.Equal(t, expectedNumClaims, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -229,7 +244,7 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
@@ -239,7 +254,11 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
-		require.Equal(t, supplierCount, int(resp.Pagination.Total))
+		// Test  setup should create NumSuppliers number of supplier/app pairs
+		// with matching serviceIds and one claim per pair, per session (height).
+		// In this scenario, the expectation is constrained to a single session,
+		// which should equate to a single claim.
+		require.Equal(t, 1, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {
@@ -254,31 +273,37 @@ func TestClaim_List(t *testing.T) {
 			}
 		}
 
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, numClaimsPerSession, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claim),
 		)
+
+		// TODO_TECHDEBT(#196): This expectation SHOULD NOT be derived from expectedClaims
+		// (as it currently is). Additionally, it SHOULD be a larger value except that each
+		// claim currently takes a block (we apparently MUST call `net.WaitForNextBlock()`)
+		// for each create claim message. This limits the number of fixture claims we can
+		// store on-chain that share the same session number/start height.
+		require.Equal(t, len(expectedClaims), int(resp.Pagination.Total))
 	})
 
 	t.Run("Total", func(t *testing.T) {
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListClaims(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListClaims(), args)
 		require.NoError(t, err)
 
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
-		require.Equal(t, totalClaims, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(claims),
 			nullify.Fill(resp.Claim),
 		)
+		require.Equal(t, totalClaims, int(resp.Pagination.Total))
 	})
 }
