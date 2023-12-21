@@ -22,11 +22,11 @@ import (
 func CreatePreGeneratedKeyringAccounts(
 	t *testing.T,
 	kr keyring.Keyring,
-	limit int,
+	numAccounts int,
 ) []*PreGeneratedAccount {
 	t.Helper()
 
-	accounts := make([]*PreGeneratedAccount, limit)
+	accounts := make([]*PreGeneratedAccount, numAccounts)
 	for i := range accounts {
 		preGeneratedAccount := MustPreGeneratedAccountAtIndex(uint32(i))
 
@@ -43,5 +43,5 @@ func CreatePreGeneratedKeyringAccounts(
 		accounts[i] = preGeneratedAccount
 	}
 
-	return accounts[:limit]
+	return accounts[:numAccounts]
 }
