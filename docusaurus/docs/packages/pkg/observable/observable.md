@@ -1,6 +1,23 @@
-## `pocket/pkg/observable` Package
+---
+title: Observable Package
+sidebar_position: 1
+---
+
+## `pocket/pkg/observable` Package <!-- omit in toc -->
 
 The `pocket/pkg/observable` package provides a lightweight and straightforward mechanism to handle asynchronous notifications using the Observer pattern. This is achieved through two primary interfaces: `Observable` and `Observer`.
+
+- [Overview](#overview)
+- [Interfaces and Structures](#interfaces-and-structures)
+  - [`Observable` Interface](#observable-interface)
+  - [`Observer` Interface](#observer-interface)
+- [Architecture Diagrams](#architecture-diagrams)
+  - [Observable Synchronization](#observable-synchronization)
+  - [Observable Buffering](#observable-buffering)
+- [Usage](#usage)
+  - [Basic Example](#basic-example)
+- [Considerations](#considerations)
+- [Conclusion](#conclusion)
 
 ## Overview
 
@@ -13,28 +30,36 @@ The `Observable` interface is responsible for notifying multiple subscribers abo
 Represents a publisher in a "Fan-Out" system design, allowing multiple subscribers to be notified of new values asynchronously.
 
 - **Methods**:
-    - **Subscribe**: Used to subscribe an observer to the observable. Returns an instance of the `Observer` interface.
-      ```go
-      func (o *MyObservableType) Subscribe(ctx context.Context) Observer[MyValueType]
-      ```
-    - **UnsubscribeAll**: Unsubscribes all observers from the observable.
-      ```go
-      func (o *MyObservableType) UnsubscribeAll()
-      ```
+
+  - **Subscribe**: Used to subscribe an observer to the observable. Returns an instance of the `Observer` interface.
+
+    ```go
+    func (o *MyObservableType) Subscribe(ctx context.Context) Observer[MyValueType]
+    ```
+
+  - **UnsubscribeAll**: Unsubscribes all observers from the observable.
+
+    ```go
+    func (o *MyObservableType) UnsubscribeAll()
+    ```
 
 ### `Observer` Interface
 
 Represents a subscriber in a "Fan-Out" system design, providing access to the notified channel and capabilities to unsubscribe.
 
 - **Methods**:
-    - **Unsubscribe**: Used to unsubscribe the observer from its associated observable.
-      ```go
-      func (obs *MyObserverType) Unsubscribe()
-      ```
-    - **Ch**: Returns the channel through which the observer receives notifications.
-      ```go
-      func (obs *MyObserverType) Ch() <-chan MyValueType
-      ```
+
+  - **Unsubscribe**: Used to unsubscribe the observer from its associated observable.
+
+    ```go
+    func (obs *MyObserverType) Unsubscribe()
+    ```
+
+  - **Ch**: Returns the channel through which the observer receives notifications.
+
+    ```go
+    func (obs *MyObserverType) Ch() <-chan MyValueType
+    ```
 
 ## Architecture Diagrams
 
@@ -124,7 +149,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
+
 	"poktroll/pkg/observable/channel"
 )
 
