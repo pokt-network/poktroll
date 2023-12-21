@@ -69,13 +69,20 @@ func TestReplayClient_Remapping(t *testing.T) {
 	connMock, dialerMock := testeventsquery.NewNTimesReconnectMockConnAndDialer(t, 2, &connClosed, &firstEventDelayed)
 	// Mock the connection receiving events
 	connMock.EXPECT().Receive().
+		// Receive is called in the tightest loop possible (max speed limited
+		// by a goroutine) and as such the sleep's within are used to slow down
+		// the time between events to prevent unexpected behavior. As in this
+		// test environment, there are no "rea" delays between "#Receive" calls
+		// (events being emitted) and as such the sleep's enable the publishing
+		// of notifications to observers to occur in a flake-free manner.
 		DoAndReturn(func() (any, error) {
 			// Simulate ErrConnClosed if connection is isClosed.
 			if connClosed.Load() {
 				return nil, events.ErrEventsConnClosed
 			}
 
-			// Delay the event if needed
+			// Delay the event if needed, this is to allow for the events query
+			// client to subscribe and receive the first event.
 			if !firstEventDelayed.CompareAndSwap(false, true) {
 				time.Sleep(50 * time.Millisecond)
 			}

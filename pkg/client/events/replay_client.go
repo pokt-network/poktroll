@@ -59,7 +59,10 @@ type replayClient[T any, R observable.ReplayObservable[T]] struct {
 	// parameter.
 	eventDecoder NewEventsFn[T]
 	// replayObsBufferSize is the buffer size for the replay observable returned
-	// by EventsSequence.
+	// by EventsSequence, this can be any integer and it refers to the number of
+	// notifications the replay observable will hold in its buffer, that can be
+	// replayed to new observers.
+	// NB: This is not the buffer size of the replayObsCache
 	replayObsBufferSize int
 	// replayObsCache is a replay observable with a buffer size of 1, which
 	// holds the "active latest replay observable" which is notified when new
@@ -144,13 +147,20 @@ func (rClient *replayClient[T, R]) EventsSequence(ctx context.Context) R {
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
+	var prevEventTypeObs observable.ReplayObservable[T]
 	channel.ForEach[R](
 		ctx,
 		rClient.replayObsCache,
 		func(ctx context.Context, eventTypeObs R) {
-			// TODO_CONSIDERATION: hold a reference to the previous event type
-			// observable and call `#UnsubscribeAll()` here in the event that it
-			// somehow starts receiving notifications again.
+			if prevEventTypeObs != nil {
+				// If the assumption that receive events from the gorilla
+				// websocket package are persistent fails, unsubscribe from the
+				// previous event type observable, in the case where it may start
+				// receiving events again.
+				prevEventTypeObs.UnsubscribeAll()
+			} else {
+				prevEventTypeObs = eventTypeObs
+			}
 			eventObserver := eventTypeObs.Subscribe(ctx)
 			for event := range eventObserver.Ch() {
 				publishCh <- event
