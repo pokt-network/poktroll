@@ -3,10 +3,10 @@
 query_node_rpc_url: tcp://poktroll-sequencer:36657
 # Pocket node URL that exposes the Cosmos gRPC service.
 query_node_grpc_url: tcp://poktroll-sequencer:36658
-# Name of the key (in the keyring) to sign transactions
-tx_node_grpc_url: tcp://poktroll-sequencer:36658
 # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
 # If unspecified, defaults to `tx_node_grpc_url`.
+tx_node_grpc_url: tcp://poktroll-sequencer:36658
+# Name of the key (in the keyring) to sign transactions
 signing_key_name: supplier1
 # Path to where the data backing SMT KV store exists on disk
 smt_store_path: smt_stores
