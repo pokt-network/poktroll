@@ -23,6 +23,19 @@ message Params {
 }
 
 
+/*
+
+TODO_IN_THIS_PR: Plan & implement the following before splitting it into smaller PRs:
+- Note how this has been deprecated: https://docs.cosmos.network/main/build/modules/params
+  - Introduce a MsgUpdateParams everywhere: https://github.com/cosmos/cosmos-sdk/blob/44be02175e8048a07b8ce3ea6ca5de05b77a9f95/proto/cosmos/gov/v1/tx.proto#L180
+- Add all the params we need (or a starting point)
+  - Make the params updatable (and helpers + tests to update )
+  - Add Makefile helper that uses the `authority` address (x/auth? x/account?) to update the params
+- Add the interaface for tokenomics
+  - Make it dependt on the banking module + w/e else we need
+  - Just focus on mint/burn with some simple logic
+*/
+
 
 /*
 {
