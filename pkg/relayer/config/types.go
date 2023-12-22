@@ -6,6 +6,7 @@ type ProxyType int
 
 const (
 	ProxyTypeHTTP ProxyType = iota
+	// TODO: Support other proxy types: HTTPS, TCP, UNIX socket, QUIC, WebRTC ...
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
@@ -123,12 +124,17 @@ type RelayMinerSupplierServiceConfig struct {
 	Url *url.URL
 	// Authentication is the basic auth structure used to authenticate to the
 	// request being proxied from the current proxy server.
-	// If `RelayMinerSupplierConfig.Type` is `ProxyTypeHTTP` then `Authentication`
-	// may be a non-nil pointer to a `RelayMinerSupplierServiceAuthentication`
+	// If the service the relay requests are forwarded to requires basic auth
+	// then this field must be populated.
+	// TODO_TECHDEBT(@red-0ne): Pass the authentication to the service instance
+	// when the relay request is forwarded to it.
 	Authentication *RelayMinerSupplierServiceAuthentication
 	// Headers is a map of headers to be used for other authentication means.
-	// If `RelayMinerSupplierConfig.Type` is `ProxyTypeHTTP` then `Headers` may
-	// be a non-nil pointer to a `map[string]string`
+	// If the service the relay requests are forwarded to requires header based
+	// authentication then this field must be populated accordingly.
+	// For example: { "Authorization": "Bearer <token>" }
+	// TODO_TECHDEBT(@red-0ne): Add these headers to the forwarded request
+	// before sending it to the service instance.
 	Headers map[string]string
 }
 
