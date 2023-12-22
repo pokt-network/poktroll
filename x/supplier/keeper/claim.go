@@ -34,7 +34,7 @@ func (k Keeper) UpsertClaim(ctx sdk.Context, claim types.Claim) {
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
-	sessionEndBlockHeight := uint64(claim.GetSessionHeader().GetSessionEndBlockHeight())
+	sessionEndBlockHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
 	sessionHeightStoreIndex.Set(heightKey, primaryKey)
 
@@ -61,7 +61,7 @@ func (k Keeper) RemoveClaim(ctx sdk.Context, sessionId, supplierAddr string) {
 	sessionHeightStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 
 	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
-	sessionEndBlockHeight := uint64(claim.GetSessionHeader().GetSessionEndBlockHeight())
+	sessionEndBlockHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
 
 	// Delete all the entries (primary store and secondary indices)

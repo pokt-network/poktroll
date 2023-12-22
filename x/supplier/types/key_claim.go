@@ -18,43 +18,22 @@ const (
 	ClaimSessionEndHeightPrefix = "Claim/height/"
 )
 
-// ClaimPrimaryKey returns the primary store key to retrieve a Claim by creating a composite key of the sessionId and supplierAddr
+// ClaimPrimaryKey returns the primary store key used to retrieve a Claim by creating a composite key of the sessionId and supplierAddr.
 func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
-	var key []byte
-
 	// We are guaranteed uniqueness of the primary key if it's a composite of the (sessionId, supplierAddr)
 	// because every supplier can only have one claim per session.
-	key = append(key, []byte(sessionId)...)
-	key = append(key, []byte("/")...)
-	key = append(key, []byte(supplierAddr)...)
-	key = append(key, []byte("/")...)
-
-	return key
+	return KeyComposite([]byte(sessionId), []byte(supplierAddr))
 }
 
-// ClaimSupplierAddressKey returns the address key to iterate through claims given a supplier Address
+// ClaimSupplierAddressKey returns the key used to iterate through claims given a supplier Address.
 func ClaimSupplierAddressKey(supplierAddr string, primaryKey []byte) []byte {
-	var key []byte
-
-	key = append(key, []byte(supplierAddr)...)
-	key = append(key, []byte("/")...)
-	key = append(key, primaryKey...)
-	key = append(key, []byte("/")...)
-
-	return key
+	return KeyComposite([]byte(supplierAddr), primaryKey)
 }
 
-// ClaimSupplierAddressKey returns the address key to iterate through claims given a supplier Address
-func ClaimSupplierEndSessionHeightKey(sessionEndHeight uint64, primaryKey []byte) []byte {
-	var key []byte
-
+// ClaimSupplierEndSessionHeightKey returns the key used to iterate through claims given a session end height.
+func ClaimSupplierEndSessionHeightKey(sessionEndHeight int64, primaryKey []byte) []byte {
 	heightBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(heightBz, sessionEndHeight)
+	binary.BigEndian.PutUint64(heightBz, uint64(sessionEndHeight))
 
-	key = append(key, []byte(heightBz)...)
-	key = append(key, []byte("/")...)
-	key = append(key, primaryKey...)
-	key = append(key, []byte("/")...)
-
-	return key
+	return KeyComposite(heightBz, primaryKey)
 }
