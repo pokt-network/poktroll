@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -80,11 +79,12 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 
 func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*types.QueryGetClaimResponse, error) {
 	if req == nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid request")
+		err := types.ErrSupplierInvalidQueryRequest.Wrapf("request cannot be nil")
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := req.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
@@ -95,7 +95,9 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 		req.SupplierAddress,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("claim not found for session %s and supplier %s", req.SessionId, req.SupplierAddress))
+		err := types.ErrSupplierClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
+		err = status.Error(codes.NotFound, err.Error())
+		return nil, err
 	}
 
 	return &types.QueryGetClaimResponse{Claim: val}, nil

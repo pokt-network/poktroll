@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -17,12 +16,12 @@ import (
 func (query *QueryGetClaimRequest) ValidateBasic() error {
 	// Validate the supplier address
 	if _, err := sdk.AccAddressFromBech32(query.SupplierAddress); err != nil {
-		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
 	}
 
 	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 	if query.SessionId == "" {
-		return sdkerrors.Wrapf(ErrSupplierInvalidSessionId, "invalid session ID for claim being retrieved %s", query.SessionId)
+		return ErrSupplierInvalidSessionId.Wrapf("invalid session ID for claim being retrieved %s", query.SessionId)
 	}
 	return nil
 }
@@ -35,7 +34,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 	switch filter := query.Filter.(type) {
 	case *QueryAllClaimsRequest_SupplierAddress:
 		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
-			return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid supplier address for claims being retrieved %s; (%v)", filter.SupplierAddress, err)
+			return ErrSupplierInvalidAddress.Wrapf("invalid supplier address for claims being retrieved %s; (%v)", filter.SupplierAddress, err)
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
@@ -46,7 +45,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
-			return sdkerrors.Wrapf(ErrSupplierInvalidSessionEndHeight, "invalid session end height for claims being retrieved %d", filter.SessionEndHeight)
+			return ErrSupplierInvalidSessionEndHeight.Wrapf("invalid session end height for claims being retrieved %d", filter.SessionEndHeight)
 		}
 
 	default:

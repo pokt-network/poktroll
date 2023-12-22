@@ -18,4 +18,7 @@ var (
 	ErrSupplierInvalidService            = sdkerrors.Register(ModuleName, 8, "invalid service in supplier")
 	ErrSupplierInvalidClaimRootHash      = sdkerrors.Register(ModuleName, 9, "invalid root hash")
 	ErrSupplierInvalidSessionEndHeight   = sdkerrors.Register(ModuleName, 10, "invalid session ending height")
+	ErrSupplierInvalidQueryRequest       = sdkerrors.Register(ModuleName, 11, "invalid query request")
+	ErrSupplierClaimNotFound             = sdkerrors.Register(ModuleName, 12, "claim not found")
+	ErrSupplierProofNotFound             = sdkerrors.Register(ModuleName, 13, "proof not found")
 )

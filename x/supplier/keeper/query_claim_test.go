@@ -19,13 +19,15 @@ func TestClaim_QuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	wctx := sdk.WrapSDKContext(ctx)
 	claims := createNClaims(keeper, ctx, 2)
+
+	var wrongSupplierAddr = sample.AccAddress()
 	tests := []struct {
 		desc string
 
 		request *types.QueryGetClaimRequest
 
-		response *types.QueryGetClaimResponse
-		err      error
+		response    *types.QueryGetClaimResponse
+		expectedErr error
 	}{
 		{
 			desc: "First Claim",
@@ -35,8 +37,8 @@ func TestClaim_QuerySingle(t *testing.T) {
 				SupplierAddress: claims[0].SupplierAddress,
 			},
 
-			response: &types.QueryGetClaimResponse{Claim: claims[0]},
-			err:      nil,
+			response:    &types.QueryGetClaimResponse{Claim: claims[0]},
+			expectedErr: nil,
 		},
 		{
 			desc: "Second Claim",
@@ -46,37 +48,58 @@ func TestClaim_QuerySingle(t *testing.T) {
 				SupplierAddress: claims[1].SupplierAddress,
 			},
 
-			response: &types.QueryGetClaimResponse{Claim: claims[1]},
-			err:      nil,
+			response:    &types.QueryGetClaimResponse{Claim: claims[1]},
+			expectedErr: nil,
 		},
 		{
 			desc: "Claim Not Found - Random SessionId",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:       "not a real session id",
-				SupplierAddress: claims[0].SupplierAddress,
+				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
-			err: status.Error(codes.NotFound, "claim not found"),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					// TODO_CONSIDERATION: factor out error message format strings to constants.
+					"session ID %q and supplier %q",
+					"not a real session id",
+					claims[0].GetSupplierAddress(),
+				).Error(),
+			),
 		},
 		{
-			desc: "Claim Not Found - Random Supplier Address",
+			desc: "Claim Not Found - Wrong Supplier Address",
 
 			request: &types.QueryGetClaimRequest{
 				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
-				SupplierAddress: sample.AccAddress(),
+				SupplierAddress: wrongSupplierAddr,
 			},
 
-			err: status.Error(codes.NotFound, "claim not found"),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					"session ID %q and supplier %q",
+					claims[0].GetSessionHeader().GetSessionId(),
+					wrongSupplierAddr,
+				).Error(),
+			),
 		},
 		{
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetClaimRequest{
 				// SessionId:       Intentionally Omitted
-				SupplierAddress: claims[0].SupplierAddress,
+				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
-			err: types.ErrSupplierInvalidSessionId,
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidSessionId.Wrapf(
+					"invalid session ID for claim being retrieved %s",
+					"",
+				).Error(),
+			),
 		},
 		{
 			desc: "InvalidRequest - Missing SupplierAddress",
@@ -85,14 +108,34 @@ func TestClaim_QuerySingle(t *testing.T) {
 				// SupplierAddress: Intentionally Omitted,
 			},
 
-			err: types.ErrSupplierInvalidAddress,
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidAddress.Wrap(
+					"invalid supplier address for claim being retrieved ; (empty address string is not allowed)",
+				).Error(),
+			),
+		},
+		{
+			desc:    "InvalidRequest - nil QueryGetClaimRequest",
+			request: nil,
+
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidQueryRequest.Wrap(
+					"request cannot be nil",
+				).Error(),
+			),
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.Claim(wctx, tc.request)
-			if tc.err != nil {
-				require.ErrorContains(t, err, tc.err.Error())
+			if tc.expectedErr != nil {
+				actualStatus, ok := status.FromError(err)
+				require.True(t, ok)
+
+				require.ErrorIs(t, tc.expectedErr, actualStatus.Err())
+				require.ErrorContains(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
