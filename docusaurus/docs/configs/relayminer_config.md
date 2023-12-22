@@ -33,8 +33,8 @@ queries from and which services it forwards requests to._
   - [`hosts`](#hosts)
   - [`proxy_names`](#proxy_names)
 - [Proxy -\> Supplier referencing](#proxy---supplier-referencing)
-  - [RelayMiner setup -\> On-chain service relationship](#relayminer-setup---on-chain-service-relationship)
-  - [Full config example](#full-config-example)
+  - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
+- [Full config example](#full-config-example)
 
 # Usage
 
@@ -280,24 +280,27 @@ and `http-example-2` and the `7b-llm-model` supplier is referencing only the
 - http-example-2
   - ethereum
 ```
-## RelayMiner setup -> On-chain service relationship
+
+## RelayMiner config -> On-chain service relationship
 
 The following diagram illustrates how the `RelayMiner` config must match the
 on-chain staked service endpoints.
 
+_Assuming that the on-chain endpoints 1 and 2 have different hosts_
+
 ```mermaid
-flowchart RL
+flowchart LR
   subgraph PocketNetwork
     subgraph Supplier[On-chain Supplier]
-      subgraph Svc1[Service-1]
-        SId1[Service-1.Id]
+      subgraph Svc1[Service1]
+        SId1[Service1.Id]
         subgraph Endpoints
-          EP1[Endpoint-1]
-          EP2[Endpoint-2]
+          EP1[Endpoint1]
+          EP2[Endpoint2]
         end
       end
-      subgraph Svc2[Service-2]
-        SId2[Service-2.Id]
+      subgraph Svc2[Service2]
+        SId2[Service2.Id]
       end
       subgraph Svcs[Services...]
       end
@@ -306,15 +309,15 @@ flowchart RL
 
   subgraph RelayMiner
     subgraph HTTP[Proxy=ProxyTypeHTTP]
-      subgraph CSvc1[Service-1 Config]
-        CSId1[name=Service-1.Id]-->SId1
+      subgraph CSvc1[Service1 Config]
+        CSId1[name=Service1.Id]-->SId1
         subgraph Hosts
-          H1[Endpoint-1.Host]-->EP1
-          H2[Endpoint-2.Host]-->EP2
+          H1[Endpoint1.Host]-->EP1
+          H2[Endpoint2.Host]-->EP2
         end
       end
-      subgraph CSvc2[Service-2]
-        CSId2[Service-2.Id]
+      subgraph CSvc2[Service2 Config]
+        CSId2[Service2.Id]
       end
     end
     subgraph Proxies[Other proxy servers...]
@@ -323,7 +326,7 @@ flowchart RL
   CSvc2-->Svc2
 ```
 
-## Full config example
+# Full config example
 
 A full and commented example of a `RelayMiner` configuration file can be found
 at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
