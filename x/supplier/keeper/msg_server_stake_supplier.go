@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -17,10 +18,10 @@ func (k msgServer) StakeSupplier(
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "StakeSupplier")
-	logger.Info("About to stake supplier with msg: %v", msg)
+	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
-		logger.Error("invalid MsgStakeSupplier: %v", msg)
+		logger.Error(fmt.Sprintf("invalid MsgStakeSupplier: %v", msg))
 		return nil, err
 	}
 
@@ -29,11 +30,11 @@ func (k msgServer) StakeSupplier(
 	var coinsToDelegate sdk.Coin
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 	if !isSupplierFound {
-		logger.Info("Supplier not found. Creating new supplier for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %s", msg.Address))
 		supplier = k.createSupplier(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info("Supplier found. Updating supplier for address %s", msg.Address)
+		logger.Info(fmt.Sprintf("Supplier found. Updating supplier for address %s", msg.Address))
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
 			return nil, err
@@ -44,7 +45,7 @@ func (k msgServer) StakeSupplier(
 	// Retrieve the address of the supplier
 	supplierAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error("could not parse address %s", msg.Address)
+		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, err
 	}
 
@@ -52,13 +53,13 @@ func (k msgServer) StakeSupplier(
 	// Send the coins from the supplier to the staked supplier pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
-		logger.Error("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err)
+		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
-	logger.Info("Successfully updated supplier stake for supplier: %+v", supplier)
+	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
 	return &types.MsgStakeSupplierResponse{}, nil
 }

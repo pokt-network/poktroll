@@ -16,12 +16,14 @@ const (
 	// Define a query string to provide to the EventsQueryClient
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	eventQueryString = "message.action='eventName'"
+	eventQueryString = "message.action='messageActionName'"
 	// Define the websocket URL the EventsQueryClient will subscribe to
 	cometWebsocketURL = "ws://example.com:36657/websocket"
 	// the amount of events we want before they are emitted
 	replayObsBufferSize = 1
 )
+
+var _ EventType = (*eventType)(nil)
 
 // Define an interface to represent the onchain event
 type EventType interface {
