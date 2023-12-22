@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +15,10 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
+	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
+	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 )
 
 // SigningInformation is a struct that holds information related to the signing
@@ -119,8 +124,18 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		app.server.Shutdown(ctx)
 	}()
 
+	// TODO_IN_THIS_PR: figure out if we are going to have fixed path - https://github.com/slok/go-http-metrics#custom-handler-id
+	// TODO_IN_THIS_PR: move this logic behind config file
+	mm := metricsmiddleware.New(metricsmiddleware.Config{
+		Recorder: metrics.NewRecorder(metrics.Config{}),
+	})
+
 	// Set the HTTP handler.
-	app.server.Handler = app
+	app.server.Handler = middlewarestd.Handler("", mm, app)
+
+	// Serve metrics.
+	log.Printf("serving metrics at: %s", ":9090")
+	go http.ListenAndServe(":9090", promhttp.Handler())
 
 	// Start the HTTP server.
 	return app.server.ListenAndServe()
@@ -192,8 +207,12 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		app.replyWithError(ctx, requestPayloadBz, writer, err)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
+
+		// TODO_IN_THIS_PR: add relay_error_count metric.
 		return
 	}
+
+	// TODO_IN_THIS_PR: add relay_success_count metric.
 
 	// TODO_TECHDEBT: log additional info?
 	app.logger.Info().Msg("request serviced successfully")

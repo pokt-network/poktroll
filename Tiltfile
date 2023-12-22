@@ -165,6 +165,6 @@ k8s_resource(
     "appgateservers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["42069", "40006"],
+    port_forwards=["42069", "40006", "9093:9090"],
 )
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
