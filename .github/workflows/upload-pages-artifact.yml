@@ -1,0 +1,59 @@
+# Based off of https://github.com/LayZeeDK/github-pages-docusaurus
+name: Deploy docusaurus docs to GitHub pages
+
+on:
+  push:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    permissions:
+      id-token: write
+      pages: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 👇 Build steps
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: docusaurus/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd docusaurus
+          npm ci
+
+      - name: Build
+        run: |
+          cd docusaurus
+          npm run build
+
+      # 👆 Build steps
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # 👇 Specify build output path relative to the subdirectory
+          path: docusaurus/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+

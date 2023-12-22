@@ -71,6 +71,26 @@ check_godoc:
 	fi; \
 	}
 
+.PHONY: check_npm
+# Internal helper target - check if npm is installed
+check_npm:
+	{ \
+	if ( ! ( command -v npm >/dev/null )); then \
+		echo "Seems like you don't have npm installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_node
+# Internal helper target - check if node is installed
+check_node:
+	{ \
+	if ( ! ( command -v node >/dev/null )); then \
+		echo "Seems like you don't have node installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: warn_destructive
 warn_destructive: ## Print WARNING to the user
@@ -118,6 +138,11 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+
+# TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
+# cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
+# cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
+# cp ${HOME}/.poktroll/config/client.toml $(POKTROLLD_HOME)/config/client.toml
 
 ###############
 ### Linting ###
@@ -226,25 +251,18 @@ go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all te
 # TODO_NB                     - An important note to reference later
 # TODO_DISCUSS_IN_THIS_COMMIT - SHOULD NEVER BE COMMITTED TO MASTER. It is a way for the reviewer of a PR to start / reply to a discussion.
 # TODO_IN_THIS_COMMIT         - SHOULD NEVER BE COMMITTED TO MASTER. It is a way to start the review process while non-critical changes are still in progress
-TODO_KEYWORDS = -e "TODO" -e "TODO_COMMUNITY" -e "TODO_DECIDE" -e "TODO_TECHDEBT" -e "TODO_IMPROVE" -e "TODO_OPTIMIZE" -e "TODO_DISCUSS" -e "TODO_INCOMPLETE" -e "TODO_INVESTIGATE" -e "TODO_CLEANUP" -e "TODO_HACK" -e "TODO_REFACTOR" -e "TODO_CONSIDERATION" -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT" -e "TODO_CONSOLIDATE" -e "TODO_DEPRECATE" -e "TODO_ADDTEST" -e "TODO_RESEARCH" -e "TODO_BUG" -e "TODO_NB"
 
 .PHONY: todo_list
 todo_list: ## List all the TODOs in the project (excludes vendor and prototype directories)
-	grep --exclude-dir={.git,vendor,prototype} -r ${TODO_KEYWORDS}  .
-
-TODO_SEARCH ?= $(shell pwd)
-
-.PHONY: todo_search
-todo_search: ## List all the TODOs in a specific directory specific by `TODO_SEARCH`
-	grep --exclude-dir={.git,vendor,prototype} -r ${TODO_KEYWORDS} ${TODO_SEARCH}
+	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  .
 
 .PHONY: todo_count
 todo_count: ## Print a count of all the TODOs in the project
-	grep --exclude-dir={.git,vendor,prototype} -r ${TODO_KEYWORDS} . | wc -l
+	grep --exclude-dir={.git,vendor,./docusaurus} -r TODO  . | wc -l
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep --exclude-dir={.git,vendor,prototype,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_COMMIT" -e "TODO_DISCUSS_IN_THIS_COMMIT"
+	grep --exclude-dir={.git,vendor,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_"
 
 ####################
 ###   Gateways   ###
@@ -526,6 +544,10 @@ go_docs: check_godoc ## Generate documentation for the project
 .PHONY: openapi_gen
 openapi_gen: ## Generate the OpenAPI spec for the Ignite API
 	ignite generate openapi --yes
+
+.PHONY: docusaurus_start
+docusaurus_start: check_npm check_node ## Start the Docusaurus server
+	(cd docusaurus && npm i && npm run start)
 
 ######################
 ### Ignite Helpers ###

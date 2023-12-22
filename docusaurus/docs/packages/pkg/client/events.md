@@ -1,4 +1,9 @@
-# Package `pocket/pkg/client/events` <!-- omit in toc -->
+---
+title: Client Events
+sidebar_position: 2
+---
+
+# Package `pkg/client/events` <!-- omit in toc -->
 
 > An event query package for interfacing with [CometBFT](https://cometbft.com/)
 > and the [Cosmos SDK](https://v1.cosmos.network/sdk), facilitating subscriptions
@@ -23,9 +28,9 @@
   - [Advanced Usage](#advanced-usage-1)
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
-  - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
-  - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
-  - [Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?](#why-use-the-eventsreplayclient-over-directly-maintaining-an-eventsqueryclient)
+    - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
+    - [How can I use a different connection mechanism other than WebSockets?](#how-can-i-use-a-different-connection-mechanism-other-than-websockets)
+    - [Why use the `EventsReplayClient` over directly maintaining an `EventsQueryClient`?](#why-use-the-eventsreplayclient-over-directly-maintaining-an-eventsqueryclient)
 
 <!-- tocstop -->
 
@@ -273,7 +278,7 @@ const (
   // Define a query string to provide to the EventsQueryClient
   // See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
   // And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-  eventQueryString = "message.action='eventName'"
+	eventQueryString = "message.action='messageActionName'"
   // Define the websocket URL the EventsQueryClient will subscribe to
   cometWebsocketURL = "ws://example.com:36657/websocket"
 	// the amount of events we want before they are emitted
@@ -361,8 +366,13 @@ a respective type. Examples of these include the `client.BlockClient` and
 `client.DelegationClient` interfaces which under-the-hood are wrappers for the
 `EventsReplayClient`.
 
-See: [BlockClient](../../../pkg/client/block/) and
-[DelegationClient](../../../pkg/client/delegation/) for more detailed examples
+
+:::danger
+TODO: Update links for BlockClient and DelegationClient when they are added to the documentation.
+:::
+
+See: [BlockClient](#TODO) and
+[DelegationClient](#TODO) for more detailed examples
 on how to wrap and use the `EventsReplayClient` in a more advanced setting.
 
 ## Best Practices

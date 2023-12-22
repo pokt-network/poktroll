@@ -15,11 +15,11 @@ const (
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
 	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
-	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the block
-	// client struct that defaults to this but can be overridden via an option
-	// in future work.
+
 	// defaultRedelegationsReplayLimit is the number of redelegations that the
 	// replay observable returned by LastNRedelegations() will be able to replay.
+	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the `delegationClient`
+	// struct that defaults to this but can be overridden via an option.
 	defaultRedelegationsReplayLimit = 100
 )
 
