@@ -32,8 +32,8 @@ queries from and which services it forwards requests to._
     - [`headers`](#headers)
   - [`hosts`](#hosts)
   - [`proxy_names`](#proxy_names)
-- [Examples](#examples)
-  - [Proxy -\> Supplier referencing](#proxy---supplier-referencing)
+- [Proxy -\> Supplier referencing](#proxy---supplier-referencing)
+  - [RelayMiner setup -\> On-chain service relationship](#relayminer-setup---on-chain-service-relationship)
   - [Full config example](#full-config-example)
 
 # Usage
@@ -247,9 +247,7 @@ It must be a valid proxy name that is defined in the `proxies` section of the
 configuration file, must be unique across the supplier's `proxy_names`  and the
 `supplier` `type` must match the `type` of the referenced `proxy`.
 
-# Examples
-
-## Proxy -> Supplier referencing
+# Proxy -> Supplier referencing
 
 To illustrate how the `proxy_names` and `name` fields are used to reference
 proxies and suppliers, let's consider the following configuration file:
@@ -281,6 +279,48 @@ and `http-example-2` and the `7b-llm-model` supplier is referencing only the
   - 7b-llm-model
 - http-example-2
   - ethereum
+```
+## RelayMiner setup -> On-chain service relationship
+
+The following diagram illustrates how the `RelayMiner` config must match the
+on-chain staked service endpoints.
+
+```mermaid
+flowchart RL
+  subgraph PocketNetwork
+    subgraph Supplier[On-chain Supplier]
+      subgraph Svc1[Service-1]
+        SId1[Service-1.Id]
+        subgraph Endpoints
+          EP1[Endpoint-1]
+          EP2[Endpoint-2]
+        end
+      end
+      subgraph Svc2[Service-2]
+        SId2[Service-2.Id]
+      end
+      subgraph Svcs[Services...]
+      end
+    end
+  end
+
+  subgraph RelayMiner
+    subgraph HTTP[Proxy=ProxyTypeHTTP]
+      subgraph CSvc1[Service-1 Config]
+        CSId1[name=Service-1.Id]-->SId1
+        subgraph Hosts
+          H1[Endpoint-1.Host]-->EP1
+          H2[Endpoint-2.Host]-->EP2
+        end
+      end
+      subgraph CSvc2[Service-2]
+        CSId2[Service-2.Id]
+      end
+    end
+    subgraph Proxies[Other proxy servers...]
+    end
+  end
+  CSvc2-->Svc2
 ```
 
 ## Full config example
