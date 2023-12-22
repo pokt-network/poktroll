@@ -1,8 +1,12 @@
 package observable
 
-import errorsmod "cosmossdk.io/errors"
+import (
+	skderrors "cosmossdk.io/errors"
+)
 
 var (
-	ErrObserverClosed = errorsmod.Register(codespace, 1, "observer is closed")
-	codespace         = "observable"
+	codespace = "observable"
+
+	ErrObserverClosed                   = skderrors.Register(codespace, 1, "observer is closed")
+	ErrMergeObservableMultipleFailModes = skderrors.Register(codespace, 2, "cannot use multiple fail modes")
 )
