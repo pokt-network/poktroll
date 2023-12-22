@@ -79,7 +79,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		2. [ ] msg distribution validation
 	*/
 
-	// Construct and insert claim after all validation.
+	// Construct and upsert claim after all validation.
 	claim := suppliertypes.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
 		SessionHeader:   msg.GetSessionHeader(),

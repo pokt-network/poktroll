@@ -84,7 +84,7 @@ func CmdShowClaim() *cobra.Command {
 		Short: "shows a specific claim",
 		Long: `List a specific claim that the node being queried has access to (if it still exists).
 
-A unique claim can be defined via a session_id that a given supplier participated in.
+A unique claim can be defined via a session_id that the given supplier participated in.
 
 Example:
 $ poktrolld --home=$(POKTROLLD_HOME) q claim show-claims <session_id> <supplier_address> --node $(POCKET_NODE)`,
