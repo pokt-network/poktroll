@@ -52,6 +52,7 @@ func NewInMemoryNetworkWithGateways(t *testing.T, cfg *network.InMemoryNetworkCo
 	}
 }
 
+// DelegateAppToGateway delegates the application by address to the gateway by address.
 func (memnet *inMemoryNetworkWithGateways) DelegateAppToGateway(
 	t *testing.T,
 	appBech32 string,
@@ -75,6 +76,7 @@ func (memnet *inMemoryNetworkWithGateways) DelegateAppToGateway(
 	require.Equal(t, uint32(0), resp.Code)
 }
 
+// UndelegateAppFromGateway delegates the application by address from the gateway by address.
 func (memnet *inMemoryNetworkWithGateways) UndelegateAppFromGateway(
 	t *testing.T,
 	appBech32 string,
@@ -97,8 +99,6 @@ func (memnet *inMemoryNetworkWithGateways) UndelegateAppFromGateway(
 	require.Equal(t, uint32(0), resp.Code)
 }
 
-// TODO_IN_THIS_COMMIT: update comment
-//
 // Start initializes the in-memory network and performs the following setup:
 //   - populates a new in-memory keyring with a sufficient number of pre-generated accounts.
 //   - configures the application module's genesis state using addresses corresponding

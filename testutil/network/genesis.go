@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// GetGenesisState retrieves the genesis state for a given module from the
-// underlying cosmos-sdk testutil network.
+// GetGenesisState retrieves the genesis state for a given module from the underlying cosmos-sdk in-memory network.
 func GetGenesisState[T proto.Message](t *testing.T, moduleName string, memnet InMemoryCosmosNetwork) T {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.GetNetwork(t), "in-memory network not started yet, call inMemoryNetworkWithSessions#Start() first")
+	// Ensure the in-memory network has been started.
+	_ = memnet.GetNetwork(t)
 
 	var genesisState T
 	// NB: As this function is generic, it MUST use reflect in order to unmarshal

@@ -12,7 +12,7 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ConfigureDefaultSupplierModuleGenesisState generates and populates the in-memory
+// configureDefaultSupplierModuleGenesisState generates and populates the in-memory
 // network's application module's GenesisState object with a given number of suppliers,
 // each of which is staked for a unique service. It returns the genesis state object.
 func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t *testing.T) *suppliertypes.GenesisState {
@@ -21,7 +21,7 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
 	require.NotEmptyf(t, memnet.PreGeneratedAccounts, "pre-generated accounts not initialized, call #Start() first")
 
-	// Create a supplier for each session in numClaimsSessions.
+	// Create NumSuppliers number of suppliers with a service "svcX", where "X" is the supplier's index.
 	var supplierGenesisState = suppliertypes.DefaultGenesis()
 	for i := 0; i < memnet.Config.NumSuppliers; i++ {
 		preGenerateAcct, ok := memnet.PreGeneratedAccounts.Next()
@@ -54,13 +54,18 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 	return supplierGenesisState
 }
 
-// TODO_IN_THIS_COMMIT: draw a diagram of the app/supplier/service session network.
+// TODO_IMPROVE: draw a mermaid diagram of the app/supplier/service session network.
 
-// ConfigureDefaultApplicationModuleGenesisState generates a GenesisState object
-// with a given number of applications which are staked for a service such that
-// memnet.Config.AppSupplierPairingRatio*NumSuppliers number of applications are
-// staked for each supplier's service (assumes that each supplier is staked for
-// a unique service with no overlap).
+// configureDefaultSupplierModuleGenesisState generates and populates the in-memory
+// network's application module's GenesisState object with a given number of suppliers,
+// each of which is staked for a unique service. It returns the genesis state object.
+
+// configureDefaultApplicationModuleGenesisState generates and populates the in-memory
+// network's applicaion module's GenesisState object with a given number of applications,
+// each of which is staked for a service such that
+// memnet.Config.AppSupplierPairingRatio*NumSuppliers number of applications are staked
+// for each genesis supplier's service (assumes that each supplier is staked for a unique
+// service with no overlap).
 func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *testing.T) *apptypes.GenesisState {
 	t.Helper()
 

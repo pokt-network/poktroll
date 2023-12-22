@@ -22,6 +22,9 @@ type BaseInMemoryCosmosNetwork struct {
 	PreGeneratedAccounts *testkeyring.PreGeneratedAccountIterator
 	Network              *sdknetwork.Network
 
+	// lastAccountSeqNumber stores the last (most recently generated) account sequence number.
+	// NB: explicitly NOT using atomic.Int32 as it's usage doesn't compose well with anonymous
+	// literal declarations.
 	lastAccountSeqNumber int32
 }
 
@@ -38,6 +41,9 @@ func NewBaseInMemoryCosmosNetwork(
 	return &BaseInMemoryCosmosNetwork{
 		Config:               *cfg,
 		PreGeneratedAccounts: preGeneratedAccounts,
+
+		// First functional account sequence number is 1. Starting at 0 so that
+		// callers can always use NextAccountSequenceNumber() (no boundary condition).
 		lastAccountSeqNumber: int32(0),
 	}
 }
@@ -60,11 +66,11 @@ func (memnet *BaseInMemoryCosmosNetwork) InitializeDefaults(t *testing.T) {
 func (memnet *BaseInMemoryCosmosNetwork) GetClientCtx(t *testing.T) client.Context {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.Network, "in-memory network not started yet, call BaseInMemoryCosmosNetwork#Start() first")
-
 	// Only the first validator's client context is populated.
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
-	ctx := memnet.Network.Validators[0].ClientCtx
+	ctx := memnet.GetNetwork(t).Validators[0].ClientCtx
+
+	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available.
 
 	// Overwrite the client context's Keyring with the in-memory one that contains
 	// our pre-generated accounts.
@@ -72,6 +78,7 @@ func (memnet *BaseInMemoryCosmosNetwork) GetClientCtx(t *testing.T) client.Conte
 }
 
 // GetNetworkConfig returns the underlying cosmos-sdk testutil network config.
+// It requires that the config has been set, failing the test if not.
 func (memnet *BaseInMemoryCosmosNetwork) GetNetworkConfig(t *testing.T) *sdknetwork.Config {
 	t.Helper()
 
@@ -80,20 +87,24 @@ func (memnet *BaseInMemoryCosmosNetwork) GetNetworkConfig(t *testing.T) *sdknetw
 }
 
 // GetNetwork returns the underlying cosmos-sdk testutil network instance.
+// It requires that the cosmos-sdk in-memory network has been set, failing the test if not.
 func (memnet *BaseInMemoryCosmosNetwork) GetNetwork(t *testing.T) *sdknetwork.Network {
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.Network, "in-memory cosmos network not set")
-
 	return memnet.Network
 }
 
+// GetLastAccountSequenceNumber returns the last (most recently generated) account sequence number.
+// It is safe for concurrent use.
 func (memnet *BaseInMemoryCosmosNetwork) GetLastAccountSequenceNumber(t *testing.T) int {
 	t.Helper()
 
-	return int(memnet.lastAccountSeqNumber)
+	return int(atomic.LoadInt32(&memnet.lastAccountSeqNumber))
 }
 
+// NextAccountSequenceNumber increments the account sequence number and returns the new value.
+// It is safe for concurrent use.
 func (memnet *BaseInMemoryCosmosNetwork) NextAccountSequenceNumber(t *testing.T) int {
 	t.Helper()
 

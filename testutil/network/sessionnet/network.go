@@ -18,8 +18,6 @@ type inMemoryNetworkWithSessions struct {
 	basenet.BaseInMemoryCosmosNetwork
 }
 
-// TODO_IN_THIS_COMMIT: consider renaming & consolidating in network/types.go
-//
 // DefaultInMemoryNetworkConfig returns the default in-memory network configuration.
 // This configuration should sufficient populate on-chain objects to support reasonable
 // coverage around most session-oriented scenarios.
@@ -57,13 +55,13 @@ func NewInMemoryNetworkWithSessions(t *testing.T, cfg *network.InMemoryNetworkCo
 // Start initializes the in-memory network and performs the following setup:
 //   - populates a new in-memory keyring with a sufficient number of pre-generated accounts.
 //   - configures the application module's genesis state using addresses corresponding
-//     to config.NumApplications number of the same pre-generated accounts which were
+//     to #GetNumApplications() number of the same pre-generated accounts which were
 //     added to the keyring.
 //   - configures the supplier module's genesis state using addresses corresponding to
 //     config.NumSuppliers number of the same pre-generated accounts which were added
 //     to the keyring.
 //   - creates the on-chain accounts in the accounts module which correspond to the
-//     pre-generated accounts which were added to the keyring.
+//     pre-generated accounts that were added to the keyring.
 func (memnet *inMemoryNetworkWithSessions) Start(_ context.Context, t *testing.T) {
 	t.Helper()
 

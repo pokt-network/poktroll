@@ -25,14 +25,16 @@ import (
 func (memnet *inMemoryNetworkWithSessions) CreateClaims(
 	t *testing.T,
 ) (claims []suppliertypes.Claim, sessionTrees []relayer.SessionTree) {
-	// TODO_IN_THIS_COMMIT: update or remove comment.
-	// Create numSessions * numClaimsPerSession claims for the supplier
+	// For NumSessions, get the session for each application in the application
+	// module genesis state. Create a claim for each supplier in each session.
 	for sessionIdx := 0; sessionIdx < memnet.Config.NumSessions; sessionIdx++ {
 		appGenesisState := network.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
 
 		var lastAppSession *sessiontypes.Session
 		for _, application := range appGenesisState.ApplicationList {
-			// TODO_IN_THIS_COMMIT: comment... only using first service as second service has no suppliers staked for it.
+			// Use applications first service because this in-memory network's application genesis
+			// state is populated with applications whose first staked service matches that of
+			// AppToSupplierPairingRatio, and whose second services matches no supplier.
 			serviceId := application.GetServiceConfigs()[0].GetService().GetId()
 			lastAppSession = memnet.GetSession(t, serviceId, application.GetAddress())
 
@@ -45,7 +47,8 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaims(
 				sessionTrees = append(sessionTrees, sessionTree)
 
 				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
-				// TODO_IN_THIS_COMMIT: comment... this screws with the session start height...
+				// This interacts negatively with the session start/end heights in test scenarios. Test
+				// assertions may have to account for this interaction and therefore may compromise on coverage.
 				require.NoError(t, memnet.GetNetwork(t).WaitForNextBlock())
 			}
 		}
@@ -65,9 +68,12 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 	clientCtx := memnet.GetClientCtx(t)
 	net := memnet.GetNetwork(t)
 
+	// Create a new session tree with NumRelaysPerSession number of relay nodes inserted.
+	// Base64-encode it's root hash for use with the CLI command.
 	sessionTree := newSessionTreeRoot(t, memnet.Config.NumRelaysPerSession, sessionHeader)
 	rootHash, rootHashEncoded := getSessionTreeRoot(t, sessionTree)
 
+	// Base64-encode the session header for use with the CLI command.
 	sessionHeaderEncoded := cliEncodeSessionHeader(t, sessionHeader)
 	args := []string{
 		sessionHeaderEncoded,

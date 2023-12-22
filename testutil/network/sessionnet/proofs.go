@@ -49,19 +49,19 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 ) *types.Proof {
 	t.Helper()
 
-	merkelProof, err := sessionTree.ProveClosest(network.TestProofPath)
+	closestMerkleProof, err := sessionTree.ProveClosest(network.TestProofPath)
 	require.NoError(t, err)
 
-	proofBz, err := merkelProof.Marshal()
+	closestMerkleProofBz, err := closestMerkleProof.Marshal()
 	require.NoError(t, err)
 
 	sessionHeaderEncoded := cliEncodeSessionHeader(t, claim.GetSessionHeader())
-	proofEncoded := base64.StdEncoding.EncodeToString(proofBz)
+	closestMerkleProofEncoded := base64.StdEncoding.EncodeToString(closestMerkleProofBz)
 
 	bondDenom := memnet.GetNetwork(t).Config.BondDenom
 	args := []string{
 		sessionHeaderEncoded,
-		proofEncoded,
+		closestMerkleProofEncoded,
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, claim.GetSupplierAddress()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
@@ -77,9 +77,9 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 
 	proof := &types.Proof{
-		SupplierAddress: claim.GetSupplierAddress(),
-		SessionHeader:   claim.GetSessionHeader(),
-		MerkleProof:     proofBz,
+		SupplierAddress:    claim.GetSupplierAddress(),
+		SessionHeader:      claim.GetSessionHeader(),
+		ClosestMerkleProof: closestMerkleProofBz,
 	}
 
 	return proof

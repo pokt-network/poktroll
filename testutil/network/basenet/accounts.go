@@ -27,6 +27,7 @@ const warnNoModuleGenesisFmt = "WARN: no %s module genesis state found, if this 
 func (memnet *BaseInMemoryCosmosNetwork) CreateKeyringAccounts(t *testing.T) {
 	t.Helper()
 
+	// Keyring MAY be provided setting InMemoryNetworkConfig#Keyring.
 	if memnet.Config.Keyring == nil {
 		t.Log("Keyring not initialized, using new in-memory keyring")
 
@@ -37,61 +38,74 @@ func (memnet *BaseInMemoryCosmosNetwork) CreateKeyringAccounts(t *testing.T) {
 		t.Log("Keyring already initialized, using existing keyring")
 	}
 
-	// Create memnet.NumKeyringAccounts() accounts in the configured keyring.
+	// Create memnet.NumKeyringAccounts() number of accounts in the configured keyring.
 	accts := testkeyring.CreatePreGeneratedKeyringAccounts(
 		t, memnet.Config.Keyring, memnet.Config.GetNumKeyringAccounts(t),
 	)
 
-	// Assign the memnet's pre-generated accounts to be a new pre-generated
+	// Assign the memnet's pre-generated accounts to a new pre-generated
 	// accounts iterator containing only the accounts which were also created
 	// in the keyring.
 	memnet.PreGeneratedAccounts = testkeyring.NewPreGeneratedAccountIterator(accts...)
 }
 
+// CreateOnChainAccounts creates on-chain accounts (i.e. auth module) for the sum of
+// the configured number of suppliers, applications, and gateways.
 func (memnet *BaseInMemoryCosmosNetwork) CreateOnChainAccounts(t *testing.T) {
 	t.Helper()
 
-	net := memnet.GetNetwork(t)
-	require.NotEmptyf(t, net, "in-memory cosmos testutil network not initialized yet, call #Start() first")
+	// NB: while it may initially seem like the memnet#Init<actor>AccountsWithSequence() methods
+	// can be refactored into a generic function, this is not possible so long as the genesis
+	// state lists are passed directly & remain a slice of concrete types (as opposed to pointers).
+	// Under these conditions, a generic function would not be able to unmarshal the genesis state
+	// stored in the in-memory network because it is unmarshalling uses reflection, and it is not
+	// possible to reflect over a nil generic type value.
 
+	// Retrieve the supplier module's genesis state from cosmos-sdk in-memory network.
 	supplierGenesisState := network.GetGenesisState[*suppliertypes.GenesisState](t, suppliertypes.ModuleName, memnet)
 	if supplierGenesisState == nil {
 		t.Logf(warnNoModuleGenesisFmt, "supplier")
 	} else {
+		// Initialize on-chain accounts for genesis suppliers.
 		memnet.InitSupplierAccountsWithSequence(t, supplierGenesisState.SupplierList...)
 
 	}
 
+	// Retrieve the application module's genesis state from cosmos-sdk in-memory network.
 	appGenesisState := network.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
 	if appGenesisState == nil {
 		t.Logf(warnNoModuleGenesisFmt, "application")
 	} else {
+		// Initialize on-chain accounts for genesis applications.
 		memnet.InitAppAccountsWithSequence(t, appGenesisState.ApplicationList...)
 	}
 
+	// Retrieve the gateway module's genesis state from cosmos-sdk in-memory network.
 	gatewayGenesisState := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet)
 	if gatewayGenesisState == nil {
 		t.Logf(warnNoModuleGenesisFmt, "gateway")
 	} else {
+		// Initialize on-chain accounts for genesis gateways.
 		memnet.InitGatewayAccountsWithSequence(t, gatewayGenesisState.GatewayList...)
 	}
 
 	// need to wait for the account to be initialized in the next block
-	require.NoError(t, net.WaitForNextBlock())
+	require.NoError(t, memnet.GetNetwork(t).WaitForNextBlock())
 }
 
-// InitAccountWithSequence initializes an Account by sending it some funds from
-// the validator in the network to the address provided
-func (memnet *BaseInMemoryCosmosNetwork) InitAccountWithSequence(
+// InitAccount initializes an Account by sending it some funds from the validator
+// in the network to the address provided
+func (memnet *BaseInMemoryCosmosNetwork) InitAccount(
 	t *testing.T,
 	addr types.AccAddress,
 ) {
 	t.Helper()
 
 	signerAccountNumber := 0
-	// TODO_IN_THIS_COMMIT: comment.. must use validator ctx because its keyring contains the validator key.
+	// Validator's client context MUST be used for this CLI command because its keyring includes the validator's key
 	clientCtx := memnet.Network.Validators[0].ClientCtx
-	//clientCtx := memnet.GetClientCtx(t)
+	// MUST NOT use memnet.GetClientCtx(t) as its keyring does not include the validator's account
+	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available via the in-memory network's keyring.
 	net := memnet.GetNetwork(t)
 	val := net.Validators[0]
 
@@ -114,6 +128,8 @@ func (memnet *BaseInMemoryCosmosNetwork) InitAccountWithSequence(
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
+// InitSupplierAccountsWithSequence uses the testCLI to create on-chain accounts
+// (i.e. auth module) for the addresses of the given suppliers.
 func (memnet *BaseInMemoryCosmosNetwork) InitSupplierAccountsWithSequence(
 	t *testing.T,
 	supplierList ...sharedtypes.Supplier,
@@ -126,10 +142,12 @@ func (memnet *BaseInMemoryCosmosNetwork) InitSupplierAccountsWithSequence(
 	for _, supplier := range supplierList {
 		supplierAddr, err := types.AccAddressFromBech32(supplier.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccountWithSequence(t, supplierAddr)
+		memnet.InitAccount(t, supplierAddr)
 	}
 }
 
+// InitAppAccountsWithSequence uses the testCLI to create on-chain accounts
+// (i.e. auth module) for the addresses of the given Applications.
 func (memnet *BaseInMemoryCosmosNetwork) InitAppAccountsWithSequence(
 	t *testing.T,
 	appList ...apptypes.Application,
@@ -139,10 +157,12 @@ func (memnet *BaseInMemoryCosmosNetwork) InitAppAccountsWithSequence(
 	for _, application := range appList {
 		appAddr, err := types.AccAddressFromBech32(application.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccountWithSequence(t, appAddr)
+		memnet.InitAccount(t, appAddr)
 	}
 }
 
+// InitGatewayAccountsWithSequence uses the testCLI to create on-chain accounts
+// (i.e. auth module) for the addresses of the given Gateways.
 func (memnet *BaseInMemoryCosmosNetwork) InitGatewayAccountsWithSequence(
 	t *testing.T,
 	gatewayList ...gatewaytypes.Gateway,
@@ -152,6 +172,6 @@ func (memnet *BaseInMemoryCosmosNetwork) InitGatewayAccountsWithSequence(
 	for _, gateway := range gatewayList {
 		gatewayAddr, err := types.AccAddressFromBech32(gateway.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccountWithSequence(t, gatewayAddr)
+		memnet.InitAccount(t, gatewayAddr)
 	}
 }
