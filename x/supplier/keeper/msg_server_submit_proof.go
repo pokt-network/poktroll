@@ -53,9 +53,9 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 
 	// Construct and insert proof after all validation.
 	proof := suppliertypes.Proof{
-		SupplierAddress: msg.GetSupplierAddress(),
-		SessionHeader:   msg.GetSessionHeader(),
-		MerkleProof:     msg.Proof,
+		SupplierAddress:    msg.GetSupplierAddress(),
+		SessionHeader:      msg.GetSessionHeader(),
+		ClosestMerkleProof: msg.Proof,
 	}
 	k.Keeper.UpsertProof(ctx, proof)
 
