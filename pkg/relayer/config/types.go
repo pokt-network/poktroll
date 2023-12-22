@@ -6,7 +6,7 @@ type ProxyType int
 
 const (
 	ProxyTypeHTTP ProxyType = iota
-	// TODO: Support other proxy types: HTTPS, TCP, UNIX socket, QUIC, WebRTC ...
+	// TODO: Support other proxy types: HTTPS, TCP, UNIX socket, UDP, QUIC, WebRTC ...
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
