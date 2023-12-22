@@ -32,7 +32,7 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 		blockHeight = ctx.BlockHeight()
 	}
 
-	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, req.BlockHeight)
+	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
 	if err != nil {
 		return nil, err
