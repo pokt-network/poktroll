@@ -1,6 +1,8 @@
 package observable
 
-import "context"
+import (
+	"context"
+)
 
 // NOTE: We explicitly decided to write a small and custom notifications package
 // to keep logic simple and minimal. If the needs & requirements of this library ever
@@ -38,4 +40,11 @@ type Observer[V any] interface {
 	// IsClosed returns true if the observer has been unsubscribed.
 	// A closed observer cannot be reused.
 	IsClosed() bool
+}
+
+// MergedObservable is an observable which merges the notifications of multiple
+// observables into a single observable, as such its interface is exactly the
+// same as the Observable interface.
+type MergedObservable[V any] interface {
+	Observable[V]
 }
