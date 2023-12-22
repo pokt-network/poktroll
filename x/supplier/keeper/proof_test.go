@@ -33,7 +33,7 @@ func createNProofs(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Proof 
 				SessionStartBlockHeight: 1,
 				SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 			},
-			MerkleProof: nil,
+			ClosestMerkleProof: nil,
 		}
 
 		keeper.UpsertProof(ctx, proofs[i])
