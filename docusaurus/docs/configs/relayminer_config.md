@@ -56,6 +56,7 @@ The `RelayMiner` configuration file is a `yaml` file that contains `top level op
 signing_key_name: <string>
 smt_store_path: <string>
 ```
+
 ## `signing_key_name`
  _`Required`_
 
@@ -78,6 +79,7 @@ pocket_node:
   query_node_grpc_url: tcp://<host>
   tx_node_grpc_url: tcp://<host>
 ```
+
 ## `query_node_rpc_url`
 _`Required`_
 
@@ -125,7 +127,7 @@ and must be unique across all proxies.
 ## `type`
 _`Required`_
 
-The type of the proxy server to be started. Currently only `http` is supported.
+The type of the proxy server to be started. Must be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
 When other types are supported, the `type` field could determine if additional
 configuration options are allowed be them optional or required.
 
@@ -141,6 +143,10 @@ The `suppliers` section of the configuration file is a list of suppliers that
 represent the services that the `RelayMiner` will offer to the Pocket network
 through the configured proxies and their corresponding services to where the
 requests will be forwarded to.
+
+Each suppliers entry's `name` must reflect the on-chain `Service.Id` the supplier
+staked for and the `hosts` list must contain the same endpoints hosts that the
+supplier advertised when staking for that service.
 
 At least one supplier is required for the `RelayMiner` to be functional.
 
@@ -167,14 +173,15 @@ _`Required`_, _`Unique`_
 The name of the service which will be used as a unique identifier to reference
 a service provided by the `Supplier` and served by the `RelayMiner` instance.
 
+It must match the `Service.Id` specified by the supplier when staking for the
+service.
+
 ## `type`
 _`Required`_
 
 The transport type that the service will be offered on. It must match the `type` field
-of the proxy that the supplier is referencing through `proxy_names`. Currently only
-`http` is supported but when other types are supported, the `type` field could
-determine if additional configuration options are allowed be them optional or
-required.
+of the proxy that the supplier is referencing through `proxy_names`.
+Must be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
 
 ## `service_config`
 _`Required`_
@@ -187,8 +194,8 @@ Pocket network.
 _`Required`_
 
 The URL of the service that the `RelayMiner` will forward the requests to when
-a relay is received. It must be a valid URL (not just a host) and must be reachable
-from the `RelayMiner` instance.
+a relay is received, also known as **data node** or **service node**.
+It must be a valid URL (not just a host) and be reachable from the `RelayMiner` instance.
 
 ### `authentication`
 _`Optional`_
@@ -212,10 +219,23 @@ The `hosts` section of the supplier configuration is a list of hosts that the
 `RelayMiner` will accept requests from. It must be a valid host that reflects
 the on-chain supplier staking service endpoints.
 
-It is used to determine which RPC-Type the request is for and must be unique
-across all the `hosts` lined to a given proxy.
+It is used to determine if the incoming request is allowed to be processed by
+the referenced proxy server as well as to check if the request's RPC-Type matches
+the on-chain endpoint's RPC-Type.
 
-_Note: The `name` of the supplier is automatically added to the `hosts` list_
+The reasons to have multiple hosts for the same supplier service are:
+- The on-chain Supplier may provide the same Service on multiple domains
+(e.g. for different regions).
+- The operator may want to route requests of different RPC types to
+the same proxy
+- Migrating from one domain to another. Where the operator could still
+accept requests on the old domain while the new domain is being propagated.
+
+It must be unique across all the `hosts` lined to a given proxy.
+
+_Note: The `name` of the supplier is automatically added to the `hosts` list as
+it may help troubleshooting the `RelayMiner` and/or send requests internally
+from a k8s cluster for example._
 
 ## `proxy_names`
 _`Required`_, _`Unique` within the `proxy_names` list_
@@ -265,115 +285,5 @@ and `http-example-2` and the `7b-llm-model` supplier is referencing only the
 
 ## Full config example
 
-Below is a full and commented example of a `RelayMiner` configuration file.
-
-```yaml
-# TODO_CONSIDERATION: We don't need this now, but it would be beneficial if the
-# logic handling this config file could be designed in such a way that it allows for
-# "hot" config changes in the future, meaning changes without restarting a process.
-# This would be useful for adding a proxy or a supplier without interrupting the service.
-
-# Name of the key (in the keyring) to sign transactions
-signing_key_name: supplier1
-# Relative path (on the relayminer's machine) to where the data backing
-# SMT KV store exists on disk
-smt_store_path: smt_stores
-
-pocket_node:
-  # Pocket node URL that exposes CometBFT JSON-RPC API.
-  # This can be used by the Cosmos client SDK, event subscriptions, etc...
-  query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
-  # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
-  # If unspecified, defaults to `tx_node_grpc_url`.
-  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
-  # Pocket node URL that exposes the Cosmos gRPC service.
-  tx_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
-
-# Proxies are endpoints that expose different suppliers to the internet.
-proxies:
-    # Name of the proxy. It will be used to reference in a supplier. Must be unique.
-    # Required.
-    # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-    # become handy in the future.
-    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-  - name: http-example
-    # Type of proxy: currently only http is supported but will support more
-    # (https, tcp, quic ...) in the future.
-    # MUST match the type of the supplier.
-    # Required.
-    type: http
-    # Hostname to open port on. Use 0.0.0.0 in containerized environments,
-    # 127.0.0.1 with a reverse-proxy when there's another process on localhost
-    # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
-    # Required.
-    host: 127.0.0.1:8080
-
-  # TODO_IMPROVE: https is not currently supported, but this is how it could potentially look.
-  # - name: example-how-we-can-support-https
-  #   type: https
-  #   host: 0.0.0.0:8443
-  #   tls:
-  #     enabled: true
-  #     certificate: /path/to/crt
-  #     key: /path/to/key
-
-# Suppliers are different services that can be offered through RelayMiner.
-# When a supplier is configured to use a proxy and staked appropriately,
-# the relays will start flowing through RelayMiner.
-suppliers:
-    # Name of the supplier offered to the network.
-    # Must be unique.
-    # Required.
-  - name: ethereum
-    # Type of how the supplier offers service through the network.
-    # Must match the type of the proxy the supplier is connected to.
-    # Required.
-    type: http
-    # Configuration of the service offered through RelayMiner.
-    service_config:
-      # URL RelayMiner proxies the requests to.
-      # Required.
-      url: http://anvil.servicer:8545
-      # Authentication for the service.
-      # HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
-      # Optional.
-      authentication:
-        username: user
-        password: pwd
-
-      # TODO_IMPROVE: This is not supported in code yet,
-      # but some services authenticate via a header.
-      # Example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
-      # Authorization: Bearer <PASSWORD>
-      # Optional.
-      headers: {}
-
-    # A list of hosts the HTTP service is offering.
-    # When linked to the proxy, that hostname is going to be used to route the
-    # request to the correct supplier.
-    # That hostname is what the user should stake the supplier for.
-    # Must be unique within a proxy/proxies it is set up on;
-    # in other words, one proxy can't offer the same hostname more than once.
-    # The `name` of the supplier is automatically added to the hosts section
-    # for potential troubleshooting/debugging purposes
-    # Required.
-    hosts:
-      - ethereum.devnet1.poktroll.com
-      # - ethereum # <- this part is be added automatically.
-
-    # Names of proxies that this supplier is connected to.
-    # This MUST correspond to the name in the `proxies` section
-    # in order for the supplier to be accessible to the external network.
-    # Required.
-    proxy_names:
-      - http-example # when the RelayMiner server builder runs.
-  - name: 7b-llm-model
-    type: http
-    service_config:
-      url: http://llama-endpoint
-    hosts:
-      - 7b-llm-model.devnet1.poktroll.com
-      # - 7b-llm-model # <- this part can be added automatically.
-    proxy_names:
-      - http-example
-```
+A full and commented example of a `RelayMiner` configuration file can be found
+at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
