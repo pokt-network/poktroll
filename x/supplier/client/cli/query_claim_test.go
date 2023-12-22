@@ -61,7 +61,6 @@ func TestClaim_Show(t *testing.T) {
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrSupplierClaimNotFound.Wrapf(
-					// TODO_CONSIDERATION: factor out error message format strings to constants.
 					"session ID %q and supplier %q",
 					"wrong_session_id",
 					claims[0].GetSupplierAddress(),
@@ -92,7 +91,6 @@ func TestClaim_Show(t *testing.T) {
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrSupplierClaimNotFound.Wrapf(
-					// TODO_CONSIDERATION: factor out error message format strings to constants.
 					"session ID %q and supplier %q",
 					claims[0].GetSessionHeader().GetSessionId(),
 					wrongSupplierAddr,
