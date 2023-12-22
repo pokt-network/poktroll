@@ -42,7 +42,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 		// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 		logger.Warn().
 			Str("session_id", filter.SessionId).
-			Msg("TODO: SessionID check is currently a noop")
+			Msg("TODO: SessionID check in claim request validation is currently a noop")
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
@@ -51,7 +51,7 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 
 	default:
 		// No filter is set
-		logger.Debug().Msg("No specific filter set")
+		logger.Debug().Msg("No specific filter set when requesting claims")
 	}
 	return nil
 }
