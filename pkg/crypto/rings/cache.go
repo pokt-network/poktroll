@@ -75,6 +75,13 @@ func (rc *ringCache) Start(ctx context.Context) {
 	rc.logger.Info().Msg("starting ring cache")
 	// Listen for redelegation events and invalidate the cache if the
 	// redelegation event's address is stored in the cache.
+	go func() {
+		select {
+		case <-ctx.Done():
+			// Stop the ring cache if the context is cancelled.
+			rc.Stop()
+		}
+	}()
 	go rc.goInvalidateCache(ctx)
 }
 

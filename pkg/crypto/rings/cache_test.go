@@ -255,6 +255,44 @@ func TestRingCache_Stop(t *testing.T) {
 	require.Equal(t, 0, len(rc.GetCachedAddresses()))
 }
 
+func TestRingCache_CancelContext(t *testing.T) {
+	// Create and start the ring cache
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	rc, _ := createRingCache(ctx, t, "")
+	rc.Start(ctx)
+
+	// Insert an application into the testing state
+	appAccount := newAccount("secp256k1")
+	gatewayAccount := newAccount("secp256k1")
+	testqueryclients.AddAddressToApplicationMap(
+		t, appAccount.address,
+		appAccount.pubKey,
+		map[string]cryptotypes.PubKey{
+			gatewayAccount.address: gatewayAccount.pubKey,
+		})
+
+	// Attempt to retrieve the ring for the address and cache it
+	ring1, err := rc.GetRingForAddress(ctx, appAccount.address)
+	require.NoError(t, err)
+	require.Equal(t, 2, ring1.Size())
+	require.Equal(t, 1, len(rc.GetCachedAddresses()))
+
+	// Retrieve the cached ring
+	ring2, err := rc.GetRingForAddress(ctx, appAccount.address)
+	require.NoError(t, err)
+	require.True(t, ring1.Equals(ring2))
+	require.Equal(t, 1, len(rc.GetCachedAddresses()))
+
+	// Cancel the context
+	cancelCtx()
+
+	// Wait a tick to allow the ring cache to process asynchronously.
+	time.Sleep(15 * time.Millisecond)
+
+	// Retrieve the ring again
+	require.Equal(t, 0, len(rc.GetCachedAddresses()))
+}
+
 // createRingCache creates the RingCache using mocked AccountQueryClient and
 // ApplicatioQueryClient instances and returns the RingCache and the delegatee
 // change replay observable.
