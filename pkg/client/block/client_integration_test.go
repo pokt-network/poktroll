@@ -14,7 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 )
 
-// TODO(255): Refactor this integration test to use an in-memory simulated network
+// TODO(#255): Refactor this integration test to use an in-memory simulated network
 
 const blockIntegrationSubTimeout = 5 * time.Second
 

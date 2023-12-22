@@ -36,8 +36,8 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.DelegationClien
 // This mock DelegationClient will expect any number of calls to RedelegationsSequence,
 // and when that call is made, it returns the given EventsObservable[Redelegation].
 func NewAnyTimesRedelegationsSequence(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	appAddress string,
 	redelegationObs observable.Observable[client.Redelegation],
 ) *mockclient.MockDelegationClient {
@@ -51,9 +51,7 @@ func NewAnyTimesRedelegationsSequence(
 	// the method is called, it returns a new replay observable that publishes
 	// redelegation events sent on the given redelegationObs.
 	delegationClientMock.EXPECT().
-		RedelegationsSequence(
-			ctx,
-		).
+		RedelegationsSequence(ctx).
 		Return(redelegationObs).
 		AnyTimes()
 
@@ -68,8 +66,8 @@ func NewAnyTimesRedelegationsSequence(
 // redelegationPublishCh is the channel the caller can use to publish
 // Redelegation events to the observable.
 func NewOneTimeRedelegationsSequenceDelegationClient(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	redelegationPublishCh chan client.Redelegation,
 ) *mockclient.MockDelegationClient {
 	t.Helper()
@@ -81,18 +79,17 @@ func NewOneTimeRedelegationsSequenceDelegationClient(
 	// Set up the mock expectation for the RedelegationsSequence method. When
 	// the method is called, it returns a new replay observable that publishes
 	// delegation changes sent on the given redelegationPublishCh.
-	delegationClientMock.EXPECT().RedelegationsSequence(
-		ctx,
-	).DoAndReturn(func(ctx context.Context) client.RedelegationReplayObservable {
-		// Create a new replay observable with a replay buffer size of 1.
-		// Redelegation events are published to this observable via the
-		// provided redelegationPublishCh.
-		withPublisherOpt := channel.WithPublisher(redelegationPublishCh)
-		obs, _ := channel.NewReplayObservable[client.Redelegation](
-			ctx, 1, withPublisherOpt,
-		)
-		return obs
-	})
+	delegationClientMock.EXPECT().RedelegationsSequence(ctx).
+		DoAndReturn(func(ctx context.Context) client.RedelegationReplayObservable {
+			// Create a new replay observable with a replay buffer size of 1.
+			// Redelegation events are published to this observable via the
+			// provided redelegationPublishCh.
+			withPublisherOpt := channel.WithPublisher(redelegationPublishCh)
+			obs, _ := channel.NewReplayObservable[client.Redelegation](
+				ctx, 1, withPublisherOpt,
+			)
+			return obs
+		}).Times(1)
 
 	delegationClientMock.EXPECT().Close().AnyTimes()
 

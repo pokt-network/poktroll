@@ -50,11 +50,11 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 	defer cancelCtx()
 	rc, _ := createRingCache(ctx, t, "")
 	rc.Start(ctx)
-	defer rc.Stop()
+	t.Cleanup(rc.Stop)
 
 	tests := []struct {
 		desc              string
-		index             int
+		appAddrIndex      int
 		appAccount        account
 		delegateeAccounts []account
 		expectedRingSize  int
@@ -62,7 +62,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 	}{
 		{
 			desc:              "success: un-cached application without delegated gateways",
-			index:             1,
+			appAddrIndex:      1,
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{},
 			expectedRingSize:  noDelegateesRingSize,
@@ -70,7 +70,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 		},
 		{
 			desc:              "success: un-cached application with delegated gateways",
-			index:             2,
+			appAddrIndex:      2,
 			appAccount:        newAccount("secp256k1"),
 			delegateeAccounts: []account{newAccount("secp256k1"), newAccount("secp256k1")},
 			expectedRingSize:  3,
@@ -121,7 +121,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 			require.NoError(t, err)
 			// Ensure the ring is the correct size.
 			require.Equal(t, test.expectedRingSize, ring.Size())
-			require.Equal(t, test.index, len(rc.GetCachedAddresses()))
+			require.Equal(t, test.appAddrIndex, len(rc.GetCachedAddresses()))
 		})
 	}
 }
@@ -154,7 +154,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			defer cancelCtx()
 			rc, pubCh := createRingCache(ctx, t, test.appAccount.address)
 			rc.Start(ctx)
-			defer rc.Stop()
+			t.Cleanup(rc.Stop)
 
 			// Check that the ring cache is empty
 			require.Equal(t, 0, len(rc.GetCachedAddresses()))
@@ -222,7 +222,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 func TestRingCache_Stop(t *testing.T) {
 	// Create and start the ring cache
 	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer cancelCtx()
+	t.Cleanup(cancelCtx)
 	rc, _ := createRingCache(ctx, t, "")
 	rc.Start(ctx)
 
@@ -261,7 +261,7 @@ func TestRingCache_Stop(t *testing.T) {
 func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.Redelegation) {
 	t.Helper()
 	redelegationObs, redelegationPublishCh := channel.NewReplayObservable[client.Redelegation](ctx, 1)
-	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(t, ctx, appAddress, redelegationObs)
+	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(ctx, t, appAddress, redelegationObs)
 	accQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	appQuerier := testqueryclients.NewTestApplicationQueryClient(t)
 	rc := testrings.NewRingCacheWithMockDependencies(ctx, t, accQuerier, appQuerier, delegationClient)

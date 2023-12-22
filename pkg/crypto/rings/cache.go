@@ -78,19 +78,20 @@ func (rc *ringCache) Start(ctx context.Context) {
 	go rc.goInvalidateCache(ctx)
 }
 
-// goInvalidateCache listens for delegatee change events and invalidates the
-// cache if the delegatee change's address is stored in the cache.
-// It is intended to be run in a goroutine.
+// goInvalidateCache listens for redelegation events and invalidates the
+// cache if the app address in the redelegation event is stored in the cache.
+// This function is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 	// Get the latest redelegation replay observable.
 	redelegationObs := rc.delegationClient.RedelegationsSequence(ctx)
-	// For each redelegation event, check if the redelegation events's
+	// For each redelegation event, check if the redelegation events'
 	// app address is in the cache. If it is, invalidate the cache entry.
 	channel.ForEach[client.Redelegation](
 		ctx, redelegationObs,
 		func(ctx context.Context, redelegation client.Redelegation) {
 			// Lock the cache for writing.
 			rc.ringPointsMu.Lock()
+			defer rc.ringPointsMu.Unlock()
 			// Check if the redelegation event's app address is in the cache.
 			if _, ok := rc.ringPointsCache[redelegation.GetAppAddress()]; ok {
 				rc.logger.Debug().
@@ -99,8 +100,6 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 				// Invalidate the cache entry.
 				delete(rc.ringPointsCache, redelegation.GetAppAddress())
 			}
-			// Unlock the cache.
-			rc.ringPointsMu.Unlock()
 		})
 }
 

@@ -1,9 +1,10 @@
 package delegation
 
-// TODO_TECHDEBT(@h5law): This is disgusting get this piece of shit out the codebase
+// TODO_TECHDEBT(#280): Refactor to use merged observables and subscribe to
+// MsgDelegateToGateway and MsgUndelegateFromGateway messages directly, instead
+// of listening to all events and doing a verbose filter.
 
 import (
-	"bytes"
 	"encoding/json"
 	"strconv"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 )
+
+// redelegationEventType is the type of the EventRedelegation event emitted by
+// both the MsgDelegateToGateway and MsgUndelegateFromGateway messages.
+const redelegationEventType = "pocket.application.EventRedelegation"
 
 var _ client.Redelegation = (*redelegation)(nil)
 
@@ -50,37 +55,38 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 			return nil, err
 		}
 		// Check if the TxEvent has empty transaction bytes, which indicates
-		// the message might not be a valid transaction event.
-		if bytes.Equal(txEvent.Tx, []byte{}) {
-			return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
+		// the message is probably not a valid transaction event.
+		if len(txEvent.Tx) == 0 {
+			return nil, events.ErrEventsUnmarshalEvent.Wrap("empty transaction bytes")
 		}
 		// Iterate through the log entries to find EventRedelegation
 		for _, event := range txEvent.Result.Events {
-			if event.GetType_() == "pocket.application.EventRedelegation" {
-				var redelegationEvent redelegation
-				for _, attr := range event.Attributes {
-					switch attr.Key {
-					case "app_address":
-						appAddr, err := unescape(attr.Value)
-						if err != nil {
-							return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
-						}
-						redelegationEvent.AppAddress = appAddr
-					case "gateway_address":
-						gatewayAddr, err := unescape(attr.Value)
-						if err != nil {
-							return nil, events.ErrEventsUnmarshalEvent.Wrapf("%s", string(eventBz))
-						}
-						redelegationEvent.GatewayAddress = gatewayAddr
-					}
-				}
-				// Handle the redelegation event
-				if redelegationEvent.AppAddress == "" || redelegationEvent.GatewayAddress == "" {
-					return nil, events.ErrEventsUnmarshalEvent.
-						Wrapf("%s", string(eventBz))
-				}
-				return redelegationEvent, nil
+			if event.GetType_() != redelegationEventType {
+				continue
 			}
+			var redelegationEvent redelegation
+			for _, attr := range event.Attributes {
+				switch attr.Key {
+				case "app_address":
+					appAddr, err := unescape(attr.Value)
+					if err != nil {
+						return nil, events.ErrEventsUnmarshalEvent.Wrapf("cannot retrieve app address: %v", err)
+					}
+					redelegationEvent.AppAddress = appAddr
+				case "gateway_address":
+					gatewayAddr, err := unescape(attr.Value)
+					if err != nil {
+						return nil, events.ErrEventsUnmarshalEvent.Wrapf("cannot retrieve gateway address: %v", err)
+					}
+					redelegationEvent.GatewayAddress = gatewayAddr
+				}
+			}
+			// Handle the redelegation event
+			if redelegationEvent.AppAddress == "" || redelegationEvent.GatewayAddress == "" {
+				return nil, events.ErrEventsUnmarshalEvent.
+					Wrapf("empty redelegation event: %s", string(eventBz))
+			}
+			return redelegationEvent, nil
 		}
 		return nil, events.ErrEventsUnmarshalEvent.Wrap("no redelegation event found")
 	}

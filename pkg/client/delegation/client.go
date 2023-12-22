@@ -14,7 +14,7 @@ const (
 	// to all application module events in order to filter for redelegation events.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	// TODO_HACK(@h5law): Instead of listening to all events and doing a verbose
+	// TODO_HACK(#280): Instead of listening to all events and doing a verbose
 	// filter, we should subscribe to both MsgDelegateToGateway and MsgUndelegateFromGateway
 	// messages directly, and filter those for the EventRedelegation event types.
 	// This would save the delegation client from listening to a lot of unnecessary

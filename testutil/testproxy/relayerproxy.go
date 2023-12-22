@@ -89,7 +89,7 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
-		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.t, test.ctx, "", redelegationObs)
+		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
 		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, accountQueryClient, applicationQueryClient, delegationClient)
 
 		deps := depinject.Supply(

@@ -19,9 +19,10 @@ type RingCache interface {
 	// GetCachedAddresses returns the addresses of the applications that are
 	// currently cached in the ring cache.
 	GetCachedAddresses() []string
-	// GetRingForAddress returns the ring for the given application address. If
-	// it does not exist in the cache, it will be created by querying the on-chain
-	// state, otherwise it will be returned from the cache.
+	// GetRingForAddress returns the ring for the given application address if
+	// it exists. If it does not exist in the cache, it follows a lazy approach
+	// of querying the on-chain state and creating it just-in-time, caching for
+	// future retrievals.
 	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
 	// Stop stops the ring cache by unsubscribing from on-chain delegation events.
 	// And clears the cache, so that it no longer contains any rings,
