@@ -72,7 +72,7 @@ func TestReplayClient_Remapping(t *testing.T) {
 		// Receive is called in the tightest loop possible (max speed limited
 		// by a goroutine) and as such the sleep's within are used to slow down
 		// the time between events to prevent unexpected behavior. As in this
-		// test environment, there are no "rea" delays between "#Receive" calls
+		// test environment, there are no "real" delays between "#Receive" calls
 		// (events being emitted) and as such the sleep's enable the publishing
 		// of notifications to observers to occur in a flake-free manner.
 		DoAndReturn(func() (any, error) {
@@ -97,7 +97,6 @@ func TestReplayClient_Remapping(t *testing.T) {
 			// Simulate IO delay between sequential events.
 			time.Sleep(50 * time.Microsecond)
 
-			// t.Logf("sending event: %s", event)
 			return event, nil
 		}).
 		MinTimes(int(eventsToRecv))
