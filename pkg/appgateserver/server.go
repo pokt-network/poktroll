@@ -15,6 +15,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
@@ -130,6 +131,8 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		Recorder: metrics.NewRecorder(metrics.Config{}),
 	})
 
+	prometheus.MustRegister(relayCount, relayErrorCount)
+
 	// Set the HTTP handler.
 	app.server.Handler = middlewarestd.Handler("", mm, app)
 
@@ -208,11 +211,11 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
-		// TODO_IN_THIS_PR: add relay_error_count metric.
+		relayErrorCount.With(prometheus.Labels{"service_id": serviceId}).Inc()
 		return
 	}
 
-	// TODO_IN_THIS_PR: add relay_success_count metric.
+	relayCount.With(prometheus.Labels{"service_id": serviceId}).Inc()
 
 	// TODO_TECHDEBT: log additional info?
 	app.logger.Info().Msg("request serviced successfully")
@@ -230,3 +233,13 @@ func (app *appGateServer) validateConfig() error {
 }
 
 type appGateServerOption func(*appGateServer)
+
+var relayErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "relay_error_count",
+	Help: "Number of unseccessful relays",
+}, []string{"service_id"})
+
+var relayCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Name: "relay_error_count",
+	Help: "Number of seccessful relays",
+}, []string{"service_id"})
