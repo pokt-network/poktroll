@@ -102,7 +102,8 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 		return nil, fmt.Errorf("failed to decode private key: %w", err)
 	}
 
-	// Start the ring cache.
+	// Start the ring cache, when the context is cancelled, the ring cache
+	// will stop. And clear any cached rings.
 	sdk.ringCache.Start(ctx)
 
 	return sdk, nil
