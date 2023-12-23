@@ -240,6 +240,6 @@ var relayErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 }, []string{"service_id"})
 
 var relayCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "relay_error_count",
+	Name: "relay_count",
 	Help: "Number of seccessful relays",
 }, []string{"service_id"})
