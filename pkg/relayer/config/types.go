@@ -31,7 +31,7 @@ type YAMLRelayMinerPocketNodeConfig struct {
 // YAMLRelayMinerProxyConfig is the structure used to unmarshal the proxy
 // section of the RelayMiner config file
 type YAMLRelayMinerProxyConfig struct {
-	Name                 string `yaml:"name"`
+	ProxyName            string `yaml:"proxy_name"`
 	Type                 string `yaml:"type"`
 	Host                 string `yaml:"host"`
 	XForwardedHostLookup bool   `yaml:"x_forwarded_host_lookup"`
@@ -40,7 +40,7 @@ type YAMLRelayMinerProxyConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	Name          string                              `yaml:"name"`
+	ServiceId     string                              `yaml:"service_id"`
 	Type          string                              `yaml:"type"`
 	Hosts         []string                            `yaml:"hosts"`
 	ServiceConfig YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
@@ -85,8 +85,8 @@ type RelayMinerPocketNodeConfig struct {
 // Other proxy types may embed other fields in the future. eg. "https" may
 // embed a TLS config.
 type RelayMinerProxyConfig struct {
-	// Name is the name of the proxy server, used to identify it in the config
-	Name string
+	// ProxyName is the name of the proxy server, used to identify it in the config
+	ProxyName string
 	// Type is the transport protocol used by the proxy server like (http, https, etc.)
 	Type ProxyType
 	// Host is the host on which the proxy server will listen for incoming
@@ -103,8 +103,8 @@ type RelayMinerProxyConfig struct {
 // RelayMinerSupplierConfig is the structure resulting from parsing the supplier
 // section of the RelayMiner config file.
 type RelayMinerSupplierConfig struct {
-	// Name is the serviceId corresponding to the current configuration.
-	Name string
+	// ServiceId is the serviceId corresponding to the current configuration.
+	ServiceId string
 	// Type is the transport protocol used by the supplier, it must match the
 	// type of the proxy it is associated with.
 	Type ProxyType

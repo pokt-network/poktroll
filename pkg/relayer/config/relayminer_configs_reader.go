@@ -65,7 +65,7 @@ func (relayMinerConfig *RelayMinerConfig) EnsureUniqueHosts() error {
 					return ErrRelayMinerConfigInvalidProxy.Wrapf(
 						"duplicate host %s in proxy %s",
 						host,
-						proxyConfig.Name,
+						proxyConfig.ProxyName,
 					)
 				}
 				existingHosts[host] = true

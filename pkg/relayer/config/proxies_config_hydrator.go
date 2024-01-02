@@ -14,20 +14,20 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 
 	for _, yamlProxyConfig := range yamlProxyConfigs {
 		// Proxy name is required
-		if len(yamlProxyConfig.Name) == 0 {
+		if len(yamlProxyConfig.ProxyName) == 0 {
 			return ErrRelayMinerConfigInvalidProxy.Wrap("proxy name is required")
 		}
 
 		// Proxy name should not be unique
-		if _, ok := relayMinerConfig.Proxies[yamlProxyConfig.Name]; ok {
+		if _, ok := relayMinerConfig.Proxies[yamlProxyConfig.ProxyName]; ok {
 			return ErrRelayMinerConfigInvalidProxy.Wrapf(
 				"duplicate porxy name %s",
-				yamlProxyConfig.Name,
+				yamlProxyConfig.ProxyName,
 			)
 		}
 
 		proxyConfig := &RelayMinerProxyConfig{
-			Name:                 yamlProxyConfig.Name,
+			ProxyName:            yamlProxyConfig.ProxyName,
 			XForwardedHostLookup: yamlProxyConfig.XForwardedHostLookup,
 			Suppliers:            make(map[string]*RelayMinerSupplierConfig),
 		}
@@ -56,7 +56,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 			)
 		}
 
-		relayMinerConfig.Proxies[proxyConfig.Name] = proxyConfig
+		relayMinerConfig.Proxies[proxyConfig.ProxyName] = proxyConfig
 	}
 
 	return nil

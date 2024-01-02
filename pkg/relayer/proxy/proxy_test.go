@@ -75,22 +75,22 @@ func init() {
 
 	proxiedServices = map[string]*config.RelayMinerProxyConfig{
 		"server1": {
-			Name: "server1",
-			Type: config.ProxyTypeHTTP,
-			Host: "127.0.0.1:8080",
+			ProxyName: "server1",
+			Type:      config.ProxyTypeHTTP,
+			Host:      "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
-					Name:  "service1",
-					Type:  config.ProxyTypeHTTP,
-					Hosts: []string{"supplier:8545"},
+					ServiceId: "service1",
+					Type:      config.ProxyTypeHTTP,
+					Hosts:     []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
 				"service2": {
-					Name:  "service2",
-					Type:  config.ProxyTypeHTTP,
-					Hosts: []string{"supplier:8546"},
+					ServiceId: "service2",
+					Type:      config.ProxyTypeHTTP,
+					Hosts:     []string{"supplier:8546"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
@@ -98,14 +98,14 @@ func init() {
 			},
 		},
 		"server2": {
-			Name: "server2",
-			Type: config.ProxyTypeHTTP,
-			Host: "127.0.0.1:8081",
+			ProxyName: "server2",
+			Type:      config.ProxyTypeHTTP,
+			Host:      "127.0.0.1:8081",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service3": {
-					Name:  "service3",
-					Type:  config.ProxyTypeHTTP,
-					Hosts: []string{"supplier:8547"},
+					ServiceId: "service3",
+					Type:      config.ProxyTypeHTTP,
+					Hosts:     []string{"supplier:8547"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
@@ -252,13 +252,13 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 
 	unsupportedTransportProxy := map[string]*config.RelayMinerProxyConfig{
 		"server1": {
-			Name: "server1",
+			ProxyName: "server1",
 			// The proxy is configured with an unsupported transport type
 			Type: config.ProxyType(100),
 			Host: "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
-					Name: "service1",
+					ServiceId: "service1",
 					// The proxy is configured with an unsupported transport type
 					Type:  config.ProxyType(100),
 					Hosts: []string{"supplier:8545"},
@@ -298,14 +298,14 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	missingServicesProxy := map[string]*config.RelayMinerProxyConfig{
 		"server1": {
-			Name: "server1",
-			Type: config.ProxyTypeHTTP,
-			Host: "127.0.0.1:8080",
+			ProxyName: "server1",
+			Type:      config.ProxyTypeHTTP,
+			Host:      "127.0.0.1:8080",
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				"service1": {
-					Name:  "service1",
-					Type:  config.ProxyTypeHTTP,
-					Hosts: []string{"supplier:8545"},
+					ServiceId: "service1",
+					Type:      config.ProxyTypeHTTP,
+					Hosts:     []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},

@@ -94,8 +94,8 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 
 	var originHost string
 	// When the proxy is behind a reverse proxy, or is getting its requests from
-	// a CDN, the host header may not contain the on-chain advertized address
-	// needed to determine the service that the relay request is for.
+	// a CDN or a load balancer, the host header may not contain the on-chain
+	// advertized address needed to determine the service that the relay request is for.
 	// These CDNs and reverse proxies usually set the X-Forwarded-Host header
 	// to the original host.
 	// RelayMiner operators that have such a setup can set the XForwardedHostLookup
@@ -115,10 +115,15 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	var serviceUrl *url.URL
 
 	// Get the Service and serviceUrl corresponding to the originHost.
+	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
+	// iterating over the proxy config's suppliers and checking if the originHost
+	// is present in any of the supplier's service's hosts. We could improve this
+	// by building a map at the server initialization level with originHost as the
+	// key so that we can get the service and serviceUrl in O(1) time.
 	for _, supplierServiceConfig := range sync.proxyConfig.Suppliers {
 		for _, host := range supplierServiceConfig.Hosts {
 			if host == originHost {
-				supplierService = sync.supplierServiceMap[supplierServiceConfig.Name]
+				supplierService = sync.supplierServiceMap[supplierServiceConfig.ServiceId]
 				serviceUrl = supplierServiceConfig.ServiceConfig.Url
 				break
 			}

@@ -33,11 +33,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -63,14 +63,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http-example": {
-						Name:                 "http-example",
+						ProxyName:            "http-example",
 						Host:                 "127.0.0.1:8080",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
@@ -100,11 +100,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -116,7 +116,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - tcp://ethereum.devnet1.poktroll.com
 				    proxy_names:
 				      - http-example
-				  - name: 7b-llm-model
+				  - service_id: 7b-llm-model
 				    type: http
 				    service_config:
 				      url: http://llama-endpoint
@@ -138,14 +138,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http-example": {
-						Name:                 "http-example",
+						ProxyName:            "http-example",
 						Host:                 "127.0.0.1:8080",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
@@ -160,8 +160,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 								},
 							},
 							"7b-llm-model": {
-								Name: "7b-llm-model",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "7b-llm-model",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
@@ -186,14 +186,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			  signing_key_name: servicer1
 			  smt_store_path: smt_stores
 			  proxies:
-			    - name: first-proxy
+			    - proxy_name: first-proxy
 			      host: 127.0.0.1:8080
 			      type: http
-			    - name: second-proxy
+			    - proxy_name: second-proxy
 			      host: 127.0.0.1:8081
 			      type: http
 			  suppliers:
-			    - name: ethereum
+			    - service_id: ethereum
 			      type: http
 			      service_config:
 			        url: http://anvil.servicer:8545
@@ -215,14 +215,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"first-proxy": {
-						Name:                 "first-proxy",
+						ProxyName:            "first-proxy",
 						Host:                 "127.0.0.1:8080",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -233,14 +233,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						},
 					},
 					"second-proxy": {
-						Name:                 "second-proxy",
+						ProxyName:            "second-proxy",
 						Host:                 "127.0.0.1:8081",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -263,11 +263,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -289,14 +289,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http-example": {
-						Name:                 "http-example",
+						ProxyName:            "http-example",
 						Host:                 "127.0.0.1:8080",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -321,12 +321,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				    x_forwarded_host_lookup: true
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -348,14 +348,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http-example": {
-						Name:                 "http-example",
+						ProxyName:            "http-example",
 						Host:                 "127.0.0.1:8080",
 						Type:                 config.ProxyTypeHTTP,
 						XForwardedHostLookup: true,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								Name: "ethereum",
-								Type: config.ProxyTypeHTTP,
+								ServiceId: "ethereum",
+								Type:      config.ProxyTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -381,11 +381,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -408,11 +408,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -435,11 +435,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -462,11 +462,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -489,11 +489,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -516,11 +516,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				# explicitly omitted signing key name
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -543,11 +543,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				# explicitly omitted smt store path
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -571,7 +571,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				# explicitly omitted proxies section
 				suppliers:
-				  - name: ethereum
+				  - proxy_name: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -595,7 +595,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				proxies: # explicitly empty proxies section
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -622,7 +622,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  - host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -645,11 +645,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: # explicitly empty proxy name
+				  - proxy_name: # explicitly empty proxy name
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -672,11 +672,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    # explicitly missing proxy host
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -699,11 +699,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: # explicitly empty proxy host
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -726,11 +726,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    # explicitly missing proxy type
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -753,11 +753,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: # explicitly empty proxy type
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -780,11 +780,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: unsupported
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -807,7 +807,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
@@ -834,11 +834,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: # explicitly empty supplier name
+				  - service_id: # explicitly empty supplier name
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -861,11 +861,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: unsupported
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -888,11 +888,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    # explicitly missing supplier type
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -915,11 +915,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: # explicitly empty supplier type
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -942,11 +942,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: &http://anvil.servicer:8545
@@ -969,11 +969,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: # explicitly empty supplier service config url
@@ -996,11 +996,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      # explicitly missing supplier service config url
@@ -1023,11 +1023,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -1050,11 +1050,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -1077,11 +1077,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -1104,11 +1104,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
-				  - name: http-example
+				  - proxy_name: http-example
 				    host: 127.0.0.1:8080
 				    type: http
 				suppliers:
-				  - name: ethereum
+				  - service_id: ethereum
 				    type: http
 				    service_config:
 				      url: http://anvil.servicer:8545
@@ -1116,7 +1116,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - tcp://devnet1.poktroll.com # hosts for both suppliers are the same
 				    proxy_names:
 				      - http-example
-				  - name: avax
+				  - service_id: avax
 				    type: http
 				    service_config:
 				      url: http://avax.servicer:8545
@@ -1189,8 +1189,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			for proxyName, proxy := range tt.expectedConfig.Proxies {
 				require.Equal(
 					t,
-					proxy.Name,
-					config.Proxies[proxyName].Name,
+					proxy.ProxyName,
+					config.Proxies[proxyName].ProxyName,
 				)
 
 				require.Equal(
@@ -1208,8 +1208,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				for supplierName, supplier := range proxy.Suppliers {
 					require.Equal(
 						t,
-						supplier.Name,
-						config.Proxies[proxyName].Suppliers[supplierName].Name,
+						supplier.ServiceId,
+						config.Proxies[proxyName].Suppliers[supplierName].ServiceId,
 					)
 
 					require.Equal(

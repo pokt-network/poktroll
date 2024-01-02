@@ -25,10 +25,9 @@ proxies:
     # Must be unique.
     # Required.
     # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-    # TODO_CONSIDERATION: Rename to `proxy_name`
     # become handy in the future.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-  - name: http-example
+  - proxy_name: http-example
     # Type of proxy: currently only http is supported but will support more
     # (https, tcp, quic ...) in the future.
     # MUST match the type of the supplier.
@@ -54,11 +53,11 @@ proxies:
 # When a supplier is configured to use a proxy and staked appropriately,
 # the relays will start flowing through RelayMiner.
 suppliers:
-    # Name of the supplier offered to the network .
-    # It must match the serviceId of the service that has been staked for.
+    # The serviceId the supplier offered to the network .
+    # It must match the Service.Id of the service that has been staked for.
     # Must be unique.
     # Required.
-  - name: ethereum
+  - service_id: ethereum
     # Type of how the supplier offers service through the network.
     # Must match the type of the proxy the supplier is connected to.
     # Required.
@@ -85,31 +84,38 @@ suppliers:
 
     # A list of hosts the proxy is accepting requests from.
     # When linked to the proxy, each host is going to be used to lookup the
-    # the Supplier.Service in the Pocket Network.
+    # the Supplier.Service in Pocket Network.
     # Each host in the list must match a Supplier.Service.Endpoint that the Supplier
     # has advertised on-chain when staking for that Service.
-    # The reasons to have multiple hosts for the same supplier service are:
+    # There are various reasons to having multiple hosts for the same supplier services,
     # - The on-chain Supplier may provide the same Service on multiple domains
     #   (e.g. for different regions).
     # - The operator may want to route requests of different RPC types to
     #   the same proxy
     # - Migrating from one domain to another. Where the operator could still
     #   accept requests on the old domain while the new domain is being propagated.
+    # - The operator may want to have a different domain for internal requests.
+    # - The on-chain Service configuration accepts multiple endpoints.
     # Must be unique within the proxy it is referenced in.
     # Required.
     hosts:
       - ethereum.devnet1.poktroll.com
-      # The `name` of the supplier is automatically added to the hosts section
-      # for potential troubleshooting/debugging purposes
+      # The `service_id` of the supplier is automatically added to the hosts section
+      # for potential troubleshooting/debugging purposes such as:
+      # Having internal requests coming from non-FQDNs because of complex routing.
+      # Sending requests from k8s pods.
+      # Specify the `host` in curl requests when testing `curl -H "Host: ethereum" ...`
+      # and make the proxy server process the request without the need for an
+      # on-chain Endpoint entry.
       # - ethereum # <- this part is added automatically.
 
     # Names of proxies that this supplier is connected to.
-    # This MUST correspond to the name in the `proxies` section
-    # in order for the supplier to be accessible to the external network.
+    # This MUST correspond to the `proxy_name` entry in the `proxies` section
+    # in order for the supplier to be available to the external network.
     # Required.
     proxy_names:
       - http-example # when the RelayMiner server builder runs.
-  - name: 7b-llm-model
+  - service_id: 7b-llm-model
     type: http
     service_config:
       url: http://llama-endpoint

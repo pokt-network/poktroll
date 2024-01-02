@@ -93,7 +93,7 @@ func (rp *relayerProxy) initializeProxyServers(
 		// Initialize the proxy server according to the proxy type defined in the config file
 		switch proxyConfig.Type {
 		case config.ProxyTypeHTTP:
-			proxyServers[proxyConfig.Name] = NewSynchronousServer(
+			proxyServers[proxyConfig.ProxyName] = NewSynchronousServer(
 				rp.logger,
 				proxyConfig,
 				supplierServiceMap,

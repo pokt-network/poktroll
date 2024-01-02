@@ -8,10 +8,10 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	yamlSupplierConfig YAMLRelayMinerSupplierConfig,
 ) error {
 	// Supplier name is required
-	if len(yamlSupplierConfig.Name) == 0 {
+	if len(yamlSupplierConfig.ServiceId) == 0 {
 		return ErrRelayMinerConfigInvalidSupplier.Wrap("supplier name is required")
 	}
-	supplierConfig.Name = yamlSupplierConfig.Name
+	supplierConfig.ServiceId = yamlSupplierConfig.ServiceId
 
 	// Supplier hosts
 	supplierConfig.Hosts = []string{}
@@ -46,8 +46,8 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 
 	// Add a default host which corresponds to the supplier name if it is not
 	// already in the list
-	if _, ok := existingHosts[supplierConfig.Name]; !ok {
-		supplierConfig.Hosts = append(supplierConfig.Hosts, supplierConfig.Name)
+	if _, ok := existingHosts[supplierConfig.ServiceId]; !ok {
+		supplierConfig.Hosts = append(supplierConfig.Hosts, supplierConfig.ServiceId)
 	}
 
 	// Populate the supplier service fields that are relevant to each supported
@@ -74,7 +74,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	if len(yamlSupplierConfig.ProxyNames) == 0 {
 		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"supplier %s has no proxies",
-			supplierConfig.Name,
+			supplierConfig.ServiceId,
 		)
 	}
 
