@@ -17,7 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var TestProofPath = []byte("test_proof_path")
+var TestProofPath = []byte{1, 0, 1, 0, 1, 0}
 
 // SubmitProofs generates and submits a proof for each claim in the provided
 // list of claims. Claims are paired with session trees by index but is otherwise
