@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 
 	"github.com/pokt-network/poktroll/app"
@@ -28,6 +29,9 @@ var (
 func init() {
 	flag.StringVar(&flagOut, "out", defaultOutPath, "the path to the generated go source of pre-generated accounts.")
 	flag.IntVar(&flagAccountsLimit, "limit", 100, "the number of accounts to generate.")
+
+	// Ensure cosmos-sdk bech32 prefixes are configured.
+	cmd.InitSDKConfig()
 }
 
 func main() {

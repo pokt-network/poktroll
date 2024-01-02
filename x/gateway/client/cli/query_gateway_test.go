@@ -1,29 +1,41 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/gatewaynet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
 func TestShowGateway(t *testing.T) {
-	net, objs := networkWithGatewayObjects(t, 2)
+	ctx := context.Background()
+	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
+		t, &network.InMemoryNetworkConfig{
+			NumGateways: 2,
+		},
+	)
+	memnet.Start(ctx, t)
 
-	ctx := net.Validators[0].ClientCtx
+	clientCtx := memnet.GetClientCtx(t)
+	codec := memnet.GetNetworkConfig(t).Codec
+	gateways := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList
+
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
@@ -33,14 +45,14 @@ func TestShowGateway(t *testing.T) {
 
 		args []string
 		err  error
-		obj  types.Gateway
+		obj  gatewaytypes.Gateway
 	}{
 		{
 			desc:      "found",
-			idAddress: objs[0].Address,
+			idAddress: gateways[0].Address,
 
 			args: common,
-			obj:  objs[0],
+			obj:  gateways[0],
 		},
 		{
 			desc:      "not found",
@@ -56,15 +68,15 @@ func TestShowGateway(t *testing.T) {
 				tc.idAddress,
 			}
 			args = append(args, tc.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowGateway(), args)
+			out, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdShowGateway(), args)
 			if tc.err != nil {
 				stat, ok := status.FromError(tc.err)
 				require.True(t, ok)
 				require.ErrorIs(t, stat.Err(), tc.err)
 			} else {
 				require.NoError(t, err)
-				var resp types.QueryGetGatewayResponse
-				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+				var resp gatewaytypes.QueryGetGatewayResponse
+				require.NoError(t, codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Gateway)
 				require.Equal(t,
 					nullify.Fill(&tc.obj),
@@ -76,9 +88,18 @@ func TestShowGateway(t *testing.T) {
 }
 
 func TestListGateway(t *testing.T) {
-	net, objs := networkWithGatewayObjects(t, 5)
+	ctx := context.Background()
+	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
+		t, &network.InMemoryNetworkConfig{
+			NumGateways: 5,
+		},
+	)
+	memnet.Start(ctx, t)
 
-	ctx := net.Validators[0].ClientCtx
+	clientCtx := memnet.GetClientCtx(t)
+	codec := memnet.GetNetworkConfig(t).Codec
+	gateways := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList
+
 	request := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
@@ -96,15 +117,15 @@ func TestListGateway(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(gateways); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
+			out, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewayResponse
-			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+			var resp gatewaytypes.QueryAllGatewayResponse
+			require.NoError(t, codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(gateways),
 				nullify.Fill(resp.Gateway),
 			)
 		}
@@ -112,30 +133,30 @@ func TestListGateway(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(gateways); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
+			out, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewayResponse
-			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+			var resp gatewaytypes.QueryAllGatewayResponse
+			require.NoError(t, codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(gateways),
 				nullify.Fill(resp.Gateway),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(objs)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListGateway(), args)
+		args := request(nil, 0, uint64(len(gateways)), true)
+		out, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdListGateway(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllGatewayResponse
-		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
+		var resp gatewaytypes.QueryAllGatewayResponse
+		require.NoError(t, codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
-		require.Equal(t, len(objs), int(resp.Pagination.Total))
+		require.Equal(t, len(gateways), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(objs),
+			nullify.Fill(gateways),
 			nullify.Fill(resp.Gateway),
 		)
 	})

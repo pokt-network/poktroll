@@ -18,13 +18,13 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/cosmos/cosmos-sdk/testutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/gatewaynet"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -39,7 +39,25 @@ const (
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	t.SkipNow()
 	// Create the network with 2 applications and 1 gateway
-	net, appAddresses, gatewayAddr := createNetworkWithApplicationsAndGateways(t)
+	ctx := context.Background()
+	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
+		t, &network.InMemoryNetworkConfig{
+			NumApplications: 2,
+			NumGateways:     1,
+		},
+	)
+	memnet.Start(ctx, t)
+
+	gatewayGenesisState := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet)
+	gatewayAddr := gatewayGenesisState.GatewayList[0].GetAddress()
+
+	appGenesisState := network.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
+	var appAddresses []string
+	for _, application := range appGenesisState.ApplicationList {
+		appAddresses = append(appAddresses, application.GetAddress())
+	}
+
+	net := memnet.GetNetwork(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -74,7 +92,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 			// of the Redelegation event alternates between app1 and app2
 			if previousRedelegation != nil {
 				require.NotEqual(t, previousRedelegation.GetAppAddress(), change.GetAppAddress())
-				if previousRedelegation.AppAddress() == appAddresses[0] {
+				if previousRedelegation.GetAppAddress() == appAddresses[0] {
 					require.Equal(t, appAddresses[1], change.GetAppAddress())
 				} else {
 					require.Equal(t, appAddresses[0], change.GetAppAddress())
@@ -96,22 +114,22 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	// Delegate from app1 to gateway
 	t.Log(time.Now().String())
 	t.Logf("delegating from app %s to gateway %s", appAddresses[0], gatewayAddr)
-	network.DelegateAppToGateway(t, net, appAddresses[0], gatewayAddr)
+	memnet.DelegateAppToGateway(t, appAddresses[0], gatewayAddr)
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 	// Delegate from app2 to gateway
 	t.Logf("delegating from app %s to gateway %s", appAddresses[1], gatewayAddr)
-	network.DelegateAppToGateway(t, net, appAddresses[1], gatewayAddr)
+	memnet.DelegateAppToGateway(t, appAddresses[1], gatewayAddr)
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 	// Undelegate from app1 to gateway
 	t.Logf("undelegating from app %s to gateway %s", appAddresses[0], gatewayAddr)
-	network.UndelegateAppFromGateway(t, net, appAddresses[0], gatewayAddr)
+	memnet.UndelegateAppFromGateway(t, appAddresses[0], gatewayAddr)
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 	// Undelegate from app2 to gateway
 	t.Logf("undelegating from app %s to gateway %s", appAddresses[1], gatewayAddr)
-	network.UndelegateAppFromGateway(t, net, appAddresses[1], gatewayAddr)
+	memnet.UndelegateAppFromGateway(t, appAddresses[1], gatewayAddr)
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
@@ -126,48 +144,4 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 			expectedChanges, delegationChangeCounter,
 		)
 	}
-}
-
-// createNetworkWithApplicationsAndGateways creates a network with 2 applications
-// and 1 gateway. It returns the network with all accoutns initialized via a
-// transaction from the first validator.
-func createNetworkWithApplicationsAndGateways(
-	t *testing.T,
-) (net *network.Network, appAddresses []string, gatewayAddress string) {
-	// Prepare the network
-	cfg := network.DefaultConfig()
-	net = network.New(t, cfg)
-	ctx := net.Validators[0].ClientCtx
-
-	// Prepare the keyring for the 2 applications and 1 gateway account
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 3)
-	ctx = ctx.WithKeyring(kr)
-
-	// Initialize all the accounts
-	for i, account := range accounts {
-		signatureSequenceNumber := i + 1
-		network.InitAccountWithSequence(t, net, account.Address, signatureSequenceNumber)
-	}
-	// need to wait for the account to be initialized in the next block
-	require.NoError(t, net.WaitForNextBlock())
-
-	addresses := make([]string, len(accounts))
-	for i, account := range accounts {
-		addresses[i] = account.Address.String()
-	}
-
-	// Create two applications
-	appGenesisState := network.ApplicationModuleGenesisStateWithAddresses(t, addresses[0:2])
-	buf, err := cfg.Codec.MarshalJSON(appGenesisState)
-	require.NoError(t, err)
-	cfg.GenesisState[apptypes.ModuleName] = buf
-
-	// Create a single gateway
-	gatewayGenesisState := network.GatewayModuleGenesisStateWithAddresses(t, addresses[2:3])
-	buf, err = cfg.Codec.MarshalJSON(gatewayGenesisState)
-	require.NoError(t, err)
-	cfg.GenesisState[gatewaytypes.ModuleName] = buf
-
-	return net, addresses[0:2], addresses[2]
 }

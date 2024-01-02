@@ -1,35 +1,36 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/testutil"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/gatewaynet"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestCLI_UnstakeGateway(t *testing.T) {
-	net, _ := networkWithGatewayObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	ctx := context.Background()
+	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
+		t, &network.InMemoryNetworkConfig{
+			NumGateways: 5,
+		},
+	)
+	memnet.Start(ctx, t)
 
-	// Create a keyring and add an account for the gateway to be unstaked
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	gatewayAccount := accounts[0]
-
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	clientCtx := memnet.GetClientCtx(t)
+	net := memnet.GetNetwork(t)
+	gatewayAccount := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList[0]
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -45,22 +46,19 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 	}{
 		{
 			desc:    "unstake gateway: valid",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 		},
 		{
 			desc: "unstake gateway: missing address",
-			// address: gatewayAccount.Address.String(),
-			err: types.ErrGatewayInvalidAddress,
+			// address: intentionally omitted,
+			err: gatewaytypes.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "unstake gateway: invalid address",
 			address: "invalid",
-			err:     types.ErrGatewayInvalidAddress,
+			err:     gatewaytypes.ErrGatewayInvalidAddress,
 		},
 	}
-
-	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, gatewayAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -75,7 +73,7 @@ func TestCLI_UnstakeGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeGateway(), args)
+			outUnstake, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdUnstakeGateway(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {

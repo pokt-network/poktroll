@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -12,6 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
@@ -19,9 +22,22 @@ import (
 )
 
 func TestShowSupplier(t *testing.T) {
-	net, suppliers := networkWithSupplierObjects(t, 2)
+	ctx := context.Background()
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		t, &network.InMemoryNetworkConfig{
+			NumSuppliers: 2,
+		},
+	)
+	memnet.Start(ctx, t)
 
-	ctx := net.Validators[0].ClientCtx
+	supplierGenesisState := network.GetGenesisState[*types.GenesisState](t, types.ModuleName, memnet)
+	require.NotEmpty(t, supplierGenesisState)
+	suppliers := supplierGenesisState.GetSupplierList()
+	require.NotEmpty(t, suppliers)
+
+	clientCtx := memnet.GetClientCtx(t)
+	net := memnet.GetNetwork(t)
+
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
@@ -54,7 +70,7 @@ func TestShowSupplier(t *testing.T) {
 				tc.idAddress,
 			}
 			args = append(args, tc.args...)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdShowSupplier(), args)
 			if tc.err != nil {
 				stat, ok := status.FromError(tc.err)
 				require.True(t, ok)
@@ -74,9 +90,16 @@ func TestShowSupplier(t *testing.T) {
 }
 
 func TestListSupplier(t *testing.T) {
-	net, suppliers := networkWithSupplierObjects(t, 5)
+	ctx := context.Background()
+	memnet := sessionnet.DefaultNetworkWithSessions(t)
+	memnet.Start(ctx, t)
 
-	ctx := net.Validators[0].ClientCtx
+	supplierGenesisState := network.GetGenesisState[*types.GenesisState](t, types.ModuleName, memnet)
+	suppliers := supplierGenesisState.GetSupplierList()
+
+	net := memnet.GetNetwork(t)
+
+	clientCtx := memnet.GetClientCtx(t)
 	request := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
 			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
@@ -96,7 +119,7 @@ func TestListSupplier(t *testing.T) {
 		step := 2
 		for i := 0; i < len(suppliers); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListSupplier(), args)
 			require.NoError(t, err)
 			var resp types.QueryAllSupplierResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
@@ -112,7 +135,7 @@ func TestListSupplier(t *testing.T) {
 		var next []byte
 		for i := 0; i < len(suppliers); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListSupplier(), args)
 			require.NoError(t, err)
 			var resp types.QueryAllSupplierResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
@@ -126,7 +149,7 @@ func TestListSupplier(t *testing.T) {
 	})
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(suppliers)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListSupplier(), args)
+		out, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdListSupplier(), args)
 		require.NoError(t, err)
 		var resp types.QueryAllSupplierResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
