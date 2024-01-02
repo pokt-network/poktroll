@@ -44,10 +44,9 @@ func NewInMemoryNetworkWithSessions(t *testing.T, cfg *network.InMemoryNetworkCo
 	t.Helper()
 
 	return &inMemoryNetworkWithSessions{
-		BaseInMemoryCosmosNetwork: basenet.BaseInMemoryCosmosNetwork{
-			Config:               *cfg,
-			PreGeneratedAccounts: testkeyring.NewPreGeneratedAccountIterator(),
-		},
+		BaseInMemoryCosmosNetwork: *basenet.NewBaseInMemoryCosmosNetwork(
+			t, cfg, testkeyring.NewPreGeneratedAccountIterator(),
+		),
 	}
 }
 

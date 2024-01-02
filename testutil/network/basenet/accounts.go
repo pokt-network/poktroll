@@ -46,7 +46,7 @@ func (memnet *BaseInMemoryCosmosNetwork) CreateKeyringAccounts(t *testing.T) {
 	// Assign the memnet's pre-generated accounts to a new pre-generated
 	// accounts iterator containing only the accounts which were also created
 	// in the keyring.
-	memnet.PreGeneratedAccounts = testkeyring.NewPreGeneratedAccountIterator(accts...)
+	memnet.PreGeneratedAccountIterator = testkeyring.NewPreGeneratedAccountIterator(accts...)
 }
 
 // CreateOnChainAccounts creates on-chain accounts (i.e. auth module) for the sum of
@@ -126,6 +126,23 @@ func (memnet *BaseInMemoryCosmosNetwork) InitAccount(
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
+// GetPreGeneratedAccountIterator returns the pre-generated account iterator associated
+// with the in-memory network; i.e. used to populate genesis and the keyring. Calling
+// #Next() will return the next (unused) pre-generated account in the iterator.
+func (memnet *BaseInMemoryCosmosNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
+	t.Helper()
+
+	preGeneratedAcct, ok := testkeyring.PreGeneratedAccounts().Next()
+	require.Truef(t, ok, "no pre-generated accounts available")
+
+	// Create a supplier on-chain account.
+	memnet.InitAccount(t, preGeneratedAcct.Address)
+
+	testkeyring.CreatePreGeneratedKeyringAccounts(t, memnet.GetClientCtx(t).Keyring, 1)
+
+	return preGeneratedAcct
 }
 
 // InitSupplierAccountsWithSequence uses the testCLI to create on-chain accounts

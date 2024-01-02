@@ -19,12 +19,12 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
-	require.NotEmptyf(t, memnet.PreGeneratedAccounts, "pre-generated accounts not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	// Create NumSuppliers number of suppliers with a service "svcX", where "X" is the supplier's index.
 	var supplierGenesisState = suppliertypes.DefaultGenesis()
 	for i := 0; i < memnet.Config.NumSuppliers; i++ {
-		preGenerateAcct, ok := memnet.PreGeneratedAccounts.Next()
+		preGenerateAcct, ok := memnet.PreGeneratedAccountIterator.Next()
 		require.True(t, ok)
 
 		supplier := sharedtypes.Supplier{
@@ -70,14 +70,14 @@ func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *tes
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
-	require.NotEmptyf(t, memnet.PreGeneratedAccounts, "pre-generated accounts not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	var (
 		serviceIdx      = 0
 		appGenesisState = apptypes.DefaultGenesis()
 	)
 	for i := 0; i < memnet.Config.GetNumApplications(t); i++ {
-		preGeneratedAcct, ok := memnet.PreGeneratedAccounts.Next()
+		preGeneratedAcct, ok := memnet.PreGeneratedAccountIterator.Next()
 		require.True(t, ok)
 
 		application := apptypes.Application{

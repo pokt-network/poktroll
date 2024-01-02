@@ -18,9 +18,9 @@ var _ network.InMemoryCosmosNetwork = (*BaseInMemoryCosmosNetwork)(nil)
 // BaseInMemoryCosmosNetwork is an "abstract" (i.e. partial) implementation, intended
 // to be embedded by other ("concrete") InMemoryCosmosNetwork implementations.
 type BaseInMemoryCosmosNetwork struct {
-	Config               network.InMemoryNetworkConfig
-	PreGeneratedAccounts *testkeyring.PreGeneratedAccountIterator
-	Network              *sdknetwork.Network
+	Config                      network.InMemoryNetworkConfig
+	PreGeneratedAccountIterator *testkeyring.PreGeneratedAccountIterator
+	Network                     *sdknetwork.Network
 
 	// lastAccountSeqNumber stores the last (most recently generated) account sequence number.
 	// NB: explicitly NOT using atomic.Int32 as it's usage doesn't compose well with anonymous
@@ -39,8 +39,8 @@ func NewBaseInMemoryCosmosNetwork(
 	t.Helper()
 
 	return &BaseInMemoryCosmosNetwork{
-		Config:               *cfg,
-		PreGeneratedAccounts: preGeneratedAccounts,
+		Config:                      *cfg,
+		PreGeneratedAccountIterator: preGeneratedAccounts,
 
 		// First functional account sequence number is 1. Starting at 0 so that
 		// callers can always use NextAccountSequenceNumber() (no boundary condition).

@@ -139,7 +139,7 @@ func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t 
 	gatewayGenesisState := gatewaytypes.DefaultGenesis()
 	for gatewayIdx := 0; gatewayIdx < memnet.Config.NumGateways; gatewayIdx++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(gatewayIdx)))
-		preGeneratedAcct, ok := memnet.PreGeneratedAccounts.Next()
+		preGeneratedAcct, ok := memnet.PreGeneratedAccountIterator.Next()
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 
@@ -164,11 +164,11 @@ func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *tes
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
-	require.NotEmptyf(t, memnet.PreGeneratedAccounts, "pre-generated accounts not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	var appGenesisState = apptypes.DefaultGenesis()
 	for appIdx := 0; appIdx < memnet.Config.GetNumApplications(t); appIdx++ {
-		preGeneratedAcct, ok := memnet.PreGeneratedAccounts.Next()
+		preGeneratedAcct, ok := memnet.PreGeneratedAccountIterator.Next()
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 
 		application := apptypes.Application{
