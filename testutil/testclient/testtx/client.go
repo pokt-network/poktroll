@@ -68,7 +68,7 @@ func NewOneTimeSignAndBroadcastTxClient(
 ) *mockclient.MockTxClient {
 	t.Helper()
 
-	var ctrl = gomock.NewController(t)
+	ctrl := gomock.NewController(t)
 
 	txClient := mockclient.NewMockTxClient(ctrl)
 	txClient.EXPECT().SignAndBroadcast(

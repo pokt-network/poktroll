@@ -158,13 +158,13 @@ func setupAppGateServerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
-		config.NewSupplyBlockClientFn(queryNodeURL.Host),            // leaf
+		config.NewSupplyBlockClientFn(),                             // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
 		config.NewSupplyAccountQuerierFn(),                          // leaf
 		config.NewSupplyApplicationQuerierFn(),                      // leaf
 		config.NewSupplySessionQuerierFn(),                          // leaf
 		config.NewSupplyRingCacheFn(),
-		config.NewSupplyPOKTRollSDKFn(queryNodeURL, appGateConfig.SigningKey),
+		config.NewSupplyPOKTRollSDKFn(appGateConfig.SigningKey),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)

@@ -36,7 +36,6 @@ const (
 func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
-	cometWebsocketURL string,
 ) (client.DelegationClient, error) {
 	client, err := events.NewEventsReplayClient[
 		client.Redelegation,
@@ -44,7 +43,6 @@ func NewDelegationClient(
 	](
 		ctx,
 		deps,
-		cometWebsocketURL,
 		delegationEventQuery,
 		newRedelegationEventFactoryFn(),
 		defaultRedelegationsReplayLimit,
