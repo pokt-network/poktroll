@@ -9,6 +9,8 @@ import (
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/spf13/cobra"
+
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -17,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"github.com/spf13/cobra"
 )
 
 // SupplierFn is a function that is used to supply a depinject config.
@@ -74,17 +75,15 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	}
 }
 
-// NewSupplyBlockClientFn supplies a depinject config with a blockClient from the
-// the given queryNodeRPCURL.
-func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
+// NewSupplyBlockClientFn supplies a depinject config with a blockClient.
+func NewSupplyBlockClientFn() SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := sdk.HostToWebsocketURL(queryNodeRPCURL.Host)
-		blockClient, err := block.NewBlockClient(ctx, deps, queryNodeWebsocketURL)
+		// Requires a query client to be supplied to the deps
+		blockClient, err := block.NewBlockClient(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
