@@ -20,11 +20,11 @@ queries from and which services it forwards requests to._
   - [`query_node_grpc_url`](#query_node_grpc_url)
   - [`tx_node_grpc_url`](#tx_node_grpc_url)
 - [RelayMiner proxies](#relayminer-proxies)
-  - [`name`](#name)
+  - [`proxy_name`](#proxy_name)
   - [`type`](#type)
   - [`host`](#host)
 - [Suppliers](#suppliers)
-  - [`name`](#name-1)
+  - [`service_id`](#service_id)
   - [`type`](#type-1)
   - [`service_config`](#service_config)
     - [`url`](#url)
@@ -35,6 +35,7 @@ queries from and which services it forwards requests to._
 - [Proxy -\> Supplier referencing](#proxy---supplier-referencing)
   - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
 - [Full config example](#full-config-example)
+- [Supported proxy types](#supported-proxy-types)
 
 # Usage
 
@@ -75,18 +76,18 @@ in a BadgerDB KV store data files.
 
 ```yaml
 pocket_node:
-  query_node_rpc_url: tcp://<host>
-  query_node_grpc_url: tcp://<host>
-  tx_node_grpc_url: tcp://<host>
+  query_node_rpc_url: tcp://<hostname>:<port>
+  query_node_grpc_url: tcp://<hostname>:<port>
+  tx_node_grpc_url: tcp://<hostname>:<port>
 ```
 
 ## `query_node_rpc_url`
 _`Required`_
 
 The RPC URL of the Pocket node that allows the `RelayMiner` to subscribe to events
-via websockets. It is then re-formatted as `ws://<host>/websocket` and establishes a
-persistent connection to the Pocket node to stream events such as latest blocks,
-application staking events, etc...
+via websockets. It is then re-formatted as `ws://<hostname>:<port>/websocket`
+and establishes a persistent connection to the Pocket node to stream events such as
+latest blocks, application staking events, etc...
 
 ## `query_node_grpc_url`
 _`Optional`_
@@ -111,12 +112,12 @@ At least one proxy is required for the `RelayMiner` to start.
 
 ```yaml
 proxies:
-  - name: <string>
+  - proxy_name: <string>
     type: <enum{http}>
     host: <host>
 ```
 
-## `name`
+## `proxy_name`
 _`Required`_, _`Unique`_
 
 Is the name of the proxy which will be used as a unique identifier to reference
@@ -127,7 +128,7 @@ and must be unique across all proxies.
 ## `type`
 _`Required`_
 
-The type of the proxy server to be started. Must be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+The type of the proxy server to be started. Must be one of the [supported types](#supported-proxy-types).
 When other types are supported, the `type` field could determine if additional
 configuration options are allowed be them optional or required.
 
@@ -144,7 +145,7 @@ represent the services that the `RelayMiner` will offer to the Pocket network
 through the configured proxies and their corresponding services to where the
 requests will be forwarded to.
 
-Each suppliers entry's `name` must reflect the on-chain `Service.Id` the supplier
+Each suppliers entry's `service_id` must reflect the on-chain `Service.Id` the supplier
 staked for and the `hosts` list must contain the same endpoints hosts that the
 supplier advertised when staking for that service.
 
@@ -152,7 +153,7 @@ At least one supplier is required for the `RelayMiner` to be functional.
 
 ```yaml
 suppliers:
-  - name: <string>
+  - service_id: <string>
     type: <enum{http}>
     service_config:
       url: <url>
@@ -167,10 +168,10 @@ suppliers:
       - <string>
 ```
 
-## `name`
+## `service_id`
 _`Required`_, _`Unique`_
 
-The name of the service which will be used as a unique identifier to reference
+The Id of the service which will be used as a unique identifier to reference
 a service provided by the `Supplier` and served by the `RelayMiner` instance.
 
 It must match the `Service.Id` specified by the supplier when staking for the
@@ -181,7 +182,7 @@ _`Required`_
 
 The transport type that the service will be offered on. It must match the `type` field
 of the proxy that the supplier is referencing through `proxy_names`.
-Must be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+Must be one of the [supported types](#supported-proxy-types).
 
 ## `service_config`
 _`Required`_
@@ -223,17 +224,19 @@ It is used to determine if the incoming request is allowed to be processed by
 the referenced proxy server as well as to check if the request's RPC-Type matches
 the on-chain endpoint's RPC-Type.
 
-The reasons to have multiple hosts for the same supplier service are:
+There are various reasons to having multiple hosts for the same supplier services.
 - The on-chain Supplier may provide the same Service on multiple domains
 (e.g. for different regions).
 - The operator may want to route requests of different RPC types to
 the same proxy
 - Migrating from one domain to another. Where the operator could still
 accept requests on the old domain while the new domain is being propagated.
+- The operator may want to have a different domain for internal requests.
+- The on-chain Service configuration accepts multiple endpoints.
 
 It must be unique across all the `hosts` lined to a given proxy.
 
-_Note: The `name` of the supplier is automatically added to the `hosts` list as
+_Note: The `service_id` of the supplier is automatically added to the `hosts` list as
 it may help troubleshooting the `RelayMiner` and/or send requests internally
 from a k8s cluster for example._
 
@@ -249,16 +252,16 @@ configuration file, must be unique across the supplier's `proxy_names`  and the
 
 # Proxy -> Supplier referencing
 
-To illustrate how the `proxy_names` and `name` fields are used to reference
-proxies and suppliers, let's consider the following configuration file:
+To illustrate how the `suppliers.proxy_names` and `proxies.proxy_name` fields are used
+to reference proxies and suppliers, let's consider the following configuration file:
 
 ```yaml
 proxies:
-  - name: http-example
+  - proxy_name: http-example
     ...
-  - name: http-example-2
+  - proxy_name: http-example-2
 suppliers:
-  - name: ethereum
+  - service_id: ethereum
     ...
     proxy_names:
       - http-example
@@ -283,50 +286,59 @@ and `http-example-2` and the `7b-llm-model` supplier is referencing only the
 
 ## RelayMiner config -> On-chain service relationship
 
-The following diagram illustrates how the `RelayMiner` config must match the
-on-chain staked service endpoints.
+The following diagram illustrates how the _off-chain_ `RelayMiner` operator
+config (yaml) must match the _on-chain_ `Supplier` actor service endpoints
+for correct and deterministic behavior.
+
+If these do not match, the behavior is non-deterministic and could result in
+a variety of errors such as bad QoS, incorrect proxying, burning of the actor, etc...
 
 _Assuming that the on-chain endpoints 1 and 2 have different hosts_
 
 ```mermaid
 flowchart LR
-  subgraph PocketNetwork
-    subgraph Supplier[On-chain Supplier]
-      subgraph Svc1[Service1]
-        SId1[Service1.Id]
-        subgraph Endpoints
-          EP1[Endpoint1]
-          EP2[Endpoint2]
-        end
-      end
-      subgraph Svc2[Service2]
-        SId2[Service2.Id]
-      end
-      subgraph Svcs[Services...]
-      end
-    end
-  end
 
-  subgraph RelayMiner
-    subgraph HTTP[Proxy=ProxyTypeHTTP]
-      subgraph CSvc1[Service1 Config]
-        CSId1[name=Service1.Id]-->SId1
-        subgraph Hosts
-          H1[Endpoint1.Host]-->EP1
-          H2[Endpoint2.Host]-->EP2
-        end
-      end
-      subgraph CSvc2[Service2 Config]
-        CSId2[Service2.Id]
+subgraph "Supplier Actor (On-Chain)"
+  subgraph "SupplierServiceConfig (protobuf)"
+    subgraph svc1["Service1 (protobuf)"]
+      svc1Id[Service1.Id]
+      subgraph SupplierEndpoint
+        EP1[Endpoint1]
+        EP2[Endpoint2]
       end
     end
-    subgraph Proxies[Other proxy servers...]
+    subgraph svc2 ["Service2 (protobuf)"]
+      svc2Id[Service2.Id]
     end
   end
-  CSvc2-->Svc2
+end
+
+subgraph "RelayMiner Operator (Off-Chain)"
+  subgraph "DevOps Operator Configs (yaml)"
+    subgraph svc1Config ["Service1 Config (yaml)"]
+      svc1IdConfig[name=Service1.Id]-->svc1Id
+      subgraph Hosts
+        H1[Endpoint1.Host]-->EP1
+        H2[Endpoint2.Host]-->EP2
+        H3[Internal Host]
+      end
+    end
+    subgraph svc2Config ["Service2 Config (yaml)"]
+      svc2IdConfig[Service2.Id]
+    end
+  end
+end
+
+svc2Config-->svc2
 ```
 
 # Full config example
 
 A full and commented example of a `RelayMiner` configuration file can be found
 at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
+
+---
+
+# Supported proxy types
+
+The list of supported proxy types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
