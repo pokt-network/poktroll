@@ -13,10 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
+
+var TestProofPath = []byte("test_proof_path")
 
 // SubmitProofs generates and submits a proof for each claim in the provided
 // list of claims. Claims are paired with session trees by index but is otherwise
@@ -49,7 +50,7 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 ) *types.Proof {
 	t.Helper()
 
-	closestMerkleProof, err := sessionTree.ProveClosest(network.TestProofPath)
+	closestMerkleProof, err := sessionTree.ProveClosest(TestProofPath)
 	require.NoError(t, err)
 
 	closestMerkleProofBz, err := closestMerkleProof.Marshal()

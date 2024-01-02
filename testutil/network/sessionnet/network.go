@@ -27,7 +27,6 @@ func DefaultInMemoryNetworkConfig(t *testing.T) *network.InMemoryNetworkConfig {
 	return &network.InMemoryNetworkConfig{
 		NumSessions:             4,
 		NumRelaysPerSession:     5,
-		NumBlocksPerSession:     5,
 		NumSuppliers:            2,
 		AppSupplierPairingRatio: 2,
 	}
