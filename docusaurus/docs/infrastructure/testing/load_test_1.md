@@ -174,6 +174,36 @@ Legend:
 - `--` Asynchronous request
 - `-` Synchronous request
 
+![colored](https://github.com/pokt-network/poktroll/assets/1892194/bf965457-bdd0-4a35-a75c-cfcddfbaab5e)
+
+The source code for the mermaid diagram above is provided at the bottom of this file
+for maintenance purposes. Since GitHub does not support rendering colors, an image was
+uploaded instead.
+
+## Tool Requirements
+
+### Deployment Environment
+
+- Ability to deploy the environment (and tooling) on LocalNet & DevNet
+
+### Request Source / Generator
+
+- A script/tool to generate N requests per second
+
+### Script - Instructions
+
+- Ramp-up & ramp-down strategy
+- Instructions on when & how to execute commands (manually) to ramp-up & down
+
+### Script - Tools
+
+- Commands to periodically `trigger manual stake/unstake txs`
+- Commands to periodically `scale up suppliers & gateways`
+- Commands to periodically `add a new virtual user`
+- Command to periodically `increase the number of requests per seconds`
+
+## Diagram
+
 ```mermaid
 flowchart TB
 
@@ -216,41 +246,18 @@ flowchart TB
     G -. metrics .-> M
     S -. metrics .-> M
 
-    classDef orangeColor fill:#FF8C00;
-    classDef purpleColor fill:#800080;
-    classDef blueColor fill:#0000FF;
+    %% classDef orangeColor fill:#FF8C00;
+    %% classDef purpleColor fill:#800080;
+    %% classDef blueColor fill:#0000FF;
 
-    class T orangeColor
-    class M orangeColor
-    class ngx orangeColor
+    %% class T orangeColor
+    %% class M orangeColor
+    %% class ngx orangeColor
 
-    class S blueColor
-    class A blueColor
-    class G blueColor
-    class P blueColor
+    %% class S blueColor
+    %% class A blueColor
+    %% class G blueColor
+    %% class P blueColor
 
-    class C purpleColor
-
+    %% class C purpleColor
 ```
-
-## Tool Requirements
-
-### Deployment Environment
-
-- Ability to deploy the environment (and tooling) on LocalNet & DevNet
-
-### Request Source / Generator
-
-- A script/tool to generate N requests per second
-
-### Script - Instructions
-
-- Ramp-up & ramp-down strategy
-- Instructions on when & how to execute commands (manually) to ramp-up & down
-
-### Script - Tools
-
-- Commands to periodically `trigger manual stake/unstake txs`
-- Commands to periodically `scale up suppliers & gateways`
-- Commands to periodically `add a new virtual user`
-- Command to periodically `increase the number of requests per seconds`
