@@ -91,7 +91,7 @@ suppliers:
     # - The on-chain Supplier may provide the same Service on multiple domains
     #   (e.g. for different regions).
     # - The operator may want to route requests of different RPC types to
-    #   the same proxy
+    #   the same proxy.
     # - Migrating from one domain to another. Where the operator could still
     #   accept requests on the old domain while the new domain is being propagated.
     # - The operator may want to have a different domain for internal requests.
