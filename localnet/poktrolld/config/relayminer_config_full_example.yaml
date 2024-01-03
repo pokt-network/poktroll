@@ -3,10 +3,10 @@
 # "hot" config changes in the future, meaning changes without restarting a process.
 # This would be useful for adding a proxy or a supplier without interrupting the service.
 
-# Name of the key (in the keyring) to sign transactions
+# Name of the key (in the keyring) to sign transactions.
 signing_key_name: supplier1
 # Relative path (on the relayminer's machine) to where the data backing
-# SMT KV store exists on disk
+# SMT KV store exists on disk.
 smt_store_path: smt_stores
 
 pocket_node:
