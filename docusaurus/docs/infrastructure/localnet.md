@@ -21,7 +21,7 @@ needed to send an end-to-end relay.
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
-  - [localnet\_config.yaml](#localnet_configyaml)
+  - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
 - [Troubleshooting](#troubleshooting)
@@ -77,20 +77,34 @@ _NOTE: You may need to up to 1 minute for the new actors to be registered and de
 
 ### Modify Kubernetes workloads
 
-If you need to modify Kubernetes resources, follow these steps:
+The local cluster is dependant on the latest available helm charts available at
+[github.com/pokt-network/helm-charts](https://github.com/pokt-network/helm-charts.git).
 
-1. Clone the [helm-charts](https://github.com/pokt-network/helm-charts) repository.
-2. In `localnet_config.yaml`, set `helm_chart_local_repo.enabled` to `true` and `path` to the **relative** path of the cloned repository.
+If you need to modify Kubernetes resources in your local setup, follow these steps.
 
-The following is an example that has not been tested yet:
+Clone the helm charts locally:
 
 ```bash
-cd ~/src/pocket
-git clone git@github.com:pokt-network/helm-charts.git
+cd .. && git@github.com:pokt-network/helm-charts.git
+cd -
+```
 
-cd ~/src/pocket/poktroll
-sed -i.bak "s/helm_chart_local_repo\.enabled: false.*/helm_chart_local_repo.enabled: true/" localnet_config.yaml
-sed -i.bak "s#path: .*#path: ../helm-charts#" localnet_config.yaml
+Update the path of the helm charts to the **relative** path of the cloned repository:
+
+```bash
+sed -i '' '/helm_chart_local_repo:/,/path:/ s|\(path: \).*|\1../helm-charts|' localnet_config.yaml
+```
+
+Toggle the `helm_chart_local_repo.enabled` flag in `localnet_config.yaml` to `true`:
+
+```bash
+sed -i '' '/helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/; /helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/' localnet_config.yaml
+```
+
+You can always toggle it back to `false` with:
+
+```bash
+sed -i '' '/helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/; /helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/' localnet_config.yaml
 ```
 
 ## Troubleshooting
