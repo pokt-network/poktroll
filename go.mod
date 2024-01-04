@@ -36,7 +36,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
-	github.com/pokt-network/smt v0.7.1
+	github.com/pokt-network/smt v0.8.1
+	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240104123447-abb5c71c14ce
 	github.com/regen-network/gocuke v0.6.2
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/cast v1.5.1
