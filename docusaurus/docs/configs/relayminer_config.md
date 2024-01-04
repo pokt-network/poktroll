@@ -18,7 +18,7 @@ queries from and which services it forwards requests to._
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
-  - [`tx_node_grpc_url`](#tx_node_grpc_url)
+  - [`tx_node_rpc_url`](#tx_node_rpc_url)
 - [RelayMiner proxies](#relayminer-proxies)
   - [`proxy_name`](#proxy_name)
   - [`type`](#type)
@@ -78,7 +78,7 @@ in a BadgerDB KV store data files.
 pocket_node:
   query_node_rpc_url: tcp://<hostname>:<port>
   query_node_grpc_url: tcp://<hostname>:<port>
-  tx_node_grpc_url: tcp://<hostname>:<port>
+  tx_node_rpc_url: tcp://<hostname>:<port>
 ```
 
 ## `query_node_rpc_url`
@@ -88,20 +88,20 @@ The RPC URL of the Pocket node that allows the `RelayMiner` to subscribe to even
 via websockets. It is then re-formatted as `ws://<hostname>:<port>/websocket`
 and establishes a persistent connection to the Pocket node to stream events such as
 latest blocks, application staking events, etc...
+If unspecified, `tx_node_rpc_url` value will be used.
 
 ## `query_node_grpc_url`
 _`Optional`_
 
 The gRPC URL of the Pocket node that allows the `RelayMiner` to query/pull data from
-the Pocket network (eg. Sessions, Accounts, etc...). If unspecified, `tx_node_grpc_url`
-value will be used.
+the Pocket network (eg. Sessions, Accounts, etc...).
 
-## `tx_node_grpc_url`
+## `tx_node_rpc_url`
 _`Required`_
 
-The gRPC URL of the Pocket node that allows the `RelayMiner` to submit transactions.
-It may have a different host than the `query_node_rpc_url` or the `tx_node_grpc_url`
-but same values are acceptable too.
+The RPC URL of the Pocket node that allows the `RelayMiner` to broadcast transactions to the a Pocket network Tendermint node.
+It may have a different host than the `query_node_rpc_url` but the same value is
+acceptable too.
 
 # RelayMiner proxies
 
@@ -316,7 +316,7 @@ end
 subgraph "RelayMiner Operator (Off-Chain)"
   subgraph "DevOps Operator Configs (yaml)"
     subgraph svc1Config ["Service1 Config (yaml)"]
-      svc1IdConfig[name=Service1.Id]-->svc1Id
+      svc1IdConfig[service_id=Service1.Id]-->svc1Id
       subgraph Hosts
         H1[Endpoint1.Host]-->EP1
         H2[Endpoint2.Host]-->EP2
