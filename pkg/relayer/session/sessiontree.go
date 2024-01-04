@@ -25,8 +25,8 @@ type sessionTree struct {
 	// sessionHeader is the header of the session corresponding to the SMST (Sparse Merkle State Trie).
 	sessionHeader *sessiontypes.SessionHeader
 
-	// trie is the SMST (Sparse Merkle State Trie) corresponding the session.
-	trie smt.SparseMerkleSumTrie
+	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
+	sessionSMT smt.SparseMerkleSumTrie
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -86,7 +86,7 @@ func NewSessionTree(
 		sessionHeader: sessionHeader,
 		storePath:     storePath,
 		treeStore:     treeStore,
-		trie:          trie,
+		sessionSMT:    trie,
 		sessionMu:     &sync.Mutex{},
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
@@ -113,7 +113,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	return st.trie.Update(key, value, weight)
+	return st.sessionSMT.Update(key, value, weight)
 }
 
 // ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.
@@ -145,10 +145,10 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 		return nil, err
 	}
 
-	st.trie = smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	st.sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	st.proof, err = st.trie.ProveClosest(path)
+	st.proof, err = st.sessionSMT.ProveClosest(path)
 	st.proofPath = path
 
 	return st.proof, err
@@ -167,10 +167,10 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		return st.claimedRoot, nil
 	}
 
-	st.claimedRoot = st.trie.Root()
+	st.claimedRoot = st.sessionSMT.Root()
 
 	// Commit the tree to disk
-	if err := st.trie.Commit(); err != nil {
+	if err := st.sessionSMT.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -180,7 +180,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	}
 
 	st.treeStore = nil
-	st.trie = nil
+	st.sessionSMT = nil
 
 	return st.claimedRoot, nil
 }
@@ -204,9 +204,5 @@ func (st *sessionTree) Delete() error {
 	}
 
 	// Delete the KVStore from disk
-	if err := os.RemoveAll(st.storePath); err != nil {
-		return err
-	}
-
-	return nil
+	return os.RemoveAll(filepath.Dir(st.storePath))
 }
