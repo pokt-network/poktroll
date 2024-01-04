@@ -146,24 +146,42 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 // from the given txNodeGRPCURL.
 // TODO_TECHDEBT(#256): Remove this function once the as we may no longer
 // need to supply a TxClientContext to the RelayMiner.
-func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
+func NewSupplyTxClientContextFn(
+	queryNodeGRPCURL *url.URL,
+	txNodeRPCURL *url.URL,
+) SupplierFn {
 	return func(_ context.Context,
 		deps depinject.Config,
 		cmd *cobra.Command,
 	) (depinject.Config, error) {
 		// Temporarily store the flag's current value to be restored later, after
-		// the client context has been created with txNodeGRPCURL.
+		// the client context has been created with txNodeRPCURL.
+		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
+		tmpNode, err := cmd.Flags().GetString(cosmosflags.FlagNode)
+		if err != nil {
+			return nil, err
+		}
+
+		// Temporarily store the flag's current value to be restored later, after
+		// the client context has been created with queryNodeGRPCURL.
 		// TODO_TECHDEBT(#223) Retrieve value from viper instead, once integrated.
 		tmpGRPC, err := cmd.Flags().GetString(cosmosflags.FlagGRPC)
 		if err != nil {
 			return nil, err
 		}
 
-		// Set --node flag to the pocketTxNodeURL for the client context
+		// Set --node flag to the txNodeRPCURL for the client context
 		// This flag is read by cosmosclient.GetClientTxContext.
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, txNodeRPCURL.String()); err != nil {
+			return nil, err
+		}
+
+		// Set --grpc-addr flag to the queryNodeGRPCURL for the client context
+		// This flag is read by cosmosclient.GetClientTxContext to query accounts
+		// for transaction signing.
 		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
 		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
-		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, txNodeGRPCURL.Host); err != nil {
+		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
 			return nil, err
 		}
 
@@ -184,6 +202,12 @@ func NewSupplyTxClientContextFn(txNodeGRPCURL *url.URL) SupplierFn {
 		// Restore the flag's original value in order for other components
 		// to use the flag as expected.
 		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, tmpGRPC); err != nil {
+			return nil, err
+		}
+
+		// Restore the flag's original value in order for other components
+		// to use the flag as expected.
+		if err := cmd.Flags().Set(cosmosflags.FlagNode, tmpNode); err != nil {
 			return nil, err
 		}
 

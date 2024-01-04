@@ -70,8 +70,8 @@ for such operations.`,
 	// Cosmos flags
 	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeRPCURL` field in the config file if specified.")
-	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query and tx contexts with grpc correctly. It can be used to override the `QueryNodeGRPCURL` and `TxNodeGRPCURL` fields in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query and tx contexts correctly. It can be used to override the `QueryNodeRPCURL` and `TxNodeRPCURL` fields in the config file if specified.")
+	cmd.Flags().StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCURL` field in the config file if specified.")
 	cmd.Flags().Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	return cmd
@@ -142,9 +142,9 @@ func setupRelayerDependencies(
 ) (deps depinject.Config, err error) {
 	queryNodeRPCUrl := relayMinerConfig.PocketNode.QueryNodeRPCUrl
 	queryNodeGRPCUrl := relayMinerConfig.PocketNode.QueryNodeGRPCUrl
-	txNodeGRPCUrl := relayMinerConfig.PocketNode.TxNodeGRPCUrl
+	txNodeRPCUrl := relayMinerConfig.PocketNode.TxNodeRPCUrl
 
-	// Override the config file's `QueryNodeGRPCUrl` and `txNodeGRPCUrl` fields
+	// Override the config file's `QueryNodeGRPCUrl` fields
 	// with the `--grpc-addr` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeGRPCURL != omittedDefaultFlagValue {
@@ -153,10 +153,9 @@ func setupRelayerDependencies(
 			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
 		}
 		queryNodeGRPCUrl = parsedFlagNodeGRPCUrl
-		txNodeGRPCUrl = parsedFlagNodeGRPCUrl
 	}
 
-	// Override the config file's `QueryNodeUrl` fields
+	// Override the config file's `QueryNodeUrl` and `txNodeRPCUrl` fields
 	// with the `--node` flag if it was specified.
 	// TODO(#223) Remove this check once viper is used as SoT for overridable config values.
 	if flagNodeRPCURL != omittedDefaultFlagValue {
@@ -165,6 +164,7 @@ func setupRelayerDependencies(
 			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
 		}
 		queryNodeRPCUrl = parsedFlagNodeRPCUrl
+		txNodeRPCUrl = parsedFlagNodeRPCUrl
 	}
 
 	signingKeyName := relayMinerConfig.SigningKeyName
@@ -177,7 +177,7 @@ func setupRelayerDependencies(
 		config.NewSupplyBlockClientFn(),                        // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		supplyMiner, // leaf
-		config.NewSupplyTxClientContextFn(txNodeGRPCUrl), // leaf
+		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),

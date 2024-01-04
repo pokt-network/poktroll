@@ -9,48 +9,48 @@ func (relayMinerConfig *RelayMinerConfig) HydratePocketNodeUrls(
 ) error {
 	relayMinerConfig.PocketNode = &RelayMinerPocketNodeConfig{}
 
-	if len(yamlPocketNodeConfig.TxNodeGRPCUrl) == 0 {
-		return ErrRelayMinerConfigInvalidNodeUrl.Wrap("tx node grpc url is required")
+	if len(yamlPocketNodeConfig.TxNodeRPCUrl) == 0 {
+		return ErrRelayMinerConfigInvalidNodeUrl.Wrap("tx node rpc url is required")
 	}
 
-	// Check if the pocket node grpc url is a valid URL
-	txNodeGRPCUrl, err := url.Parse(yamlPocketNodeConfig.TxNodeGRPCUrl)
+	// Check if the pocket node rpc url is a valid URL
+	txNodeRPCUrl, err := url.Parse(yamlPocketNodeConfig.TxNodeRPCUrl)
 	if err != nil {
 		return ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
-			"invalid tx node grpc url %s",
+			"invalid tx node rpc url %s",
 			err.Error(),
 		)
 	}
-	relayMinerConfig.PocketNode.TxNodeGRPCUrl = txNodeGRPCUrl
+	relayMinerConfig.PocketNode.TxNodeRPCUrl = txNodeRPCUrl
 
-	// If the query node grpc url is empty, use the tx node grpc url
-	if len(yamlPocketNodeConfig.QueryNodeGRPCUrl) == 0 {
-		relayMinerConfig.PocketNode.QueryNodeGRPCUrl = relayMinerConfig.PocketNode.TxNodeGRPCUrl
+	// If the query node rpc url is empty, use the tx node rpc url
+	if len(yamlPocketNodeConfig.QueryNodeRPCUrl) == 0 {
+		relayMinerConfig.PocketNode.QueryNodeRPCUrl = relayMinerConfig.PocketNode.TxNodeRPCUrl
 	} else {
-		// If the query node grpc url is not empty, make sure it is a valid URL
-		queryNodeGRPCUrl, err := url.Parse(yamlPocketNodeConfig.QueryNodeGRPCUrl)
+		// If the query node rpc url is not empty, make sure it is a valid URL
+		queryNodeRPCUrl, err := url.Parse(yamlPocketNodeConfig.QueryNodeRPCUrl)
 		if err != nil {
 			return ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
-				"invalid query node grpc url %s",
+				"invalid query node rpc url %s",
 				err.Error(),
 			)
 		}
-		relayMinerConfig.PocketNode.QueryNodeGRPCUrl = queryNodeGRPCUrl
+		relayMinerConfig.PocketNode.QueryNodeRPCUrl = queryNodeRPCUrl
 	}
 
-	if len(yamlPocketNodeConfig.QueryNodeRPCUrl) == 0 {
-		return ErrRelayMinerConfigInvalidNodeUrl.Wrap("query node rpc url is required")
+	if len(yamlPocketNodeConfig.QueryNodeGRPCUrl) == 0 {
+		return ErrRelayMinerConfigInvalidNodeUrl.Wrap("query node grpc url is required")
 	}
 
-	// Check if the query node rpc url is a valid URL
-	queryNodeRPCUrl, err := url.Parse(yamlPocketNodeConfig.QueryNodeRPCUrl)
+	// Check if the query node grpc url is a valid URL
+	queryNodeGRPCUrl, err := url.Parse(yamlPocketNodeConfig.QueryNodeGRPCUrl)
 	if err != nil {
 		return ErrRelayMinerConfigInvalidNodeUrl.Wrapf(
-			"invalid query node rpc url %s",
+			"invalid query node grpc url %s",
 			err.Error(),
 		)
 	}
-	relayMinerConfig.PocketNode.QueryNodeRPCUrl = queryNodeRPCUrl
+	relayMinerConfig.PocketNode.QueryNodeGRPCUrl = queryNodeGRPCUrl
 
 	return nil
 }

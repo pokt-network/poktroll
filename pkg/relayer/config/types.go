@@ -25,7 +25,7 @@ type YAMLRelayMinerConfig struct {
 type YAMLRelayMinerPocketNodeConfig struct {
 	QueryNodeRPCUrl  string `yaml:"query_node_rpc_url"`
 	QueryNodeGRPCUrl string `yaml:"query_node_grpc_url"`
-	TxNodeGRPCUrl    string `yaml:"tx_node_grpc_url"`
+	TxNodeRPCUrl     string `yaml:"tx_node_rpc_url"`
 }
 
 // YAMLRelayMinerProxyConfig is the structure used to unmarshal the proxy
@@ -76,7 +76,7 @@ type RelayMinerConfig struct {
 type RelayMinerPocketNodeConfig struct {
 	QueryNodeRPCUrl  *url.URL
 	QueryNodeGRPCUrl *url.URL
-	TxNodeGRPCUrl    *url.URL
+	TxNodeRPCUrl     *url.URL
 }
 
 // RelayMinerProxyConfig is the structure resulting from parsing the proxy

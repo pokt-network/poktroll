@@ -29,7 +29,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -57,7 +57,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-					TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
 				SigningKeyName: "servicer1",
 				SmtStorePath:   "smt_stores",
@@ -96,7 +96,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -132,7 +132,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-					TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
 				SigningKeyName: "servicer1",
 				SmtStorePath:   "smt_stores",
@@ -182,7 +182,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			  pocket_node:
 			    query_node_rpc_url: tcp://127.0.0.1:36657
 			    query_node_grpc_url: tcp://127.0.0.1:36658
-			    tx_node_grpc_url: tcp://127.0.0.1:36659
+			    tx_node_rpc_url: tcp://127.0.0.1:36659
 			  signing_key_name: servicer1
 			  smt_store_path: smt_stores
 			  proxies:
@@ -209,7 +209,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-					TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
 				SigningKeyName: "servicer1",
 				SmtStorePath:   "smt_stores",
@@ -254,12 +254,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid: relay miner config with query node grpc url defaulting to tx node grpc url",
+			desc: "valid: relay miner config with query node rpc url defaulting to tx node rpc url",
 
 			inputConfigYAML: `
 				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  query_node_grpc_url: tcp://127.0.0.1:36658
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -281,9 +281,9 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedError: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
-					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
-					TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
 				SigningKeyName: "servicer1",
 				SmtStorePath:   "smt_stores",
@@ -317,7 +317,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -342,7 +342,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-					TxNodeGRPCUrl:    &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
+					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
 				},
 				SigningKeyName: "servicer1",
 				SmtStorePath:   "smt_stores",
@@ -377,7 +377,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: &tcp://127.0.0.1:36659
+				  tx_node_rpc_url: &tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -431,7 +431,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: &tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -458,7 +458,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: &tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -479,13 +479,13 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
-			desc: "invalid: missing query node rpc url",
+			desc: "invalid: missing query node grpc url",
 
 			inputConfigYAML: `
 				pocket_node:
 				  # explicitly omitted query node rpc url
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  query_node_rpc_url: tcp://127.0.0.1:36657
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -512,7 +512,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				# explicitly omitted signing key name
 				smt_store_path: smt_stores
 				proxies:
@@ -539,7 +539,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				# explicitly omitted smt store path
 				proxies:
@@ -566,7 +566,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				# explicitly omitted proxies section
@@ -590,7 +590,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies: # explicitly empty proxies section
@@ -614,7 +614,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -641,7 +641,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -668,7 +668,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -695,7 +695,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -722,7 +722,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -749,7 +749,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -776,7 +776,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -803,7 +803,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -830,7 +830,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -857,7 +857,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -884,7 +884,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -911,7 +911,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -938,7 +938,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -965,7 +965,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -992,7 +992,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -1019,7 +1019,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -1046,7 +1046,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -1073,7 +1073,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -1100,7 +1100,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				pocket_node:
 				  query_node_rpc_url: tcp://127.0.0.1:36657
 				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_grpc_url: tcp://127.0.0.1:36659
+				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: servicer1
 				smt_store_path: smt_stores
 				proxies:
@@ -1182,8 +1182,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.TxNodeGRPCUrl.String(),
-				config.PocketNode.TxNodeGRPCUrl.String(),
+				tt.expectedConfig.PocketNode.TxNodeRPCUrl.String(),
+				config.PocketNode.TxNodeRPCUrl.String(),
 			)
 
 			for proxyName, proxy := range tt.expectedConfig.Proxies {
