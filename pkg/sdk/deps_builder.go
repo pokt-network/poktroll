@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	block "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
@@ -74,7 +75,15 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
 
-	// Create and supply the ring cache that depends on application and account queriers
+	// Create and supply the delegation client
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
+	if err != nil {
+		return nil, err
+	}
+	deps = depinject.Configs(deps, depinject.Supply(delegationClient))
+
+	// Create and supply the ring cache that depends on:
+	// the logger, application and account querier and the delegation client
 	ringCache, err := rings.NewRingCache(deps)
 	if err != nil {
 		return nil, err

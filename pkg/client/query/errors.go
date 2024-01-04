@@ -7,6 +7,6 @@ import (
 var (
 	codespace                          = "query"
 	ErrQueryAccountNotFound            = sdkerrors.Register(codespace, 1, "account not found")
-	ErrQueryUnableToDeserialiseAccount = sdkerrors.Register(codespace, 2, "unable to deserialise account")
+	ErrQueryUnableToDeserializeAccount = sdkerrors.Register(codespace, 2, "unable to deserialize account")
 	ErrQueryRetrieveSession            = sdkerrors.Register(codespace, 3, "error while trying to retrieve a session")
 )

@@ -11,15 +11,25 @@ import (
 
 const (
 	// delegationEventQuery is the query used by the EventsQueryClient to subscribe
-	// to new delegation events from the the application module on chain.
+	// to all application module events in order to filter for redelegation events.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
+	// TODO_HACK(#280): Instead of listening to all events and doing a verbose
+	// filter, we should subscribe to both MsgDelegateToGateway and MsgUndelegateFromGateway
+	// messages directly, and filter those for the EventRedelegation event types.
+	// This would save the delegation client from listening to a lot of unnecessary
+	// events, that it filters out.
+	// NB: This is not currently possible because the observer pattern does not
+	// support multiplexing multiple observables into a single observable, that
+	// can supply the EventsReplayClient with both the MsgDelegateToGateway and
+	// MsgUndelegateFromGateway events.
+	delegationEventQuery = "tm.event='Tx' AND message.module='application'"
 
 	// defaultRedelegationsReplayLimit is the number of redelegations that the
 	// replay observable returned by LastNRedelegations() will be able to replay.
-	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the `delegationClient`
-	// struct that defaults to this but can be overridden via an option.
+	// TODO_TECHDEBT/TODO_FUTURE: add a `redelegationsReplayLimit` field to the
+	// delegation client struct that defaults to this but can be overridden via
+	// an option in future work.
 	defaultRedelegationsReplayLimit = 100
 )
 
