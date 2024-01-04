@@ -118,7 +118,7 @@ type RelayerSessionsManager interface {
 
 type RelayerSessionsManagerOption func(RelayerSessionsManager)
 
-// SessionTree is an interface that wraps an SMST (Sparse Merkle State Tree) and its corresponding session.
+// SessionTree is an interface that wraps an SMST (Sparse Merkle State Trie) and its corresponding session.
 type SessionTree interface {
 	// GetSessionHeader returns the header of the session corresponding to the SMST.
 	GetSessionHeader() *sessiontypes.SessionHeader
