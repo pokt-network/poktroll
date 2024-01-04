@@ -9,6 +9,8 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// ValidateSessionHeader ensures that a session with the sessionID of the given session
+// header exists and that this session includes the supplier with the given address.
 func (k msgServer) ValidateSessionHeader(
 	goCtx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
@@ -42,5 +44,22 @@ func (k msgServer) ValidateSessionHeader(
 			sessionHeader.SessionId,
 		)
 	}
+
+	var found bool
+	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
+		if supplier.Address == supplierAddr {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
+			"supplier address %q in session ID %q",
+			supplierAddr,
+			sessionRes.GetSession().GetSessionId(),
+		)
+	}
+
 	return sessionRes, nil
 }
