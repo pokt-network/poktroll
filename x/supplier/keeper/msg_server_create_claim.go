@@ -25,22 +25,6 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		return nil, err
 	}
 
-	var found bool
-	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
-		if supplier.Address == msg.GetSupplierAddress() {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"supplier address %q in session ID %q",
-			msg.GetSupplierAddress(),
-			sessionRes.GetSession().GetSessionId(),
-		)
-	}
-
 	logger.
 		With(
 			"session_id", sessionRes.GetSession().GetSessionId(),
@@ -67,6 +51,9 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		SessionHeader:   msg.GetSessionHeader(),
 		RootHash:        msg.RootHash,
 	}
+
+	// TODO_TECHDEBT: check if this claim already exists and return an appropriate error
+	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.
