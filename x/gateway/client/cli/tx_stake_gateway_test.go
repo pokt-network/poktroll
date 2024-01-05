@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -41,55 +43,69 @@ func TestCLI_StakeGateway(t *testing.T) {
 	tests := []struct {
 		desc    string
 		address string
-		stake   string
+		config  string
 		err     *sdkerrors.Error
 	}{
 		{
 			desc:    "stake gateway: invalid address",
 			address: "invalid",
-			stake:   "1000upokt",
-			err:     types.ErrGatewayInvalidAddress,
+			config: `
+			  stake_amount: 1000upokt,
+				`,
+			err: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
 			// address:     gatewayAccount.Address.String(),
-			stake: "1000upokt",
-			err:   types.ErrGatewayInvalidAddress,
+			config: `
+			  stake_amount: 1000upokt,
+				`,
+			err: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
 			address: gatewayAccount.Address.String(),
-			stake:   "0upokt",
-			err:     types.ErrGatewayInvalidStake,
+			config: `
+			  stake_amount: 0upokt,
+				`,
+			err: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
 			address: gatewayAccount.Address.String(),
-			stake:   "-1000upokt",
-			err:     types.ErrGatewayInvalidStake,
+			config: `
+			  stake_amount: -1000upokt,
+				`,
+			err: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
 			address: gatewayAccount.Address.String(),
-			stake:   "1000invalid",
-			err:     types.ErrGatewayInvalidStake,
+			config: `
+			  stake_amount: 1000invalid,
+				`,
+			err: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
 			address: gatewayAccount.Address.String(),
-			stake:   "1000",
-			err:     types.ErrGatewayInvalidStake,
+			config: `
+			  stake_amount: 1000,
+				`,
+			err: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing stake",
 			address: gatewayAccount.Address.String(),
-			// stake: "1000upokt",
-			err: types.ErrGatewayInvalidStake,
+			config:  ``,
+			err:     types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
 			address: gatewayAccount.Address.String(),
-			stake:   "1000upokt",
+			config: `
+			  stake_amount: 1000upokt,
+				`,
 		},
 	}
 
@@ -102,9 +118,12 @@ func TestCLI_StakeGateway(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// write the stake config to a file
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.config)).Name()
+			t.Cleanup(func() { os.Remove(configPath) })
+
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stake,
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
