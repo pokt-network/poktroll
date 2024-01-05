@@ -178,6 +178,8 @@ Legend:
 This GitHub does not render colored mermaid diagrams, you can also access the image
 [here](https://github.com/pokt-network/poktroll/assets/1892194/bf965457-bdd0-4a35-a75c-cfcddfbaab5e).
 
+_TODO_IMPROVE: Improve the colors for readability purposes per the comment [here](https://github.com/pokt-network/poktroll/pull/286#pullrequestreview-1806384312)._
+
 ```mermaid
 flowchart TB
 
