@@ -220,7 +220,7 @@ flowchart TB
     S -. metrics .-> M
 
     classDef orangeColor fill:#FF8C00;
-    classDef purpleColor fill:#800080;
+    classDef purpleColor fill:#B160E3;
     classDef blueColor fill:#0000FF;
 
     class T orangeColor
