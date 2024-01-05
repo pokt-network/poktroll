@@ -1,15 +1,19 @@
-# tcp://<host>:<port> to a full pocket node for reading data and listening for on-chain events
-query_node_url: tcp://localhost:36657
-# tcp://<host>:<port> to a pocket node that gossips transactions throughout the network (may or may not be the sequencer)
-network_node_url: tcp://127.0.0.1:36657
-# Name of the key (in the keyring) to sign transactions
 signing_key_name: supplier1
-# TODO_TECHDEBT(#137, #130): Once the `relayer.json` config file is implemented AND a local LLM RPC service
-# is supported on LocalNet, this needs to be expanded to include more than one service. The ability to support
-# multiple services is already in place but currently (as seen below) is hardcoded.
-# TODO_UPNEXT(@okdas): this hostname should be updated to match that of the in-tilt anvil service.
-proxied_service_endpoints:
-  anvil: http://anvil:8547
-  svc1: http://localhost:8082
-# Path to where the data backing SMT KV store exists on disk
 smt_store_path: smt_stores
+pocket_node:
+  query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+  tx_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+proxies:
+  - proxy_name: http-proxy
+    type: http
+    host: 0.0.0.0:8545
+suppliers:
+  - service_id: anvil
+    type: http
+    service_config:
+      url: http://anvil:8547/
+    proxy_names:
+      - http-proxy
+    hosts:
+      - tcp://relayminers:8545
