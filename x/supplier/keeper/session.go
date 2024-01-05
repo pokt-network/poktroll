@@ -9,13 +9,13 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ValidateSessionHeader ensures that a session with the sessionID of the given session
+// queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
 // header exists and that this session includes the supplier with the given address.
-func (k msgServer) ValidateSessionHeader(
+func (k msgServer) queryAndValidateSessionHeader(
 	goCtx context.Context,
 	sessionHeader *sessiontypes.SessionHeader,
 	supplierAddr string,
-) (*sessiontypes.QueryGetSessionResponse, error) {
+) (*sessiontypes.Session, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	logger := k.Logger(ctx).With("method", "SubmitProof")
 
@@ -25,26 +25,32 @@ func (k msgServer) ValidateSessionHeader(
 		BlockHeight:        sessionHeader.GetSessionStartBlockHeight(),
 	}
 
+	// Get the on-chain session for the ground-truth against which the given
+	// session header is to be validated.
 	sessionRes, err := k.Keeper.sessionKeeper.GetSession(goCtx, sessionReq)
 	if err != nil {
 		return nil, err
 	}
+	onChainSession := sessionRes.GetSession()
 
 	logger.
 		With(
-			"session_id", sessionRes.GetSession().GetSessionId(),
+			"session_id", onChainSession.GetSessionId(),
 			"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
 			"supplier", supplierAddr,
 		).
 		Debug("got sessionId for proof")
-	if sessionRes.Session.SessionId != sessionHeader.SessionId {
+
+	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
+	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
 		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
-			"claimed sessionRes ID does not match on-chain sessionRes ID; expected %q, got %q",
-			sessionRes.Session.SessionId,
-			sessionHeader.SessionId,
+			"claimed onChainSession ID does not match on-chain onChainSession ID; expected %q, got %q",
+			onChainSession.GetSessionId(),
+			sessionHeader.GetSessionId(),
 		)
 	}
 
+	// Ensure the given supplier is in the onChainSession supplier list.
 	var found bool
 	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
 		if supplier.Address == supplierAddr {
@@ -52,14 +58,12 @@ func (k msgServer) ValidateSessionHeader(
 			break
 		}
 	}
-
 	if !found {
 		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"supplier address %q in session ID %q",
+			"supplier address %q in onChainSession ID %q",
 			supplierAddr,
-			sessionRes.GetSession().GetSessionId(),
+			onChainSession.GetSessionId(),
 		)
 	}
-
-	return sessionRes, nil
+	return onChainSession, nil
 }
