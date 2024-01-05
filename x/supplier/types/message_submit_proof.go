@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -40,10 +41,34 @@ func (msg *MsgSubmitProof) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
+// ValidateBasic ensures that the bech32 address strings for the supplier and
+// application addresses are valid and that the proof and service ID are not empty.
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	var errMsg string
+	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid supplierAddress address (%s)", err)
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"supplier address %q, error: %s",
+			msg.GetSupplierAddress(),
+			err,
+		)
 	}
+
+	_, err = sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress())
+	if err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"application address: %q, error: %s",
+			msg.GetSessionHeader().GetApplicationAddress(),
+			err,
+		)
+	}
+
+	if len(msg.GetProof()) == 0 {
+		return sdkerrors.ErrInvalidRequest.Wrap("proof cannot be empty")
+	}
+	if errMsg != "" {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, errMsg)
+	}
+
 	return nil
 }

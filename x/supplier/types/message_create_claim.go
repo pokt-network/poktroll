@@ -47,27 +47,27 @@ func (msg *MsgCreateClaim) GetSignBytes() []byte {
 
 func (msg *MsgCreateClaim) ValidateBasic() error {
 	// Validate the supplier address
-	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
-		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid supplierAddress address (%s)", err)
+		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "%s", msg.GetSupplierAddress())
 	}
 
 	// Validate the session header
 	sessionHeader := msg.SessionHeader
 	if sessionHeader.SessionStartBlockHeight < 1 {
-		return sdkerrors.Wrapf(ErrSupplierInvalidSessionStartHeight, "invalid session start block height (%d)", sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(ErrSupplierInvalidSessionStartHeight, "%d", sessionHeader.SessionStartBlockHeight)
 	}
 	if len(sessionHeader.SessionId) == 0 {
-		return sdkerrors.Wrapf(ErrSupplierInvalidSessionId, "invalid session ID (%v)", sessionHeader.SessionId)
+		return sdkerrors.Wrapf(ErrSupplierInvalidSessionId, "%s", sessionHeader.SessionId)
 	}
 	if !sharedhelpers.IsValidService(sessionHeader.Service) {
-		return sdkerrors.Wrapf(ErrSupplierInvalidService, "invalid service (%v)", sessionHeader.Service)
+		return sdkerrors.Wrapf(ErrSupplierInvalidServiceID, "%v", sessionHeader.Service)
 	}
 
 	// Validate the root hash
 	// TODO_IMPROVE: Only checking to make sure a non-nil hash was provided for now, but we can validate the length as well.
 	if len(msg.RootHash) == 0 {
-		return sdkerrors.Wrapf(ErrSupplierInvalidClaimRootHash, "invalid root hash (%v)", msg.RootHash)
+		return sdkerrors.Wrapf(ErrSupplierInvalidClaimRootHash, "%v", msg.RootHash)
 	}
 
 	return nil
