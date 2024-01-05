@@ -5,9 +5,17 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
+
+// YAMLStakeConfig is the structure describing the supplier stake config file
+type YAMLStakeConfig struct {
+	StakeAmount string              `yaml:"stake_amount"`
+	Services    []*YAMLStakeService `yaml:"services"`
+}
 
 // YAMLStakeService is the structure describing a single service stake entry in the stake config file
 type YAMLStakeService struct {
@@ -19,27 +27,63 @@ type YAMLStakeService struct {
 type YAMLServiceEndpoint struct {
 	Url     string            `yaml:"url"`
 	RPCType string            `yaml:"rpc_type"`
-	Config  map[string]string `yaml:"config"`
+	Config  map[string]string `yaml:"config,omitempty"`
+}
+
+// SupplierStakeConfig is the structure describing the parsed supplier stake config
+type SupplierStakeConfig struct {
+	StakeAmount sdk.Coin
+	Services    []*sharedtypes.SupplierServiceConfig
 }
 
 // ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
-func ParseSupplierConfigs(configContent []byte) ([]*sharedtypes.SupplierServiceConfig, error) {
-	var stakeConfig []*YAMLStakeService
+func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
+	var stakeConfig *YAMLStakeConfig
+
+	if len(configContent) == 0 {
+		return nil, ErrSupplierConfigEmptyContent
+	}
 
 	// Unmarshal the stake config file into a stakeConfig
 	if err := yaml.Unmarshal(configContent, &stakeConfig); err != nil {
 		return nil, ErrSupplierConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if len(stakeConfig) == 0 {
-		return nil, ErrSupplierConfigEmptyContent
+	// Validate the stake amount
+	if len(stakeConfig.StakeAmount) == 0 {
+		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be empty")
+	}
+
+	stakeAmount, err := sdk.ParseCoinNormalized(stakeConfig.StakeAmount)
+	if err != nil {
+		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+	}
+
+	if err := stakeAmount.Validate(); err != nil {
+		return nil, ErrSupplierConfigInvalidStake.Wrap(err.Error())
+	}
+
+	if stakeAmount.IsZero() {
+		return nil, ErrSupplierConfigInvalidStake.Wrap("stake amount cannot be zero")
+	}
+
+	if stakeAmount.Denom != "upokt" {
+		return nil, ErrSupplierConfigInvalidStake.Wrapf(
+			"invalid stake denom, expecting: upokt, got: %s",
+			stakeAmount.Denom,
+		)
+	}
+
+	// Validate the services
+	if stakeConfig.Services == nil || len(stakeConfig.Services) == 0 {
+		return nil, ErrSupplierConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
 	}
 
 	// Prepare the supplierServiceConfig
-	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig))
+	supplierServiceConfig := make([]*sharedtypes.SupplierServiceConfig, 0, len(stakeConfig.Services))
 
 	// Populate the services slice
-	for _, svc := range stakeConfig {
+	for _, svc := range stakeConfig.Services {
 		// Validate the serviceId
 		if !sharedhelpers.IsValidServiceId(svc.ServiceId) {
 			return nil, ErrSupplierConfigInvalidServiceId.Wrapf("%s", svc.ServiceId)
@@ -66,7 +110,10 @@ func ParseSupplierConfigs(configContent []byte) ([]*sharedtypes.SupplierServiceC
 		supplierServiceConfig = append(supplierServiceConfig, service)
 	}
 
-	return supplierServiceConfig, nil
+	return &SupplierStakeConfig{
+		StakeAmount: stakeAmount,
+		Services:    supplierServiceConfig,
+	}, nil
 }
 
 func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*sharedtypes.SupplierEndpoint, error) {

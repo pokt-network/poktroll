@@ -11,4 +11,5 @@ var (
 	ErrSupplierConfigInvalidRPCType        = sdkerrors.Register(codespace, 5, "invalid rpc type in supplier config")
 	ErrSupplierConfigInvalidURL            = sdkerrors.Register(codespace, 6, "invalid endpoint url in supplier config")
 	ErrSupplierConfigEmptyContent          = sdkerrors.Register(codespace, 7, "empty supplier config content")
+	ErrSupplierConfigInvalidStake          = sdkerrors.Register(codespace, 8, "invalid stake amount in supplier config")
 )
