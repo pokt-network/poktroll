@@ -5,7 +5,7 @@ title: Load Test 1 - Plan
 
 # Load Test #1 - Plan <!-- omit in toc -->
 
-_This document outlines the first load test for the Shannon upgrade. IT IS NOT intended to be an exhaustive evaluation of the entire system's performance. IT IS intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
+_This document outlines the first load test for the Shannon upgrade. IT **IS NOT** intended to be an exhaustive evaluation of the entire system's performance. **IT IS** intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
 
 - _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
 
