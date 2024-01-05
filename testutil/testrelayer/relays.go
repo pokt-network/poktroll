@@ -15,16 +15,12 @@ import (
 // heights on the session header, and the bytes and hash fields populated.
 func NewMinedRelay(
 	t *testing.T,
-	sessionStartHeight int64,
-	sessionEndHeight int64,
+	sessionHeader *sessiontypes.SessionHeader,
 ) *relayer.MinedRelay {
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
 			Meta: &servicetypes.RelayRequestMetadata{
-				SessionHeader: &sessiontypes.SessionHeader{
-					SessionStartBlockHeight: sessionStartHeight,
-					SessionEndBlockHeight:   sessionEndHeight,
-				},
+				SessionHeader: sessionHeader,
 			},
 		},
 		Res: &servicetypes.RelayResponse{},

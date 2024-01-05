@@ -19,7 +19,7 @@ const (
 
 // SessionsByAppAddress is a map of session fixtures where the key is the
 // application address and the value is the session fixture.
-type SessionsByAppAddress map[string]sessiontypes.Session
+type SessionsByAppAddress map[string]*sessiontypes.Session
 
 // AppSupplierPair is a pairing of an application and a supplier address.
 type AppSupplierPair struct {
@@ -35,7 +35,7 @@ type AppSupplierPair struct {
 func NewSessionFixturesWithPairings(
 	t *testing.T,
 	service *sharedtypes.Service,
-	appSupplierPairs ...AppSupplierPair,
+	appSupplierPairs ...*AppSupplierPair,
 ) SessionsByAppAddress {
 	t.Helper()
 
@@ -53,7 +53,7 @@ func NewSessionFixturesWithPairings(
 			continue
 		}
 
-		sessionFixturesByAppAddr[appSupplierPair.AppAddr] = sessiontypes.Session{
+		sessionFixturesByAppAddr[appSupplierPair.AppAddr] = &sessiontypes.Session{
 			Header: &sessiontypes.SessionHeader{
 				ApplicationAddress:      appSupplierPair.AppAddr,
 				Service:                 service,

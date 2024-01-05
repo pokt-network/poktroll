@@ -19,7 +19,7 @@ import (
 const testServiceId = "svc1"
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
-	appSupplierPair := supplier.AppSupplierPair{
+	appSupplierPair := &supplier.AppSupplierPair{
 		AppAddr:      sample.AccAddress(),
 		SupplierAddr: sample.AccAddress(),
 	}
@@ -51,7 +51,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	service := &sharedtypes.Service{Id: testServiceId}
-	appSupplierPair := supplier.AppSupplierPair{
+	appSupplierPair := &supplier.AppSupplierPair{
 		AppAddr:      sample.AccAddress(),
 		SupplierAddr: sample.AccAddress(),
 	}
