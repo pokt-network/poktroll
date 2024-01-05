@@ -36,7 +36,7 @@ func ParseApplicationConfigs(configContent []byte) (*ApplicationStakeConfig, err
 		return nil, ErrApplicationConfigUnmarshalYAML.Wrapf("%s", err)
 	}
 
-	if len(parsedAppConfig.ServiceIds) == 0 {
+	if len(parsedAppConfig.ServiceIds) == 0 || parsedAppConfig.ServiceIds == nil {
 		return nil, ErrApplicationConfigInvalidServiceId.Wrap("serviceIds cannot be empty")
 	}
 
