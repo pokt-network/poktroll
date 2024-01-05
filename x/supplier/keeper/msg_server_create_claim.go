@@ -79,19 +79,18 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		2. [ ] msg distribution validation
 	*/
 
-	// Construct and insert claim after all validation.
+	// Construct and upsert claim after all validation.
 	claim := suppliertypes.Claim{
-		SupplierAddress:       msg.GetSupplierAddress(),
-		SessionId:             msg.GetSessionHeader().GetSessionId(),
-		SessionEndBlockHeight: uint64(msg.GetSessionHeader().GetSessionEndBlockHeight()),
-		RootHash:              msg.RootHash,
+		SupplierAddress: msg.GetSupplierAddress(),
+		SessionHeader:   msg.GetSessionHeader(),
+		RootHash:        msg.RootHash,
 	}
-	k.Keeper.InsertClaim(ctx, claim)
+	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.
 		With(
-			"session_id", claim.GetSessionId(),
-			"session_end_height", claim.GetSessionEndBlockHeight(),
+			"session_id", claim.GetSessionHeader().GetSessionId(),
+			"session_end_height", claim.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", claim.GetSupplierAddress(),
 		).
 		Debug("created claim")

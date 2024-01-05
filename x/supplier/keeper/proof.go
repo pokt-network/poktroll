@@ -7,25 +7,27 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SetProof set a specific proof in the store from its index
-func (k Keeper) SetProof(ctx sdk.Context, proof types.Proof) {
+// UpsertProof inserts or updates a specific proof in the store by index.
+func (k Keeper) UpsertProof(ctx sdk.Context, proof types.Proof) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	b := k.cdc.MustMarshal(&proof)
+	// TODO_NEXT(@bryanchriswhite #141): Refactor keys to support multiple indices.
 	store.Set(types.ProofKey(
-		proof.Index,
+		proof.GetSessionHeader().GetSessionId(),
 	), b)
 }
 
 // GetProof returns a proof from its index
 func (k Keeper) GetProof(
 	ctx sdk.Context,
-	index string,
+	sessionId string,
 
 ) (val types.Proof, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 
+	// TODO_NEXT(@bryanchriswhite #141): Refactor proof keys to support multiple indices.
 	b := store.Get(types.ProofKey(
-		index,
+		sessionId,
 	))
 	if b == nil {
 		return val, false
@@ -38,10 +40,12 @@ func (k Keeper) GetProof(
 // RemoveProof removes a proof from the store
 func (k Keeper) RemoveProof(
 	ctx sdk.Context,
+	// TODO_NEXT(@bryanchriswhite #141): Refactor proof keys to support multiple indices.
 	index string,
 
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
+	// TODO_NEXT(@bryanchriswhite #141): Refactor proof keys to support multiple indices.
 	store.Delete(types.ProofKey(
 		index,
 	))

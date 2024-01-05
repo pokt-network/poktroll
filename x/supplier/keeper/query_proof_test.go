@@ -31,14 +31,14 @@ func TestProofQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetProofRequest{
-				Index: msgs[0].Index,
+				Index: msgs[0].GetSessionHeader().GetSessionId(),
 			},
 			response: &types.QueryGetProofResponse{Proof: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetProofRequest{
-				Index: msgs[1].Index,
+				Index: msgs[1].GetSessionHeader().GetSessionId(),
 			},
 			response: &types.QueryGetProofResponse{Proof: msgs[1]},
 		},

@@ -214,10 +214,15 @@ func createClaim(
 
 	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
 	return &types.Claim{
-		SupplierAddress:       supplierAddr,
-		SessionId:             sessionId,
-		SessionEndBlockHeight: uint64(sessionEndHeight),
-		RootHash:              rootHash,
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress:      appAddress,
+			Service:                 &sharedtypes.Service{Id: testServiceId},
+			SessionId:               sessionId,
+			SessionStartBlockHeight: sessionStartHeight,
+			SessionEndBlockHeight:   sessionEndHeight,
+		},
+		RootHash: rootHash,
 	}
 }
 

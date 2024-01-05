@@ -31,7 +31,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 			desc: "First Claim",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[0].SessionId,
+				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: claims[0].SupplierAddress,
 			},
 
@@ -42,7 +42,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 			desc: "Second Claim",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[1].SessionId,
+				SessionId:       claims[1].GetSessionHeader().GetSessionId(),
 				SupplierAddress: claims[1].SupplierAddress,
 			},
 
@@ -63,7 +63,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 			desc: "Claim Not Found - Random Supplier Address",
 
 			request: &types.QueryGetClaimRequest{
-				SessionId:       claims[0].SessionId,
+				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: sample.AccAddress(),
 			},
 
@@ -81,7 +81,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest - Missing SupplierAddress",
 			request: &types.QueryGetClaimRequest{
-				SessionId: claims[0].SessionId,
+				SessionId: claims[0].GetSessionHeader().GetSessionId(),
 				// SupplierAddress: Intentionally Omitted,
 			},
 
@@ -172,7 +172,7 @@ func TestClaim_QueryPaginated(t *testing.T) {
 	t.Run("BySessionId", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
 		req.Filter = &types.QueryAllClaimsRequest_SessionId{
-			SessionId: claims[0].SessionId,
+			SessionId: claims[0].GetSessionHeader().GetSessionId(),
 		}
 		resp, err := keeper.AllClaims(wctx, req)
 		require.NoError(t, err)
@@ -182,7 +182,7 @@ func TestClaim_QueryPaginated(t *testing.T) {
 	t.Run("BySessionEndHeight", func(t *testing.T) {
 		req := request(nil, 0, 0, true)
 		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
-			SessionEndHeight: claims[0].SessionEndBlockHeight,
+			SessionEndHeight: uint64(claims[0].GetSessionHeader().GetSessionEndBlockHeight()),
 		}
 		resp, err := keeper.AllClaims(wctx, req)
 		require.NoError(t, err)
