@@ -221,7 +221,7 @@ flowchart TB
 
     classDef orangeColor fill:#FF8C00;
     classDef purpleColor fill:#B160E3;
-    classDef blueColor fill:#0000FF;
+    classDef blueColor fill:#75A8E6;
 
     class T orangeColor
     class M orangeColor
