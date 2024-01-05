@@ -50,7 +50,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: invalid address",
 			address: "invalid",
 			inputConfig: `
-			  stake_amount: 1000upokt,
+			  stake_amount: 1000upokt
 				`,
 			expectedError: types.ErrGatewayInvalidAddress,
 		},
@@ -58,7 +58,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc: "stake gateway: missing address",
 			// address:     gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: 1000upokt,
+			  stake_amount: 1000upokt
 				`,
 			expectedError: types.ErrGatewayInvalidAddress,
 		},
@@ -66,7 +66,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: invalid stake amount (zero)",
 			address: gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: 0upokt,
+			  stake_amount: 0upokt
 				`,
 			expectedError: types.ErrGatewayInvalidStake,
 		},
@@ -74,7 +74,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: invalid stake amount (negative)",
 			address: gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: -1000upokt,
+			  stake_amount: -1000upokt
 				`,
 			expectedError: types.ErrGatewayInvalidStake,
 		},
@@ -82,7 +82,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: invalid stake denom",
 			address: gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: 1000invalid,
+			  stake_amount: 1000invalid
 				`,
 			expectedError: types.ErrGatewayInvalidStake,
 		},
@@ -90,7 +90,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: invalid stake missing denom",
 			address: gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: 1000,
+			  stake_amount: 1000
 				`,
 			expectedError: types.ErrGatewayInvalidStake,
 		},
@@ -104,7 +104,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			desc:    "stake gateway: valid",
 			address: gatewayAccount.Address.String(),
 			inputConfig: `
-			  stake_amount: 1000upokt,
+			  stake_amount: 1000upokt
 				`,
 		},
 	}
