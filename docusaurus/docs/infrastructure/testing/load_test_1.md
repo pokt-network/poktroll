@@ -36,7 +36,7 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 2. `Stress test` the SMT (Sparse Merkle Trie) and how it is being used
 3. `Build intuition` into the cost of operating the network for all of the stakeholders involved, both on & off chain
 4. `Gain visibility` into basic metrics (disk, RAM, CPU, ingress/egress traffic, etc.…) for our network actors
-5. `Uncover` potential bugs or bottlenecks in both on-chain & off-chain code
+5. `Uncover` potential bugs, bottlenecks or concurrency issues in the on-chain & off-chain code
 6. `Document and design` a process that’ll act as the foundation for future load-testing efforts
 
 ## Non-Goals
@@ -127,9 +127,10 @@ pie showData
 
 `Why`:
 
-- `Relay Proxies` Ingress/egress of relays could add
+- `Relay Proxies` Ingress/egress of relays could add up to large networking costs
 - `Caches & State` - All the caching & state can have impact across the board
 - `Request Processing` - Signature generation, request marshaling / unmarshaling, etc…
+- `Response handling` - Slow supplier responses could increase pending relays at the AppGate level (i.e. RAM)
 
 |                    | RAM | CPU | Network | Disk |
 | ------------------ | --- | --- | ------- | ---- |
