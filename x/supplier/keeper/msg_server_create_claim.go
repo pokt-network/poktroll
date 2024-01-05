@@ -16,7 +16,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		return nil, err
 	}
 
-	sessionRes, err := k.ValidateSessionHeader(
+	session, err := k.queryAndValidateSessionHeader(
 		goCtx,
 		msg.GetSessionHeader(),
 		msg.GetSupplierAddress(),
@@ -27,7 +27,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 
 	logger.
 		With(
-			"session_id", sessionRes.GetSession().GetSessionId(),
+			"session_id", session.GetSessionId(),
 			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", msg.GetSupplierAddress(),
 		).
