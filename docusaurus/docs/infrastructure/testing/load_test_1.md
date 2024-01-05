@@ -33,7 +33,7 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 
 1. `De-risk` the network’s feasibility to have completely permissionless services & actors
    1. This is intended for `scalability` purposes and does not account for `Sybil` attacks
-2. `Stress test` the SMT (Sparse Merkle Trie) and/or how it is being used
+2. `Stress test` the SMT (Sparse Merkle Trie) and how it is being used
 3. `Build intuition` into the cost of operating the network for all of the stakeholders involved, both on & off chain
 4. `Gain visibility` into basic metrics (disk, RAM, CPU, ingress/egress traffic, etc.…) for our network actors
 5. `Uncover` potential bugs or bottlenecks in both on-chain & off-chain code
