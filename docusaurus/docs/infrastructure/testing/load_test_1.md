@@ -244,7 +244,7 @@ flowchart TB
 
 ### Request Source / Generator
 
-- A script/tool to generate N requests per second
+- A script/tool to generate $N$ requests per second
 
 ### Script - Instructions
 
