@@ -81,3 +81,6 @@ go.work.sum
 # Quickstart helpers
 shannon_appgate_config.yaml
 shannon_app_config.yaml
+
+# localnet_config
+localnet_config.yaml-e

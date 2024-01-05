@@ -92,19 +92,19 @@ cd -
 Update the path of the helm charts to the **relative** path of the cloned repository:
 
 ```bash
-sed -i '' '/helm_chart_local_repo:/,/path:/ s|\(path: \).*|\1../helm-charts|' localnet_config.yaml
+sed -i'' -e '/helm_chart_local_repo:/,/path:/ s|\(path: \).*|\1../helm-charts|' localnet_config.yaml
 ```
 
-Toggle the `helm_chart_local_repo.enabled` flag in `localnet_config.yaml` to `true`:
+Set the `helm_chart_local_repo.enabled` flag in `localnet_config.yaml` to `true`:
 
 ```bash
-sed -i '' '/helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/; /helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/' localnet_config.yaml
+sed -i'' -e '/helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/; /helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/' localnet_config.yaml
 ```
 
-You can always toggle it back to `false` with:
+You can always set it back to `false` with:
 
 ```bash
-sed -i '' '/helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/; /helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/' localnet_config.yaml
+sed -i'' -e '/helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/; /helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/' localnet_config.yaml
 ```
 
 ## Troubleshooting
