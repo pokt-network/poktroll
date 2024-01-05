@@ -41,69 +41,69 @@ func TestCLI_StakeGateway(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		config  string
-		err     *sdkerrors.Error
+		desc          string
+		address       string
+		inputConfig   string
+		expectedError *sdkerrors.Error
 	}{
 		{
 			desc:    "stake gateway: invalid address",
 			address: "invalid",
-			config: `
+			inputConfig: `
 			  stake_amount: 1000upokt,
 				`,
-			err: types.ErrGatewayInvalidAddress,
+			expectedError: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
 			// address:     gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: 1000upokt,
 				`,
-			err: types.ErrGatewayInvalidAddress,
+			expectedError: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
 			address: gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: 0upokt,
 				`,
-			err: types.ErrGatewayInvalidStake,
+			expectedError: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
 			address: gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: -1000upokt,
 				`,
-			err: types.ErrGatewayInvalidStake,
+			expectedError: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
 			address: gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: 1000invalid,
 				`,
-			err: types.ErrGatewayInvalidStake,
+			expectedError: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
 			address: gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: 1000,
 				`,
-			err: types.ErrGatewayInvalidStake,
+			expectedError: types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:    "stake gateway: invalid stake missing stake",
-			address: gatewayAccount.Address.String(),
-			config:  ``,
-			err:     types.ErrGatewayInvalidStake,
+			desc:          "stake gateway: invalid stake missing stake",
+			address:       gatewayAccount.Address.String(),
+			inputConfig:   ``,
+			expectedError: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
 			address: gatewayAccount.Address.String(),
-			config: `
+			inputConfig: `
 			  stake_amount: 1000upokt,
 				`,
 		},
@@ -119,21 +119,22 @@ func TestCLI_StakeGateway(t *testing.T) {
 			require.NoError(t, net.WaitForNextBlock())
 
 			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.config)).Name()
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.inputConfig)).Name()
 			t.Cleanup(func() { os.Remove(configPath) })
 
 			// Prepare the arguments for the CLI command
 			args := []string{
+				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
 
 			// Execute the command
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeGateway(), args)
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if tt.expectedError != nil {
+				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)
