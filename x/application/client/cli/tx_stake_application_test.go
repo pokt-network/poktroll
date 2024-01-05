@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -40,6 +41,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 	}
 
 	defaultConfig := `
+		stake_amount: 1000upokt
 		service_ids:
 		  - svc1
 		  - svc2
@@ -49,9 +51,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		inputConfig      string
-		inputAddress     string
-		inputStakeString string
+		inputConfig  string
+		inputAddress string
 
 		expectedError *sdkerrors.Error
 	}{
@@ -59,9 +60,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "valid",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000upokt",
-			inputConfig:      defaultConfig,
+			inputAddress: appAccount.Address.String(),
+			inputConfig:  defaultConfig,
 
 			expectedError: nil,
 		},
@@ -70,17 +70,15 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: missing address",
 			// inputAddress:     "explicitly missing",
-			inputStakeString: "1000upokt",
-			inputConfig:      defaultConfig,
+			inputConfig: defaultConfig,
 
 			expectedError: types.ErrAppInvalidAddress,
 		},
 		{
 			desc: "invalid: invalid address",
 
-			inputAddress:     "invalid",
-			inputStakeString: "1000upokt",
-			inputConfig:      defaultConfig,
+			inputAddress: "invalid",
+			inputConfig:  defaultConfig,
 
 			expectedError: types.ErrAppInvalidAddress,
 		},
@@ -90,35 +88,55 @@ func TestCLI_StakeApplication(t *testing.T) {
 			desc: "invalid: missing stake",
 
 			inputAddress: appAccount.Address.String(),
-			// inputStakeString: "explicitly missing",
-			inputConfig: defaultConfig,
+			inputConfig: `
+				stake_amount: # explicitly missing
+				service_ids:
+				  - svc1
+				  - svc2
+				  - svc3
+				`,
 
 			expectedError: types.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: invalid stake denom",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000invalid",
-			inputConfig:      defaultConfig,
+			inputAddress: appAccount.Address.String(),
+			inputConfig: `
+				stake_amount: 1000invalid
+				service_ids:
+				  - svc1
+				  - svc2
+				  - svc3
+				`,
 
 			expectedError: types.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: stake amount (zero)",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "0upokt",
-			inputConfig:      defaultConfig,
+			inputAddress: appAccount.Address.String(),
+			inputConfig: `
+				stake_amount: 0upokt
+				service_ids:
+				  - svc1
+				  - svc2
+				  - svc3
+				`,
 
 			expectedError: types.ErrAppInvalidStake,
 		},
 		{
 			desc: "invalid: stake amount (negative)",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "-1000upokt",
-			inputConfig:      defaultConfig,
+			inputAddress: appAccount.Address.String(),
+			inputConfig: `
+				stake_amount: -1000upokt
+				service_ids:
+				  - svc1
+				  - svc2
+				  - svc3
+				`,
 
 			expectedError: types.ErrAppInvalidStake,
 		},
@@ -127,18 +145,19 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: services (empty string)",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000upokt",
-			inputConfig:      "",
+			inputAddress: appAccount.Address.String(),
+			inputConfig: `
+				stake_amount: 1000upokt
+				`,
 
 			expectedError: types.ErrAppInvalidServiceConfigs,
 		},
 		{
 			desc: "invalid: single invalid service contains spaces",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000upokt",
+			inputAddress: appAccount.Address.String(),
 			inputConfig: `
+				stake_amount: 1000upokt
 				service_ids:
 				  - svc1 svc1_part2 svc1_part3
 				`,
@@ -148,9 +167,9 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: one of two services is invalid because it contains spaces",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000upokt",
+			inputAddress: appAccount.Address.String(),
 			inputConfig: `
+				stake_amount: 1000upokt
 				service_ids:
 				  - svc1 svc1_part2
 				  - svc2
@@ -161,9 +180,9 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: service ID is too long (8 chars is the max)",
 
-			inputAddress:     appAccount.Address.String(),
-			inputStakeString: "1000upokt",
+			inputAddress: appAccount.Address.String(),
 			inputConfig: `
+				stake_amount: 1000upokt
 				service_ids:
 				  - svc1,
 				  - abcdefghi
@@ -184,10 +203,10 @@ func TestCLI_StakeApplication(t *testing.T) {
 
 			// write the stake config to a file
 			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.inputConfig)).Name()
+			t.Cleanup(func() { os.Remove(configPath) })
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.inputStakeString,
 				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.inputAddress),
 			}
