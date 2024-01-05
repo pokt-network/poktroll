@@ -14,12 +14,6 @@ import (
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-const (
-	FlagSessionEndHeight = "session-end-height"
-	FlagSessionId        = "session-id"
-	FlagSupplierAddress  = "supplier-address"
-)
-
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
 func AddClaimFilterFlags(cmd *cobra.Command) {
 	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "claims whose session ends at this height will be returned")
