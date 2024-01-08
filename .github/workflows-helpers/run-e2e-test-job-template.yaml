@@ -21,7 +21,7 @@ spec:
               poktrolld q application list-application --node=$POCKET_NODE && \
               poktrolld q supplier list-supplier --node=$POCKET_NODE && \
               poktrolld tx supplier stake-supplier --config=/poktroll/localnet/poktrolld/config/supplier1_stake_config.yaml --keyring-backend=test --from=supplier1 --node=$POCKET_NODE --yes && \
-              poktrolld tx application stake-application 1000upokt --config=/poktroll/localnet/poktrolld/config/application1_stake_config.yaml --keyring-backend=test --from=app1 --node=$POCKET_NODE --yes && \
+              poktrolld tx application stake-application --config=/poktroll/localnet/poktrolld/config/application1_stake_config.yaml --keyring-backend=test --from=app1 --node=$POCKET_NODE --yes && \
               go test -v ./e2e/tests/... -tags=e2e
           env:
             - name: AUTH_TOKEN
