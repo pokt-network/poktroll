@@ -21,7 +21,7 @@ type InMemoryNetwork interface {
 	// underlying cosmos-sdk testutil network instance.
 	GetClientCtx(*testing.T) client.Context
 
-	// GetNetworkConfig returns the underlying cosmos-sdk testutil network config.
+	// GetCosmosNetworkConfig returns the underlying cosmos-sdk testutil network config.
 	GetCosmosNetworkConfig(*testing.T) *network.Config
 
 	// GetNetwork returns the underlying cosmos-sdk testutil network instance.
