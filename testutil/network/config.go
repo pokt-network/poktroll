@@ -11,7 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdkservertypes "github.com/cosmos/cosmos-sdk/server/types"
-	pruninttypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
+	pruningtypes "github.com/cosmos/cosmos-sdk/store/pruning/types"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	"github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,7 +20,10 @@ import (
 	"github.com/pokt-network/poktroll/app"
 )
 
-// GetNumApplications returns the number of applications to be created in the network at genesis.
+// GetNumApplications returns the number of applications to be created in the
+// network at genesis. NOTE: This method is intended to compute the correct value,
+// regardless of how the configuration is configured (i.e. the expectations/usage
+// of it in any given in-memory network implementation).
 func (cfg *InMemoryNetworkConfig) GetNumApplications(t *testing.T) int {
 	t.Helper()
 
@@ -62,7 +65,7 @@ func DefaultConfig() network.Config {
 				0,
 				encoding,
 				sims.EmptyAppOptions{},
-				baseapp.SetPruning(pruninttypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
+				baseapp.SetPruning(pruningtypes.NewPruningOptionsFromString(val.GetAppConfig().Pruning)),
 				baseapp.SetMinGasPrices(val.GetAppConfig().MinGasPrices),
 				baseapp.SetChainID(chainID),
 			)
@@ -76,7 +79,7 @@ func DefaultConfig() network.Config {
 		AccountTokens:   sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction),
 		StakingTokens:   sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction),
 		BondedTokens:    sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction),
-		PruningStrategy: pruninttypes.PruningOptionNothing,
+		PruningStrategy: pruningtypes.PruningOptionNothing,
 		CleanupDir:      true,
 		SigningAlgo:     string(hd.Secp256k1Type),
 		KeyringOptions:  []keyring.Option{},

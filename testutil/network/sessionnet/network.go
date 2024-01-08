@@ -11,11 +11,11 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
-var _ network.InMemoryCosmosNetwork = (*inMemoryNetworkWithSessions)(nil)
+var _ network.InMemoryNetwork = (*inMemoryNetworkWithSessions)(nil)
 
-// inMemoryNetworkWithSessions is an implementation of the InMemoryCosmosNetwork interface.
+// inMemoryNetworkWithSessions is an implementation of the InMemoryNetwork interface.
 type inMemoryNetworkWithSessions struct {
-	basenet.BaseInMemoryCosmosNetwork
+	basenet.BaseInMemoryNetwork
 }
 
 // DefaultInMemoryNetworkConfig returns the default in-memory network configuration.
@@ -44,7 +44,7 @@ func NewInMemoryNetworkWithSessions(t *testing.T, cfg *network.InMemoryNetworkCo
 	t.Helper()
 
 	return &inMemoryNetworkWithSessions{
-		BaseInMemoryCosmosNetwork: *basenet.NewBaseInMemoryCosmosNetwork(
+		BaseInMemoryNetwork: *basenet.NewBaseInMemoryNetwork(
 			t, cfg, testkeyring.NewPreGeneratedAccountIterator(),
 		),
 	}
@@ -77,7 +77,7 @@ func (memnet *inMemoryNetworkWithSessions) Start(_ context.Context, t *testing.T
 	memnet.configureAppModuleGenesisState(t)
 	memnet.configureSupplierModuleGenesisState(t)
 
-	memnet.Network = network.New(t, *memnet.GetNetworkConfig(t))
+	memnet.Network = network.New(t, *memnet.GetCosmosNetworkConfig(t))
 	err := memnet.Network.WaitForNextBlock()
 	require.NoError(t, err)
 

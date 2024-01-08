@@ -17,5 +17,6 @@ func LogErrors(ctx context.Context, errs observable.Observable[error]) {
 // forEachErrorLogError is a ForEachFn that logs the given error.
 func forEachErrorLogError(ctx context.Context, err error) {
 	logger := polylog.Ctx(ctx)
-	logger.Error().Err(err)
+	// Logging the error and flushing (i.e. sending) the log message to stdout
+	logger.Error().Err(err).Send()
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -26,7 +25,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	require.NotNil(t, queryClient)
 
 	deps := depinject.Supply(queryClient)
-	bClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
+	bClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 
 	return bClient

@@ -9,7 +9,7 @@ import (
 )
 
 // GetGenesisState retrieves the genesis state for a given module from the underlying cosmos-sdk in-memory network.
-func GetGenesisState[T proto.Message](t *testing.T, moduleName string, memnet InMemoryCosmosNetwork) T {
+func GetGenesisState[T proto.Message](t *testing.T, moduleName string, memnet InMemoryNetwork) T {
 	t.Helper()
 
 	// Ensure the in-memory network has been started.
@@ -22,8 +22,8 @@ func GetGenesisState[T proto.Message](t *testing.T, moduleName string, memnet In
 	genesisStateValue := reflect.New(genesisStateType.Elem())
 	genesisStatePtr := genesisStateValue.Interface().(proto.Message)
 
-	genesisStateJSON := memnet.GetNetworkConfig(t).GenesisState[moduleName]
-	err := memnet.GetNetworkConfig(t).Codec.UnmarshalJSON(genesisStateJSON, genesisStatePtr)
+	genesisStateJSON := memnet.GetCosmosNetworkConfig(t).GenesisState[moduleName]
+	err := memnet.GetCosmosNetworkConfig(t).Codec.UnmarshalJSON(genesisStateJSON, genesisStatePtr)
 	require.NoError(t, err)
 
 	return genesisStatePtr.(T)

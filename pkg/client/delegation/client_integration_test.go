@@ -1,5 +1,3 @@
-//go:build integration
-
 package delegation_test
 
 // TODO(@h5law): Figure out how to use real components of the localnet
@@ -8,7 +6,7 @@ package delegation_test
 //  - Delegate to the gateway
 //  - Undelegate from the gateway
 // Currently this test doesn't work, because (I think) it is using a mock
-// keeper etc and this isnt actually interacting with the localnet where
+// keeper etc and this isn't actually interacting with the localnet where
 // the DelegationClient is listening for events from.
 
 import (
@@ -34,10 +32,10 @@ const (
 )
 
 // TODO_UPNEXT(@h5law): Figure out the correct way to subscribe to events on the
-// simulated localnet. Currently this test doesn't work. Although the block client
-// subscribes it doesn't receive any events.
+// simulated localnet. Currently this test doesn't work. Although the delegation
+// client subscribes it doesn't receive any events.
 func TestDelegationClient_RedelegationsObservables(t *testing.T) {
-	t.SkipNow()
+	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	// Create the network with 2 applications and 1 gateway
 	ctx := context.Background()
 	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
@@ -64,7 +62,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	// Create the delegation client
 	evtQueryClient := events.NewEventsQueryClient("ws://localhost:26657/websocket")
 	deps := depinject.Supply(evtQueryClient)
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps, "ws://localhost:26657/websocket")
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, delegationClient)
 	t.Cleanup(func() {

@@ -20,12 +20,12 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ network.InMemoryCosmosNetwork = (*inMemoryNetworkWithGateways)(nil)
+var _ network.InMemoryNetwork = (*inMemoryNetworkWithGateways)(nil)
 
-// inMemoryNetworkWithGateways is an implementation of the InMemoryCosmosNetwork interface.
+// inMemoryNetworkWithGateways is an implementation of the InMemoryNetwork interface.
 type inMemoryNetworkWithGateways struct {
-	//baseInMemoryNetwork basenet.BaseInMemoryCosmosNetwork
-	basenet.BaseInMemoryCosmosNetwork
+	//baseInMemoryNetwork basenet.BaseInMemoryNetwork
+	basenet.BaseInMemoryNetwork
 }
 
 // DefaultInMemoryNetworkConfig returns the default in-memory network configuration.
@@ -46,7 +46,7 @@ func NewInMemoryNetworkWithGateways(t *testing.T, cfg *network.InMemoryNetworkCo
 	t.Helper()
 
 	return &inMemoryNetworkWithGateways{
-		BaseInMemoryCosmosNetwork: *basenet.NewBaseInMemoryCosmosNetwork(
+		BaseInMemoryNetwork: *basenet.NewBaseInMemoryNetwork(
 			t, cfg, testkeyring.NewPreGeneratedAccountIterator(),
 		),
 	}
@@ -70,7 +70,7 @@ func (memnet *inMemoryNetworkWithGateways) DelegateAppToGateway(
 	responseRaw, err := testcli.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdDelegateToGateway(), args)
 	require.NoError(t, err)
 	var resp sdk.TxResponse
-	require.NoError(t, memnet.GetNetworkConfig(t).Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NoError(t, memnet.GetCosmosNetworkConfig(t).Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.TxHash)
 	require.Equal(t, uint32(0), resp.Code)
@@ -88,12 +88,12 @@ func (memnet *inMemoryNetworkWithGateways) UndelegateAppFromGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appBech32),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(memnet.GetNetworkConfig(t).BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(memnet.GetCosmosNetworkConfig(t).BondDenom, math.NewInt(10))).String()),
 	}
 	responseRaw, err := testcli.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdUndelegateFromGateway(), args)
 	require.NoError(t, err)
 	var resp sdk.TxResponse
-	require.NoError(t, memnet.GetNetworkConfig(t).Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NoError(t, memnet.GetCosmosNetworkConfig(t).Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.TxHash)
 	require.Equal(t, uint32(0), resp.Code)
@@ -125,7 +125,7 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 	memnet.configureGatewayModuleGenesisState(t)
 	memnet.configureAppModuleGenesisState(t)
 
-	memnet.Network = network.New(t, *memnet.GetNetworkConfig(t))
+	memnet.Network = network.New(t, *memnet.GetCosmosNetworkConfig(t))
 
 	memnet.CreateOnChainAccounts(t)
 }
@@ -153,17 +153,17 @@ func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t 
 		gatewayGenesisState.GatewayList = append(gatewayGenesisState.GatewayList, gateway)
 	}
 
-	gatewayGenesisBuffer, err := memnet.GetNetworkConfig(t).Codec.MarshalJSON(gatewayGenesisState)
+	gatewayGenesisBuffer, err := memnet.GetCosmosNetworkConfig(t).Codec.MarshalJSON(gatewayGenesisState)
 	require.NoError(t, err)
 
 	// Add supplier module genesis supplierGenesisState to the network config.
-	memnet.GetNetworkConfig(t).GenesisState[gatewaytypes.ModuleName] = gatewayGenesisBuffer
+	memnet.GetCosmosNetworkConfig(t).GenesisState[gatewaytypes.ModuleName] = gatewayGenesisBuffer
 }
 
 func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *testing.T) {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.GetCosmosNetworkConfig(t), "cosmos config not initialized, call #Start() first")
 	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	var appGenesisState = apptypes.DefaultGenesis()
@@ -186,5 +186,5 @@ func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *tes
 	require.NoError(t, err)
 
 	// Add supplier and application module genesis appGenesisState to the network memnetConfig.
-	memnet.GetNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
+	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 }

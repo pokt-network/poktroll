@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 )
 
 // WithSigningKeyName sets the signing key name used by the relayer proxy to sign relay responses.
@@ -13,8 +14,8 @@ func WithSigningKeyName(keyName string) relayer.RelayerProxyOption {
 }
 
 // WithProxiedServicesEndpoints sets the endpoints of the proxied services.
-func WithProxiedServicesEndpoints(proxiedServicesEndpoints servicesEndpointsMap) relayer.RelayerProxyOption {
+func WithProxiedServicesEndpoints(proxyConfig map[string]*config.RelayMinerProxyConfig) relayer.RelayerProxyOption {
 	return func(relProxy relayer.RelayerProxy) {
-		relProxy.(*relayerProxy).proxiedServicesEndpoints = proxiedServicesEndpoints
+		relProxy.(*relayerProxy).proxyConfigs = proxyConfig
 	}
 }
