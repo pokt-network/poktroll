@@ -10,7 +10,7 @@ message Params {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = false;
 
-  uint64 computeToTokensMultiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_to_tokens_multiplier\""];
+  uint64 computeUnitsToTokensMultiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
   /* Ideas:
     - RelayToTokensMultiplier
     - Application.MaxuPOKTPerRelay

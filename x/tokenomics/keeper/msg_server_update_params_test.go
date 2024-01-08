@@ -36,13 +36,13 @@ func TestUpdateParams(t *testing.T) {
 			expErrMsg: "invalid authority",
 		},
 		{
-			desc: "set invalid compute to tokens multiplier",
+			desc: "set invalid ComputeUnitsToTokensMultiplier",
 
 			req: &types.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
 
 				Params: types.Params{
-					ComputeToTokensMultiplier: 0,
+					ComputeUnitsToTokensMultiplier: 0,
 				},
 			},
 
@@ -56,7 +56,7 @@ func TestUpdateParams(t *testing.T) {
 				Authority: tokenomicsKeeper.GetAuthority(),
 
 				Params: types.Params{
-					ComputeToTokensMultiplier: 1000000,
+					ComputeUnitsToTokensMultiplier: 1000000,
 				},
 			},
 
