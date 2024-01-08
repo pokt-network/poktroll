@@ -71,7 +71,7 @@ func OnError(
 			logger.Error().
 				Str("work_name", workName).
 				Err(err).
-				Msg("on final retry")
+				Msgf("on retry: %d", retryCount)
 		}
 	}
 }

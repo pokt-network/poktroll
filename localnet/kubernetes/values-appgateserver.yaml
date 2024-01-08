@@ -1,2 +1,3 @@
 config:
-  query_node_url: tcp://sequencer-poktroll-sequencer:36657
+  query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658

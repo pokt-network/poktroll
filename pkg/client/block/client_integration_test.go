@@ -1,5 +1,3 @@
-//go:build integration
-
 package block_test
 
 import (
@@ -19,6 +17,7 @@ import (
 const blockIntegrationSubTimeout = 5 * time.Second
 
 func TestBlockClient_LastNBlocks(t *testing.T) {
+	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	ctx := context.Background()
 
 	blockClient := testblock.NewLocalnetClient(ctx, t)
@@ -29,6 +28,7 @@ func TestBlockClient_LastNBlocks(t *testing.T) {
 }
 
 func TestBlockClient_BlocksObservable(t *testing.T) {
+	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	ctx := context.Background()
 
 	blockClient := testblock.NewLocalnetClient(ctx, t)

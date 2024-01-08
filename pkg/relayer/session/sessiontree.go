@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore/badger"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -21,11 +22,11 @@ type sessionTree struct {
 	// sessionMu is a mutex used to protect sessionTree operations from concurrent access.
 	sessionMu *sync.Mutex
 
-	// sessionHeader is the header of the session corresponding to the SMST (Sparse Merkle State Tree).
+	// sessionHeader is the header of the session corresponding to the SMST (Sparse Merkle State Trie).
 	sessionHeader *sessiontypes.SessionHeader
 
-	// tree is the SMST (Sparse Merkle State Tree) corresponding the session.
-	tree *smt.SMST
+	// sessionSMT is the SMST (Sparse Merkle State Trie) corresponding the session.
+	sessionSMT smt.SparseMerkleSumTrie
 
 	// claimedRoot is the root hash of the SMST needed for submitting the claim.
 	// If it holds a non-nil value, it means that the SMST has been flushed,
@@ -40,7 +41,7 @@ type sessionTree struct {
 	proof *smt.SparseMerkleClosestProof
 
 	// treeStore is the KVStore used to store the SMST.
-	treeStore smt.KVStore
+	treeStore badger.BadgerKVStore
 
 	// storePath is the path to the KVStore used to store the SMST.
 	// It is created from the storePrefix and the session.sessionId.
@@ -72,20 +73,20 @@ func NewSessionTree(
 		return nil, ErrSessionTreeStorePathExists.Wrapf("storePath: %q", storePath)
 	}
 
-	treeStore, err := smt.NewKVStore(storePath)
+	treeStore, err := badger.NewKVStore(storePath)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the SMST from the KVStore and a nil value hasher so the proof would
 	// contain a non-hashed Relay that could be used to validate the proof on-chain.
-	tree := smt.NewSparseMerkleSumTree(treeStore, sha256.New(), smt.WithValueHasher(nil))
+	trie := smt.NewSparseMerkleSumTrie(treeStore, sha256.New(), smt.WithValueHasher(nil))
 
 	sessionTree := &sessionTree{
 		sessionHeader: sessionHeader,
 		storePath:     storePath,
 		treeStore:     treeStore,
-		tree:          tree,
+		sessionSMT:    trie,
 		sessionMu:     &sync.Mutex{},
 
 		removeFromRelayerSessions: removeFromRelayerSessions,
@@ -112,7 +113,7 @@ func (st *sessionTree) Update(key, value []byte, weight uint64) error {
 		return ErrSessionTreeClosed
 	}
 
-	return st.tree.Update(key, value, weight)
+	return st.sessionSMT.Update(key, value, weight)
 }
 
 // ProveClosest is a wrapper for the SMST's ProveClosest function. It returns a proof for the given path.
@@ -139,15 +140,15 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	}
 
 	// Restore the KVStore from disk since it has been closed after the claim has been generated.
-	st.treeStore, err = smt.NewKVStore(st.storePath)
+	st.treeStore, err = badger.NewKVStore(st.storePath)
 	if err != nil {
 		return nil, err
 	}
 
-	st.tree = smt.ImportSparseMerkleSumTree(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	st.sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	st.proof, err = st.tree.ProveClosest(path)
+	st.proof, err = st.sessionSMT.ProveClosest(path)
 	st.proofPath = path
 
 	return st.proof, err
@@ -166,10 +167,10 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 		return st.claimedRoot, nil
 	}
 
-	st.claimedRoot = st.tree.Root()
+	st.claimedRoot = st.sessionSMT.Root()
 
 	// Commit the tree to disk
-	if err := st.tree.Commit(); err != nil {
+	if err := st.sessionSMT.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +180,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	}
 
 	st.treeStore = nil
-	st.tree = nil
+	st.sessionSMT = nil
 
 	return st.claimedRoot, nil
 }
@@ -203,9 +204,5 @@ func (st *sessionTree) Delete() error {
 	}
 
 	// Delete the KVStore from disk
-	if err := os.RemoveAll(st.storePath); err != nil {
-		return err
-	}
-
-	return nil
+	return os.RemoveAll(filepath.Dir(st.storePath))
 }
