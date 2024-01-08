@@ -17,8 +17,10 @@ var TestMerkleProofPath = []byte("test_proof_merkle_path")
 // - Creating accounts in the local keyring.
 // - Creating genesis state for (a) module(s).
 // - Executing on-chain transactions (i.e. on-chain, non-genesis state).
+// - Governance parameter configuration
+// - Etc...
 type InMemoryNetworkConfig struct {
-	// NumSessions is the number of sessions (with sequential start heights) for
+	// NumSessions is the number of sessions (with increasing start heights) for
 	// which the network should generate claims and proofs.
 	NumSessions int
 

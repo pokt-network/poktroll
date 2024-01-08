@@ -98,7 +98,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
 	sh.session.SessionNumber = sh.blockHeight / NumBlocksPerSession
 
-	// NB: SessionStartBlockHeight should be aligned to NumBlocksPerSession.
+	// TODO_BLOCKER: SessionStartBlockHeight should be aligned to NumBlocksPerSession.
 	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
 	sh.sessionHeader.SessionEndBlockHeight = sh.sessionHeader.SessionStartBlockHeight + NumBlocksPerSession
 	return nil
