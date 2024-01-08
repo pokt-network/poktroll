@@ -44,11 +44,17 @@ func (k msgServer) queryAndValidateSessionHeader(
 	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
 	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
 		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
-			"claimed onChainSession ID does not match on-chain onChainSession ID; expected %q, got %q",
+			"session ID does not match on-chain session ID; expected %q, got %q",
 			onChainSession.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
 	}
+
+	// NB: it is redundant to assert that the service ID in the request matches the
+	// on-chain session service ID because the session is queried using the service
+	// ID as a parameter. Either a different session (i.e. different session ID)
+	// or an error would be returned depending on whether an application/supplier
+	// pair exists for the given service ID or not, respectively.
 
 	// Ensure the given supplier is in the onChainSession supplier list.
 	var found bool
@@ -60,9 +66,9 @@ func (k msgServer) queryAndValidateSessionHeader(
 	}
 	if !found {
 		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"supplier address %q in onChainSession ID %q",
+			"supplier address %q not found in session ID %q",
 			supplierAddr,
-			onChainSession.GetSessionId(),
+			sessionHeader.GetSessionId(),
 		)
 	}
 	return onChainSession, nil
