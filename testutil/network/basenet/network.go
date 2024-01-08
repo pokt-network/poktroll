@@ -13,11 +13,11 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
-var _ network.InMemoryCosmosNetwork = (*BaseInMemoryCosmosNetwork)(nil)
+var _ network.InMemoryNetwork = (*BaseInMemoryNetwork)(nil)
 
-// BaseInMemoryCosmosNetwork is an "abstract" (i.e. partial) implementation, intended
-// to be embedded by other ("concrete") InMemoryCosmosNetwork implementations.
-type BaseInMemoryCosmosNetwork struct {
+// BaseInMemoryNetwork is an "abstract" (i.e. partial) implementation, intended
+// to be embedded by other ("concrete") InMemoryNetwork implementations.
+type BaseInMemoryNetwork struct {
 	Config                      network.InMemoryNetworkConfig
 	PreGeneratedAccountIterator *testkeyring.PreGeneratedAccountIterator
 	Network                     *sdknetwork.Network
@@ -28,17 +28,17 @@ type BaseInMemoryCosmosNetwork struct {
 	lastAccountSeqNumber int32
 }
 
-// NewBaseInMemoryCosmosNetwork creates a new BaseInMemoryNetwork with the given
+// NewBaseInMemoryNetwork creates a new BaseInMemoryNetwork with the given
 // configuration and pre-generated accounts. Intended to be used in constructor
-// functions of structs that embed BaseInMemoryCosmosNetwork.
-func NewBaseInMemoryCosmosNetwork(
+// functions of structs that embed BaseInMemoryNetwork.
+func NewBaseInMemoryNetwork(
 	t *testing.T,
 	cfg *network.InMemoryNetworkConfig,
 	preGeneratedAccounts *testkeyring.PreGeneratedAccountIterator,
-) *BaseInMemoryCosmosNetwork {
+) *BaseInMemoryNetwork {
 	t.Helper()
 
-	return &BaseInMemoryCosmosNetwork{
+	return &BaseInMemoryNetwork{
 		Config:                      *cfg,
 		PreGeneratedAccountIterator: preGeneratedAccounts,
 
@@ -50,7 +50,7 @@ func NewBaseInMemoryCosmosNetwork(
 
 // InitializeDefaults sets the underlying cosmos-sdk testutil network config to
 // a reasonable default in case one was not provided with the InMemoryNetworkConfig.
-func (memnet *BaseInMemoryCosmosNetwork) InitializeDefaults(t *testing.T) {
+func (memnet *BaseInMemoryNetwork) InitializeDefaults(t *testing.T) {
 	if memnet.Config.CosmosCfg == nil {
 		t.Log("Cosmos config not initialized, using default config")
 
@@ -63,7 +63,7 @@ func (memnet *BaseInMemoryCosmosNetwork) InitializeDefaults(t *testing.T) {
 }
 
 // GetClientCtx returns the underlying cosmos-sdk testutil network's client context.
-func (memnet *BaseInMemoryCosmosNetwork) GetClientCtx(t *testing.T) client.Context {
+func (memnet *BaseInMemoryNetwork) GetClientCtx(t *testing.T) client.Context {
 	t.Helper()
 
 	// Only the first validator's client context is populated.
@@ -77,9 +77,17 @@ func (memnet *BaseInMemoryCosmosNetwork) GetClientCtx(t *testing.T) client.Conte
 	return ctx.WithKeyring(memnet.Config.Keyring)
 }
 
-// GetNetworkConfig returns the underlying cosmos-sdk testutil network config.
+// GetConfig returns the InMemoryNetworkConfig which associated with a given
+// InMemoryNetwork instance.
+func (memnet *BaseInMemoryNetwork) GetConfig(t *testing.T) *network.InMemoryNetworkConfig {
+	t.Helper()
+
+	return &memnet.Config
+}
+
+// GetCosmosNetworkConfig returns the underlying cosmos-sdk testutil network config.
 // It requires that the config has been set, failing the test if not.
-func (memnet *BaseInMemoryCosmosNetwork) GetNetworkConfig(t *testing.T) *sdknetwork.Config {
+func (memnet *BaseInMemoryNetwork) GetCosmosNetworkConfig(t *testing.T) *sdknetwork.Config {
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.Config, "in-memory network config not set")
@@ -88,7 +96,7 @@ func (memnet *BaseInMemoryCosmosNetwork) GetNetworkConfig(t *testing.T) *sdknetw
 
 // GetNetwork returns the underlying cosmos-sdk testutil network instance.
 // It requires that the cosmos-sdk in-memory network has been set, failing the test if not.
-func (memnet *BaseInMemoryCosmosNetwork) GetNetwork(t *testing.T) *sdknetwork.Network {
+func (memnet *BaseInMemoryNetwork) GetNetwork(t *testing.T) *sdknetwork.Network {
 	t.Helper()
 
 	require.NotEmptyf(t, memnet.Network, "in-memory cosmos network not set")
@@ -97,7 +105,7 @@ func (memnet *BaseInMemoryCosmosNetwork) GetNetwork(t *testing.T) *sdknetwork.Ne
 
 // GetLastAccountSequenceNumber returns the last (most recently generated) account sequence number.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryCosmosNetwork) GetLastAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) GetLastAccountSequenceNumber(t *testing.T) int {
 	t.Helper()
 
 	return int(atomic.LoadInt32(&memnet.lastAccountSeqNumber))
@@ -105,13 +113,13 @@ func (memnet *BaseInMemoryCosmosNetwork) GetLastAccountSequenceNumber(t *testing
 
 // NextAccountSequenceNumber increments the account sequence number and returns the new value.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryCosmosNetwork) NextAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
 	t.Helper()
 
 	return int(atomic.AddInt32(&memnet.lastAccountSeqNumber, 1))
 }
 
 // Start is a stub which is expected to be implemented by embedders. It panics when called.
-func (memnet *BaseInMemoryCosmosNetwork) Start(_ context.Context, t *testing.T) {
+func (memnet *BaseInMemoryNetwork) Start(_ context.Context, t *testing.T) {
 	panic("not implemented")
 }
