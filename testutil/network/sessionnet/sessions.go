@@ -80,10 +80,7 @@ func newSessionTreeRoot(
 		// While these relays use the `MinedRelay` data structure, they are not
 		// "mined" in the sense that their inclusion is dependent on their difficulty.
 		// `MinedRelay` fixtures produced this way effectively have difficulty 0.
-		relay := testrelayer.NewMinedRelay(
-			t, sessionHeader.GetSessionStartBlockHeight(),
-			sessionHeader.GetSessionEndBlockHeight(),
-		)
+		relay := testrelayer.NewMinedRelay(t, sessionHeader)
 
 		err := sessionTree.Update(relay.Hash, relay.Bytes, 1)
 		require.NoError(t, err)
