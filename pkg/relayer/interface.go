@@ -83,9 +83,6 @@ type RelayServer interface {
 
 	// Stop terminates the service server and returns an error if it fails.
 	Stop(ctx context.Context) error
-
-	// Service returns the service to which the RelayServer relays.
-	Service() *sharedtypes.Service
 }
 
 // RelayerSessionsManager is responsible for managing the relayer's session lifecycles.
