@@ -13,6 +13,10 @@ import (
 // #Start(). It also provides access to additional cosmos-sdk testutil network
 // internals via corresponding methods.
 type InMemoryNetwork interface {
+	// GetConfig returns the InMemoryNetworkConfig which assiciated with a given
+	// InMemoryNetwork instance.
+	GetConfig(*testing.T) *InMemoryNetworkConfig
+
 	// GetClientCtx returns a cosmos-sdk client.Context associated with the
 	// underlying cosmos-sdk testutil network instance.
 	GetClientCtx(*testing.T) client.Context
