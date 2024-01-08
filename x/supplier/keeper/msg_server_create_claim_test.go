@@ -5,6 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -71,19 +73,25 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				msg := newTestClaimMsg(t)
+				msg := newTestClaimMsg(t, "invalid_session_id")
 				msg.SupplierAddress = appSupplierPair.SupplierAddr
 				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
-				msg.SessionHeader.SessionId = "invalid_session_id"
 
 				return msg
 			},
-			expectedErr: types.ErrSupplierInvalidSessionId,
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidSessionId.Wrapf(
+					"session ID does not match on-chain session ID; expected %q, got %q",
+					sessionId,
+					"invalid_session_id",
+				).Error(),
+			),
 		},
 		{
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				msg := newTestClaimMsg(t)
+				msg := newTestClaimMsg(t, sessionId)
 				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
 				// Overwrite supplier address to one not included in the session fixtures.
@@ -98,13 +106,13 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			createClaimRes, err := srv.CreateClaim(ctx, tt.claimMsgFn(t))
-			require.ErrorIs(t, err, tt.expectedErr)
+			require.ErrorContains(t, err, tt.expectedErr.Error())
 			require.Nil(t, createClaimRes)
 		})
 	}
 }
 
-func newTestClaimMsg(t *testing.T) *suppliertypes.MsgCreateClaim {
+func newTestClaimMsg(t *testing.T, sessionId string) *suppliertypes.MsgCreateClaim {
 	t.Helper()
 
 	return suppliertypes.NewMsgCreateClaim(
@@ -112,7 +120,7 @@ func newTestClaimMsg(t *testing.T) *suppliertypes.MsgCreateClaim {
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      sample.AccAddress(),
 			SessionStartBlockHeight: 1,
-			SessionId:               "mock_session_id",
+			SessionId:               sessionId,
 			Service: &sharedtypes.Service{
 				Id:   "svc1",
 				Name: "svc1",
