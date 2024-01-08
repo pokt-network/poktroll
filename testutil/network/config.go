@@ -20,7 +20,10 @@ import (
 	"github.com/pokt-network/poktroll/app"
 )
 
-// GetNumApplications returns the number of applications to be created in the network at genesis.
+// GetNumApplications returns the number of applications to be created in the
+// network at genesis. NOTE: This method is intended to compute the correct value,
+// regardless of how the configuration is configured (i.e. the expectations/usage
+// of it in any given in-memory network implementation).
 func (cfg *InMemoryNetworkConfig) GetNumApplications(t *testing.T) int {
 	t.Helper()
 
