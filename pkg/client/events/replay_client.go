@@ -156,7 +156,7 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 				// Just in case the assumption that all transport errors are
 				// persistent does not hold, unsubscribe from the previous
 				// event type observable in order to prevent unexpected and/or
-				// duplicate notifications on the obsersvable returned by this
+				// duplicate notifications on the observable returned by this
 				// function.
 				prevEventTypeObs.UnsubscribeAll()
 			} else {

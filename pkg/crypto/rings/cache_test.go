@@ -265,8 +265,8 @@ func TestRingCache_CancelContext(t *testing.T) {
 	appAccount := newAccount("secp256k1")
 	gatewayAccount := newAccount("secp256k1")
 	testqueryclients.AddAddressToApplicationMap(
-		t, appAccount.address,
-		appAccount.pubKey,
+		t,
+		appAccount.address, appAccount.pubKey,
 		map[string]cryptotypes.PubKey{
 			gatewayAccount.address: gatewayAccount.pubKey,
 		})

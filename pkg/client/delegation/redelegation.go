@@ -79,6 +79,8 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 						return nil, events.ErrEventsUnmarshalEvent.Wrapf("cannot retrieve gateway address: %v", err)
 					}
 					redelegationEvent.GatewayAddress = gatewayAddr
+				default:
+					return nil, events.ErrEventsUnmarshalEvent.Wrapf("unknown attribute key: %s", attr.Key)
 				}
 			}
 			// Handle the redelegation event
