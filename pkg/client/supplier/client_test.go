@@ -8,6 +8,10 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
+	"github.com/pokt-network/smt"
+	"github.com/pokt-network/smt/kvstore/badger"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
@@ -15,8 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/smt"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -167,10 +169,10 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 		},
 	}
 
-	kvStore, err := smt.NewKVStore("")
+	kvStore, err := badger.NewKVStore("")
 	require.NoError(t, err)
 
-	tree := smt.NewSparseMerkleSumTree(kvStore, sha256.New())
+	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
 	proof, err := tree.ProveClosest([]byte{1})
 	require.NoError(t, err)
 
