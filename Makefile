@@ -193,6 +193,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
+	go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
@@ -514,6 +515,20 @@ claim_list_height_5: ## List all the claims at height 5
 .PHONY: claim_list_session
 claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+
+##############
+### Params ###
+##############
+
+MODULES := application gateway pocket service session supplier tokenomics
+
+.PHONY: query_all_params
+query_all_params: ## Query the params from all available modules
+	@for module in $(MODULES); do \
+	    echo "~~~ Querying $$module module params ~~~"; \
+	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \
+	    echo ""; \
+	done
 
 ######################
 ### Ignite Helpers ###

@@ -3,8 +3,11 @@ package pocket.tokenomics;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/tokenomics/params.proto";
+import "google/protobuf/any.proto";
+import "cosmos/auth/v1beta1/auth.proto";
+import "cosmos_proto/cosmos.proto";
+import "cosmos/query/v1/query.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
@@ -12,15 +15,16 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 service Query {
   // Parameters queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/pokt-network/poktroll/tokenomics/params";
   }
 }
 
-// QueryParamsRequest is request type for the Query/Params RPC method.
+// Params queries all parameters.
 message QueryParamsRequest {}
 
-// QueryParamsResponse is response type for the Query/Params RPC method.
+// QueryParamsResponse is the response type for the Query/Params RPC method.
 message QueryParamsResponse {
-  // params holds all the parameters of this module.
+  // params defines the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
 }

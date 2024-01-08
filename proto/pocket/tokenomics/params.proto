@@ -5,8 +5,9 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
-// Params defines the parameters for the module.
+// Params defines the parameters for the tokenomics module.
 message Params {
+  option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = false;
 
   uint64 computeToTokensMultiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_to_tokens_multiplier\""];

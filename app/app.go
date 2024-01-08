@@ -110,8 +110,6 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
-	"github.com/spf13/cast"
-
 	appparams "github.com/pokt-network/poktroll/app/params"
 	"github.com/pokt-network/poktroll/docs"
 	applicationmodule "github.com/pokt-network/poktroll/x/application"
@@ -135,6 +133,7 @@ import (
 	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/spf13/cast"
 )
 
 const (
@@ -288,7 +287,7 @@ type App struct {
 
 	GatewayKeeper gatewaymodulekeeper.Keeper
 
-	TokenomicsKeeper tokenomicsmodulekeeper.Keeper
+	TokenomicsKeeper tokenomicsmodulekeeper.TokenomicsKeeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -346,6 +345,10 @@ func New(
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+
+	// The `x/gov` address that is primarily responsible for updating module
+	// parametesr and other transactions
+	authorirty := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	app := &App{
 		BaseApp:           bApp,
@@ -641,11 +644,12 @@ func New(
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
+	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewTokenomicsKeeper(
 		appCodec,
 		keys[tokenomicsmoduletypes.StoreKey],
 		keys[tokenomicsmoduletypes.MemStoreKey],
 		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+		authorirty,
 	)
 	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
 

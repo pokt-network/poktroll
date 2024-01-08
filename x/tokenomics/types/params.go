@@ -12,7 +12,7 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 var (
 	KeyComputeToTokensMultiplier = []byte("ComputeToTokensMultiplier")
 	// TODO: Determine the default value
-	DefaultComputeToTokensMultiplier uint64 = 0
+	DefaultComputeToTokensMultiplier uint64 = 42
 )
 
 // ParamKeyTable the param key table for launch module
@@ -65,8 +65,10 @@ func validateComputeToTokensMultiplier(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO implement validation
-	_ = computeToTokensMultiplier
+	// TODO_IN_THIS_PR: implement validation
+	if computeToTokensMultiplier <= 0 {
+		return fmt.Errorf("invalid compute to tokens multiplier: %d", computeToTokensMultiplier)
+	}
 
 	return nil
 }
