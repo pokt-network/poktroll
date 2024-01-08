@@ -522,6 +522,10 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 
 MODULES := application gateway pocket service session supplier tokenomics
 
+.PHONY: update_tokenomics_params
+update_tokenomics_params: ## Update the tokenomics module params
+	poktrolld tx tokenomics update-params --keyring-backend test --from validator --node $(POCKET_NODE)
+
 .PHONY: query_all_params
 query_all_params: ## Query the params from all available modules
 	@for module in $(MODULES); do \
