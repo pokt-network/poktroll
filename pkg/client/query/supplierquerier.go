@@ -23,7 +23,7 @@ type supplierQuerier struct {
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
+// - grpc.ClientConn
 func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
 	supq := &supplierQuerier{}
 

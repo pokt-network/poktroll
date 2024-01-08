@@ -101,7 +101,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 }
 
 // newMapClaimSessionFn returns a new MapFn that creates a claim for the given
-// session. Any session which encouters an error while creating a claim is sent
+// session. Any session which encounters an error while creating a claim is sent
 // on the failedCreateClaimSessions channel.
 func (rs *relayerSessionsManager) newMapClaimSessionFn(
 	failedCreateClaimSessionsPublishCh chan<- relayer.SessionTree,
