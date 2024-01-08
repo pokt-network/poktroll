@@ -10,6 +10,9 @@ import (
 )
 
 func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCreateClaim) (*suppliertypes.MsgCreateClaimResponse, error) {
+	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
+	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	logger := k.Logger(ctx).With("method", "CreateClaim")
 
