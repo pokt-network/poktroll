@@ -47931,12 +47931,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
+                                  - REST
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
+                                   - REST: REST
                               configs:
                                 type: array
                                 items:
@@ -48080,12 +48082,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
+                                    - REST
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
+                                     - REST: REST
                                 configs:
                                   type: array
                                   items:
@@ -48236,7 +48240,7 @@ paths:
   /pokt-network/poktroll/tokenomics/params:
     get:
       summary: Parameters queries the parameters of the module.
-      operationId: PoktrollTokenomicsParams
+      operationId: PocketTokenomicsParams
       responses:
         '200':
           description: A successful response.
@@ -48250,6 +48254,16 @@ paths:
                   computeToTokensMultiplier:
                     type: string
                     format: uint64
+                    title: |-
+                      Ideas:
+                      - RelayToTokensMultiplier
+                      - Application.MaxuPOKTPerRelay
+                      - Application.MinuPOKTPerRelay
+                      - Suppler.MaxuPOKTPerRelay
+                      - Suppler.MinuPOKTPerRelay
+                      - PercentageCutToDAO
+                      - PercentageCutToSequencer
+                      - PercentageCutToOthers?
             description: >-
               QueryParamsResponse is response type for the Query/Params RPC
               method.
@@ -78032,6 +78046,7 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
+      - REST
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
@@ -78099,6 +78114,7 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
+                      - REST
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
@@ -78156,6 +78172,7 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
+          - REST
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
@@ -78227,6 +78244,7 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
+                - REST
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
@@ -78481,12 +78499,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78661,12 +78681,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
+                          - REST
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
+                           - REST: REST
                       configs:
                         type: array
                         items:
@@ -78713,14 +78735,24 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
-  poktroll.tokenomics.Params:
+  pocket.tokenomics.Params:
     type: object
     properties:
       computeToTokensMultiplier:
         type: string
         format: uint64
+        title: |-
+          Ideas:
+          - RelayToTokensMultiplier
+          - Application.MaxuPOKTPerRelay
+          - Application.MinuPOKTPerRelay
+          - Suppler.MaxuPOKTPerRelay
+          - Suppler.MinuPOKTPerRelay
+          - PercentageCutToDAO
+          - PercentageCutToSequencer
+          - PercentageCutToOthers?
     description: Params defines the parameters for the module.
-  poktroll.tokenomics.QueryParamsResponse:
+  pocket.tokenomics.QueryParamsResponse:
     type: object
     properties:
       params:
@@ -78730,4 +78762,14 @@ definitions:
           computeToTokensMultiplier:
             type: string
             format: uint64
+            title: |-
+              Ideas:
+              - RelayToTokensMultiplier
+              - Application.MaxuPOKTPerRelay
+              - Application.MinuPOKTPerRelay
+              - Suppler.MaxuPOKTPerRelay
+              - Suppler.MinuPOKTPerRelay
+              - PercentageCutToDAO
+              - PercentageCutToSequencer
+              - PercentageCutToOthers?
     description: QueryParamsResponse is response type for the Query/Params RPC method.
