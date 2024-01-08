@@ -1,0 +1,11 @@
+# Pocket node URL that exposes CometBFT JSON-RPC API.
+# This can be used by the Cosmos client SDK, event subscriptions, etc...
+query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+# Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
+query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+# The name of the key (in the keyring) that will be used to sign relays
+signing_key: app1
+# Whether the server should sign all incoming requests with its own ring (for applications)
+self_signing: true
+# The host and port that the appgate server will listen on
+listening_endpoint: http://localhost:42069

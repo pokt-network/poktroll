@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"context"
-	"net/url"
 
 	"cosmossdk.io/depinject"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -13,16 +12,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
-
-type (
-	serviceId            = string
-	relayServersMap      = map[serviceId][]relayer.RelayServer
-	servicesEndpointsMap = map[serviceId]*url.URL
-)
 
 // relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
 // and proxies them to the supported proxied services.
@@ -49,13 +43,15 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier client.SessionQueryClient
 
-	// advertisedRelayServers is a map of the services provided by the relayer proxy. Each provided service
-	// has the necessary information to start the server that listens for incoming relay requests and
-	// the client that relays the request to the supported proxied service.
-	advertisedRelayServers relayServersMap
+	// proxyServers is a map of proxyName -> RelayServer provided by the relayer proxy,
+	// where proxyName is the name of the proxy defined in the config file and
+	// RelayServer is the server that listens for incoming relay requests.
+	proxyServers map[string]relayer.RelayServer
 
-	// proxiedServicesEndpoints is a map of the proxied services endpoints that the relayer proxy supports.
-	proxiedServicesEndpoints servicesEndpointsMap
+	// proxyConfigs is a map of proxyName -> RelayMinerProxyConfig where proxyName
+	// is the name of the proxy defined in the config file and RelayMinerProxyConfig
+	// is the configuration of the proxy.
+	proxyConfigs map[string]*config.RelayMinerProxyConfig
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays relayer.RelaysObservable
@@ -132,11 +128,9 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 
 	startGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, relayServer := range rp.advertisedRelayServers {
-		for _, svr := range relayServer {
-			server := svr // create a new variable scoped to the anonymous function
-			startGroup.Go(func() error { return server.Start(ctx) })
-		}
+	for _, relayServer := range rp.proxyServers {
+		server := relayServer // create a new variable scoped to the anonymous function
+		startGroup.Go(func() error { return server.Start(ctx) })
 	}
 
 	return startGroup.Wait()
@@ -147,11 +141,10 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 func (rp *relayerProxy) Stop(ctx context.Context) error {
 	stopGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, providedService := range rp.advertisedRelayServers {
-		for _, svr := range providedService {
-			server := svr // create a new variable scoped to the anonymous function
-			stopGroup.Go(func() error { return server.Stop(ctx) })
-		}
+	for _, relayServer := range rp.proxyServers {
+		// Create a new object (i.e. deep copy) variable scoped to the anonymous function below
+		server := relayServer
+		stopGroup.Go(func() error { return server.Stop(ctx) })
 	}
 
 	return stopGroup.Wait()
@@ -171,7 +164,7 @@ func (rp *relayerProxy) validateConfig() error {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
-	if rp.proxiedServicesEndpoints == nil || len(rp.proxiedServicesEndpoints) == 0 {
+	if rp.proxyConfigs == nil || len(rp.proxyConfigs) == 0 {
 		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
 	}
 

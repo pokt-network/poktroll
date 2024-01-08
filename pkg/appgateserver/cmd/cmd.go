@@ -25,8 +25,13 @@ import (
 const omittedDefaultFlagValue = "explicitly omitting default"
 
 var (
+	// flagAppGateConfig is the variable containing the AppGate config filepath
+	// sourced from the `--config` flag.
 	flagAppGateConfig string
-	flagCosmosNodeURL string
+	// flagNodeRPCURL is the variable containing the Cosmos node RPC URL flag value.
+	flagNodeRPCURL string
+	// flagNodeGRPCURL is the variable containing the Cosmos node GRPC URL flag value.
+	flagNodeGRPCURL string
 )
 
 // AppGateServerCmd returns the Cobra command for running the AppGate server.
@@ -65,9 +70,14 @@ provided that:
 	cmd.Flags().StringVar(&flagAppGateConfig, "config", "", "The path to the appgate config file")
 
 	// Cosmos flags
+	// TODO_TECHDEBT(#256): Remove unneeded cosmos flags.
 	cmd.Flags().String(cosmosflags.FlagKeyringBackend, "", "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().
-		StringVar(&flagCosmosNodeURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
+		StringVar(&flagNodeRPCURL, cosmosflags.FlagNode, omittedDefaultFlagValue, "Register the default Cosmos node flag, which is needed to initialize the Cosmos query context correctly. It can be used to override the `QueryNodeUrl` field in the config file if specified.")
+	cmd.Flags().
+		StringVar(&flagNodeGRPCURL, cosmosflags.FlagGRPC, omittedDefaultFlagValue, "Register the default Cosmos node grpc flag, which is needed to initialize the Cosmos query context with grpc correctly. It can be used to override the `QueryNodeGRPCUrl` field in the config file if specified.")
+	cmd.Flags().
+		Bool(cosmosflags.FlagGRPCInsecure, true, "Used to initialize the Cosmos query context with grpc security options. It can be used to override the `QueryNodeGRPCInsecure` field in the config file if specified.")
 
 	return cmd
 }
@@ -145,26 +155,40 @@ func setupAppGateServerDependencies(
 	cmd *cobra.Command,
 	appGateConfig *appgateconfig.AppGateServerConfig,
 ) (_ depinject.Config, err error) {
-	queryNodeURL := appGateConfig.QueryNodeUrl
-	// Override the config file's `QueryNodeUrl` fields
-	// with the `--node` flag if it was specified.
-	if flagCosmosNodeURL != omittedDefaultFlagValue {
-		queryNodeURL, err = url.Parse(flagCosmosNodeURL)
+	queryNodeRPCURL := appGateConfig.QueryNodeRPCUrl
+	queryNodeGRPCURL := appGateConfig.QueryNodeGRPCUrl
+
+	// Override the config file's `QueryNodeGRPCUrl` field
+	// with the `--grpc-addr` flag if it was specified.
+	// TODO_TECHDEBT(#223) Remove this check once viper is used as SoT for overridable config values.
+	if flagNodeGRPCURL != omittedDefaultFlagValue {
+		queryNodeGRPCURL, err = url.Parse(flagNodeGRPCURL)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse Cosmos node URL: %w", err)
+			return nil, fmt.Errorf("failed to parse grpc query URL: %w", err)
+		}
+	}
+
+	// Override the config file's `QueryNodeRPCURL` field
+	// with the `--node` flag if it was specified.
+	// TODO_TECHDEBT(#223) Remove this check once viper is used as SoT for overridable config values.
+	if flagNodeRPCURL != omittedDefaultFlagValue {
+		queryNodeRPCURL, err = url.Parse(flagNodeRPCURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse rpc query URL: %w", err)
 		}
 	}
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
-		config.NewSupplyEventsQueryClientFn(queryNodeURL.Host),      // leaf
-		config.NewSupplyBlockClientFn(),                             // leaf
-		config.NewSupplyQueryClientContextFn(queryNodeURL.String()), // leaf
-		config.NewSupplyDelegationClientFn(),                        // leaf
-		config.NewSupplyAccountQuerierFn(),                          // leaf
-		config.NewSupplyApplicationQuerierFn(),                      // leaf
-		config.NewSupplySessionQuerierFn(),                          // leaf
-		config.NewSupplyRingCacheFn(),                               // leaf
+		config.NewSupplyEventsQueryClientFn(queryNodeRPCURL),   // leaf
+		config.NewSupplyBlockClientFn(),                        // leaf
+		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL), // leaf
+		config.NewSupplyDelegationClientFn(),                   // leaf
+		config.NewSupplyAccountQuerierFn(),                     // leaf
+		config.NewSupplyApplicationQuerierFn(),                 // leaf
+		config.NewSupplySessionQuerierFn(),                     // leaf
+		config.NewSupplyRingCacheFn(),
+
 		config.NewSupplyPOKTRollSDKFn(appGateConfig.SigningKey),
 	}
 

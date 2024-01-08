@@ -2,8 +2,12 @@ package proxy
 
 import (
 	"context"
+	"net/url"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -28,59 +32,78 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		return err
 	}
 
-	services := supplier.Services
-
-	// Build the advertised relay servers map. For each service's endpoint, create the appropriate RelayServer.
-	providedServices := make(relayServersMap)
-	for _, serviceConfig := range services {
-		service := serviceConfig.Service
-		proxiedServicesEndpoints := rp.proxiedServicesEndpoints[service.Id]
-		var serviceEndpoints []relayer.RelayServer
-
-		for _, endpoint := range serviceConfig.Endpoints {
-			// url, err := url.Parse(endpoint.Url)
-			// if err != nil {
-			// 	return err
-			// }
-			// supplierEndpointHost := url.Host
-
-			// This will throw an error if we have more than one endpoint
-			supplierEndpointHost := "0.0.0.0:8545"
-
-			rp.logger.Info().
-				Fields(map[string]any{
-					"service_id":   service.Id,
-					"endpoint_url": endpoint.Url,
-				}).
-				Msg("starting relay server")
-
-			// Switch to the RPC type
-			// TODO(@h5law): Implement a switch that handles all synchronous
-			// RPC types in one server type and asynchronous RPC types in another
-			// to create the appropriate RelayServer
-			var server relayer.RelayServer
-			switch endpoint.RpcType {
-			case sharedtypes.RPCType_JSON_RPC:
-				server = NewSynchronousServer(
-					rp.logger,
-					service,
-					supplierEndpointHost,
-					proxiedServicesEndpoints,
-					rp.servedRelaysPublishCh,
-					rp,
-				)
-			default:
-				return ErrRelayerProxyUnsupportedRPCType
+	// Check that the supplier's advertised services' endpoints are present in
+	// the proxy config and handled by a proxy host
+	// Iterate over the supplier's advertised services then iterate over each
+	// service's endpoint
+	for _, service := range supplier.Services {
+		for _, endpoint := range service.Endpoints {
+			endpointUrl, err := url.Parse(endpoint.Url)
+			if err != nil {
+				return err
+			}
+			found := false
+			// Iterate over the proxy configs and check if `endpointUrl` is present
+			// in any of the proxy config's suppliers' service's hosts
+			for _, proxyConfig := range rp.proxyConfigs {
+				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
+				if ok && slices.Contains(supplierService.Hosts, endpointUrl.Host) {
+					found = true
+					break
+				}
 			}
 
-			serviceEndpoints = append(serviceEndpoints, server)
+			if !found {
+				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
+					"service endpoint %s not handled by proxy",
+					endpoint.Url,
+				)
+			}
 		}
-
-		providedServices[service.Id] = serviceEndpoints
 	}
 
-	rp.advertisedRelayServers = providedServices
+	if rp.proxyServers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+		return err
+	}
+
 	rp.supplierAddress = supplier.Address
 
 	return nil
+}
+
+// initializeProxyServers initializes the proxy servers for each proxy config.
+func (rp *relayerProxy) initializeProxyServers(
+	supplierServices []*sharedtypes.SupplierServiceConfig,
+) (proxyServerMap map[string]relayer.RelayServer, err error) {
+	// Build a map of serviceId -> service for the supplier's advertised services
+	supplierServiceMap := make(map[string]*sharedtypes.Service)
+	for _, service := range supplierServices {
+		supplierServiceMap[service.Service.Id] = service.Service
+	}
+
+	// Build a map of proxyName -> RelayServer for each proxy defined in the config file
+	proxyServers := make(map[string]relayer.RelayServer)
+
+	for _, proxyConfig := range rp.proxyConfigs {
+		rp.logger.Info().Str("proxy host", proxyConfig.Host).Msg("starting relay proxy server")
+
+		// TODO(@h5law): Implement a switch that handles all synchronous
+		// RPC types in one server type and asynchronous RPC types in another
+		// to create the appropriate RelayServer.
+		// Initialize the proxy server according to the proxy type defined in the config file
+		switch proxyConfig.Type {
+		case config.ProxyTypeHTTP:
+			proxyServers[proxyConfig.ProxyName] = NewSynchronousServer(
+				rp.logger,
+				proxyConfig,
+				supplierServiceMap,
+				rp.servedRelaysPublishCh,
+				rp,
+			)
+		default:
+			return nil, ErrRelayerProxyUnsupportedTransportType
+		}
+	}
+
+	return proxyServers, nil
 }
