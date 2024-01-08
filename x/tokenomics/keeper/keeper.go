@@ -3,6 +3,8 @@ package keeper
 import (
 	"fmt"
 
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	// sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/cometbft/cometbft/libs/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -15,6 +17,18 @@ import (
 type TokenomicsKeeperI interface {
 	// GetAuthority returns the x/tokenomics module's authority.
 	GetAuthority() string
+
+	// TODO_CONSIDERATION:
+	// 1. Should we pass in a full session instead of the header?
+	// 2. Should we create a well defined type for the smst root?
+
+	// SettleSessionAccounting is responsible for all of the post-session accounting
+	// necessary to burn, mint or transfer tokens depending on the amount of work
+	// done. The amount of work complete is represented by `computeUnits` which
+	// is expect to be the
+	// NOTE: It is assumed the validation of the `smstRoot` w.r.t to the
+	// `sessionHeader` has already been done by the caller.
+	SettleSessionAccounting(sessionHeader *sessiontypes.SessionHeader, smstRoot []byte)
 }
 
 // TODO_TECHDEBT(#240): See `x/auth/keeper.keeper.go` in the Cosmos SDK on how
