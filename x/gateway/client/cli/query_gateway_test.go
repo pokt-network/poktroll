@@ -33,7 +33,7 @@ func TestShowGateway(t *testing.T) {
 	memnet.Start(ctx, t)
 
 	clientCtx := memnet.GetClientCtx(t)
-	codec := memnet.GetNetworkConfig(t).Codec
+	codec := memnet.GetCosmosNetworkConfig(t).Codec
 	gateways := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList
 
 	common := []string{
@@ -97,7 +97,7 @@ func TestListGateway(t *testing.T) {
 	memnet.Start(ctx, t)
 
 	clientCtx := memnet.GetClientCtx(t)
-	codec := memnet.GetNetworkConfig(t).Codec
+	codec := memnet.GetCosmosNetworkConfig(t).Codec
 	gateways := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList
 
 	request := func(next []byte, offset, limit uint64, total bool) []string {

@@ -11,4 +11,5 @@ var (
 	ErrEventsConnClosed     = sdkerrors.Register(codespace, 2, "connection closed")
 	ErrEventsSubscribe      = sdkerrors.Register(codespace, 3, "failed to subscribe to events")
 	ErrEventsUnmarshalEvent = sdkerrors.Register(codespace, 4, "failed to unmarshal event bytes")
+	ErrEventsConsClosed     = sdkerrors.Register(codespace, 5, "eventsqueryclient connection closed")
 )

@@ -18,7 +18,7 @@ import (
 func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t *testing.T) *suppliertypes.GenesisState {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.GetCosmosNetworkConfig(t), "cosmos config not initialized, call #Start() first")
 	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	// Create NumSuppliers number of suppliers with a service "svcX", where "X" is the supplier's index.
@@ -45,11 +45,11 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 		supplierGenesisState.SupplierList = append(supplierGenesisState.SupplierList, supplier)
 	}
 
-	supplierGenesisBuffer, err := memnet.GetNetworkConfig(t).Codec.MarshalJSON(supplierGenesisState)
+	supplierGenesisBuffer, err := memnet.GetCosmosNetworkConfig(t).Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
 
 	// Add supplier module genesis supplierGenesisState to the network config.
-	memnet.GetNetworkConfig(t).GenesisState[suppliertypes.ModuleName] = supplierGenesisBuffer
+	memnet.GetCosmosNetworkConfig(t).GenesisState[suppliertypes.ModuleName] = supplierGenesisBuffer
 
 	return supplierGenesisState
 }
@@ -69,7 +69,7 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *testing.T) *apptypes.GenesisState {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.GetNetworkConfig(t), "cosmos config not initialized, call #Start() first")
+	require.NotEmptyf(t, memnet.GetCosmosNetworkConfig(t), "cosmos config not initialized, call #Start() first")
 	require.NotEmptyf(t, memnet.PreGeneratedAccountIterator, "pre-generated accounts not initialized, call #Start() first")
 
 	var (
@@ -103,7 +103,7 @@ func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *tes
 	require.NoError(t, err)
 
 	// Add supplier and application module genesis appGenesisState to the network memnetConfig.
-	memnet.GetNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
+	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 
 	return appGenesisState
 }

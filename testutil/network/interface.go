@@ -8,17 +8,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 )
 
-// InMemoryCosmosNetwork encapsulates the cosmos-sdk testutil network instance and
-// the responsibility of initializing it, along with (optional) additional/ setup,
-// in #Start(). It also provides access to additional cosmos-sdk testutil network
+// InMemoryNetwork encapsulates the cosmos-sdk testutil network instance and the
+// esponsibility of initializing it, along with (optional) additional/ setup, in
+// #Start(). It also provides access to additional cosmos-sdk testutil network
 // internals via corresponding methods.
-type InMemoryCosmosNetwork interface {
+type InMemoryNetwork interface {
+	// GetConfig returns the InMemoryNetworkConfig which associated with a given
+	// InMemoryNetwork instance.
+	GetConfig(*testing.T) *InMemoryNetworkConfig
+
 	// GetClientCtx returns a cosmos-sdk client.Context associated with the
 	// underlying cosmos-sdk testutil network instance.
 	GetClientCtx(*testing.T) client.Context
 
-	// GetNetworkConfig returns the underlying cosmos-sdk testutil network config.
-	GetNetworkConfig(*testing.T) *network.Config
+	// GetCosmosNetworkConfig returns the underlying cosmos-sdk testutil network config.
+	GetCosmosNetworkConfig(*testing.T) *network.Config
 
 	// GetNetwork returns the underlying cosmos-sdk testutil network instance.
 	GetNetwork(*testing.T) *network.Network

@@ -24,7 +24,7 @@ const warnNoModuleGenesisFmt = "WARN: no %s module genesis state found, if this 
 
 // CreateKeyringAccounts populates the Keyring associated with the in-memory
 // network with memnet.numKeyringAccounts() number of pre-generated accounts.
-func (memnet *BaseInMemoryCosmosNetwork) CreateKeyringAccounts(t *testing.T) {
+func (memnet *BaseInMemoryNetwork) CreateKeyringAccounts(t *testing.T) {
 	t.Helper()
 
 	// Keyring MAY be provided setting InMemoryNetworkConfig#Keyring.
@@ -51,7 +51,7 @@ func (memnet *BaseInMemoryCosmosNetwork) CreateKeyringAccounts(t *testing.T) {
 
 // CreateOnChainAccounts creates on-chain accounts (i.e. auth module) for the sum of
 // the configured number of suppliers, applications, and gateways.
-func (memnet *BaseInMemoryCosmosNetwork) CreateOnChainAccounts(t *testing.T) {
+func (memnet *BaseInMemoryNetwork) CreateOnChainAccounts(t *testing.T) {
 	t.Helper()
 
 	// NB: while it may initially seem like the memnet#Init<actor>AccountsWithSequence() methods
@@ -95,7 +95,7 @@ func (memnet *BaseInMemoryCosmosNetwork) CreateOnChainAccounts(t *testing.T) {
 
 // InitAccount initializes an Account by sending it some funds from the validator
 // in the network to the address provided
-func (memnet *BaseInMemoryCosmosNetwork) InitAccount(
+func (memnet *BaseInMemoryNetwork) InitAccount(
 	t *testing.T,
 	addr types.AccAddress,
 ) {
@@ -131,7 +131,7 @@ func (memnet *BaseInMemoryCosmosNetwork) InitAccount(
 // GetPreGeneratedAccountIterator returns the pre-generated account iterator associated
 // with the in-memory network; i.e. used to populate genesis and the keyring. Calling
 // #Next() will return the next (unused) pre-generated account in the iterator.
-func (memnet *BaseInMemoryCosmosNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
+func (memnet *BaseInMemoryNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
 	t.Helper()
 
 	preGeneratedAcct, ok := testkeyring.PreGeneratedAccounts().Next()
@@ -147,7 +147,7 @@ func (memnet *BaseInMemoryCosmosNetwork) CreateNewOnChainAccount(t *testing.T) *
 
 // InitSupplierAccountsWithSequence uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given suppliers.
-func (memnet *BaseInMemoryCosmosNetwork) InitSupplierAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) InitSupplierAccountsWithSequence(
 	t *testing.T,
 	supplierList ...sharedtypes.Supplier,
 ) {
@@ -165,7 +165,7 @@ func (memnet *BaseInMemoryCosmosNetwork) InitSupplierAccountsWithSequence(
 
 // InitAppAccountsWithSequence uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given Applications.
-func (memnet *BaseInMemoryCosmosNetwork) InitAppAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) InitAppAccountsWithSequence(
 	t *testing.T,
 	appList ...apptypes.Application,
 ) {
@@ -180,7 +180,7 @@ func (memnet *BaseInMemoryCosmosNetwork) InitAppAccountsWithSequence(
 
 // InitGatewayAccountsWithSequence uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given Gateways.
-func (memnet *BaseInMemoryCosmosNetwork) InitGatewayAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) InitGatewayAccountsWithSequence(
 	t *testing.T,
 	gatewayList ...gatewaytypes.Gateway,
 ) {

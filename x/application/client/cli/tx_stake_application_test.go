@@ -33,9 +33,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 
 	appGenesisState := network.GetGenesisState[*apptypes.GenesisState](t, apptypes.ModuleName, memnet)
 	applications := appGenesisState.ApplicationList
-	appBech32 := applications[0].GetAddress()
-	//appAddr, err := sdk.AccAddressFromBech32(appBech32)
-	//require.NoError(t, err)
+	appAddr := applications[0].GetAddress()
 
 	net := memnet.GetNetwork(t)
 
@@ -66,7 +64,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "valid",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000upokt",
 			inputConfig:      defaultConfig,
 
@@ -96,7 +94,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: missing stake",
 
-			inputAddress: appBech32,
+			inputAddress: appAddr,
 			// inputStakeString: "explicitly missing",
 			inputConfig: defaultConfig,
 
@@ -105,7 +103,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: invalid stake denom",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000invalid",
 			inputConfig:      defaultConfig,
 
@@ -114,7 +112,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: stake amount (zero)",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "0upokt",
 			inputConfig:      defaultConfig,
 
@@ -123,7 +121,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: stake amount (negative)",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "-1000upokt",
 			inputConfig:      defaultConfig,
 
@@ -134,7 +132,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: services (empty string)",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000upokt",
 			inputConfig:      "",
 
@@ -143,7 +141,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: single invalid service contains spaces",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000upokt",
 			inputConfig: `
 				service_ids:
@@ -155,7 +153,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: one of two services is invalid because it contains spaces",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000upokt",
 			inputConfig: `
 				service_ids:
@@ -168,7 +166,7 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: service ID is too long (8 chars is the max)",
 
-			inputAddress:     appBech32,
+			inputAddress:     appAddr,
 			inputStakeString: "1000upokt",
 			inputConfig: `
 				service_ids:

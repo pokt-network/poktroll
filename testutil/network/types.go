@@ -9,7 +9,7 @@ import (
 // which to generate a proof.
 var TestMerkleProofPath = []byte("test_proof_merkle_path")
 
-// InMemoryNetworkConfig is a **SHARED** config struct for use by InMemoryCosmosNetwork
+// InMemoryNetworkConfig is a **SHARED** config struct for use by InMemoryNetwork
 // implementations to configure themselves, provide the necessary parameters to set-up
 // code, and initialize the underlying cosmos-sdk testutil network.
 //
@@ -17,8 +17,10 @@ var TestMerkleProofPath = []byte("test_proof_merkle_path")
 // - Creating accounts in the local keyring.
 // - Creating genesis state for (a) module(s).
 // - Executing on-chain transactions (i.e. on-chain, non-genesis state).
+// - Governance parameter configuration
+// - Etc...
 type InMemoryNetworkConfig struct {
-	// NumSessions is the number of sessions (with sequential start heights) for
+	// NumSessions is the number of sessions (with increasing start heights) for
 	// which the network should generate claims and proofs.
 	NumSessions int
 
@@ -34,13 +36,13 @@ type InMemoryNetworkConfig struct {
 
 	// NumApplications is the number of applications that should be created at genesis.
 	// Usage is mutually exclusive with AppSupplierPairingRatio. This is enforced by
-	// InMemoryCosmosNetwork implementations.
+	// InMemoryNetwork implementations.
 	NumApplications int
 
 	// AppSupplierPairingRatio is the number of applications, per supplier, that
 	// share a serviceId (i.e. will be in the same session).
 	// Usage is mutually exclusive with NumApplications. This is enforced by
-	// InMemoryCosmosNetwork implementations.
+	// InMemoryNetwork implementations.
 	AppSupplierPairingRatio int
 
 	// CosmosCfg is the configuration for the underlying cosmos-sdk testutil network.
@@ -48,9 +50,9 @@ type InMemoryNetworkConfig struct {
 
 	// Keyring is the keyring to be used by clients of the cosmos-sdk testutil network.
 	// It is intended to be populated with a sufficient number of accounts for the
-	// InMemoryCosmosNetwork implementation's use cases. BaseInMemoryCosmosNetwork
+	// InMemoryNetwork implementation's use cases. BaseInMemoryNetwork
 	// implements a #GetNumKeyringAccounts() for this purpose.
 	// This keyring is associated with the cosmos client context returned from
-	// BaseInMemoryCosmosNetwork#GetClientCtx().
+	// BaseInMemoryNetwork#GetClientCtx().
 	Keyring keyring.Keyring
 }
