@@ -93,8 +93,12 @@ func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 	require.NoError(t, memnet.GetNetwork(t).WaitForNextBlock())
 }
 
-// FundAddress initializes an Account by sending it some funds from the validator
-// in the network to the address provided
+// FundAddress initializes an Account address and sequence number with the auth module
+// by sending some tokens from the in-memory network  validator, to the address provided.
+// This is a necessary prerequesite in order for the account with the given address
+// to be able to submit valid transactions (i.e. pay tx fees).
+// NOTE: It DOES NOT associate a public key with the account. This will happen when a tx
+// which is signed by the account is broadcast to the network for the first time.
 func (memnet *BaseInMemoryNetwork) FundAddress(
 	t *testing.T,
 	addr types.AccAddress,
@@ -128,8 +132,13 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
-// FundSupplierAccounts uses the testCLI to create on-chain accounts
-// (i.e. auth module) for the addresses of the given suppliers.
+// FundSupplierAccounts initializes account addresses and sequence numbers for,
+// each supplier in the given list, with the auth module by sending them some tokens
+// from the in-memory network validator, to the address provided. This is a necessary
+// prerequisite in order for the account with the given address to be able to submit
+// valid transactions (i.e. pay tx fees).
+// NOTE: It DOES NOT associate a public key with the account. This will happen when a tx
+// which is signed by the account is broadcast to the network for the first time.
 func (memnet *BaseInMemoryNetwork) FundSupplierAccounts(
 	t *testing.T,
 	supplierList ...sharedtypes.Supplier,
@@ -146,8 +155,13 @@ func (memnet *BaseInMemoryNetwork) FundSupplierAccounts(
 	}
 }
 
-// FundAppAccounts uses the testCLI to create on-chain accounts
-// (i.e. auth module) for the addresses of the given Applications.
+// FundAppAccounts initializes account addresses and sequence numbers for, each
+// application in the given list, with the auth module by sending them some tokens
+// from the in-memory network validator, to the address provided. This is a necessary
+// prerequisite in order for the account with the given address to be able to submit
+// valid transactions (i.e. pay tx fees).
+// NOTE: It DOES NOT associate a public key with the account. This will happen when a tx
+// which is signed by the account is broadcast to the network for the first time.
 func (memnet *BaseInMemoryNetwork) FundAppAccounts(
 	t *testing.T,
 	appList ...apptypes.Application,
@@ -161,8 +175,13 @@ func (memnet *BaseInMemoryNetwork) FundAppAccounts(
 	}
 }
 
-// FundGatewayAccounts uses the testCLI to create on-chain accounts
-// (i.e. auth module) for the addresses of the given Gateways.
+// FundGatewayAccounts initializes account addresses and sequence numbers for, each
+// gateway in the given list, with the auth module by sending them some tokens
+// from the in-memory network validator, to the address provided. This is a necessary
+// prerequisite in order for the account with the given address to be able to submit
+// valid transactions (i.e. pay tx fees).
+// NOTE: It DOES NOT associate a public key with the account. This will happen when a tx
+// which is signed by the account is broadcast to the network for the first time.
 func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 	t *testing.T,
 	gatewayList ...gatewaytypes.Gateway,

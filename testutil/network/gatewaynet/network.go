@@ -130,15 +130,17 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 	memnet.FundOnChainAccounts(t)
 }
 
-// TODO_IN_THIS_COMMIT: fix comment...
-// GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
-// a gateway list full of gateways with the given addresses.
+// configureGatewayModuleGenesisState generates and populates the in-memory network's
+//
+//	application module's GenesisState object with the number of applications specified
+//	by the InMemoryConfig, each of which is staked for a unique service. It returns
+//	the genesis state object.
 func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t *testing.T) {
 	t.Helper()
 
 	gatewayGenesisState := gatewaytypes.DefaultGenesis()
 	for gatewayIdx := 0; gatewayIdx < memnet.Config.NumGateways; gatewayIdx++ {
-		stake := sdk.NewCoin("upokt", sdk.NewInt(int64(gatewayIdx)))
+		stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
 		preGeneratedAcct, ok := memnet.PreGeneratedAccountIterator.Next()
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
@@ -148,8 +150,6 @@ func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t 
 			Stake:   &stake,
 		}
 
-		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
-		// nullify.Fill(&gateway)
 		gatewayGenesisState.GatewayList = append(gatewayGenesisState.GatewayList, gateway)
 	}
 
