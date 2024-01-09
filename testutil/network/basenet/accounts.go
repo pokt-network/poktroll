@@ -67,7 +67,7 @@ func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 		t.Logf(warnNoModuleGenesisFmt, "supplier")
 	} else {
 		// Initialize on-chain accounts for genesis suppliers.
-		memnet.InitSupplierAccountsWithSequence(t, supplierGenesisState.SupplierList...)
+		memnet.FundSupplierAccounts(t, supplierGenesisState.SupplierList...)
 
 	}
 
@@ -77,7 +77,7 @@ func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 		t.Logf(warnNoModuleGenesisFmt, "application")
 	} else {
 		// Initialize on-chain accounts for genesis applications.
-		memnet.InitAppAccountsWithSequence(t, appGenesisState.ApplicationList...)
+		memnet.FundAppAccounts(t, appGenesisState.ApplicationList...)
 	}
 
 	// Retrieve the gateway module's genesis state from cosmos-sdk in-memory network.
@@ -86,16 +86,16 @@ func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 		t.Logf(warnNoModuleGenesisFmt, "gateway")
 	} else {
 		// Initialize on-chain accounts for genesis gateways.
-		memnet.InitGatewayAccountsWithSequence(t, gatewayGenesisState.GatewayList...)
+		memnet.FundGatewayAccounts(t, gatewayGenesisState.GatewayList...)
 	}
 
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, memnet.GetNetwork(t).WaitForNextBlock())
 }
 
-// InitAccount initializes an Account by sending it some funds from the validator
+// FundAddress initializes an Account by sending it some funds from the validator
 // in the network to the address provided
-func (memnet *BaseInMemoryNetwork) InitAccount(
+func (memnet *BaseInMemoryNetwork) FundAddress(
 	t *testing.T,
 	addr types.AccAddress,
 ) {
@@ -128,26 +128,9 @@ func (memnet *BaseInMemoryNetwork) InitAccount(
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
-// GetPreGeneratedAccountIterator returns the pre-generated account iterator associated
-// with the in-memory network; i.e. used to populate genesis and the keyring. Calling
-// #Next() will return the next (unused) pre-generated account in the iterator.
-func (memnet *BaseInMemoryNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
-	t.Helper()
-
-	preGeneratedAcct, ok := testkeyring.PreGeneratedAccounts().Next()
-	require.Truef(t, ok, "no pre-generated accounts available")
-
-	// Create a supplier on-chain account.
-	memnet.InitAccount(t, preGeneratedAcct.Address)
-
-	testkeyring.CreatePreGeneratedKeyringAccounts(t, memnet.GetClientCtx(t).Keyring, 1)
-
-	return preGeneratedAcct
-}
-
-// InitSupplierAccountsWithSequence uses the testCLI to create on-chain accounts
+// FundSupplierAccounts uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given suppliers.
-func (memnet *BaseInMemoryNetwork) InitSupplierAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) FundSupplierAccounts(
 	t *testing.T,
 	supplierList ...sharedtypes.Supplier,
 ) {
@@ -159,13 +142,13 @@ func (memnet *BaseInMemoryNetwork) InitSupplierAccountsWithSequence(
 	for _, supplier := range supplierList {
 		supplierAddr, err := types.AccAddressFromBech32(supplier.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccount(t, supplierAddr)
+		memnet.FundAddress(t, supplierAddr)
 	}
 }
 
-// InitAppAccountsWithSequence uses the testCLI to create on-chain accounts
+// FundAppAccounts uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given Applications.
-func (memnet *BaseInMemoryNetwork) InitAppAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) FundAppAccounts(
 	t *testing.T,
 	appList ...apptypes.Application,
 ) {
@@ -174,13 +157,13 @@ func (memnet *BaseInMemoryNetwork) InitAppAccountsWithSequence(
 	for _, application := range appList {
 		appAddr, err := types.AccAddressFromBech32(application.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccount(t, appAddr)
+		memnet.FundAddress(t, appAddr)
 	}
 }
 
-// InitGatewayAccountsWithSequence uses the testCLI to create on-chain accounts
+// FundGatewayAccounts uses the testCLI to create on-chain accounts
 // (i.e. auth module) for the addresses of the given Gateways.
-func (memnet *BaseInMemoryNetwork) InitGatewayAccountsWithSequence(
+func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 	t *testing.T,
 	gatewayList ...gatewaytypes.Gateway,
 ) {
@@ -189,6 +172,6 @@ func (memnet *BaseInMemoryNetwork) InitGatewayAccountsWithSequence(
 	for _, gateway := range gatewayList {
 		gatewayAddr, err := types.AccAddressFromBech32(gateway.GetAddress())
 		require.NoError(t, err)
-		memnet.InitAccount(t, gatewayAddr)
+		memnet.FundAddress(t, gatewayAddr)
 	}
 }
