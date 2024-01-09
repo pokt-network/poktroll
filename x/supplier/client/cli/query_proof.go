@@ -11,7 +11,7 @@ import (
 )
 
 // AddPaginationFlagsToCmd adds common pagination flags to cmd
-func AddProofFilterFlags(cmd *cobra.Command) {
+func AddProofFilterFlagsToCmd(cmd *cobra.Command) {
 	cmd.Flags().Uint64(FlagSessionEndHeight, 0, "proofs whose session ends at this height will be returned")
 	cmd.Flags().String(FlagSessionId, "", "proofs matching this session id will be returned")
 	cmd.Flags().String(FlagSupplierAddress, "", "proofs submitted by suppliers matching this address will be returned")
@@ -62,7 +62,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof list-proofs --supplier-address <sup
 		},
 	}
 
-	AddProofFilterFlags(cmd)
+	AddProofFilterFlagsToCmd(cmd)
 	flags.AddPaginationFlagsToCmd(cmd, cmd.Use)
 	flags.AddQueryFlagsToCmd(cmd)
 
@@ -113,7 +113,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q proof show-proofs <session_id> <supplier_
 	return cmd
 }
 
-// updateClaimsFilter updates the claims filter request based on the flags set provided
+// updateClaimsFilter updates the proofs filter request based on the flags set provided
 func updateProofsFilter(cmd *cobra.Command, req *types.QueryAllProofsRequest) error {
 	sessionId, _ := cmd.Flags().GetString(FlagSessionId)
 	supplierAddr, _ := cmd.Flags().GetString(FlagSupplierAddress)
