@@ -127,7 +127,7 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 
 	memnet.Network = network.New(t, *memnet.GetCosmosNetworkConfig(t))
 
-	memnet.CreateOnChainAccounts(t)
+	memnet.FundOnChainAccounts(t)
 }
 
 // TODO_IN_THIS_COMMIT: fix comment...

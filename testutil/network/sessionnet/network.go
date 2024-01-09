@@ -81,5 +81,5 @@ func (memnet *inMemoryNetworkWithSessions) Start(_ context.Context, t *testing.T
 	err := memnet.Network.WaitForNextBlock()
 	require.NoError(t, err)
 
-	memnet.CreateOnChainAccounts(t)
+	memnet.FundOnChainAccounts(t)
 }

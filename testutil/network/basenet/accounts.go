@@ -49,9 +49,9 @@ func (memnet *BaseInMemoryNetwork) CreateKeyringAccounts(t *testing.T) {
 	memnet.PreGeneratedAccountIterator = testkeyring.NewPreGeneratedAccountIterator(accts...)
 }
 
-// CreateOnChainAccounts creates on-chain accounts (i.e. auth module) for the sum of
+// FundOnChainAccounts creates on-chain accounts (i.e. auth module) for the sum of
 // the configured number of suppliers, applications, and gateways.
-func (memnet *BaseInMemoryNetwork) CreateOnChainAccounts(t *testing.T) {
+func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 	t.Helper()
 
 	// NB: while it may initially seem like the memnet#Init<actor>AccountsWithSequence() methods
