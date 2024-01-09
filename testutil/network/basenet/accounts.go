@@ -194,3 +194,22 @@ func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 		memnet.FundAddress(t, gatewayAddr)
 	}
 }
+
+// CreateNewOnChainAccount uses the pre-generated account iterator associated
+// with the in-memory network (which is also used to populate genesis and the
+// in-memory network keyring). It initializes the address on-chain by sending
+// it some tokens and also creates a corresponding keypair in the in-memory
+// network's keyring. It returns the pre-generated account which was used.
+func (memnet *BaseInMemoryNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
+	t.Helper()
+
+	preGeneratedAcct, ok := testkeyring.PreGeneratedAccounts().Next()
+	require.Truef(t, ok, "no pre-generated accounts available")
+
+	// Create a supplier on-chain account.
+	memnet.FundAddress(t, preGeneratedAcct.Address)
+
+	testkeyring.CreatePreGeneratedKeyringAccounts(t, memnet.GetClientCtx(t).Keyring, 1)
+
+	return preGeneratedAcct
+}
