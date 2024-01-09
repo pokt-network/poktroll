@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	cmd.InitSDKCosmosConfig()
+	cmd.InitCosmosSDKConfig()
 }
 
 // NOTE: See `session_hydrator_test.go` for more extensive test coverage of different

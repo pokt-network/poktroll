@@ -22,7 +22,7 @@ import (
 var _ = strconv.IntSize
 
 func init() {
-	cmd.InitSDKCosmosConfig()
+	cmd.InitCosmosSDKConfig()
 }
 
 func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Supplier {

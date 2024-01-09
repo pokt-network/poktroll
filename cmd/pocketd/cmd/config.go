@@ -6,11 +6,11 @@ import (
 	"github.com/pokt-network/poktroll/app"
 )
 
-// InitSDKCosmosConfig initializes the cosmos SDK's config with the appropriate parameters
+// InitCosmosSDKConfig initializes the cosmos SDK's config with the appropriate parameters
 // and prefixes so everything is named appropriately for Pocket Network.
 // TODO_DISCUSS: Exporting publically for testing purposes only.
 // Consider adding a helper per the discussion here: https://github.com/pokt-network/poktroll/pull/59#discussion_r1357816798
-func InitSDKsmosConfig() {
+func InitCosmosSDKConfig() {
 	// Set prefixes
 	accountPubKeyPrefix := app.AccountAddressPrefix + "pub"
 	validatorAddressPrefix := app.AccountAddressPrefix + "valoper"

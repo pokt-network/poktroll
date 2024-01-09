@@ -31,5 +31,5 @@ func New(t *testing.T, configs ...network.Config) *network.Network {
 
 // init initializes the SDK configuration.
 func init() {
-	cmd.InitSDKCosmosConfig()
+	cmd.InitCosmosSDKConfig()
 }
