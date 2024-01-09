@@ -5,6 +5,7 @@ package e2e
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -166,18 +167,36 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 }
 
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
+	// Create a temporary config file
+	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
+	configFile, err := ioutil.TempFile("", configPathPattern)
+	if err != nil {
+		s.Fatalf("error creating config file: %q", err)
+	}
+	if _, err = configFile.Write([]byte(configContent)); err != nil {
+		s.Fatalf("error writing config file: %q", err)
+	}
+
 	args := []string{
 		"tx",
 		actorType,
 		fmt.Sprintf("stake-%s", actorType),
 		"--config",
-		fmt.Sprintf("%s/config/%s1_stake_config.yaml", defaultHome, actorType),
+		configFile.Name(),
 		"--from",
 		accName,
 		keyRingFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
+
+	// Remove the temporary config file
+	err = os.Remove(configFile.Name())
+	if err != nil {
+		s.Fatalf("error removing config file: %q", err)
+	}
+
 	if err != nil {
 		s.Fatalf("error staking %s: %s", actorType, err)
 	}
