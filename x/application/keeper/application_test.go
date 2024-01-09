@@ -22,7 +22,7 @@ import (
 var _ = strconv.IntSize
 
 func init() {
-	cmd.InitSDKConfig()
+	cmd.InitSDKCosmosConfig()
 }
 
 func createNApplication(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Application {

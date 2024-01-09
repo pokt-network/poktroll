@@ -19,7 +19,7 @@ import (
 var _ = strconv.IntSize
 
 func init() {
-	cmd.InitSDKConfig()
+	cmd.InitSDKCosmosConfig()
 }
 
 func createNGateway(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Gateway {
