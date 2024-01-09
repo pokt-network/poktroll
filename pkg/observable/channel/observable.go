@@ -2,7 +2,6 @@ package channel
 
 import (
 	"context"
-	"sync"
 	"sync/atomic"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -17,6 +16,11 @@ const defaultPublishBufferSize = 50
 var (
 	_ observable.Observable[any] = (*channelObservable[any])(nil)
 	_ observerManager[any]       = (*channelObservable[any])(nil)
+
+	// failFast is an atomic bool used in obersvable merging to determine if
+	// the resulting merged observable should fail/close when one of the
+	// observables fails/closes that it is merging.
+	failFast atomic.Bool
 )
 
 // option is a function which receives and can modify the channelObservable state.
@@ -110,146 +114,52 @@ func (obs *channelObservable[V]) goPublish() {
 	obs.observerManager.removeAll()
 }
 
-// nergeOpt is a function that can be used to modify the behaviour of the
-// mergedObservable, during construction.
-type mergeOpt[V any] func(mObs *mergedObservable[V])
-
-// observablesToMerge is a struct that holds the observables that are being
-// managed by the mergedObservable, along with their index so that they can
-// be remoed if they close.
-type observablesToMerge[V any] struct {
-	index uint64
-	obs   observable.Observable[V]
-}
-
-// mergedObservable implements the observable.Observable interface and can be
-// constructeed in such a way that the supplied observables are merged into
-// one observable.
-type mergedObservable[V any] struct {
-	// observables is a list of all observables that are managed by the
-	// mergedObservable.
-	observables []observablesToMerge[V]
-	// obsMu protects the observables list from concurrent access.
-	obsMu sync.RWMutex
-	// publishChs is a list of all publish channels for each of the observables
-	// managed by the observerManager.
-	publishChs []chan<- V
-	// mergesObs is the merged observable that emits notifications from each
-	// of the observables managed by the observerManager.
-	mergedObs observable.Observable[V]
-	// megedObsPublishCh is the publish channel for the merged observable.
-	mergedObsPublishCh chan<- V
-	// delayError indicaates whether the merged observable should delay any
-	// error emissions until all observables have completed.
-	delayError atomic.Bool
-	// failFast indicates whether the merged observable should fail as soon as
-	// any of the observables fail.
-	failFast atomic.Bool
-}
-
-// NewMergedObservable constructs a new merged observable instance based on the
-// supplied observables and options, by default it will fail fast unless other
-// wise specified.
-func NewMergedObservable[V any](
-	obvserbables []observable.Observable[V],
-	opts ...mergeOpt[V],
-) (observable.MergedObservable[V], error) {
-	// Create the base struct of the merged observable.
-	mObs := &mergedObservable[V]{}
-	for i, obs := range obvserbables {
-		mObs.observables = append(
-			mObs.observables, observablesToMerge[V]{
-				index: uint64(i),
-				obs:   obs,
-			})
-	}
-
-	// Apply any supplied options to the merged observable.
-	for _, opt := range opts {
-		opt(mObs)
-	}
-
-	// Check that the merged observable has been configured correctly.
-	failFast := mObs.failFast.Load()
-	delayError := mObs.delayError.Load()
-	if failFast && delayError {
-		// We cannot fail fast and delay errors at the same time.
-		return nil, observable.ErrMergeObservableMultipleFailModes
-	} else if !failFast && !delayError {
-		// If no fail mode has been specified, default to fail fast.
-		mObs.failFast.Store(true)
-	}
-
-	// Create the merged observable and its publish channel.
-	mObs.mergedObs, mObs.mergedObsPublishCh = NewObservable[V]()
-
-	return mObs, nil
-}
-
-// WithMergeDelayError is an option provided to the Mapped Observer constructor
-// that will delay any error emissons until all observables have completed.
-// This means is one or many observables fail the mergerd observable will not
-// fail until the last remaining observable(s) have completed.
-func WithMergeDelayError[V any](delay bool) mergeOpt[V] {
-	return func(mObs *mergedObservable[V]) {
-		mObs.delayError.CompareAndSwap(false, delay)
-	}
-}
-
-// WithFailFast is an option provided to the Mapped Observer constructor that
-// will fail the merged observable as soon as any of the observables fail.
-// This is the default behaviour of the merged observable.
-func WithFailFast[V any](fast bool) mergeOpt[V] {
-	return func(mObs *mergedObservable[V]) {
-		mObs.failFast.CompareAndSwap(false, fast)
-	}
-}
-
-// Subscribe returns an observer which merges notifications from all observables
-// provided to the merged observable during construction.
-func (mObs *mergedObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	mObs.obsMu.RLock()
-	defer mObs.obsMu.RUnlock()
-	for i, obs := range mObs.observables {
-		j := uint64(i)
-		go mObs.goMergeObservables(ctx, j, obs.obs)
-	}
-	return mObs.mergedObs.Subscribe(ctx)
-}
-
-// goMergeObservables subscribes to the supplied observable and emits all their
-// notifications to the merged observable's publish channel.
-func (mObs *mergedObservable[V]) goMergeObservables(
+// Merge takes a slice of observables and merges them into a single observable
+// which publishes notifications from each of the observables supplied.
+// If the closeEarly flag is set to true, the merged observable will close
+// and unsubscribe from all observables when the first of them closes.
+func Merge[V any](
 	ctx context.Context,
-	idx uint64,
-	obs observable.Observable[V],
-) {
-	// Subscribe to the observable and add the publish channel to the list of
-	// publish channels.
-	observer := obs.Subscribe(ctx)
-	for notification := range observer.Ch() {
-		mObs.mergedObsPublishCh <- notification
+	obs []observable.Observable[V],
+	closeEarly bool,
+) observable.Observable[V] {
+	// Determine whether the merged observable should close as soon as one of
+	// the observables closes that it is merging of continue notifying observers.
+	closeEarlyCh := make(chan struct{})
+	if closeEarly {
+		failFast.CompareAndSwap(false, closeEarly)
 	}
-	// Unsubscribe the observable from the merged observable as it is closed.
-	obs.UnsubscribeAll()
-	// Remove the observable from the list of observables.
-	mObs.observables = append(mObs.observables[:idx], mObs.observables[idx+1:]...)
-	// Here the channel has closed which means the chosen error strategy must
-	// be applied.
-	if mObs.failFast.Load() {
-		// Fail the merged observable if any of the observables have closed.
-		mObs.mergedObs.UnsubscribeAll()
-		return
+	mergedObs, mergedObsPubCh := NewObservable[V]()
+
+	// Start a goroutine to listen for a message to the closeEarlyCh and
+	// then call UnsubscribeAll() on the merged observable.
+	go func() {
+		for range closeEarlyCh {
+			mergedObs.UnsubscribeAll()
+		}
+	}()
+
+	for _, o := range obs {
+		go goPublishNotifications[V](ctx, o, mergedObsPubCh, closeEarlyCh)
 	}
+
+	return mergedObs
 }
 
-// UnsubscribeAll unsubscribes and removes all observers from the merged
-// observable. As well as unsubscribing from the merged observable itself.
-func (mObs *mergedObservable[V]) UnsubscribeAll() {
-	// Unsubscribe all observables merged by the merged observable.
-	for _, obs := range mObs.observables {
-		obs.obs.UnsubscribeAll()
+// goPublishNotifications re-publishes events from the given observable to
+// and sends them to the given publishCh.
+// This is intended to be run in a goroutine,
+func goPublishNotifications[V any](
+	ctx context.Context,
+	obs observable.Observable[V],
+	publishCh chan<- V,
+	closeEarlyCh <-chan struct{},
+) {
+	obsCh := obs.Subscribe(ctx).Ch()
+	for event := range obsCh {
+		publishCh <- event
 	}
-	// Unsubscribe the lustener from the merged observable itself.
-	mObs.mergedObs.UnsubscribeAll()
+	if failFast.Load() {
+		<-closeEarlyCh
+	}
 }
