@@ -16,6 +16,7 @@ func (k Keeper) UpsertProof(ctx sdk.Context, proof types.Proof) {
 	proofBz := k.cdc.MustMarshal(&proof)
 	parentStore := ctx.KVStore(k.storeKey)
 
+	// Update the primary store containing the proof object.
 	primaryStore := prefix.NewStore(parentStore, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
 	sessionId := proof.GetSessionHeader().GetSessionId()
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierAddress())

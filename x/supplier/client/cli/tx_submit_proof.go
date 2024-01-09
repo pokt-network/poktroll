@@ -29,12 +29,12 @@ func CmdSubmitProof() *cobra.Command {
 			smstProofEncodedStr := args[1]
 
 			// Get the session header
-			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 			sessionHeaderBz, err := base64.StdEncoding.DecodeString(sessionHeaderEncodedStr)
 			if err != nil {
 				return err
 			}
 			sessionHeader := &sessiontypes.SessionHeader{}
+			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 			cdc.MustUnmarshalJSON(sessionHeaderBz, sessionHeader)
 
 			smstProof, err := base64.StdEncoding.DecodeString(smstProofEncodedStr)
