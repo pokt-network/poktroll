@@ -96,8 +96,7 @@ func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*
 	)
 	if !found {
 		err := types.ErrSupplierClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
-		err = status.Error(codes.NotFound, err.Error())
-		return nil, err
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
 	return &types.QueryGetClaimResponse{Claim: val}, nil
