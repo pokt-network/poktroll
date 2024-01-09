@@ -3,6 +3,7 @@ package channel_test
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -33,8 +34,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 	inputs := []int{123, 456, 789}
 	// NB: see TODO_INCOMPLETE comment below
-	//fullBlockingPublisher := make(chan *int)
-	//fullBufferedPublisher := make(chan *int, 1)
+	// fullBlockingPublisher := make(chan *int)
+	// fullBufferedPublisher := make(chan *int, 1)
 
 	tests := []test{
 		{
@@ -326,6 +327,105 @@ func TestChannelObservable_SequentialPublishAndUnsubscription(t *testing.T) {
 // TODO_TECHDEBT/TODO_INCOMPLETE: add coverage for active observers closing when publishCh closes.
 func TestChannelObservable_ObserversCloseOnPublishChannelClose(t *testing.T) {
 	t.Skip("add coverage: all observers should unsubscribe when publishCh closes")
+}
+
+func TestChannelObservable_MergeObservables(t *testing.T) {
+	const testTimeOut = time.Second
+
+	tests := []struct {
+		desc           string
+		numObservables int
+		failFast       bool
+		publishCh      chan int
+		inputs         []int // unsorted
+		expectedOutput []int // sorted
+	}{
+		{
+			desc:           "successful merge 5 observables",
+			inputs:         []int{52, 12, 34, 423, 32},
+			numObservables: 5,
+			failFast:       false,
+			publishCh:      make(chan int),
+			expectedOutput: []int{12, 32, 34, 52, 423},
+		},
+		{
+			desc:           "fail fast merge 5 observables, after 3 closes",
+			inputs:         []int{52, 12, 34, 423, 32},
+			expectedOutput: []int{12, 32},
+			numObservables: 5,
+			failFast:       true,
+			publishCh:      make(chan int),
+		},
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(func() {
+		cancel()
+	})
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			observers := make([]observable.Observable[int], 0, tt.numObservables)
+			publisChs := make([]chan<- int, 0, tt.numObservables)
+			for i := 0; i < tt.numObservables; i++ {
+				observer, publisCh := channel.NewObservable[int]()
+				observers = append(observers, observer)
+				publisChs = append(publisChs, publisCh)
+			}
+			mergedObs := channel.Merge[int](context.Background(), observers, tt.failFast)
+
+			// Publish each input to each of the observables individually.
+			// We do this in a goroutine to also start listening at the
+			// same time on the merged observable.
+			go func() {
+				for i, pubCh := range publisChs {
+					if i == 2 {
+						// Close the merged observable after 3 publishes
+						observers[2].UnsubscribeAll()
+						t.Log("closed merged observable")
+					}
+					pubCh <- tt.inputs[i]
+					t.Logf("published %d", tt.inputs[i])
+				}
+			}()
+
+			// Subscribe to the merged observable
+			mergedObsCh := mergedObs.Subscribe(ctx)
+			t.Cleanup(func() {
+				mergedObs.UnsubscribeAll()
+			})
+			receivedAllCh := make(chan *struct{})
+			receivedNotifications := make([]int, 0, len(tt.inputs))
+			// Listen for notifications from the merged observables in a
+			// goroutine so we can timeout the test if necessary.
+			go func() {
+				// Listen for notifications from the merged observables
+				for notification := range mergedObsCh.Ch() {
+					t.Logf("received %d", notification)
+					receivedNotifications = append(receivedNotifications, notification)
+					if len(receivedNotifications) == len(tt.inputs) {
+						receivedAllCh <- &struct{}{}
+						break
+					}
+				}
+			}()
+
+			select {
+			case <-receivedAllCh:
+				sort.Ints(receivedNotifications)
+				require.Equal(t, len(tt.expectedOutput), len(receivedNotifications))
+				require.EqualValuesf(
+					t,
+					tt.expectedOutput,
+					receivedNotifications,
+					"expected %v, received %v", tt.inputs, receivedNotifications,
+				)
+			case <-ctx.Done():
+				t.Fatalf("test failed: context cancelled early")
+			case <-time.After(testTimeOut):
+				t.Fatal("test failed: timed out after 1 second")
+			}
+		})
+	}
 }
 
 func delayedPublishFactory[V any](publishCh chan<- V, delay time.Duration) func(value V) {

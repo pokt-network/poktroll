@@ -7,17 +7,22 @@ sidebar_position: 4
 
 The `pocket/pkg/observable` package provides a lightweight and straightforward mechanism to handle asynchronous notifications using the Observer pattern. This is achieved through two primary interfaces: `Observable` and `Observer`.
 
+<!-- toc -->
+
 - [Overview](#overview)
 - [Interfaces and Structures](#interfaces-and-structures)
-  - [`Observable` Interface](#observable-interface)
-  - [`Observer` Interface](#observer-interface)
+  * [`Observable` Interface](#observable-interface)
+  * [`Observer` Interface](#observer-interface)
 - [Architecture Diagrams](#architecture-diagrams)
-  - [Observable Synchronization](#observable-synchronization)
-  - [Observable Buffering](#observable-buffering)
+  * [Observable Synchronization](#observable-synchronization)
+  * [Observable Buffering](#observable-buffering)
+- [Merging](#merging)
 - [Usage](#usage)
-  - [Basic Example](#basic-example)
+  * [Basic Example](#basic-example)
 - [Considerations](#considerations)
 - [Conclusion](#conclusion)
+
+<!-- tocstop -->
 
 ## Overview
 
@@ -137,6 +142,19 @@ notify2 -."source".-> sb2
 ```
 
 > Figure 2: The diagram illustrates the buffering mechanisms within the observable and its observers. It highlights how published messages are buffered and how they propagate to the individual observers' buffers.
+
+## Merging
+
+Observables can be merged together into a single `Observable` instance. "Merged
+Observables" are simply `Observable`s that have had each notification they
+publish merged into a single observable. By default all notifications are
+published until there are none left. However the caller of the `Merge` function
+can specify a `bool` that tells the merged observerable to "fail fast" and stop
+publishing any further notifications, this is only after any of the
+observerables it merges fails/closes.
+
+This is useful if you want to merge the notifications from multiple sources into
+a single stream, in essence this allows the multiplexing of observables.
 
 ## Usage
 
