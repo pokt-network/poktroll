@@ -3,6 +3,7 @@ package channel
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
@@ -140,10 +141,10 @@ type mergedObservable[V any] struct {
 	mergedObsPublishCh chan<- V
 	// delayError indicaates whether the merged observable should delay any
 	// error emissions until all observables have completed.
-	delayError bool
+	delayError atomic.Bool
 	// failFast indicates whether the merged observable should fail as soon as
 	// any of the observables fail.
-	failFast bool
+	failFast atomic.Bool
 }
 
 // NewMergedObservable constructs a new merged observable instance based on the
@@ -169,12 +170,14 @@ func NewMergedObservable[V any](
 	}
 
 	// Check that the merged observable has been configured correctly.
-	if mObs.failFast && mObs.delayError {
+	failFast := mObs.failFast.Load()
+	delayError := mObs.delayError.Load()
+	if failFast && delayError {
 		// We cannot fail fast and delay errors at the same time.
 		return nil, observable.ErrMergeObservableMultipleFailModes
-	} else if !mObs.failFast && !mObs.delayError {
+	} else if !failFast && !delayError {
 		// If no fail mode has been specified, default to fail fast.
-		mObs.failFast = true
+		mObs.failFast.Store(true)
 	}
 
 	// Create the merged observable and its publish channel.
@@ -189,7 +192,7 @@ func NewMergedObservable[V any](
 // fail until the last remaining observable(s) have completed.
 func WithMergeDelayError[V any](delay bool) mergeOpt[V] {
 	return func(mObs *mergedObservable[V]) {
-		mObs.delayError = delay
+		mObs.delayError.CompareAndSwap(false, delay)
 	}
 }
 
@@ -198,7 +201,7 @@ func WithMergeDelayError[V any](delay bool) mergeOpt[V] {
 // This is the default behaviour of the merged observable.
 func WithFailFast[V any](fast bool) mergeOpt[V] {
 	return func(mObs *mergedObservable[V]) {
-		mObs.failFast = fast
+		mObs.failFast.CompareAndSwap(false, fast)
 	}
 }
 
@@ -231,8 +234,17 @@ func (mObs *mergedObservable[V]) goMergeObservables(
 	obs.UnsubscribeAll()
 	// Remove the observable from the list of observables.
 	mObs.observables = append(mObs.observables[:idx], mObs.observables[idx+1:]...)
+	// Here the channel has closed which means the chosen error strategy must
+	// be applied.
+	if mObs.failFast.Load() {
+		// Fail the merged observable if any of the observables have closed.
+		mObs.mergedObs.UnsubscribeAll()
+		return
+	}
 }
 
+// UnsubscribeAll unsubscribes and removes all observers from the merged
+// observable. As well as unsubscribing from the merged observable itself.
 func (mObs *mergedObservable[V]) UnsubscribeAll() {
 	// Unsubscribe all observables merged by the merged observable.
 	for _, obs := range mObs.observables {
