@@ -70,7 +70,7 @@ func (memnet *BaseInMemoryNetwork) GetClientCtx(t *testing.T) client.Context {
 	// (see: https://pkg.go.dev/github.com/cosmos/cosmos-sdk/testutil/network#pkg-overview)
 	ctx := memnet.GetNetwork(t).Validators[0].ClientCtx
 
-	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available.
+	// TODO_NEXT(@bryanchriswhite): Ensure validator key is always available.
 
 	// Overwrite the client context's Keyring with the in-memory one that contains
 	// our pre-generated accounts.
@@ -119,7 +119,10 @@ func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
 	return int(atomic.AddInt32(&memnet.lastAccountSeqNumber, 1))
 }
 
-// Start is a stub which is expected to be implemented by embedders. It panics when called.
+// Start is a stub which is expected to be implemented by "concrete" InMemoryNetwork
+// implementations. As BaseInMemoryNetwork is intended to be an "abstract" implementation,
+// it is too general to define this behavior, leaving it up to embedders. As a result,
+// this function panics if it is called.
 func (memnet *BaseInMemoryNetwork) Start(_ context.Context, t *testing.T) {
 	panic("not implemented")
 }

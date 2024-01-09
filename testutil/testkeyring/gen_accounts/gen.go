@@ -31,7 +31,7 @@ func init() {
 	flag.IntVar(&flagAccountsLimit, "limit", 100, "the number of accounts to generate.")
 
 	// Ensure cosmos-sdk bech32 prefixes are configured.
-	cmd.InitSDKConfig()
+	cmd.InitCosmosSDKConfig()
 }
 
 func main() {
