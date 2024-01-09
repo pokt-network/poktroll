@@ -314,7 +314,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
 # TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
@@ -393,7 +393,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier 1000upokt --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
