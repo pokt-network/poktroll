@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
@@ -107,7 +108,7 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 
 	signerAccountNumber := 0
 	// Validator's client context MUST be used for this CLI command because its keyring includes the validator's key
-	clientCtx := memnet.Network.Validators[0].ClientCtx
+	clientCtx := memnet.GetClientCtx(t)
 	// MUST NOT use memnet.GetClientCtx(t) as its keyring does not include the validator's account
 	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available via the in-memory network's keyring.
 	net := memnet.GetNetwork(t)
@@ -116,14 +117,14 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	args := []string{
 		fmt.Sprintf("--%s=true", flags.FlagOffline),
 		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
-		fmt.Sprintf("--%s=%d", flags.FlagSequence, memnet.NextAccountSequenceNumber(t)),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, memnet.NextValidatorTxSequenceNumber(t)),
 
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, types.NewCoins(types.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
-	amount := types.NewCoins(types.NewCoin("stake", math.NewInt(200)))
+	amount := memnet.NewBondDenomCoins(t, 200)
 	responseRaw, err := testcli.MsgSendExec(clientCtx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
 	var responseJSON map[string]interface{}
@@ -193,4 +194,10 @@ func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 		require.NoError(t, err)
 		memnet.FundAddress(t, gatewayAddr)
 	}
+}
+
+func (memnet *BaseInMemoryNetwork) NewBondDenomCoins(t *testing.T, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(numCoins)))
 }

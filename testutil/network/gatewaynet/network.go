@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +23,6 @@ var _ network.InMemoryNetwork = (*inMemoryNetworkWithGateways)(nil)
 
 // inMemoryNetworkWithGateways is an implementation of the InMemoryNetwork interface.
 type inMemoryNetworkWithGateways struct {
-	//baseInMemoryNetwork basenet.BaseInMemoryNetwork
 	basenet.BaseInMemoryNetwork
 }
 
@@ -55,17 +53,17 @@ func NewInMemoryNetworkWithGateways(t *testing.T, cfg *network.InMemoryNetworkCo
 // DelegateAppToGateway delegates the application by address to the gateway by address.
 func (memnet *inMemoryNetworkWithGateways) DelegateAppToGateway(
 	t *testing.T,
-	appBech32 string,
-	gatewayBech32 string,
+	appAddrBech32 string,
+	gatewayAddrBech32 string,
 ) {
 	t.Helper()
 
 	args := []string{
-		gatewayBech32,
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, appBech32),
+		gatewayAddrBech32,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddrBech32),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
 	responseRaw, err := testcli.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdDelegateToGateway(), args)
 	require.NoError(t, err)
@@ -88,7 +86,7 @@ func (memnet *inMemoryNetworkWithGateways) UndelegateAppFromGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appBech32),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(memnet.GetCosmosNetworkConfig(t).BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
 	responseRaw, err := testcli.ExecTestCLICmd(memnet.GetClientCtx(t), cli.CmdUndelegateFromGateway(), args)
 	require.NoError(t, err)
@@ -112,8 +110,8 @@ func (memnet *inMemoryNetworkWithGateways) UndelegateAppFromGateway(
 func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T) {
 	t.Helper()
 
-	// Application module genesis state fixture data generation is independent
-	// of that of the supplier module.
+	// The number of applications is NOT a function of the number of suppliers.
+	// `AppSupplierPairingRatio` SHOULD NOT be used by this network implementation.
 	if memnet.Config.AppSupplierPairingRatio > 0 {
 		panic("AppSupplierPairingRatio must be 0 for inMemoryNetworkWithGateways, use NumApplications instead")
 	}
@@ -125,7 +123,7 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 	memnet.configureGatewayModuleGenesisState(t)
 	memnet.configureAppModuleGenesisState(t)
 
-	memnet.Network = network.New(t, *memnet.GetCosmosNetworkConfig(t))
+	memnet.CosmosNetwork = network.New(t, *memnet.GetCosmosNetworkConfig(t))
 
 	memnet.FundOnChainAccounts(t)
 }
@@ -184,6 +182,6 @@ func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *tes
 	appGenesisBuffer, err := memnet.Config.CosmosCfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	// Add supplier and application module genesis appGenesisState to the network memnetConfig.
+	// Add application module genesis appGenesisState to the network memnet cosmos config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 }

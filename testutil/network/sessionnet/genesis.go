@@ -99,7 +99,7 @@ func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *tes
 	appGenesisBuffer, err := memnet.Config.CosmosCfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	// Add supplier and application module genesis appGenesisState to the network memnetConfig.
+	// Add supplier and application module genesis appGenesisState to the network memnet cosmos config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 
 	return appGenesisState

@@ -20,12 +20,12 @@ var _ network.InMemoryNetwork = (*BaseInMemoryNetwork)(nil)
 type BaseInMemoryNetwork struct {
 	Config                      network.InMemoryNetworkConfig
 	PreGeneratedAccountIterator *testkeyring.PreGeneratedAccountIterator
-	Network                     *sdknetwork.Network
+	CosmosNetwork               *sdknetwork.Network
 
-	// lastAccountSeqNumber stores the last (most recently generated) account sequence number.
+	// lastValidatorSeqNumber stores the last (most recently generated) account sequence number.
 	// NB: explicitly NOT using atomic.Int32 as it's usage doesn't compose well with anonymous
 	// literal declarations.
-	lastAccountSeqNumber int32
+	lastValidatorSeqNumber int32
 }
 
 // NewBaseInMemoryNetwork creates a new BaseInMemoryNetwork with the given
@@ -43,8 +43,8 @@ func NewBaseInMemoryNetwork(
 		PreGeneratedAccountIterator: preGeneratedAccounts,
 
 		// First functional account sequence number is 1. Starting at 0 so that
-		// callers can always use NextAccountSequenceNumber() (no boundary condition).
-		lastAccountSeqNumber: int32(0),
+		// callers can always use NextValidatorTxSequenceNumber() (no boundary condition).
+		lastValidatorSeqNumber: int32(0),
 	}
 }
 
@@ -99,24 +99,24 @@ func (memnet *BaseInMemoryNetwork) GetCosmosNetworkConfig(t *testing.T) *sdknetw
 func (memnet *BaseInMemoryNetwork) GetNetwork(t *testing.T) *sdknetwork.Network {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.Network, "in-memory cosmos network not set")
-	return memnet.Network
+	require.NotEmptyf(t, memnet.CosmosNetwork, "in-memory cosmos network not set")
+	return memnet.CosmosNetwork
 }
 
-// GetLastAccountSequenceNumber returns the last (most recently generated) account sequence number.
+// GetLastValidatorTxSequenceNumber returns the last (most recently generated) account sequence number.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryNetwork) GetLastAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) GetLastValidatorTxSequenceNumber(t *testing.T) int {
 	t.Helper()
 
-	return int(atomic.LoadInt32(&memnet.lastAccountSeqNumber))
+	return int(atomic.LoadInt32(&memnet.lastValidatorSeqNumber))
 }
 
-// NextAccountSequenceNumber increments the account sequence number and returns the new value.
+// NextValidatorTxSequenceNumber increments the account sequence number and returns the new value.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) NextValidatorTxSequenceNumber(t *testing.T) int {
 	t.Helper()
 
-	return int(atomic.AddInt32(&memnet.lastAccountSeqNumber, 1))
+	return int(atomic.AddInt32(&memnet.lastValidatorSeqNumber, 1))
 }
 
 // Start is a stub which is expected to be implemented by "concrete" InMemoryNetwork

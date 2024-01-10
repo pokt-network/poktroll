@@ -77,8 +77,8 @@ func (memnet *inMemoryNetworkWithSessions) Start(_ context.Context, t *testing.T
 	memnet.configureAppModuleGenesisState(t)
 	memnet.configureSupplierModuleGenesisState(t)
 
-	memnet.Network = network.New(t, *memnet.GetCosmosNetworkConfig(t))
-	err := memnet.Network.WaitForNextBlock()
+	memnet.CosmosNetwork = network.New(t, *memnet.GetCosmosNetworkConfig(t))
+	err := memnet.CosmosNetwork.WaitForNextBlock()
 	require.NoError(t, err)
 
 	memnet.FundOnChainAccounts(t)
