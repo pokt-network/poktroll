@@ -7,7 +7,7 @@ import (
 
 const TypeMsgAddService = "add_service"
 
-var _ sdk.Msg = &MsgAddService{}
+var _ sdk.Msg = (*MsgAddService)(nil)
 
 func NewMsgAddService(address string) *MsgAddService {
 	return &MsgAddService{
