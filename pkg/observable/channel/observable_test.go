@@ -351,7 +351,7 @@ func TestChannelObservable_MergeObservables(t *testing.T) {
 		{
 			desc:           "fail fast merge 5 observables, after 3 closes",
 			inputs:         []int{52, 12, 34, 423, 32},
-			expectedOutput: []int{12, 32},
+			expectedOutput: []int{12, 52},
 			numObservables: 5,
 			failFast:       true,
 			publishCh:      make(chan int),
@@ -378,12 +378,13 @@ func TestChannelObservable_MergeObservables(t *testing.T) {
 			// same time on the merged observable.
 			go func() {
 				for i, pubCh := range publisChs {
-					if i == 2 {
+					if tt.failFast && i == 2 {
 						// Close the merged observable after 3 publishes
 						observers[2].UnsubscribeAll()
 						t.Log("closed merged observable")
 					}
 					pubCh <- tt.inputs[i]
+					time.Sleep(1 * time.Millisecond) // Allow publish to be processed
 					t.Logf("published %d", tt.inputs[i])
 				}
 			}()
@@ -402,7 +403,7 @@ func TestChannelObservable_MergeObservables(t *testing.T) {
 				for notification := range mergedObsCh.Ch() {
 					t.Logf("received %d", notification)
 					receivedNotifications = append(receivedNotifications, notification)
-					if len(receivedNotifications) == len(tt.inputs) {
+					if len(receivedNotifications) == len(tt.expectedOutput) {
 						receivedAllCh <- &struct{}{}
 						break
 					}
