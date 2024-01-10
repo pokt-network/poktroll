@@ -11,14 +11,16 @@ message Params {
   option (gogoproto.goproto_stringer) = false;
 
   uint64 computeUnitsToTokensMultiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
-  // Ideas:
-  //   - RelayToTokensMultiplier
+
+  // TODO: Add all tokenomics & revenue related params here.
+  // The following are for exemplery purposes only:
+  //   - Service.computeUnitsToTokensMultiplierMap
   //   - Application.MaxuPOKTPerRelay
   //   - Application.MinuPOKTPerRelay
   //   - Suppler.MaxuPOKTPerRelay
   //   - Suppler.MinuPOKTPerRelay
-  //   - PercentageCutToDAO
-  //   - PercentageCutToSequencer
-  //   - PercentageCutToOthers?
-
+  //   - RevDistr.PercentageToSupploer
+  //   - RevDistr.PercentageToDAO
+  //   - RevDistr.PercentageToPNF
+  //   - RevDistr.PercentageToDelegators
 }

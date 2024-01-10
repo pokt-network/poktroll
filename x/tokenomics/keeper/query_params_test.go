@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetParams(t *testing.T) {
+	k, ctx := testkeeper.TokenomicsKeeper(t)
+	params := types.DefaultParams()
+
+	k.SetParams(ctx, params)
+
+	require.EqualValues(t, params, k.GetParams(ctx))
+	require.EqualValues(t, params.ComputeUnitsToTokensMultiplier, k.ComputeUnitsToTokensMultiplier(ctx))
+}
+
 func TestParamsQuery(t *testing.T) {
 	keeper, ctx := testkeeper.TokenomicsKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)

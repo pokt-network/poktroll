@@ -1,17 +1,17 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const TypeMsgUpdateParams = "update_params"
 
-var _ sdk.Msg = &MsgUpdateParams{}
+var _ sdk.Msg = (*MsgUpdateParams)(nil)
 
-func NewMsgUpdateParams(creator string) *MsgUpdateParams {
+func NewMsgUpdateParams(authority string) *MsgUpdateParams {
 	return &MsgUpdateParams{
-		Authority: creator,
+		Authority: authority,
 	}
 }
 
@@ -24,11 +24,11 @@ func (msg *MsgUpdateParams) Type() string {
 }
 
 func (msg *MsgUpdateParams) GetSigners() []sdk.AccAddress {
-	creator, err := sdk.AccAddressFromBech32(msg.Authority)
+	authority, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
 		panic(err)
 	}
-	return []sdk.AccAddress{creator}
+	return []sdk.AccAddress{authority}
 }
 
 func (msg *MsgUpdateParams) GetSignBytes() []byte {
@@ -37,9 +37,11 @@ func (msg *MsgUpdateParams) GetSignBytes() []byte {
 }
 
 func (msg *MsgUpdateParams) ValidateBasic() error {
+	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+		return sdkerrors.Wrapf(ErrAuthorityInvalidAddress, "invalid authority address %s; (%v)", msg.Authority, err)
 	}
+
 	return nil
 }

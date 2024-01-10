@@ -347,8 +347,10 @@ func New(
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
 	// The `x/gov` address that is primarily responsible for updating module
-	// parametesr and other transactions
-	authorirty := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	// parameters and other transactions.
+	// TODO_IN_THIS_PR: Prepare next work (github issues) for how this should
+	// 					be managed after studying `x/gov` and `x/upgrade`.
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
 	app := &App{
 		BaseApp:           bApp,
@@ -649,7 +651,7 @@ func New(
 		keys[tokenomicsmoduletypes.StoreKey],
 		keys[tokenomicsmoduletypes.MemStoreKey],
 		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
-		authorirty,
+		authority,
 	)
 	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
 

@@ -8,6 +8,6 @@ option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 // Params defines the parameters for the module.
 message Params {
   option (gogoproto.goproto_stringer) = false;
-  // TODO_BLOCKER: Add proof related submission window params
-  // TODO_BLOCKER: Add claim related submission window params
+  // TODO_BLOCKER: Add proof-related submission window params
+  // TODO_BLOCKER: Add claim-related submission window params
 }

@@ -12,7 +12,6 @@ import (
 func TestUpdateParams(t *testing.T) {
 	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
-	// wctx := sdk.WrapSDKContext(sdkCtx)
 
 	params := types.DefaultParams()
 	tokenomicsKeeper.SetParams(ctx, params)
@@ -26,17 +25,17 @@ func TestUpdateParams(t *testing.T) {
 		expErrMsg string
 	}{
 		{
-			desc: "set invalid authority",
+			desc: "invalid authority address",
 
 			req: &types.MsgUpdateParams{
-				Authority: "foo",
+				Authority: "invalid",
 			},
 
 			expectErr: true,
 			expErrMsg: "invalid authority",
 		},
 		{
-			desc: "set invalid ComputeUnitsToTokensMultiplier",
+			desc: "invalid ComputeUnitsToTokensMultiplier",
 
 			req: &types.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
@@ -50,7 +49,7 @@ func TestUpdateParams(t *testing.T) {
 			expErrMsg: "invalid compute to tokens multiplier",
 		},
 		{
-			desc: "successful update",
+			desc: "successful update ",
 
 			req: &types.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),

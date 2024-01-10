@@ -3,35 +3,36 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgUpdateParams
-		err  error
+		desc string
+
+		msg MsgUpdateParams
+
+		expectedErr error
 	}{
 		{
-			name: "invalid address",
+			desc: "invalid authority address",
 			msg: MsgUpdateParams{
-				Creator: "invalid_address",
+				Authority: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			expectedErr: ErrAuthorityInvalidAddress,
 		}, {
-			name: "valid address",
+			desc: "valid address",
 			msg: MsgUpdateParams{
-				Creator: sample.AccAddress(),
+				Authority: sample.AccAddress(),
 			},
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+			if tt.expectedErr != nil {
+				require.ErrorIs(t, err, tt.expectedErr)
 				return
 			}
 			require.NoError(t, err)

@@ -522,6 +522,7 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 
 MODULES := application gateway pocket service session supplier tokenomics
 
+# TODO_IN_THIS_PR: Make sure this helper works to update the compute units param
 .PHONY: update_tokenomics_params
 update_tokenomics_params: ## Update the tokenomics module params
 	poktrolld tx tokenomics update-params --keyring-backend test --from validator --node $(POCKET_NODE)
