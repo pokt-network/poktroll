@@ -42,7 +42,8 @@ func (cfg *InMemoryNetworkConfig) GetNumKeyringAccounts(t *testing.T) int {
 }
 
 // DefaultConfig will initialize config for the network with custom application,
-// genesis and single validator. All other parameters are inherited from cosmos-sdk/testutil/network.DefaultConfig
+// genesis and single validator.
+// All other parameters are inherited from cosmos-sdk/testutil/network.DefaultConfig.
 //
 // TODO_UPNEXT(@bryanchriswhite #285): Remove _ prefix after DebugConfig is removed from network.go.
 func _DefaultConfig() network.Config {
