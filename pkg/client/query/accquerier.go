@@ -52,7 +52,7 @@ func (aq *accQuerier) GetAccount(
 	}
 	var acc accounttypes.AccountI
 	if err = queryCodec.UnpackAny(res.Account, &acc); err != nil {
-		return nil, ErrQueryUnableToDeserialiseAccount.Wrapf("address: %s [%v]", address, err)
+		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}
 	return acc, nil
 }
