@@ -199,5 +199,5 @@ func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 func (memnet *BaseInMemoryNetwork) NewBondDenomCoins(t *testing.T, numCoins int64) sdk.Coins {
 	t.Helper()
 
-	sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(numCoins)))
+	return sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(numCoins)))
 }
