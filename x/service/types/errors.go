@@ -6,7 +6,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 )
 
-// x/service module sentinel errors
 var (
-	ErrSample = sdkerrors.Register(ModuleName, 1100, "sample error")
+	ErrServiceDuplicateIndex = sdkerrors.Register(ModuleName, 1, "duplicate index")
+	ErrServiceInvalidAddress = sdkerrors.Register(ModuleName, 2, "invalid address")
 )

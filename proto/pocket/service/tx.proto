@@ -2,6 +2,11 @@ syntax = "proto3";
 
 package pocket.service;
 
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "pocket/shared/service.proto";
+
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 // Msg defines the Msg service.
@@ -10,7 +15,9 @@ service Msg {
 }
 
 message MsgAddService {
-  string address = 1;
+  option (cosmos.msg.v1.signer) = "supplier_address"; // https://docs.cosmos.network/main/build/building-modules/messages-and-queries
+  string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding using cosmos' ScalarDescriptor to ensure deterministic deterministic encoding
+  shared.Service service = 2 [(gogoproto.nullable) = false]; // The Service for which the supplier is adding to the network
 }
 
 message MsgAddServiceResponse {}

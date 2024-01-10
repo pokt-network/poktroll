@@ -1,45 +1,58 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	shared "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TypeMsgAddService is the name of the service message
 const TypeMsgAddService = "add_service"
 
 var _ sdk.Msg = (*MsgAddService)(nil)
 
-func NewMsgAddService(address string) *MsgAddService {
+// NewMsgAddService creates a new MsgAddService instance
+func NewMsgAddService(address string, serviceID, serviceName string) *MsgAddService {
 	return &MsgAddService{
-		Address: address,
+		SupplierAddress: address,
+		Service:         shared.Service{Id: serviceID, Name: serviceName},
 	}
 }
 
+// Route returns the roter key for the message
 func (msg *MsgAddService) Route() string {
 	return RouterKey
 }
 
+// Type returns the message type
 func (msg *MsgAddService) Type() string {
 	return TypeMsgAddService
 }
 
+// GetSigners returns the signers of the message
 func (msg *MsgAddService) GetSigners() []sdk.AccAddress {
-	address, err := sdk.AccAddressFromBech32(msg.Address)
+	address, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
 	if err != nil {
 		panic(err)
 	}
 	return []sdk.AccAddress{address}
 }
 
+// GetSignBytes returns the signable bytes of the message
 func (msg *MsgAddService) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
+// ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.SupplierAddress); err != nil {
+		return sdkerrors.Wrapf(
+			ErrServiceInvalidAddress,
+			"invalid supplier address %s; (%v)", msg.SupplierAddress, err,
+		)
 	}
+	// TODO(@h5law): Check the service ID is not already found in the store
 	return nil
 }
