@@ -84,9 +84,9 @@ func CmdShowClaim() *cobra.Command {
 		Short: "shows a specific claim",
 		Long: `List a specific claim that the node being queried has access to (if it still exists).
 
-A unique claim can be defined via a `session_id` that the given `supplier` participated in.
+A unique claim can be defined via a ` + "`session_id`" + ` that the given ` + "`supplier`" + ` participated in.
 
-`Claims` are pruned, according to protocol parameters, some time after their respective `proof` has been submitted and any dispute window has elapsed.
+` + "`Claims`" + ` are pruned, according to protocol parameters, some time after their respective ` + "`proof`" + ` has been submitted and any dispute window has elapsed.
 
 This is done to minimize the rate at which state accumulates by eliminating claims as a long-term factor to persistence requirements.
 
