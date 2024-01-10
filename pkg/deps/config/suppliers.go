@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
@@ -59,8 +60,8 @@ func NewSupplyLoggerFromCtx(ctx context.Context) SupplierFn {
 	}
 }
 
-// NewSupplyEventsQueryClientFn supplies a depinject config with an eventsQueryClient
-// from the given queryNodeRPCURL.
+// NewSupplyEventsQueryClientFn supplies a depinject config with an
+// EventsQueryClient from the given queryNodeRPCURL.
 func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		_ context.Context,
@@ -89,6 +90,25 @@ func NewSupplyBlockClientFn() SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(blockClient)), nil
+	}
+}
+
+// NewSupplyDelegationClientFn returns a function which constructs a
+// DelegationClient instance and returns a new depinject.Config which is
+// supplied with the given deps and the new DelegationClient.
+func NewSupplyDelegationClientFn() SupplierFn {
+	return func(
+		ctx context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		// Requires a query client to be supplied to the deps
+		delegationClient, err := delegation.NewDelegationClient(ctx, deps)
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(delegationClient)), nil
 	}
 }
 

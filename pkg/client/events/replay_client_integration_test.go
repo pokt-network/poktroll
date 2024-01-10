@@ -89,6 +89,9 @@ func TestReplayClient_Remapping(t *testing.T) {
 
 			eventNum := readEventCounter.Add(1) - 1
 			event := newMessageEventBz(eventNum)
+			// After an arbitrary number of events (2 in this case), simulate
+			// the connection closing so that the replay client can remap the
+			// events it receives without the caller having to resubscribe.
 			if eventNum == 2 {
 				// Simulate the connection closing
 				connMock.Close()

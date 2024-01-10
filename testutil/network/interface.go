@@ -9,7 +9,7 @@ import (
 )
 
 // InMemoryNetwork encapsulates the cosmos-sdk testutil network instance and the
-// esponsibility of initializing it, along with (optional) additional/ setup, in
+// responsibility of initializing it, along with (optional) additional/ setup, in
 // #Start(). It also provides access to additional cosmos-sdk testutil network
 // internals via corresponding methods.
 type InMemoryNetwork interface {
