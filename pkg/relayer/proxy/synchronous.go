@@ -8,8 +8,10 @@ import (
 	"net/url"
 
 	sdkerrors "cosmossdk.io/errors"
+
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -22,11 +24,14 @@ var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 type synchronousRPCServer struct {
 	logger polylog.Logger
 
-	// service is the service that the server is responsible for.
-	service *sharedtypes.Service
+	// supplierServiceMap is a map of serviceId -> SupplierServiceConfig
+	// representing the supplier's advertised services.
+	supplierServiceMap map[string]*sharedtypes.Service
 
-	// proxiedServiceEndpoint is the address of the proxied service that the server relays requests to.
-	proxiedServiceEndpoint *url.URL
+	// proxyConfig is the configuration of the proxy server. It contains the
+	// host address of the server, the service endpoint, and the advertised service.
+	// endpoints it gets relay requests from.
+	proxyConfig *config.RelayMinerProxyConfig
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -45,19 +50,18 @@ type synchronousRPCServer struct {
 // and returns a RelayServer that listens to incoming RelayRequests.
 func NewSynchronousServer(
 	logger polylog.Logger,
-	service *sharedtypes.Service,
-	supplierEndpointHost string,
-	proxiedServiceEndpoint *url.URL,
+	proxyConfig *config.RelayMinerProxyConfig,
+	supplierServiceMap map[string]*sharedtypes.Service,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
 ) relayer.RelayServer {
 	return &synchronousRPCServer{
-		logger:                 logger,
-		service:                service,
-		server:                 &http.Server{Addr: supplierEndpointHost},
-		relayerProxy:           proxy,
-		proxiedServiceEndpoint: proxiedServiceEndpoint,
-		servedRelaysProducer:   servedRelaysProducer,
+		logger:               logger,
+		supplierServiceMap:   supplierServiceMap,
+		server:               &http.Server{Addr: proxyConfig.Host},
+		relayerProxy:         proxy,
+		servedRelaysProducer: servedRelaysProducer,
+		proxyConfig:          proxyConfig,
 	}
 }
 
@@ -81,17 +85,59 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 	return sync.server.Shutdown(ctx)
 }
 
-// Service returns the underlying service object.
-func (sync *synchronousRPCServer) Service() *sharedtypes.Service {
-	return sync.service
-}
-
 // ServeHTTP listens for incoming relay requests. It implements the respective
 // method of the http.Handler interface. It is called by http.ListenAndServe()
 // when synchronousRPCServer is used as an http.Handler with an http.Server.
 // (see https://pkg.go.dev/net/http#Handler)
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
+
+	var originHost string
+	// When the proxy is behind a reverse proxy, or is getting its requests from
+	// a CDN or a load balancer, the host header may not contain the on-chain
+	// advertized address needed to determine the service that the relay request is for.
+	// These CDNs and reverse proxies usually set the X-Forwarded-Host header
+	// to the original host.
+	// RelayMiner operators that have such a setup can set the XForwardedHostLookup
+	// option to true in the proxy config to enable the proxy to look up the
+	// original host from the X-Forwarded-Host header.
+	// Get the original host from X-Forwarded-Host header if specified in the proxy
+	// config and fall back to the Host header if it is not specified.
+	if sync.proxyConfig.XForwardedHostLookup {
+		originHost = request.Header.Get("X-Forwarded-Host")
+	}
+
+	if originHost == "" {
+		originHost = request.Host
+	}
+
+	var supplierService *sharedtypes.Service
+	var serviceUrl *url.URL
+
+	// Get the Service and serviceUrl corresponding to the originHost.
+	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
+	// iterating over the proxy config's suppliers and checking if the originHost
+	// is present in any of the supplier's service's hosts. We could improve this
+	// by building a map at the server initialization level with originHost as the
+	// key so that we can get the service and serviceUrl in O(1) time.
+	for _, supplierServiceConfig := range sync.proxyConfig.Suppliers {
+		for _, host := range supplierServiceConfig.Hosts {
+			if host == originHost {
+				supplierService = sync.supplierServiceMap[supplierServiceConfig.ServiceId]
+				serviceUrl = supplierServiceConfig.ServiceConfig.Url
+				break
+			}
+		}
+
+		if serviceUrl != nil {
+			break
+		}
+	}
+
+	if supplierService == nil || serviceUrl == nil {
+		sync.replyWithError(ctx, []byte{}, writer, ErrRelayerProxyServiceEndpointNotHandled)
+		return
+	}
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
 
@@ -115,7 +161,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
-	relay, err := sync.serveHTTP(ctx, request, relayRequest)
+	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
 		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
@@ -144,6 +190,8 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 // serveHTTP holds the underlying logic of ServeHTTP.
 func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
+	serviceUrl *url.URL,
+	supplierService *sharedtypes.Service,
 	request *http.Request,
 	relayRequest *types.RelayRequest,
 ) (*types.Relay, error) {
@@ -154,7 +202,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// request signature verification, session verification, and response signature.
 	// This would help in separating concerns and improving code maintainability.
 	// See https://github.com/pokt-network/poktroll/issues/160
-	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, sync.service); err != nil {
+	if err := sync.relayerProxy.VerifyRelayRequest(ctx, relayRequest, supplierService); err != nil {
 		return nil, err
 	}
 
@@ -169,14 +217,14 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
 	sync.logger.Debug().
-		Str("destination_url", sync.proxiedServiceEndpoint.String()).
+		Str("destination_url", serviceUrl.String()).
 		Msg("building relay request payload to service")
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    sync.proxiedServiceEndpoint,
-		Host:   sync.proxiedServiceEndpoint.Host,
+		URL:    serviceUrl,
+		Host:   serviceUrl.Host,
 		Body:   requestBodyReader,
 	}
 

@@ -1,4 +1,20 @@
 config:
-  query_node_url: tcp://sequencer-poktroll-sequencer:36657
-  network_node_url: tcp://sequencer-poktroll-sequencer:36657
-  
+  signing_key_name: supplier1
+  smt_store_path: smt_stores
+  pocket_node:
+    query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+    query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+    tx_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+  proxies:
+    - proxy_name: http-proxy
+      type: http
+      host: 0.0.0.0:8545
+  suppliers:
+    - service_id: anvil
+      type: http
+      service_config:
+        url: http://anvil:8547/
+      proxy_names:
+        - http-proxy
+      hosts:
+        - tcp://relayminers:8545

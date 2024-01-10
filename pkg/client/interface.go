@@ -111,7 +111,7 @@ type Block interface {
 
 // Redelegation is an interface which wraps the EventRedelegation event
 // emitted by the application module.
-// See: proto/pocket/application/types/event.proto#EventRedelegatio
+// See: proto/pocket/application/types/event.proto#EventRedelegation
 type Redelegation interface {
 	GetAppAddress() string
 	GetGatewayAddress() string
@@ -162,8 +162,8 @@ type DelegationClient interface {
 	// RedelegationsSequence returns a Observable of Redelegations that
 	// emits the latest redelegation events that have occurred on chain.
 	RedelegationsSequence(context.Context) RedelegationReplayObservable
-	// LastNBlocks returns the latest N blocks that have been committed to
-	// the chain.
+	// LastNRedelegations returns the latest N redelegation events that have
+	// occurred on chain.
 	LastNRedelegations(context.Context, int) []Redelegation
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.

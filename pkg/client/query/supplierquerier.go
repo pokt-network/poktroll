@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/client/query/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -16,7 +15,7 @@ import (
 // querying of on-chain supplier information through a single exposed method
 // which returns an sharedtypes.Supplier struct
 type supplierQuerier struct {
-	clientCtx       types.Context
+	clientConn      grpc.ClientConn
 	supplierQuerier suppliertypes.QueryClient
 }
 
@@ -24,18 +23,18 @@ type supplierQuerier struct {
 // injecting the dependecies provided by the depinject.Config.
 //
 // Required dependencies:
-// - clientCtx
+// - grpc.ClientConn
 func NewSupplierQuerier(deps depinject.Config) (client.SupplierQueryClient, error) {
 	supq := &supplierQuerier{}
 
 	if err := depinject.Inject(
 		deps,
-		&supq.clientCtx,
+		&supq.clientConn,
 	); err != nil {
 		return nil, err
 	}
 
-	supq.supplierQuerier = suppliertypes.NewQueryClient(cosmosclient.Context(supq.clientCtx))
+	supq.supplierQuerier = suppliertypes.NewQueryClient(supq.clientConn)
 
 	return supq, nil
 }
