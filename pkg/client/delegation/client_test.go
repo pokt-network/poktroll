@@ -2,7 +2,6 @@ package delegation_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -12,29 +11,25 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
-	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
 const (
 	testTimeoutDuration = 100 * time.Millisecond
 
 	// duplicates pkg/client/delegation/client.go's delegationEventQuery for testing purposes.
-	delegationEventQuery = "message.action='pocket.application.EventRedelegation'"
+	delegationEventQuery = "tm.event='Tx' AND message.module='application'"
 )
 
 func TestDelegationClient(t *testing.T) {
 	var (
-		expectedAddress         = sample.AccAddress()
-		expectedDelegationEvent = apptypes.EventRedelegation{
-			AppAddress:     expectedAddress,
-			GatewayAddress: sample.AccAddress(),
-		}
-		ctx = context.Background()
+		expectedAppAddress     = sample.AccAddress()
+		expectedGatewayAddress = sample.AccAddress()
+		ctx                    = context.Background()
 	)
 
-	expectedEventBz, err := json.Marshal(expectedDelegationEvent)
-	require.NoError(t, err)
+	expectedEventBz := testdelegation.NewRedelegationEventBytes(t, expectedAppAddress, expectedGatewayAddress)
 
 	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
 		ctx, t,
@@ -58,6 +53,8 @@ func TestDelegationClient(t *testing.T) {
 			name: "LastNRedelegations successfully returns latest redelegation",
 			fn: func() client.Redelegation {
 				lastRedelegation := delegationClient.LastNRedelegations(ctx, 1)[0]
+				require.Equal(t, expectedAppAddress, lastRedelegation.GetAppAddress())
+				require.Equal(t, expectedGatewayAddress, lastRedelegation.GetGatewayAddress())
 				return lastRedelegation
 			},
 		},
@@ -69,7 +66,8 @@ func TestDelegationClient(t *testing.T) {
 
 				// Ensure that the observable is replayable via Last.
 				lastRedelegation := redelegationObs.Last(ctx, 1)[0]
-				require.Equal(t, expectedAddress, lastRedelegation.GetAppAddress())
+				require.Equal(t, expectedAppAddress, lastRedelegation.GetAppAddress())
+				require.Equal(t, expectedGatewayAddress, lastRedelegation.GetGatewayAddress())
 
 				return lastRedelegation
 			},
@@ -90,7 +88,8 @@ func TestDelegationClient(t *testing.T) {
 
 			select {
 			case actualRedelegation := <-actualRedelegationCh:
-				require.Equal(t, expectedAddress, actualRedelegation.GetAppAddress())
+				require.Equal(t, expectedAppAddress, actualRedelegation.GetAppAddress())
+				require.Equal(t, expectedGatewayAddress, actualRedelegation.GetGatewayAddress())
 			case <-time.After(testTimeoutDuration):
 				t.Fatal("timed out waiting for redelegation event")
 			}
