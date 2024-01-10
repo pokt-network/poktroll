@@ -154,10 +154,10 @@ func (rClient *replayClient[T, R]) goRemapEventsSequence(ctx context.Context, pu
 		func(ctx context.Context, eventTypeObs R) {
 			if prevEventTypeObs != nil {
 				// Just in case the assumption that all transport errors are
-				// persistent does not hold, unsubscribe from the previous
-				// event type observable in order to prevent unexpected and/or
-				// duplicate notifications on the obsersvable returned by this
-				// function.
+				// persistent (i.e. they occur once and do not repeat) does not
+				// hold, unsubscribe from the previous event type observable in
+				// order to prevent unexpected and/or duplicate notifications
+				// on the observable returned by this function.
 				prevEventTypeObs.UnsubscribeAll()
 			} else {
 				prevEventTypeObs = eventTypeObs
