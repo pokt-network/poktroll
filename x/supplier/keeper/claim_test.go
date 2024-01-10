@@ -11,6 +11,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -22,10 +23,12 @@ func createNClaims(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Claim 
 	claims := make([]types.Claim, n)
 	for i := range claims {
 		claims[i].SupplierAddress = sample.AccAddress()
-		claims[i].SessionId = fmt.Sprintf("session-%d", i)
-		claims[i].SessionEndBlockHeight = uint64(i)
+		claims[i].SessionHeader = &sessiontypes.SessionHeader{
+			SessionId:             fmt.Sprintf("session-%d", i),
+			SessionEndBlockHeight: int64(i),
+		}
 		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
-		keeper.InsertClaim(ctx, claims[i])
+		keeper.UpsertClaim(ctx, claims[i])
 	}
 	return claims
 }
@@ -35,7 +38,7 @@ func TestClaim_Get(t *testing.T) {
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		foundClaim, isClaimFound := keeper.GetClaim(ctx,
-			claim.SessionId,
+			claim.GetSessionHeader().GetSessionId(),
 			claim.SupplierAddress,
 		)
 		require.True(t, isClaimFound)
@@ -49,12 +52,13 @@ func TestClaim_Remove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
+		sessionId := claim.GetSessionHeader().GetSessionId()
 		keeper.RemoveClaim(ctx,
-			claim.SessionId,
+			sessionId,
 			claim.SupplierAddress,
 		)
 		_, isClaimFound := keeper.GetClaim(ctx,
-			claim.SessionId,
+			sessionId,
 			claim.SupplierAddress,
 		)
 		require.False(t, isClaimFound)
@@ -90,7 +94,8 @@ func TestClaim_GetAll_ByHeight(t *testing.T) {
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all claims for a given ending session block height
-	allFoundClaimsEndingAtHeight := keeper.GetClaimsByHeight(ctx, claims[6].SessionEndBlockHeight)
+	sessionEndHeight := claims[6].GetSessionHeader().GetSessionEndBlockHeight()
+	allFoundClaimsEndingAtHeight := keeper.GetClaimsByHeight(ctx, uint64(sessionEndHeight))
 	require.ElementsMatch(t,
 		nullify.Fill([]types.Claim{claims[6]}),
 		nullify.Fill(allFoundClaimsEndingAtHeight),
@@ -102,7 +107,8 @@ func TestClaim_GetAll_BySession(t *testing.T) {
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all claims for a given ending session block height
-	allFoundClaimsForSession := keeper.GetClaimsBySession(ctx, claims[8].SessionId)
+	sessionId := claims[8].GetSessionHeader().GetSessionId()
+	allFoundClaimsForSession := keeper.GetClaimsBySession(ctx, sessionId)
 	require.ElementsMatch(t,
 		nullify.Fill([]types.Claim{claims[8]}),
 		nullify.Fill(allFoundClaimsForSession),

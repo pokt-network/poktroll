@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -31,38 +32,70 @@ func TestClaim_Show(t *testing.T) {
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
+
+	var wrongSupplierAddr = sample.AccAddress()
 	tests := []struct {
 		desc         string
 		sessionId    string
 		supplierAddr string
 
-		args []string
-		err  error
-		obj  types.Claim
+		args        []string
+		expectedErr error
+		claim       types.Claim
 	}{
 		{
 			desc:         "claim found",
-			sessionId:    claims[0].SessionId,
-			supplierAddr: claims[0].SupplierAddress,
+			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
+			supplierAddr: claims[0].GetSupplierAddress(),
 
-			args: common,
-			obj:  claims[0],
+			args:  common,
+			claim: claims[0],
 		},
 		{
 			desc:         "claim not found (wrong session ID)",
 			sessionId:    "wrong_session_id",
-			supplierAddr: claims[0].SupplierAddress,
+			supplierAddr: claims[0].GetSupplierAddress(),
 
 			args: common,
-			err:  status.Error(codes.NotFound, "not found"),
+
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					"session ID %q and supplier %q",
+					"wrong_session_id",
+					claims[0].GetSupplierAddress(),
+				).Error(),
+			),
+		},
+		{
+			desc:         "claim not found (invalid bech32 supplier address)",
+			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
+			supplierAddr: "invalid_bech32_supplier_address",
+
+			args: common,
+			// NB: this is *NOT* a gRPC status error because the bech32 parse
+			// error occurs during request validation (i.e. client-side).
+			expectedErr: types.ErrSupplierInvalidAddress.Wrapf(
+				// TODO_CONSIDERATION: prefer using "%q" in error format strings
+				// to disambiguate empty string from space or no output.
+				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
+				"invalid_bech32_supplier_address",
+			),
 		},
 		{
 			desc:         "claim not found (wrong supplier address)",
-			sessionId:    claims[0].SessionId,
-			supplierAddr: "wrong_supplier_address",
+			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
+			supplierAddr: wrongSupplierAddr,
 
 			args: common,
-			err:  status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					"session ID %q and supplier %q",
+					claims[0].GetSessionHeader().GetSessionId(),
+					wrongSupplierAddr,
+				).Error(),
+			),
 		},
 	}
 	for _, tc := range tests {
@@ -73,19 +106,17 @@ func TestClaim_Show(t *testing.T) {
 			}
 			args = append(args, tc.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdShowClaim(), args)
-			if tc.err != nil {
-				stat, ok := status.FromError(tc.err)
-				require.True(t, ok)
-				require.ErrorIs(t, stat.Err(), tc.err)
+			if tc.expectedErr != nil {
+				require.ErrorContains(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				var resp types.QueryGetClaimResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Claim)
-				require.Equal(t,
-					nullify.Fill(&tc.obj),
-					nullify.Fill(&resp.Claim),
-				)
+
+				require.Equal(t, tc.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
+				require.Equal(t, tc.claim.GetRootHash(), resp.Claim.GetRootHash())
+				require.Equal(t, tc.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
 			}
 		})
 	}
@@ -187,13 +218,13 @@ func TestClaim_List(t *testing.T) {
 	})
 
 	t.Run("BySession", func(t *testing.T) {
-		sessionId := claims[0].SessionId
+		sessionId := claims[0].GetSessionHeader().SessionId
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
 		args = append(args, fmt.Sprintf("--%s=%s", cli.FlagSessionId, sessionId))
 
 		expectedClaims := make([]types.Claim, 0)
 		for _, claim := range claims {
-			if claim.SessionId == sessionId {
+			if claim.GetSessionHeader().SessionId == sessionId {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}
@@ -212,13 +243,13 @@ func TestClaim_List(t *testing.T) {
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {
-		sessionEndHeight := claims[0].SessionEndBlockHeight
+		sessionEndHeight := claims[0].GetSessionHeader().GetSessionEndBlockHeight()
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
 		args = append(args, fmt.Sprintf("--%s=%d", cli.FlagSessionEndHeight, sessionEndHeight))
 
 		expectedClaims := make([]types.Claim, 0)
 		for _, claim := range claims {
-			if claim.SessionEndBlockHeight == sessionEndHeight {
+			if claim.GetSessionHeader().GetSessionEndBlockHeight() == sessionEndHeight {
 				expectedClaims = append(expectedClaims, claim)
 			}
 		}
