@@ -29,7 +29,7 @@ type inMemoryNetworkWithGateways struct {
 }
 
 // DefaultInMemoryNetworkConfig returns the default in-memory network configuration.
-// This configuration should sufficient populate on-chain objects to support reasonable
+// This configuration should sufficiently populate on-chain objects to support reasonable
 // coverage around most session-oriented scenarios.
 func DefaultInMemoryNetworkConfig(t *testing.T) *network.InMemoryNetworkConfig {
 	t.Helper()
@@ -131,10 +131,9 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 }
 
 // configureGatewayModuleGenesisState generates and populates the in-memory network's
-//
-//	application module's GenesisState object with the number of applications specified
-//	by the InMemoryConfig, each of which is staked for a unique service. It returns
-//	the genesis state object.
+// application module's GenesisState object with the number of applications specified
+// by the InMemoryConfig, each of which is staked for a unique service. It returns
+// the genesis state object.
 func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t *testing.T) {
 	t.Helper()
 

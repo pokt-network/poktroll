@@ -54,7 +54,7 @@ func (memnet *BaseInMemoryNetwork) CreateKeyringAccounts(t *testing.T) {
 func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 	t.Helper()
 
-	// NB: while it may initially seem like the memnet#Init<actor>AccountsWithSequence() methods
+	// NB: while it may initially seem like the memnet#Fund<actor>Accounts() methods
 	// can be refactored into a generic function, this is not possible so long as the genesis
 	// state lists are passed directly & remain a slice of concrete types (as opposed to pointers).
 	// Under these conditions, a generic function would not be able to unmarshal the genesis state

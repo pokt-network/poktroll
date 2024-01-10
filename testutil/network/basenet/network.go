@@ -51,15 +51,15 @@ func NewBaseInMemoryNetwork(
 // InitializeDefaults sets the underlying cosmos-sdk testutil network config to
 // a reasonable default in case one was not provided with the InMemoryNetworkConfig.
 func (memnet *BaseInMemoryNetwork) InitializeDefaults(t *testing.T) {
-	if memnet.Config.CosmosCfg == nil {
-		t.Log("Cosmos config not initialized, using default config")
-
-		// Initialize a network config.
-		cfg := network.DefaultConfig()
-		memnet.Config.CosmosCfg = &cfg
-	} else {
+	if memnet.Config.CosmosCfg != nil {
 		t.Log("Cosmos config already initialized, using existing config")
+		return
 	}
+	
+	t.Log("Cosmos config not initialized, using default config")
+	// Initialize a network config.
+	cfg := network.DefaultConfig()
+	memnet.Config.CosmosCfg = &cfg
 }
 
 // GetClientCtx returns the underlying cosmos-sdk testutil network's client context.
@@ -124,5 +124,5 @@ func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
 // it is too general to define this behavior, leaving it up to embedders. As a result,
 // this function panics if it is called.
 func (memnet *BaseInMemoryNetwork) Start(_ context.Context, t *testing.T) {
-	panic("not implemented")
+	panic("must be implemented by struct embedders")
 }
