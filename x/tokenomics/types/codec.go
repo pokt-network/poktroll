@@ -11,6 +11,7 @@ import (
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(Params{}, "tokenomics/Params", nil)
+	cdc.RegisterConcrete(&MsgUpdateParams{}, "tokenomics/UpdateParams", nil)
 	// this line is used by starport scaffolding # 2
 }
 

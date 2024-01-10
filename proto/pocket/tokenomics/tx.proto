@@ -11,11 +11,11 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 // Msg defines the Msg service.
 service Msg {
-    rpc UpdateParamsTemp(MsgUpdateParamsTemp) returns (MsgUpdateParamsResponse);
+    rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
 }
 
 // MsgUpdateParams is the Msg/UpdateParams request type.
-message MsgUpdateParamsTemp {
+message MsgUpdateParams {
   // option (cosmos.msg.v1.signer) = "authority";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
