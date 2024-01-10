@@ -123,6 +123,9 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 		return err
 	}
 
+	// Start the ring cache.
+	rp.ringCache.Start(ctx)
+
 	startGroup, ctx := errgroup.WithContext(ctx)
 
 	for _, relayServer := range rp.proxyServers {
