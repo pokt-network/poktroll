@@ -37,12 +37,20 @@ type InMemoryNetworkConfig struct {
 	// NumApplications is the number of applications that should be created at genesis.
 	// Usage is mutually exclusive with AppSupplierPairingRatio. This is enforced by
 	// InMemoryNetwork implementations.
+	//
+	// NOTE: Use #GetNumApplications() to compute the correct value, regardless of
+	// which field is used; in-memory network implementations SHOULD NOT modify config
+	// fields. #GetNumApplications() is intended to be the single source of truth.
 	NumApplications int
 
 	// AppSupplierPairingRatio is the number of applications, per supplier, that
 	// share a serviceId (i.e. will be in the same session).
 	// Usage is mutually exclusive with NumApplications. This is enforced by
 	// InMemoryNetwork implementations.
+	//
+	// NOTE: Use #GetNumApplications() to compute the correct value, regardless of
+	// which field is used; in-memory network implementations SHOULD NOT modify config
+	// fields. #GetNumApplications() is intended to be the single source of truth.
 	AppSupplierPairingRatio int
 
 	// CosmosCfg is the configuration for the underlying cosmos-sdk testutil network.
