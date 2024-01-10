@@ -63,9 +63,6 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 ) (*suppliertypes.Claim, relayer.SessionTree) {
 	t.Helper()
 
-	clientCtx := memnet.GetClientCtx(t)
-	net := memnet.GetNetwork(t)
-
 	// Create a new session tree with NumRelaysPerSession number of relay nodes inserted.
 	// Base64-encode it's root hash for use with the CLI command.
 	sessionTree := newSessionTreeRoot(t, memnet.Config.NumRelaysPerSession, sessionHeader)
@@ -82,6 +79,7 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
 
+	clientCtx := memnet.GetClientCtx(t)
 	responseRaw, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
 	var responseJson map[string]interface{}

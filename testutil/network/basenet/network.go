@@ -16,7 +16,9 @@ import (
 var _ network.InMemoryNetwork = (*BaseInMemoryNetwork)(nil)
 
 // BaseInMemoryNetwork is an "abstract" (i.e. partial) implementation, intended
-// to be embedded by other ("concrete") InMemoryNetwork implementations.
+// to consolidate shared behavior between multiple ("concrete") InMemoryNetwork
+// implementations. These shared behaviors (methods) are accessible to any concrete
+// implementation which embeds BaseInMemoryNetwork.
 type BaseInMemoryNetwork struct {
 	Config                      network.InMemoryNetworkConfig
 	PreGeneratedAccountIterator *testkeyring.PreGeneratedAccountIterator
@@ -55,7 +57,7 @@ func (memnet *BaseInMemoryNetwork) InitializeDefaults(t *testing.T) {
 		t.Log("Cosmos config already initialized, using existing config")
 		return
 	}
-	
+
 	t.Log("Cosmos config not initialized, using default config")
 	// Initialize a network config.
 	cfg := network.DefaultConfig()
