@@ -3,9 +3,10 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {
@@ -15,15 +16,31 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid supplier address - no service",
 			msg: MsgAddService{
-				Address: "invalid_address",
+				SupplierAddress: "invalid_address",
+				// Service: intentionally omitted,
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrServiceInvalidAddress,
 		}, {
-			name: "valid address",
+			name: "valid supplier address - no service ID",
 			msg: MsgAddService{
-				Address: sample.AccAddress(),
+				SupplierAddress: sample.AccAddress(),
+				Service:         sharedtypes.Service{Name: "service name"},
+			},
+			err: ErrServiceMissingID,
+		}, {
+			name: "valid supplier address - no service name",
+			msg: MsgAddService{
+				SupplierAddress: sample.AccAddress(),
+				Service:         sharedtypes.Service{Id: "srv1"},
+			},
+			err: ErrServiceMissingName,
+		}, {
+			name: "valid address and service",
+			msg: MsgAddService{
+				SupplierAddress: sample.AccAddress(),
+				Service:         sharedtypes.Service{Id: "srv1", Name: "service name"},
 			},
 		},
 	}

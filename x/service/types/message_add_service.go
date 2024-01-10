@@ -53,6 +53,12 @@ func (msg *MsgAddService) ValidateBasic() error {
 			"invalid supplier address %s; (%v)", msg.SupplierAddress, err,
 		)
 	}
+	if msg.Service.Id == "" {
+		return ErrServiceMissingID
+	}
+	if msg.Service.Name == "" {
+		return ErrServiceMissingName
+	}
 	// TODO(@h5law): Check the service ID is not already found in the store
 	return nil
 }
