@@ -15,8 +15,8 @@ const (
 func ServiceKey(serviceID string) []byte {
 	var key []byte
 
-	serviceIDBytes := []byte(serviceID)
-	key = append(key, serviceIDBytes...)
+	serviceIDBz := []byte(serviceID)
+	key = append(key, serviceIDBz...)
 	key = append(key, []byte("/")...)
 
 	return key

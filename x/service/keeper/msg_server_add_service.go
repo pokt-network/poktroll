@@ -11,7 +11,10 @@ import (
 
 // AddService handles MsgAddService and adds a service to the network storing
 // it in the service keeper's store using the provided ID from the message.
-func (k msgServer) AddService(goCtx context.Context, msg *types.MsgAddService) (*types.MsgAddServiceResponse, error) {
+func (k msgServer) AddService(
+	goCtx context.Context,
+	msg *types.MsgAddService,
+) (*types.MsgAddServiceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger(ctx).With("method", "AddService")

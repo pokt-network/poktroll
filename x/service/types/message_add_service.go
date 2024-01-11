@@ -4,7 +4,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	shared "github.com/pokt-network/poktroll/x/shared/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // TypeMsgAddService is the name of the service message
@@ -16,7 +16,7 @@ var _ sdk.Msg = (*MsgAddService)(nil)
 func NewMsgAddService(address string, serviceID, serviceName string) *MsgAddService {
 	return &MsgAddService{
 		SupplierAddress: address,
-		Service:         shared.Service{Id: serviceID, Name: serviceName},
+		Service:         sharedtypes.Service{Id: serviceID, Name: serviceName},
 	}
 }
 
