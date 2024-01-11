@@ -30,6 +30,7 @@ func (k msgServer) AddService(
 		return nil, types.ErrServiceAlreadyExists
 	}
 
+	logger.Info(fmt.Sprintf("Adding service: %v", msg.Service))
 	k.SetService(ctx, msg.Service)
 
 	return &types.MsgAddServiceResponse{}, nil
