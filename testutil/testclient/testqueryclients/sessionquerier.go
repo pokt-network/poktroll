@@ -2,10 +2,12 @@ package testqueryclients
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -40,7 +42,11 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHash, blockHeight)
+			blockHashBz, err := hex.DecodeString(blockHash)
+			if err != nil {
+				return nil, fmt.Errorf("error while trying to decode block hash: %w", err)
+			}
+			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
 			if !ok {
@@ -65,7 +71,9 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHash, blockHeight)
+	blockHashBz, err := hex.DecodeString(blockHash)
+	require.NoError(t, err)
+	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{

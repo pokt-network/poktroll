@@ -3,6 +3,7 @@ package testproxy
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -335,7 +336,9 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHash, blockHeight)
+	blockHashBz, err := hex.DecodeString(blockHash)
+	require.NoError(test.t, err)
+	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
