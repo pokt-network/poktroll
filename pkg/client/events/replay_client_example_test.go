@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"cosmossdk.io/depinject"
+
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -15,7 +16,7 @@ const (
 	// Define a query string to provide to the EventsQueryClient
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	// And: https://docs.cosmos.network/v0.47/learn/advanced/events#default-events
-	eventQueryString = "message.action='eventName'"
+	eventQueryString = "message.action='messageActionName'"
 	// Define the websocket URL the EventsQueryClient will subscribe to
 	cometWebsocketURL = "ws://example.com:36657/websocket"
 	// the amount of events we want before they are emitted
@@ -78,7 +79,6 @@ func ExampleNewEventsReplayClient() {
 	](
 		ctx,
 		depConfig,
-		cometWebsocketURL,
 		eventQueryString,
 		eventTypeFactory(ctx),
 		replayObsBufferSize,

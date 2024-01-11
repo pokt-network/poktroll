@@ -82,7 +82,7 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 
 	// Use a temporary observer to accumulate replay values.
 	// Subscribe will always start with the replay buffer, so we can safely
-	// leverage it here for syncrhonization (i.e. blocking until at least 1
+	// leverage it here for synchronization (i.e. blocking until at least 1
 	// notification has been accumulated). This also eliminates the need for
 	// locking and/or copying the replay buffer.
 	tempObserver := ro.Subscribe(ctx)
@@ -97,7 +97,7 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 			Msg("requested replay buffer size is greater than replay buffer capacity; returning entire replay buffer")
 	}
 
-	// accumulateReplayValues works concurrently and returns a context and cancelation
+	// accumulateReplayValues works concurrently and returns a context and cancellation
 	// function for signaling completion.
 	return accumulateReplayValues(tempObserver, n)
 }
@@ -122,7 +122,7 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 
 	ro.observerManager.add(observer)
 
-	// caller can rely on context cancelation or call UnsubscribeAll() to unsubscribe
+	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
 	// active observers
 	if ctx != nil {
 		// asynchronously wait for the context to be done and then unsubscribe

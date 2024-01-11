@@ -5,6 +5,7 @@ package e2e
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -15,15 +16,14 @@ import (
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/regen-network/gocuke"
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/regen-network/gocuke"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -167,17 +167,36 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 }
 
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
+	// Create a temporary config file
+	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
+	configFile, err := ioutil.TempFile("", configPathPattern)
+	if err != nil {
+		s.Fatalf("error creating config file: %q", err)
+	}
+	if _, err = configFile.Write([]byte(configContent)); err != nil {
+		s.Fatalf("error writing config file: %q", err)
+	}
+
 	args := []string{
 		"tx",
 		actorType,
 		fmt.Sprintf("stake-%s", actorType),
-		fmt.Sprintf("%dupokt", amount),
+		"--config",
+		configFile.Name(),
 		"--from",
 		accName,
 		keyRingFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
+
+	// Remove the temporary config file
+	err = os.Remove(configFile.Name())
+	if err != nil {
+		s.Fatalf("error removing config file: %q", err)
+	}
+
 	if err != nil {
 		s.Fatalf("error staking %s: %s", actorType, err)
 	}

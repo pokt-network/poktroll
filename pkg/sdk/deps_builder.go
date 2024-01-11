@@ -2,8 +2,6 @@ package sdk
 
 import (
 	"context"
-	"fmt"
-	"net/url"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
@@ -11,6 +9,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	block "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
@@ -24,7 +23,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := queryNodeToWebsocketURL(config.QueryNodeUrl)
+	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
@@ -37,7 +36,7 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 
 	// Create and supply the block client that depends on the events query client
-	blockClient, err := block.NewBlockClient(ctx, deps, pocketNodeWebsocketURL)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +75,15 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
 
-	// Create and supply the ring cache that depends on application and account queriers
+	// Create and supply the delegation client
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
+	if err != nil {
+		return nil, err
+	}
+	deps = depinject.Configs(deps, depinject.Supply(delegationClient))
+
+	// Create and supply the ring cache that depends on:
+	// the logger, application and account querier and the delegation client
 	ringCache, err := rings.NewRingCache(deps)
 	if err != nil {
 		return nil, err
@@ -84,11 +91,4 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(ringCache))
 
 	return deps, nil
-}
-
-// hostToWebsocketURL converts the provided host into a websocket URL that can
-// be used to subscribe to onchain events and query the chain via a client
-// context or send transactions via a tx client context.
-func queryNodeToWebsocketURL(queryNode *url.URL) string {
-	return fmt.Sprintf("ws://%s/websocket", queryNode.Host)
 }

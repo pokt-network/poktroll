@@ -12,7 +12,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -53,7 +52,7 @@ func TestBlockClient(t *testing.T) {
 	deps := depinject.Supply(eventsQueryClient)
 
 	// Set up block client.
-	blockClient, err := block.NewBlockClient(ctx, deps, testclient.CometLocalWebsocketURL)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
