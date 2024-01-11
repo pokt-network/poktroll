@@ -26,14 +26,14 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			name: "valid supplier address - no service ID",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
-				Service:         sharedtypes.Service{Name: "service name"},
+				Service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
 			},
 			err: ErrServiceMissingID,
 		}, {
 			name: "valid supplier address - no service name",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
-				Service:         sharedtypes.Service{Id: "srv1"},
+				Service:         sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
 			},
 			err: ErrServiceMissingName,
 		}, {
