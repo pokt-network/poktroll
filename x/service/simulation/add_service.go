@@ -1,13 +1,16 @@
 package simulation
 
 import (
+	"fmt"
 	"math/rand"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
+
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func SimulateMsgAddService(
@@ -19,7 +22,11 @@ func SimulateMsgAddService(
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgAddService{
-			Address: simAccount.Address.String(),
+			SupplierAddress: simAccount.Address.String(),
+			Service: sharedtypes.Service{
+				Id:   fmt.Sprintf("srv%d", rand.Intn(100)),
+				Name: fmt.Sprintf("srv%d", rand.Intn(100)),
+			},
 		}
 
 		// TODO: Handling the AddService simulation
