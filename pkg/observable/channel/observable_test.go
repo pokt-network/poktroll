@@ -340,103 +340,116 @@ type obsWithMu struct {
 	mu sync.Mutex
 }
 
-// Defining TDD tests this way avoids race conditions
 func TestChannelObservable_MergeObservables(t *testing.T) {
-	runTestMergeObservables(
-		t,
-		"successful: merge 5 observables", // desc
-		false,                             // failFast
-		[]int{52, 12, 34, 423, 32},        // inputs
-		[]int{12, 32, 34, 52, 423},        // expectedOutput
-	)
-	runTestMergeObservables(
-		t,
-		"successful: fast fail merge 5 observables, after 3 closes", // desc
-		true,                       // failFast
-		[]int{52, 12, 34, 423, 32}, // inputs
-		[]int{12, 52},              // expectedOutput
-	)
-}
-
-func runTestMergeObservables(t *testing.T, desc string, failFast bool, inputs []int, expectedOutput []int) {
 	const testTimeOut = 2 * time.Second
-	numObservables := len(inputs)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	observers := make([]observable.Observable[int], 0, numObservables)
-	publishChs := make([]chan<- int, 0, numObservables)
-	for i := 0; i < numObservables; i++ {
-		observer, publishCh := channel.NewObservable[int]()
-		observers = append(observers, observer)
-		publishChs = append(publishChs, publishCh)
+	tests := []struct {
+		desc           string
+		failFast       bool
+		inputs         []int
+		expectedOutput []int
+	}{
+		{
+			desc:           "successful: merge 5 observables",
+			failFast:       false,
+			inputs:         []int{52, 12, 34, 423, 32},
+			expectedOutput: []int{12, 32, 34, 52, 423},
+		},
+		{
+			desc:           "successful: fast fail merge 5 observables, after 3 closes",
+			failFast:       true,
+			inputs:         []int{52, 12, 34, 423, 32},
+			expectedOutput: []int{12, 52},
+		},
 	}
 
-	// Publish each input to each of the observables individually.
-	// We do this in a goroutine to also start listening at the
-	// same time on the merged observable.
-	go func() {
-		for i := 0; i < numObservables; i++ {
-			if failFast {
-				// Close the merged observable after 3 publishes
-				// To simulate an obvserver closing/failing
-				observers[len(expectedOutput)-1].UnsubscribeAll()
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			numObservables := len(tt.inputs)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			observables := make([]observable.Observable[int], 0, numObservables)
+			publishChs := make([]pubChWithMu, 0, numObservables)
+			for i := 0; i < numObservables; i++ {
+				obs, publishCh := channel.NewObservable[int]()
+				observables = append(observables, obs)
+				publishChs = append(publishChs, pubChWithMu{publishCh: publishCh, mu: sync.Mutex{}})
 			}
-			publishChs[i] <- inputs[i]
-			t.Logf("published %d", inputs[i])
-			time.Sleep(1 * time.Millisecond) // Allow publish to be processed
-		}
-	}()
 
-	receivedAllCh := make(chan *struct{})
-	receivedNotifications := make([]int, 0, len(inputs))
-	recvNotifMutex := sync.RWMutex{}
+			// Publish each input to each of the observables individually.
+			// We do this in a goroutine to also start listening at the
+			// same time on the merged observable.
+			go func() {
+				wg := sync.WaitGroup{}
+				for i := 0; i < numObservables; i++ {
+					wg.Add(1)
+					defer wg.Done()
+					if tt.failFast {
+						// Close the merged observable after 3 publishes
+						// To simulate an obvserver closing/failing
+						observables[len(tt.expectedOutput)-1].UnsubscribeAll()
+					}
+					publishChs[i].mu.Lock()
+					publishChs[i].publishCh <- tt.inputs[i]
+					publishChs[i].mu.Unlock()
+					t.Logf("published %d", tt.inputs[i])
+					time.Sleep(1 * time.Millisecond) // Allow publish to be processed
+				}
+				wg.Wait()
+			}()
 
-	// Subscribe to the merged observable
-	mergedObs := channel.Merge[int](ctx, observers, failFast)
-	t.Cleanup(func() {
-		mergedObs.UnsubscribeAll()
-		cancel()
-	})
+			receivedAllCh := make(chan *struct{})
+			receivedNotifications := make([]int, 0, len(tt.inputs))
+			recvNotifMutex := sync.RWMutex{}
 
-	// Listen for notifications from the merged observables in a
-	// goroutine so we can timeout the test if necessary.
-	go func() {
-		// Subscribe to the merged observable
-		mergedObsCh := mergedObs.Subscribe(ctx)
-		// Listen for notifications from the merged observable
-		for notification := range mergedObsCh.Ch() {
-			t.Logf("received %d", notification)
-			recvNotifMutex.Lock()
-			// Add the notification to the list of received notifications
-			receivedNotifications = append(receivedNotifications, notification)
-			// Stop listening if all notifications have been received
-			if len(receivedNotifications) == len(expectedOutput) {
-				recvNotifMutex.Unlock()
-				receivedAllCh <- &struct{}{}
-				return
+			// Subscribe to the merged observable
+			mergedObs := channel.Merge[int](ctx, observables, tt.failFast)
+			// Subscribe to the merged observable
+			mergedObsCh := mergedObs.Subscribe(ctx)
+			t.Cleanup(func() {
+				cancel() // cancel() will unsubscribe all observers
+			})
+
+			// Listen for notifications from the merged observables in a
+			// goroutine so we can timeout the test if necessary.
+			go func() {
+				// Listen for notifications from the merged observable
+				for notification := range mergedObsCh.Ch() {
+					t.Logf("received %d", notification)
+					recvNotifMutex.Lock()
+					// Add the notification to the list of received notifications
+					receivedNotifications = append(receivedNotifications, notification)
+					recvNotifMutex.Unlock()
+					recvNotifMutex.RLock()
+					// Stop listening if all notifications have been received
+					if len(receivedNotifications) == len(tt.expectedOutput) {
+						receivedAllCh <- nil
+						return
+					}
+					recvNotifMutex.RUnlock()
+				}
+			}()
+
+			select {
+			case <-receivedAllCh:
+				recvNotifMutex.RLock()
+				defer recvNotifMutex.RUnlock()
+				sort.Ints(receivedNotifications)
+				require.Equal(t, len(tt.expectedOutput), len(receivedNotifications))
+				require.EqualValuesf(
+					t,
+					tt.expectedOutput,
+					receivedNotifications,
+					"expected %v, received %v", tt.inputs, receivedNotifications,
+				)
+			case <-ctx.Done():
+				t.Fatalf("test failed: context cancelled early")
+			case <-time.After(testTimeOut):
+				t.Fatalf("test failed: timed out after %v", testTimeOut)
 			}
-			recvNotifMutex.Unlock()
-		}
-	}()
-
-	select {
-	case <-receivedAllCh:
-		sort.Ints(receivedNotifications)
-		recvNotifMutex.RLock()
-		defer recvNotifMutex.RUnlock()
-		require.Equal(t, len(expectedOutput), len(receivedNotifications))
-		require.EqualValuesf(
-			t,
-			expectedOutput,
-			receivedNotifications,
-			"expected %v, received %v", inputs, receivedNotifications,
-		)
-	case <-ctx.Done():
-		t.Fatalf("test failed: context cancelled early")
-	case <-time.After(testTimeOut):
-		t.Fatalf("test failed: timed out after %v", testTimeOut)
+		})
 	}
 }
 
