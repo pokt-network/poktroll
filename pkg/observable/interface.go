@@ -41,10 +41,3 @@ type Observer[V any] interface {
 	// A closed observer cannot be reused.
 	IsClosed() bool
 }
-
-// MergedObservable is an observable which merges the notifications of multiple
-// observables into a single observable, as such its interface is exactly the
-// same as the Observable interface.
-type MergedObservable[V any] interface {
-	Observable[V]
-}

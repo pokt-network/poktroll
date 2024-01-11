@@ -2,7 +2,6 @@ package channel
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
@@ -16,11 +15,6 @@ const defaultPublishBufferSize = 50
 var (
 	_ observable.Observable[any] = (*channelObservable[any])(nil)
 	_ observerManager[any]       = (*channelObservable[any])(nil)
-
-	// failFastAtomic is an atomic bool used in obersvable merging to determine if
-	// the resulting merged observable should fail/close when one of the
-	// observables fails/closes that it is merging.
-	failFastAtomic atomic.Bool
 )
 
 // option is a function which receives and can modify the channelObservable state.
@@ -125,25 +119,22 @@ func Merge[V any](
 ) observable.Observable[V] {
 	// Determine whether the merged observable should close as soon as one of
 	// the observables closes that it is merging of continue notifying observers.
-	fastFailCh := make(chan *struct{})
-	if failFast {
-		failFastAtomic.CompareAndSwap(false, failFast)
-	}
+	failFastCh := make(chan *struct{})
 	mergedObs, mergedObsPubCh := NewObservable[V]()
 
 	// Start a goroutine to wait for the fast fail error channel to close and
 	// then call UnsubscribeAll() on the merged observable.
 	// NB: This only occurs if the closeEarly flag is set to true.
 	go func() {
-		for range fastFailCh {
-			// Do nothing wait for the channel to close
-			continue
+		select {
+		case <-failFastCh:
+			// Unsubscribe all observers
+			mergedObs.UnsubscribeAll()
 		}
-		mergedObs.UnsubscribeAll()
 	}()
 
 	for _, o := range obs {
-		go goPublishNotifications[V](ctx, o, mergedObsPubCh, fastFailCh)
+		go goPublishNotifications[V](ctx, o, mergedObsPubCh, failFast, failFastCh)
 	}
 
 	return mergedObs
@@ -156,13 +147,14 @@ func goPublishNotifications[V any](
 	ctx context.Context,
 	obs observable.Observable[V],
 	publishCh chan<- V,
-	fastFailCh chan *struct{},
+	failFast bool,
+	failFastCh chan *struct{},
 ) {
 	obsCh := obs.Subscribe(ctx).Ch()
 	for event := range obsCh {
 		publishCh <- event
 	}
-	if failFastAtomic.Load() {
-		close(fastFailCh)
+	if failFast {
+		failFastCh <- nil
 	}
 }
