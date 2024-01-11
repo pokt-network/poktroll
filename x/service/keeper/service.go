@@ -46,8 +46,8 @@ func (k Keeper) RemoveService(
 	))
 }
 
-// GetAllService returns all services
-func (k Keeper) GetAllService(ctx sdk.Context) (list []sharedtypes.Service) {
+// GetAllServices returns all services
+func (k Keeper) GetAllServices(ctx sdk.Context) (list []sharedtypes.Service) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ServiceKeyPrefix))
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
