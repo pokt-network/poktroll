@@ -178,6 +178,7 @@ func setupRelayerDependencies(
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
+		config.NewSupplyDelegationClientFn(),                              // leaf
 		config.NewSupplyAccountQuerierFn(),
 		config.NewSupplyApplicationQuerierFn(),
 		config.NewSupplySupplierQuerierFn(),
