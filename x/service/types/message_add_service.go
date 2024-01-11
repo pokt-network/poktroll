@@ -59,6 +59,6 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if msg.Service.Name == "" {
 		return ErrServiceMissingName
 	}
-	// TODO(@h5law): Check the service ID is not already found in the store
+
 	return nil
 }

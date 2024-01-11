@@ -37,7 +37,7 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 			},
 			err: ErrServiceMissingName,
 		}, {
-			name: "valid address and service",
+			name: "valid supplier address and service",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
 				Service:         sharedtypes.Service{Id: "srv1", Name: "service name"},
