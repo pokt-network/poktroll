@@ -651,6 +651,7 @@ func New(
 		keys[tokenomicsmoduletypes.StoreKey],
 		keys[tokenomicsmoduletypes.MemStoreKey],
 		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+		app.BankKeeper,
 		authority,
 	)
 	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)

@@ -16,7 +16,8 @@ func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params",
 		Short: "Broadcast message update-params",
-		Args:  cobra.ExactArgs(0),
+		// TODO_IN_THIS_PR: Update `Short` and `Long` to show how parameters could/should be updated
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {

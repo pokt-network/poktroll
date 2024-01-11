@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/cometbft/cometbft/libs/log"
@@ -8,9 +9,8 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/pokt-network/smt"
 )
 
 // TokenomicsKeeperI is the interface contract that x/tokenomics's keeper implements.
@@ -18,27 +18,27 @@ type TokenomicsKeeperI interface {
 	// GetAuthority returns the x/tokenomics module's authority.
 	GetAuthority() string
 
-	// TODO_CONSIDERATION:
-	// 1. Should we pass in a full session instead of the header?
-	// 2. Should we create a well defined type for the smst root?
-
 	// SettleSessionAccounting is responsible for all of the post-session accounting
 	// necessary to burn, mint or transfer tokens depending on the amount of work
-	// done. The amount of "work done"  complete is represented by `computeUnits` which
-	// is expect to be the
-	// NOTE: It is assumed the validation of the `smstRoot` w.r.t to the
-	// `sessionHeader` has already been done by the caller.
-	SettleSessionAccounting(sessionHeader *sessiontypes.SessionHeader, root smt.MerkleRoot)
+	// done. The amount of "work done" complete is dictated by `sum` of `root`.
+	// ASSUMPTION: It is assumed the caller of this function validated the claim against
+	// a proof BEFORE calling this function.
+	// TODO_IN_THIS_PR: Is there a way to limit who can call this function?
+	SettleSessionAccounting(goCtx context.Context, claim suppliertypes.Claim)
 }
 
 // TODO_TECHDEBT(#240): See `x/auth/keeper.keeper.go` in the Cosmos SDK on how
-// we should refactor all out keepers. This one has started following a subset
-// of those patterns as they related to parameters.
+// we should refactor all our keepers. This keeper has started following a small
+// subset of those patterns.
+// TokenomicsKeeper is the structure that implements the `TokenomicsKeeperI` interface.
 type TokenomicsKeeper struct {
 	cdc        codec.BinaryCodec
 	storeKey   storetypes.StoreKey
 	memKey     storetypes.StoreKey
 	paramstore paramtypes.Subspace
+
+	// keeper dependencies
+	bankKeeper types.BankKeeper
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this
 	// should be the x/gov module account.
@@ -50,6 +50,9 @@ func NewTokenomicsKeeper(
 	storeKey,
 	memKey storetypes.StoreKey,
 	ps paramtypes.Subspace,
+
+	// keeper dependencies
+	bankKeeper types.BankKeeper,
 
 	authority string,
 

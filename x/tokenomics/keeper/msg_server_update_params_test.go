@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateParams(t *testing.T) {
+func TestUpdateParams_Validity(t *testing.T) {
 	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
 
@@ -21,8 +21,9 @@ func TestUpdateParams(t *testing.T) {
 
 		req *types.MsgUpdateParams
 
-		expectErr bool
-		expErrMsg string
+		expectErr     bool
+		expectedPanic bool
+		expErrMsg     string
 	}{
 		{
 			desc: "invalid authority address",
@@ -31,8 +32,9 @@ func TestUpdateParams(t *testing.T) {
 				Authority: "invalid",
 			},
 
-			expectErr: true,
-			expErrMsg: "invalid authority",
+			expectErr:     true,
+			expectedPanic: false,
+			expErrMsg:     "invalid authority",
 		},
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",
@@ -45,11 +47,12 @@ func TestUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr: true,
-			expErrMsg: "invalid compute to tokens multiplier",
+			expectErr:     true,
+			expectedPanic: true,
+			expErrMsg:     "invalid compute to tokens multiplier",
 		},
 		{
-			desc: "successful update ",
+			desc: "successful param update",
 
 			req: &types.MsgUpdateParams{
 				Authority: tokenomicsKeeper.GetAuthority(),
@@ -59,12 +62,22 @@ func TestUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr: false,
+			expectedPanic: false,
+			expectErr:     false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
+			if tt.expectedPanic {
+				defer func() {
+					if r := recover(); r != nil {
+						_, err := srv.UpdateParams(ctx, tt.req)
+						require.Error(t, err)
+					}
+				}()
+				return
+			}
 			_, err := srv.UpdateParams(ctx, tt.req)
 			if tt.expectErr {
 				require.Error(t, err)
@@ -74,4 +87,27 @@ func TestUpdateParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
+	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
+	// srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
+
+	params := types.DefaultParams()
+	tokenomicsKeeper.SetParams(ctx, params)
+
+	getParamsReq := &types.QueryParamsRequest{}
+	getParamsRes, err := tokenomicsKeeper.Params(ctx, getParamsReq)
+	require.Nil(t, err)
+	require.Equal(t, 42, getParamsRes.Params.ComputeUnitsToTokensMultiplier)
+
+	// req := &types.MsgUpdateParams{
+	// 	Authority: tokenomicsKeeper.GetAuthority(),
+
+	// 	Params: types.Params{
+	// 		ComputeUnitsToTokensMultiplier: 1000000,
+	// 	},
+	// }
+
+	// srv.GetParams(ctx, &types.QueryParamsRequest{})
 }

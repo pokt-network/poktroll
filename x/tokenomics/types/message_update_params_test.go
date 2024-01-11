@@ -20,7 +20,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParams{
 				Authority: "invalid_address",
 			},
-			expectedErr: ErrAuthorityInvalidAddress,
+			expectedErr: ErrTokenomicsAuthorityInvalidAddress,
 		}, {
 			desc: "valid address",
 			msg: MsgUpdateParams{

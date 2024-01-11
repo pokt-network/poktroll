@@ -9,12 +9,22 @@ import (
 
 func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	logger := k.Logger(ctx)
 
-	if msg.ValidateBasic() != nil {
-		return nil, msg.ValidateBasic()
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
 	}
-	
-	_ = ctx
+
+	// TODO_BLOCKER: Make sure that this check validates the authority address
+	// is the one that signed the request
+	if msg.Authority != k.GetAuthority() {
+		return nil, types.ErrTokenomicsAuthorityAddressIncorrect
+	}
+
+	prevParams := k.GetParams(ctx)
+	logger.Info("About to update params from [%v] to [%v]", prevParams, msg.Params)
+	k.SetParams(ctx, msg.Params)
+	logger.Info("Done updating params")
 
 	return &types.MsgUpdateParamsResponse{}, nil
 }

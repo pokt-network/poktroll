@@ -40,8 +40,11 @@ func (msg *MsgUpdateParams) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		return sdkerrors.Wrapf(ErrAuthorityInvalidAddress, "invalid authority address %s; (%v)", msg.Authority, err)
+		return sdkerrors.Wrapf(ErrTokenomicsAuthorityInvalidAddress, "invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	return nil
 }
+
+// https://github.com/cosmos/cosmos-sdk/blob/main/docs/architecture/adr-030-authz-module.md
+// What if we let authority grant MsgUpdateParams permission to a particular address that'll be m of n?
