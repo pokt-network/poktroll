@@ -101,8 +101,8 @@ func TestCLI_StakeGateway(t *testing.T) {
 			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
-			desc:          "stake gateway: invalid stake missing stake",
-			address:       gatewayAccount.GetAddress(),
+			desc:    "stake gateway: invalid stake missing stake",
+			address: gatewayAccount.GetAddress(),
 			// inputConfig intentionally empty,
 			inputConfig:   ``,
 			expectedError: gatewaytypes.ErrGatewayInvalidStake,
