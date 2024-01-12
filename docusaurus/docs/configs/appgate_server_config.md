@@ -3,6 +3,8 @@ title: AppGateServer config
 sidebar_position: 2
 ---
 
+# AppGateServer config
+
 ## `appgateserver/config/appgate_configs_reader`
 
 _This document describes the configuration options available through the
@@ -11,6 +13,8 @@ of Pocket network connectivity, whether it acts as a self serving `Application`
 or a `Gateway` to other `Applications`, and the host it listens on for incoming
 `RelayRequests`._
 
+- [AppGateServer config](#appgateserver-config)
+  - [`appgateserver/config/appgate_configs_reader`](#appgateserverconfigappgate_configs_reader)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`query_node_rpc_url`](#query_node_rpc_url)
