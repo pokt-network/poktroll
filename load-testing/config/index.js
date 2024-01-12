@@ -1,7 +1,19 @@
-import { anvilDirectScenario } from './scenarios/anvilDirect.js';
-import { anvilAppGateServerScenario } from './scenarios/anvilAppGateServer.js';
 import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
+
+// Environment configuration
+export const ENV_CONFIG = {
+    anvilBaseUrl: __ENV.ANVIL_BASE_URL || 'http://localhost:8547',
+    nginxBaseUrl: __ENV.NGINX_BASE_URL || 'http://localhost:8548',
+    AppGateServerAnvilUrl: __ENV.APP_GATE_SERVER_ANVIL_URL || 'http://localhost:42069/anvil',
+};
+
+export function handleSummary(data) {
+  return {
+    "summary.html": htmlReport(data),
+    stdout: textSummary(data, { indent: " ", enableColors: true }),
+  };
+}
 
 export const options = {
   // A number specifying the number of VUs to run concurrently.
@@ -51,20 +63,3 @@ export const options = {
   //   },
   // }
 };
-
-// The function that defines VU logic.
-//
-// See https://grafana.com/docs/k6/latest/examples/get-started-with-k6/ to learn more
-// about authoring k6 scripts.
-//
-export default function () {
-  anvilDirectScenario();
-  anvilAppGateServerScenario();
-}
-
-export function handleSummary(data) {
-  return {
-    "summary.html": htmlReport(data),
-    stdout: textSummary(data, { indent: " ", enableColors: true }),
-  };
-}

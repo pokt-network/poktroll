@@ -21,7 +21,7 @@ export function sendEthereumRequest(baseUrl, method, params = [], tags = {}) {
     let response = http.post(baseUrl, payload, requestOptions);
 
     // Basic check for HTTP 200 OK and a valid JSON-RPC response
-    check(response, {
+    let passed = check(response, {
         "is status 200": (r) => r.status === 200,
         "is successful JSON-RPC response": (r) => {
             let jsonResponse = JSON.parse(r.body);
@@ -29,6 +29,11 @@ export function sendEthereumRequest(baseUrl, method, params = [], tags = {}) {
             return jsonResponse.hasOwnProperty("result") && jsonResponse.hasOwnProperty("id") && !jsonResponse.hasOwnProperty("error");
         }
     }, tags);
+
+    // TODO: remove this or make configurable. But for now, let's output all debug info if the request doesn't pass checks.
+    if (!passed) {
+        console.log(`Request to ${response.request.url} with status ${response.status} failed the checks!`, JSON.stringify(response));      
+    }
 
     return response;
 }
