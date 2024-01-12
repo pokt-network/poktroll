@@ -55,6 +55,7 @@ func TestApplicationGet(t *testing.T) {
 		)
 	}
 }
+
 func TestApplicationRemove(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
 	apps := createNApplication(keeper, ctx, 10)

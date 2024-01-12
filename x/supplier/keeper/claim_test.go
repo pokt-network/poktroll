@@ -48,6 +48,7 @@ func TestClaim_Get(t *testing.T) {
 		)
 	}
 }
+
 func TestClaim_Remove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)

@@ -90,7 +90,6 @@ func (k msgServer) updateSupplier(
 		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*supplier.Stake) {
-
 		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
 	}
 	supplier.Stake = msg.Stake

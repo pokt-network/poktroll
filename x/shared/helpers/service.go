@@ -24,7 +24,6 @@ func init() {
 	// Compile the regex pattern
 	regexExprServiceId = regexp.MustCompile(regexServiceId)
 	regexExprServiceName = regexp.MustCompile(regexServiceName)
-
 }
 
 // IsValidService checks if the provided ServiceId struct has valid fields

@@ -20,7 +20,7 @@ func TestClaim_QuerySingle(t *testing.T) {
 	wctx := sdk.WrapSDKContext(ctx)
 	claims := createNClaims(keeper, ctx, 2)
 
-	var wrongSupplierAddr = sample.AccAddress()
+	wrongSupplierAddr := sample.AccAddress()
 	tests := []struct {
 		desc string
 

@@ -48,7 +48,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54
-          args: --timeout=15m
+          args: --timeout=15m --build-tags test
 
       - name: Test
         run: make go_test

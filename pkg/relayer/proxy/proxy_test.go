@@ -512,7 +512,6 @@ func sendRequestWithMissingMeta(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errorCode int32, errorMessage string) {
-
 	req := &servicetypes.RelayRequest{
 		// RelayRequest is missing Metadata
 		Payload: testproxy.PrepareJsonRPCRequestPayload(),

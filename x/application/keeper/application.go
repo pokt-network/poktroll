@@ -20,7 +20,6 @@ func (k Keeper) SetApplication(ctx sdk.Context, application types.Application) {
 func (k Keeper) GetApplication(
 	ctx sdk.Context,
 	appAddr string,
-
 ) (app types.Application, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
 
@@ -39,7 +38,6 @@ func (k Keeper) GetApplication(
 func (k Keeper) RemoveApplication(
 	ctx sdk.Context,
 	appAddr string,
-
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
 	store.Delete(types.ApplicationKey(

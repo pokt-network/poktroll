@@ -9,13 +9,14 @@ import (
 
 	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	_ "golang.org/x/crypto/sha3"
+	_ "golang.org/x/crypto/sha3" // blank to be able to get the size of the hash
 
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// SHA3HashLen is the length of the sha3_256 hash (32 bytes)
 var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO(#21): Make these configurable governance param
@@ -36,28 +37,30 @@ type sessionHydrator struct {
 	blockHeight int64
 
 	// A redundant helper that maintains a hex decoded copy of `session.Id` used for session hydration
-	sessionIdBz []byte
+	sessionIDBz []byte
 }
 
+// NewSessionHydrator creates a new session hydrator instance.
 func NewSessionHydrator(
 	appAddress string,
-	serviceId string,
+	serviceID string,
 	blockHeight int64,
 ) *sessionHydrator {
 	sessionHeader := &types.SessionHeader{
 		ApplicationAddress: appAddress,
-		Service:            &sharedtypes.Service{Id: serviceId},
+		Service:            &sharedtypes.Service{Id: serviceID},
 	}
 	return &sessionHydrator{
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
 		blockHeight:   blockHeight,
-		sessionIdBz:   make([]byte, 0),
+		sessionIDBz:   make([]byte, 0),
 	}
 }
 
-// GetSession implements of the exposed `UtilityModule.GetSession` function
-// TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
+// HydrateSession implements of the exposed `UtilityModule.GetSession` function
+// TECHDEBT(#519): Add custom error types depending on the type of issue that
+// occurred and assert on them in the unit tests.
 func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger(ctx).With("method", "hydrateSession")
 
@@ -87,12 +90,19 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 	return sh.session, nil
 }
 
-// hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
+// hydrateSessionMetadata hydrates metadata related to the session such as the
+// height at which the session started, its number, the number of blocks per
+// session, etc..
 func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	if sh.blockHeight > ctx.BlockHeight() {
-		return sdkerrors.Wrapf(types.ErrSessionHydration, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
+		return sdkerrors.Wrapf(
+			types.ErrSessionHydration,
+			"block height %d is ahead of the current block height %d",
+			sh.blockHeight,
+			ctx.BlockHeight(),
+		)
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
@@ -105,7 +115,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
-func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionID(_ sdk.Context, sh *sessionHydrator) error {
 	// TODO_BLOCKER: Need to retrieve the block hash at SessionStartBlockHeight, but this requires
 	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
 	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
@@ -119,7 +129,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
 	}
 
-	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
+	sh.sessionHeader.SessionId, sh.sessionIDBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		prevHash,
@@ -133,7 +143,12 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
 	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
-		return sdkerrors.Wrapf(types.ErrSessionAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(
+			types.ErrSessionAppNotFound,
+			"could not find app with address: %s at height %d",
+			sh.sessionHeader.ApplicationAddress,
+			sh.sessionHeader.SessionStartBlockHeight,
+		)
 	}
 
 	for _, appServiceConfig := range app.ServiceConfigs {
@@ -143,7 +158,12 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 		}
 	}
 
-	return sdkerrors.Wrapf(types.ErrSessionAppNotStakedForService, "application %s not staked for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.Service.Id)
+	return sdkerrors.Wrapf(
+		types.ErrSessionAppNotStakedForService,
+		"application %s not staked for service %s",
+		sh.sessionHeader.ApplicationAddress,
+		sh.sessionHeader.Service.Id,
+	)
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
@@ -154,7 +174,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
 	// only retrieving the suppliers at the current block height which could create a discrepancy
 	// if new suppliers were staked mid session.
-	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
+	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable`
+	// where `N = SessionLength` could be used here.`
 	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
@@ -163,7 +184,8 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 		// to a slice of  pointers; otherwise, we'd be appending new pointers to
 		// the same memory address containing the last supplier in the loop.
 		supplier := s
-		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{}, we could eliminate `slices.Contains()`'s loop
+		// TODO_OPTIMIZE: If `supplier.Services` was a map[string]struct{},
+		// we could eliminate `slices.Contains()`'s loop
 		for _, supplierServiceConfig := range supplier.Services {
 			if supplierServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
 				candidateSuppliers = append(candidateSuppliers, &supplier)
@@ -174,26 +196,42 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 
 	if len(candidateSuppliers) == 0 {
 		logger.Error(fmt.Sprintf("[ERROR] no suppliers found for session"))
-		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
+		return sdkerrors.Wrapf(
+			types.ErrSessionSuppliersNotFound,
+			"could not find suppliers for service %s at height %d",
+			sh.sessionHeader.Service,
+			sh.sessionHeader.SessionStartBlockHeight,
+		)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info(fmt.Sprintf("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession))
+		logger.Info(
+			fmt.Sprintf(
+				"[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)",
+				len(candidateSuppliers),
+				NumSupplierPerSession,
+			),
+		)
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
+		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIDBz)
 	}
 
 	return nil
 }
 
-// TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
-// for it to be language agnostic, a general purpose algorithm MUST be used.
-// pseudoRandomSelection returns a random subset of the candidates.
-func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIdBz []byte) []*sharedtypes.Supplier {
-	// Take the first 8 bytes of sessionId to use as the seed
+// TODO_INVESTIGATE: We are using a `Go` native implementation for a
+// pseudo-random number generator. In order for it to be language agnostic, a
+// general purpose algorithm MUST be used. pseudoRandomSelection returns a
+// random subset of the candidates.
+func pseudoRandomSelection(
+	candidates []*sharedtypes.Supplier,
+	numTarget int,
+	sessionIDBz []byte,
+) []*sharedtypes.Supplier {
+	// Take the first 8 bytes of sessionID to use as the seed
 	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIdBz)[:8]))
+	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
 
 	// Retrieve the indices for the candidates
 	actors := make([]*sharedtypes.Supplier, 0)
@@ -247,19 +285,25 @@ func sha3Hash(bz []byte) []byte {
 // given the application public key, service ID, block hash, and block height.
 func GetSessionId(
 	appPubKey,
-	serviceId,
+	serviceID,
 	blockHash string,
 	blockHeight int64,
-) (sessionId string, sessionIdBz []byte) {
+) (sessionID string, sessionIDBz []byte) {
 	appPubKeyBz := []byte(appPubKey)
-	serviceIdBz := []byte(serviceId)
+	serviceIDBz := []byte(serviceID)
 	blockHashBz := []byte(blockHash)
 
 	sessionHeightBz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight))
 
-	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
-	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
+	sessionIDBz = concatWithDelimiter(
+		SessionIDComponentDelimiter,
+		blockHashBz,
+		serviceIDBz,
+		appPubKeyBz,
+		sessionHeightBz,
+	)
+	sessionID = hex.EncodeToString(sha3Hash(sessionIDBz))
 
-	return sessionId, sessionIdBz
+	return sessionID, sessionIDBz
 }

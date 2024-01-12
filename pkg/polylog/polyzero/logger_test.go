@@ -34,11 +34,14 @@ var (
 	// for the output expectation.
 	expectedTimestampDayPrecisionLayout = "2006-01-02T"
 	expectedTimeLayout                  = "2006-01-02T15:04:05-07:00"
-	expectedTimestampEventContains      = fmt.Sprintf(`"time":"%s`, expectedTime.Format(expectedTimestampDayPrecisionLayout))
-	expectedTimeEventContains           = fmt.Sprintf(`"Time":"%s`, expectedTime.Format(expectedTimeLayout))
-	expectedDuration                    = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
-	expectedDurationString              = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
-	expectedDurationEventContains       = fmt.Sprintf(`"Dur":%s`, expectedDurationString)
+	expectedTimestampEventContains      = fmt.Sprintf(
+		`"time":"%s`,
+		expectedTime.Format(expectedTimestampDayPrecisionLayout),
+	)
+	expectedTimeEventContains     = fmt.Sprintf(`"Time":"%s`, expectedTime.Format(expectedTimeLayout))
+	expectedDuration              = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
+	expectedDurationString        = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
+	expectedDurationEventContains = fmt.Sprintf(`"Dur":%s`, expectedDurationString)
 )
 
 func TestZerologLogger_AllLevels_AllEventTypeMethods(t *testing.T) {

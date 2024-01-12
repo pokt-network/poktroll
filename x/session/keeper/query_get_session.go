@@ -10,7 +10,11 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
-func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequest) (*types.QueryGetSessionResponse, error) {
+// GetSession returns the session handling the query request.
+func (k Keeper) GetSession(
+	goCtx context.Context,
+	req *types.QueryGetSessionRequest,
+) (*types.QueryGetSessionResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}

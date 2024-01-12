@@ -13,6 +13,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
+// CmdGetSession creates a new get-session command.
 func CmdGetSession() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-session <application_address> <service_id> [block_height]",
@@ -24,11 +25,11 @@ func CmdGetSession() *cobra.Command {
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`,
+		$ poktrolld --home=$(POKTROLLD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`, //nolint:lll
 		Args: cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			appAddressString := args[0]
-			serviceIdString := args[1]
+			serviceIDString := args[1]
 			blockHeightString := "0" // 0 will default to latest height
 			if len(args) == 3 {
 				blockHeightString = args[2]
@@ -39,7 +40,7 @@ $ poktrolld --home=$(POKTROLLD_HOME) q session get-session pokt1mrqt5f7qh8uxs27c
 				return fmt.Errorf("couldn't convert block height to int: %s; (%v)", blockHeightString, err)
 			}
 
-			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIdString, blockHeight)
+			getSessionReq := types.NewQueryGetSessionRequest(appAddressString, serviceIDString, blockHeight)
 			if err := getSessionReq.ValidateBasic(); err != nil {
 				return err
 			}

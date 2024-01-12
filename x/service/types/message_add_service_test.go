@@ -4,8 +4,9 @@ import (
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {

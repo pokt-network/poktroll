@@ -55,6 +55,7 @@ func TestProofGet(t *testing.T) {
 		)
 	}
 }
+
 func TestProofRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	items := createNProofs(keeper, ctx, 10)

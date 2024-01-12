@@ -33,7 +33,6 @@ func (k Keeper) ApplicationAll(goCtx context.Context, req *types.QueryAllApplica
 		applications = append(applications, application)
 		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

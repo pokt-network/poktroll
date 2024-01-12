@@ -32,7 +32,6 @@ func (k Keeper) AllProofs(goCtx context.Context, req *types.QueryAllProofsReques
 		proofs = append(proofs, proof)
 		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

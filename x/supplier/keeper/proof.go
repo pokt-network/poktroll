@@ -21,7 +21,6 @@ func (k Keeper) UpsertProof(ctx sdk.Context, proof types.Proof) {
 func (k Keeper) GetProof(
 	ctx sdk.Context,
 	sessionId string,
-
 ) (val types.Proof, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 
@@ -42,7 +41,6 @@ func (k Keeper) RemoveProof(
 	ctx sdk.Context,
 	// TODO_NEXT(@bryanchriswhite #141): Refactor proof keys to support multiple indices.
 	index string,
-
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ProofKeyPrefix))
 	// TODO_NEXT(@bryanchriswhite #141): Refactor proof keys to support multiple indices.

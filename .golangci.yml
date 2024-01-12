@@ -84,6 +84,9 @@ issues:
     - path: errors\.go$
       linters:
         - lll
+    - path: ./app/app.go
+      linters:
+        - gci
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
-  new: true,
+  #new: true,
   #fix: true,

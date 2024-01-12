@@ -19,7 +19,6 @@ func NewMsgStakeApplication(
 	stake types.Coin,
 	appServiceConfigs []*sharedtypes.ApplicationServiceConfig,
 ) *MsgStakeApplication {
-
 	return &MsgStakeApplication{
 		Address:  address,
 		Stake:    &stake,

@@ -33,7 +33,7 @@ func TestClaim_Show(t *testing.T) {
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
 
-	var wrongSupplierAddr = sample.AccAddress()
+	wrongSupplierAddr := sample.AccAddress()
 	tests := []struct {
 		desc         string
 		sessionId    string

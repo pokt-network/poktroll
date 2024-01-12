@@ -152,9 +152,6 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 go_lint: ## Run all go linters
 	golangci-lint run --timeout 5m --build-tags test
 
-go_imports: check_go_version ## Run goimports on all go files
-	go run ./tools/scripts/goimports
-
 #############
 ### Tests ###
 #############

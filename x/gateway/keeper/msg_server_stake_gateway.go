@@ -29,12 +29,12 @@ func (k msgServer) StakeGateway(
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
 		logger.Info(fmt.Sprintf("Gateway not found. Creating new gateway for address %s", msg.Address))
-		gateway = k.createGateway(ctx, msg)
+		gateway = k.createGateway(msg)
 		coinsToDelegate = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Gateway found. Updating gateway stake for address %s", msg.Address))
 		currGatewayStake := *gateway.Stake
-		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
+		if err = k.updateGateway(&gateway, msg); err != nil {
 			return nil, err
 		}
 		coinsToDelegate = (*msg.Stake).Sub(currGatewayStake)
@@ -48,9 +48,22 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.DelegateCoinsFromAccountToModule(
+		ctx,
+		gatewayAddress,
+		types.ModuleName,
+		[]sdk.Coin{coinsToDelegate},
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err))
+		logger.Error(
+			fmt.Sprintf(
+				"could not send %v coins from %s to %s module account due to %v",
+				coinsToDelegate,
+				gatewayAddress,
+				types.ModuleName,
+				err,
+			),
+		)
 		return nil, err
 	}
 
@@ -62,7 +75,6 @@ func (k msgServer) StakeGateway(
 }
 
 func (k msgServer) createGateway(
-	ctx sdk.Context,
 	msg *types.MsgStakeGateway,
 ) types.Gateway {
 	return types.Gateway{
@@ -72,19 +84,28 @@ func (k msgServer) createGateway(
 }
 
 func (k msgServer) updateGateway(
-	ctx sdk.Context,
 	gateway *types.Gateway,
 	msg *types.MsgStakeGateway,
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return sdkerrors.Wrapf(types.ErrGatewayUnauthorized, "msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
+		return sdkerrors.Wrapf(
+			types.ErrGatewayUnauthorized,
+			"msg Address (%s) != gateway address (%s)",
+			msg.Address,
+			gateway.Address,
+		)
 	}
 	if msg.Stake == nil {
 		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*gateway.Stake) {
-		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
+		return sdkerrors.Wrapf(
+			types.ErrGatewayInvalidStake,
+			"stake amount %v must be higher than previous stake amount %v",
+			msg.Stake,
+			gateway.Stake,
+		)
 	}
 	gateway.Stake = msg.Stake
 	return nil

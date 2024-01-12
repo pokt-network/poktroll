@@ -88,7 +88,12 @@ func TestOnError(t *testing.T) {
 	time.Sleep(totalExpectedDelay + 100*time.Millisecond)
 
 	// Verify that the test function was called the expected number of times.
-	require.Equal(t, expectedRetryLimit, int(testFnCallCount), "Test function was not called the expected number of times")
+	require.Equal(
+		t,
+		expectedRetryLimit,
+		int(testFnCallCount),
+		"Test function was not called the expected number of times",
+	)
 
 	// Verify the delay between retries of the test function.
 	var prevCallTime time.Time
@@ -186,7 +191,7 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 	require.Equal(t, expectedRetryLimit, int(testFnCallCount))
 
 	// Assert that the retry delay between function calls matches the expected delay
-	var prevCallTime = new(time.Time)
+	prevCallTime := new(time.Time)
 	for i := 0; i < expectedRetryLimit; i++ {
 		select {
 		case nextCallTime := <-testFnCallTimeCh:
@@ -213,10 +218,11 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 
 	// Verify the logged error messages
 	var (
-		logOutputLines   = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
-		errorLines       = logOutputLines[:len(logOutputLines)-1]
-		warnLine         = logOutputLines[len(logOutputLines)-1]
-		expectedWarnMsg  = "WARN: error channel for TestOnError_ExitsWhenErrChCloses closed, will no longer retry on error"
+		logOutputLines  = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
+		errorLines      = logOutputLines[:len(logOutputLines)-1]
+		warnLine        = logOutputLines[len(logOutputLines)-1]
+		expectedWarnMsg = "WARN: error channel for TestOnError_ExitsWhenErrChCloses " +
+			"closed, will no longer retry on error"
 		expectedErrorMsg = "ERROR: retrying TestOnError_ExitsWhenErrChCloses after error: test error"
 	)
 
@@ -294,7 +300,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	require.Equal(t, expectedRetryLimit, int(testFnCallCount))
 
 	// Assert that the retry delay between function calls matches the expected delay
-	var prevCallTime = new(time.Time)
+	prevCallTime := new(time.Time)
 	for i := 0; i < expectedRetryLimit; i++ {
 		select {
 		case nextCallTime := <-testFnCallTimeCh:
