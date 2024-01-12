@@ -48,9 +48,6 @@ func main() {
 
 	// Run gci on all accumulated files - this writes changes in place
 	if len(filesToProcess) > 0 {
-		cmdToRun := append([]string{"gci", "write"}, defaultArgs...)
-		cmdToRun = append(cmdToRun, filesToProcess...)
-		fmt.Printf("Running: %s\n", cmdToRun)
 		args := defaultArgs
 		args = append(args, filesToProcess...)
 		cmd := exec.Command("gci", append([]string{"write"}, args...)...)
