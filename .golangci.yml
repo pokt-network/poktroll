@@ -18,16 +18,13 @@ linters:
 
 linters-settings:
   lll:
-    line-length: 150
+    line-length: 120
     tab-width: 4
   gci:
     sections:
       - standard # std lib
       - default # external
       - prefix(github.com/pokt-network/poktroll) # local imports
-      - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
-      - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
-      - alias # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
     skip-generated: true
     custom-order: true
 
@@ -84,6 +81,11 @@ issues:
     - path: _test\.go$
       linters:
         - errcheck
+    # Exclude line length check for errors.go files as they are easier to read
+    # as as single line.
+    - path: ^.*/errors\.go$
+      links:
+          - lll
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #new: true,
   #fix: true,
