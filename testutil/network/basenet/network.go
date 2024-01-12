@@ -16,16 +16,18 @@ import (
 var _ network.InMemoryNetwork = (*BaseInMemoryNetwork)(nil)
 
 // BaseInMemoryNetwork is an "abstract" (i.e. partial) implementation, intended
-// to be embedded by other ("concrete") InMemoryNetwork implementations.
+// to consolidate shared behavior between multiple ("concrete") InMemoryNetwork
+// implementations. These shared behaviors (methods) are accessible to any concrete
+// implementation which embeds BaseInMemoryNetwork.
 type BaseInMemoryNetwork struct {
 	Config                      network.InMemoryNetworkConfig
 	PreGeneratedAccountIterator *testkeyring.PreGeneratedAccountIterator
-	Network                     *sdknetwork.Network
+	CosmosNetwork               *sdknetwork.Network
 
-	// lastAccountSeqNumber stores the last (most recently generated) account sequence number.
+	// lastValidatorSeqNumber stores the last (most recently generated) account sequence number.
 	// NB: explicitly NOT using atomic.Int32 as it's usage doesn't compose well with anonymous
 	// literal declarations.
-	lastAccountSeqNumber int32
+	lastValidatorSeqNumber int32
 }
 
 // NewBaseInMemoryNetwork creates a new BaseInMemoryNetwork with the given
@@ -43,23 +45,23 @@ func NewBaseInMemoryNetwork(
 		PreGeneratedAccountIterator: preGeneratedAccounts,
 
 		// First functional account sequence number is 1. Starting at 0 so that
-		// callers can always use NextAccountSequenceNumber() (no boundary condition).
-		lastAccountSeqNumber: int32(0),
+		// callers can always use NextValidatorTxSequenceNumber() (no boundary condition).
+		lastValidatorSeqNumber: int32(0),
 	}
 }
 
 // InitializeDefaults sets the underlying cosmos-sdk testutil network config to
 // a reasonable default in case one was not provided with the InMemoryNetworkConfig.
 func (memnet *BaseInMemoryNetwork) InitializeDefaults(t *testing.T) {
-	if memnet.Config.CosmosCfg == nil {
-		t.Log("Cosmos config not initialized, using default config")
-
-		// Initialize a network config.
-		cfg := network.DefaultConfig()
-		memnet.Config.CosmosCfg = &cfg
-	} else {
+	if memnet.Config.CosmosCfg != nil {
 		t.Log("Cosmos config already initialized, using existing config")
+		return
 	}
+
+	t.Log("Cosmos config not initialized, using default config")
+	// Initialize a network config.
+	cfg := network.DefaultConfig()
+	memnet.Config.CosmosCfg = &cfg
 }
 
 // GetClientCtx returns the underlying cosmos-sdk testutil network's client context.
@@ -99,24 +101,24 @@ func (memnet *BaseInMemoryNetwork) GetCosmosNetworkConfig(t *testing.T) *sdknetw
 func (memnet *BaseInMemoryNetwork) GetNetwork(t *testing.T) *sdknetwork.Network {
 	t.Helper()
 
-	require.NotEmptyf(t, memnet.Network, "in-memory cosmos network not set")
-	return memnet.Network
+	require.NotEmptyf(t, memnet.CosmosNetwork, "in-memory cosmos network not set")
+	return memnet.CosmosNetwork
 }
 
-// GetLastAccountSequenceNumber returns the last (most recently generated) account sequence number.
+// GetLastValidatorTxSequenceNumber returns the last (most recently generated) account sequence number.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryNetwork) GetLastAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) GetLastValidatorTxSequenceNumber(t *testing.T) int {
 	t.Helper()
 
-	return int(atomic.LoadInt32(&memnet.lastAccountSeqNumber))
+	return int(atomic.LoadInt32(&memnet.lastValidatorSeqNumber))
 }
 
-// NextAccountSequenceNumber increments the account sequence number and returns the new value.
+// NextValidatorTxSequenceNumber increments the account sequence number and returns the new value.
 // It is safe for concurrent use.
-func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
+func (memnet *BaseInMemoryNetwork) NextValidatorTxSequenceNumber(t *testing.T) int {
 	t.Helper()
 
-	return int(atomic.AddInt32(&memnet.lastAccountSeqNumber, 1))
+	return int(atomic.AddInt32(&memnet.lastValidatorSeqNumber, 1))
 }
 
 // Start is a stub which is expected to be implemented by "concrete" InMemoryNetwork
@@ -124,5 +126,5 @@ func (memnet *BaseInMemoryNetwork) NextAccountSequenceNumber(t *testing.T) int {
 // it is too general to define this behavior, leaving it up to embedders. As a result,
 // this function panics if it is called.
 func (memnet *BaseInMemoryNetwork) Start(_ context.Context, t *testing.T) {
-	panic("not implemented")
+	panic("must be implemented by struct embedders")
 }

@@ -51,18 +51,17 @@ func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t
 	supplierGenesisBuffer, err := memnet.GetCosmosNetworkConfig(t).Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
 
-	// Add supplier module genesis supplierGenesisState to the network config.
+	// Add supplier module genesis state to the network config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[suppliertypes.ModuleName] = supplierGenesisBuffer
 
 	return supplierGenesisState
 }
 
 // configureApplicationModuleGenesisState generates and populates the in-memory network's
-// applicaion module's GenesisState object with a given number of applications,
-// each of which is staked for a service such that
-// memnet.Config.AppSupplierPairingRatio*NumSuppliers number of applications are staked
-// for each genesis supplier's service (assumes that each supplier is staked for a unique
-// service with no overlap).
+// application module's GenesisState object with a given number of applications, each of
+// which is staked for a service such that memnet.Config.AppSupplierPairingRatio*NumSuppliers
+// number of applications are staked for each genesis supplier's service (assumes that each
+// supplier is staked for a unique service with no overlap).
 func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *testing.T) *apptypes.GenesisState {
 	t.Helper()
 
@@ -99,7 +98,7 @@ func (memnet *inMemoryNetworkWithSessions) configureAppModuleGenesisState(t *tes
 	appGenesisBuffer, err := memnet.Config.CosmosCfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	// Add supplier and application module genesis appGenesisState to the network memnetConfig.
+	// Add supplier and application module genesis appGenesisState to the network memnet cosmos config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 
 	return appGenesisState

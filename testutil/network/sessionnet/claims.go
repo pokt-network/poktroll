@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -65,9 +63,6 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 ) (*suppliertypes.Claim, relayer.SessionTree) {
 	t.Helper()
 
-	clientCtx := memnet.GetClientCtx(t)
-	net := memnet.GetNetwork(t)
-
 	// Create a new session tree with NumRelaysPerSession number of relay nodes inserted.
 	// Base64-encode it's root hash for use with the CLI command.
 	sessionTree := newSessionTreeRoot(t, memnet.Config.NumRelaysPerSession, sessionHeader)
@@ -81,9 +76,10 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
 
+	clientCtx := memnet.GetClientCtx(t)
 	responseRaw, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
 	var responseJson map[string]interface{}

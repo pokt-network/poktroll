@@ -3,11 +3,13 @@ package cli_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
@@ -15,6 +17,7 @@ import (
 
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/network/gatewaynet"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
@@ -44,57 +47,72 @@ func TestCLI_StakeGateway(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		stake   string
-		err     *sdkerrors.Error
+		desc          string
+		address       string
+		inputConfig   string
+		expectedError *sdkerrors.Error
 	}{
 		{
 			desc:    "stake gateway: invalid address",
 			address: "invalid",
-			stake:   "1000upokt",
-			err:     gatewaytypes.ErrGatewayInvalidAddress,
+			inputConfig: `
+			  stake_amount: 1000upokt
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
 			// address: intentionally omitted,
-			stake: "1000upokt",
-			err:   gatewaytypes.ErrGatewayInvalidAddress,
+			inputConfig: `
+			  stake_amount: 1000upokt
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
 			address: gatewayAccount.GetAddress(),
-			stake:   "0upokt",
-			err:     gatewaytypes.ErrGatewayInvalidStake,
+			inputConfig: `
+			  stake_amount: 0upokt
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
 			address: gatewayAccount.GetAddress(),
-			stake:   "-1000upokt",
-			err:     gatewaytypes.ErrGatewayInvalidStake,
+			inputConfig: `
+			  stake_amount: -1000upokt
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
 			address: gatewayAccount.GetAddress(),
-			stake:   "1000invalid",
-			err:     gatewaytypes.ErrGatewayInvalidStake,
+			inputConfig: `
+			  stake_amount: 1000invalid
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
 			address: gatewayAccount.GetAddress(),
-			stake:   "1000",
-			err:     gatewaytypes.ErrGatewayInvalidStake,
+			inputConfig: `
+			  stake_amount: 1000
+				`,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
-			desc:    "stake gateway: invalid stake missing stake",
-			address: gatewayAccount.GetAddress(),
-			// stake: intentionally omitted,
-			err: gatewaytypes.ErrGatewayInvalidStake,
+			desc:          "stake gateway: invalid stake missing stake",
+			address:       gatewayAccount.GetAddress(),
+			// inputConfig intentionally empty,
+			inputConfig:   ``,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
 			address: gatewayAccount.GetAddress(),
-			stake:   "1000upokt",
+			inputConfig: `
+			  stake_amount: 1000upokt
+				`,
 		},
 	}
 
@@ -104,19 +122,23 @@ func TestCLI_StakeGateway(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
+			// write the stake config to a file
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.inputConfig)).Name()
+			t.Cleanup(func() { os.Remove(configPath) })
+
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.stake,
+				fmt.Sprintf("--config=%s", configPath),
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
 			}
 			args = append(args, commonArgs...)
 
 			// Execute the command
 			outStake, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdStakeGateway(), args)
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if tt.expectedError != nil {
+				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), tt.expectedError.Error())
 				return
 			}
 			require.NoError(t, err)

@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/network"
@@ -54,7 +55,7 @@ func (memnet *BaseInMemoryNetwork) CreateKeyringAccounts(t *testing.T) {
 func (memnet *BaseInMemoryNetwork) FundOnChainAccounts(t *testing.T) {
 	t.Helper()
 
-	// NB: while it may initially seem like the memnet#Init<actor>AccountsWithSequence() methods
+	// NB: while it may initially seem like the memnet#Fund<actor>Accounts() methods
 	// can be refactored into a generic function, this is not possible so long as the genesis
 	// state lists are passed directly & remain a slice of concrete types (as opposed to pointers).
 	// Under these conditions, a generic function would not be able to unmarshal the genesis state
@@ -106,24 +107,21 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	t.Helper()
 
 	signerAccountNumber := 0
-	// Validator's client context MUST be used for this CLI command because its keyring includes the validator's key
-	clientCtx := memnet.Network.Validators[0].ClientCtx
-	// MUST NOT use memnet.GetClientCtx(t) as its keyring does not include the validator's account
-	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available via the in-memory network's keyring.
+	clientCtx := memnet.GetClientCtx(t)
 	net := memnet.GetNetwork(t)
 	val := net.Validators[0]
 
 	args := []string{
 		fmt.Sprintf("--%s=true", flags.FlagOffline),
 		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
-		fmt.Sprintf("--%s=%d", flags.FlagSequence, memnet.NextAccountSequenceNumber(t)),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, memnet.NextValidatorTxSequenceNumber(t)),
 
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, types.NewCoins(types.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
-	amount := types.NewCoins(types.NewCoin("stake", math.NewInt(200)))
+	amount := memnet.NewBondDenomCoins(t, 200)
 	responseRaw, err := testcli.MsgSendExec(clientCtx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
 	var responseJSON map[string]interface{}
@@ -212,4 +210,10 @@ func (memnet *BaseInMemoryNetwork) CreateNewOnChainAccount(t *testing.T) *testke
 	testkeyring.CreatePreGeneratedKeyringAccounts(t, memnet.GetClientCtx(t).Keyring, 1)
 
 	return preGeneratedAcct
+}
+
+func (memnet *BaseInMemoryNetwork) NewBondDenomCoins(t *testing.T, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	return sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(numCoins)))
 }

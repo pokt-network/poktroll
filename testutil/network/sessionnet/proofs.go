@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -58,15 +56,13 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 
 	sessionHeaderEncoded := cliEncodeSessionHeader(t, claim.GetSessionHeader())
 	closestMerkleProofEncoded := base64.StdEncoding.EncodeToString(closestMerkleProofBz)
-
-	bondDenom := memnet.GetNetwork(t).Config.BondDenom
 	args := []string{
 		sessionHeaderEncoded,
 		closestMerkleProofEncoded,
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, claim.GetSupplierAddress()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(bondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, memnet.NewBondDenomCoins(t, 10).String()),
 	}
 
 	ctx := memnet.GetClientCtx(t)
