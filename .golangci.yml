@@ -81,8 +81,8 @@ issues:
         - errcheck
     # Exclude line length check for errors.go files as they are easier to read
     # as as single line.
-    - path: ^.*/errors\.go$
-      links:
+    - path: errors\.go$
+      linters:
         - lll
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #new: true,
