@@ -8,6 +8,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 service Msg {
   rpc AddService (MsgAddService) returns (MsgAddServiceResponse);
 }
+
 message MsgAddService {
   string address = 1;
 }
