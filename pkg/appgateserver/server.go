@@ -105,6 +105,8 @@ func NewAppGateServer(
 		app.signingInformation.AppAddress = appAddress.String()
 	}
 
+	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
+	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
