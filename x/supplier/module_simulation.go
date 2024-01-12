@@ -3,15 +3,15 @@ package supplier
 import (
 	"math/rand"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	suppliersimulation "github.com/pokt-network/poktroll/x/supplier/simulation"
-	"github.com/pokt-network/poktroll/x/supplier/types"
-
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
 	"github.com/cosmos/cosmos-sdk/x/simulation"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	suppliersimulation "github.com/pokt-network/poktroll/x/supplier/simulation"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // avoid unused import issue

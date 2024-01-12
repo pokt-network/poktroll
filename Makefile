@@ -14,7 +14,7 @@ POCKET_ADDR_PREFIX = pokt
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
-	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/daixiang0/gci@latest
 
 ########################
 ### Makefile Helpers ###
@@ -67,6 +67,16 @@ check_godoc:
 	{ \
 	if ( ! ( command -v godoc >/dev/null )); then \
 		echo "Seems like you don't have godoc installed. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gci
+# Internal helper target - check if gci is installed
+check_gci:
+	{ \
+	if ( ! ( command -v gci >/dev/null )); then \
+		echo "Seems like you don't have gci installed. Make sure you install it via 'go install github.com/daixiang0/gci@latest' before continuing"; \
 		exit 1; \
 	fi; \
 	}
@@ -150,7 +160,11 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 
 .PHONY: go_lint
 go_lint: ## Run all go linters
-	golangci-lint run --timeout 5m --build-tags test
+	golangci-lint run --timeout 15m --build-tags test
+
+.PHONY: gci
+gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
+	go run ./tools/scripts/gci
 
 #############
 ### Tests ###

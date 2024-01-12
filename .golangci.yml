@@ -22,9 +22,13 @@ linters-settings:
     sections:
       - standard # std lib
       - default # external
+      - custom # internal
       - prefix(github.com/pokt-network/poktroll) # local imports
     skip-generated: true
     custom-order: true
+  skip-files:
+    - "*.pb.go"
+    - "*/vendor/*"
 
 issues:
   exclude-use-default: true
