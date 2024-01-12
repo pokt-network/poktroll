@@ -7,11 +7,29 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-#    - govet
-#    - revive
-#    - errcheck
-#    - unused
+    #    - govet
+    #    - revive
+    #    - errcheck
+    #    - unused
+    - gofumpt
     - goimports
+    - lll
+    - gci
+
+linters-settings:
+  lll:
+    line-length: 150
+    tab-width: 4
+  gci:
+    sections:
+      - standard # std lib
+      - default # external
+      - prefix(github.com/pokt-network/poktroll) # local imports
+      - blank # Blank section: contains all blank imports. This section is not present unless explicitly enabled.
+      - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
+      - alias # Alias section: contains all alias imports. This section is not present unless explicitly enabled.
+    skip-generated: true
+    custom-order: true
 
 issues:
   exclude-use-default: true
@@ -27,26 +45,41 @@ issues:
     # empty import block containing a comment used by ignite CLI.
     - path: ^x/.+/genesis\.go$
       linters:
+        - gci
+        - lll
+        - gofumpt
         - goimports
     # Exclude cosmos-sdk module module.go files as they are generated with unused
     # parameters and unchecked errors.
     - path: ^x/.+/module\.go$
       linters:
+        - gci
+        - lll
+        - gofumpt
         - revive
         - errcheck
     # Exclude cosmos-sdk module tx.go files as they are generated with unused
     # constants.
     - path: ^x/.+/cli/tx\.go$
       linters:
+        - gci
+        - lll
+        - gofumpt
         - unused
     # Exclude simulation code as it's generated with lots of unused parameters.
     - path: .*/simulation/.*|_simulation\.go$
       linters:
+        - gci
+        - lll
+        - gofumpt
         - revive
     # Exclude cosmos-sdk module codec files as they are scaffolded with a unused
-    # paramerters and a comment used by ignite CLI.
+    # parameters and a comment used by ignite CLI.
     - path: ^x/.+/codec.go$
       linters:
+        - gci
+        - lll
+        - gofumpt
         - revive
     - path: _test\.go$
       linters:
