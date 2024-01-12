@@ -11,33 +11,33 @@ import (
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgAddService
-		err  error
+		desc        string
+		msg         MsgAddService
+		expectedErr error
 	}{
 		{
-			name: "invalid supplier address - no service",
+			desc: "invalid supplier address - no service",
 			msg: MsgAddService{
 				SupplierAddress: "invalid_address",
 				// Service: intentionally omitted,
 			},
-			err: ErrServiceInvalidAddress,
+			expectedErr: ErrServiceInvalidAddress,
 		}, {
-			name: "valid supplier address - no service ID",
+			desc: "valid supplier address - no service ID",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
 				Service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
 			},
-			err: ErrServiceMissingID,
+			expectedErr: ErrServiceMissingID,
 		}, {
-			name: "valid supplier address - no service name",
+			desc: "valid supplier address - no service name",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
 				Service:         sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
 			},
-			err: ErrServiceMissingName,
+			expectedErr: ErrServiceMissingName,
 		}, {
-			name: "valid supplier address and service",
+			desc: "valid supplier address and service",
 			msg: MsgAddService{
 				SupplierAddress: sample.AccAddress(),
 				Service:         sharedtypes.Service{Id: "srv1", Name: "service name"},
@@ -45,10 +45,10 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+			if tt.expectedErr != nil {
+				require.ErrorIs(t, err, tt.expectedErr)
 				return
 			}
 			require.NoError(t, err)
