@@ -1,7 +1,3 @@
-linters-settings:
-  govet:
-    check-shadowing: true
-
 # TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
 # Don't forget to delete the `disable-all: true` line as well.
 linters:
@@ -17,6 +13,8 @@ linters:
     - gci
 
 linters-settings:
+  govet:
+    check-shadowing: true
   lll:
     line-length: 120
     tab-width: 4
@@ -85,7 +83,7 @@ issues:
     # as as single line.
     - path: ^.*/errors\.go$
       links:
-          - lll
+        - lll
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #new: true,
   #fix: true,
