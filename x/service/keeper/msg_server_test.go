@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
+	"github.com/stretchr/testify/require"
 )
 
 func setupMsgServer(t testing.TB) (types.MsgServer, context.Context) {
