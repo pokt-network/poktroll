@@ -201,17 +201,21 @@ func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 func (memnet *BaseInMemoryNetwork) CreateNewOnChainAccount(t *testing.T) *testkeyring.PreGeneratedAccount {
 	t.Helper()
 
+	// Get the next available pre-generated account.
 	preGeneratedAcct, ok := testkeyring.PreGeneratedAccounts().Next()
 	require.Truef(t, ok, "no pre-generated accounts available")
 
-	// Create a supplier on-chain account.
+	// Create an account in the auth module with the address of the pre-generated account.
 	memnet.FundAddress(t, preGeneratedAcct.Address)
 
+	// Create an entry in the keyring using the pre-generated account's mnemonic.
 	testkeyring.CreatePreGeneratedKeyringAccounts(t, memnet.GetClientCtx(t).Keyring, 1)
 
 	return preGeneratedAcct
 }
 
+// NewBondDenomCoins returns a Coins object containing the given number of coins
+// in terms of the network's configured bond denomination.
 func (memnet *BaseInMemoryNetwork) NewBondDenomCoins(t *testing.T, numCoins int64) sdk.Coins {
 	t.Helper()
 
