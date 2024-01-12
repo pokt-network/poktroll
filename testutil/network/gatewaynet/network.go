@@ -129,9 +129,8 @@ func (memnet *inMemoryNetworkWithGateways) Start(_ context.Context, t *testing.T
 }
 
 // configureGatewayModuleGenesisState generates and populates the in-memory network's
-// application module's GenesisState object with the number of applications specified
-// by the InMemoryConfig, each of which is staked for a unique service. It returns
-// the genesis state object.
+// gateway module's GenesisState object with the number of gateways specified by the
+// InMemoryConfig.
 func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t *testing.T) {
 	t.Helper()
 
@@ -139,7 +138,6 @@ func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t 
 	for gatewayIdx := 0; gatewayIdx < memnet.Config.NumGateways; gatewayIdx++ {
 		stake := sdk.NewCoin("upokt", sdk.NewInt(10000))
 		preGeneratedAcct, ok := memnet.PreGeneratedAccountIterator.Next()
-		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 		require.Truef(t, ok, "pre-generated accounts iterator exhausted")
 
 		gateway := gatewaytypes.Gateway{
@@ -153,10 +151,14 @@ func (memnet *inMemoryNetworkWithGateways) configureGatewayModuleGenesisState(t 
 	gatewayGenesisBuffer, err := memnet.GetCosmosNetworkConfig(t).Codec.MarshalJSON(gatewayGenesisState)
 	require.NoError(t, err)
 
-	// Add supplier module genesis supplierGenesisState to the network config.
+	// Add gateway module genesis state to the network config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[gatewaytypes.ModuleName] = gatewayGenesisBuffer
 }
 
+// configureAppModuleGenesisState generates and populates the in-memory network's
+// application module's GenesisState object with the number of applications specified
+// by the InMemoryConfig, each of which is staked for a unique service. It returns
+// the genesis state object.
 func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *testing.T) {
 	t.Helper()
 
@@ -182,6 +184,6 @@ func (memnet *inMemoryNetworkWithGateways) configureAppModuleGenesisState(t *tes
 	appGenesisBuffer, err := memnet.Config.CosmosCfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
 
-	// Add application module genesis appGenesisState to the network memnet cosmos config.
+	// Add application module genesis state to the network memnet cosmos config.
 	memnet.GetCosmosNetworkConfig(t).GenesisState[apptypes.ModuleName] = appGenesisBuffer
 }

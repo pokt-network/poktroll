@@ -107,10 +107,7 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	t.Helper()
 
 	signerAccountNumber := 0
-	// Validator's client context MUST be used for this CLI command because its keyring includes the validator's key
 	clientCtx := memnet.GetClientCtx(t)
-	// MUST NOT use memnet.GetClientCtx(t) as its keyring does not include the validator's account
-	// TODO_UPNEXT(@bryanchriswhite): Ensure validator key is always available via the in-memory network's keyring.
 	net := memnet.GetNetwork(t)
 	val := net.Validators[0]
 

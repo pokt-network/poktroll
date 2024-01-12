@@ -17,7 +17,7 @@ func GetGenesisState[T proto.Message](t *testing.T, moduleName string, memnet In
 
 	var genesisState T
 	// NB: As this function is generic, it MUST use reflect in order to unmarshal
-	// the genesis state as the codec requries a reference to a concrete type pointer.
+	// the genesis state as the codec requires a reference to a concrete type pointer.
 	genesisStateType := reflect.TypeOf(genesisState)
 	genesisStateValue := reflect.New(genesisStateType.Elem())
 	genesisStatePtr := genesisStateValue.Interface().(proto.Message)
