@@ -79107,8 +79107,6 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
-  poktroll.service.MsgAddServiceResponse:
-    type: object
   poktroll.tokenomics.Params:
     type: object
     properties:
