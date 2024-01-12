@@ -8,6 +8,7 @@ export const ENV_CONFIG = {
     AppGateServerAnvilUrl: __ENV.APP_GATE_SERVER_ANVIL_URL || 'http://localhost:42069/anvil',
 };
 
+// We can export this function in our tests to generate HTML summary.
 export function handleSummary(data) {
   return {
     "summary.html": htmlReport(data),
