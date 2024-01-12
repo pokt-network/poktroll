@@ -45,7 +45,10 @@ jobs:
         run: make go_mockgen
 
       - name: Run golangci-lint
-        run: make go_lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+          args: --timeout=15m
 
       - name: Test
         run: make go_test
