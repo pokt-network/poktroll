@@ -9,15 +9,17 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// CmdUnstakeSupplier creates a new unstake-supplier command.
 func CmdUnstakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
 		Use:   "unstake-supplier",
 		Short: "Unstake a supplier",
+		// nolint:lll
 		Long: `Unstake an supplier with the provided parameters. This is a broadcast operation that will unstake the supplier specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
+		$ poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			clientCtx, err := client.GetClientTxContext(cmd)

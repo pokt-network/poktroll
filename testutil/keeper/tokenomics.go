@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// TokenomicsKeeper returns a mocked tokenomics keeper and context for testing.
 func TokenomicsKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)

@@ -13,7 +13,11 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k Keeper) ApplicationAll(goCtx context.Context, req *types.QueryAllApplicationRequest) (*types.QueryAllApplicationResponse, error) {
+// ApplicationAll returns all applications handling the query.
+func (k Keeper) ApplicationAll(
+	goCtx context.Context,
+	req *types.QueryAllApplicationRequest,
+) (*types.QueryAllApplicationResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -40,7 +44,11 @@ func (k Keeper) ApplicationAll(goCtx context.Context, req *types.QueryAllApplica
 	return &types.QueryAllApplicationResponse{Application: applications, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Application(goCtx context.Context, req *types.QueryGetApplicationRequest) (*types.QueryGetApplicationResponse, error) {
+// Application returns the desired application handling the query.
+func (k Keeper) Application(
+	goCtx context.Context,
+	req *types.QueryGetApplicationRequest,
+) (*types.QueryGetApplicationResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -51,7 +59,10 @@ func (k Keeper) Application(goCtx context.Context, req *types.QueryGetApplicatio
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("application not found: address %s", req.Address))
+		return nil, status.Error(
+			codes.NotFound,
+			fmt.Sprintf("application not found: address %s", req.Address),
+		)
 	}
 
 	return &types.QueryGetApplicationResponse{Application: val}, nil

@@ -22,7 +22,11 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress) (*keeper.Keeper, sdk.Context) {
+// SupplierKeeper returns a mocked supplier keeper and context for testing.
+func SupplierKeeper(
+	t testing.TB,
+	sessionByAppAddr supplier.SessionsByAppAddress,
+) (*keeper.Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -39,8 +43,20 @@ func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress
 
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
-	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().
+		DelegateCoinsFromAccountToModule(
+			gomock.Any(),
+			gomock.Any(),
+			types.ModuleName,
+			gomock.Any()).
+		AnyTimes()
+	mockBankKeeper.EXPECT().
+		UndelegateCoinsFromModuleToAccount(
+			gomock.Any(),
+			types.ModuleName,
+			gomock.Any(),
+			gomock.Any()).
+		AnyTimes()
 
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockSessionKeeper.EXPECT().
@@ -51,7 +67,12 @@ func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress
 				req *sessiontypes.QueryGetSessionRequest,
 			) (*sessiontypes.QueryGetSessionResponse, error) {
 				session, ok := sessionByAppAddr[req.GetApplicationAddress()]
-				require.Truef(t, ok, "application address not provided during mock construction: %q", req.ApplicationAddress)
+				require.Truef(
+					t,
+					ok,
+					"application address not provided during mock construction: %q",
+					req.ApplicationAddress,
+				)
 
 				return &sessiontypes.QueryGetSessionResponse{
 					Session: &sessiontypes.Session{

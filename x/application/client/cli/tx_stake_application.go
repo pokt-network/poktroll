@@ -27,7 +27,7 @@ func CmdStakeApplication() *cobra.Command {
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+		$ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`, //nolint:lll
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			configContent, err := os.ReadFile(flagStakeConfig)

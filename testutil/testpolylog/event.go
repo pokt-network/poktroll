@@ -111,8 +111,18 @@ func RunEventMethodTests(
 		// Ensure that calls to #Msg(), #Msgf(), and #Send() are mutually exclusive.
 		switch {
 		case tt.Msg != "":
-			require.Emptyf(t, tt.MsgFmt, "Msg and MsgFmt are mutually exclusive but MsgFmt was not empty: %s", tt.MsgFmt)
-			require.Emptyf(t, tt.MsgFmtArgs, "Msg and MsgFmt are mutually exclusive but MsgFmtArgs was not empty: %v", tt.MsgFmtArgs)
+			require.Emptyf(
+				t,
+				tt.MsgFmt,
+				"Msg and MsgFmt are mutually exclusive but MsgFmt was not empty: %s",
+				tt.MsgFmt,
+			)
+			require.Emptyf(
+				t,
+				tt.MsgFmtArgs,
+				"Msg and MsgFmt are mutually exclusive but MsgFmtArgs was not empty: %v",
+				tt.MsgFmtArgs,
+			)
 
 			// Set up call args for polylog.Event#Msg() if tt.msg is not empty.
 			doneMethodName = "Msg"

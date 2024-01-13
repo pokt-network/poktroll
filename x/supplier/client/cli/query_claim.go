@@ -27,6 +27,7 @@ func AddClaimFilterFlags(cmd *cobra.Command) {
 	cmd.Flags().String(FlagSupplierAddress, "", "claims submitted by suppliers matching this address will be returned")
 }
 
+// CmdListClaims creates a new lits-claims command.
 func CmdListClaims() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-claims",
@@ -78,10 +79,12 @@ $ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --supplier-address <sup
 	return cmd
 }
 
+// CmdShowClaim creates a new show-claim command.
 func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show-claim <session_id> <supplier_addr>",
 		Short: "shows a specific claim",
+		//nolint:lll
 		Long: `List a specific claim that the node being queried has access to (if it still exists).
 
 A unique claim can be defined via a ` + "`session_id`" + ` that the given ` + "`supplier`" + ` participated in.
@@ -133,7 +136,12 @@ func updateClaimsFilter(cmd *cobra.Command, req *types.QueryAllClaimsRequest) er
 	sessionEndHeight, _ := cmd.Flags().GetUint64(FlagSessionEndHeight)
 
 	// Preparing a shared error in case more than one flag was set
-	err := fmt.Errorf("can only specify one flag filter but got sessionId (%s), supplierAddr (%s) and sessionEngHeight (%d)", sessionId, supplierAddr, sessionEndHeight)
+	err := fmt.Errorf(
+		"can only specify one flag filter but got sessionId (%s), supplierAddr (%s) and sessionEngHeight (%d)",
+		sessionId,
+		supplierAddr,
+		sessionEndHeight,
+	)
 
 	// Use the session id as the filter
 	if sessionId != "" {

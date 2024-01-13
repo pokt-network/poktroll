@@ -18,6 +18,7 @@ var (
 	_               = strconv.Itoa(0) // Part of the default ignite imports
 )
 
+// CmdStakeSupplier creates a new stake-supplier command.
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
@@ -27,7 +28,7 @@ func CmdStakeSupplier() *cobra.Command {
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`, //nolint:lll
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {

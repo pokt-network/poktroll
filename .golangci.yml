@@ -8,7 +8,6 @@ linters:
     #    - errcheck
     #    - unused
     - gofumpt
-    - goimports
     - lll
     - gci
 
@@ -46,7 +45,6 @@ issues:
         - gci
         - lll
         - gofumpt
-        - goimports
     # Exclude cosmos-sdk module module.go files as they are generated with unused
     # parameters and unchecked errors.
     - path: ^x/.+/module\.go$

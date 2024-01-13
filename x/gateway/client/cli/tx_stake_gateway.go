@@ -25,7 +25,7 @@ func CmdStakeGateway() *cobra.Command {
 		Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the gateway specified by the 'from' address.
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config stake_config.yaml --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)`,
+		$ poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config stake_config.yaml --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)`, // nolint:lll
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			configContent, err := os.ReadFile(flagStakeConfig)

@@ -18,6 +18,7 @@ func CmdUnstakeGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unstake-gateway <upokt_amount>",
 		Short: "Unstake a gateway",
+		//nolint:lll
 		Long: `Unstake a gateway. This is a broadcast operation that will unstake the gateway specified by the 'from' address.
 
 Example:

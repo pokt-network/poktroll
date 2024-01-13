@@ -6,6 +6,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// DefaultMaxDelegatedGateways is the default max number of delegated gateways
+// an application can have.
 // TODO: Revisit default param values
 const DefaultMaxDelegatedGateways int64 = 7
 
@@ -34,7 +36,10 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 // Validate validates the set of params
 func (p Params) Validate() error {
 	if p.MaxDelegatedGateways < 1 {
-		return sdkerrors.Wrapf(ErrAppInvalidMaxDelegatedGateways, "MaxDelegatedGateways param < 1: got %d", p.MaxDelegatedGateways)
+		return sdkerrors.Wrapf(
+			ErrAppInvalidMaxDelegatedGateways,
+			"MaxDelegatedGateways param < 1: got %d", p.MaxDelegatedGateways,
+		)
 	}
 	return nil
 }

@@ -7,7 +7,8 @@
 // of this packages consumers as well as any future ambitions to (and implications
 // thereof) adding support for adapting to additional logging libraries.
 //
-// It is intended to initially support the go std `log`, `github.com/rs/zerolog` and `go.uber.org/zap` logging libraries:
+// It is intended to initially support the go std `log`, `github.com/rs/zerolog`
+// and `go.uber.org/zap` logging libraries:
 //
 // - https://pkg.go.dev/log@go1.21.4
 //

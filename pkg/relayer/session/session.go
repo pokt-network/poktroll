@@ -129,7 +129,9 @@ func (rs *relayerSessionsManager) InsertRelays(relays relayer.MinedRelaysObserva
 
 // ensureSessionTree returns the SessionTree for a given session.
 // If no tree for the session exists, a new SessionTree is created before returning.
-func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.SessionHeader) (relayer.SessionTree, error) {
+func (rs *relayerSessionsManager) ensureSessionTree(
+	sessionHeader *sessiontypes.SessionHeader,
+) (relayer.SessionTree, error) {
 	sessionsTrees, ok := rs.sessionsTrees[sessionHeader.SessionEndBlockHeight]
 
 	// If there is no map for sessions at the sessionEndHeight, create one.
@@ -144,7 +146,9 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	// If the sessionTree does not exist, create it.
 	var err error
 	if !ok {
-		sessionTree, err = NewSessionTree(sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions)
+		sessionTree, err = NewSessionTree(
+			sessionHeader, rs.storesDirectory, rs.removeFromRelayerSessions,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -169,11 +173,13 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-		// TODO_BLOCKER(@red-0ne): We need this to be == instead of <= because we don't want to keep sending
-		// the same session while waiting the next step. This does not address the case
-		// where the block client misses the target block which should be handled by the
-		// retry mechanism. See the discussion in the following GitHub thread for next
-		// steps: https://github.com/pokt-network/poktroll/pull/177/files?show-viewed-files=true&file-filters%5B%5D=#r1391957041
+		// TODO_BLOCKER(@red-0ne): We need this to be == instead of <= because
+		// we don't want to keep sending the same session while waiting the next
+		// step. This does not address the case where the block client misses
+		// the target block which should be handled by the retry mechanism. See
+		// the discussion in the following GitHub thread for next steps:
+		// nolint:lll
+		//	 https://github.com/pokt-network/poktroll/pull/177/files?show-viewed-files=true&file-filters%5B%5D=#r1391957041
 		if endBlockHeight == block.Height() {
 			// Iterate over the sessionsTrees that end at this block height (or
 			// less) and add them to the list of sessionTrees to be published.
@@ -209,8 +215,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
-func (rp *relayerSessionsManager) validateConfig() error {
-	if rp.storesDirectory == "" {
+func (rs *relayerSessionsManager) validateConfig() error {
+	if rs.storesDirectory == "" {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 
