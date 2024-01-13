@@ -1,3 +1,10 @@
+run:
+  timeout: 15m
+  build-tags:
+    - e2e
+    - test
+    - integration
+
 # TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
 # Don't forget to delete the `disable-all: true` line as well.
 linters:

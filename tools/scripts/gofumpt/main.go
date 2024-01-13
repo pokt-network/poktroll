@@ -21,7 +21,6 @@ var (
 		filters.PathMatchesProtobufGo,
 		filters.PathMatchesProtobufGatewayGo,
 		filters.PathMatchesMockGo,
-		filters.PathMatchesTestGo,
 		filters.ContentMatchesEmptyImportScaffold,
 	}
 )

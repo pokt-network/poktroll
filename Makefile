@@ -171,8 +171,7 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 
 .PHONY: go_lint
 go_lint: ## Run all go linters
-	golangci-lint run --timeout 15m --build-tags test
-
+	golangci-lint run
 .PHONY: gci
 gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gci

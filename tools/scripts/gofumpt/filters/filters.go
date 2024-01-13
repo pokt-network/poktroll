@@ -41,11 +41,6 @@ func PathMatchesMockGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_mock.go"), nil
 }
 
-// PathMatchesTestGo matches go test files.
-func PathMatchesTestGo(path string) (bool, error) {
-	return strings.HasSuffix(path, "_test.go"), nil
-}
-
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
 // to ignite incompatibility.
 func ContentMatchesEmptyImportScaffold(path string) (bool, error) {
