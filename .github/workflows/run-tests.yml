@@ -44,6 +44,9 @@ jobs:
       - name: Generate mocks
         run: make go_mockgen
 
+      - name: Fix imports
+        run: make gci
+
       - name: Run golangci-lint
         run: make go_lint
 
