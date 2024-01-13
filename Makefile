@@ -15,6 +15,7 @@ install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install github.com/daixiang0/gci@latest
+	go install mvdan.cc/gofumpt@latest
 
 ########################
 ### Makefile Helpers ###
@@ -77,6 +78,16 @@ check_gci:
 	{ \
 	if ( ! ( command -v gci >/dev/null )); then \
 		echo "Seems like you don't have gci installed. Make sure you install it via 'go install github.com/daixiang0/gci@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gofumpt
+# Internal helper target - check if gofumpt is installed
+check_gofumpt:
+	{ \
+	if ( ! ( command -v gci >/dev/null )); then \
+		echo "Seems like you don't have gci installed. Make sure you install it via 'go install mvdan.cc/gofumpt@latest' before continuing"; \
 		exit 1; \
 	fi; \
 	}
@@ -165,6 +176,10 @@ go_lint: ## Run all go linters
 .PHONY: gci
 gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gci
+
+.PHONY: gofumpt
+gofumpt: check_gofumpt ## Run gofumpt (stricter gofmt) on all applicable files, this writes changes in place
+	go run ./tools/scripts/gofumpt
 
 #############
 ### Tests ###

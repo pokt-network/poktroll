@@ -108,7 +108,7 @@ func main() {
 	}
 
 	// Write the output buffer to the file at flagOut path.
-	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0o644); err != nil {
 		log.Fatal(err)
 	}
 }
