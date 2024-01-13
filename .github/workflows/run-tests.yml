@@ -47,6 +47,9 @@ jobs:
       - name: Fix imports
         run: make gci
 
+      - name: Format the repo
+        run: make gofumpt
+
       - name: Run golangci-lint
         run: make go_lint
 
