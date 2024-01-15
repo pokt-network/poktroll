@@ -13,11 +13,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
-
 	mocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/stretchr/testify/require"
 )
 
 func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
