@@ -136,8 +136,11 @@ import (
 )
 
 const (
+	// AccountAddressPrefix is the prefix generated addresses will have.
 	AccountAddressPrefix = "pokt"
-	Name                 = "pocket"
+	// Name is the name of the network itself.
+	Name = "pocket"
+	// DenomuPOKT is the default denomination used in the chain.
 	// TODO_CLEANUP: Find a way to centralize the use of `upokt` throughout the codebase
 	DenomuPOKT = "upokt"
 )
@@ -719,7 +722,14 @@ func New(
 			app.StakingKeeper,
 			app.GetSubspace(slashingtypes.ModuleName),
 		),
-		distr.NewAppModule(appCodec, app.DistrKeeper, app.AccountKeeper, app.BankKeeper, app.StakingKeeper, app.GetSubspace(distrtypes.ModuleName)),
+		distr.NewAppModule(
+			appCodec,
+			app.DistrKeeper,
+			app.AccountKeeper,
+			app.BankKeeper,
+			app.StakingKeeper,
+			app.GetSubspace(distrtypes.ModuleName),
+		),
 		staking.NewAppModule(
 			appCodec, app.StakingKeeper, app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 		),
@@ -1026,7 +1036,7 @@ func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+func (app *App) RegisterAPIRoutes(apiSvr *api.Server, _ config.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
 	// Register new tx routes from grpc-gateway.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)

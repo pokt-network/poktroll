@@ -22,9 +22,13 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// networkWithApplicationsAndSupplier creates a new network with a given number of supplier & application objects.
-// It returns the network and a slice of the created supplier & application objects.
-func networkWithApplicationsAndSupplier(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier, []apptypes.Application) {
+// networkWithApplicationsAndSupplier creates a new network with a given number
+// of supplier & application objects. It returns the network and a slice of the
+// created supplier & application objects.
+func networkWithApplicationsAndSupplier(
+	t *testing.T,
+	n int,
+) (*network.Network, []sharedtypes.Supplier, []apptypes.Application) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 

@@ -114,7 +114,12 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 }
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
-func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, args ...string) (*commandResult, error) {
+func (p *pocketdBin) runCurlPostCmd(
+	rpcUrl string,
+	service string,
+	data string,
+	args ...string,
+) (*commandResult, error) {
 	dataStr := fmt.Sprintf("%s", data)
 	urlStr := fmt.Sprintf("%s/%s", rpcUrl, service)
 	base := []string{

@@ -16,7 +16,10 @@ import (
 func (query *QueryGetClaimRequest) ValidateBasic() error {
 	// Validate the supplier address
 	if _, err := sdk.AccAddressFromBech32(query.SupplierAddress); err != nil {
-		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address for claim being retrieved %s; (%v)", query.SupplierAddress, err)
+		return ErrSupplierInvalidAddress.Wrapf(
+			"invalid supplier address for claim being retrieved %s; (%v)",
+			query.SupplierAddress, err,
+		)
 	}
 
 	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
@@ -34,7 +37,10 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 	switch filter := query.Filter.(type) {
 	case *QueryAllClaimsRequest_SupplierAddress:
 		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
-			return ErrSupplierInvalidAddress.Wrapf("invalid supplier address for claims being retrieved %s; (%v)", filter.SupplierAddress, err)
+			return ErrSupplierInvalidAddress.Wrapf(
+				"invalid supplier address for claims being retrieved %s; (%v)",
+				filter.SupplierAddress, err,
+			)
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
@@ -45,7 +51,10 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
-			return ErrSupplierInvalidSessionEndHeight.Wrapf("invalid session end height for claims being retrieved %d", filter.SessionEndHeight)
+			return ErrSupplierInvalidSessionEndHeight.Wrapf(
+				"invalid session end height for claims being retrieved %d",
+				filter.SessionEndHeight,
+			)
 		}
 
 	default:

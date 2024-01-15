@@ -21,7 +21,8 @@ import (
 
 func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	t.Skip(
-		"TODO_TECHDEBT: this test depends on some setup which is currently not implemented in this test: staked application and servicer with matching services",
+		"TODO_TECHDEBT: this test depends on some setup which is currently not " +
+			"implemented in this test: staked application and servicer with matching services",
 	)
 
 	ctx := context.Background()

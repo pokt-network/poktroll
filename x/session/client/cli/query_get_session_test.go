@@ -17,7 +17,8 @@ import (
 func TestCLI_GetSession(t *testing.T) {
 	// Prepare the network
 	net, suppliers, applications := networkWithApplicationsAndSupplier(t, 2)
-	_, err := net.WaitForHeight(10) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
+	// Wait for a sufficiently high block height to ensure the staking transactions have been processed
+	_, err := net.WaitForHeight(10)
 	require.NoError(t, err)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
@@ -91,8 +92,10 @@ func TestCLI_GetSession(t *testing.T) {
 		{
 			desc: "invalid - app not staked for service",
 
-			appAddress:  appSvc0.Address,
-			serviceId:   "svc9001", // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier) and is not staked for service over 9000
+			appAddress: appSvc0.Address,
+			// appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't
+			// have supplier) and is not staked for service over 9000
+			serviceId:   "svc9001",
 			blockHeight: 0,
 
 			expectedErr: sessiontypes.ErrSessionAppNotStakedForService,
@@ -100,8 +103,9 @@ func TestCLI_GetSession(t *testing.T) {
 		{
 			desc: "invalid - no suppliers staked for service",
 
-			appAddress:  appSvc0.Address, // dynamically getting address from applications
-			serviceId:   "svc00",         // appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
+			appAddress: appSvc0.Address, // dynamically getting address from applications
+			// appSvc0 is only staked for svc0 (has supplier) and svc00 (doesn't have supplier)
+			serviceId:   "svc00",
 			blockHeight: 0,
 
 			expectedErr: sessiontypes.ErrSessionSuppliersNotFound,

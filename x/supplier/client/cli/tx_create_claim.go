@@ -19,6 +19,7 @@ import (
 
 var _ = strconv.Itoa(0)
 
+// CmdCreateClaim creates a new create-claim command.
 func CmdCreateClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-claim <session_header> <root_hash_base64>",

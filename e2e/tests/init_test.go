@@ -38,14 +38,20 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
-	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
+	// Keeping localhost by default because that is how we run the tests on our machines locally
+	appGateServerUrl = "http://localhost:42069"
 )
 
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 
-	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
+	flag.StringVar(
+		&flagFeaturesPath,
+		"features-path",
+		"*.feature",
+		"Specifies glob paths for the runner to look up .feature files",
+	)
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
 	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
@@ -256,7 +262,7 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
-func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
+func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName string) {
 	app, found := accNameToAppMap[appName]
 	if !found {
 		s.Fatalf("application %s not found", appName)
@@ -288,10 +294,15 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
-func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(
+	appName, supplierName, serviceId, requestData string,
+) {
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
 	if err != nil {
-		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
+		s.Fatalf(
+			"error sending relay request from app %s to supplier %s for service %s: %v",
+			appName, supplierName, serviceId, err,
+		)
 	}
 
 	relayKey := relayReferenceKey(appName, supplierName)

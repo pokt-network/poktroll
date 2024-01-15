@@ -77,8 +77,9 @@ func TestClaim_Show(t *testing.T) {
 			// error occurs during request validation (i.e. client-side).
 			expectedErr: types.ErrSupplierInvalidAddress.Wrapf(
 				// TODO_CONSIDERATION: prefer using "%q" in error format strings
-				// to disambiguate empty string from space or no output.
-				"invalid supplier address for claim being retrieved %s; (decoding bech32 failed: invalid separator index -1)",
+				// to disambiguate empty string from space or no output.""
+				"invalid supplier address for claim being retrieved %s; "+
+					"(decoding bech32 failed: invalid separator index -1)",
 				"invalid_bech32_supplier_address",
 			),
 		},

@@ -51,9 +51,16 @@ func (k msgServer) StakeSupplier(
 
 	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the supplier to the staked supplier pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.DelegateCoinsFromAccountToModule(
+		ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate},
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err))
+		logger.Error(
+			fmt.Sprintf(
+				"could not send %v coins from %s to %s module account due to %v",
+				coinsToDelegate, supplierAddress, types.ModuleName, err,
+			),
+		)
 		return nil, err
 	}
 
@@ -82,7 +89,12 @@ func (k msgServer) updateSupplier(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != supplier.Address {
-		return sdkerrors.Wrapf(types.ErrSupplierUnauthorized, "msg Address (%s) != supplier address (%s)", msg.Address, supplier.Address)
+		return sdkerrors.Wrapf(
+			types.ErrSupplierUnauthorized,
+			"msg Address (%s) != supplier address (%s)",
+			msg.Address,
+			supplier.Address,
+		)
 	}
 
 	// Validate that the stake is not being lowered
@@ -90,7 +102,12 @@ func (k msgServer) updateSupplier(
 		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*supplier.Stake) {
-		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+		return sdkerrors.Wrapf(
+			types.ErrSupplierInvalidStake,
+			"stake amount %v must be higher than previous stake amount %v",
+			msg.Stake,
+			supplier.Stake,
+		)
 	}
 	supplier.Stake = msg.Stake
 

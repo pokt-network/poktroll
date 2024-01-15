@@ -12,7 +12,11 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) AllProofs(goCtx context.Context, req *types.QueryAllProofsRequest) (*types.QueryAllProofsResponse, error) {
+// AllProofs returns all proofs stored on-chain.
+func (k Keeper) AllProofs(
+	goCtx context.Context,
+	req *types.QueryAllProofsRequest,
+) (*types.QueryAllProofsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -39,7 +43,11 @@ func (k Keeper) AllProofs(goCtx context.Context, req *types.QueryAllProofsReques
 	return &types.QueryAllProofsResponse{Proof: proofs, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Proof(goCtx context.Context, req *types.QueryGetProofRequest) (*types.QueryGetProofResponse, error) {
+// Proof returns a singular proof according to the request.
+func (k Keeper) Proof(
+	goCtx context.Context,
+	req *types.QueryGetProofRequest,
+) (*types.QueryGetProofResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}

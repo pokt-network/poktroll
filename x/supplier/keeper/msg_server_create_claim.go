@@ -9,7 +9,11 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCreateClaim) (*suppliertypes.MsgCreateClaimResponse, error) {
+// CreateClaim creates a new claim on-chain, handlin the message it receives.
+func (k msgServer) CreateClaim(
+	goCtx context.Context,
+	msg *suppliertypes.MsgCreateClaim,
+) (*suppliertypes.MsgCreateClaimResponse, error) {
 	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 

@@ -45,7 +45,11 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	require.Lenf(t, claims, 1, "expected 1 claim, got %d", len(claims))
 	require.Equal(t, claimMsg.SessionHeader.SessionId, claims[0].GetSessionHeader().GetSessionId())
 	require.Equal(t, claimMsg.SupplierAddress, claims[0].GetSupplierAddress())
-	require.Equal(t, claimMsg.SessionHeader.GetSessionEndBlockHeight(), claims[0].GetSessionHeader().GetSessionEndBlockHeight())
+	require.Equal(
+		t,
+		claimMsg.SessionHeader.GetSessionEndBlockHeight(),
+		claims[0].GetSessionHeader().GetSessionEndBlockHeight(),
+	)
 	require.Equal(t, claimMsg.RootHash, claims[0].GetRootHash())
 }
 

@@ -262,7 +262,11 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
@@ -293,7 +297,11 @@ func InitAccountWithSequence(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
@@ -319,7 +327,11 @@ func DelegateAppToGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdDelegateToGateway(), args)
 	require.NoError(t, err)
@@ -345,7 +357,11 @@ func UndelegateAppFromGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdUndelegateFromGateway(), args)
 	require.NoError(t, err)

@@ -13,7 +13,8 @@ import (
 )
 
 func TestNewSupplierClient_Localnet(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test depends on some setup which is currently not implemented in this test: staked application and servicer with matching services")
+	t.Skip("TODO_TECHDEBT: this test depends on some setup which is currently" +
+		" not implemented in this test: staked application and servicer with matching services")
 
 	var (
 		signingKeyName = "app1"

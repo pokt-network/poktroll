@@ -24,7 +24,7 @@ import (
 const (
 	createClaimTimeoutDuration   = 10 * time.Second
 	eitherEventsReplayBufferSize = 100
-	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
+	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'" //nolint:lll
 	testServiceId                = "anvil"
 	eitherEventsBzReplayObsKey   = "eitherEventsBzReplayObsKey"
 	preExistingClaimsKey         = "preExistingClaimsKey"
@@ -83,7 +83,9 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 	}
 }
 
-func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(
+	supplierName, serviceId, appName string,
+) {
 	ctx := context.Background()
 
 	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{
@@ -114,7 +116,9 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
 }
 
-func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierName, relayCountStr, serviceId, appName string) {
+func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(
+	supplierName, relayCountStr, serviceId, appName string,
+) {
 	ctx := context.Background()
 
 	relayCount, err := strconv.Atoi(relayCountStr)

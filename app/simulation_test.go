@@ -60,7 +60,9 @@ func fauxMerkleModeOpt(bapp *baseapp.BaseApp) {
 // Running using starport command:
 // `starport chain simulate -v --numBlocks 200 --blockSize 50`
 // Running as go benchmark test:
-// `go test -benchmem -run=^$ -bench ^BenchmarkSimulation ./app -NumBlocks=200 -BlockSize 50 -Commit=true -Verbose=true -Enabled=true`
+//
+//	$ go test -benchmem -run=^$ -bench ^BenchmarkSimulation ./app -NumBlocks=200 \
+//		-BlockSize 50 -Commit=true -Verbose=true -Enabled=true
 func BenchmarkSimulation(b *testing.B) {
 	simcli.FlagSeedValue = time.Now().Unix()
 	simcli.FlagVerboseValue = true
@@ -209,7 +211,8 @@ func TestAppStateDeterminism(t *testing.T) {
 			if j != 0 {
 				require.Equal(
 					t, string(appHashList[0]), string(appHashList[j]),
-					"non-determinism in seed %d: %d/%d, attempt: %d/%d\n", config.Seed, i+1, numSeeds, j+1, numTimesToRunPerSeed,
+					"non-determinism in seed %d: %d/%d, attempt: %d/%d\n",
+					config.Seed, i+1, numSeeds, j+1, numTimesToRunPerSeed,
 				)
 			}
 		}
@@ -344,7 +347,8 @@ func TestAppImportExport(t *testing.T) {
 			bApp.GetKey(stakingtypes.StoreKey), newApp.GetKey(stakingtypes.StoreKey),
 			[][]byte{
 				stakingtypes.UnbondingQueueKey, stakingtypes.RedelegationQueueKey, stakingtypes.ValidatorQueueKey,
-				stakingtypes.HistoricalInfoKey, stakingtypes.UnbondingIDKey, stakingtypes.UnbondingIndexKey, stakingtypes.UnbondingTypeKey, stakingtypes.ValidatorUpdatesKey,
+				stakingtypes.HistoricalInfoKey, stakingtypes.UnbondingIDKey, stakingtypes.UnbondingIndexKey,
+				stakingtypes.UnbondingTypeKey, stakingtypes.ValidatorUpdatesKey,
 			},
 		}, // ordering may change but it doesn't matter
 		{bApp.GetKey(slashingtypes.StoreKey), newApp.GetKey(slashingtypes.StoreKey), [][]byte{}},
@@ -355,7 +359,9 @@ func TestAppImportExport(t *testing.T) {
 		{bApp.GetKey(govtypes.StoreKey), newApp.GetKey(govtypes.StoreKey), [][]byte{}},
 		{bApp.GetKey(evidencetypes.StoreKey), newApp.GetKey(evidencetypes.StoreKey), [][]byte{}},
 		{bApp.GetKey(capabilitytypes.StoreKey), newApp.GetKey(capabilitytypes.StoreKey), [][]byte{}},
-		{bApp.GetKey(authzkeeper.StoreKey), newApp.GetKey(authzkeeper.StoreKey), [][]byte{authzkeeper.GrantKey, authzkeeper.GrantQueuePrefix}},
+		{bApp.GetKey(authzkeeper.StoreKey), newApp.GetKey(authzkeeper.StoreKey), [][]byte{
+			authzkeeper.GrantKey, authzkeeper.GrantQueuePrefix,
+		}},
 	}
 
 	for _, skp := range storeKeysPrefixes {
@@ -366,7 +372,9 @@ func TestAppImportExport(t *testing.T) {
 		require.Equal(t, len(failedKVAs), len(failedKVBs), "unequal sets of key-values to compare")
 
 		fmt.Printf("compared %d different key/value pairs between %s and %s\n", len(failedKVAs), skp.A, skp.B)
-		require.Equal(t, 0, len(failedKVAs), simtestutil.GetSimulationLog(skp.A.Name(), bApp.SimulationManager().StoreDecoders, failedKVAs, failedKVBs))
+		require.Equal(t, 0, len(failedKVAs), simtestutil.GetSimulationLog(
+			skp.A.Name(), bApp.SimulationManager().StoreDecoders, failedKVAs, failedKVBs),
+		)
 	}
 }
 

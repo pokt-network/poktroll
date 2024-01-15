@@ -221,7 +221,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for application joining/leaving the network at different heights as well changing the services they support
+// TODO_TECHDEBT: Expand these tests to account for application joining/leaving
+// the network at different heights as well changing the services they support
 func TestSession_HydrateSession_Application(t *testing.T) {
 	type test struct {
 		// Description
@@ -290,7 +291,8 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	}
 }
 
-// TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the network at different heights as well changing the services they support
+// TODO_TECHDEBT: Expand these tests to account for supplier joining/leaving the
+// network at different heights as well changing the services they support
 func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	type test struct {
 		// Description
