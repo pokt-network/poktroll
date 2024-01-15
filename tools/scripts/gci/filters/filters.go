@@ -41,6 +41,13 @@ func PathMatchesMockGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_mock.go"), nil
 }
 
+// ImportBlockContainsScaffoldComment matches import blocks containing the
+// `// this line is used by starport scaffolding` comment.
+func ImportBlockContainsScaffoldComment(path string) (bool, error) {
+	contains := strings.Contains(path, "// this line is used by starport scaffolding")
+	return contains, nil
+}
+
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
 // to ignite incompatibility.
 func ContentMatchesEmptyImportScaffold(path string) (bool, error) {

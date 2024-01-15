@@ -26,6 +26,7 @@ var (
 		filters.PathMatchesProtobufGatewayGo,
 		filters.PathMatchesMockGo,
 		filters.ContentMatchesEmptyImportScaffold,
+		filters.ImportBlockContainsScaffoldComment,
 	}
 )
 
