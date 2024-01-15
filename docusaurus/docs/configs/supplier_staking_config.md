@@ -17,6 +17,7 @@ a stake transaction required to provide RPC services on the Pocket Network._
     - [`endpoints`](#endpoints)
       - [`url`](#url)
       - [`rpc_type`](#rpc_type)
+- [Example](#example)
 
 # Usage
 
@@ -25,11 +26,11 @@ that points to a `yaml` configuration file that defines the `stake_amount`,
 the `service`s and their respective advertised `endpoints`.
 
 ```bash
-poktrolld tx supplier stake-supplier
-  --home=./poktroll
-  --config ./stake_config.yaml
-  --keyring-backend test
-  --from pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+poktrolld tx supplier stake-supplier \
+  --home=./poktroll \
+  --config ./stake_config.yaml \
+  --keyring-backend test \
+  --from pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 \
   --node tcp://poktroll-node:36657
 ```
 
@@ -43,7 +44,7 @@ wants to provide.
 _`Required`_
 
 ```yaml
-stake_amount: 1000upokt
+stake_amount: <number>upokt
 ```
 
 Defines the amount of `upokt` to stake for the `Supplier` account. This amount
@@ -98,3 +99,7 @@ _`Required`_
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
 is providing. The `rpc_type` MUST be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
+
+# Example
+
+A full example of the configuration file could be found at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml)
