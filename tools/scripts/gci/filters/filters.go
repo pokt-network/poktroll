@@ -44,8 +44,7 @@ func PathMatchesMockGo(path string) (bool, error) {
 // ImportBlockContainsScaffoldComment matches import blocks containing the
 // `// this line is used by starport scaffolding` comment.
 func ImportBlockContainsScaffoldComment(path string) (bool, error) {
-	contains := strings.Contains(path, "// this line is used by starport scaffolding")
-	return contains, nil
+	return containsImportScaffoldComment(path)
 }
 
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
@@ -73,6 +72,34 @@ func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error)
 	for scanner.Scan() {
 		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
 		if strings.HasPrefix(trimmedImportBlock, igniteScaffoldComment) {
+			return true, nil
+		}
+	}
+
+	if scanner.Err() != nil {
+		return false, scanner.Err()
+	}
+
+	return false, nil
+}
+
+// containsImportScaffoldComment checks if the go file at goSrcPath contains a
+// comment in the import block like the following:
+//
+// // this line is used by starport scaffolding ...
+func containsImportScaffoldComment(goSrcPath string) (containsComment bool, _ error) {
+	file, err := os.Open(goSrcPath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(importBlockSplit)
+
+	for scanner.Scan() {
+		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
+		if strings.Contains(trimmedImportBlock, igniteScaffoldComment) {
 			return true, nil
 		}
 	}
