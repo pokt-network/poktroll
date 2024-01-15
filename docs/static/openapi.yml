@@ -47176,7 +47176,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured
+                                configured for
                               type: object
                               properties:
                                 id:
@@ -47243,7 +47243,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured
+                                  configured for
                                 type: object
                                 properties:
                                   id:
@@ -48418,16 +48418,6 @@ paths:
                   computeUnitsToTokensMultiplier:
                     type: string
                     format: uint64
-                    title: |-
-                      Ideas:
-                         - RelayToTokensMultiplier
-                         - Application.MaxuPOKTPerRelay
-                         - Application.MinuPOKTPerRelay
-                         - Suppler.MaxuPOKTPerRelay
-                         - Suppler.MinuPOKTPerRelay
-                         - PercentageCutToDAO
-                         - PercentageCutToSequencer
-                         - PercentageCutToOthers?
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -77883,7 +77873,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured
+                      title: The Service for which the application is configured for
                       type: object
                       properties:
                         id:
@@ -77947,7 +77937,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured
+                        title: The Service for which the supplier is configured for
                         type: object
                         properties:
                           id:
@@ -78137,7 +78127,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured
+                  title: The Service for which the application is configured for
                   type: object
                   properties:
                     id:
@@ -78199,7 +78189,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured
+                    title: The Service for which the supplier is configured for
                     type: object
                     properties:
                       id:
@@ -78414,7 +78404,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured
+              title: The Service for which the supplier is configured for
               type: object
               properties:
                 id:
@@ -78545,7 +78535,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured
+        title: The Service for which the supplier is configured for
         type: object
         properties:
           id:
@@ -79284,33 +79274,17 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
-<<<<<<< HEAD
   pocket.tokenomics.MsgUpdateParamsResponse:
     type: object
-    description: |-
+    description: >-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
   pocket.tokenomics.Params:
-=======
-  poktroll.service.MsgAddServiceResponse:
-    type: object
-  poktroll.tokenomics.Params:
->>>>>>> main
     type: object
     properties:
       computeUnitsToTokensMultiplier:
         type: string
         format: uint64
-        title: |-
-          Ideas:
-             - RelayToTokensMultiplier
-             - Application.MaxuPOKTPerRelay
-             - Application.MinuPOKTPerRelay
-             - Suppler.MaxuPOKTPerRelay
-             - Suppler.MinuPOKTPerRelay
-             - PercentageCutToDAO
-             - PercentageCutToSequencer
-             - PercentageCutToOthers?
     description: Params defines the parameters for the tokenomics module.
   pocket.tokenomics.QueryParamsResponse:
     type: object
@@ -79322,14 +79296,4 @@ definitions:
           computeUnitsToTokensMultiplier:
             type: string
             format: uint64
-            title: |-
-              Ideas:
-                 - RelayToTokensMultiplier
-                 - Application.MaxuPOKTPerRelay
-                 - Application.MinuPOKTPerRelay
-                 - Suppler.MaxuPOKTPerRelay
-                 - Suppler.MinuPOKTPerRelay
-                 - PercentageCutToDAO
-                 - PercentageCutToSequencer
-                 - PercentageCutToOthers?
     description: QueryParamsResponse is the response type for the Query/Params RPC method.

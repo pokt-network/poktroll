@@ -91,23 +91,29 @@ func TestUpdateParams_Validity(t *testing.T) {
 
 func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
 	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
-	// srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
+	srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
 
-	params := types.DefaultParams()
-	tokenomicsKeeper.SetParams(ctx, params)
+	// Set the default params
+	tokenomicsKeeper.SetParams(ctx, types.DefaultParams())
 
+	// Verify the default value for ComputeUnitsToTokensMultiplier
 	getParamsReq := &types.QueryParamsRequest{}
 	getParamsRes, err := tokenomicsKeeper.Params(ctx, getParamsReq)
 	require.Nil(t, err)
-	require.Equal(t, 42, getParamsRes.Params.ComputeUnitsToTokensMultiplier)
+	require.Equal(t, uint64(42), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
 
-	// req := &types.MsgUpdateParams{
-	// 	Authority: tokenomicsKeeper.GetAuthority(),
+	// Update the value for ComputeUnitsToTokensMultiplier
+	updateParamsReq := &types.MsgUpdateParams{
+		Authority: tokenomicsKeeper.GetAuthority(),
+		Params: types.Params{
+			ComputeUnitsToTokensMultiplier: 69,
+		},
+	}
+	_, err = srv.UpdateParams(ctx, updateParamsReq)
+	require.Nil(t, err)
 
-	// 	Params: types.Params{
-	// 		ComputeUnitsToTokensMultiplier: 1000000,
-	// 	},
-	// }
-
-	// srv.GetParams(ctx, &types.QueryParamsRequest{})
+	// Verify that ComputeUnitsToTokensMultiplier was updated
+	getParamsRes, err = tokenomicsKeeper.Params(ctx, getParamsReq)
+	require.Nil(t, err)
+	require.Equal(t, uint64(69), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
 }
