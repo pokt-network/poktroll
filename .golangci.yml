@@ -54,6 +54,8 @@ issues:
     # parameters and unchecked errors.
     - path: ^x/.+/module\.go$
       linters:
+        - lll
+        - gci
         - revive
         - errcheck
     # Exclude cosmos-sdk module tx.go files as they are generated with unused
@@ -83,6 +85,18 @@ issues:
     - path: errors\.go$
       linters:
         - lll
+    # Exclude app module code as it's generated with lots with long lines and
+    # improperly formatted imports.
+    - path: ^app
+      linters:
+        - lll
+        - gci
+    # Exclude cmd directory code as it's generated with lots with long lines and
+    # improperly formatted imports.
+    - path: ^cmd/poc
+      linters:
+        - lll
+        - gci
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #new: true,
   #fix: true,
