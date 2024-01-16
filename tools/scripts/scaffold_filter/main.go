@@ -24,6 +24,14 @@ func main() {
 	// purely because gci (the golanci-lint linter for imports) doesn't
 	// support this type of filtering natively.
 	for _, path := range os.Args[1:] {
+		goFile, err := filters.PathMatchesGoExtension(path)
+		if err != nil {
+			fmt.Printf("Error processing file %s: %s\n", path, err)
+			continue
+		}
+		if !goFile {
+			continue
+		}
 		for _, excludeFilter := range defaultExcludeFilters {
 			shouldExclude, err := excludeFilter(path)
 			if err != nil {

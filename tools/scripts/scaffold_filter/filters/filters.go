@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,6 +18,11 @@ var (
 // FilterFn is a function that returns true if the given path matches the
 // filter's criteria.
 type FilterFn func(path string) (bool, error)
+
+// PathMatchesGoExtension matches go source files.
+func PathMatchesGoExtension(path string) (bool, error) {
+	return filepath.Ext(path) == ".go", nil
+}
 
 // ImportBlockContainsScaffoldComment matches import blocks containing the
 // `// this line is used by starport scaffolding` comment.
