@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// SupplierKeeper returns a mocked supplier keeper and context for testing.
+// SupplierKeeper returns a supplier keeper and context for testing.
 func SupplierKeeper(
 	t testing.TB,
 	sessionByAppAddr supplier.SessionsByAppAddress,

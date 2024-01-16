@@ -20,7 +20,7 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// GatewayKeeper returns a mocked gateway keeper and context for testing.
+// GatewayKeeper returns a gateway keeper and context for testing.
 func GatewayKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)

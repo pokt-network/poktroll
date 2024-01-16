@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// ServiceKeeper returns a mocked service keeper and context for testing.
+// ServiceKeeper returns a service keeper and context for testing.
 func ServiceKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)

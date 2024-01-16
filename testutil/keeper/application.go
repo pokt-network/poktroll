@@ -27,7 +27,7 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-// ApplicationKeeper returns a mocked application keeper and context for testing
+// ApplicationKeeper returns an application keeper and context for testing
 // it mocks the chain having staked gateways via the use of the stakedGatewayMap
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)

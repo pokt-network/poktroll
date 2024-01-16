@@ -18,7 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/x/pocket/types"
 )
 
-// PocketKeeper returns a mocked pocket keeper and context for testing.
+// PocketKeeper returns a pocket keeper and context for testing.
 func PocketKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
