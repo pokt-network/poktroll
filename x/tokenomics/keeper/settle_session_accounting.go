@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/smt"
 )
 
+// TODO_UPNEXT(#323, @Olshansk): Implement this function
 // SettleSessionAccounting implements TokenomicsKeeper#SettleSessionAccounting
 func (k TokenomicsKeeper) SettleSessionAccounting(
 	goCtx context.Context,

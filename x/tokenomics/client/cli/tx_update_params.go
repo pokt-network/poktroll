@@ -13,6 +13,8 @@ import (
 
 var _ = strconv.Itoa(0)
 
+// TODO_BLOCKER(#322): Update the CLI once we determine settle on how to maintain
+// and update parameters.
 func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params <compute_units_to_tokens_multiplier>",
@@ -23,7 +25,7 @@ All parameters must be provided when updating.
 
 Example:
 $ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from dao --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
-		Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Parse computeUnitsToTokensMultiplier
 			computeUnitsToTokensMultiplier, err := strconv.ParseUint(args[0], 10, 64)
@@ -46,7 +48,8 @@ $ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --f
 				return err
 			}
 
-			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			res := tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+			return res
 		},
 	}
 

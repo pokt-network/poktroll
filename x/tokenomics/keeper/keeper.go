@@ -21,16 +21,18 @@ type TokenomicsKeeperI interface {
 	// SettleSessionAccounting is responsible for all of the post-session accounting
 	// necessary to burn, mint or transfer tokens depending on the amount of work
 	// done. The amount of "work done" complete is dictated by `sum` of `root`.
-	// ASSUMPTION: It is assumed the caller of this function validated the claim against
-	// a proof BEFORE calling this function.
-	// TODO_IN_THIS_PR: Is there a way to limit who can call this function?
+	//
+	// ASSUMPTION: It is assumed the caller of this function validated the claim
+	// against a proof BEFORE calling this function.
+	// TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
 	SettleSessionAccounting(goCtx context.Context, claim suppliertypes.Claim)
 }
 
+// TokenomicsKeeper is the structure that implements the `TokenomicsKeeperI` interface.
+//
 // TODO_TECHDEBT(#240): See `x/auth/keeper.keeper.go` in the Cosmos SDK on how
 // we should refactor all our keepers. This keeper has started following a small
 // subset of those patterns.
-// TokenomicsKeeper is the structure that implements the `TokenomicsKeeperI` interface.
 type TokenomicsKeeper struct {
 	cdc        codec.BinaryCodec
 	storeKey   storetypes.StoreKey

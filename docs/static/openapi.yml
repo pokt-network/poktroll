@@ -48415,7 +48415,7 @@ paths:
                 description: params defines the parameters of the module.
                 type: object
                 properties:
-                  computeUnitsToTokensMultiplier:
+                  compute_units_to_tokens_multiplier:
                     type: string
                     format: uint64
             description: >-
@@ -79282,7 +79282,7 @@ definitions:
   pocket.tokenomics.Params:
     type: object
     properties:
-      computeUnitsToTokensMultiplier:
+      compute_units_to_tokens_multiplier:
         type: string
         format: uint64
     description: Params defines the parameters for the tokenomics module.
@@ -79293,7 +79293,7 @@ definitions:
         description: params defines the parameters of the module.
         type: object
         properties:
-          computeUnitsToTokensMultiplier:
+          compute_units_to_tokens_multiplier:
             type: string
             format: uint64
     description: QueryParamsResponse is the response type for the Query/Params RPC method.
