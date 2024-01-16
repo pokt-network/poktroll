@@ -15,7 +15,10 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 		return nil, err
 	}
 
-	// TODO_IN_THIS_PR: How do we validate this is the same address that signed the request?
+	// TODO_BLOCKER(@Olshansk): How do we validate this is the same address that signed the request?
+	// Do we have to use `msg.GetSigners()` explicitly during the check/validation or
+	// does the `cosmos.msg.v1.signer` tag in the protobuf definition enforce
+	// this somewhere in the Cosmos SDK?
 	if msg.Authority != k.GetAuthority() {
 		return nil, types.ErrTokenomicsAuthorityAddressIncorrect
 	}
@@ -36,6 +39,8 @@ func (k TokenomicsKeeper) GetParams(ctx sdk.Context) types.Params {
 }
 
 // SetParams set the params
+// TODO_IMPROVE: We are following a pattern from `Cosmos v0.50` that does not
+// return errors. Opportunity to investigate better approaches.
 func (k TokenomicsKeeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramstore.SetParamSet(ctx, &params)
 }

@@ -12,8 +12,7 @@ message Params {
 
   uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
-  // TODO: Add all tokenomics & revenue related params here.
-  // The following are for exemplery purposes only:
+  // TODO: Some parameters we should consider adding next:
   //   - Service.computeUnitsToTokensMultiplierMap
   //   - Application.MaxuPOKTPerRelay
   //   - Application.MinuPOKTPerRelay
