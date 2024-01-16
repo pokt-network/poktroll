@@ -60,7 +60,7 @@ jobs:
         run: git diff --name-only ${{ github.event.before }} ${{ github.sha }} > modified_files.txt
 
       # Filter the list of files modified in this PR to exclude those that have
-      # ignite scaffold comments in their import block, this is because gci
+      # ignite scaffold comments in their import block. This is because gci
       # (golangci-lint's import formatter) doesn't support this kind of filtering
       # and removes all comments from import blocks.
       - name: Filter For Lintable Files
@@ -83,7 +83,7 @@ jobs:
           comm -23 <(sort modified_files.txt) <(sort files_to_lint.txt) > excluded_files.txt
 
       # Do a second lint pass without import checking (after filtered lint) to
-      # catcy any linter errors in files that were excluded in the first pass.
+      # catch any linter errors in files that were excluded in the first pass.
       # This step disables gci checks, to check for all other linter errors,
       # on every file in the PR, without filtering.
       - name: Run golangci-lint (without import checking)
