@@ -71,7 +71,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				},
 				Proof: testClosestMerkleProof,
 			},
-			expectedErr: ErrSupplierInvalidServiceID.Wrap("proof service ID %q cannot be empty"),
+			expectedErr: ErrSupplierInvalidService.Wrap("proof service ID %q cannot be empty"),
 		},
 		{
 			desc: "valid message metadata",

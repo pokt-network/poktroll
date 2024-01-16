@@ -61,7 +61,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					}, // Should trigger error
 				},
 			},
-			err: ErrSupplierInvalidServiceID,
+			err: ErrSupplierInvalidService,
 		},
 		{
 			desc: "valid address, session start height, session ID, service but invalid root hash",

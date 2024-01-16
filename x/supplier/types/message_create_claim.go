@@ -61,7 +61,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return sdkerrors.Wrapf(ErrSupplierInvalidSessionId, "%s", sessionHeader.SessionId)
 	}
 	if !sharedhelpers.IsValidService(sessionHeader.Service) {
-		return sdkerrors.Wrapf(ErrSupplierInvalidServiceID, "%v", sessionHeader.Service)
+		return sdkerrors.Wrapf(ErrSupplierInvalidService, "%v", sessionHeader.Service)
 	}
 
 	// Validate the root hash

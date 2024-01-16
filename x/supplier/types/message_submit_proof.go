@@ -68,7 +68,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 	}
 
 	if msg.GetSessionHeader().GetService().GetId() == "" {
-		return ErrSupplierInvalidServiceID.Wrap("proof service ID %q cannot be empty")
+		return ErrSupplierInvalidService.Wrap("proof service ID %q cannot be empty")
 	}
 
 	if len(msg.GetProof()) == 0 {

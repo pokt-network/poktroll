@@ -110,7 +110,7 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 
 	// Ensure application addresses match.
 	if claim.GetSessionHeader().GetApplicationAddress() != proof.GetSessionHeader().GetApplicationAddress() {
-		return suppliertypes.ErrSupplierInvalidApplicationAddress.Wrapf(
+		return suppliertypes.ErrSupplierInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claim.GetSessionHeader().GetApplicationAddress(),
 			proof.GetSessionHeader().GetApplicationAddress(),
@@ -119,7 +119,7 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 
 	// Ensure service IDs match.
 	if claim.GetSessionHeader().GetService().GetId() != proof.GetSessionHeader().GetService().GetId() {
-		return suppliertypes.ErrSupplierInvalidServiceID.Wrapf(
+		return suppliertypes.ErrSupplierInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claim.GetSessionHeader().GetService().GetId(),
 			proof.GetSessionHeader().GetService().GetId(),
