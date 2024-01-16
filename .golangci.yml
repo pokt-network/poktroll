@@ -50,15 +50,10 @@ issues:
     - path: ^x/.+/genesis\.go$
       linters:
         - gci
-        - lll
-        - gofumpt
     # Exclude cosmos-sdk module module.go files as they are generated with unused
     # parameters and unchecked errors.
     - path: ^x/.+/module\.go$
       linters:
-        - gci
-        - lll
-        - gofumpt
         - revive
         - errcheck
     # Exclude cosmos-sdk module tx.go files as they are generated with unused
@@ -67,22 +62,18 @@ issues:
       linters:
         - gci
         - lll
-        - gofumpt
         - unused
     # Exclude simulation code as it's generated with lots of unused parameters.
     - path: .*/simulation/.*|_simulation\.go$
       linters:
         - gci
         - lll
-        - gofumpt
         - revive
     # Exclude cosmos-sdk module codec files as they are scaffolded with a unused
     # parameters and a comment used by ignite CLI.
     - path: ^x/.+/codec.go$
       linters:
-        - gci
         - lll
-        - gofumpt
         - revive
     - path: _test\.go$
       linters:
@@ -92,9 +83,6 @@ issues:
     - path: errors\.go$
       linters:
         - lll
-    - path: ./app/app.go
-      linters:
-        - gci
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #new: true,
   #fix: true,

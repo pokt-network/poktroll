@@ -1,0 +1,109 @@
+package filters
+
+import (
+	"bufio"
+	"bytes"
+	"os"
+	"strings"
+)
+
+const igniteScaffoldComment = "// this line is used by starport scaffolding"
+
+var (
+	importStart = []byte("import (")
+	importEnd   = []byte(")")
+)
+
+// FilterFn is a function that returns true if the given path matches the
+// filter's criteria.
+type FilterFn func(path string) (bool, error)
+
+// ImportBlockContainsScaffoldComment matches import blocks containing the
+// `// this line is used by starport scaffolding` comment.
+func ImportBlockContainsScaffoldComment(path string) (bool, error) {
+	return containsImportScaffoldComment(path)
+}
+
+// ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
+// to ignite incompatibility.
+func ContentMatchesEmptyImportScaffold(path string) (bool, error) {
+	return containsEmptyImportScaffold(path)
+}
+
+// containsEmptyImportScaffold checks if the go file at goSrcPath contains an
+// import statement like the following:
+//
+// import (
+// // this line is used by starport scaffolding ...
+// )
+func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error) {
+	file, err := os.Open(goSrcPath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(importBlockSplit)
+
+	for scanner.Scan() {
+		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
+		if strings.HasPrefix(trimmedImportBlock, igniteScaffoldComment) {
+			return true, nil
+		}
+	}
+
+	if scanner.Err() != nil {
+		return false, scanner.Err()
+	}
+
+	return false, nil
+}
+
+// containsImportScaffoldComment checks if the go file at goSrcPath contains a
+// comment in the import block like the following:
+//
+// // this line is used by starport scaffolding ...
+func containsImportScaffoldComment(goSrcPath string) (containsComment bool, _ error) {
+	file, err := os.Open(goSrcPath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(importBlockSplit)
+
+	for scanner.Scan() {
+		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
+		if strings.Contains(trimmedImportBlock, igniteScaffoldComment) {
+			return true, nil
+		}
+	}
+
+	if scanner.Err() != nil {
+		return false, scanner.Err()
+	}
+
+	return false, nil
+}
+
+// importBlockSplit is a split function intended to be used with bufio.Scanner
+// to extract the contents of a multi-line go import block.
+func importBlockSplit(data []byte, _ bool) (advance int, token []byte, err error) {
+	// Search for the beginning of the import block
+	startIdx := bytes.Index(data, importStart)
+	if startIdx == -1 {
+		return 0, nil, nil
+	}
+
+	// Search for the end of the import block from the start index
+	endIdx := bytes.Index(data[startIdx:], importEnd)
+	if endIdx == -1 {
+		return 0, nil, nil
+	}
+
+	// Return the entire import block, including "import (" and ")"
+	importBlock := data[startIdx+len(importStart) : startIdx-len(importEnd)+endIdx+1]
+	return startIdx + endIdx + 1, importBlock, nil
+}
