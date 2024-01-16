@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -347,26 +346,10 @@ func New(
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
 
-	// The `x/gov` address that is primarily responsible for updating module
-	// parameters and other transactions.
-	// TODO_IN_THIS_PR: Prepare next work (github issues) for how this should
-	// 					be managed after studying `x/gov` and `x/upgrade`.
-	// TODO_BLOCKER: This will need to be a multisig until we use x/gov correctly
-	daoAccount := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	// tokenomicsUpdateParam := &tokenomicsmoduletypes.MsgUpdateParams{}
-	// authorization := authz.NewGenericAuthorization(proto.MessageName(tokenomicsUpdateParam))
-	// grant, err := authz.NewGrant(time.Now(), authorization, nil)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// grantMsg := &authz.MsgGrant{
-	// 	Granter: authority,
-	// 	Grantee: daoAccount,
-	// 	Grant:   grant,
-	// }
-	// fmt.Println("grantMsg", grantMsg)
-	authority := daoAccount
-	// authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
+	// TODO_BLOCKER(#322): Change this to `authtypes.NewModuleAddress(govtypes.ModuleName)`
+	// once we figure out the MVP for on-chain parameter governance.
+	foundationAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	authority := foundationAddress
 
 	app := &App{
 		BaseApp:           bApp,

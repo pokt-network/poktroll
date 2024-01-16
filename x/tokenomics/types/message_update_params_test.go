@@ -19,12 +19,26 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 			desc: "invalid authority address",
 			msg: MsgUpdateParams{
 				Authority: "invalid_address",
+				Params: Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
 			},
 			expectedErr: ErrTokenomicsAuthorityInvalidAddress,
 		}, {
 			desc: "valid address",
 			msg: MsgUpdateParams{
 				Authority: sample.AccAddress(),
+				Params: Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
+			},
+		}, {
+			desc: "invalid ComputeUnitsToTokensMultiplier",
+			msg: MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: Params{
+					ComputeUnitsToTokensMultiplier: 0,
+				},
 			},
 		},
 	}

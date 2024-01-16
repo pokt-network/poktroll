@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
@@ -30,11 +31,28 @@ func TestUpdateParams_Validity(t *testing.T) {
 
 			req: &types.MsgUpdateParams{
 				Authority: "invalid",
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
 			},
 
 			expectErr:     true,
 			expectedPanic: false,
 			expErrMsg:     "invalid authority",
+		},
+		{
+			desc: "incorrect authority address",
+
+			req: &types.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
+			},
+
+			expectErr:     true,
+			expectedPanic: false,
+			expErrMsg:     "authority address is incorrect",
 		},
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",

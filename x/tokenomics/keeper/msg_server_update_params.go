@@ -15,8 +15,7 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 		return nil, err
 	}
 
-	// TODO_BLOCKER: Make sure that this check validates the authority address
-	// is the one that signed the request
+	// TODO_IN_THIS_PR: How do we validate this is the same address that signed the request?
 	if msg.Authority != k.GetAuthority() {
 		return nil, types.ErrTokenomicsAuthorityAddressIncorrect
 	}

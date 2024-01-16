@@ -16,4 +16,5 @@ var (
 	ErrTokenomicsSupplierRewardFailed       = sdkerrors.Register(ModuleName, 6, "failed to send uPOKT from supplier module account to supplier")
 	ErrTokenomicsApplicationModuleBurn      = sdkerrors.Register(ModuleName, 7, "failed to burn uPOKT from application module account")
 	ErrTokenomicsApplicationModuleFeeFailed = sdkerrors.Register(ModuleName, 8, "failed to send uPOKT from application module account to application")
+	ErrTokenomicsParamsInvalid              = sdkerrors.Register(ModuleName, 9, "provided params are invalid")
 )
