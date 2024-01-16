@@ -14,8 +14,8 @@ POCKET_ADDR_PREFIX = pokt
 install_ci_deps: ## Installs `mockgen`
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
-	go install github.com/daixiang0/gci@latest
-	go install mvdan.cc/gofumpt@latest
+	go install github.com/daixiang0/gci@latest && gci --version
+	go install mvdan.cc/gofumpt@latest && gofumpt --version
 
 ########################
 ### Makefile Helpers ###
