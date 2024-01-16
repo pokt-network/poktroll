@@ -76,6 +76,12 @@ jobs:
           only-new-issues: true
           skip-cache: true
 
+      # Generate a list of files that were excluded from linting in the last
+      # golangci-lint step.
+      - name: Generate List of Excluded Files
+        run: |
+          comm -23 <(sort modified_files.txt) <(sort files_to_lint.txt) > excluded_files.txt
+
       # Do a second lint pass without import checking (after filtered lint) to
       # catcy any linter errors in files that were excluded in the first pass.
       # This step disables gci checks, to check for all other linter errors,
@@ -84,7 +90,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --timeout=15m --config=.golangci.yml --disable gci $(cat modified_files.txt)
+          args: --timeout=15m --config=.golangci.yml --disable gci $(cat excluded_files.txt)
           only-new-issues: true
           skip-cache: true
 
