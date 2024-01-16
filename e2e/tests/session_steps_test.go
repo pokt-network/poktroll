@@ -24,10 +24,12 @@ import (
 const (
 	createClaimTimeoutDuration   = 10 * time.Second
 	eitherEventsReplayBufferSize = 100
-	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'" //nolint:lll
-	testServiceId                = "anvil"
-	eitherEventsBzReplayObsKey   = "eitherEventsBzReplayObsKey"
-	preExistingClaimsKey         = "preExistingClaimsKey"
+	// Not liniting as this is a long query string.
+	//nolint:lll
+	msgClaimSenderQueryFmt     = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
+	testServiceId              = "anvil"
+	eitherEventsBzReplayObsKey = "eitherEventsBzReplayObsKey"
+	preExistingClaimsKey       = "preExistingClaimsKey"
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {

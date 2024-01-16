@@ -17,6 +17,7 @@ func CmdUndelegateFromGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "undelegate-from-gateway [gateway address]",
 		Short: "Undelegate an application from a gateway",
+		// Not liniting as this is the long description of the command.
 		//nolint:lll
 		Long: `Undelegate an application from the gateway with the provided address. This is a broadcast operation
 that removes the authority from the gateway specified to sign relays requests for the application, disallowing the gateway

@@ -84,6 +84,7 @@ func CmdShowClaim() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show-claim <session_id> <supplier_addr>",
 		Short: "shows a specific claim",
+		// Not liniting as this is the long description of the command.
 		//nolint:lll
 		Long: `List a specific claim that the node being queried has access to (if it still exists).
 

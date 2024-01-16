@@ -23,11 +23,13 @@ func CmdStakeApplication() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-application --config <config_file.yaml>",
 		Short: "Stake an application",
+		// Not liniting as this is the long description of the command.
+		//nolint:lll
 		Long: `Stake an application with the provided parameters. This is a broadcast operation that
 will stake the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
-		$ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`, //nolint:lll
+		$ poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			configContent, err := os.ReadFile(flagStakeConfig)
