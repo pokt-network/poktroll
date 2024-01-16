@@ -18,8 +18,7 @@ func CmdGetSession() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "get-session <application_address> <service_id> [block_height]",
 		Short: "Query get-session",
-		// Not liniting as this is the long description of the command.
-		//nolint:lll
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Query the session data for a specific (app, service, height) tuple.
 
 [block_height] is optional. If unspecified, or set to 0, it defaults to the latest height of the node being queried.

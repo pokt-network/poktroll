@@ -148,9 +148,7 @@ func NewRedelegationEventBytes(
 	gatewayAddress string,
 ) []byte {
 	t.Helper()
-	// Not linting as this is a "fake" JSON string any extra whitespace may
-	// lead to unexpected behavior during deserialization.
-	//nolint:lll
+	//nolint:lll // Not linting as this is a "fake" JSON string needing to be 1 line
 	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/pocket.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"pocket.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
 	json := fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)
 	return []byte(json)

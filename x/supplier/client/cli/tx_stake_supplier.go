@@ -24,8 +24,7 @@ func CmdStakeSupplier() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-supplier --config <config_file.yaml>",
 		Short: "Stake a supplier",
-		// Not liniting as this is the long description of the command.
-		//nolint:lll
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 

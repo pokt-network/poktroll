@@ -18,8 +18,7 @@ func CmdUnstakeApplication() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unstake-application",
 		Short: "Unstake an application",
-		// Not liniting as this is the long description of the command.
-		//nolint:lll
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Unstake an application. This is a broadcast operation that will unstake
 the application specified by the 'from' address.
 

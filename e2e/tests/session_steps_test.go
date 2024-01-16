@@ -24,8 +24,7 @@ import (
 const (
 	createClaimTimeoutDuration   = 10 * time.Second
 	eitherEventsReplayBufferSize = 100
-	// Not liniting as this is a long query string.
-	//nolint:lll
+	//nolint:lll // Not liniting as this is a long query string.
 	msgClaimSenderQueryFmt     = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
 	testServiceId              = "anvil"
 	eitherEventsBzReplayObsKey = "eitherEventsBzReplayObsKey"

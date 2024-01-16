@@ -22,8 +22,7 @@ func CmdStakeGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "stake-gateway --config <config_file.yaml>",
 		Short: "Stake a gateway",
-		// Not liniting as this is the long description of the command.
-		//nolint:lll
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the gateway specified by the 'from' address.
 Example:

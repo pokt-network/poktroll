@@ -178,8 +178,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// step. This does not address the case where the block client misses
 		// the target block which should be handled by the retry mechanism. See
 		// the discussion in the following GitHub thread for next steps:
-		// Not linting as breaking the link wouldn't be appropriate
-		// nolint:lll
+		// nolint:lll // Not linting as breaking the link wouldn't be appropriate
 		//	 https://github.com/pokt-network/poktroll/pull/177/files?show-viewed-files=true&file-filters%5B%5D=#r1391957041
 		if endBlockHeight == block.Height() {
 			// Iterate over the sessionsTrees that end at this block height (or

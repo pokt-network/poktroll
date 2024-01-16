@@ -17,8 +17,7 @@ func CmdDelegateToGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delegate-to-gateway <gateway_address>",
 		Short: "Delegate an application to a gateway",
-		// Not liniting as this is the long description of the command.
-		//nolint:lll
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Delegate an application to the gateway with the provided address. This is a broadcast operation
 that delegates authority to the gateway specified to sign relays requests for the application, allowing the gateway
 act on the behalf of the application during a session.
