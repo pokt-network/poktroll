@@ -73,7 +73,6 @@ jobs:
         with:
           version: latest
           args: --timeout=15m --config=.golangci.yml $(cat files_to_lint.txt)
-          only-new-issues: true
           skip-cache: true
 
       # Generate a list of files that were excluded from linting in the last
@@ -91,7 +90,6 @@ jobs:
         with:
           version: latest
           args: --timeout=15m --config=.golangci.yml --disable gci $(cat excluded_files.txt)
-          only-new-issues: true
           skip-cache: true
 
       - name: Test
