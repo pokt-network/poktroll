@@ -12,6 +12,7 @@ import (
 
 var (
 	defaultArgs = []string{
+		"--custom-order",
 		"--section=standard",
 		"--section=default",
 		"--section=prefix(github.com/pokt-network/poktroll)",
