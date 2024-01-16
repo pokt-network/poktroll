@@ -55,6 +55,12 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
 	if err != nil {
 		return sdkerrors.Wrapf(
+			ErrSupplierInvalidAddress,
+			"invalid supplierAddress address (%s)", err,
+		)
+	}
+	if err != nil {
+		return sdkerrors.Wrapf(
 			ErrSupplierInvalidService,
 			"invalid supplierAddress address (%s)", err,
 		)
