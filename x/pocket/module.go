@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	// this line is used by starport scaffolding # 1
+	
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
