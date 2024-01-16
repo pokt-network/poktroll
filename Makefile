@@ -86,7 +86,7 @@ check_gci:
 # Internal helper target - check if gofumpt is installed
 check_gofumpt:
 	{ \
-	if ( ! ( command -v gci >/dev/null )); then \
+	if ( ! ( command -v gofumpt >/dev/null )); then \
 		echo "Seems like you don't have gofumpt installed. Make sure you install it via 'go install mvdan.cc/gofumpt@latest' before continuing"; \
 		exit 1; \
 	fi; \
@@ -173,11 +173,11 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 go_lint: ## Run all go linters
 	golangci-lint run --timeout=15m --build-tags=e2e,test,integration
 
-.PHONY: gci
+.PHONY: go_gci
 gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gci
 
-.PHONY: gofumpt
+.PHONY: go_gofumpt
 gofumpt: check_gofumpt ## Run gofumpt (stricter gofmt) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gofumpt
 
