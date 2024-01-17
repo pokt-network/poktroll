@@ -17,8 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
@@ -53,14 +51,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	relayerSessionsManager.Start(ctx)
 
 	// Publish a mined relay to the minedRelaysPublishCh to insert into the session tree.
-	sessionHeader := &sessiontypes.SessionHeader{
-		ApplicationAddress:      "app_address",
-		Service:                 &sharedtypes.Service{Id: "service_id"},
-		SessionId:               "session_id",
-		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   sessionEndHeight,
-	}
-	minedRelay := testrelayer.NewMinedRelay(t, sessionHeader)
+	minedRelay := testrelayer.NewMinedRelay(t, sessionStartHeight, sessionEndHeight)
 	minedRelaysPublishCh <- minedRelay
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

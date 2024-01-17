@@ -22,7 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB, sessionFixtures *supplier.SessionFixtures) (*keeper.Keeper, sdk.Context) {
+func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress) (*keeper.Keeper, sdk.Context) {
 	t.Helper()
 
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -50,19 +50,14 @@ func SupplierKeeper(t testing.TB, sessionFixtures *supplier.SessionFixtures) (*k
 				ctx sdk.Context,
 				req *sessiontypes.QueryGetSessionRequest,
 			) (*sessiontypes.QueryGetSessionResponse, error) {
-				eitherSession := sessionFixtures.GetSessionByAppService(t, req.GetApplicationAddress(), req.GetService().GetId())
-				session, err := eitherSession.ValueOrError()
-				if err != nil {
-					return nil, err
-				}
-
-				firstAppService := session.GetApplication().GetServiceConfigs()[0].GetService()
+				session, ok := sessionByAppAddr[req.GetApplicationAddress()]
+				require.Truef(t, ok, "application address not provided during mock construction: %q", req.ApplicationAddress)
 
 				return &sessiontypes.QueryGetSessionResponse{
 					Session: &sessiontypes.Session{
 						Header: &sessiontypes.SessionHeader{
 							ApplicationAddress:      session.GetApplication().GetAddress(),
-							Service:                 firstAppService,
+							Service:                 req.GetService(),
 							SessionStartBlockHeight: 1,
 							SessionId:               session.GetSessionId(),
 							SessionEndBlockHeight:   5,

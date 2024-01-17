@@ -21,19 +21,18 @@ import (
 const testServiceId = "svc1"
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
-	appSupplierPair := &supplier.AppSupplierPair{
+	appSupplierPair := supplier.AppSupplierPair{
 		AppAddr:      sample.AccAddress(),
 		SupplierAddr: sample.AccAddress(),
 	}
 	service := &sharedtypes.Service{Id: testServiceId}
-	sessionFixtures := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
-	sessionId := sessionFixtures.GetMockSessionId(appSupplierPair)
+	sessionFixturesByAddr := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
-	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixtures)
+	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
-	claimMsg := newTestClaimMsg(t, sessionId)
+	claimMsg := newTestClaimMsg(t)
 	claimMsg.SupplierAddress = appSupplierPair.SupplierAddr
 	claimMsg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
@@ -54,14 +53,13 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	service := &sharedtypes.Service{Id: testServiceId}
-	appSupplierPair := &supplier.AppSupplierPair{
+	appSupplierPair := supplier.AppSupplierPair{
 		AppAddr:      sample.AccAddress(),
 		SupplierAddr: sample.AccAddress(),
 	}
-	sessionFixtures := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
-	sessionId := sessionFixtures.GetMockSessionId(appSupplierPair)
+	sessionFixturesByAppAddr := supplier.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
-	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixtures)
+	supplierKeeper, sdkCtx := keepertest.SupplierKeeper(t, sessionFixturesByAppAddr)
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
