@@ -18,7 +18,10 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-const testServiceId = "svc1"
+const (
+	testServiceId = "svc1"
+	testSessionId = "mock_session_id"
+)
 
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	appSupplierPair := supplier.AppSupplierPair{
@@ -32,7 +35,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*supplierKeeper)
 	ctx := sdk.WrapSDKContext(sdkCtx)
 
-	claimMsg := newTestClaimMsg(t)
+	claimMsg := newTestClaimMsg(t, testSessionId)
 	claimMsg.SupplierAddress = appSupplierPair.SupplierAddr
 	claimMsg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
@@ -81,7 +84,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 				codes.InvalidArgument,
 				types.ErrSupplierInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
-					sessionId,
+					testSessionId,
 					"invalid_session_id",
 				).Error(),
 			),
@@ -89,7 +92,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				msg := newTestClaimMsg(t, sessionId)
+				msg := newTestClaimMsg(t, testSessionId)
 				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
 				// Overwrite supplier address to one not included in the session fixtures.
