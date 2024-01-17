@@ -7,10 +7,6 @@ run:
 
 linters:
   disable-all: true
-  enable:
-    - gofumpt
-    - lll
-    - gci
 
 linters-settings:
   govet:
@@ -70,6 +66,7 @@ issues:
     - path: ^x/.+/codec.go$
       linters:
         - lll
+        - gci
         - revive
     - path: _test\.go$
       linters:
@@ -91,6 +88,6 @@ issues:
       linters:
         - lll
         - gci
-  # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   new: true
+  # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
   #fix: true,

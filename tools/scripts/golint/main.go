@@ -7,14 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/pokt-network/poktroll/tools/scripts/gci/filters"
 )
 
 var (
 	defaultArgs = []string{
 		"run",
-		"--timeout=15m",
-		"--build-tags=e2e,test,integration",
+		"--config=.golangci.yml",
+		"--color=always",
 	}
 	defaultIncludeFilters = []filters.FilterFn{
 		filters.PathMatchesGoExtension,
@@ -30,9 +32,15 @@ var (
 func main() {
 	root := "."
 	var (
+		packagesWithGCI          map[string][]string
+		packagesWithoutGCI       map[string][]string
 		filesToProcessWithGCI    []string
 		filesToProcessWithoutGCI []string
 	)
+
+	// Create the maps
+	packagesWithGCI = make(map[string][]string)
+	packagesWithoutGCI = make(map[string][]string)
 
 	// Walk the file system and accumulate matching files
 	err := filepath.Walk(root, walkRepoRootFn(
@@ -40,30 +48,54 @@ func main() {
 		defaultIncludeFilters,
 		defaultExcludeFilters,
 		&filesToProcessWithGCI,
+		&filesToProcessWithoutGCI,
 	))
 	if err != nil {
 		fmt.Printf("Error processing files: %s\n", err)
 		return
 	}
 
-	// Run golangci-lint on all files that don't have a scaffold comment in
-	// their import block - so it can be run normally with gci
+	// Organise each file found by package
 	if len(filesToProcessWithGCI) > 0 {
-		args := append(defaultArgs, "--disable=gci")
-		cmd := exec.Command("golangci-lint", args...)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("Output: %s\nFailed running golangci-lint with gci: %v\n", out, err)
+		for _, path := range filesToProcessWithGCI {
+			pkgPath := filepath.Dir(path)
+			packagesWithGCI[pkgPath] = append(packagesWithGCI[pkgPath], path)
+		}
+	}
+	if len(filesToProcessWithoutGCI) > 0 {
+		for _, path := range filesToProcessWithoutGCI {
+			pkgPath := filepath.Dir(path)
+			packagesWithoutGCI[pkgPath] = append(packagesWithoutGCI[pkgPath], path)
 		}
 	}
 
-	// Run golangci-lint on all files that don't have a scaffold comment in
-	// their import block - so it can be run normally with gci
-	if len(filesToProcessWithoutGCI) > 0 {
-		cmd := exec.Command("golangci-lint", append(defaultArgs..., "--disable=gci")...)
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf("Output: %s\nFailed running golangci-lint without gci: %v\n", out, err)
+	if len(packagesWithGCI) > 0 {
+		fmt.Println("Linting files without scaffold comments in their import blocks...")
+		// Run golangci-lint on all files that don't have a scaffold comment in
+		// their import block - so it can be run normally with gci
+		for _, path := range packagesWithGCI {
+			args := append(defaultArgs, []string{"--enable=gci", "--enable=lll", "--enable=gofumpt"}...)
+			slices.Sort(path)
+			cmd := exec.Command("golangci-lint", append(args, path...)...)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("Output: %s\nFailed running golangci-lint with gci: %v\n", out, err)
+			}
+		}
+	}
+
+	if len(packagesWithoutGCI) > 0 {
+		fmt.Println("Linting files with scaffold comments in their import blocks...")
+		// Run golangci-lint on all files that do have a scaffold comment in
+		// their import block - so it can't be run with gci as it would remove it
+		for _, path := range packagesWithoutGCI {
+			args := append(defaultArgs, []string{"--enable=lll", "--enable=gofumpt"}...)
+			slices.Sort(path)
+			cmd := exec.Command("golangci-lint", append(args, path...)...)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Printf("Output: %s\nFailed running golangci-lint without gci: %v\n", out, err)
+			}
 		}
 	}
 }
@@ -112,17 +144,6 @@ func walkRepoRootFn(
 			return nil
 		}
 
-		// Check if the file contains a scaffold comment in the import block,
-		// skip it and tell golangci-lin to disable the gci linter
-		containsImportScaffoldComment, err := filters.ImportBlockContainsScaffoldComment(path)
-		if err != nil {
-			panic(err)
-		}
-		if containsImportScaffoldComment {
-			enableGCI.CompareAndSwap(false, true)
-			return nil
-		}
-
 		// Don't process paths which match any exclude filter.
 		var shouldExcludePath bool
 		for _, excludeFilter := range excludeFilters {
@@ -140,11 +161,17 @@ func walkRepoRootFn(
 			return nil
 		}
 
+		// Check if the file contains a scaffold comment in the import block,
+		// skip it and tell golangci-lin to disable the gci linter
+		containsImportScaffoldComment, err := filters.ImportBlockContainsScaffoldComment(path)
+		if err != nil {
+			panic(err)
+		}
 		if containsImportScaffoldComment {
 			*filesToProcessWithoutGCI = append(*filesToProcessWithoutGCI, path)
+		} else {
+			*filesToProcessWithGCI = append(*filesToProcessWithGCI, path)
 		}
-
-		*filesToProcessWithGCI = append(*filesToProcessWithGCI, path)
 
 		return nil
 	}
