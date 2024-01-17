@@ -2,8 +2,8 @@
 import http from 'k6/http';
 import { check } from 'k6';
 
-// Function to send a generic Ethereum JSON-RPC request to Anvil
-export function sendEthereumRequest(baseUrl, method, params = [], tags = {}) {
+// Function to send a generic JSON-RPC request to Anvil
+export function sendJsonRPCRequest(baseUrl, method, params = [], tags = {}) {
      const payload = JSON.stringify({
         jsonrpc: "2.0",
         method: method,
@@ -30,7 +30,6 @@ export function sendEthereumRequest(baseUrl, method, params = [], tags = {}) {
         }
     }, tags);
 
-    // TODO: remove this or make configurable. But for now, let's output all debug info if the request doesn't pass checks.
     if (!passed) {
         console.log(`Request to ${response.request.url} with status ${response.status} failed the checks!`, JSON.stringify(response));      
     }

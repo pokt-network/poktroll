@@ -1,6 +1,6 @@
 // Import necessary modules
 import { check } from 'k6';
-import { sendEthereumRequest } from '../modules/etheriumRequests.js';
+import { sendJsonRPCRequest } from '../modules/jsonRpc.js';
 
 export function requestBlockNumberEtheriumScenario(baseUrl) {
     // Example method and parameters for the Ethereum JSON-RPC request
@@ -14,7 +14,7 @@ export function requestBlockNumberEtheriumScenario(baseUrl) {
     // }
 
     // Send request and receive response
-    let response = sendEthereumRequest(baseUrl, method, params);
+    let response = sendJsonRPCRequest(baseUrl, method, params);
 
     // Additional checks specific to the scenario can be written like that:
     // check(response, {
