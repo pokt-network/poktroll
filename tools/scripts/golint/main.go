@@ -66,6 +66,7 @@ func main() {
 		}
 	}
 
+	errorFound := false
 	if len(packagesWithGCI) > 0 {
 		fmt.Println("Linting files without scaffold comments in their import blocks...")
 		// Run golangci-lint on all files that don't have a scaffold comment in
@@ -76,6 +77,7 @@ func main() {
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("Output: %s\nFailed running golangci-lint with gci: %v\n", out, err)
+				errorFound = true
 			}
 		}
 	}
@@ -90,8 +92,14 @@ func main() {
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				fmt.Printf("Output: %s\nFailed running golangci-lint without gci: %v\n", out, err)
+				errorFound = true
 			}
 		}
+	}
+
+	// Fail if any errors were found
+	if errorFound {
+		os.Exit(1)
 	}
 }
 
