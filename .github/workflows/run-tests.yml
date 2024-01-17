@@ -13,11 +13,6 @@ env:
   GKE_CLUSTER: protocol-us-central1
   GKE_ZONE: us-central1
 
-permissions:
-  contents: read
-  pull-requests: read
-  checks: write
-
 jobs:
   go-test:
     runs-on: ubuntu-latest
