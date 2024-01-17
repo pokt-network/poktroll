@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -14,7 +15,9 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 	// TODO_BLOCKER: Prevent Proof upserts after the tokenomics module has processes the respective session.
 	// TODO_BLOCKER: Validate the signature on the Proof message corresponds to the supplier before Upserting.
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	logger := k.Logger(ctx).With("method", "SubmitProof")
+	// TODO_DISCUSS_IN_THIS_COMMIT: log lines from the cosmos-sdk logger aren't printed in tilt for some reason.
+	logger := polylog.Ctx(ctx).With("method", "SubmitProof")
+	logger.Debug().Msg("submitting proof")
 
 	/*
 			INCOMPLETE: Handling the message
@@ -73,7 +76,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 			"session_end_height", proof.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", proof.GetSupplierAddress(),
 		).
-		Debug("created proof")
+		Debug().Msg("created proof")
 
 	return &suppliertypes.MsgSubmitProofResponse{}, nil
 }

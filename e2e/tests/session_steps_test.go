@@ -10,76 +10,30 @@ import (
 	"strings"
 	"time"
 
+	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 const (
-	createClaimTimeoutDuration   = 10 * time.Second
-	eitherEventsReplayBufferSize = 100
-	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
-	testServiceId                = "anvil"
-	eitherEventsBzReplayObsKey   = "eitherEventsBzReplayObsKey"
-	preExistingClaimsKey         = "preExistingClaimsKey"
+	createClaimTimeoutDuration       = 10 * time.Second
+	submitProofTimeoutDuration       = 10 * time.Second
+	testEventsReplayClientBufferSize = 100
+	msgTxSenderQueryFmt              = "tm.event='Tx' AND message.sender='%s'"
+	testServiceId                    = "anvil"
+	eventsReplayClientKey            = "eventsReplayClientKey"
+	preExistingClaimsKey             = "preExistingClaimsKey"
+	preExistingProofsKey             = "preExistingProofsKey"
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
-	ctx, done := context.WithCancel(context.Background())
-
-	// TODO_CONSIDERATION: if this test suite gets more complex, it might make
-	// sense to refactor this key into a function that takes serviceId and appName
-	// as arguments and returns the key.
-	eitherEventsBzReplayObs := s.scenarioState[eitherEventsBzReplayObsKey].(observable.ReplayObservable[either.Bytes])
-
-	// TODO(#220): refactor to use EventsReplayClient once available.
-	channel.ForEach[either.Bytes](
-		ctx, eitherEventsBzReplayObs,
-		func(_ context.Context, eitherEventBz either.Bytes) {
-			eventBz, err := eitherEventBz.ValueOrError()
-			require.NoError(s, err)
-
-			if strings.Contains(string(eventBz), "jsonrpc") {
-				return
-			}
-
-			// Unmarshal event data into a TxEventResponse object.
-			txEvent := &abci.TxResult{}
-			err = json.Unmarshal(eventBz, txEvent)
-			require.NoError(s, err)
-
-			var found bool
-			for _, event := range txEvent.Result.Events {
-				for _, attribute := range event.Attributes {
-					if attribute.Key == "action" {
-						require.Equal(
-							s, "/pocket.supplier.MsgCreateClaim",
-							attribute.Value,
-						)
-						found = true
-						break
-					}
-				}
-				if found {
-					break
-				}
-			}
-			require.Truef(s, found, "unable to find event action attribute")
-
-			done()
-		},
-	)
-
-	select {
-	case <-ctx.Done():
-	case <-time.After(createClaimTimeoutDuration):
-		s.Fatal("timed out waiting for claim to be created")
-	}
+	s.waitForMessageAction("/pocket.supplier.MsgCreateClaim")
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -125,17 +79,37 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claim
 
-	// Construct an events query client to listen for tx events from the supplier.
-	msgSenderQuery := fmt.Sprintf(msgClaimSenderQueryFmt, accNameToAddrMap[supplierName])
+	// Query for any existing proofs so that we can compensate for them in the
+	// future assertions about changes in on-chain proofs.
+	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{})
+	require.NoError(s, err)
+	s.scenarioState[preExistingProofsKey] = allProofsRes.Proof
 
-	// TODO_TECHDEBT(#220): refactor to use EventsReplayClient once available.
-	eventsQueryClient := events.NewEventsQueryClient(testclient.CometLocalWebsocketURL)
-	eitherEventsBzObs, err := eventsQueryClient.EventsBytes(ctx, msgSenderQuery)
+	// Construct an events query client to listen for tx events from the supplier.
+	msgSenderQuery := fmt.Sprintf(msgTxSenderQueryFmt, accNameToAddrMap[supplierName])
+
+	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
+	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+		ctx,
+		deps,
+		msgSenderQuery,
+		func(eventBz []byte) (*abci.TxResult, error) {
+			if strings.Contains(string(eventBz), "jsonrpc") {
+				return nil, nil
+			}
+
+			// Unmarshal event data into an ABCI TxResult object.
+			txResult := &abci.TxResult{}
+			err = json.Unmarshal(eventBz, txResult)
+			require.NoError(s, err)
+
+			return txResult, nil
+		},
+		testEventsReplayClientBufferSize,
+	)
 	require.NoError(s, err)
 
-	eitherEventsBytesObs := observable.Observable[either.Bytes](eitherEventsBzObs)
-	eitherEventsBzRelayObs := channel.ToReplayObservable(ctx, eitherEventsReplayBufferSize, eitherEventsBytesObs)
-	s.scenarioState[eitherEventsBzReplayObsKey] = eitherEventsBzRelayObs
+	s.scenarioState[eventsReplayClientKey] = eventsReplayClient
 
 	s.sendRelaysForSession(
 		appName,
@@ -143,6 +117,41 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 		testServiceId,
 		relayCount,
 	)
+}
+
+func (s *suite) AfterTheSupplierSubmitsAProofForTheSessionForServiceForApplication(a string, b string) {
+	s.waitForMessageAction("/pocket.supplier.MsgSubmitProof")
+}
+
+func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
+	ctx := context.Background()
+
+	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{
+		Filter: &suppliertypes.QueryAllProofsRequest_SupplierAddress{
+			SupplierAddress: accNameToAddrMap[supplierName],
+		},
+	})
+	require.NoError(s, err)
+	require.NotNil(s, allProofsRes)
+
+	// Assert that the number of proofs has increased by one.
+	preExistingProofs := s.scenarioState[preExistingProofsKey].([]suppliertypes.Proof)
+	// NB: We are avoiding the use of require.Len here because it provides unreadable output
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
+	// these values are appropriately adjusted
+	require.Greater(s, len(allProofsRes.Proof), len(preExistingProofs), "number of proofs must have increased")
+
+	// TODO_IMPROVE: assert that the root hash of the proof contains the correct
+	// SMST sum. The sum can be retrieved by parsing the last 8 bytes as a
+	// binary-encoded uint64; e.g. something like:
+	// `binary.Uvarint(proof.RootHash[len(proof.RootHash-8):])`
+
+	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
+	// them into the scenarioState key(s).
+
+	proof := allProofsRes.Proof[0]
+	require.Equal(s, accNameToAddrMap[supplierName], proof.SupplierAddress)
 }
 
 func (s *suite) sendRelaysForSession(
@@ -161,5 +170,47 @@ func (s *suite) sendRelaysForSession(
 	for i := 0; i < relayLimit; i++ {
 		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
+	}
+}
+
+func (s *suite) waitForMessageAction(action string) {
+	ctx, done := context.WithCancel(context.Background())
+
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*abci.TxResult])
+	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
+	require.NotNil(s, eventsReplayClient)
+
+	eventsSequenceObs := eventsReplayClient.EventsSequence(ctx)
+
+	channel.ForEach[*abci.TxResult](
+		ctx, eventsSequenceObs,
+		func(_ context.Context, txEvent *abci.TxResult) {
+			if txEvent == nil {
+				return
+			}
+
+			var found bool
+			for _, event := range txEvent.Result.Events {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == "action" {
+						if attribute.Value == action {
+							found = true
+							break
+						}
+					}
+				}
+				if found {
+					done()
+					break
+				}
+			}
+		},
+	)
+
+	select {
+	case <-ctx.Done():
+		// Success; message detected before timeout.
+	case <-time.After(submitProofTimeoutDuration):
+		s.Fatalf("timed out waiting for message with action %q", action)
 	}
 }
