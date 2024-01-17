@@ -72,6 +72,16 @@ check_godoc:
 	fi; \
 	}
 
+.PHONY: check_golanci_lint
+# Internal helper target - check if golangci-lint is installed
+check_golanci_lint:
+	{ \
+	if ( ! ( command -v gci >/dev/null )); then \
+		echo "Seems like you don't have golanci-lint installed. Make sure you install it via 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 .PHONY: check_gci
 # Internal helper target - check if gci is installed
 check_gci:
@@ -170,15 +180,15 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 ###############
 
 .PHONY: go_lint
-go_lint: ## Run all go linters
+go_lint: check_golanci_lint ## Run all go linters
 	go run ./tools/scripts/golint
 
 .PHONY: go_gci
-gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
+go_gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gci
 
 .PHONY: go_gofumpt
-gofumpt: check_gofumpt ## Run gofumpt (stricter gofmt) on all applicable files, this writes changes in place
+go_gofumpt: check_gofumpt ## Run gofumpt (stricter gofmt) on all applicable files, this writes changes in place
 	go run ./tools/scripts/gofumpt
 
 #############
