@@ -5,7 +5,6 @@ package e2e
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -39,7 +38,7 @@ var (
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
 	// Keeping localhost by default because that is how we run the tests on our machines locally
-	appGateServerUrl = "http://localhost:42069"
+	appGateServerURL = "http://localhost:42069"
 )
 
 func init() {
@@ -55,7 +54,7 @@ func init() {
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
 	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
-		appGateServerUrl = url
+		appGateServerURL = url
 	}
 }
 
@@ -107,13 +106,13 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 	res, err := s.pocketd.RunCommand(cmds...)
 	s.pocketd.result = res
 	if err != nil {
-		s.Fatalf("error running command %s: %s", cmd, err)
+		s.Fatalf("error running command %s: %s", cmd, err) //nolint:typecheck // This method does exist
 	}
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
-		s.Fatalf("stdout must contain %s", arg1)
+		s.Fatalf("stdout must contain %s", arg1) //nolint:typecheck // This method does exist
 	}
 }
 
@@ -130,7 +129,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error sending upokt: %s", err)
+		s.Fatalf("error sending upokt: %s", err) //nolint:typecheck // This method does exist
 	}
 	s.pocketd.result = res
 }
@@ -138,7 +137,13 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
 	if int64(bal) < amount {
-		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
+		//nolint:typecheck // This method does exist
+		s.Fatalf(
+			"account %s does not have enough upokt: %d < %d",
+			accName,
+			bal,
+			amount,
+		)
 	}
 	s.scenarioState[accName] = bal // save the balance for later
 }
@@ -148,24 +153,37 @@ func (s *suite) AnAccountExistsFor(accName string) {
 	s.scenarioState[accName] = bal // save the balance for later
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, _ int64, condition string) {
 	prev, ok := s.scenarioState[accName]
 	if !ok {
-		s.Fatalf("no previous balance found for %s", accName)
+		s.Fatalf("no previous balance found for %s", accName) //nolint:typecheck // This method does exist
 	}
 
 	bal := s.getAccBalance(accName)
 	switch condition {
 	case "more":
 		if bal <= prev.(int) {
-			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, bal, prev)
+			//nolint:typecheck // This method does exist
+			s.Fatalf(
+				"account %s expected to have more upokt but: %d <= %d",
+				accName,
+				bal,
+				prev,
+			)
 		}
 	case "less":
 		if bal >= prev.(int) {
-			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, bal, prev)
+			//nolint:typecheck // This method does exist
+			s.Fatalf(
+				"account %s expected to have less upokt but: %d >= %d",
+				accName,
+				bal,
+				prev,
+			)
 		}
 	default:
-		s.Fatalf("unknown condition %s", condition)
+		s.Fatalf("unknown condition %s", condition) //nolint:typecheck // This method does exist
+
 	}
 }
 
@@ -177,12 +195,12 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
 	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
-	configFile, err := ioutil.TempFile("", configPathPattern)
+	configFile, err := os.CreateTemp("", configPathPattern)
 	if err != nil {
-		s.Fatalf("error creating config file: %q", err)
+		s.Fatalf("error creating config file: %q", err) //nolint:typecheck // This method does exist
 	}
 	if _, err = configFile.Write([]byte(configContent)); err != nil {
-		s.Fatalf("error writing config file: %q", err)
+		s.Fatalf("error writing config file: %q", err) //nolint:typecheck // This method does exist
 	}
 
 	args := []string{
@@ -201,11 +219,11 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
 	if err != nil {
-		s.Fatalf("error removing config file: %q", err)
+		s.Fatalf("error removing config file: %q", err) //nolint:typecheck // This method does exist
 	}
 
 	if err != nil {
-		s.Fatalf("error staking %s: %s", actorType, err)
+		s.Fatalf("error staking %s: %s", actorType, err) //nolint:typecheck // This method does exist
 	}
 	s.pocketd.result = res
 }
@@ -222,7 +240,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error unstaking %s: %s", actorType, err)
+		s.Fatalf("error unstaking %s: %s", actorType, err) //nolint:typecheck // This method does exist
 	}
 	s.pocketd.result = res
 }
@@ -230,58 +248,74 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	found, _ := s.getStakedAmount(actorType, accName)
 	if found {
-		s.Fatalf("account %s should not be staked", accName)
+		s.Fatalf("account %s should not be staked", accName) //nolint:typecheck // This method does exist
 	}
 }
 
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if !found {
-		s.Fatalf("account %s should be staked", accName)
+		s.Fatalf("account %s should be staked", accName) //nolint:typecheck // This method does exist
 	}
 	if int64(stakeAmount) != amount {
-		s.Fatalf("account %s stake amount is not %d", accName, amount)
+		s.Fatalf("account %s stake amount is not %d", accName, amount) //nolint:typecheck // This method does exist
 	}
 }
 
-func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
+func (s *suite) TheApplicationIsStakedForService(appName string, serviceID string) {
 	for _, serviceConfig := range accNameToAppMap[appName].ServiceConfigs {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.Service.Id == serviceID {
 			return
 		}
 	}
-	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+	//nolint:typecheck // This method does exist
+	s.Fatalf(
+		"application %s is not staked for service %s",
+		appName,
+		serviceID,
+	)
 }
 
-func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
+func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceID string) {
 	for _, serviceConfig := range accNameToSupplierMap[supplierName].Services {
-		if serviceConfig.Service.Id == serviceId {
+		if serviceConfig.Service.Id == serviceID {
 			return
 		}
 	}
-	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
+	//nolint:typecheck // This method does exist
+	s.Fatalf(
+		"supplier %s is not staked for service %s",
+		supplierName,
+		serviceID,
+	)
 }
 
-func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName string) {
+func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceID, supplierName string) {
 	app, found := accNameToAppMap[appName]
 	if !found {
-		s.Fatalf("application %s not found", appName)
+		s.Fatalf("application %s not found", appName) //nolint:typecheck // This method does exist
 	}
 	expectedSupplier, found := accNameToSupplierMap[supplierName]
 	if !found {
-		s.Fatalf("supplier %s not found", supplierName)
+		s.Fatalf("supplier %s not found", supplierName) //nolint:typecheck // This method does exist
 	}
 	argsAndFlags := []string{
 		"query",
 		"session",
 		"get-session",
 		app.Address,
-		serviceId,
+		serviceID,
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
-		s.Fatalf("error getting session for app %s and service %s: %s", appName, serviceId, err)
+		//nolint:typecheck // This method does exist
+		s.Fatalf(
+			"error getting session for app %s and service %s: %s",
+			appName,
+			serviceID,
+			err,
+		)
 	}
 	var resp sessiontypes.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -291,17 +325,25 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName, s
 			return
 		}
 	}
-	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	//nolint:typecheck // This method does exist
+	s.Fatalf(
+		"session for app %s and service %s does not contain supplier %s",
+		appName,
+		serviceID,
+		supplierName,
+	)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(
-	appName, supplierName, serviceId, requestData string,
+	appName, supplierName, serviceID, requestData string,
 ) {
-	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
+	res, err := s.pocketd.RunCurl(appGateServerURL, serviceID, requestData)
 	if err != nil {
+		//nolint:typecheck // This method does exist
 		s.Fatalf(
+
 			"error sending relay request from app %s to supplier %s for service %s: %v",
-			appName, supplierName, serviceId, err,
+			appName, supplierName, serviceID, err,
 		)
 	}
 
@@ -326,7 +368,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error getting %s: %s", actorType, err)
+		s.Fatalf("error getting %s: %s", actorType, err) //nolint:typecheck // This method does exist
 	}
 	s.pocketd.result = res
 	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
@@ -336,7 +378,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 		stakedAmountRe := regexp.MustCompile(`address: ` + escapedAddress + `\s+stake:\s+amount: "(\d+)"`)
 		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
 		if len(matches) < 2 {
-			s.Fatalf("no stake amount found for %s", accName)
+			s.Fatalf("no stake amount found for %s", accName) //nolint:typecheck // This method does exist
 		}
 		amount, err = strconv.Atoi(matches[1])
 		require.NoError(s, err)
@@ -414,7 +456,7 @@ func (s *suite) getAccBalance(accName string) int {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
+		s.Fatalf("error getting balance: %s", err) //nolint:typecheck // This method does exist
 	}
 	s.pocketd.result = res
 	match := amountRe.FindStringSubmatch(res.Stdout)

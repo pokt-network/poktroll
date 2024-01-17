@@ -26,12 +26,12 @@ const (
 	eitherEventsReplayBufferSize = 100
 	//nolint:lll // Not liniting as this is a long query string.
 	msgClaimSenderQueryFmt     = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
-	testServiceId              = "anvil"
+	testServiceID              = "anvil"
 	eitherEventsBzReplayObsKey = "eitherEventsBzReplayObsKey"
 	preExistingClaimsKey       = "preExistingClaimsKey"
 )
 
-func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
+func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(_, _ string) {
 	ctx, done := context.WithCancel(context.Background())
 
 	// TODO_CONSIDERATION: if this test suite gets more complex, it might make
@@ -85,7 +85,7 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(
-	supplierName, serviceId, appName string,
+	supplierName, _, _ string,
 ) {
 	ctx := context.Background()
 
@@ -118,7 +118,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 }
 
 func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(
-	supplierName, relayCountStr, serviceId, appName string,
+	supplierName, relayCountStr, _, appName string,
 ) {
 	ctx := context.Background()
 
@@ -146,7 +146,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	s.sendRelaysForSession(
 		appName,
 		supplierName,
-		testServiceId,
+		testServiceID,
 		relayCount,
 	)
 }
@@ -154,18 +154,18 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 func (s *suite) sendRelaysForSession(
 	appName string,
 	supplierName string,
-	serviceId string,
+	serviceID string,
 	relayLimit int,
 ) {
-	s.TheApplicationIsStakedForService(appName, serviceId)
-	s.TheSupplierIsStakedForService(supplierName, serviceId)
-	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName)
+	s.TheApplicationIsStakedForService(appName, serviceID)
+	s.TheSupplierIsStakedForService(supplierName, serviceID)
+	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceID, supplierName)
 
 	// TODO_IMPROVE/TODO_COMMUNITY: hard-code a default set of RPC calls to iterate over for coverage.
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
+		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceID, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }

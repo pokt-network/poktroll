@@ -47,8 +47,8 @@ type commandResult struct {
 // PocketClient is a single function interface for interacting with a node
 type PocketClient interface {
 	RunCommand(args ...string) (*commandResult, error)
-	RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error)
-	RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error)
+	RunCommandOnHost(rpcURL string, args ...string) (*commandResult, error)
+	RunCurl(rpcURL, service, data string, args ...string) (*commandResult, error)
 }
 
 // Ensure that pocketdBin struct fulfills PocketClient
@@ -65,20 +65,20 @@ func (p *pocketdBin) RunCommand(args ...string) (*commandResult, error) {
 }
 
 // RunCommandOnHost runs a command on specified host with the given args
-func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
-	if rpcUrl == "" {
-		rpcUrl = defaultRPCURL
+func (p *pocketdBin) RunCommandOnHost(rpcURL string, args ...string) (*commandResult, error) {
+	if rpcURL == "" {
+		rpcURL = defaultRPCURL
 	}
-	args = append(args, "--node", rpcUrl)
+	args = append(args, "--node", rpcURL)
 	return p.runPocketCmd(args...)
 }
 
 // RunCurl runs a curl command on the local machine
-func (p *pocketdBin) RunCurl(rpcUrl, service, data string, args ...string) (*commandResult, error) {
-	if rpcUrl == "" {
-		rpcUrl = defaultAppGateServerURL
+func (p *pocketdBin) RunCurl(rpcURL, service, data string, args ...string) (*commandResult, error) {
+	if rpcURL == "" {
+		rpcURL = defaultAppGateServerURL
 	}
-	return p.runCurlPostCmd(rpcUrl, service, data, args...)
+	return p.runCurlPostCmd(rpcURL, service, data, args...)
 }
 
 // runPocketCmd is a helper to run a command using the local pocketd binary with the flags provided
@@ -115,13 +115,13 @@ func (p *pocketdBin) runPocketCmd(args ...string) (*commandResult, error) {
 
 // runCurlPostCmd is a helper to run a command using the local pocketd binary with the flags provided
 func (p *pocketdBin) runCurlPostCmd(
-	rpcUrl string,
+	rpcURL string,
 	service string,
 	data string,
 	args ...string,
 ) (*commandResult, error) {
 	dataStr := fmt.Sprintf("%s", data)
-	urlStr := fmt.Sprintf("%s/%s", rpcUrl, service)
+	urlStr := fmt.Sprintf("%s/%s", rpcURL, service)
 	base := []string{
 		"-v",         // verbose output
 		"-sS",        // silent with error
