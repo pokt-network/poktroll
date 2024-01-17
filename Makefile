@@ -10,8 +10,8 @@ POCKET_ADDR_PREFIX = pokt
 ####################
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
-.PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen`
+.PHONY: install_deps
+install_deps: ## Installs the dependencies required for mockgen and linting
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install github.com/daixiang0/gci@latest && gci --version
