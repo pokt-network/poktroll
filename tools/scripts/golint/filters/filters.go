@@ -1,3 +1,5 @@
+// The filters package contains functions that can be used to filter file paths.
+
 package filters
 
 import (
@@ -22,6 +24,21 @@ type FilterFn func(path string) (bool, error)
 // PathMatchesGoExtension matches go source files.
 func PathMatchesGoExtension(path string) (bool, error) {
 	return filepath.Ext(path) == ".go", nil
+}
+
+// PathMatchesProtobufGo matches generated protobuf go source files.
+func PathMatchesProtobufGo(path string) (bool, error) {
+	return strings.HasSuffix(path, ".pb.go"), nil
+}
+
+// PathMatchesProtobufGatewayGo matches generated protobuf gateway go source files.
+func PathMatchesProtobufGatewayGo(path string) (bool, error) {
+	return strings.HasSuffix(path, ".pb.gw.go"), nil
+}
+
+// PathMatchesMockGo matches generated mock go source files.
+func PathMatchesMockGo(path string) (bool, error) {
+	return strings.HasSuffix(path, "_mock.go"), nil
 }
 
 // ImportBlockContainsScaffoldComment matches import blocks containing the

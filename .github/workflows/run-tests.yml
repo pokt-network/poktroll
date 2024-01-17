@@ -50,47 +50,13 @@ jobs:
         run: make go_mockgen
 
       - name: Fix imports
-        run: make gci
+        run: make go_gci
 
       - name: Format the repo
-        run: make gofumpt
+        run: make go_gofumpt
 
-      # Fetch a list of all modified files in this PR.
-      - name: Get Modified Files
-        run: git diff --name-only ${{ github.event.before }} ${{ github.sha }} > modified_files.txt
-
-      # Filter the list of files modified in this PR to exclude those that have
-      # ignite scaffold comments in their import block. This is because gci
-      # (golangci-lint's import formatter) doesn't support this kind of filtering
-      # and removes all comments from import blocks.
-      - name: Filter For Lintable Files
-        run: go run ./tools/scripts/scaffold_filter/main.go $(cat modified_files.txt) > files_to_lint.txt
-
-      # Run golangci-lint on the filtered files from this PR - allowing gci to
-      # catch any improperly formatted import blocks in this PR.
-      - name: Run golangci-lint (filtered for scaffold comments)
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --timeout=15m --config=.golangci.yml $(cat files_to_lint.txt)
-          skip-cache: true
-
-      # Generate a list of files that were excluded from linting in the last
-      # golangci-lint step.
-      - name: Generate List of Excluded Files
-        run: |
-          comm -23 <(sort modified_files.txt) <(sort files_to_lint.txt) > excluded_files.txt
-
-      # Do a second lint pass without import checking (after filtered lint) to
-      # catch any linter errors in files that were excluded in the first pass.
-      # This step disables gci checks, to check for all other linter errors,
-      # on every file in the PR, without filtering.
-      - name: Run golangci-lint (without import checking)
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --timeout=15m --config=.golangci.yml --disable gci $(cat excluded_files.txt)
-          skip-cache: true
+      - name: golangci-lint
+        run: make go_lint
 
       - name: Test
         run: make go_test
