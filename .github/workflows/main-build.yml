@@ -31,8 +31,8 @@ jobs:
         with:
           go-version: "1.20.10"
 
-      - name: Install CI dependencies
-        run: make install_ci_deps
+      - name: Install dependencies
+        run: make install_deps
 
       - name: Generate protobufs
         run: make proto_regen
@@ -103,11 +103,11 @@ jobs:
           sparse-checkout: |
             .github
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: '${{ secrets.GKE_PROTOCOL_US_CENTRAL }}'
+          credentials_json: "${{ secrets.GKE_PROTOCOL_US_CENTRAL }}"
 
       - uses: google-github-actions/get-gke-credentials@v1
         with:
