@@ -6,7 +6,10 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
+
 	"github.com/pokt-network/poktroll/x/service/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -94,18 +97,35 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	// TODO_BLOCKER(#275): Need to either slow down blocks, increase num blocks
-	// per session, BlocksPerSession. See the following comment for more details:
-	// https://github.com/pokt-network/poktroll/issues/275#issuecomment-1863519333
-	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
-	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+	currentBlockHeight := rp.blockClient.LastNBlocks(ctx, 1)[0].Height()
+	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+	var session *sessiontypes.Session
+
+	// Check if the `RelayRequest`'s session has expired.
+	if sessionEndblockHeight < currentBlockHeight {
+		// Do not process the `RelayRequest` if the session has expired and the current
+		// block height is past the session's grace period.
+		if sessionEndblockHeight < currentBlockHeight-sessionkeeper.SessionGracePeriod {
+			return ErrRelayerProxyInvalidSession.Wrapf(
+				"session expired, expecting: %d, got: %d",
+				sessionEndblockHeight,
+				currentBlockHeight,
+			)
+		}
+
+		// Use the graced session to verify the relay request.
+		session, err = rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, sessionEndblockHeight)
+	} else {
+		// Session has not expired, so use the current block height to verify the relay request.
+		session, err = rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlockHeight)
+	}
 
 	if err != nil {
 		return err
 	}
 
 	// Since the retrieved sessionId was in terms of:
-	// - the current block height (which is not provided by the relayRequest)
+	// - the current block height and sessionGracePeriod (which are not provided by the relayRequest)
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to to verify the relayRequest signature)
 	// we can reduce the session validity check to checking if the retrieved session's sessionId

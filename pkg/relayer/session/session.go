@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -165,18 +166,21 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	defer rs.sessionsTreesMu.Unlock()
 
 	// Check if there are sessions that need to enter the claim/proof phase
-	// as their end block height was the one before the last committed block.
-	// Iterate over the sessionsTrees map to get the ones that end at a block height
-	// lower than the current block height.
+	// as grace period block height was the one before the last committed block.
+	// Iterate over the sessionsTrees map to get the ones that have a grace period
+	// ending at the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 		// TODO_BLOCKER(@red-0ne): We need this to be == instead of <= because we don't want to keep sending
 		// the same session while waiting the next step. This does not address the case
 		// where the block client misses the target block which should be handled by the
 		// retry mechanism. See the discussion in the following GitHub thread for next
 		// steps: https://github.com/pokt-network/poktroll/pull/177/files?show-viewed-files=true&file-filters%5B%5D=#r1391957041
-		if endBlockHeight == block.Height() {
-			// Iterate over the sessionsTrees that end at this block height (or
-			// less) and add them to the list of sessionTrees to be published.
+		// TODO_DISCUSS: Add a `isClosing()` method to SessionTree to check if the session is closing
+		// so we can use the `<=` operator here while still avoiding sending the same session
+		// multiple times.
+		if endBlockHeight == block.Height()-sessionkeeper.SessionGracePeriod {
+			// Iterate over the sessionsTrees that have grace period ending at this
+			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
 				sessionTrees = append(sessionTrees, sessionTree)
 			}

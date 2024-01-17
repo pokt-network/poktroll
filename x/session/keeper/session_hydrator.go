@@ -21,6 +21,7 @@ var SHA3HashLen = crypto.SHA3_256.Size()
 // TODO(#21): Make these configurable governance param
 const (
 	NumBlocksPerSession         = 4
+	SessionGracePeriod          = NumBlocksPerSession
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -96,11 +97,10 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = sh.blockHeight / NumBlocksPerSession
+	sh.session.SessionNumber = GetSessionNumber(sh.blockHeight)
 
-	// TODO_BLOCKER: SessionStartBlockHeight should be aligned to NumBlocksPerSession.
-	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
-	sh.sessionHeader.SessionEndBlockHeight = sh.sessionHeader.SessionStartBlockHeight + NumBlocksPerSession
+	sh.sessionHeader.SessionStartBlockHeight = GetSessionStartBlockHeight(sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = GetSessionEndBlockHeight(sh.blockHeight)
 	return nil
 }
 
@@ -123,7 +123,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		prevHash,
-		sh.sessionHeader.SessionStartBlockHeight,
+		sh.blockHeight,
 	)
 
 	return nil
@@ -243,8 +243,24 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
+// GetSessionStartBlockHeight returns the block height at which the session starts
+func GetSessionStartBlockHeight(blockHeight int64) int64 {
+	return blockHeight - (blockHeight % NumBlocksPerSession)
+}
+
+// GetSessionEndBlockHeight returns the block height at which the session ends
+func GetSessionEndBlockHeight(blockHeight int64) int64 {
+	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
+}
+
+// GetSessionNumber returns the session number given the block height
+func GetSessionNumber(blockHeight int64) int64 {
+	return blockHeight / NumBlocksPerSession
+}
+
 // GetSessionId returns the string and bytes representation of the sessionId
-// given the application public key, service ID, block hash, and block height.
+// given the application public key, service ID, block hash, and block height
+// that is used to get the session start block height.
 func GetSessionId(
 	appPubKey,
 	serviceId,
@@ -255,8 +271,9 @@ func GetSessionId(
 	serviceIdBz := []byte(serviceId)
 	blockHashBz := []byte(blockHash)
 
+	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
 	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight))
+	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sessionStartBlockHeight))
 
 	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
