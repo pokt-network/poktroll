@@ -3,18 +3,17 @@ title: AppGateServer config
 sidebar_position: 2
 ---
 
-# AppGateServer config
+# AppGateServer config <!-- omit in toc -->
 
-## `appgateserver/config/appgate_configs_reader`
+This document describes the configuration options available for the
+`AppGateServer`through the `appgate_server_config.yaml` file.
 
-_This document describes the configuration options available through the
-`appgate_server_config.yaml` file. It drives how the `AppGateServer` is setup in terms
-of Pocket network connectivity, whether it acts as a self serving `Application`
-or a `Gateway` to other `Applications`, and the host it listens on for incoming
-`RelayRequests`._
+It is responsible for multiple things:
 
-- [AppGateServer config](#appgateserver-config)
-  - [`appgateserver/config/appgate_configs_reader`](#appgateserverconfigappgate_configs_reader)
+1. Determines how the `AppGateServer` with respect to Pocket network connectivity
+2. Whether it acts as a self serving `Application` or a `Gateway` to other `Applications`
+3. Configures the host(s) it listens on for incoming `RelayRequests`
+
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`query_node_rpc_url`](#query_node_rpc_url)
@@ -23,16 +22,25 @@ or a `Gateway` to other `Applications`, and the host it listens on for incoming
   - [`signing_key`](#signing_key)
   - [`listening_endpoint`](#listening_endpoint)
 
-# Usage
+## Usage
 
 The `AppGateServer` start command accepts a `--config` flag that points to a
 configuration `.yaml` file that will be used to initialize the `AppGateServer`.
 
+:::warning
+
+TestNet is not ready as of writing this documentation so you may
+need to adjust the command below appropriately.
+
+:::
+
 ```bash
-pokt appgate-server start --config ./appgate_server_config.yaml --keyring-backend test
+poktrolld appgate-server start \
+  --config ./appgate_server_config.yaml \
+  --keyring-backend test
 ```
 
-# Configuration
+## Configuration
 
 The `AppGateServer` configuration file is a `.yaml` file that contains the
 following fields:
@@ -45,28 +53,41 @@ signing_key: <string>
 listening_endpoint: http://<hostname>:<port>
 ```
 
-## `query_node_rpc_url`
+### `query_node_rpc_url`
+
 _`Required`_
 
 The RPC URL of the Pocket node that allows the `AppGateServer` to subscribe to
-events via websockets. It is re-formatted as `ws://<hostname>:<port>/websocket`
-and establishes a persistent connection to the Pocket node in order to stream
-events such as latest blocks and (un)delegation events.
+on-chain CometBFT events via websockets. It is re-formatted by the SDK as
+`ws://<hostname>:<port>/websocket` and establishes a persistent connection to
+the Pocket Node in order to stream events such as latest blocks, and other
+information such as on-chain (un)delegation events.
 
-## `query_node_grpc_url`
+### `query_node_grpc_url`
+
 _`Required`_
 
-The gRPC URL of the Pocket node that allows the `AppGateServer` to fetch data from
-the Pocket network (eg. Sessions, Accounts, Applications, etc...).
+The gRPC URL of the Pocket node that allows the `AppGateServer` to fetch data
+from the Pocket network (eg. Sessions, Accounts, Applications, etc...).
 
-## `self_signing`
+### `self_signing`
+
+:::tip
+
+tl;dr
+
+- `true` -> `AppGateServer` acts as an `Application`
+- `false` -> `AppGateServer` acts as a `Gateway`
+
+:::
+
 _`Optional`_
 
 Indicates whether the `AppGateServer` acts as a self serving `Application` or a
 `Gateway` to other `Application`s.
 
 If `true`, the `AppGateServer` will act as an `Application` and will only use
-its address to generate a ring-signer for signing `RelayRequest`s before
+its own address to generate a ring-signer for signing `RelayRequest`s before
 forwarding them to a `RelayMiner`.
 
 If `false`, the `AppGateServer` will act as a `Gateway` and will generate a
@@ -74,7 +95,8 @@ ring-signer from both its address and the `Application`'s address provided in
 the request's `senderAddr` query parameter then use it to sign the `RelayRequests`
 before forwarding them to a `RelayMiner`.
 
-## `signing_key`
+### `signing_key`
+
 _`Required`_
 
 Name of the key used to derive the public key and the corresponding address
@@ -83,7 +105,8 @@ for cryptographic rings generation used to sign `RelayRequests`.
 The key name must be present in the keyring that is specified when the
 `AppGateServer` is started.
 
-## `listening_endpoint`
+### `listening_endpoint`
+
 _`Required`_
 
 The endpoint that the `AppGateServer` will listen on for incoming requests.
