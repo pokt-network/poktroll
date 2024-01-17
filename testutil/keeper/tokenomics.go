@@ -15,6 +15,8 @@ import (
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
 	mocks "github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
@@ -39,9 +41,8 @@ func TokenomicsKeeper(t testing.TB) (*keeper.TokenomicsKeeper, sdk.Context) {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	mockBankKeeper.EXPECT().BurnCoins(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().SendCoinsFromModuleToModule(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().SendCoinsFromModuleToAccount(gomock.Any(), suppliertypes.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), apptypes.ModuleName, gomock.Any()).AnyTimes()
 
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,

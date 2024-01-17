@@ -6,10 +6,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewSupplierClient_Localnet(t *testing.T) {

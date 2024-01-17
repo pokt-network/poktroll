@@ -11,8 +11,13 @@ import (
 	"github.com/pokt-network/smt"
 )
 
-// TODO_UPNEXT(#323, @Olshansk): Implement this function
 // SettleSessionAccounting implements TokenomicsKeeper#SettleSessionAccounting
+//
+// ASSUMPTION: It is assumed the caller of this function validated the claim
+// against a proof BEFORE calling this function.
+// TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
+//
+// TODO_BLOCKER: This is just a first naive implementation of the business logic.
 func (k TokenomicsKeeper) SettleSessionAccounting(
 	goCtx context.Context,
 	claim *suppliertypes.Claim,
@@ -21,6 +26,7 @@ func (k TokenomicsKeeper) SettleSessionAccounting(
 		return types.ErrTokenomicsClaimNil
 	}
 
+	// Parse the context
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	logger := k.Logger(ctx).With("method", "SettleSessionAccounting")
 
@@ -34,16 +40,16 @@ func (k TokenomicsKeeper) SettleSessionAccounting(
 	if sessionHeader == nil {
 		return types.ErrTokenomicsSessionHeaderNil
 	}
+	if sessionHeader.ValidateBasic() != nil {
+
+	// Retrieve the sum of the root as a proxy into the amount of work done
+	claimComputeUnits := root.Sum()
 
 	// Retrieve the existing tokenomics params
 	params := k.GetParams(ctx)
 
-	// Retrieve the sum of the root as a proxy into the amount of work done
-	computeUnits := root.Sum()
-
 	// Calculate the amount of tokens to mint & burn
-	// TODO_BLOCKER: This is just a simple naive implementation
-	upokt := sdk.NewInt(int64(computeUnits * params.ComputeUnitsToTokensMultiplier))
+	upokt := sdk.NewInt(int64(claimComputeUnits * params.ComputeUnitsToTokensMultiplier))
 	upoktCoins := sdk.NewCoins(sdk.NewCoin("upokt", upokt))
 
 	// NB: We are doing a mint & burn + transfer, instead of a simple transfer

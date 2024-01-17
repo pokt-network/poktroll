@@ -24,6 +24,7 @@ type TokenomicsKeeperI interface {
 	//
 	// ASSUMPTION: It is assumed the caller of this function validated the claim
 	// against a proof BEFORE calling this function.
+	//
 	// TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
 	SettleSessionAccounting(goCtx context.Context, claim suppliertypes.Claim)
 }
@@ -69,6 +70,8 @@ func NewTokenomicsKeeper(
 		storeKey:   storeKey,
 		memKey:     memKey,
 		paramstore: ps,
+
+		bankKeeper: bankKeeper,
 
 		authority: authority,
 	}
