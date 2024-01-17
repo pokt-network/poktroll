@@ -39,7 +39,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 			"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
 			"supplier", supplierAddr,
 		).
-		Debug("got testSessionId for proof")
+		Debug("got sessionId for proof")
 
 	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
 	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
