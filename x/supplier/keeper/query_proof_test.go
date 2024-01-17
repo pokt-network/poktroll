@@ -26,10 +26,8 @@ func TestProofQuerySingle(t *testing.T) {
 
 	var randSupplierAddr = sample.AccAddress()
 	tests := []struct {
-		desc string
-
-		request *types.QueryGetProofRequest
-
+		desc        string
+		request     *types.QueryGetProofRequest
 		response    *types.QueryGetProofResponse
 		expectedErr error
 	}{
@@ -51,12 +49,10 @@ func TestProofQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "Proof Not Found - Random SessionId",
-
 			request: &types.QueryGetProofRequest{
 				SessionId:       "not a real session id",
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
-
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrSupplierProofNotFound.Wrapf(
@@ -68,12 +64,10 @@ func TestProofQuerySingle(t *testing.T) {
 		},
 		{
 			desc: "Proof Not Found - Random Supplier Address",
-
 			request: &types.QueryGetProofRequest{
 				SessionId:       proofs[0].GetSessionHeader().GetSessionId(),
 				SupplierAddress: randSupplierAddr,
 			},
-
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrSupplierProofNotFound.Wrapf(
@@ -89,7 +83,6 @@ func TestProofQuerySingle(t *testing.T) {
 				// SessionId:       Intentionally Omitted
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
-
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrSupplierInvalidSessionId.Wrapf(
@@ -104,7 +97,6 @@ func TestProofQuerySingle(t *testing.T) {
 				SessionId: proofs[0].GetSessionHeader().GetSessionId(),
 				// SupplierAddress: Intentionally Omitted,
 			},
-
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrSupplierInvalidAddress.Wrap(
@@ -115,7 +107,6 @@ func TestProofQuerySingle(t *testing.T) {
 		{
 			desc:    "InvalidRequest - nil QueryGetProofRequest",
 			request: nil,
-
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrSupplierInvalidQueryRequest.Wrap(
