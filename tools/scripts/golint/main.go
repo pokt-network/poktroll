@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/pokt-network/poktroll/tools/scripts/gci/filters"
 )
 
@@ -29,6 +27,7 @@ var (
 	}
 )
 
+// TODO_OPTIMISATION: This could probably be optimised for speed.
 func main() {
 	root := "."
 	var (
@@ -75,7 +74,6 @@ func main() {
 		// their import block - so it can be run normally with gci
 		for _, path := range packagesWithGCI {
 			args := append(defaultArgs, []string{"--enable=gci", "--enable=lll", "--enable=gofumpt"}...)
-			slices.Sort(path)
 			cmd := exec.Command("golangci-lint", append(args, path...)...)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
@@ -90,7 +88,6 @@ func main() {
 		// their import block - so it can't be run with gci as it would remove it
 		for _, path := range packagesWithoutGCI {
 			args := append(defaultArgs, []string{"--enable=lll", "--enable=gofumpt"}...)
-			slices.Sort(path)
 			cmd := exec.Command("golangci-lint", append(args, path...)...)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
