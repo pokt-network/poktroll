@@ -1,5 +1,8 @@
 run:
   timeout: 15m
+  config: ./.golangci.yml
+  new: true
+  color: always
   build-tags:
     - e2e
     - test

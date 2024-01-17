@@ -13,8 +13,6 @@ import (
 var (
 	defaultArgs = []string{
 		"run",
-		"--config=.golangci.yml",
-		"--color=always",
 	}
 	defaultIncludeFilters = []filters.FilterFn{
 		filters.PathMatchesGoExtension,

@@ -55,8 +55,8 @@ jobs:
       - name: Format the repo
         run: make go_gofumpt
 
-      - name: golangci-lint
-        run: make go_lint
-
       - name: Test
         run: make go_test
+
+      - name: golangci-lint
+        run: make go_lint
