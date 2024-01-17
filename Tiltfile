@@ -7,6 +7,7 @@ hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
+    "sequencer": {"cleanupBeforeEachStart": True},
     "relayminers": {"count": 1},
     "gateways": {"count": 1},
     "appgateservers": {"count": 1},
@@ -109,14 +110,18 @@ WORKDIR /
 
 # Run celestia and anvil nodes
 k8s_yaml(
-    ["localnet/kubernetes/celestia-rollkit.yaml", "localnet/kubernetes/anvil.yaml"]
+    ["localnet/kubernetes/celestia-rollkit.yaml", "localnet/kubernetes/anvil.yaml", "localnet/kubernetes/sequencer-volume.yaml"]
 )
 
 # Run pocket-specific nodes (sequencer, relayminers, etc...)
 helm_resource(
     "sequencer",
     chart_prefix + "poktroll-sequencer",
-    flags=["--values=./localnet/kubernetes/values-common.yaml"],
+    flags=[
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--values=./localnet/kubernetes/values-sequencer.yaml",
+        "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["sequencer"]["cleanupBeforeEachStart"]),
+        ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
