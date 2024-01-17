@@ -3,12 +3,11 @@ title: Supplier staking config
 sidebar_position: 3
 ---
 
-# Supplier staking config
+# Supplier staking config <!-- omit in toc -->
 
 _This document describes the configuration file used by the `Supplier` to submit
 a stake transaction required to provide RPC services on the Pocket Network._
 
-- [Supplier staking config](#supplier-staking-config)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
@@ -19,11 +18,21 @@ a stake transaction required to provide RPC services on the Pocket Network._
       - [`rpc_type`](#rpc_type)
 - [Example](#example)
 
-# Usage
+## Usage
 
 The `stake-supplier` transaction submission command accepts a `--config` flag
-that points to a `yaml` configuration file that defines the `stake_amount`,
-the `service`s and their respective advertised `endpoints`.
+that points to a `yaml` configuration file that defines their staking
+configuration. This includes, but is not limited to things like `stake_amount`, the `service`s, their respective advertised `endpoints`, etc.
+
+The following is an example command of how to stake a supplier
+in a LocalNet environment.
+
+:::warning
+
+TestNet is not ready as of writing this documentation so you may
+need to adjust the command below appropriately.
+
+:::
 
 ```bash
 poktrolld tx supplier stake-supplier \
@@ -34,31 +43,31 @@ poktrolld tx supplier stake-supplier \
   --node tcp://poktroll-node:36657
 ```
 
-# Configuration
+## Configuration
 
-The configuration file consists of a `stake_amount` entry denominated in `upokt`
-and a `services` section that defines the list of services that the `Supplier`
-wants to provide.
+### `stake_amount`
 
-## `stake_amount`
-_`Required`_
+_`Required`_, _`Non-empty`_
 
 ```yaml
 stake_amount: <number>upokt
 ```
 
-Defines the amount of `upokt` to stake for the `Supplier` account. This amount
-covers all the `service`s defined in the `services` section.
+Defines the amount of `upokt` to stake for the `Supplier` account.
+This amount covers all the `service`s defined in the `services` section.
 
-_NOTE: If the `Supplier` account already has a stake and wishes to change or add
-to the `service`s that it provides, then it needs to increase the current
+:::note
+
+If the `Supplier` account already has a stake and wishes to change or add
+to the `service`s that it provides, then it MUST to increase the current
 `stake_amount` by at least `1upokt`.
-(i.e. If the current stake is `1000upokt` and the `Supplier` wants to add a new
-`service` then `stake_amount: 1001upokt` should be specified in the configuration
-file; increasing it by `1upokt` and deducting `1upokt` from the `Supplier`'s
-account balance.)_
 
-## `services`
+For example, if the current stake is `1000upokt` and the `Supplier` wants to add a new `service` then `stake_amount: 1001upokt` should be specified in the configuration file. This will increase the stake by `1upokt` and deduct `1upokt` from the `Supplier`'s account balance.
+
+:::
+
+### `services`
+
 _`Required`_, _`Non-empty`_
 
 ```yaml
@@ -69,37 +78,42 @@ services:
         rpc_type: <string>
 ```
 
-`services` define the list of services that the `Supplier` wants to provide,
-which takes the form of a list of `service` objects. Each `service` object
+`services` define the list of services that the `Supplier` wants to provide.
+It takes the form of a list of `service` objects. Each `service` object
 consists of a `service_id` and a list of `endpoints` that the `Supplier` will
 advertise on the Pocket Network.
 
-### `service_id`
+#### `service_id`
+
 _`Required`_
 
 `service_id` is a string that uniquely identifies the service that the `Supplier`
-is providing and MUST be of 8 characters or less allowing alphanumeric characters,
-underscores, and dashes only (i.e. match the regex `^[a-zA-Z0-9_-]{1,8}$`, no spaces
-allowed).
+is providing. It MUST 8 characters or less and composed of alphanumeric characters,
+underscores, and dashes only.
 
-### `endpoints`
+For example, it must match the regex `^[a-zA-Z0-9_-]{1,8}$`, and spaces are disallowed.
+
+#### `endpoints`
+
 _`Required`_, _`Non-empty`_
 
 `endpoints` is a list of `endpoint` objects that the `Supplier` will advertise
 to the Pocket Network. Each `endpoint` object consists of an `url` and a `rpc_type`.
 
-#### `url`
+##### `url`
+
 _`Required`_
 
 `url` is a string formatted URL that defines the endpoint that MUST be reachable by
 `Gateways` and `Applications` to send `RelayRequests` to.
 
-#### `rpc_type`
+##### `rpc_type`
+
 _`Required`_
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
-is providing. The `rpc_type` MUST be one of the [supported types](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
+is providing. The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
 
-# Example
+## Example
 
 A full example of the configuration file could be found at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml)
