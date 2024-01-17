@@ -67,6 +67,7 @@ func main() {
 	}
 
 	errorFound := false
+	totalOut := ""
 	if len(packagesWithGCI) > 0 {
 		fmt.Println("Linting files without scaffold comments in their import blocks...")
 		// Run golangci-lint on all files that don't have a scaffold comment in
@@ -79,6 +80,7 @@ func main() {
 				fmt.Printf("Output: %s\nFailed running golangci-lint with gci: %v\n", out, err)
 				errorFound = true
 			}
+			totalOut += fmt.Sprintf("%s\n", out)
 		}
 	}
 
@@ -94,11 +96,13 @@ func main() {
 				fmt.Printf("Output: %s\nFailed running golangci-lint without gci: %v\n", out, err)
 				errorFound = true
 			}
+			totalOut += fmt.Sprintf("%s\n", out)
 		}
 	}
 
 	// Fail if any errors were found
 	if errorFound {
+		fmt.Println(totalOut)
 		os.Exit(1)
 	}
 }
@@ -118,6 +122,20 @@ func walkRepoRootFn(
 		// Don't process the root directory but don't skip it either; that would
 		// exclude everything.
 		if info.Name() == rootPath {
+			return nil
+		}
+
+		// Don't look in specific dirctories for files to lint
+		if strings.HasPrefix(path, "ts-client") {
+			return nil
+		}
+		if strings.HasPrefix(path, "docs") {
+			return nil
+		}
+		if strings.HasPrefix(path, "bin") {
+			return nil
+		}
+		if strings.HasPrefix(path, ".git") {
 			return nil
 		}
 
