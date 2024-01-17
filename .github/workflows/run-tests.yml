@@ -9,6 +9,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 env:
   GKE_CLUSTER: protocol-us-central1
   GKE_ZONE: us-central1
@@ -17,15 +22,6 @@ jobs:
   go-test:
     runs-on: ubuntu-latest
     steps:
-      - name: install ignite
-        # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
-        run: |
-          # curl https://get.ignite.com/cli! | bash
-          wget https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz
-          tar -xzf ignite_0.27.2_linux_amd64.tar.gz
-          sudo mv ignite /usr/local/bin/ignite
-          ignite version
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
@@ -34,6 +30,15 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: "1.20.10"
+
+      - name: install ignite
+        # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
+        run: |
+          # curl https://get.ignite.com/cli! | bash
+          wget https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz
+          tar -xzf ignite_0.27.2_linux_amd64.tar.gz
+          sudo mv ignite /usr/local/bin/ignite
+          ignite version
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -50,8 +55,12 @@ jobs:
       - name: Format the repo
         run: make go_gofumpt
 
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          only-new-issues: true
+          args: --timeout 15m --issues-exit-code=1
+
       - name: Test
         run: make go_test
-
-      - name: golangci-lint
-        run: make go_lint
