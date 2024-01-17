@@ -7,9 +7,19 @@ run:
     - e2e
     - test
     - integration
+    - tools
+    - ignore
 
+# TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
 linters:
-  disable-all: true
+  enable:
+    # - govet
+    # - errcheck
+    # - unused
+    - revive
+    - gofumpt
+    - lll
+    - gci
 
 linters-settings:
   govet:
