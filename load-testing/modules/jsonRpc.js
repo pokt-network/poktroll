@@ -31,7 +31,7 @@ export function sendJsonRPCRequest(baseUrl, method, params = [], tags = {}) {
     }, tags);
 
     if (!passed) {
-        console.log(`Request to ${response.request.url} with status ${response.status} failed the checks!`, JSON.stringify(response));      
+        console.log(`Request to ${response.request.url} failed:`, JSON.stringify(response, null, 2));
     }
 
     return response;
