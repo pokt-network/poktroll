@@ -1,4 +1,5 @@
-// The filters package contains functions that can be used to filter file paths.
+// The filters package contains functions that can be used to filter file paths
+// in limiting the scope of which files the gci linter touches.
 
 package filters
 
@@ -10,6 +11,8 @@ import (
 	"strings"
 )
 
+// igniteScaffoldComment is a a comment inserted by the ignite CLI that we want
+// to maintain in the source code and ignore for linting purposes.
 const igniteScaffoldComment = "// this line is used by starport scaffolding"
 
 var (
