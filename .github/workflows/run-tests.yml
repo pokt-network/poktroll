@@ -61,6 +61,7 @@ jobs:
           version: latest
           only-new-issues: true
           args: --timeout 15m --issues-exit-code=1
+          skip-cache: true
 
       - name: Test
         run: make go_test
