@@ -36,10 +36,7 @@ func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 ) (client.BlockClient, error) {
-	client, err := events.NewEventsReplayClient[
-		client.Block,
-		client.EventsObservable[client.Block],
-	](
+	client, err := events.NewEventsReplayClient[client.Block](
 		ctx,
 		deps,
 		committedBlocksQuery,
@@ -60,7 +57,7 @@ type blockClient struct {
 	// and the BlockReplayObservable type as its generic types.
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Block objects and to correctly return a BlockReplayObservable
-	eventsReplayClient client.EventsReplayClient[client.Block, client.EventsObservable[client.Block]]
+	eventsReplayClient client.EventsReplayClient[client.Block]
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
