@@ -16,32 +16,33 @@ func TestMsgAddService_ValidateBasic(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "invalid supplier address - no service",
+			desc: "invalid service supplier address - no service",
 			msg: MsgAddService{
-				SupplierAddress: "invalid_address",
+				Address: "invalid_address",
 				// Service: intentionally omitted,
 			},
 			expectedErr: ErrServiceInvalidAddress,
 		}, {
-			desc: "valid supplier address - no service ID",
+			desc: "valid service supplier address - no service ID",
 			msg: MsgAddService{
-				SupplierAddress: sample.AccAddress(),
-				Service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
 			},
 			expectedErr: ErrServiceMissingID,
 		}, {
-			desc: "valid supplier address - no service name",
+			desc: "valid service supplier address - no service name",
 			msg: MsgAddService{
-				SupplierAddress: sample.AccAddress(),
-				Service:         sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
 			},
 			expectedErr: ErrServiceMissingName,
 		}, {
-			desc: "valid supplier address and service",
+			desc: "valid service supplier address and service",
 			msg: MsgAddService{
-				SupplierAddress: sample.AccAddress(),
-				Service:         sharedtypes.Service{Id: "srv1", Name: "service name"},
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "srv1", Name: "service name"},
 			},
+			expectedErr: nil,
 		},
 	}
 	for _, tt := range tests {

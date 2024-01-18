@@ -8,21 +8,27 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SetService set a specific service in the store from its index
+// SetService set a specific service in the store from its index.
 func (k Keeper) SetService(ctx sdk.Context, service sharedtypes.Service) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ServiceKeyPrefix))
+	store := prefix.NewStore(
+		ctx.KVStore(k.storeKey),
+		types.KeyPrefix(types.ServiceKeyPrefix),
+	)
 	b := k.cdc.MustMarshal(&service)
 	store.Set(types.ServiceKey(
 		service.Id,
 	), b)
 }
 
-// GetService returns a service from its index
+// GetService returns a service from the store by its index.
 func (k Keeper) GetService(
 	ctx sdk.Context,
 	id string,
 ) (val sharedtypes.Service, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ServiceKeyPrefix))
+	store := prefix.NewStore(
+		ctx.KVStore(k.storeKey),
+		types.KeyPrefix(types.ServiceKeyPrefix),
+	)
 
 	b := store.Get(types.ServiceKey(
 		id,
@@ -35,20 +41,26 @@ func (k Keeper) GetService(
 	return val, true
 }
 
-// RemoveService removes a service from the store
+// RemoveService removes a service from the store.
 func (k Keeper) RemoveService(
 	ctx sdk.Context,
 	address string,
 ) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ServiceKeyPrefix))
+	store := prefix.NewStore(
+		ctx.KVStore(k.storeKey),
+		types.KeyPrefix(types.ServiceKeyPrefix),
+	)
 	store.Delete(types.ServiceKey(
 		address,
 	))
 }
 
-// GetAllServices returns all services
+// GetAllServices returns all services from the store.
 func (k Keeper) GetAllServices(ctx sdk.Context) (list []sharedtypes.Service) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ServiceKeyPrefix))
+	store := prefix.NewStore(
+		ctx.KVStore(k.storeKey),
+		types.KeyPrefix(types.ServiceKeyPrefix),
+	)
 	iterator := sdk.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()

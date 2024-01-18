@@ -18,8 +18,8 @@ func TestMsgServer_AddService(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(*k)
 	wctx := sdk.WrapSDKContext(ctx)
 
-	// Generate a supplier address
-	supplierAddr := sample.AccAddress()
+	// Generate a valid address
+	addr := sample.AccAddress()
 	// Create a service
 	preExistingService := sharedtypes.Service{
 		Id:   "svc2",
@@ -27,8 +27,8 @@ func TestMsgServer_AddService(t *testing.T) {
 	}
 	// Add the service to the store
 	_, err := srv.AddService(wctx, &types.MsgAddService{
-		SupplierAddress: supplierAddr,
-		Service:         preExistingService,
+		Address: addr,
+		Service: preExistingService,
 	})
 	require.NoError(t, err)
 	// Validate the service was added
@@ -37,14 +37,14 @@ func TestMsgServer_AddService(t *testing.T) {
 	require.Equal(t, preExistingService, serviceFound)
 
 	tests := []struct {
-		desc            string
-		supplierAddress string
-		service         sharedtypes.Service
-		expectedError   error
+		desc          string
+		address       string
+		service       sharedtypes.Service
+		expectedError error
 	}{
 		{
-			desc:            "valid - service added successfully",
-			supplierAddress: sample.AccAddress(),
+			desc:    "valid - service added successfully",
+			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id:   "svc1",
 				Name: "service 1",
@@ -52,8 +52,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			desc:            "invalid - supplier address is empty",
-			supplierAddress: "", // explicitly set to empty string
+			desc:    "invalid - service supplier address is empty",
+			address: "", // explicitly set to empty string
 			service: sharedtypes.Service{
 				Id:   "svc1",
 				Name: "service 1",
@@ -61,8 +61,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceInvalidAddress,
 		},
 		{
-			desc:            "invalid - invalid supplier address",
-			supplierAddress: "invalid address",
+			desc:    "invalid - invalid service supplier address",
+			address: "invalid address",
 			service: sharedtypes.Service{
 				Id:   "svc1",
 				Name: "service 1",
@@ -70,8 +70,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceInvalidAddress,
 		},
 		{
-			desc:            "invalid - missing service ID",
-			supplierAddress: sample.AccAddress(),
+			desc:    "invalid - missing service ID",
+			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				// Explicitly omitting Id field
 				Name: "service 1",
@@ -79,8 +79,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceMissingID,
 		},
 		{
-			desc:            "invalid - empty service ID",
-			supplierAddress: sample.AccAddress(),
+			desc:    "invalid - empty service ID",
+			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id:   "", // explicitly set to empty string
 				Name: "service 1",
@@ -88,8 +88,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceMissingID,
 		},
 		{
-			desc:            "invalid - missing service name",
-			supplierAddress: sample.AccAddress(),
+			desc:    "invalid - missing service name",
+			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id: "svc1",
 				// Explicitly omitting Name field
@@ -97,8 +97,8 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceMissingName,
 		},
 		{
-			desc:            "invalid - empty service name",
-			supplierAddress: sample.AccAddress(),
+			desc:    "invalid - empty service name",
+			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id:   "svc1",
 				Name: "", // explicitly set to empty string
@@ -106,24 +106,24 @@ func TestMsgServer_AddService(t *testing.T) {
 			expectedError: types.ErrServiceMissingName,
 		},
 		{
-			desc:            "invalid - service already exists (same supplier)",
-			supplierAddress: supplierAddr,
-			service:         preExistingService,
-			expectedError:   types.ErrServiceAlreadyExists,
+			desc:          "invalid - service already exists (same service supplier)",
+			address:       addr,
+			service:       preExistingService,
+			expectedError: types.ErrServiceAlreadyExists,
 		},
 		{
-			desc:            "invalid - service already exists (different supplier)",
-			supplierAddress: sample.AccAddress(),
-			service:         preExistingService,
-			expectedError:   types.ErrServiceAlreadyExists,
+			desc:          "invalid - service already exists (different service supplier)",
+			address:       sample.AccAddress(),
+			service:       preExistingService,
+			expectedError: types.ErrServiceAlreadyExists,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			_, err := srv.AddService(wctx, &types.MsgAddService{
-				SupplierAddress: tt.supplierAddress,
-				Service:         tt.service,
+				Address: tt.address,
+				Service: tt.service,
 			})
 			if tt.expectedError != nil {
 				require.ErrorIs(t, err, tt.expectedError)

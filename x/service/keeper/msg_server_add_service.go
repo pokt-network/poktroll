@@ -11,6 +11,9 @@ import (
 
 // AddService handles MsgAddService and adds a service to the network storing
 // it in the service keeper's store using the provided ID from the message.
+// TODO(@h5law): Add a governance parameter defining the cost to add a service
+// and enforce it then send the fee to the service module, if the signer has
+// enough funds otherwise fail.
 func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,

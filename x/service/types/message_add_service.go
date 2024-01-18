@@ -15,8 +15,8 @@ var _ sdk.Msg = (*MsgAddService)(nil)
 // NewMsgAddService creates a new MsgAddService instance
 func NewMsgAddService(address string, serviceID, serviceName string) *MsgAddService {
 	return &MsgAddService{
-		SupplierAddress: address,
-		Service:         sharedtypes.Service{Id: serviceID, Name: serviceName},
+		Address: address,
+		Service: sharedtypes.Service{Id: serviceID, Name: serviceName},
 	}
 }
 
@@ -32,7 +32,7 @@ func (msg *MsgAddService) Type() string {
 
 // GetSigners returns the signers of the message
 func (msg *MsgAddService) GetSigners() []sdk.AccAddress {
-	address, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	address, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
 		panic(err)
 	}
@@ -47,10 +47,10 @@ func (msg *MsgAddService) GetSignBytes() []byte {
 
 // ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(msg.SupplierAddress); err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
 		return sdkerrors.Wrapf(
 			ErrServiceInvalidAddress,
-			"invalid supplier address %s; (%v)", msg.SupplierAddress, err,
+			"invalid supplier address %s; (%v)", msg.Address, err,
 		)
 	}
 	if msg.Service.Id == "" {
