@@ -19,7 +19,7 @@ func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params <compute_units_to_tokens_multiplier>",
 		Short: "Update the parameters of the tokenomics module",
-		Long: `Update the parameter in the tokenomics module.",
+		Long: `Update the parameters in the tokenomics module.",
 
 All parameters must be provided when updating.
 
