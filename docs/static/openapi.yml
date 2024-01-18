@@ -47176,7 +47176,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured for
+                                configured
                               type: object
                               properties:
                                 id:
@@ -47243,7 +47243,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured for
+                                  configured
                                 type: object
                                 properties:
                                   id:
@@ -47279,12 +47279,14 @@ paths:
                                         - GRPC
                                         - WEBSOCKET
                                         - JSON_RPC
+                                        - REST
                                       default: UNKNOWN_RPC
                                       description: |-
                                         - UNKNOWN_RPC: Undefined RPC type
                                          - GRPC: gRPC
                                          - WEBSOCKET: WebSocket
                                          - JSON_RPC: JSON-RPC
+                                         - REST: REST
                                     configs:
                                       type: array
                                       items:
@@ -47441,17 +47443,56 @@ paths:
                   supplier_address:
                     type: string
                     title: the address of the supplier that submitted this claim
-                  session_id:
-                    type: string
-                    title: session id from the SessionHeader
-                  session_end_block_height:
-                    type: string
-                    format: uint64
-                    title: session end block height from the SessionHeader
+                  session_header:
+                    description: The session header of the session that this claim is for.
+                    type: object
+                    properties:
+                      application_address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      service:
+                        title: The service this session is for
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: Unique identifier for the service
+                            title: >-
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
+                          name:
+                            type: string
+                            description: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                            title: >-
+                              TODO_TECHDEBT: Name is currently unused but acts
+                              as a reminder than an optional onchain
+                              representation of the service is necessary
+                      session_start_block_height:
+                        type: string
+                        format: int64
+                        title: The height at which this session started
+                      session_id:
+                        type: string
+                        description: A unique pseudoranom ID for this session
+                        title: >-
+                          NOTE: session_id can be derived from the above values
+                          using on-chain but is included in the header for
+                          convenience
+                      session_end_block_height:
+                        type: string
+                        format: int64
+                        title: >-
+                          The height at which this session ended, this is the
+                          last block of the session
                   root_hash:
                     type: string
                     format: byte
-                    title: smt.SMST#Root()
+                    description: Root hash returned from smt.SMST#Root().
                 title: >-
                   Claim is the serialized object stored on-chain for claims
                   pending to be proven
@@ -47501,17 +47542,58 @@ paths:
                     supplier_address:
                       type: string
                       title: the address of the supplier that submitted this claim
-                    session_id:
-                      type: string
-                      title: session id from the SessionHeader
-                    session_end_block_height:
-                      type: string
-                      format: uint64
-                      title: session end block height from the SessionHeader
+                    session_header:
+                      description: >-
+                        The session header of the session that this claim is
+                        for.
+                      type: object
+                      properties:
+                        application_address:
+                          type: string
+                          title: >-
+                            The Bech32 address of the application using cosmos'
+                            ScalarDescriptor to ensure deterministic encoding
+                        service:
+                          title: The service this session is for
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
+                        session_start_block_height:
+                          type: string
+                          format: int64
+                          title: The height at which this session started
+                        session_id:
+                          type: string
+                          description: A unique pseudoranom ID for this session
+                          title: >-
+                            NOTE: session_id can be derived from the above
+                            values using on-chain but is included in the header
+                            for convenience
+                        session_end_block_height:
+                          type: string
+                          format: int64
+                          title: >-
+                            The height at which this session ended, this is the
+                            last block of the session
                     root_hash:
                       type: string
                       format: byte
-                      title: smt.SMST#Root()
+                      description: Root hash returned from smt.SMST#Root().
                   title: >-
                     Claim is the serialized object stored on-chain for claims
                     pending to be proven
@@ -47683,19 +47765,62 @@ paths:
                 items:
                   type: object
                   properties:
-                    index:
-                      type: string
                     supplier_address:
                       type: string
-                    session_id:
+                    session_header:
+                      description: >-
+                        The session header of the session that this claim is
+                        for.
+                      type: object
+                      properties:
+                        application_address:
+                          type: string
+                          title: >-
+                            The Bech32 address of the application using cosmos'
+                            ScalarDescriptor to ensure deterministic encoding
+                        service:
+                          title: The service this session is for
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              description: Unique identifier for the service
+                              title: >-
+                                For example, what if we want to request a
+                                session for a certain service but with some
+                                additional configs that identify it?
+                            name:
+                              type: string
+                              description: >-
+                                (Optional) Semantic human readable name for the
+                                service
+                              title: >-
+                                TODO_TECHDEBT: Name is currently unused but acts
+                                as a reminder than an optional onchain
+                                representation of the service is necessary
+                        session_start_block_height:
+                          type: string
+                          format: int64
+                          title: The height at which this session started
+                        session_id:
+                          type: string
+                          description: A unique pseudoranom ID for this session
+                          title: >-
+                            NOTE: session_id can be derived from the above
+                            values using on-chain but is included in the header
+                            for convenience
+                        session_end_block_height:
+                          type: string
+                          format: int64
+                          title: >-
+                            The height at which this session ended, this is the
+                            last block of the session
+                    closest_merkle_proof:
                       type: string
-                    merkle_proof:
-                      type: string
-                  description: >-
-                    TODO_UPNEXT(@Olshansk): The structure below is the default
-                    (untouched) scaffolded type. Update
-
-                    and productionize it for our use case.
+                      format: byte
+                      description: >-
+                        The serialized SMST proof from the `#ClosestProof()`
+                        method.
               pagination:
                 type: object
                 properties:
@@ -47818,19 +47943,60 @@ paths:
               proof:
                 type: object
                 properties:
-                  index:
-                    type: string
                   supplier_address:
                     type: string
-                  session_id:
+                  session_header:
+                    description: The session header of the session that this claim is for.
+                    type: object
+                    properties:
+                      application_address:
+                        type: string
+                        title: >-
+                          The Bech32 address of the application using cosmos'
+                          ScalarDescriptor to ensure deterministic encoding
+                      service:
+                        title: The service this session is for
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            description: Unique identifier for the service
+                            title: >-
+                              For example, what if we want to request a session
+                              for a certain service but with some additional
+                              configs that identify it?
+                          name:
+                            type: string
+                            description: >-
+                              (Optional) Semantic human readable name for the
+                              service
+                            title: >-
+                              TODO_TECHDEBT: Name is currently unused but acts
+                              as a reminder than an optional onchain
+                              representation of the service is necessary
+                      session_start_block_height:
+                        type: string
+                        format: int64
+                        title: The height at which this session started
+                      session_id:
+                        type: string
+                        description: A unique pseudoranom ID for this session
+                        title: >-
+                          NOTE: session_id can be derived from the above values
+                          using on-chain but is included in the header for
+                          convenience
+                      session_end_block_height:
+                        type: string
+                        format: int64
+                        title: >-
+                          The height at which this session ended, this is the
+                          last block of the session
+                  closest_merkle_proof:
                     type: string
-                  merkle_proof:
-                    type: string
-                description: >-
-                  TODO_UPNEXT(@Olshansk): The structure below is the default
-                  (untouched) scaffolded type. Update
-
-                  and productionize it for our use case.
+                    format: byte
+                    description: >-
+                      The serialized SMST proof from the `#ClosestProof()`
+                      method.
         default:
           description: An unexpected error response.
           schema:
@@ -47931,12 +48097,14 @@ paths:
                                   - GRPC
                                   - WEBSOCKET
                                   - JSON_RPC
+                                  - REST
                                 default: UNKNOWN_RPC
                                 description: |-
                                   - UNKNOWN_RPC: Undefined RPC type
                                    - GRPC: gRPC
                                    - WEBSOCKET: WebSocket
                                    - JSON_RPC: JSON-RPC
+                                   - REST: REST
                               configs:
                                 type: array
                                 items:
@@ -48080,12 +48248,14 @@ paths:
                                     - GRPC
                                     - WEBSOCKET
                                     - JSON_RPC
+                                    - REST
                                   default: UNKNOWN_RPC
                                   description: |-
                                     - UNKNOWN_RPC: Undefined RPC type
                                      - GRPC: gRPC
                                      - WEBSOCKET: WebSocket
                                      - JSON_RPC: JSON-RPC
+                                     - REST: REST
                                 configs:
                                   type: array
                                   items:
@@ -77426,6 +77596,8 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  pocket.service.MsgAddServiceResponse:
+    type: object
   pocket.service.Params:
     type: object
     description: Params defines the parameters for the module.
@@ -77536,7 +77708,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured for
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
@@ -77600,7 +77772,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured for
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
@@ -77635,12 +77807,14 @@ definitions:
                                 - GRPC
                                 - WEBSOCKET
                                 - JSON_RPC
+                                - REST
                               default: UNKNOWN_RPC
                               description: |-
                                 - UNKNOWN_RPC: Undefined RPC type
                                  - GRPC: gRPC
                                  - WEBSOCKET: WebSocket
                                  - JSON_RPC: JSON-RPC
+                                 - REST: REST
                             configs:
                               type: array
                               items:
@@ -77790,7 +77964,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -77852,7 +78026,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured for
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
@@ -77887,12 +78061,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78032,12 +78208,14 @@ definitions:
       - GRPC
       - WEBSOCKET
       - JSON_RPC
+      - REST
     default: UNKNOWN_RPC
     description: |-
       - UNKNOWN_RPC: Undefined RPC type
        - GRPC: gRPC
        - WEBSOCKET: WebSocket
        - JSON_RPC: JSON-RPC
+       - REST: REST
     title: Enum to define RPC types
   pocket.shared.Supplier:
     type: object
@@ -78066,7 +78244,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured for
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
@@ -78099,12 +78277,14 @@ definitions:
                       - GRPC
                       - WEBSOCKET
                       - JSON_RPC
+                      - REST
                     default: UNKNOWN_RPC
                     description: |-
                       - UNKNOWN_RPC: Undefined RPC type
                        - GRPC: gRPC
                        - WEBSOCKET: WebSocket
                        - JSON_RPC: JSON-RPC
+                       - REST: REST
                   configs:
                     type: array
                     items:
@@ -78156,12 +78336,14 @@ definitions:
           - GRPC
           - WEBSOCKET
           - JSON_RPC
+          - REST
         default: UNKNOWN_RPC
         description: |-
           - UNKNOWN_RPC: Undefined RPC type
            - GRPC: gRPC
            - WEBSOCKET: WebSocket
            - JSON_RPC: JSON-RPC
+           - REST: REST
       configs:
         type: array
         items:
@@ -78195,7 +78377,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured for
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:
@@ -78227,12 +78409,14 @@ definitions:
                 - GRPC
                 - WEBSOCKET
                 - JSON_RPC
+                - REST
               default: UNKNOWN_RPC
               description: |-
                 - UNKNOWN_RPC: Undefined RPC type
                  - GRPC: gRPC
                  - WEBSOCKET: WebSocket
                  - JSON_RPC: JSON-RPC
+                 - REST: REST
             configs:
               type: array
               items:
@@ -78272,17 +78456,53 @@ definitions:
       supplier_address:
         type: string
         title: the address of the supplier that submitted this claim
-      session_id:
-        type: string
-        title: session id from the SessionHeader
-      session_end_block_height:
-        type: string
-        format: uint64
-        title: session end block height from the SessionHeader
+      session_header:
+        description: The session header of the session that this claim is for.
+        type: object
+        properties:
+          application_address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          service:
+            title: The service this session is for
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the service
+                title: >-
+                  For example, what if we want to request a session for a
+                  certain service but with some additional configs that identify
+                  it?
+              name:
+                type: string
+                description: (Optional) Semantic human readable name for the service
+                title: >-
+                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
+                  than an optional onchain representation of the service is
+                  necessary
+          session_start_block_height:
+            type: string
+            format: int64
+            title: The height at which this session started
+          session_id:
+            type: string
+            description: A unique pseudoranom ID for this session
+            title: >-
+              NOTE: session_id can be derived from the above values using
+              on-chain but is included in the header for convenience
+          session_end_block_height:
+            type: string
+            format: int64
+            title: >-
+              The height at which this session ended, this is the last block of
+              the session
       root_hash:
         type: string
         format: byte
-        title: smt.SMST#Root()
+        description: Root hash returned from smt.SMST#Root().
     title: >-
       Claim is the serialized object stored on-chain for claims pending to be
       proven
@@ -78300,19 +78520,55 @@ definitions:
   pocket.supplier.Proof:
     type: object
     properties:
-      index:
-        type: string
       supplier_address:
         type: string
-      session_id:
+      session_header:
+        description: The session header of the session that this claim is for.
+        type: object
+        properties:
+          application_address:
+            type: string
+            title: >-
+              The Bech32 address of the application using cosmos'
+              ScalarDescriptor to ensure deterministic encoding
+          service:
+            title: The service this session is for
+            type: object
+            properties:
+              id:
+                type: string
+                description: Unique identifier for the service
+                title: >-
+                  For example, what if we want to request a session for a
+                  certain service but with some additional configs that identify
+                  it?
+              name:
+                type: string
+                description: (Optional) Semantic human readable name for the service
+                title: >-
+                  TODO_TECHDEBT: Name is currently unused but acts as a reminder
+                  than an optional onchain representation of the service is
+                  necessary
+          session_start_block_height:
+            type: string
+            format: int64
+            title: The height at which this session started
+          session_id:
+            type: string
+            description: A unique pseudoranom ID for this session
+            title: >-
+              NOTE: session_id can be derived from the above values using
+              on-chain but is included in the header for convenience
+          session_end_block_height:
+            type: string
+            format: int64
+            title: >-
+              The height at which this session ended, this is the last block of
+              the session
+      closest_merkle_proof:
         type: string
-      merkle_proof:
-        type: string
-    description: >-
-      TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
-      scaffolded type. Update
-
-      and productionize it for our use case.
+        format: byte
+        description: The serialized SMST proof from the `#ClosestProof()` method.
   pocket.supplier.QueryAllClaimsResponse:
     type: object
     properties:
@@ -78324,17 +78580,53 @@ definitions:
             supplier_address:
               type: string
               title: the address of the supplier that submitted this claim
-            session_id:
-              type: string
-              title: session id from the SessionHeader
-            session_end_block_height:
-              type: string
-              format: uint64
-              title: session end block height from the SessionHeader
+            session_header:
+              description: The session header of the session that this claim is for.
+              type: object
+              properties:
+                application_address:
+                  type: string
+                  title: >-
+                    The Bech32 address of the application using cosmos'
+                    ScalarDescriptor to ensure deterministic encoding
+                service:
+                  title: The service this session is for
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
+                session_start_block_height:
+                  type: string
+                  format: int64
+                  title: The height at which this session started
+                session_id:
+                  type: string
+                  description: A unique pseudoranom ID for this session
+                  title: >-
+                    NOTE: session_id can be derived from the above values using
+                    on-chain but is included in the header for convenience
+                session_end_block_height:
+                  type: string
+                  format: int64
+                  title: >-
+                    The height at which this session ended, this is the last
+                    block of the session
             root_hash:
               type: string
               format: byte
-              title: smt.SMST#Root()
+              description: Root hash returned from smt.SMST#Root().
           title: >-
             Claim is the serialized object stored on-chain for claims pending to
             be proven
@@ -78372,19 +78664,55 @@ definitions:
         items:
           type: object
           properties:
-            index:
-              type: string
             supplier_address:
               type: string
-            session_id:
+            session_header:
+              description: The session header of the session that this claim is for.
+              type: object
+              properties:
+                application_address:
+                  type: string
+                  title: >-
+                    The Bech32 address of the application using cosmos'
+                    ScalarDescriptor to ensure deterministic encoding
+                service:
+                  title: The service this session is for
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: Unique identifier for the service
+                      title: >-
+                        For example, what if we want to request a session for a
+                        certain service but with some additional configs that
+                        identify it?
+                    name:
+                      type: string
+                      description: (Optional) Semantic human readable name for the service
+                      title: >-
+                        TODO_TECHDEBT: Name is currently unused but acts as a
+                        reminder than an optional onchain representation of the
+                        service is necessary
+                session_start_block_height:
+                  type: string
+                  format: int64
+                  title: The height at which this session started
+                session_id:
+                  type: string
+                  description: A unique pseudoranom ID for this session
+                  title: >-
+                    NOTE: session_id can be derived from the above values using
+                    on-chain but is included in the header for convenience
+                session_end_block_height:
+                  type: string
+                  format: int64
+                  title: >-
+                    The height at which this session ended, this is the last
+                    block of the session
+            closest_merkle_proof:
               type: string
-            merkle_proof:
-              type: string
-          description: >-
-            TODO_UPNEXT(@Olshansk): The structure below is the default
-            (untouched) scaffolded type. Update
-
-            and productionize it for our use case.
+              format: byte
+              description: The serialized SMST proof from the `#ClosestProof()` method.
       pagination:
         type: object
         properties:
@@ -78481,12 +78809,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78562,17 +78892,53 @@ definitions:
           supplier_address:
             type: string
             title: the address of the supplier that submitted this claim
-          session_id:
-            type: string
-            title: session id from the SessionHeader
-          session_end_block_height:
-            type: string
-            format: uint64
-            title: session end block height from the SessionHeader
+          session_header:
+            description: The session header of the session that this claim is for.
+            type: object
+            properties:
+              application_address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              service:
+                title: The service this session is for
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the service
+                    title: >-
+                      For example, what if we want to request a session for a
+                      certain service but with some additional configs that
+                      identify it?
+                  name:
+                    type: string
+                    description: (Optional) Semantic human readable name for the service
+                    title: >-
+                      TODO_TECHDEBT: Name is currently unused but acts as a
+                      reminder than an optional onchain representation of the
+                      service is necessary
+              session_start_block_height:
+                type: string
+                format: int64
+                title: The height at which this session started
+              session_id:
+                type: string
+                description: A unique pseudoranom ID for this session
+                title: >-
+                  NOTE: session_id can be derived from the above values using
+                  on-chain but is included in the header for convenience
+              session_end_block_height:
+                type: string
+                format: int64
+                title: >-
+                  The height at which this session ended, this is the last block
+                  of the session
           root_hash:
             type: string
             format: byte
-            title: smt.SMST#Root()
+            description: Root hash returned from smt.SMST#Root().
         title: >-
           Claim is the serialized object stored on-chain for claims pending to
           be proven
@@ -78582,19 +78948,55 @@ definitions:
       proof:
         type: object
         properties:
-          index:
-            type: string
           supplier_address:
             type: string
-          session_id:
+          session_header:
+            description: The session header of the session that this claim is for.
+            type: object
+            properties:
+              application_address:
+                type: string
+                title: >-
+                  The Bech32 address of the application using cosmos'
+                  ScalarDescriptor to ensure deterministic encoding
+              service:
+                title: The service this session is for
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Unique identifier for the service
+                    title: >-
+                      For example, what if we want to request a session for a
+                      certain service but with some additional configs that
+                      identify it?
+                  name:
+                    type: string
+                    description: (Optional) Semantic human readable name for the service
+                    title: >-
+                      TODO_TECHDEBT: Name is currently unused but acts as a
+                      reminder than an optional onchain representation of the
+                      service is necessary
+              session_start_block_height:
+                type: string
+                format: int64
+                title: The height at which this session started
+              session_id:
+                type: string
+                description: A unique pseudoranom ID for this session
+                title: >-
+                  NOTE: session_id can be derived from the above values using
+                  on-chain but is included in the header for convenience
+              session_end_block_height:
+                type: string
+                format: int64
+                title: >-
+                  The height at which this session ended, this is the last block
+                  of the session
+          closest_merkle_proof:
             type: string
-          merkle_proof:
-            type: string
-        description: >-
-          TODO_UPNEXT(@Olshansk): The structure below is the default (untouched)
-          scaffolded type. Update
-
-          and productionize it for our use case.
+            format: byte
+            description: The serialized SMST proof from the `#ClosestProof()` method.
   pocket.supplier.QueryGetSupplierResponse:
     type: object
     properties:
@@ -78661,12 +79063,14 @@ definitions:
                           - GRPC
                           - WEBSOCKET
                           - JSON_RPC
+                          - REST
                         default: UNKNOWN_RPC
                         description: |-
                           - UNKNOWN_RPC: Undefined RPC type
                            - GRPC: gRPC
                            - WEBSOCKET: WebSocket
                            - JSON_RPC: JSON-RPC
+                           - REST: REST
                       configs:
                         type: array
                         items:
@@ -78713,6 +79117,8 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+  poktroll.service.MsgAddServiceResponse:
+    type: object
   poktroll.tokenomics.Params:
     type: object
     properties:

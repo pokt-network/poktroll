@@ -1,7 +1,17 @@
 syntax = "proto3";
+
 package pocket.service;
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 // Msg defines the Msg service.
-service Msg {}
+service Msg {
+  rpc AddService (MsgAddService) returns (MsgAddServiceResponse);
+}
+
+message MsgAddService {
+  string address = 1;
+}
+
+message MsgAddServiceResponse {}
+

@@ -19,12 +19,16 @@ import (
 	"github.com/noot/ring-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
+	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	testkeyring "github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
+	testrings "github.com/pokt-network/poktroll/testutil/testcrypto/rings"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -85,18 +89,19 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, 1)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
-		ringDeps := depinject.Supply(accountQueryClient, applicationQueryClient)
-		ringCache, err := rings.NewRingCache(ringDeps)
-		require.NoError(test.t, err)
+		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
+		delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(test.ctx, test.t, "", redelegationObs)
+		ringCache := testrings.NewRingCacheWithMockDependencies(test.ctx, test.t, accountQueryClient, applicationQueryClient, delegationClient)
 
-		deps := depinject.Configs(ringDeps, depinject.Supply(
+		deps := depinject.Supply(
 			logger,
+			accountQueryClient,
 			ringCache,
 			blockClient,
 			sessionQueryClient,
 			supplierQueryClient,
 			keyring,
-		))
+		)
 
 		test.Deps = deps
 	}
@@ -104,20 +109,26 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 
 // WithRelayerProxiedServices creates the services that the relayer proxy will
 // proxy requests to.
-func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestBehavior) {
+// It creates an HTTP server for each service and starts listening on the
+// provided host.
+func WithRelayerProxiedServices(
+	proxiedServices map[string]*config.RelayMinerProxyConfig,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		for serviceId, endpoint := range proxiedServices {
-			server := &http.Server{Addr: endpoint.Host}
-			server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Write(prepareJsonRPCResponsePayload())
-			})
-			go func() { server.ListenAndServe() }()
-			go func() {
-				<-test.ctx.Done()
-				server.Shutdown(test.ctx)
-			}()
+		for _, proxy := range proxiedServices {
+			for serviceId, service := range proxy.Suppliers {
+				server := &http.Server{Addr: service.ServiceConfig.Url.Host}
+				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					w.Write(prepareJsonRPCResponsePayload())
+				})
+				go func() { server.ListenAndServe() }()
+				go func() {
+					<-test.ctx.Done()
+					server.Shutdown(test.ctx)
+				}()
 
-			test.proxiedServices[serviceId] = server
+				test.proxiedServices[serviceId] = server
+			}
 		}
 	}
 }
@@ -125,7 +136,7 @@ func WithRelayerProxiedServices(proxiedServices map[string]*url.URL) func(*TestB
 // WithDefaultSupplier creates the default staked supplier for the test
 func WithDefaultSupplier(
 	supplierKeyName string,
-	supplierEndpoints []*sharedtypes.SupplierEndpoint,
+	supplierEndpoints map[string][]*sharedtypes.SupplierEndpoint,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		var keyring keyringtypes.Keyring
@@ -141,12 +152,14 @@ func WithDefaultSupplier(
 
 		supplierAddress := supplierAccAddress.String()
 
-		testqueryclients.AddSuppliersWithServiceEndpoints(
-			test.t,
-			supplierAddress,
-			"service1",
-			supplierEndpoints,
-		)
+		for serviceId, endpoints := range supplierEndpoints {
+			testqueryclients.AddSuppliersWithServiceEndpoints(
+				test.t,
+				supplierAddress,
+				serviceId,
+				endpoints,
+			)
+		}
 	}
 }
 
@@ -206,17 +219,41 @@ func WithDefaultSessionSupplier(
 	}
 }
 
-// MarshalAndSend marshals the request and sends it to the provided service
+// TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
+// needs to have its http.Request "Content-Type" header passed-in as a parameter
+// and take out the GetRelayResponseError function which parses JSON-RPC responses
+// to make it RPC-type agnostic.
+
+// MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
-	url string,
+	proxiedServices map[string]*config.RelayMinerProxyConfig,
+	proxyServeName string,
+	serviceId string,
 	request *servicetypes.RelayRequest,
 ) (errCode int32, errorMessage string) {
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)
 
+	var scheme string
+	switch proxiedServices[proxyServeName].Type {
+	case config.ProxyTypeHTTP:
+		scheme = "http"
+	default:
+		require.FailNow(test.t, "unsupported proxy type")
+	}
+
 	reader := io.NopCloser(bytes.NewReader(reqBz))
-	res, err := http.DefaultClient.Post(url, "application/json", reader)
+	req := &http.Request{
+		Method: http.MethodPost,
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].Host},
+		Host: proxiedServices[proxyServeName].Suppliers[serviceId].Hosts[0],
+		Body: reader,
+	}
+	res, err := http.DefaultClient.Do(req)
 	require.NoError(test.t, err)
 	require.NotNil(test.t, res)
 
