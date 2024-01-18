@@ -23,13 +23,13 @@ func (query *QueryGetClaimRequest) ValidateBasic() error {
 	if query.SessionId == "" {
 		return ErrSupplierInvalidSessionId.Wrapf("invalid session ID for claim being retrieved %s", query.SessionId)
 	}
+
 	return nil
 }
 
 // ValidateBasic performs basic (non-state-dependant) validation on a QueryAllClaimsRequest.
 func (query *QueryAllClaimsRequest) ValidateBasic() error {
-	// TODO_TECHDEBT: update function signature to receive a context.
-	logger := polylog.Ctx(context.TODO())
+	logger := polylog.Ctx(context.Background())
 
 	switch filter := query.Filter.(type) {
 	case *QueryAllClaimsRequest_SupplierAddress:
@@ -38,16 +38,16 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllClaimsRequest_SessionId:
-		// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 		logger.Warn().
 			Str("session_id", filter.SessionId).
-			Msg("TODO: SessionID check in claim request validation is currently a noop")
+			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
 
 	case *QueryAllClaimsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
 			return ErrSupplierInvalidSessionEndHeight.Wrapf("invalid session end height for claims being retrieved %d", filter.SessionEndHeight)
 		}
 	}
+
 	return nil
 }
 
@@ -61,6 +61,7 @@ func (query *QueryGetProofRequest) ValidateBasic() error {
 	if query.SessionId == "" {
 		return ErrSupplierInvalidSessionId.Wrapf("invalid session ID for proof being retrieved %s", query.SessionId)
 	}
+
 	return nil
 }
 
@@ -75,18 +76,19 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 		}
 
 	case *QueryAllProofsRequest_SessionId:
-		// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
 		logger.Warn().
 			Str("session_id", filter.SessionId).
-			Msg("TODO: SessionID check is currently a noop")
+			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
 
 	case *QueryAllProofsRequest_SessionEndHeight:
 		if filter.SessionEndHeight < 0 {
 			return ErrSupplierInvalidSessionEndHeight.Wrapf("invalid session end height for proofs being retrieved %d", filter.SessionEndHeight)
 		}
+
 	default:
 		// No filter is set
 		logger.Debug().Msg("No specific filter set when requesting claims")
 	}
+
 	return nil
 }

@@ -55,7 +55,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 		RootHash:        msg.RootHash,
 	}
 
-	// TODO_TECHDEBT: check if this claim already exists and return an appropriate error
+	// TODO_BLOCKER: check if this claim already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
