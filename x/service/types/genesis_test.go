@@ -20,34 +20,63 @@ func TestGenesisState_Validate(t *testing.T) {
 		Name: "svcName2",
 	}
 
+	srv3 := &sharedtypes.Service{
+		Id:   "srv3",
+		Name: "srv1",
+	}
+
 	tests := []struct {
-		desc     string
-		genState *types.GenesisState
-		valid    bool
+		desc          string
+		genState      *types.GenesisState
+		expectedError error
 	}{
 		{
-			desc:     "default is valid",
-			genState: types.DefaultGenesis(),
-			valid:    true,
+			desc:          "default is valid",
+			genState:      types.DefaultGenesis(),
+			expectedError: nil,
 		},
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ServiceList: []sharedtypes.Service{
 					*svc1, *svc2,
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
-			valid: true,
+			expectedError: nil,
 		},
 		{
 			desc: "invalid - duplicate service ID",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ServiceList: []sharedtypes.Service{
 					*svc1, *svc1,
 				},
 			},
-			valid: false,
+			expectedError: types.ErrServiceDuplicateIndex,
+		},
+		{
+			desc: "invalid - duplicate service name",
+			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
+				ServiceList: []sharedtypes.Service{
+					*srv1, *srv3,
+				},
+			},
+			expectedError: types.ErrServiceDuplicateIndex,
+		},
+		{
+			desc: "invalid - invalid add service fee parameter",
+			genState: &types.GenesisState{
+				Params: types.Params{
+					AddServiceFee: 999999, // 0.999999 POKT
+				},
+				ServiceList: []sharedtypes.Service{
+					*srv1, *srv2,
+				},
+			},
+			expectedError: types.ErrServiceInvalidServiceFee,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
@@ -55,10 +84,10 @@ func TestGenesisState_Validate(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			err := tc.genState.Validate()
-			if tc.valid {
+			if tc.expectedError == nil {
 				require.NoError(t, err)
 			} else {
-				require.Error(t, err)
+				require.ErrorIs(t, err, tc.expectedError)
 			}
 		})
 	}

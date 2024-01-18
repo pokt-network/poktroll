@@ -9,4 +9,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 message Params {
   option (gogoproto.goproto_stringer) = false;
 
+  // The amount of uPOKT required to add a new service
+  uint64 add_service_fee = 1
+    [(gogoproto.jsontag) = "add_service_fee"];
 }

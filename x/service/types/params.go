@@ -1,9 +1,15 @@
 package types
 
 import (
+	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"gopkg.in/yaml.v2"
 )
+
+// DefaultAddServiceFee is the default value for the add service fee
+// parameter in the genesis state of the service module.
+// TODO: Revisit default param values
+const DefaultAddServiceFee = 1000000000 // 1000 POKT
 
 var _ paramtypes.ParamSet = (*Params)(nil)
 
@@ -14,7 +20,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams() Params {
-	return Params{}
+	return Params{AddServiceFee: DefaultAddServiceFee}
 }
 
 // DefaultParams returns a default set of parameters
@@ -29,6 +35,14 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
+	// TODO(@h5law): Look into better validation
+	if p.AddServiceFee < 1000000 { // 1 POKT
+		return sdkerrors.Wrapf(
+			ErrServiceInvalidServiceFee,
+			"AddServiceFee param < 1000000 uPOKT: got %d",
+			p.AddServiceFee,
+		)
+	}
 	return nil
 }
 
