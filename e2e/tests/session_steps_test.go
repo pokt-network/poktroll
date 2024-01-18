@@ -22,14 +22,25 @@ import (
 )
 
 const (
-	createClaimTimeoutDuration       = 10 * time.Second
-	submitProofTimeoutDuration       = 10 * time.Second
-	testEventsReplayClientBufferSize = 100
-	msgTxSenderQueryFmt              = "tm.event='Tx' AND message.sender='%s'"
-	testServiceId                    = "anvil"
-	eventsReplayClientKey            = "eventsReplayClientKey"
-	preExistingClaimsKey             = "preExistingClaimsKey"
-	preExistingProofsKey             = "preExistingProofsKey"
+	// txEventTimeout is the duration of time to wait after sending a valid tx
+	// before the test should time out (fail).
+	txEventTimeout = 10 * time.Second
+	// txSenderEventSubscriptionQueryFmt is the format string which yields the
+	// cosmos-sdk event subscription "query" string for a given sender address.
+	// This is used by an events replay client to subscribe to tx events from the supplier.
+	// See: https://docs.cosmos.network/v0.46/core/events.html#subscribing-to-events.
+	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+	testEventsReplayClientBufferSize  = 100
+	testServiceId                     = "anvil"
+	// eventsReplayClientKey is the suite#scenarioState key for the events replay client
+	// which is subscribed to tx events where the tx sender is the scenario's supplier.
+	eventsReplayClientKey = "eventsReplayClientKey"
+	// preExistingClaimsKey is the suite#scenarioState key for any pre-existing
+	// claims when querying for all claims prior to running the scenario.
+	preExistingClaimsKey = "preExistingClaimsKey"
+	// preExistingProofsKey is the suite#scenarioState key for any pre-existing
+	// proofs when querying for all proofs prior to running the scenario.
+	preExistingProofsKey = "preExistingProofsKey"
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
@@ -48,7 +59,8 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
-	preExistingClaims := s.scenarioState[preExistingClaimsKey].([]suppliertypes.Claim)
+	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]suppliertypes.Claim)
+	require.True(s, ok, "preExistingClaimsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
@@ -73,7 +85,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	relayCount, err := strconv.Atoi(relayCountStr)
 	require.NoError(s, err)
 
-	// Query for any existing claims so that we can compensate for them in the
+	// Query for any existing claims so that we can compare against them in
 	// future assertions about changes in on-chain claims.
 	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{})
 	require.NoError(s, err)
@@ -86,7 +98,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	s.scenarioState[preExistingProofsKey] = allProofsRes.Proof
 
 	// Construct an events query client to listen for tx events from the supplier.
-	msgSenderQuery := fmt.Sprintf(msgTxSenderQueryFmt, accNameToAddrMap[supplierName])
+	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
 
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
 	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
@@ -135,7 +147,8 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	require.NotNil(s, allProofsRes)
 
 	// Assert that the number of proofs has increased by one.
-	preExistingProofs := s.scenarioState[preExistingProofsKey].([]suppliertypes.Proof)
+	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]suppliertypes.Proof)
+	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
@@ -210,7 +223,7 @@ func (s *suite) waitForMessageAction(action string) {
 	select {
 	case <-ctx.Done():
 		// Success; message detected before timeout.
-	case <-time.After(submitProofTimeoutDuration):
+	case <-time.After(txEventTimeout):
 		s.Fatalf("timed out waiting for message with action %q", action)
 	}
 }
