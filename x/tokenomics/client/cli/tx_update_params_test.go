@@ -18,6 +18,7 @@ import (
 func TestCLI_UpdateParams(t *testing.T) {
 	net := networkWithDefaultConfig(t)
 	ctx := net.Validators[0].ClientCtx
+
 	common := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, net.Validators[0].Address.String()),
@@ -25,30 +26,26 @@ func TestCLI_UpdateParams(t *testing.T) {
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
 	}
+
 	tests := []struct {
-		desc string
-
-		args []string
-
+		desc                string
+		args                []string
 		expectedErr         error
 		expectedExtraErrMsg string
 	}{
 		{
-			desc: "valid update of all params",
-
-			args: []string{"42"},
-
+			desc:        "valid update of all params",
+			args:        []string{"42"},
 			expectedErr: nil,
 		},
 		{
-			desc: "invalid compute_units_to_tokens_multiplier update",
-
-			args: []string{"0"},
-
+			desc:                "invalid compute_units_to_tokens_multiplier update",
+			args:                []string{"0"},
 			expectedErr:         types.ErrTokenomicsParamsInvalid,
 			expectedExtraErrMsg: "invalid ComputeUnitsToTokensMultiplier",
 		},
 	}
+
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := append(common, tc.args...)

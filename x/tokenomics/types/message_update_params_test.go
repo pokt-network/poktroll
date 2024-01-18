@@ -40,6 +40,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 					ComputeUnitsToTokensMultiplier: 0,
 				},
 			},
+			expectedErr: ErrTokenomicsParamsInvalid,
 		},
 	}
 	for _, tt := range tests {
