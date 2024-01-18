@@ -3,9 +3,11 @@ package pocket.application;
 
 option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
-import "cosmos_proto/cosmos.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
+
+import "amino/amino.proto";
 
 import "pocket/shared/service.proto";
 
@@ -14,5 +16,31 @@ message Application {
   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   repeated shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
-  repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+  repeated string delegatee_gateway_addresses = 4
+    [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+}
+
+// Redelegation defines the type used to store an on-chain redelegation event
+// This occurs when an application delegates to / undelegates from a gateway.
+message Redelegation {
+  option (gogoproto.equal)           = false;
+  option (gogoproto.goproto_getters) = false;
+  
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+  repeated RedelegationEntry entries = 3
+    [(gogoproto.nullable) = false, (amino.dont_omitempty) = true]; // Redelegation event entry.
+}
+
+// RedelegationEntry defines the type used to determine the status of a
+// redelegation, when it took place on-chain and when it should be completed.
+message RedelegationEntry {
+  option (gogoproto.equal) = true;
+
+  int64 current_height = 1;    // The block height at which the redelegation was created.
+
+  int64 completion_height = 2; // The block height at which the redelegation should be completed.
+  string deletation_type = 3; // The type of redelegation even this is (delegation or undelegation).
+
+  uint64 redelegation_id = 4;  // The unique ID of the redelegation.
 }
