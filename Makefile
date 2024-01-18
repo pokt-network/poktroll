@@ -76,7 +76,7 @@ check_godoc:
 # Internal helper target - check if golangci-lint is installed
 check_golanci_lint:
 	{ \
-	if ( ! ( command -v gci >/dev/null )); then \
+	if ( ! ( command -v golangci-lint >/dev/null )); then \
 		echo "Seems like you don't have golanci-lint installed. Make sure you install it via 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest' before continuing"; \
 		exit 1; \
 	fi; \
