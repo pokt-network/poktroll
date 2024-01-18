@@ -3,6 +3,7 @@ package testeventsquery
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,6 +38,7 @@ func NewOneTimeEventsQuery(
 	ctx context.Context,
 	t *testing.T,
 	query string,
+	publishChMu *sync.Mutex,
 	publishCh *chan<- either.Bytes,
 ) *mockclient.MockEventsQueryClient {
 	t.Helper()
@@ -48,7 +50,9 @@ func NewOneTimeEventsQuery(
 			ctx context.Context,
 			query string,
 		) (eventsBzObservable client.EventsBytesObservable, err error) {
+			publishChMu.Lock()
 			eventsBzObservable, *publishCh = channel.NewObservable[either.Bytes]()
+			publishChMu.Unlock()
 			return eventsBzObservable, nil
 		}).Times(1)
 	return eventsQueryClient
@@ -64,6 +68,7 @@ func NewOneTimeTxEventsQueryClient(
 	ctx context.Context,
 	t *testing.T,
 	key *cosmoskeyring.Record,
+	publishChMu *sync.Mutex,
 	publishCh *chan<- either.Bytes,
 ) *mockclient.MockEventsQueryClient {
 	t.Helper()
@@ -78,6 +83,7 @@ func NewOneTimeTxEventsQueryClient(
 	return NewOneTimeEventsQuery(
 		ctx, t,
 		expectedEventsQuery,
+		publishChMu,
 		publishCh,
 	)
 }

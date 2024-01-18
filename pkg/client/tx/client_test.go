@@ -3,6 +3,7 @@ package tx_test
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -44,6 +45,9 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 		// testtx.NewOneTimeTxTxContext helper function. The same reference needs
 		// to be used across the expectations that are set on the transactions context mock.
 		expectedTx cometbytes.HexBytes
+		// eventsBzPublishChMu is a mutex that protects eventsBzPublishCh from concurrent access
+		// as it is expected to be updated in a mock method but is also sent on in the test.
+		eventsBzPublishChMu = new(sync.Mutex)
 		// eventsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is used near the end of
 		// the test to mock the network signaling that the transactions was committed.
@@ -55,7 +59,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, &eventsBzPublishCh,
+		ctx, t, signingKey, eventsBzPublishChMu, &eventsBzPublishCh,
 	)
 
 	txCtxMock := testtx.NewOneTimeTxTxContext(
@@ -107,7 +111,9 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Publish the transaction event bytes to the events query client so that the transaction client
 	// registers the transactions as committed (i.e. removes it from the timeout pool).
+	eventsBzPublishChMu.Lock()
 	eventsBzPublishCh <- either.Success[[]byte](txEventBz)
+	eventsBzPublishChMu.Unlock()
 
 	// Assert that the error channel was closed without receiving.
 	select {
@@ -185,6 +191,9 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 
 func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	var (
+		// eventsBzPublishChMu is a mutex that protects eventsBzPublishCh from concurrent access
+		// as it is expected to be updated in a mock method but is also sent on in the test.
+		eventsBzPublishChMu = new(sync.Mutex)
 		// eventsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is not used in
 		// this test but is required to use the NewOneTimeTxEventsQueryClient
@@ -204,7 +213,7 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 	// NewTxClient call to fail, we don't need to set any expectations
 	// on this mock.
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, &eventsBzPublishCh,
+		ctx, t, signingKey, eventsBzPublishChMu, &eventsBzPublishCh,
 	)
 
 	// Construct a new mock transaction context.
@@ -255,6 +264,9 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
 		expectedErrMsg string
+		// eventsBzPublishChMu is a mutex that protects eventsBzPublishCh from concurrent access
+		// as it is expected to be updated in a mock method but is also sent on in the test.
+		eventsBzPublishChMu = new(sync.Mutex)
 		// eventsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is used near the end of
 		// the test to mock the network signaling that the transactions was committed.
@@ -266,7 +278,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, &eventsBzPublishCh,
+		ctx, t, signingKey, eventsBzPublishChMu, &eventsBzPublishCh,
 	)
 
 	txCtxMock := testtx.NewOneTimeErrCheckTxTxContext(
@@ -318,6 +330,9 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		// by the transaction client. It is computed and assigned in the
 		// testtx.NewOneTimeErrCheckTxTxContext helper function.
 		expectedErrMsg string
+		// eventsBzPublishChMu is a mutex that protects eventsBzPublishCh from concurrent access
+		// as it is expected to be updated in a mock method but is also sent on in the test.
+		eventsBzPublishChMu = new(sync.Mutex)
 		// eventsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transaction event bytes. It is used near the end of
 		// the test to mock the network signaling that the transaction was committed.
@@ -329,7 +344,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
-		ctx, t, signingKey, &eventsBzPublishCh,
+		ctx, t, signingKey, eventsBzPublishChMu, &eventsBzPublishCh,
 	)
 
 	txCtxMock := testtx.NewOneTimeErrTxTimeoutTxContext(
