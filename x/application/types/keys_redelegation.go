@@ -16,26 +16,20 @@ const (
 )
 
 // RedelegationPrimaryKey returns the primary store key used to retrieve a
-// Redelegation by creating a composite key of the appAddr and gatewayAddr
-// and the blockHeight at initiation and the completion blockHeight.
+// Redelegation by creating a composite key of the appAddr and gatewayAddr.
 func RedelegationPrimaryKey(
 	appAddr, gatewayAddr string,
-	redlegationID uint64,
 ) []byte {
-	redlegationIDBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(redlegationIDBz, redlegationID)
 	return KeyComposite(
 		[]byte(appAddr),
 		[]byte(gatewayAddr),
-		redlegationIDBz,
 	)
 }
 
 // RedelegationCompletionPrimaryKey returns the primary store key used to
 // retrieve a Redelegation by the completionBlockHeight, appAddr and gatewayAddr
-// and the blockHeight at initiation.
+// and the blockHeight at initiation, as well as the redelegation ID.
 func RedelegationCompletionPrimaryKey(
-	appAddr, gatewayAddr string,
 	blockHeight, completionBlockHeight int64,
 	redlegationID uint64,
 ) []byte {
@@ -44,12 +38,10 @@ func RedelegationCompletionPrimaryKey(
 	completionHeightBz := make([]byte, 8)
 	binary.BigEndian.PutUint64(completionHeightBz, uint64(completionBlockHeight))
 	redelegationIDBz := make([]byte, 8)
-	binary.BigEndian.PutUint64(redelegationIDBz, uint64(0))
+	binary.BigEndian.PutUint64(redelegationIDBz, redlegationID)
 	return KeyComposite(
 		completionHeightBz,
 		heightBz,
 		redelegationIDBz,
-		[]byte(appAddr),
-		[]byte(gatewayAddr),
 	)
 }
