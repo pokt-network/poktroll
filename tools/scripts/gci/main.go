@@ -31,6 +31,12 @@ var (
 	}
 )
 
+// main is the entry point for the gci tool to format all files with the gci
+// tool, according to the filters defined in the filters package.
+// It will walk the entire repo and collect the files it is "allowed" to run
+// gci on and then executes the gci command on them, splitting the import
+// block into 3 groups: standard library, third party, and local, removing
+// any isolated comments (those on their own line).
 func main() {
 	root := "."
 	var filesToProcess []string
@@ -54,11 +60,18 @@ func main() {
 		cmd := exec.Command("gci", append([]string{"write"}, args...)...)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			fmt.Printf("Output: %s\nFailed running gci: %v\n", out, err)
+			fmt.Printf("%s\nFailed running gci: %v\n", out, err)
 		}
 	}
 }
 
+// walkRepoRootFn defines a walk function that is supplied to filepath.Walk
+// this essentially determines whether a given path should be added to the
+// list of files to be processed, based on the include and exclude filters
+// provided. filepath.Walk, recursively walks down the path it is provided
+// according to the filepath.WalkFunc passed to it - in this case it simply
+// adds files to format to the provided filesToProcess slice according to the
+// filters provided and only skips if the path's directory starts with `.`.
 func walkRepoRootFn(
 	rootPath string,
 	includeFilters []filters.FilterFn,
