@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 
@@ -16,10 +15,9 @@ import (
 	"go.uber.org/multierr"
 
 	"github.com/pokt-network/poktroll/pkg/client"
+	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/either"
-	"github.com/pokt-network/poktroll/pkg/observable"
-	"github.com/pokt-network/poktroll/pkg/observable/channel"
 )
 
 const (
@@ -27,6 +25,13 @@ const (
 	// latest block (when broadcasting) that a transactions should be considered
 	// errored if it has not been committed.
 	DefaultCommitTimeoutHeightOffset = 5
+
+	// defaultTxReplayLimit is the number of abci.TxResult events that the replay
+	// observable returned by LastNBlocks() will be able to replay.
+	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
+	// struct that defaults to this but can be overridden via an option.
+	defaultTxReplayLimit = 100
+
 	// txWithSenderAddrQueryFmt is the query used to subscribe to cometbft transactions
 	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
@@ -61,10 +66,10 @@ type txClient struct {
 	// txCtx is the transactions context which encapsulates transactions building, signing,
 	// broadcasting, and querying, as well as keyring access.
 	txCtx client.TxContext
-	// eventsQueryClient is the client used to subscribe to transactions events from this
+	// eventsReplayClient is the client used to subscribe to transactions events from this
 	// sender. It is used to receive notifications about transactions events corresponding
 	// to transactions which it has constructed, signed, and broadcast.
-	eventsQueryClient client.EventsQueryClient
+	eventsReplayClient client.EventsReplayClient[*abci.TxResult]
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
 	blockClient client.BlockClient
@@ -86,13 +91,6 @@ type (
 	height             = int64
 	txHash             = string
 )
-
-// TxEvent is used to deserialize incoming websocket messages from
-// the transactions subscription.
-//
-// TODO_CONSIDERATION: either expose this via an interface and unexport this type,
-// or remove it altogether.
-type TxEvent = abci.TxResult
 
 // NewTxClient attempts to construct a new TxClient using the given dependencies
 // and options.
@@ -119,17 +117,16 @@ func NewTxClient(
 	ctx context.Context,
 	deps depinject.Config,
 	opts ...client.TxClientOption,
-) (client.TxClient, error) {
+) (_ client.TxClient, err error) {
 	tClient := &txClient{
 		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
 		txErrorChans:              make(txErrorChansByHash),
 		txTimeoutPool:             make(txTimeoutPool),
 	}
 
-	if err := depinject.Inject(
+	if err = depinject.Inject(
 		deps,
 		&tClient.txCtx,
-		&tClient.eventsQueryClient,
 		&tClient.blockClient,
 	); err != nil {
 		return nil, err
@@ -143,12 +140,25 @@ func NewTxClient(
 		return nil, err
 	}
 
+	// Form a query based on the client's signing address.
+	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, tClient.signingAddr)
+
+	// Initialize and events replay client.
+	tClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
+		ctx,
+		deps,
+		eventQuery,
+		unmarshalTxResult,
+		defaultTxReplayLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Start an events query subscription for transactions originating from this
 	// client's signing address.
 	// TODO_CONSIDERATION: move this into a #Start() method
-	if err := tClient.subscribeToOwnTxs(ctx); err != nil {
-		return nil, err
-	}
+	go tClient.goSubscribeToOwnTxs(ctx)
 
 	// Launch a separate goroutine to handle transaction timeouts.
 	// TODO_CONSIDERATION: move this into a #Start() method
@@ -326,51 +336,9 @@ func (tClient *txClient) addPendingTransactions(
 	return either.AsyncErr(errCh)
 }
 
-// subscribeToOwnTxs establishes an event query subscription to monitor transactions
-// originating from this client's signing address.
-//
-// It performs the following steps:
-//
-//  1. Forms a query to fetch transaction events specific to the client's signing address.
-//  2. Maps raw event bytes observable notifications to a new transaction event objects observable.
-//  3. Handle each transaction event.
-//
-// Important considerations:
-// There's uncertainty surrounding the potential for asynchronous errors post transaction broadcast.
-// Current implementation and observations suggest that errors might be returned synchronously,
-// even when using Cosmos' BroadcastTxAsync method. Further investigation is required.
-//
-// This function also spawns a goroutine to handle transaction timeouts via goTimeoutPendingTransactions.
-//
-// Parameters:
-// - ctx: Context for managing the function's lifecycle and child operations.
-//
-// Returns:
-// - An error if there's a failure during the event query or subscription process.
-func (tClient *txClient) subscribeToOwnTxs(ctx context.Context) error {
-	// Form a query based on the client's signing address.
-	query := fmt.Sprintf(txWithSenderAddrQueryFmt, tClient.signingAddr)
-
-	// Fetch transaction events matching the query.
-	eventsBz, err := tClient.eventsQueryClient.EventsBytes(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	// Convert raw event data into a stream of transaction events.
-	txEventsObservable := channel.Map[
-		either.Bytes, either.Either[*TxEvent],
-	](ctx, eventsBz, tClient.txEventFromEventBz)
-	txEventsObserver := txEventsObservable.Subscribe(ctx)
-
-	// Handle transaction events asynchronously.
-	go tClient.goHandleTxEvents(txEventsObserver)
-
-	return nil
-}
-
-// goHandleTxEvents ranges over the transaction events observable, performing
-// the following steps on each:
+// goSubscribeToOwnTxs establishes an event query subscription to monitor transactions
+// originating from this client's signing address, ranges over observed transaction events,
+// and performs the following steps on each:
 //
 //  1. Normalize hexadeimal transaction hash.
 //  2. Retrieves the transaction's error channel from txErrorChans.
@@ -378,17 +346,20 @@ func (tClient *txClient) subscribeToOwnTxs(ctx context.Context) error {
 //  4. Removes the transaction error channel from txTimeoutPool.
 //
 // It is intended to be called in a goroutine.
-func (tClient *txClient) goHandleTxEvents(
-	txEventsObserver observable.Observer[either.Either[*TxEvent]],
-) {
-	for eitherTxEvent := range txEventsObserver.Ch() {
-		txEvent, err := eitherTxEvent.ValueOrError()
-		if err != nil {
-			return
-		}
-
+//
+// Important considerations:
+// There's uncertainty surrounding the potential for asynchronous errors post transaction broadcast.
+// Current implementation and observations suggest that errors might be returned synchronously,
+// even when using Cosmos' BroadcastTxAsync method. Further investigation is required.
+//
+// Parameters:
+// - ctx: Context for managing the function's lifecycle and child operations.
+func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
+	txEventsObs := tClient.eventsReplayClient.EventsSequence(ctx)
+	txEventsCh := txEventsObs.Subscribe(ctx).Ch()
+	for txResult := range txEventsCh {
 		// Convert transaction hash into its normalized hex form.
-		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txEvent.Tx).Hash())
+		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
 
 		tClient.txsMutex.Lock()
 
@@ -399,7 +370,7 @@ func (tClient *txClient) goHandleTxEvents(
 		}
 
 		// TODO_INVESTIGATE: it seems like it may not be possible for the
-		// txEvent to represent an error. Cosmos' #BroadcastTxSync() is being
+		// txResult to represent an error. Cosmos' #BroadcastTxSync() is being
 		// called internally, which will return an error if the transaction
 		// is not accepted by the mempool.
 		//
@@ -492,65 +463,6 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	}
 }
 
-// txEventFromEventBz deserializes a binary representation of a transaction event
-// into a TxEvent structure.
-//
-// Parameters:
-//   - eitherEventBz: Binary data of the event, potentially encapsulating an error.
-//
-// Returns:
-//   - eitherTxEvent: The TxEvent or an encapsulated error, facilitating clear
-//     error management in the caller's context.
-//   - skip: A flag denoting if the event should be bypassed. A value of true
-//     suggests the event be disregarded, progressing to the succeeding message.
-func (tClient *txClient) txEventFromEventBz(
-	_ context.Context,
-	eitherEventBz either.Bytes,
-) (eitherTxEvent either.Either[*TxEvent], skip bool) {
-	// Extract byte data from the given event. In case of failure, wrap the error
-	// and denote the event for skipping.
-	eventBz, err := eitherEventBz.ValueOrError()
-	if err != nil {
-		return either.Error[*TxEvent](err), true
-	}
-
-	// Unmarshal byte data into a TxEvent object.
-	txEvt, err := tClient.unmarshalTxEvent(eventBz)
-	switch {
-	// If the error indicates a non-transactional event, return the TxEvent and
-	// signal for skipping.
-	case errors.Is(err, ErrNonTxEventBytes):
-		return either.Success(txEvt), true
-	// For other errors, wrap them and flag the event to be skipped.
-	case err != nil:
-		return either.Error[*TxEvent](ErrUnmarshalTx.Wrapf("%s", err)), true
-	}
-
-	// For successful unmarshaling, return the TxEvent.
-	return either.Success(txEvt), false
-}
-
-// unmarshalTxEvent attempts to deserialize a slice of bytes into a TxEvent.
-// It checks if the given bytes correspond to a valid transaction event.
-// If the resulting TxEvent has empty transaction bytes, it assumes that
-// the message was not a transaction event and returns an ErrNonTxEventBytes error.
-func (tClient *txClient) unmarshalTxEvent(eventBz []byte) (*TxEvent, error) {
-	txEvent := new(TxEvent)
-
-	// Try to deserialize the provided bytes into a TxEvent.
-	if err := json.Unmarshal(eventBz, txEvent); err != nil {
-		return nil, err
-	}
-
-	// Check if the TxEvent has empty transaction bytes, which indicates
-	// the message might not be a valid transaction event.
-	if bytes.Equal(txEvent.Tx, []byte{}) {
-		return nil, ErrNonTxEventBytes.Wrapf("%s", string(eventBz))
-	}
-
-	return txEvent, nil
-}
-
 // getTxTimeoutError checks if a transaction with the specified hash has timed out.
 // The function decodes the provided hexadecimal hash into bytes and queries the
 // transaction using the byte hash. If any error occurs during this process,
@@ -570,4 +482,25 @@ func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string
 
 	// Return a timeout error with details about the transaction.
 	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
+}
+
+// unmarshalTxResult attempts to deserialize a slice of bytes into a TxEvent.
+// It checks if the given bytes correspond to a valid transaction event.
+// If the resulting TxEvent has empty transaction bytes, it assumes that
+// the message was not a transaction event and returns an ErrNonTxEventBytes error.
+func unmarshalTxResult(eventBz []byte) (*abci.TxResult, error) {
+	txResult := new(abci.TxResult)
+
+	// Try to deserialize the provided bytes into a TxEvent.
+	if err := json.Unmarshal(eventBz, txResult); err != nil {
+		return nil, err
+	}
+
+	// Check if the TxEvent has empty transaction bytes, which indicates
+	// the message might not be a valid transaction event.
+	if bytes.Equal(txResult.Tx, []byte{}) {
+		return nil, ErrNonTxEventBytes.Wrapf("%s", string(eventBz))
+	}
+
+	return txResult, nil
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
@@ -101,7 +102,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
-	txEventBz, err := json.Marshal(&tx.TxEvent{Tx: expectedTx})
+	txEventBz, err := json.Marshal(abci.TxResult{Tx: expectedTx})
 	require.NoError(t, err)
 
 	// Publish the transaction event bytes to the events query client so that the transaction client
