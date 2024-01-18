@@ -11,4 +11,7 @@ var (
 	ErrServiceMissingName       = sdkerrors.Register(ModuleName, 4, "missing service name")
 	ErrServiceAlreadyExists     = sdkerrors.Register(ModuleName, 5, "service already exists")
 	ErrServiceInvalidServiceFee = sdkerrors.Register(ModuleName, 6, "invalid service fee")
+	ErrServiceAccountNotFound   = sdkerrors.Register(ModuleName, 7, "account not found")
+	ErrServiceNotEnoughFunds    = sdkerrors.Register(ModuleName, 8, "not enough funds to add service")
+	ErrServiceFailedToDeductFee = sdkerrors.Register(ModuleName, 9, "failed to deduct fee")
 )
