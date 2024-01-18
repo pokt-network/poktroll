@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -57,19 +58,28 @@ func (k msgServer) queryAndValidateSessionHeader(
 	// pair exists for the given service ID or not, respectively.
 
 	// Ensure the given supplier is in the onChainSession supplier list.
-	var found bool
-	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
-		if supplier.Address == supplierAddr {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if found := foundSupplier(
+		sessionRes.GetSession().GetSuppliers(),
+		supplierAddr,
+	); !found {
 		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
 			"supplier address %q not found in session ID %q",
 			supplierAddr,
 			sessionHeader.GetSessionId(),
 		)
 	}
+
 	return onChainSession, nil
+}
+
+// foundSupplier ensures that the given supplier address is in the given list of suppliers.
+func foundSupplier(suppliers []*sharedtypes.Supplier, supplierAddr string) bool {
+	var found bool
+	for _, supplier := range suppliers {
+		if supplier.Address == supplierAddr {
+			found = true
+			break
+		}
+	}
+	return found
 }
