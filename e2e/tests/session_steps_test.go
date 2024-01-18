@@ -91,7 +91,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	require.NoError(s, err)
 	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claim
 
-	// Query for any existing proofs so that we can compensate for them in the
+	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in on-chain proofs.
 	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{})
 	require.NoError(s, err)
