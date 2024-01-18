@@ -75,10 +75,15 @@ func NewRelayerProxyTestBehavior(
 	return test
 }
 
-// WithRelayerProxyDependencies creates the dependencies for the relayer proxy
+// WithRelayerProxyDependenciesAndCurrentBlockHeight creates the dependencies for the relayer proxy
 // from the TestBehavior.mocks so they have the right interface and can be
 // used by the dependency injection framework.
-func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
+// blockHeight being the block height that will be returned by the block client's
+// LastNBlock method
+func WithRelayerProxyDependenciesAndCurrentBlockHeight(
+	keyName string,
+	blockHeight int64,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		logger := polylog.Ctx(test.ctx)
 		accountQueryClient := testqueryclients.NewTestAccountQueryClient(test.t)
@@ -86,7 +91,7 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
 
-		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, 1)
+		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
@@ -216,6 +221,41 @@ func WithDefaultSessionSupplier(
 			blockHeight,
 			sessionSuppliers,
 		)
+	}
+}
+
+func WithSuccessiveSessions(
+	supplierKeyName string,
+	serviceId string,
+	appPrivateKey *secp256k1.PrivKey,
+	sessionsCount int,
+) func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+
+		sessionSuppliers := []string{}
+		var keyring keyringtypes.Keyring
+		err := depinject.Inject(test.Deps, &keyring)
+		require.NoError(test.t, err)
+
+		supplierAccount, err := keyring.Key(supplierKeyName)
+		require.NoError(test.t, err)
+
+		supplierAccAddress, err := supplierAccount.GetAddress()
+		require.NoError(test.t, err)
+
+		supplierAddress := supplierAccAddress.String()
+		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+
+		for i := 0; i < sessionsCount; i++ {
+			testqueryclients.AddToExistingSessions(
+				test.t,
+				appAddress,
+				serviceId,
+				sessionkeeper.NumBlocksPerSession*int64(i),
+				sessionSuppliers,
+			)
+		}
 	}
 }
 

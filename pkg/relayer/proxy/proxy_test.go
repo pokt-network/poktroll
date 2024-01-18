@@ -18,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -115,7 +116,7 @@ func init() {
 	}
 
 	defaultRelayerProxyBehavior = []func(*testproxy.TestBehavior){
-		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+		testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(supplierKeyName, blockHeight),
 		testproxy.WithRelayerProxiedServices(proxiedServices),
 		testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 		testproxy.WithDefaultApplication(appPrivateKey),
@@ -216,7 +217,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	}
 
 	unsupportedRPCTypeBehavior := []func(*testproxy.TestBehavior){
-		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+		testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(supplierKeyName, blockHeight),
 		testproxy.WithRelayerProxiedServices(proxiedServices),
 
 		// The supplier is staked on-chain but the service it provides is not supported by the proxy
@@ -271,7 +272,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 	}
 
 	unsupportedTransportTypeBehavior := []func(*testproxy.TestBehavior){
-		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+		testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(supplierKeyName, blockHeight),
 
 		// The proxy is configured with an unsupported transport type for the proxy
 		testproxy.WithRelayerProxiedServices(unsupportedTransportProxy),
@@ -315,7 +316,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 	}
 
 	unsupportedTransportTypeBehavior := []func(*testproxy.TestBehavior){
-		testproxy.WithRelayerProxyDependencies(supplierKeyName),
+		testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(supplierKeyName, blockHeight),
 
 		// The proxy is configured with an unsupported transport type for the proxy
 		testproxy.WithRelayerProxiedServices(missingServicesProxy),
@@ -432,7 +433,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			desc: "Invalid relay supplier",
 
 			relayerProxyBehavior: []func(*testproxy.TestBehavior){
-				testproxy.WithRelayerProxyDependencies(supplierKeyName),
+				testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(supplierKeyName, blockHeight),
 				testproxy.WithRelayerProxiedServices(proxiedServices),
 				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 				testproxy.WithDefaultApplication(appPrivateKey),
@@ -461,6 +462,49 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			expectedErrCode: 0,
 			expectedErrMsg:  "",
+		},
+		{
+			desc: "Successful late relay from session under grace period",
+
+			relayerProxyBehavior: []func(*testproxy.TestBehavior){
+				// blockHeight is past the first session but within its grace period
+				testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(
+					supplierKeyName,
+					blockHeight+sessionkeeper.SessionGracePeriod,
+				),
+				testproxy.WithRelayerProxiedServices(proxiedServices),
+				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
+				testproxy.WithDefaultApplication(appPrivateKey),
+				// Add 2 sessions with the first one being past but within the grace period
+				// and the second one being the current session
+				testproxy.WithSuccessiveSessions(supplierKeyName, "service1", appPrivateKey, 2),
+			},
+			inputScenario: sendRequestWithCustomSessionHeight(blockHeight),
+
+			expectedErrCode: 0,
+			expectedErrMsg:  "",
+		},
+		{
+			desc: "Failed late relay from closed session",
+
+			relayerProxyBehavior: []func(*testproxy.TestBehavior){
+				// blockHeight is past the first session's grace period
+				testproxy.WithRelayerProxyDependenciesAndCurrentBlockHeight(
+					supplierKeyName,
+					// Set the current block height value returned by the block provider
+					blockHeight+sessionkeeper.NumBlocksPerSession+sessionkeeper.SessionGracePeriod,
+				),
+				testproxy.WithRelayerProxiedServices(proxiedServices),
+				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
+				testproxy.WithDefaultApplication(appPrivateKey),
+				// Add 3 sessions having the first one being past the grace period
+				testproxy.WithSuccessiveSessions(supplierKeyName, "service1", appPrivateKey, 3),
+			},
+			// Send a request that has a late session past the grace period
+			inputScenario: sendRequestWithCustomSessionHeight(blockHeight),
+
+			expectedErrCode: -32000,
+			expectedErrMsg:  "session expired",
 		},
 	}
 
@@ -678,4 +722,21 @@ func sendRequestWithSuccessfulReply(
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
 	return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
+}
+
+func sendRequestWithCustomSessionHeight(
+	requestSessionBlockHeight int64,
+) func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errorMessage string) {
+	return func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errorMessage string) {
+		req := testproxy.GenerateRelayRequest(
+			test,
+			appPrivateKey,
+			"service1",
+			requestSessionBlockHeight,
+			testproxy.PrepareJsonRPCRequestPayload(),
+		)
+		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+
+		return testproxy.MarshalAndSend(test, proxiedServices, "server1", "service1", req)
+	}
 }
