@@ -60,6 +60,5 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if msg.Service.Name == "" {
 		return ErrServiceMissingName
 	}
-
 	return nil
 }
