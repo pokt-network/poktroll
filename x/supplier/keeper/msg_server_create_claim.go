@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -16,9 +15,8 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	// TODO_DISCUSS_IN_THIS_COMMIT: log lines from the cosmos-sdk logger aren't printed in tilt for some reason.
-	logger := polylog.Ctx(ctx).With("method", "SubmitProof")
-	logger.Debug().Msg("creating claim")
+	logger := k.Logger(ctx).With("method", "CreateClaim")
+	logger.Debug("creating claim")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -39,7 +37,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", msg.GetSupplierAddress(),
 		).
-		Debug().Msg("validated claim")
+		Debug("validated claim")
 
 	/*
 		TODO_INCOMPLETE:
@@ -70,7 +68,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *suppliertypes.MsgCrea
 			"session_end_height", claim.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", claim.GetSupplierAddress(),
 		).
-		Debug().Msg("created claim")
+		Debug("created claim")
 
 	// TODO: return the claim in the response.
 	return &suppliertypes.MsgCreateClaimResponse{}, nil
