@@ -31,6 +31,7 @@ export function sendJsonRPCRequest(baseUrl, method, params = [], tags = {}) {
     }, tags);
 
     if (!passed) {
+        // Logging output includes vital information for troubleshooting: request/response body, status code, etc.
         console.log(`Request to ${response.request.url} failed:`, JSON.stringify(response, null, 2));
     }
 
