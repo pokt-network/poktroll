@@ -11,13 +11,13 @@ import (
 
 func TestGenesisState_Validate(t *testing.T) {
 	svc1 := &sharedtypes.Service{
-		Id:   "srvId1",
-		Name: "srvName1",
+		Id:   "svcId1",
+		Name: "svcName1",
 	}
 
 	svc2 := &sharedtypes.Service{
-		Id:   "srvId2",
-		Name: "srvName2",
+		Id:   "svcId2",
+		Name: "svcName2",
 	}
 
 	tests := []struct {

@@ -52,14 +52,14 @@ func TestCLI_AddService(t *testing.T) {
 
 	// Prepare two valid services
 	svc1 := sharedtypes.Service{
-		Id:   "srv1",
+		Id:   "svc1",
 		Name: "service name",
 	}
 	svc2 := sharedtypes.Service{
-		Id:   "srv2",
+		Id:   "svc2",
 		Name: "service name 2",
 	}
-	// Add srv2 to the network
+	// Add svc2 to the network
 	args := []string{
 		svc2.Id,
 		svc2.Name,
@@ -89,7 +89,7 @@ func TestCLI_AddService(t *testing.T) {
 		{
 			desc:            "invalid - missing service name",
 			supplierAddress: account.Address.String(),
-			service:         sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
+			service:         sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
 			err:             types.ErrServiceMissingName,
 		},
 		{
