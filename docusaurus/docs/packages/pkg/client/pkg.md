@@ -6,7 +6,6 @@ sidebar_position: 1
 # Package `pkg/client` <!-- omit in toc -->
 
 - [Overview](#overview)
-- [Features](#features)
 - [Architecture Overview](#architecture-overview)
 - [Installation](#installation)
 - [Usage (Supplier Client)](#usage-supplier-client)
