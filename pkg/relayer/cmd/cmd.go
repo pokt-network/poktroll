@@ -12,6 +12,7 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
@@ -119,6 +120,11 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Serve metrics.
+	// TODO_IN_THIS_PR: make the endpoint configurable
+	logger.Info().Str("endpoint", ":9090").Msg("serving metrics")
+	go http.ListenAndServe(":9090", promhttp.Handler())
 
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")

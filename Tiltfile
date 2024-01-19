@@ -164,7 +164,7 @@ k8s_resource(
     "relayminers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["8545", "40005"],
+    port_forwards=["8545", "40005", "9094:9090"],
 )
 k8s_resource(
     "appgateservers",

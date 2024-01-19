@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -133,13 +132,15 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		Recorder: metrics.NewRecorder(metrics.Config{}),
 	})
 
+	// TODO_IN_THIS_PR: What's the best place to register the metrics? Ideally, this should only be done once.
 	prometheus.MustRegister(relayCount, relayErrorCount)
 
 	// Set the HTTP handler.
 	app.server.Handler = middlewarestd.Handler("", mm, app)
 
 	// Serve metrics.
-	log.Printf("serving metrics at: %s", ":9090")
+	// TODO_IN_THIS_PR: make the endpoint configurable
+	app.logger.Info().Str("endpoint", ":9090").Msg("serving metrics")
 	go http.ListenAndServe(":9090", promhttp.Handler())
 
 	// Start the HTTP server.

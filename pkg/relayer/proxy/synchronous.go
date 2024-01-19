@@ -75,7 +75,8 @@ func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 	}()
 
 	// Set the HTTP handler.
-	sync.server.Handler = sync
+	// sync.server.Handler = sync
+	sync.server.Handler = sync.metricsMiddleware(sync)
 
 	return sync.server.ListenAndServe()
 }
@@ -219,6 +220,8 @@ func (sync *synchronousRPCServer) serveHTTP(
 	sync.logger.Debug().
 		Str("destination_url", serviceUrl.String()).
 		Msg("building relay request payload to service")
+
+	// We should rather catch the metric here
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
