@@ -14,10 +14,11 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	mocks "github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TokenomicsKeeper(t testing.TB) (*keeper.TokenomicsKeeper, sdk.Context) {

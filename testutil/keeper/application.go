@@ -13,11 +13,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
+
 	mocks "github.com/pokt-network/poktroll/testutil/application/mocks"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/stretchr/testify/require"
 )
 
 // stakedGatewayMap is used to mock whether a gateway is staked or not for use
