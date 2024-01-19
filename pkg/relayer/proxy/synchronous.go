@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 
@@ -75,8 +76,8 @@ func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 	}()
 
 	// Set the HTTP handler.
-	// sync.server.Handler = sync
-	sync.server.Handler = sync.metricsMiddleware(sync)
+	sync.server.Handler = sync
+	// sync.server.Handler = sync.metricsMiddleware(sync)
 
 	return sync.server.ListenAndServe()
 }
@@ -91,6 +92,7 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 // when synchronousRPCServer is used as an http.Handler with an http.Server.
 // (see https://pkg.go.dev/net/http#Handler)
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	startTime := time.Now()
 	ctx := request.Context()
 
 	var originHost string
@@ -139,6 +141,17 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		sync.replyWithError(ctx, []byte{}, writer, ErrRelayerProxyServiceEndpointNotHandled)
 		return
 	}
+
+	// Increment the relays counter.
+	relaysTotal.With("proxy_name", sync.proxyConfig.ProxyName, "service_id", supplierService.Id).Add(1)
+	defer func() {
+		duration := time.Since(startTime).Seconds()
+
+		// Capture the relay request duration metric.
+		relaysDurationSeconds.With(
+			"proxy_name", sync.proxyConfig.ProxyName,
+			"service_id", supplierService.Id).Observe(duration)
+	}()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
 
@@ -220,8 +233,6 @@ func (sync *synchronousRPCServer) serveHTTP(
 	sync.logger.Debug().
 		Str("destination_url", serviceUrl.String()).
 		Msg("building relay request payload to service")
-
-	// We should rather catch the metric here
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
