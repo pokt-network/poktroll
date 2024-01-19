@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
@@ -352,4 +353,11 @@ func UndelegateAppFromGateway(
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.TxHash)
 	require.Equal(t, uint32(0), resp.Code)
+}
+
+// TODO_TECHDEBT: Reuse this helper in all test helpers where appropriate.
+func NewBondDenomCoins(t *testing.T, net *network.Network, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	return sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(numCoins)))
 }

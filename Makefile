@@ -525,7 +525,7 @@ MODULES := application gateway pocket service session supplier tokenomics
 # TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
 .PHONY: update_tokenomics_params
 update_tokenomics_params: ## Update the tokenomics module params
-	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from dao --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE)
 
 .PHONY: query_all_params
 query_all_params: ## Query the params from all available modules

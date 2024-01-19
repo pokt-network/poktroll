@@ -24,7 +24,7 @@ func CmdUpdateParams() *cobra.Command {
 All parameters must be provided when updating.
 
 Example:
-$ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from dao --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
+$ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from pnf --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Parse computeUnitsToTokensMultiplier

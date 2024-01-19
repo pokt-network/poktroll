@@ -10,7 +10,8 @@ message Params {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = false;
 
-  uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
+  // The amount of upokt that a compute unit should translate to when settling a session.
+  uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
   // TODO: Some parameters we should consider adding next:
   //   - Service.computeUnitsToTokensMultiplierMap
