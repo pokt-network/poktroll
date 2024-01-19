@@ -350,8 +350,8 @@ func New(
 
 	// TODO_BLOCKER(#322): Change this to `authtypes.NewModuleAddress(govtypes.ModuleName)`
 	// once we figure out the MVP for on-chain parameter governance.
-	foundationAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	authority := foundationAddress
+	pnfAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	authority := pnfAddress
 
 	app := &App{
 		BaseApp:           bApp,
