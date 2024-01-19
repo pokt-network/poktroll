@@ -74,12 +74,10 @@ func (k msgServer) queryAndValidateSessionHeader(
 
 // foundSupplier ensures that the given supplier address is in the given list of suppliers.
 func foundSupplier(suppliers []*sharedtypes.Supplier, supplierAddr string) bool {
-	var found bool
 	for _, supplier := range suppliers {
 		if supplier.Address == supplierAddr {
-			found = true
-			break
+			return true
 		}
 	}
-	return found
+	return false
 }
