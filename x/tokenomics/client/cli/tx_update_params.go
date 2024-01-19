@@ -7,8 +7,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var _ = strconv.Itoa(0)
