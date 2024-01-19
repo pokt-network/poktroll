@@ -20,14 +20,14 @@ import (
 )
 
 func TestCLI_AddService(t *testing.T) {
-	net, _ := networkWithSupplierObjects(t, 1)
+	net := network.New(t, network.DefaultConfig())
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 
-	// Create a keyring and add an account for the supplier adding the service
+	// Create a keyring and add an account for the address adding the service
 	kr := ctx.Keyring
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	supplierAccount := accounts[0]
+	account := accounts[0]
 
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
@@ -36,30 +36,34 @@ func TestCLI_AddService(t *testing.T) {
 	commonArgs := []string{
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 
 	// Initialize the Supplier account by sending it some funds from the
 	// validator account that is part of genesis
-	network.InitAccountWithSequence(t, net, supplierAccount.Address, 1)
+	network.InitAccountWithSequence(t, net, account.Address, 1)
 
 	// Wait for a new block to be committed
 	require.NoError(t, net.WaitForNextBlock())
 
 	// Prepare two valid services
-	srv1 := sharedtypes.Service{
+	svc1 := sharedtypes.Service{
 		Id:   "srv1",
 		Name: "service name",
 	}
-	srv2 := sharedtypes.Service{
+	svc2 := sharedtypes.Service{
 		Id:   "srv2",
 		Name: "service name 2",
 	}
 	// Add srv2 to the network
 	args := []string{
-		srv2.Id,
-		srv2.Name,
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAccount.Address.String()),
+		svc2.Id,
+		svc2.Name,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, account.Address.String()),
 	}
 	args = append(args, commonArgs...)
 	_, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdAddService(), args)
@@ -73,31 +77,31 @@ func TestCLI_AddService(t *testing.T) {
 	}{
 		{
 			desc:            "valid - add new service",
-			supplierAddress: supplierAccount.Address.String(),
-			service:         srv1,
+			supplierAddress: account.Address.String(),
+			service:         svc1,
 		},
 		{
 			desc:            "invalid - missing service id",
-			supplierAddress: supplierAccount.Address.String(),
+			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
 			err:             types.ErrServiceMissingID,
 		},
 		{
 			desc:            "invalid - missing service name",
-			supplierAddress: supplierAccount.Address.String(),
+			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Id: "srv1"}, // Name intentionally omitted
 			err:             types.ErrServiceMissingName,
 		},
 		{
 			desc:            "invalid - invalid supplier address",
 			supplierAddress: "invalid address",
-			service:         srv1,
+			service:         svc1,
 			err:             types.ErrServiceInvalidAddress,
 		},
 		{
 			desc:            "invalid - service already staked",
-			supplierAddress: supplierAccount.Address.String(),
-			service:         srv2,
+			supplierAddress: account.Address.String(),
+			service:         svc2,
 			err:             types.ErrServiceAlreadyExists,
 		},
 	}

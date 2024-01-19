@@ -25,14 +25,14 @@ func init() {
 }
 
 func createNservices(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Service {
-	items := make([]sharedtypes.Service, n)
-	for i := range items {
-		items[i].Id = fmt.Sprintf("srv%d", i)
-		items[i].Name = fmt.Sprintf("srv%d", i)
+	services := make([]sharedtypes.Service, n)
+	for i := range services {
+		services[i].Id = fmt.Sprintf("srvId%d", i)
+		services[i].Name = fmt.Sprintf("srvName%d", i)
 
-		keeper.SetService(ctx, items[i])
+		keeper.SetService(ctx, services[i])
 	}
-	return items
+	return services
 }
 
 func TestServiceModuleAddress(t *testing.T) {
@@ -42,28 +42,28 @@ func TestServiceModuleAddress(t *testing.T) {
 
 func TestServiceGet(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	items := createNservices(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetService(ctx,
+	services := createNservices(keeper, ctx, 10)
+	for _, item := range services {
+		service, found := keeper.GetService(ctx,
 			item.Id,
 		)
 		require.True(t, found)
 		require.Equal(t,
 			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&service),
 		)
 	}
 }
 
 func TestServiceRemove(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	items := createNservices(keeper, ctx, 10)
-	for _, item := range items {
+	services := createNservices(keeper, ctx, 10)
+	for _, service := range services {
 		keeper.RemoveService(ctx,
-			item.Id,
+			service.Id,
 		)
 		_, found := keeper.GetService(ctx,
-			item.Id,
+			service.Id,
 		)
 		require.False(t, found)
 	}
@@ -71,9 +71,9 @@ func TestServiceRemove(t *testing.T) {
 
 func TestServiceGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	items := createNservices(keeper, ctx, 10)
+	services := createNservices(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(services),
 		nullify.Fill(keeper.GetAllServices(ctx)),
 	)
 }

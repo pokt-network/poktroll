@@ -53,6 +53,7 @@ func (msg *MsgAddService) ValidateBasic() error {
 			"invalid supplier address %s; (%v)", msg.Address, err,
 		)
 	}
+	// TODO_TECHDEBT: Add a validate basic function to the `Service` object
 	if msg.Service.Id == "" {
 		return ErrServiceMissingID
 	}

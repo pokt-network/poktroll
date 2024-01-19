@@ -10,14 +10,14 @@ import (
 )
 
 func TestGenesisState_Validate(t *testing.T) {
-	srv1 := &sharedtypes.Service{
-		Id:   "srv1",
-		Name: "srv1",
+	svc1 := &sharedtypes.Service{
+		Id:   "srvId1",
+		Name: "srvName1",
 	}
 
-	srv2 := &sharedtypes.Service{
-		Id:   "srv2",
-		Name: "srv2",
+	svc2 := &sharedtypes.Service{
+		Id:   "srvId2",
+		Name: "srvName2",
 	}
 
 	tests := []struct {
@@ -34,7 +34,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
 				ServiceList: []sharedtypes.Service{
-					*srv1, *srv2,
+					*svc1, *svc2,
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
@@ -44,7 +44,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			desc: "invalid - duplicate service ID",
 			genState: &types.GenesisState{
 				ServiceList: []sharedtypes.Service{
-					*srv1, *srv1,
+					*svc1, *svc1,
 				},
 			},
 			valid: false,

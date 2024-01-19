@@ -22,7 +22,7 @@ gateways and suppliers to use. The service id MUST be unique - or the command
 will fail, however the name you use to describe it does not have to be unique.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx service add-service "srv1" "service_one" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)`,
+$ poktrolld tx service add-service "srv1" "service_one" --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			serviceIdStr := args[0]
