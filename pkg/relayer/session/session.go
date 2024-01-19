@@ -166,7 +166,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	defer rs.sessionsTreesMu.Unlock()
 
 	// Check if there are sessions that need to enter the claim/proof phase
-	// as end block height was the one before the last committed block.
+	// as their end block height was the one before the last committed block.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
