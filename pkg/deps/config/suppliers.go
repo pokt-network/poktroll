@@ -8,7 +8,7 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -35,7 +35,7 @@ type SupplierFn func(
 func SupplyConfig(
 	ctx context.Context,
 	cmd *cobra.Command,
-	suppliers []SupplierFn,
+	suppliers ...SupplierFn,
 ) (deps depinject.Config, err error) {
 	// Initialize deps to with empty depinject config.
 	deps = depinject.Configs()

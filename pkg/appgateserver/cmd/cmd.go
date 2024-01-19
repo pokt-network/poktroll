@@ -189,5 +189,5 @@ func setupAppGateServerDependencies(
 		config.NewSupplyPOKTRollSDKFn(appGateConfig.SigningKey),
 	}
 
-	return config.SupplyConfig(ctx, cmd, supplierFuncs)
+	return config.SupplyConfig(ctx, cmd, supplierFuncs...)
 }
