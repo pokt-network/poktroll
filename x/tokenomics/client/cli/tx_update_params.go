@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -31,8 +30,7 @@ $ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --f
 			// Parse computeUnitsToTokensMultiplier
 			computeUnitsToTokensMultiplier, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
-				// TODO_IMPROVE: Add support for `#Fatal()` level to polylog.
-				log.Fatal(err)
+				return err
 			}
 
 			// Get client context

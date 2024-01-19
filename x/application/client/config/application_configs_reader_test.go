@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"log"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -134,7 +133,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			require.Equal(t, tt.expectedConfig.StakeAmount.Amount, appServiceConfig.StakeAmount.Amount)
 			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, appServiceConfig.StakeAmount.Denom)
 
-			log.Printf("serviceIds: %v", appServiceConfig)
+			t.Logf("serviceIds: %v", tt.expectedConfig.Services)
 			require.Equal(t, len(tt.expectedConfig.Services), len(appServiceConfig.Services))
 			for i, expected := range tt.expectedConfig.Services {
 				require.Equal(t, expected.Service.Id, appServiceConfig.Services[i].Service.Id)
