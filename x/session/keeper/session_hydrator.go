@@ -18,8 +18,10 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO(#21): Make these configurable governance param
+// TODO_BLOCKER(#21): Make these configurable governance param
 const (
+	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
+	// when they will be replaced by governance params
 	NumBlocksPerSession         = 4
 	SessionGracePeriod          = NumBlocksPerSession
 	NumSupplierPerSession       = 15
@@ -271,12 +273,24 @@ func GetSessionId(
 	serviceIdBz := []byte(serviceId)
 	blockHashBz := []byte(blockHash)
 
-	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
-	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(sessionStartBlockHeight))
-
-	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	blockHeightBz := getSessionStartBlockHeightBz(blockHeight)
+	sessionIdBz = concatWithDelimiter(
+		SessionIDComponentDelimiter,
+		blockHashBz,
+		serviceIdBz,
+		appPubKeyBz,
+		blockHeightBz,
+	)
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 
 	return sessionId, sessionIdBz
+}
+
+// getSessionStartBlockHeightBz returns the bytes representation of the session
+// start block height given the block height.
+func getSessionStartBlockHeightBz(blockHeight int64) []byte {
+	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
+	sessionStartBlockHeightBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
+	return sessionStartBlockHeightBz
 }

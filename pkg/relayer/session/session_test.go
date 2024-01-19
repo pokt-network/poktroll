@@ -63,7 +63,10 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	noopBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
+	// Calculate the session grace period end block height to emit that block height
+	// to the blockPublishCh to trigger claim creation for the session.
 	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + sessionkeeper.SessionGracePeriod)
+
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
 	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
 	// This will likely change in future work.

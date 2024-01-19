@@ -166,9 +166,9 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	defer rs.sessionsTreesMu.Unlock()
 
 	// Check if there are sessions that need to enter the claim/proof phase
-	// as grace period block height was the one before the last committed block.
-	// Iterate over the sessionsTrees map to get the ones that have a grace period
-	// ending at the current block height.
+	// as end block height was the one before the last committed block.
+	// Iterate over the sessionsTrees map to get the ones that end at a block height
+	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 		// TODO_BLOCKER(@red-0ne): We need this to be == instead of <= because we don't want to keep sending
 		// the same session while waiting the next step. This does not address the case
@@ -178,7 +178,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 		// TODO_DISCUSS: Add a `isClosing()` method to SessionTree to check if the session is closing
 		// so we can use the `<=` operator here while still avoiding sending the same session
 		// multiple times.
-		if endBlockHeight == block.Height()-sessionkeeper.SessionGracePeriod {
+		if checkGracePeriodEnd(endBlockHeight, block.Height()) {
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
@@ -264,4 +264,10 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 	// Skip because this map function only outputs errors.
 	return nil, true
+}
+
+// checkGracePeriodEnd checks if the grace period for the session has ended
+// and signals whether it is time to create a claim for it.
+func checkGracePeriodEnd(endBlockHeight, currentBlockHeight int64) bool {
+	return endBlockHeight == currentBlockHeight-sessionkeeper.SessionGracePeriod
 }
