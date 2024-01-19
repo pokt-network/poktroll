@@ -111,10 +111,3 @@ genesis:
     service:
       params:
         addServiceFee: 1000000000
-      serviceList:
-        - service:
-          id: anvil
-          name: "anvil test service"
-        - service:
-          id: srv1
-          name: "service one"
