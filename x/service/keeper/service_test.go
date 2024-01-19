@@ -26,7 +26,7 @@ func init() {
 func createNServices(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Service {
 	services := make([]sharedtypes.Service, n)
 	for i := range services {
-		services[i].Id = fmt.Sprintf("srvId%d", i)
+		services[i].Id = fmt.Sprintf("svcId%d", i)
 		services[i].Name = fmt.Sprintf("svcName%d", i)
 
 		keeper.SetService(ctx, services[i])
