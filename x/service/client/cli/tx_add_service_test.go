@@ -10,12 +10,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/status"
+
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/service/client/cli"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/status"
 )
 
 func TestCLI_AddService(t *testing.T) {

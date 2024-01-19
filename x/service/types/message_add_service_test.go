@@ -3,9 +3,10 @@ package types
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {
