@@ -1,3 +1,4 @@
+//go:generate mockgen -destination ../../../testutil/service/mocks/expected_keepers_mock.go -package mocks . BankKeeper
 package types
 
 import (

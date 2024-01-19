@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -35,8 +33,7 @@ func (k msgServer) AddService(
 	// Check if the service already exists or not.
 	if _, found := k.GetService(ctx, msg.Service.Id); found {
 		logger.Error(fmt.Sprintf("Service already exists: %v", msg.Service))
-		return nil, sdkerrors.Wrapf(
-			types.ErrServiceAlreadyExists,
+		return nil, types.ErrServiceAlreadyExists.Wrapf(
 			"duplicate ID: %s", msg.Service.Id,
 		)
 	}
@@ -45,8 +42,7 @@ func (k msgServer) AddService(
 	accAddr, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
-		return nil, sdkerrors.Wrapf(
-			types.ErrServiceInvalidAddress,
+		return nil, types.ErrServiceInvalidAddress.Wrapf(
 			"%s is not in Bech32 format", msg.Address,
 		)
 	}
@@ -55,28 +51,27 @@ func (k msgServer) AddService(
 	accCoins := k.bankKeeper.SpendableCoins(ctx, accAddr)
 	if accCoins.Len() == 0 {
 		logger.Error(fmt.Sprintf("%s doesn't have any funds to add service: %v", msg.Address, err))
-		return nil, sdkerrors.Wrapf(
-			types.ErrServiceNotEnoughFunds,
+		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has no spendable coins",
 		)
 	}
+
+	// Check the balance of upokt is enough to cover the AddServiceFee.
 	accBalance := accCoins.AmountOf("upokt")
-	if accBalance.LTE(sdkmath.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)) {
+	if accBalance.LTE(sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)) {
 		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", msg.Address, err))
-		return nil, sdkerrors.Wrapf(
-			types.ErrServiceNotEnoughFunds,
+		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has %d uPOKT, but the service fee is %d uPOKT",
 			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
 		)
 	}
 
 	// Deduct the service fee from the actor's balance.
-	serviceFee := sdk.Coins{sdk.NewCoin("upokt", sdkmath.NewIntFromUint64(k.GetParams(ctx).AddServiceFee))}
+	serviceFee := sdk.Coins{sdk.NewCoin("upokt", sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee))}
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, accAddr, types.ModuleName, serviceFee)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to deduct service fee from actor's balance: %v", err))
-		return nil, sdkerrors.Wrapf(
-			types.ErrServiceFailedToDeductFee,
+		return nil, types.ErrServiceFailedToDeductFee.Wrapf(
 			"account has %d uPOKT, failed to deduct %d uPOKT",
 			accBalance.Uint64(), k.GetParams(ctx).AddServiceFee,
 		)
