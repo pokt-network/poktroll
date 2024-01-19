@@ -23,7 +23,7 @@ func TestMsgUpdateParams_ValidateBasic(t *testing.T) {
 					ComputeUnitsToTokensMultiplier: 1,
 				},
 			},
-			expectedErr: ErrTokenomicsAuthorityInvalidAddress,
+			expectedErr: ErrTokenomicsAuthorityAddressInvalid,
 		}, {
 			desc: "valid address",
 			msg: MsgUpdateParams{

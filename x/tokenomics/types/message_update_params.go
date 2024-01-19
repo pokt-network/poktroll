@@ -46,7 +46,7 @@ func (msg *MsgUpdateParams) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		return sdkerrors.Wrapf(ErrTokenomicsAuthorityInvalidAddress, "invalid authority address %s; (%v)", msg.Authority, err)
+		return sdkerrors.Wrapf(ErrTokenomicsAuthorityAddressInvalid, "invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	// Validate the params
