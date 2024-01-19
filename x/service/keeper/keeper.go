@@ -13,24 +13,24 @@ import (
 )
 
 type (
+	// Keeper defines the keeper, and its dependencies, for the service module.
 	Keeper struct {
 		cdc        codec.BinaryCodec
 		storeKey   storetypes.StoreKey
 		memKey     storetypes.StoreKey
 		paramstore paramtypes.Subspace
 
-		accountKeeper types.AccountKeeper
-		bankKeeper    types.BankKeeper
+		bankKeeper types.BankKeeper
 	}
 )
 
+// NewKeeper creates a new Service module Keeper instance.
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey,
 	memKey storetypes.StoreKey,
 	ps paramtypes.Subspace,
 
-	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 ) *Keeper {
 	// set KeyTable if it has not already been set
@@ -44,11 +44,11 @@ func NewKeeper(
 		memKey:     memKey,
 		paramstore: ps,
 
-		accountKeeper: accountKeeper,
-		bankKeeper:    bankKeeper,
+		bankKeeper: bankKeeper,
 	}
 }
 
+// Logger provides a module-specific logger from the context's logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }

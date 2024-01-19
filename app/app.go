@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	// this line is used by starport scaffolding # stargate/app/moduleImport
-
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"
@@ -582,7 +580,6 @@ func New(
 		keys[servicemoduletypes.MemStoreKey],
 		app.GetSubspace(servicemoduletypes.ModuleName),
 
-		app.AccountKeeper,
 		app.BankKeeper,
 	)
 	serviceModule := servicemodule.NewAppModule(appCodec, app.ServiceKeeper, app.AccountKeeper, app.BankKeeper)
