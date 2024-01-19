@@ -5,12 +5,14 @@ import "gogoproto/gogo.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
+// TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 // Params defines the parameters for the tokenomics module.
 message Params {
   option (gogoproto.equal) = true;
   option (gogoproto.goproto_stringer) = false;
 
   // The amount of upokt that a compute unit should translate to when settling a session.
+  // TODO_DOCUMENT(@Olshansk): Make sure to document the units of this parameter (or the map) once finalized.
   uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
   // TODO: Some parameters we should consider adding next:

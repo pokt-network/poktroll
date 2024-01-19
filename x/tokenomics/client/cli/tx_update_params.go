@@ -7,15 +7,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/spf13/cobra"
-
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/spf13/cobra"
 )
 
 var _ = strconv.Itoa(0)
 
-// TODO_BLOCKER(#322): Update the CLI once we determine settle on how to maintain
-// and update parameters.
+// TODO_BLOCKER(#322): Update the CLI once we determine settle on how to maintain and update parameters.
+// TODO_TECHDEBT(@red-0ne): Add a config file for on-chain parameters.
 func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params <compute_units_to_tokens_multiplier>",
