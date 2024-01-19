@@ -75,12 +75,12 @@ func NewRelayerProxyTestBehavior(
 	return test
 }
 
-// WithRelayerProxyDependenciesAndCurrentBlockHeight creates the dependencies for the relayer proxy
+// WithRelayerProxyDependenciesForBlockHeight creates the dependencies for the relayer proxy
 // from the TestBehavior.mocks so they have the right interface and can be
 // used by the dependency injection framework.
 // blockHeight being the block height that will be returned by the block client's
 // LastNBlock method
-func WithRelayerProxyDependenciesAndCurrentBlockHeight(
+func WithRelayerProxyDependenciesForBlockHeight(
 	keyName string,
 	blockHeight int64,
 ) func(*TestBehavior) {
@@ -224,6 +224,12 @@ func WithDefaultSessionSupplier(
 	}
 }
 
+// WithSuccessiveSessions adds multiple sessions to the sessionsMap given a
+// sessionsCount.
+// The sessions are added with the same supplier list and serviceId for the
+// application.
+// The sessions are added with their respective SessionNumber starting from 0
+// and ending at sessionsCount - 1.
 func WithSuccessiveSessions(
 	supplierKeyName string,
 	serviceId string,
@@ -247,6 +253,8 @@ func WithSuccessiveSessions(
 		supplierAddress := supplierAccAddress.String()
 		sessionSuppliers = append(sessionSuppliers, supplierAddress)
 
+		// Adding `sessionCount` sessions to the sessionsMap to make them available
+		// to the MockSessionQueryClient.
 		for i := 0; i < sessionsCount; i++ {
 			testqueryclients.AddToExistingSessions(
 				test.t,
