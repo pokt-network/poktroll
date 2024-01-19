@@ -8,3 +8,8 @@ Feature: Session Namespace
 #  TODO_IMPROVE: ...
 #    And an event should be emitted...
 #  TODO_INCOMPLETE: add step(s) for proof validation.
+
+#  Scenario: Late RelayRequests are handled within the session grace period
+#    When a RelayRequest is signed for an Application within session number N
+#    And the RelayMiner gets the RelayRequest within session number N+1
+#    Then the RelayMiner should process the RelayRequest and include it in the claim N
