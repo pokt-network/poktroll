@@ -493,13 +493,13 @@ func unmarshalTxResult(eventBz []byte) (*abci.TxResult, error) {
 
 	// Try to deserialize the provided bytes into a TxEvent.
 	if err := json.Unmarshal(eventBz, txResult); err != nil {
-		return nil, err
+		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
 	// Check if the TxEvent has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
 	if bytes.Equal(txResult.Tx, []byte{}) {
-		return nil, ErrNonTxEventBytes.Wrapf("%s", string(eventBz))
+		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult event")
 	}
 
 	return txResult, nil
