@@ -7,3 +7,10 @@ groups:
         output:
           location: local-file-system
           path: ../generated/typescript
+      - name: fernapi/fern-go-sdk
+        version: 0.9.0
+        output:
+          location: local-file-system
+          path: ../generated/go
+        config:
+          importPath: go-mod-path/generated/go
