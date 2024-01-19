@@ -52,7 +52,7 @@ func TestUpdateParams_Validity(t *testing.T) {
 
 			expectErr:     true,
 			expectedPanic: false,
-			expErrMsg:     "authority address is incorrect",
+			expErrMsg:     "the provided authority address does not match the on-chain governance address",
 		},
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",
