@@ -26,7 +26,7 @@ func SimulateMsgAddService(
 			Address: simAccount.Address.String(),
 			Service: sharedtypes.Service{
 				Id:   fmt.Sprintf("srvId%d", rndNum),
-				Name: fmt.Sprintf("servName%d", rndNum),
+				Name: fmt.Sprintf("svcName%d", rndNum),
 			},
 		}
 
