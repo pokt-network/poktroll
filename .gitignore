@@ -84,6 +84,9 @@ go.work.sum
 # TODO_TECHDEBT: It seems that .dot files come and go so we need to figure out the root cause: https://github.com/pokt-network/poktroll/pull/177/files#r1392521547
 # **/*.dot
 
+# Load-test summary report, mentioning in gitignore to avoid accidentally committing it
+summary.html
+
 # Quickstart helpers
 shannon_appgate_config.yaml
 shannon_app_config.yaml
