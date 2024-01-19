@@ -22,7 +22,7 @@ func TestMsgServer_AddService(t *testing.T) {
 	wctx := sdk.WrapSDKContext(ctx)
 
 	// Create a service
-	srv1 := sharedtypes.Service{
+	svc1 := sharedtypes.Service{
 		Id:   "svc1",
 		Name: "service 1",
 	}
@@ -64,7 +64,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				keepertest.AddAccToAccMapCoins(t, validAddr1, "upokt", oneUPOKTGreaterThanFee)
 			},
 			address:       validAddr1,
-			service:       srv1,
+			service:       svc1,
 			expectedError: nil,
 		},
 		{
@@ -81,7 +81,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc:          "invalid - invalid service supplier address",
 			preFn:         func(t *testing.T) {},
 			address:       "invalid address",
-			service:       srv1,
+			service:       svc1,
 			expectedError: types.ErrServiceInvalidAddress,
 		},
 		{
@@ -142,7 +142,7 @@ func TestMsgServer_AddService(t *testing.T) {
 			desc:          "invalid - no spendable coins",
 			preFn:         func(t *testing.T) {},
 			address:       sample.AccAddress(),
-			service:       srv1,
+			service:       svc1,
 			expectedError: types.ErrServiceNotEnoughFunds,
 		},
 		{
@@ -152,7 +152,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", oneUPOKTGreaterThanFee-2)
 			},
 			address:       validAddr2,
-			service:       srv1,
+			service:       svc1,
 			expectedError: types.ErrServiceNotEnoughFunds,
 		},
 		{
@@ -162,7 +162,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", oneUPOKTGreaterThanFee-1)
 			},
 			address:       validAddr2,
-			service:       srv1,
+			service:       svc1,
 			expectedError: types.ErrServiceNotEnoughFunds,
 		},
 		{
@@ -172,7 +172,7 @@ func TestMsgServer_AddService(t *testing.T) {
 				keepertest.AddAccToAccMapCoins(t, validAddr2, "wrong", oneUPOKTGreaterThanFee)
 			},
 			address:       validAddr2,
-			service:       srv1,
+			service:       svc1,
 			expectedError: types.ErrServiceNotEnoughFunds,
 		},
 	}

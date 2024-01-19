@@ -20,9 +20,9 @@ func TestGenesisState_Validate(t *testing.T) {
 		Name: "svcName2",
 	}
 
-	srv3 := &sharedtypes.Service{
-		Id:   "srv3",
-		Name: "srv1",
+	svc3 := &sharedtypes.Service{
+		Id:   "srvId3",
+		Name: "srvName1",
 	}
 
 	tests := []struct {
@@ -61,7 +61,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				ServiceList: []sharedtypes.Service{
-					*srv1, *srv3,
+					*svc1, *svc3,
 				},
 			},
 			expectedError: types.ErrServiceDuplicateIndex,
@@ -73,7 +73,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					AddServiceFee: 999999, // 0.999999 POKT
 				},
 				ServiceList: []sharedtypes.Service{
-					*srv1, *srv2,
+					*svc1, *svc2,
 				},
 			},
 			expectedError: types.ErrServiceInvalidServiceFee,
