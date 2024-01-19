@@ -1,0 +1,8 @@
+instances:
+  - url: https://olshansk.docs.buildwithfern.com
+title: olshansk | Documentation
+navigation:
+  - api: API Reference
+colors:
+  accentPrimary: '#ffffff'
+  background: '#000000'
