@@ -2,12 +2,13 @@ package cli
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cobra"
 
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -24,12 +25,19 @@ func CmdSubmitProof() *cobra.Command {
 		Short: "Broadcast message submit-proof",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			argSessionHeader := new(sessiontypes.SessionHeader)
-			err = json.Unmarshal([]byte(args[0]), argSessionHeader)
+			sessionHeaderEncodedStr := args[0]
+			smstProofEncodedStr := args[1]
+
+			// Get the session header
+			sessionHeaderBz, err := base64.StdEncoding.DecodeString(sessionHeaderEncodedStr)
 			if err != nil {
 				return err
 			}
-			argSmstProof, err := base64.StdEncoding.DecodeString(args[1])
+			sessionHeader := &sessiontypes.SessionHeader{}
+			cdc := codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
+			cdc.MustUnmarshalJSON(sessionHeaderBz, sessionHeader)
+
+			smstProof, err := base64.StdEncoding.DecodeString(smstProofEncodedStr)
 			if err != nil {
 				return err
 			}
@@ -41,8 +49,8 @@ func CmdSubmitProof() *cobra.Command {
 
 			msg := types.NewMsgSubmitProof(
 				clientCtx.GetFromAddress().String(),
-				argSessionHeader,
-				argSmstProof,
+				sessionHeader,
+				smstProof,
 			)
 			if err := msg.ValidateBasic(); err != nil {
 				return err

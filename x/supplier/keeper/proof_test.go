@@ -45,8 +45,10 @@ func TestProofGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	proofs := createNProofs(keeper, ctx, 10)
 	for _, proof := range proofs {
-		rst, found := keeper.GetProof(ctx,
+		rst, found := keeper.GetProof(
+			ctx,
 			proof.GetSessionHeader().GetSessionId(),
+			proof.GetSupplierAddress(),
 		)
 		require.True(t, found)
 		require.Equal(t,
@@ -57,14 +59,11 @@ func TestProofGet(t *testing.T) {
 }
 func TestProofRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
-	items := createNProofs(keeper, ctx, 10)
-	for _, item := range items {
-		keeper.RemoveProof(ctx,
-			item.GetSessionHeader().GetSessionId(),
-		)
-		_, found := keeper.GetProof(ctx,
-			item.GetSessionHeader().GetSessionId(),
-		)
+	proofs := createNProofs(keeper, ctx, 10)
+	for _, proof := range proofs {
+		sessionId := proof.GetSessionHeader().GetSessionId()
+		keeper.RemoveProof(ctx, sessionId, proof.GetSupplierAddress())
+		_, found := keeper.GetProof(ctx, sessionId, proof.GetSupplierAddress())
 		require.False(t, found)
 	}
 }
