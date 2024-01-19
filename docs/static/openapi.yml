@@ -79284,12 +79284,16 @@ definitions:
         description: params holds all the parameters of this module.
         type: object
     description: QueryParamsResponse is response type for the Query/Params RPC method.
+<<<<<<< HEAD
   pocket.tokenomics.MsgUpdateParamsResponse:
     type: object
     description: >-
       MsgUpdateParamsResponse defines the response structure for executing a
       MsgUpdateParams message.
   pocket.tokenomics.Params:
+=======
+  poktroll.tokenomics.Params:
+>>>>>>> main
     type: object
     properties:
       compute_units_to_tokens_multiplier:
