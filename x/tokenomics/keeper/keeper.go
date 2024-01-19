@@ -57,7 +57,6 @@ func NewTokenomicsKeeper(
 	bankKeeper types.BankKeeper,
 
 	authority string,
-
 ) *TokenomicsKeeper {
 	// set KeyTable if it has not already been set
 	if !ps.HasKeyTable() {
