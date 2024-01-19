@@ -13,7 +13,7 @@ sidebar_position: 2
 
 - [Overview](#overview)
 - [Architecture Diagrams](#architecture-diagrams)
-  - [Components](#components)
+  - [Component Diagram Legend](#component-diagram-legend)
     - [Events Query Client](#events-query-client)
     - [Events Replay Client](#events-replay-client)
   - [Subscriptions](#subscriptions)
@@ -51,18 +51,11 @@ and easy-to-use way to get events from the chain. Highlights:
 
 ## Architecture Diagrams
 
-The following section contains numerous diagrams that detail the architecture
-of the different aspects of the `events` package.
+Visual representations often make it easier to understand the design and flow of a package. Below are the architecture diagrams that explain the high-level structure and interactions in this package:
 
-### Components
-
-The following legend describes how to read the following component diagrams.
+### Component Diagram Legend
 
 ```mermaid
----
-title: Component Diagram Legend
----
-
 flowchart
 
   a[Component A]
@@ -75,13 +68,11 @@ flowchart
   b -."B uses D via network IO".-> d
 ```
 
-#### Events Query Client
+> **Figure 1**: A legend for the component diagrams in this document.
+
+### Events Query Client Components
 
 ```mermaid
----
-title: EventsQueryClient Components
----
-
 flowchart
 
   subgraph comet[Cometbft Node]
@@ -110,13 +101,11 @@ flowchart
   q1_conn -.-> sub
 ```
 
-#### Events Replay Client
+> **Figure 2**: This diagram depicts the components of the `EventsQueryClient` and their interactions. It specifically showcases the use of the `Connection` and `Dialer` interfaces for handling the underlying connection mechanism. It also illustrates multiple, simultaneous subscriptions to the same client.
+
+### Events Replay Client Components
 
 ```mermaid
----
-title: EventsReplayClient Components
----
-
 flowchart
     slice_cons[Events Slice Consumer]
 
@@ -145,15 +134,13 @@ flowchart
     eqc -.-> chain
 ```
 
-### Subscriptions
+> **Figure 3**: This diagram depicts the components of the `EventsReplayClient` and their interactions. It highlights the relationship between the `EventsReplayClient` and its `EventsQueryClient` dependency. It also illustrates usage of the different methods available to retrieve events (i.e. `#EventsSequence()` and `#LastNEvents()`).
+
+### Event Subscription Data Flow
 
 _TODO_DOCUMENTATION(@bryanchriswhite): Add Legend_
 
 ```mermaid
----
-title: Event Subscription Data Flow
----
-
 flowchart
 
   subgraph comet[Cometbft Node]
@@ -188,6 +175,8 @@ flowchart
   sub -.-> q1_conn
   sub -.-> q2_conn
 ```
+
+> **Figure 4**: This diagram depicts the flow of event data from the network, where it originates, through the `EventsQueryClient` and ultimately to the observers. It highlights the fact that **each event subscription query established a separate `Connection`**.
 
 ## Installation
 
