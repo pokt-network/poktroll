@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: Load Test 1 - Plan
+title: Load Testing - Plan
 ---
 
 # Load Test #1 - Plan <!-- omit in toc -->
