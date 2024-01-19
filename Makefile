@@ -560,3 +560,12 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+
+############
+### Fern ###
+############
+
+.PHONY: fern_update
+fern_update: ## Update fern to the latest version
+	cp docs/static/openapi.yml fern/openapi/openapi.yml
+	sed -i'' -e '/info:/,/^\s*$$/ { /version: '"'"'0.0.1'"'"'/d; }' fern/openapi/openapi.yml
