@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -24,51 +23,18 @@ func (k msgServer) CreateClaim(
 		return nil, err
 	}
 
-	sessionReq := &sessiontypes.QueryGetSessionRequest{
-		ApplicationAddress: msg.GetSessionHeader().GetApplicationAddress(),
-		Service:            msg.GetSessionHeader().GetService(),
-		BlockHeight:        msg.GetSessionHeader().GetSessionStartBlockHeight(),
-	}
-	sessionRes, err := k.Keeper.sessionKeeper.GetSession(goCtx, sessionReq)
+	session, err := k.queryAndValidateSessionHeader(
+		goCtx,
+		msg.GetSessionHeader(),
+		msg.GetSupplierAddress(),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.
 		With(
-			"session_id", sessionRes.GetSession().GetSessionId(),
-			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
-			"supplier", msg.GetSupplierAddress(),
-		).
-		Debug("got sessionId for claim")
-
-	if sessionRes.Session.SessionId != msg.SessionHeader.SessionId {
-		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
-			"claimed sessionRes ID does not match on-chain sessionRes ID; expected %q, got %q",
-			sessionRes.Session.SessionId,
-			msg.SessionHeader.SessionId,
-		)
-	}
-
-	var found bool
-	for _, supplier := range sessionRes.GetSession().GetSuppliers() {
-		if supplier.Address == msg.GetSupplierAddress() {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
-			"supplier address %q in session ID %q",
-			msg.GetSupplierAddress(),
-			sessionRes.GetSession().GetSessionId(),
-		)
-	}
-
-	logger.
-		With(
-			"session_id", sessionRes.GetSession().GetSessionId(),
+			"session_id", session.GetSessionId(),
 			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
 			"supplier", msg.GetSupplierAddress(),
 		).
@@ -92,6 +58,9 @@ func (k msgServer) CreateClaim(
 		SessionHeader:   msg.GetSessionHeader(),
 		RootHash:        msg.RootHash,
 	}
+
+	// TODO_BLOCKER: check if this claim already exists and return an appropriate error
+	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
 	logger.

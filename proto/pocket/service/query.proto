@@ -3,7 +3,6 @@ package pocket.service;
 
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "cosmos/base/query/v1beta1/pagination.proto";
 import "pocket/service/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
