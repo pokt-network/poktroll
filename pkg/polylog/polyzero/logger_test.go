@@ -38,7 +38,6 @@ var (
 		`"time":"%s`,
 		expectedTime.Format(expectedTimestampDayPrecisionLayout),
 	)
-	expectedTimeEventContains     = fmt.Sprintf(`"Time":"%s`, expectedTime.Format(expectedTimeLayout))
 	expectedDuration              = time.Millisecond + (250 * time.Nanosecond)                   // 1000250
 	expectedDurationString        = expectedDuration.String()[:len(expectedDuration.String())-2] // 1.00025
 	expectedDurationEventContains = fmt.Sprintf(`"Dur":%s`, expectedDurationString)

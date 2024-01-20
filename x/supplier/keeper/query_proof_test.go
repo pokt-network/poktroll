@@ -24,7 +24,7 @@ func TestProofQuerySingle(t *testing.T) {
 	wctx := sdk.WrapSDKContext(ctx)
 	proofs := createNProofs(keeper, ctx, 2)
 
-	var randSupplierAddr = sample.AccAddress()
+	randSupplierAddr := sample.AccAddress()
 	tests := []struct {
 		desc        string
 		request     *types.QueryGetProofRequest
