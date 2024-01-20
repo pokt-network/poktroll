@@ -4,11 +4,9 @@ run:
   new: true
   color: always
   build-tags:
-    - e2e
-    - test
     - integration
+    - test
     - tools
-    - ignore
 
 # TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
 linters:
