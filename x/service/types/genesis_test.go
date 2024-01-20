@@ -21,8 +21,8 @@ func TestGenesisState_Validate(t *testing.T) {
 	}
 
 	svc3 := &sharedtypes.Service{
-		Id:   "srvId3",
-		Name: "srvName1",
+		Id:   "svcId3",
+		Name: "svcName1",
 	}
 
 	tests := []struct {
