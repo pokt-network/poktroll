@@ -14,7 +14,6 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
@@ -126,14 +125,10 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		app.server.Shutdown(ctx)
 	}()
 
-	// TODO_IN_THIS_PR: figure out if we are going to have fixed path - https://github.com/slok/go-http-metrics#custom-handler-id
-	// TODO_IN_THIS_PR: move this logic behind config file
+	// This hooks https://github.com/slok/go-http-metrics to the appgate server HTTP server.
 	mm := metricsmiddleware.New(metricsmiddleware.Config{
 		Recorder: metrics.NewRecorder(metrics.Config{}),
 	})
-
-	// TODO_IN_THIS_PR: What's the best place to register the metrics? Ideally, this should only be done once.
-	prometheus.MustRegister(relayCount, relayErrorCount)
 
 	// Set the HTTP handler.
 	app.server.Handler = middlewarestd.Handler("", mm, app)
@@ -171,6 +166,8 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
 
+	relaysTotal.With("service_id", serviceId).Add(1)
+
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -182,6 +179,8 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed reading relay request body")
+
+		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
 	app.logger.Debug().
@@ -198,6 +197,8 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		app.replyWithError(ctx, requestPayloadBz, writer, ErrAppGateMissingAppAddress)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Msg("no application address provided")
+
+		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
 
@@ -214,11 +215,9 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
-		relayErrorCount.With(prometheus.Labels{"service_id": serviceId}).Inc()
+		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
-
-	relayCount.With(prometheus.Labels{"service_id": serviceId}).Inc()
 
 	// TODO_TECHDEBT: log additional info?
 	app.logger.Info().Msg("request serviced successfully")
@@ -236,13 +235,3 @@ func (app *appGateServer) validateConfig() error {
 }
 
 type appGateServerOption func(*appGateServer)
-
-var relayErrorCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "relay_error_count",
-	Help: "Number of unseccessful relays",
-}, []string{"service_id"})
-
-var relayCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Name: "relay_count",
-	Help: "Number of seccessful relays",
-}, []string{"service_id"})
