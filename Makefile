@@ -568,4 +568,6 @@ poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 .PHONY: fern_update
 fern_update: ## Update fern to the latest version
 	cp docs/static/openapi.yml fern/openapi/openapi.yml
-	sed -i'' -e '/info:/,/^\s*$$/ { /version: '"'"'0.0.1'"'"'/d; }' fern/openapi/openapi.yml
+	sed -i'' -e '/info:/,/^\s*$$/ { /version: "'0.0.1'" /d; }' fern/openapi/openapi.yml
+
+# fern check --warnings
