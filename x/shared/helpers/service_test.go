@@ -28,7 +28,7 @@ func TestIsValidService(t *testing.T) {
 		{
 			desc: "Valid ID and empty Name",
 
-			serviceId:   "Srv",
+			serviceId:   "svc",
 			serviceName: "", // Valid because the service name can be empty
 
 			expectedIsValid: true,
