@@ -15,11 +15,14 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var TestProofPath = []byte{1, 0, 1, 0, 1, 0}
+var testProofPath = []byte{1, 0, 1, 0, 1, 0}
 
 // SubmitProofs generates and submits a proof for each claim in the provided
 // list of claims. Claims are implicitly paired with session trees by index but are otherwise
 // arbitrary (any session tree could be used for any claim).
+//
+// TODO_CONSIDERATION: This method could be refactored to accept a single list of
+// objects which encapsulates both the claim and session tree.
 func (memnet *inMemoryNetworkWithSessions) SubmitProofs(
 	t *testing.T,
 	claims []types.Claim,
@@ -48,7 +51,7 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 ) *types.Proof {
 	t.Helper()
 
-	closestMerkleProof, err := sessionTree.ProveClosest(TestProofPath)
+	closestMerkleProof, err := sessionTree.ProveClosest(testProofPath)
 	require.NoError(t, err)
 
 	closestMerkleProofBz, err := closestMerkleProof.Marshal()

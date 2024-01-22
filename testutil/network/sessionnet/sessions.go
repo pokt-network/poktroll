@@ -51,8 +51,8 @@ func cliEncodeSessionHeader(t *testing.T, sessionHeader *sessiontypes.SessionHea
 }
 
 // newSessionTreeRoot creates and returns a new session tree with the given number
-// of relays and session header. All SMT persistence is done in a temporary and
-// is cleaned up when the test completes.
+// of relays and session header. All SMT persistence is done in a temporary directory
+// and is cleaned up when the test completes.
 func newSessionTreeRoot(
 	t *testing.T,
 	numRelays int,
@@ -79,7 +79,8 @@ func newSessionTreeRoot(
 	for i := 0; i < numRelays; i++ {
 		// While these relays use the `MinedRelay` data structure, they are not
 		// "mined" in the sense that their inclusion in the tree is guaranteed.
-		// `MinedRelay` fixtures produced this way effectively have difficulty 0.
+		// `MinedRelay` fixtures produced this way have difficulty 0.
+		// I.e.: the on-chain mining difficulty is assumed to be 0.
 		relay := testrelayer.NewMinedRelay(
 			t, sessionHeader.GetSessionStartBlockHeight(),
 			sessionHeader.GetSessionEndBlockHeight(),

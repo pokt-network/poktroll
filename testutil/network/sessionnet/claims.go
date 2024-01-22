@@ -90,7 +90,9 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
 
-	// TODO_TECHDEBT: Forward the actual claim in the response once the response is updated to return it.
+	// TODO_TECHDEBT: Forward the claim in the response, as opposed to constructing
+	// an equivalent one here once the response and respective message handler is
+	// updated to include it.
 	claim := &suppliertypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader:   sessionHeader,
