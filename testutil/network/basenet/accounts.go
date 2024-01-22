@@ -43,7 +43,7 @@ func (memnet *BaseInMemoryNetwork) CreateKeyringAccounts(t *testing.T) {
 		t, memnet.Config.Keyring, memnet.Config.GetNumKeyringAccounts(t),
 	)
 
-	// Assign the memnet's pre-generated accounts to a new pre-generated
+	// Assign the memnet's pre-generated accounts iterator to a new pre-generated
 	// accounts iterator containing only the accounts which were also created
 	// in the keyring.
 	memnet.PreGeneratedAccountIterator = testkeyring.NewPreGeneratedAccountIterator(accts...)
