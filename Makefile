@@ -51,6 +51,27 @@ check_go_version:
 		exit 1; \
 	fi
 
+.PHONY: check_act
+# Internal helper target - check if `act` is installed
+check_act:
+	{ \
+	if ( ! ( command -v act >/dev/null )); then \
+		echo "Seems like you don't have `act` installed. Please visit https://github.com/nektos/act before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gh
+# Internal helper target - check if `gh` is installed
+check_gh:
+	{ \
+	if ( ! ( command -v gh >/dev/null )); then \
+		echo "Seems like you don't have `gh` installed. Please visit https://cli.github.com/ before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+
 .PHONY: check_docker
 # Internal helper target - check if docker is installed
 check_docker:
@@ -560,3 +581,16 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+
+
+###################
+### Act Helpers ###
+###################
+
+.PHONY: act_list
+act_list: check_act ## List all github actions that can be executed locally with act
+	act --list
+
+.PHONY: act_reviewdog
+act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so: `GITHUB_TOKEN=$(gh auth token) make act_reviewdog`
+	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture linux/arm64
