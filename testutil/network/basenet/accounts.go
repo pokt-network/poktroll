@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
