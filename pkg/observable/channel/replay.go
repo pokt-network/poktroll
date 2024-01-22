@@ -14,7 +14,10 @@ import (
 // TODO_CONSIDERATION: perhaps this should be parameterized.
 const replayPartialBufferTimeout = 100 * time.Millisecond
 
-var _ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
+var (
+	_ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
+	_ observable.Observable[any]       = (*replayObservable[any])(nil)
+)
 
 type replayObservable[V any] struct {
 	// embed observerManager to encapsulate concurrent-safe read/write access to

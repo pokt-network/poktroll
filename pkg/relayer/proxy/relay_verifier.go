@@ -6,6 +6,7 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
+
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
