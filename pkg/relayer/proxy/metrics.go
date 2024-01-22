@@ -51,25 +51,27 @@ var (
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
 	}, []string{"proxy_name", "service_id"})
 
-	// responseSizeBytes defines a histogram metric to observe the size distribution of proxy response sizes.
-	// Each bucket boundary in the array represents the upper inclusive limit for that bucket.
-	// This histogram counts the number of responses, measuring each response's size in bytes. The bucket ranges are:
-	// - 100 bytes: Counts all responses up to 100 bytes.
-	// - 500 bytes: Counts responses more than 100 bytes but up to 500 bytes.
-	// - 1,000 bytes (1 KB): Counts responses more than 500 bytes but up to 1 KB.
-	// - 5,000 bytes (5 KB): Counts responses more than 1 KB but up to 5 KB.
-	// - 10,000 bytes (10 KB): Counts responses more than 5 KB but up to 10 KB.
-	// - 50,000 bytes (50 KB): Counts responses more than 10 KB but up to 50 KB.
-	// Responses larger than 50 KB are counted in the last bucket.
-	// These initial bucket sizes should be revisited and adjusted based on actual observed data
-	// to ensure accurate representation of the distribution of response sizes.
-	//
-	// Note: It is recommended to place the bucket sizes in a configuration file for easier,
-	// dynamic adjustments without source code modification, which is particularly useful
-	// for adapting to different data patterns or deployment environments.
-	responseSizeBytes metrics.Histogram = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-		Subsystem: "relayminer",
-		Name:      "response_size_bytes",
-		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
-	}, []string{"proxy_name", "service_id"})
+	// TODO(@okdas): add `response_size_bytes`. Skipping for now to avoid creating of a new HTTP server writer - let's
+	// reevaluate after we have some historical load testing data.
+	// // responseSizeBytes defines a histogram metric to observe the size distribution of proxy response sizes.
+	// // Each bucket boundary in the array represents the upper inclusive limit for that bucket.
+	// // This histogram counts the number of responses, measuring each response's size in bytes. The bucket ranges are:
+	// // - 100 bytes: Counts all responses up to 100 bytes.
+	// // - 500 bytes: Counts responses more than 100 bytes but up to 500 bytes.
+	// // - 1,000 bytes (1 KB): Counts responses more than 500 bytes but up to 1 KB.
+	// // - 5,000 bytes (5 KB): Counts responses more than 1 KB but up to 5 KB.
+	// // - 10,000 bytes (10 KB): Counts responses more than 5 KB but up to 10 KB.
+	// // - 50,000 bytes (50 KB): Counts responses more than 10 KB but up to 50 KB.
+	// // Responses larger than 50 KB are counted in the last bucket.
+	// // These initial bucket sizes should be revisited and adjusted based on actual observed data
+	// // to ensure accurate representation of the distribution of response sizes.
+	// //
+	// // Note: It is recommended to place the bucket sizes in a configuration file for easier,
+	// // dynamic adjustments without source code modification, which is particularly useful
+	// // for adapting to different data patterns or deployment environments.
+	// responseSizeBytes metrics.Histogram = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+	// 	Subsystem: "relayminer",
+	// 	Name:      "response_size_bytes",
+	// 	Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
+	// }, []string{"proxy_name", "service_id"})
 )
