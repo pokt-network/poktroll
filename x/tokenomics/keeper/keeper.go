@@ -9,6 +9,7 @@ import (
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
+
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -58,7 +59,6 @@ func NewTokenomicsKeeper(
 	bankKeeper types.BankKeeper,
 
 	authority string,
-
 ) *TokenomicsKeeper {
 	// set KeyTable if it has not already been set
 	if !ps.HasKeyTable() {

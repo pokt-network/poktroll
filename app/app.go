@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -109,6 +110,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v7/modules/core/keeper"
 	solomachine "github.com/cosmos/ibc-go/v7/modules/light-clients/06-solomachine"
 	ibctm "github.com/cosmos/ibc-go/v7/modules/light-clients/07-tendermint"
+	"github.com/spf13/cast"
+
 	appparams "github.com/pokt-network/poktroll/app/params"
 	"github.com/pokt-network/poktroll/docs"
 	applicationmodule "github.com/pokt-network/poktroll/x/application"
@@ -132,7 +135,6 @@ import (
 	tokenomicsmodule "github.com/pokt-network/poktroll/x/tokenomics"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/spf13/cast"
 )
 
 const (
@@ -348,8 +350,8 @@ func New(
 
 	// TODO_BLOCKER(#322): Change this to `authtypes.NewModuleAddress(govtypes.ModuleName)`
 	// once we figure out the MVP for on-chain parameter governance.
-	foundationAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
-	authority := foundationAddress
+	pnfAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	authority := pnfAddress
 
 	app := &App{
 		BaseApp:           bApp,

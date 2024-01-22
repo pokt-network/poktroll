@@ -47922,15 +47922,24 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: supplier_address
+          in: query
+          required: false
+          type: string
+        - name: session_id
+          in: query
+          required: false
+          type: string
+        - name: session_end_height
+          in: query
+          required: false
+          type: string
+          format: uint64
       tags:
         - Query
-  /pocket/supplier/proof/{index}:
+  /pocket/supplier/proof/{session_id}/{supplier_address}:
     get:
-      summary: >-
-        TODO_UPNEXT(@Olshansk): Update these endpoints after implementing proof
-        persistence
-
-        Queries a list of Proof items.
+      summary: Queries a list of Proof items.
       operationId: PocketSupplierProof
       responses:
         '200':
@@ -48014,7 +48023,11 @@ paths:
                       type: string
                   additionalProperties: {}
       parameters:
-        - name: index
+        - name: session_id
+          in: path
+          required: true
+          type: string
+        - name: supplier_address
           in: path
           required: true
           type: string
@@ -48418,6 +48431,12 @@ paths:
                   compute_units_to_tokens_multiplier:
                     type: string
                     format: uint64
+                    description: >-
+                      The amount of upokt that a compute unit should translate
+                      to when settling a session.
+
+                      TODO_DOCUMENT(@Olshansk): Make sure to document the units
+                      of this parameter (or the map) once finalized.
             description: >-
               QueryParamsResponse is the response type for the Query/Params RPC
               method.
@@ -79285,7 +79304,17 @@ definitions:
       compute_units_to_tokens_multiplier:
         type: string
         format: uint64
-    description: Params defines the parameters for the tokenomics module.
+        description: >-
+          The amount of upokt that a compute unit should translate to when
+          settling a session.
+
+          TODO_DOCUMENT(@Olshansk): Make sure to document the units of this
+          parameter (or the map) once finalized.
+    description: >-
+      TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance
+      parameters.
+
+      Params defines the parameters for the tokenomics module.
   pocket.tokenomics.QueryParamsResponse:
     type: object
     properties:
@@ -79296,4 +79325,10 @@ definitions:
           compute_units_to_tokens_multiplier:
             type: string
             format: uint64
+            description: >-
+              The amount of upokt that a compute unit should translate to when
+              settling a session.
+
+              TODO_DOCUMENT(@Olshansk): Make sure to document the units of this
+              parameter (or the map) once finalized.
     description: QueryParamsResponse is the response type for the Query/Params RPC method.

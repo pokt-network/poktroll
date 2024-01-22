@@ -47,10 +47,7 @@ func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
 ) (client.DelegationClient, error) {
-	client, err := events.NewEventsReplayClient[
-		client.Redelegation,
-		client.EventsObservable[client.Redelegation],
-	](
+	client, err := events.NewEventsReplayClient[client.Redelegation](
 		ctx,
 		deps,
 		delegationEventQuery,
@@ -71,7 +68,7 @@ type delegationClient struct {
 	// and the RedelegationReplayObservable type as its generic types.
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Redelegation objects and to correctly return a RedelegationReplayObservable
-	eventsReplayClient client.EventsReplayClient[client.Redelegation, client.EventsObservable[client.Redelegation]]
+	eventsReplayClient client.EventsReplayClient[client.Redelegation]
 }
 
 // RedelegationsSequence returns a replay observable of Redelgation events

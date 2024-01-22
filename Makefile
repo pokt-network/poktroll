@@ -11,7 +11,7 @@ POCKET_ADDR_PREFIX = pokt
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen`
+install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
@@ -37,6 +37,9 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 ### Checks ###
 ##############
+
+# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
+# on the user's OS and enviornment.
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -80,6 +83,17 @@ check_npm:
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_jq
+# Internal helper target - check if jq is installed
+check_jq:
+	{ \
+	if ( ! ( command -v jq >/dev/null )); then \
+		echo "Seems like you don't have jq installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: check_node
 # Internal helper target - check if node is installed
@@ -212,6 +226,10 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+
+.PHONY: load_test_simple
+load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
 ### TODOS ###
@@ -522,13 +540,13 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 
 MODULES := application gateway pocket service session supplier tokenomics
 
-# TODO_IMPROVE(#287): Improve once we decide how to handle parameter updates
+# TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
 .PHONY: update_tokenomics_params
 update_tokenomics_params: ## Update the tokenomics module params
-	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from dao --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE)
 
 .PHONY: query_all_params
-query_all_params: ## Query the params from all available modules
+query_all_params: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
 	    echo "~~~ Querying $$module module params ~~~"; \
 	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \

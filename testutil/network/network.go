@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
@@ -20,6 +21,8 @@ import (
 	simtestutil "github.com/cosmos/cosmos-sdk/testutil/sims"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	appcli "github.com/pokt-network/poktroll/x/application/client/cli"
@@ -28,7 +31,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 type (
@@ -352,4 +354,11 @@ func UndelegateAppFromGateway(
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.TxHash)
 	require.Equal(t, uint32(0), resp.Code)
+}
+
+// TODO_TECHDEBT: Reuse this helper in all test helpers where appropriate.
+func NewBondDenomCoins(t *testing.T, net *network.Network, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	return sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(numCoins)))
 }

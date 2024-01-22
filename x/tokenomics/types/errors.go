@@ -8,8 +8,8 @@ import (
 
 // x/tokenomics module sentinel errors
 var (
-	ErrTokenomicsAuthorityInvalidAddress    = sdkerrors.Register(ModuleName, 1, "provided authority address is invalid")
-	ErrTokenomicsAuthorityAddressIncorrect  = sdkerrors.Register(ModuleName, 2, "provided authority address is incorrect")
+	ErrTokenomicsAuthorityAddressInvalid    = sdkerrors.Register(ModuleName, 1, "the provided authority address is not a valid bech32 address")
+	ErrTokenomicsAuthorityAddressMismatch   = sdkerrors.Register(ModuleName, 2, "the provided authority address does not match the on-chain governance address")
 	ErrTokenomicsClaimNil                   = sdkerrors.Register(ModuleName, 3, "provided claim is nil")
 	ErrTokenomicsSessionHeaderNil           = sdkerrors.Register(ModuleName, 4, "provided claim's session header is nil")
 	ErrTokenomicsSupplierModuleMintFailed   = sdkerrors.Register(ModuleName, 5, "failed to mint uPOKT to supplier module account")

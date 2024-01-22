@@ -27,25 +27,22 @@ func (blockEvent *cometBlockEvent) Hash() []byte {
 	return blockEvent.Block.LastBlockID.Hash.Bytes()
 }
 
-// newCometBlockEventFactoryFn is a factory function that returns a function
-// that attempts to deserialize the given bytes into a comet block.
-// If the resulting block has a height of zero, assume the event was not a block
-// event and return an ErrUnmarshalBlockEvent error.
-func newCometBlockEventFactoryFn() events.NewEventsFn[client.Block] {
-	return func(blockMsgBz []byte) (client.Block, error) {
-		blockMsg := new(cometBlockEvent)
-		if err := json.Unmarshal(blockMsgBz, blockMsg); err != nil {
-			return nil, err
-		}
-
-		// The header height should never be zero. If it is, it means that blockMsg
-		// does not match the expected format which led unmarshaling to fail,
-		// and blockHeader.height to have a default value.
-		if blockMsg.Block.Header.Height == 0 {
-			return nil, events.ErrEventsUnmarshalEvent.
-				Wrapf("with block data: %s", string(blockMsgBz))
-		}
-
-		return blockMsg, nil
+// newCometBlockEvent is a function that attempts to deserialize the given bytes
+// into a comet block. If the resulting block has a height of zero, assume the event
+// was not a block event and return an ErrUnmarshalBlockEvent error.
+func newCometBlockEvent(blockMsgBz []byte) (client.Block, error) {
+	blockMsg := new(cometBlockEvent)
+	if err := json.Unmarshal(blockMsgBz, blockMsg); err != nil {
+		return nil, err
 	}
+
+	// The header height should never be zero. If it is, it means that blockMsg
+	// does not match the expected format which led unmarshaling to fail,
+	// and blockHeader.height to have a default value.
+	if blockMsg.Block.Header.Height == 0 {
+		return nil, events.ErrEventsUnmarshalEvent.
+			Wrapf("with block data: %s", string(blockMsgBz))
+	}
+
+	return blockMsg, nil
 }

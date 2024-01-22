@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -20,7 +21,7 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 	// does the `cosmos.msg.v1.signer` tag in the protobuf definition enforce
 	// this somewhere in the Cosmos SDK?
 	if msg.Authority != k.GetAuthority() {
-		return nil, types.ErrTokenomicsAuthorityAddressIncorrect
+		return nil, types.ErrTokenomicsAuthorityAddressMismatch
 	}
 
 	prevParams := k.GetParams(ctx)

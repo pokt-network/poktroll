@@ -1,36 +1,36 @@
 package cli
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 var _ = strconv.Itoa(0)
 
-// TODO_BLOCKER(#322): Update the CLI once we determine settle on how to maintain
-// and update parameters.
+// TODO_BLOCKER(#322): Update the CLI once we determine settle on how to maintain and update parameters.
+// TODO_TECHDEBT(@red-0ne): Add a config file for on-chain parameters.
 func CmdUpdateParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update-params <compute_units_to_tokens_multiplier>",
 		Short: "Update the parameters of the tokenomics module",
-		Long: `Update the parameter in the tokenomics module.",
+		Long: `Update the parameters in the tokenomics module.",
 
 All parameters must be provided when updating.
 
 Example:
-$ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from dao --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
+$ poktrolld tx tokenomics update-params <compute_units_to_tokens_multiplier> --from pnf --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			// Parse computeUnitsToTokensMultiplier
 			computeUnitsToTokensMultiplier, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			// Get client context

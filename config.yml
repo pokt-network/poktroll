@@ -6,7 +6,8 @@ accounts:
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
     coins:
       - 999999999999999999upokt
-  - name: dao
+  # PNF represents the multisig address that acts on behalf of the DAO
+  - name: pnf
     mnemonic: "crumble shrimp south strategy speed kick green topic stool seminar track stand rhythm almost bubble pet knock steel pull flag weekend country major blade"
     coins:
       - 69000000000000000000042upokt
