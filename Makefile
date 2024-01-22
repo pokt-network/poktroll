@@ -89,7 +89,7 @@ check_npm:
 check_jq:
 	{ \
 	if ( ! ( command -v jq >/dev/null )); then \
-		echo "Seems like you don't have kq installed. Make sure you install it before continuing"; \
+		echo "Seems like you don't have jq installed. Make sure you install it before continuing"; \
 		exit 1; \
 	fi; \
 	}
