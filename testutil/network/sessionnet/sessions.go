@@ -70,7 +70,7 @@ func newSessionTreeRoot(
 		}
 	})
 
-	// This function is a required constructor argument but is only called at the
+	// NB: This function is a required constructor argument but is only called at the
 	// end of `sessionTree#Delete()`, which this test doesn't exercise.
 	noop := func(header *sessiontypes.SessionHeader) {}
 	sessionTree, err := session.NewSessionTree(sessionHeader, tmpSmtStorePath, noop)
@@ -78,7 +78,7 @@ func newSessionTreeRoot(
 
 	for i := 0; i < numRelays; i++ {
 		// While these relays use the `MinedRelay` data structure, they are not
-		// "mined" in the sense that their inclusion is dependent on their difficulty.
+		// "mined" in the sense that their inclusion in the tree is guaranteed.
 		// `MinedRelay` fixtures produced this way effectively have difficulty 0.
 		relay := testrelayer.NewMinedRelay(
 			t, sessionHeader.GetSessionStartBlockHeight(),
@@ -94,7 +94,7 @@ func newSessionTreeRoot(
 
 // getSessionTreeRoot returns the root hash of the given sessionTree as a both a
 // byte slice and a base64-encoded string.
-func getSessionTreeRoot(
+func getEncodedSessionTreeRoot(
 	t *testing.T,
 	sessionTree relayer.SessionTree,
 ) ([]byte, string) {
