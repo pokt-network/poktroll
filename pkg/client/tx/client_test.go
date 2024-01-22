@@ -48,12 +48,12 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
 		// as it is expected to be updated in a mock method but is also sent on in the test.
 		txResultsBzPublishChMu = new(sync.Mutex)
-		// eventsBzPublishCh is the channel that the mock events query client
+		// txResultsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is used near the end of
 		// the test to mock the network signaling that the transactions was committed.
-		eventsBzPublishCh chan<- either.Bytes
-		blocksPublishCh   chan client.Block
-		ctx               = context.Background()
+		txResultsBzPublishCh chan<- either.Bytes
+		blocksPublishCh      chan client.Block
+		ctx                  = context.Background()
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
@@ -194,11 +194,11 @@ func TestTxClient_SignAndBroadcast_SyncError(t *testing.T) {
 		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
 		// as it is expected to be updated in a mock method but is also sent on in the test.
 		txResultsBzPublishChMu = new(sync.Mutex)
-		// eventsBzPublishCh is the channel that the mock events query client
+		// txResultsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is not used in
 		// this test but is required to use the NewOneTimeTxEventsQueryClient
 		// helper.
-		eventsBzPublishCh chan<- either.Bytes
+		txResultsBzPublishCh chan<- either.Bytes
 		// blocksPublishCh is the channel that the mock block client will use
 		// to publish the latest block. It is not used in this test but is
 		// required to use the NewOneTimeCommittedBlocksSequenceBlockClient
@@ -270,9 +270,9 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		// txResultsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transactions event bytes. It is used near the end of
 		// the test to mock the network signaling that the transactions was committed.
-		eventsBzPublishCh chan<- either.Bytes
-		blocksPublishCh   chan client.Block
-		ctx               = context.Background()
+		txResultsBzPublishCh chan<- either.Bytes
+		blocksPublishCh      chan client.Block
+		ctx                  = context.Background()
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
@@ -333,12 +333,12 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
 		// as it is expected to be updated in a mock method but is also sent on in the test.
 		txResultsBzPublishChMu = new(sync.Mutex)
-		// eventsBzPublishCh is the channel that the mock events query client
+		// txResultsBzPublishCh is the channel that the mock events query client
 		// will use to publish the transaction event bytes. It is used near the end of
 		// the test to mock the network signaling that the transaction was committed.
-		eventsBzPublishCh chan<- either.Bytes
-		blocksPublishCh   = make(chan client.Block, tx.DefaultCommitTimeoutHeightOffset)
-		ctx               = context.Background()
+		txResultsBzPublishCh chan<- either.Bytes
+		blocksPublishCh      = make(chan client.Block, tx.DefaultCommitTimeoutHeightOffset)
+		ctx                  = context.Background()
 	)
 
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
