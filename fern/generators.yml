@@ -6,13 +6,13 @@ groups:
         version: 0.7.2
         output:
           location: local-file-system
-          path: ../generated/typescript
+          path: ../sdk/typescript
       - name: fernapi/fern-go-sdk
         version: 0.9.4
         config:
           module:
-            path: github.com/pokt-network/poktroll/generated/go
-            version: "0.0.1"
+            path: github.com/pokt-network/poktroll
+            version: "1.19"
         output:
           location: local-file-system
-          path: ../../generated/go
+          path: ../../sdk/go

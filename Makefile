@@ -570,4 +570,9 @@ fern_update: ## Update fern to the latest version
 	cp docs/static/openapi.yml fern/openapi/openapi.yml
 	sed -i'' -e '/info:/,/^\s*$$/ { /version: "'0.0.1'" /d; }' fern/openapi/openapi.yml
 
+.PHONY: fern_generate
+fern_generate: ## Generate fern
+	fern generate
+
+# fern generate --local
 # fern check --warnings

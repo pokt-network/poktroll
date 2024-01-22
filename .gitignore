@@ -1,3 +1,6 @@
+# TODO_IN_THIS_PR: Decide if we want to merge this in
+sdk/
+
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
 #
