@@ -1,8 +1,6 @@
 syntax = "proto3";
 package pocket.service;
 
-import "cosmos_proto/cosmos.proto";
-import "pocket/application/application.proto";
 import "pocket/session/session.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";

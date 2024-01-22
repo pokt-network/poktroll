@@ -40,7 +40,7 @@ func NewBlockClient(
 		ctx,
 		deps,
 		committedBlocksQuery,
-		newCometBlockEventFactoryFn(),
+		newCometBlockEvent,
 		defaultBlocksReplayLimit,
 	)
 	if err != nil {
