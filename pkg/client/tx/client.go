@@ -355,9 +355,9 @@ func (tClient *txClient) addPendingTransactions(
 // Parameters:
 // - ctx: Context for managing the function's lifecycle and child operations.
 func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
-	txEventsObs := tClient.eventsReplayClient.EventsSequence(ctx)
-	txEventsCh := txEventsObs.Subscribe(ctx).Ch()
-	for txResult := range txEventsCh {
+	txResultsObs := tClient.eventsReplayClient.EventsSequence(ctx)
+	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
+	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
 		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
 
@@ -484,19 +484,19 @@ func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string
 	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
 }
 
-// unmarshalTxResult attempts to deserialize a slice of bytes into a TxEvent.
+// unmarshalTxResult attempts to deserialize a slice of bytes into a TxResult
 // It checks if the given bytes correspond to a valid transaction event.
-// If the resulting TxEvent has empty transaction bytes, it assumes that
-// the message was not a transaction event and returns an ErrNonTxEventBytes error.
-func unmarshalTxResult(eventBz []byte) (*abci.TxResult, error) {
+// If the resulting TxResult has empty transaction bytes, it assumes that
+// the message was not a transaction results and returns an error.
+func unmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 	txResult := new(abci.TxResult)
 
-	// Try to deserialize the provided bytes into a TxEvent.
-	if err := json.Unmarshal(eventBz, txResult); err != nil {
+	// Try to deserialize the provided bytes into a TxResult.
+	if err := json.Unmarshal(txResultBz, txResult); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
-	// Check if the TxEvent has empty transaction bytes, which indicates
+	// Check if the TxResult has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
 	if bytes.Equal(txResult.Tx, []byte{}) {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult event")
