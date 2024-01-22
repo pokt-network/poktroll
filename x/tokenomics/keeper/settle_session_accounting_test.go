@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
+	"github.com/stretchr/testify/require"
+
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/pokt-network/smt"
-	"github.com/stretchr/testify/require"
 )
 
 // TODO_BLOCKER, TODO_ADDTEST(@Olshansk): Add E2E and integration tests for
@@ -24,10 +25,8 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 	// Define test cases
 	testCases := []struct {
-		desc string
-
-		root []byte // smst.MerkleRoot
-
+		desc      string
+		root      []byte // smst.MerkleRoot
 		expectErr bool
 	}{
 		{
