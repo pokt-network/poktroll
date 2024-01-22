@@ -13,7 +13,11 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsRequest) (*types.QueryAllClaimsResponse, error) {
+// AllClaims returns all claims from the store handling the query request.
+func (k Keeper) AllClaims(
+	goCtx context.Context,
+	req *types.QueryAllClaimsRequest,
+) (*types.QueryAllClaimsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -69,7 +73,6 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -77,7 +80,12 @@ func (k Keeper) AllClaims(goCtx context.Context, req *types.QueryAllClaimsReques
 	return &types.QueryAllClaimsResponse{Claim: claims, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Claim(goCtx context.Context, req *types.QueryGetClaimRequest) (*types.QueryGetClaimResponse, error) {
+// Claim retrieves a single claim from the store (if it still exists),
+// handling the query request.
+func (k Keeper) Claim(
+	goCtx context.Context,
+	req *types.QueryGetClaimRequest,
+) (*types.QueryGetClaimResponse, error) {
 	if req == nil {
 		err := types.ErrSupplierInvalidQueryRequest.Wrapf("request cannot be nil")
 		return nil, status.Error(codes.InvalidArgument, err.Error())

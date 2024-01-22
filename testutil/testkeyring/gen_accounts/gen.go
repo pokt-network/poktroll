@@ -14,9 +14,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
-
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
 var (
@@ -73,7 +72,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(flagOut, outputBuffer.Bytes(), 0o644); err != nil {
 		log.Fatal(err)
 	}
 }

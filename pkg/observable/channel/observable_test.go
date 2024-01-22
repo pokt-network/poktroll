@@ -33,8 +33,8 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 	inputs := []int{123, 456, 789}
 	// NB: see TODO_INCOMPLETE comment below
-	//fullBlockingPublisher := make(chan *int)
-	//fullBufferedPublisher := make(chan *int, 1)
+	// fullBlockingPublisher := make(chan *int)
+	// fullBufferedPublisher := make(chan *int, 1)
 
 	tests := []test{
 		{

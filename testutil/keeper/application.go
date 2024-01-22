@@ -27,7 +27,7 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-// ApplicationKeeper returns a mocked application keeper and context for testing
+// ApplicationKeeper returns an application keeper and context for testing
 // it mocks the chain having staked gateways via the use of the stakedGatewayMap
 func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -44,8 +44,20 @@ func ApplicationKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 
 	ctrl := gomock.NewController(t)
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
-	mockBankKeeper.EXPECT().DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).AnyTimes()
-	mockBankKeeper.EXPECT().UndelegateCoinsFromModuleToAccount(gomock.Any(), types.ModuleName, gomock.Any(), gomock.Any()).AnyTimes()
+	mockBankKeeper.EXPECT().
+		DelegateCoinsFromAccountToModule(
+			gomock.Any(),
+			gomock.Any(),
+			types.ModuleName,
+			gomock.Any()).
+		AnyTimes()
+	mockBankKeeper.EXPECT().
+		UndelegateCoinsFromModuleToAccount(
+			gomock.Any(),
+			types.ModuleName,
+			gomock.Any(),
+			gomock.Any()).
+		AnyTimes()
 
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()

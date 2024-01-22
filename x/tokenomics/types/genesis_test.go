@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

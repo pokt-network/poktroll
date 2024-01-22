@@ -20,7 +20,6 @@ func (k Keeper) SetGateway(ctx sdk.Context, gateway types.Gateway) {
 func (k Keeper) GetGateway(
 	ctx sdk.Context,
 	address string,
-
 ) (val types.Gateway, found bool) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
 
@@ -39,7 +38,6 @@ func (k Keeper) GetGateway(
 func (k Keeper) RemoveGateway(
 	ctx sdk.Context,
 	address string,
-
 ) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
 	store.Delete(types.GatewayKey(

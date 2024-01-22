@@ -18,6 +18,7 @@ func CmdUnstakeApplication() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "unstake-application",
 		Short: "Unstake an application",
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Unstake an application. This is a broadcast operation that will unstake
 the application specified by the 'from' address.
 
@@ -25,7 +26,6 @@ Example:
 $ poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err

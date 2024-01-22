@@ -14,7 +14,11 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) SupplierAll(goCtx context.Context, req *types.QueryAllSupplierRequest) (*types.QueryAllSupplierResponse, error) {
+// SupplierAll returns all supplier handling the query request.
+func (k Keeper) SupplierAll(
+	goCtx context.Context,
+	req *types.QueryAllSupplierRequest,
+) (*types.QueryAllSupplierResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -41,7 +45,11 @@ func (k Keeper) SupplierAll(goCtx context.Context, req *types.QueryAllSupplierRe
 	return &types.QueryAllSupplierResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Supplier(goCtx context.Context, req *types.QueryGetSupplierRequest) (*types.QueryGetSupplierResponse, error) {
+// Supplier returns a specific supplier handling the query request.
+func (k Keeper) Supplier(
+	goCtx context.Context,
+	req *types.QueryGetSupplierRequest,
+) (*types.QueryGetSupplierResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}

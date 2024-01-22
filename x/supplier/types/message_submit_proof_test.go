@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -22,7 +21,7 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			msg: MsgSubmitProof{
 				SupplierAddress: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrSupplierInvalidAddress,
 		}, {
 			name: "valid address",
 			msg: MsgSubmitProof{

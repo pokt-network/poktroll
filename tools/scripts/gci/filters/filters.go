@@ -1,4 +1,5 @@
-// The filters package contains functions that can be used to filter file paths.
+// The filters package contains functions that can be used to filter file paths
+// in limiting the scope of which files the gci linter touches.
 
 package filters
 
@@ -10,6 +11,8 @@ import (
 	"strings"
 )
 
+// igniteScaffoldComment is a a comment inserted by the ignite CLI that we want
+// to maintain in the source code and ignore for linting purposes.
 const igniteScaffoldComment = "// this line is used by starport scaffolding"
 
 var (
@@ -41,9 +44,10 @@ func PathMatchesMockGo(path string) (bool, error) {
 	return strings.HasSuffix(path, "_mock.go"), nil
 }
 
-// PathMatchesTestGo matches go test files.
-func PathMatchesTestGo(path string) (bool, error) {
-	return strings.HasSuffix(path, "_test.go"), nil
+// ImportBlockContainsScaffoldComment matches import blocks containing the
+// `// this line is used by starport scaffolding` comment.
+func ImportBlockContainsScaffoldComment(path string) (bool, error) {
+	return containsImportScaffoldComment(path)
 }
 
 // ContentMatchesEmptyImportScaffold matches files that can't be goimport'd due
@@ -71,6 +75,34 @@ func containsEmptyImportScaffold(goSrcPath string) (isEmptyImport bool, _ error)
 	for scanner.Scan() {
 		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
 		if strings.HasPrefix(trimmedImportBlock, igniteScaffoldComment) {
+			return true, nil
+		}
+	}
+
+	if scanner.Err() != nil {
+		return false, scanner.Err()
+	}
+
+	return false, nil
+}
+
+// containsImportScaffoldComment checks if the go file at goSrcPath contains a
+// comment in the import block like the following:
+//
+// // this line is used by starport scaffolding ...
+func containsImportScaffoldComment(goSrcPath string) (containsComment bool, _ error) {
+	file, err := os.Open(goSrcPath)
+	if err != nil {
+		return false, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(importBlockSplit)
+
+	for scanner.Scan() {
+		trimmedImportBlock := strings.Trim(scanner.Text(), "\n\t")
+		if strings.Contains(trimmedImportBlock, igniteScaffoldComment) {
 			return true, nil
 		}
 	}

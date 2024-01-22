@@ -203,7 +203,13 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
 	if publishError != nil {
-		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishError))
+		panic(
+			fmt.Errorf(
+				"EventsReplayClient[%T].goPublishEvents should never reach this spot: %w",
+				*new(T),
+				publishError,
+			),
+		)
 	}
 }
 

@@ -202,7 +202,11 @@ func createClaim(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, supplierAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdktypes.NewCoins(sdktypes.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdktypes.NewCoins(sdktypes.NewCoin(net.Config.BondDenom, math.NewInt(10))).String(),
+		),
 	}
 
 	responseRaw, err := testcli.ExecTestCLICmd(ctx, cli.CmdCreateClaim(), args)

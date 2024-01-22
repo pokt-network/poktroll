@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
+// StakeApplication stakes an application handling the message request.
 func (k msgServer) StakeApplication(
 	goCtx context.Context,
 	msg *types.MsgStakeApplication,
@@ -29,13 +30,21 @@ func (k msgServer) StakeApplication(
 	var coinsToDelegate sdk.Coin
 	app, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %s", msg.Address))
-		app = k.createApplication(ctx, msg)
+		logger.Info(
+			fmt.Sprintf(
+				"Application not found. Creating new application for address %s", msg.Address,
+			),
+		)
+		app = k.createApplication(msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Application found. Updating application for address %s", msg.Address))
+		logger.Info(
+			fmt.Sprintf(
+				"Application found. Updating application for address %s", msg.Address,
+			),
+		)
 		currAppStake := *app.Stake
-		if err = k.updateApplication(ctx, &app, msg); err != nil {
+		if err = k.updateApplication(&app, msg); err != nil {
 			return nil, err
 		}
 		coinsToDelegate = (*msg.Stake).Sub(currAppStake)
@@ -50,9 +59,16 @@ func (k msgServer) StakeApplication(
 
 	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the application to the staked application pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.DelegateCoinsFromAccountToModule(
+		ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate},
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err))
+		logger.Error(
+			fmt.Sprintf(
+				"could not send %v coins from %s to %s module account due to %v",
+				coinsToDelegate, appAddress, types.ModuleName, err,
+			),
+		)
 		return nil, err
 	}
 
@@ -63,8 +79,8 @@ func (k msgServer) StakeApplication(
 	return &types.MsgStakeApplicationResponse{}, nil
 }
 
+// createApplication creates and applications from the given message.
 func (k msgServer) createApplication(
-	ctx sdk.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
@@ -75,14 +91,17 @@ func (k msgServer) createApplication(
 	}
 }
 
+// updateApplication updates an application from the given application and message.
 func (k msgServer) updateApplication(
-	ctx sdk.Context,
 	app *types.Application,
 	msg *types.MsgStakeApplication,
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != app.Address {
-		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
+		return sdkerrors.Wrapf(
+			types.ErrAppUnauthorized,
+			"msg Address (%s) != application address (%s)", msg.Address, app.Address,
+		)
 	}
 
 	// Validate that the stake is not being lowered
@@ -90,14 +109,19 @@ func (k msgServer) updateApplication(
 		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*app.Stake) {
-		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+		return sdkerrors.Wrapf(
+			types.ErrAppInvalidStake,
+			"stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake,
+		)
 	}
 	app.Stake = msg.Stake
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
+		return sdkerrors.Wrapf(
+			types.ErrAppInvalidServiceConfigs, "must have at least one service",
+		)
 	}
 	app.ServiceConfigs = msg.Services
 

@@ -1,11 +1,15 @@
 package yaml
 
-import "strings"
+import (
+	"strings"
+)
 
-// YAML is indentation sensitive, so we need to remove the extra indentation from the test cases and make sure
-// it is space-indented instead of tab-indented, otherwise the YAML parser will fail
+// NormalizeYAMLIndentation is a function that normalizes YAML indentation. YAML
+// As YAML is indentation sensitive, so we need to remove the extra indentation
+// from the test cases and make sure it is space-indented instead of tab-indented,
+// otherwise the YAML parser will fail
 func NormalizeYAMLIndentation(rawContent string) string {
-	var processedContent = rawContent
+	processedContent := rawContent
 	// Remove extra newlines
 	processedContent = strings.TrimPrefix(processedContent, "\n")
 

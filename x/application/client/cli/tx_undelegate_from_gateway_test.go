@@ -37,7 +37,12 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 	commonArgs := []string{
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(
+				sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 
 	tests := []struct {
@@ -77,7 +82,8 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 		},
 	}
 
-	// Initialize the App and Gateway Accounts by sending it some funds from the validator account that is part of genesis
+	// Initialize the App and Gateway Accounts by sending it some funds from
+	// the validator account that is part of genesis
 	network.InitAccountWithSequence(t, net, appAccount.Address, 1)
 	network.InitAccountWithSequence(t, net, gatewayAccount.Address, 2)
 

@@ -3,11 +3,11 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/gateway/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

@@ -394,11 +394,22 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 					require.Equal(t, expectedEndpoint.Url, supplierServiceConfig.Services[i].Endpoints[j].Url)
 					require.Equal(t, expectedEndpoint.RpcType, supplierServiceConfig.Services[i].Endpoints[j].RpcType)
 
-					require.Equal(t, len(expectedEndpoint.Configs), len(supplierServiceConfig.Services[i].Endpoints[j].Configs))
+					require.Equal(
+						t,
+						len(expectedEndpoint.Configs),
+						len(supplierServiceConfig.Services[i].Endpoints[j].Configs),
+					)
 					for k, expectedConfig := range expectedEndpoint.Configs {
-
-						require.Equal(t, expectedConfig.Key, supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Key)
-						require.Equal(t, expectedConfig.Value, supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Value)
+						require.Equal(
+							t,
+							expectedConfig.Key,
+							supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Key,
+						)
+						require.Equal(
+							t,
+							expectedConfig.Value,
+							supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Value,
+						)
 					}
 				}
 			}

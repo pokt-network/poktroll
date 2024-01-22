@@ -40,12 +40,20 @@ func (k msgServer) UndelegateFromGateway(
 		}
 	}
 	if foundIdx == -1 {
-		logger.Info(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GatewayAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotDelegated, "application not delegated to gateway with address: %s", msg.GatewayAddress)
+		logger.Info(
+			fmt.Sprintf(
+				"Application not delegated to gateway with address [%s]", msg.GatewayAddress),
+		)
+		return nil, sdkerrors.Wrapf(
+			types.ErrAppNotDelegated,
+			"application not delegated to gateway with address: %s", msg.GatewayAddress,
+		)
 	}
 
 	// Remove the gateway from the application's delegatee gateway public keys
-	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses[:foundIdx], app.DelegateeGatewayAddresses[foundIdx+1:]...)
+	app.DelegateeGatewayAddresses = append(
+		app.DelegateeGatewayAddresses[:foundIdx], app.DelegateeGatewayAddresses[foundIdx+1:]...,
+	)
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, app)

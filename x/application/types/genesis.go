@@ -43,10 +43,18 @@ func (gs GenesisState) Validate() error {
 		}
 		stake, err := sdk.ParseCoinNormalized(app.Stake.String())
 		if !stake.IsValid() {
-			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application %v; (%v)", app.Stake, stake.Validate())
+			return sdkerrors.Wrapf(
+				ErrAppInvalidStake,
+				"invalid stake amount for application %v; (%v)",
+				app.Stake, stake.Validate(),
+			)
 		}
 		if err != nil {
-			return sdkerrors.Wrapf(ErrAppInvalidStake, "cannot parse stake amount for application %v; (%v)", app.Stake, err)
+			return sdkerrors.Wrapf(
+				ErrAppInvalidStake,
+				"cannot parse stake amount for application %v; (%v)",
+				app.Stake, err,
+			)
 		}
 		if stake.IsZero() || stake.IsNegative() {
 			return sdkerrors.Wrapf(ErrAppInvalidStake, "invalid stake amount for application: %v <= 0", app.Stake)
@@ -58,7 +66,11 @@ func (gs GenesisState) Validate() error {
 		// Check that the application's delegated gateway addresses are valid
 		for _, gatewayAddr := range app.DelegateeGatewayAddresses {
 			if _, err := sdk.AccAddressFromBech32(gatewayAddr); err != nil {
-				return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", gatewayAddr, err)
+				return sdkerrors.Wrapf(
+					ErrAppInvalidGatewayAddress,
+					"invalid gateway address %s; (%v)",
+					gatewayAddr, err,
+				)
 			}
 		}
 

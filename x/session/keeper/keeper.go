@@ -32,7 +32,6 @@ func NewKeeper(
 
 	appKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
-
 ) *Keeper {
 	// set KeyTable if it has not already been set
 	if !ps.HasKeyTable() {

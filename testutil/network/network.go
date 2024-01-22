@@ -32,8 +32,12 @@ import (
 )
 
 type (
+	// Network is a type alias for the cosmos-sdk type that represents
+	// and in-memory network. And is intended to be used in tests.
 	Network = network.Network
-	Config  = network.Config
+	// Config is a type alias for the cosmos-sdk type that represents
+	// the config of an in-memory network.
+	Config = network.Config
 )
 
 // New creates instance with fully configured cosmos network.
@@ -57,7 +61,8 @@ func New(t *testing.T, configs ...Config) *Network {
 }
 
 // DefaultConfig will initialize config for the network with custom application,
-// genesis and single validator. All other parameters are inherited from cosmos-sdk/testutil/network.DefaultConfig
+// genesis and single validator. All other parameters are inherited from
+// cosmos-sdk/testutil/network.DefaultConfig
 func DefaultConfig() network.Config {
 	var (
 		encoding = app.MakeEncodingConfig()
@@ -104,8 +109,8 @@ func DefaultConfig() network.Config {
 // TODO_CLEANUP: Refactor the genesis state helpers below to consolidate usage
 // and reduce the code footprint.
 
-// DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
-// It returns the populated GenesisState object.
+// DefaultApplicationModuleGenesisState generates a GenesisState object with a
+// given number of applications. It returns the populated GenesisState object.
 func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
 	t.Helper()
 	state := apptypes.DefaultGenesis()
@@ -123,15 +128,16 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 				},
 			},
 		}
-		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we
+		// should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&application)
 		state.ApplicationList = append(state.ApplicationList, application)
 	}
 	return state
 }
 
-// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
-// a single application for each of the given addresses.
+// ApplicationModuleGenesisStateWithAddresses generates a GenesisState object
+// with a single application for each of the given addresses.
 func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
 	t.Helper()
 	state := apptypes.DefaultGenesis()
@@ -173,7 +179,8 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 				},
 			},
 		}
-		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we
+		// should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&supplier)
 		state.SupplierList = append(state.SupplierList, supplier)
 	}
@@ -218,7 +225,8 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 			Address: sample.AccAddress(),
 			Stake:   &stake,
 		}
-		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we
+		// should enforce `(gogoproto.nullable) = false` everywhere
 		// nullify.Fill(&gateway)
 		state.GatewayList = append(state.GatewayList, gateway)
 	}
@@ -254,7 +262,11 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
@@ -285,7 +297,11 @@ func InitAccountWithSequence(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, args...)
@@ -311,7 +327,11 @@ func DelegateAppToGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdDelegateToGateway(), args)
 	require.NoError(t, err)
@@ -337,7 +357,11 @@ func UndelegateAppFromGateway(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf(
+			"--%s=%s",
+			flags.FlagFees,
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+		),
 	}
 	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appcli.CmdUndelegateFromGateway(), args)
 	require.NoError(t, err)

@@ -41,9 +41,16 @@ func (k msgServer) UnstakeGateway(
 	}
 
 	// Send the coins from the gateway pool back to the gateway
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
+	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(
+		ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake},
+	)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
+		logger.Error(
+			fmt.Sprintf(
+				"could not send %v coins from %s module to %s account due to %v",
+				gateway.Stake, gatewayAddress, types.ModuleName, err,
+			),
+		)
 		return nil, err
 	}
 

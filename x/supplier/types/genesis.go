@@ -44,16 +44,32 @@ func (gs GenesisState) Validate() error {
 		}
 		stake, err := sdk.ParseCoinNormalized(supplier.Stake.String())
 		if !stake.IsValid() {
-			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount for supplier %v; (%v)", supplier.Stake, stake.Validate())
+			return sdkerrors.Wrapf(
+				ErrSupplierInvalidStake,
+				"invalid stake amount for supplier %v; (%v)",
+				supplier.Stake, stake.Validate(),
+			)
 		}
 		if err != nil {
-			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "cannot parse stake amount for supplier %v; (%v)", supplier.Stake, err)
+			return sdkerrors.Wrapf(
+				ErrSupplierInvalidStake,
+				"cannot parse stake amount for supplier %v; (%v)",
+				supplier.Stake, err,
+			)
 		}
 		if stake.IsZero() || stake.IsNegative() {
-			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount for supplier: %v <= 0", supplier.Stake)
+			return sdkerrors.Wrapf(
+				ErrSupplierInvalidStake,
+				"invalid stake amount for supplier: %v <= 0",
+				supplier.Stake,
+			)
 		}
 		if stake.Denom != "upokt" {
-			return sdkerrors.Wrapf(ErrSupplierInvalidStake, "invalid stake amount denom for supplier %v", supplier.Stake)
+			return sdkerrors.Wrapf(
+				ErrSupplierInvalidStake,
+				"invalid stake amount denom for supplier %v",
+				supplier.Stake,
+			)
 		}
 
 		// Validate the application service configs

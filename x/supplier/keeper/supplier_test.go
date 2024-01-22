@@ -63,6 +63,7 @@ func TestSupplierGet(t *testing.T) {
 		)
 	}
 }
+
 func TestSupplierRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t, nil)
 	suppliers := createNSupplier(keeper, ctx, 10)

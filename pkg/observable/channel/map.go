@@ -6,8 +6,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable"
 )
 
-type MapFn[S, D any] func(ctx context.Context, src S) (dst D, skip bool)
-type ForEachFn[V any] func(ctx context.Context, src V)
+type (
+	// MapFn defines a function alias to be used as the transformation fn in Map,
+	// MapExpand and MapReplay.
+	MapFn[S, D any] func(ctx context.Context, src S) (dst D, skip bool)
+	// ForEachFn defines a function alias to be used as the function applied to
+	// each notification in ForEach.
+	ForEachFn[V any] func(ctx context.Context, src V)
+)
 
 // Map transforms the given observable by applying the given transformFn to each
 // notification received from the observable. If the transformFn returns a skip
@@ -121,7 +127,6 @@ func goMapTransformNotification[S, D any](
 
 		publishFn(dstNotifications)
 	}
-
 }
 
 // zeroValue is a generic helper which returns the zero value of the given type.

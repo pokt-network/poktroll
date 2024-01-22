@@ -8,7 +8,10 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) SubmitProof(goCtx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+func (k msgServer) SubmitProof(
+	goCtx context.Context,
+	msg *types.MsgSubmitProof,
+) (*types.MsgSubmitProofResponse, error) {
 	// TODO_BLOCKER: Prevent Proof upserts after the tokenomics module has processes the respective session.
 	// TODO_BLOCKER: Validate the signature on the Proof message corresponds to the supplier before Upserting.
 

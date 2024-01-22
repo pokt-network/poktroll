@@ -8,8 +8,9 @@ import (
 
 // InitSDKConfig initializes the SDK's config with the appropriate parameters
 // and prefixes so everything is named appropriately for Pocket Network.
-// TODO_DISCUSS: Exporting publically for testing purposes only.
-// Consider adding a helper per the discussion here: https://github.com/pokt-network/poktroll/pull/59#discussion_r1357816798
+// TODO_DISCUSS: Exporting publicly for testing purposes only.
+// Consider adding a helper per the discussion here:
+// https://github.com/pokt-network/poktroll/pull/59#discussion_r1357816798
 func InitSDKConfig() {
 	// Set prefixes
 	accountPubKeyPrefix := app.AccountAddressPrefix + "pub"

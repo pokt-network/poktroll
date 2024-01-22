@@ -11,25 +11,27 @@ import (
 	"time"
 
 	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 const (
 	createClaimTimeoutDuration   = 10 * time.Second
 	eitherEventsReplayBufferSize = 100
-	msgClaimSenderQueryFmt       = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
-	testServiceId                = "anvil"
-	eitherEventsBzReplayObsKey   = "eitherEventsBzReplayObsKey"
-	preExistingClaimsKey         = "preExistingClaimsKey"
+	//nolint:lll // Not liniting as this is a long query string.
+	msgClaimSenderQueryFmt     = "tm.event='Tx' AND message.sender='%s' AND message.action='/pocket.supplier.MsgCreateClaim'"
+	testServiceID              = "anvil"
+	eitherEventsBzReplayObsKey = "eitherEventsBzReplayObsKey"
+	preExistingClaimsKey       = "preExistingClaimsKey"
 )
 
-func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
+func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(_, _ string) {
 	ctx, done := context.WithCancel(context.Background())
 
 	// TODO_CONSIDERATION: if this test suite gets more complex, it might make
@@ -82,7 +84,9 @@ func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplicati
 	}
 }
 
-func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
+func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(
+	supplierName, _, _ string,
+) {
 	ctx := context.Background()
 
 	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{
@@ -113,7 +117,9 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
 }
 
-func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierName, relayCountStr, serviceId, appName string) {
+func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(
+	supplierName, relayCountStr, _, appName string,
+) {
 	ctx := context.Background()
 
 	relayCount, err := strconv.Atoi(relayCountStr)
@@ -140,7 +146,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	s.sendRelaysForSession(
 		appName,
 		supplierName,
-		testServiceId,
+		testServiceID,
 		relayCount,
 	)
 }
@@ -148,18 +154,18 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 func (s *suite) sendRelaysForSession(
 	appName string,
 	supplierName string,
-	serviceId string,
+	serviceID string,
 	relayLimit int,
 ) {
-	s.TheApplicationIsStakedForService(appName, serviceId)
-	s.TheSupplierIsStakedForService(supplierName, serviceId)
-	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceId, supplierName)
+	s.TheApplicationIsStakedForService(appName, serviceID)
+	s.TheSupplierIsStakedForService(supplierName, serviceID)
+	s.TheSessionForApplicationAndServiceContainsTheSupplier(appName, serviceID, supplierName)
 
 	// TODO_IMPROVE/TODO_COMMUNITY: hard-code a default set of RPC calls to iterate over for coverage.
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
+		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceID, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }

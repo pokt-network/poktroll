@@ -1,17 +1,40 @@
+run:
+  timeout: 15m
+  config: ./.golangci.yml
+  new: true
+  color: always
+  build-tags:
+    - integration
+    - test
+    - tools
+
+# TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
+linters:
+  enable:
+    # - govet
+    # - errcheck
+    # - unused
+    - revive
+    - gofumpt
+    - lll
+    - gci
+
 linters-settings:
   govet:
     check-shadowing: true
-
-# TODO_TECHDEBT: Enable each linter listed, 1 by 1, fixing issues as they appear.
-# Don't forget to delete the `disable-all: true` line as well.
-linters:
-  disable-all: true
-  enable:
-#    - govet
-#    - revive
-#    - errcheck
-#    - unused
-    - goimports
+  lll:
+    line-length: 120
+    tab-width: 4
+  gci:
+    sections:
+      - standard # std lib
+      - default # external
+      - prefix(github.com/pokt-network/poktroll) # local imports
+    skip-generated: true
+    custom-order: true
+  skip-files:
+    - "*.pb.go"
+    - "*/vendor/*"
 
 issues:
   exclude-use-default: true
@@ -27,30 +50,55 @@ issues:
     # empty import block containing a comment used by ignite CLI.
     - path: ^x/.+/genesis\.go$
       linters:
-        - goimports
+        - gci
     # Exclude cosmos-sdk module module.go files as they are generated with unused
     # parameters and unchecked errors.
     - path: ^x/.+/module\.go$
       linters:
+        - lll
+        - gci
         - revive
         - errcheck
     # Exclude cosmos-sdk module tx.go files as they are generated with unused
     # constants.
     - path: ^x/.+/cli/tx\.go$
       linters:
+        - gci
+        - lll
         - unused
     # Exclude simulation code as it's generated with lots of unused parameters.
     - path: .*/simulation/.*|_simulation\.go$
       linters:
+        - gci
+        - lll
         - revive
     # Exclude cosmos-sdk module codec files as they are scaffolded with a unused
-    # paramerters and a comment used by ignite CLI.
+    # parameters and a comment used by ignite CLI.
     - path: ^x/.+/codec.go$
       linters:
+        - lll
+        - gci
         - revive
     - path: _test\.go$
       linters:
         - errcheck
+    # Exclude line length check for errors.go files as they are easier to read
+    # as as single line.
+    - path: errors\.go$
+      linters:
+        - lll
+    # Exclude app module code as it's generated with lots with long lines and
+    # improperly formatted imports.
+    - path: ^app
+      linters:
+        - lll
+        - gci
+    # Exclude cmd directory code as it's generated with lots with long lines and
+    # improperly formatted imports.
+    - path: ^cmd/poc
+      linters:
+        - lll
+        - gci
+  new: true
   # TODO_IMPROVE: see https://golangci-lint.run/usage/configuration/#issues-configuration
-  #new: true,
   #fix: true,

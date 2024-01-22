@@ -35,10 +35,18 @@ func (gs GenesisState) Validate() error {
 		}
 		stake, err := sdk.ParseCoinNormalized(gateway.Stake.String())
 		if !stake.IsValid() {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", gateway.Stake, stake.Validate())
+			return sdkerrors.Wrapf(
+				ErrGatewayInvalidStake,
+				"invalid stake amount for gateway %v; (%v)",
+				gateway.Stake, stake.Validate(),
+			)
 		}
 		if err != nil {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "cannot parse stake amount for gateway %v; (%v)", gateway.Stake, err)
+			return sdkerrors.Wrapf(
+				ErrGatewayInvalidStake,
+				"cannot parse stake amount for gateway %v; (%v)",
+				gateway.Stake, err,
+			)
 		}
 		if stake.IsZero() || stake.IsNegative() {
 			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", gateway.Stake)

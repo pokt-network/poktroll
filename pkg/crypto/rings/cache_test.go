@@ -296,7 +296,11 @@ func TestRingCache_CancelContext(t *testing.T) {
 // createRingCache creates the RingCache using mocked AccountQueryClient and
 // ApplicatioQueryClient instances and returns the RingCache and the delegatee
 // change replay observable.
-func createRingCache(ctx context.Context, t *testing.T, appAddress string) (crypto.RingCache, chan<- client.Redelegation) {
+func createRingCache(
+	ctx context.Context,
+	t *testing.T,
+	appAddress string,
+) (crypto.RingCache, chan<- client.Redelegation) {
 	t.Helper()
 	redelegationObs, redelegationPublishCh := channel.NewReplayObservable[client.Redelegation](ctx, 1)
 	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(ctx, t, appAddress, redelegationObs)

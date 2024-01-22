@@ -11,10 +11,11 @@ POCKET_ADDR_PREFIX = pokt
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen`
-	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
-	go install golang.org/x/tools/cmd/goimports@latest
+install_ci_deps: ## Installs `mockgen` and `golangci-lint` and other linters
+	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version; \
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2 && golangci-lint --version; \
+	go install github.com/daixiang0/gci@latest && gci --version; \
+	go install mvdan.cc/gofumpt@latest && gofumpt --version
 
 ########################
 ### Makefile Helpers ###
@@ -67,6 +68,36 @@ check_godoc:
 	{ \
 	if ( ! ( command -v godoc >/dev/null )); then \
 		echo "Seems like you don't have godoc installed. Make sure you install it via 'go install golang.org/x/tools/cmd/godoc@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_golanci_lint
+# Internal helper target - check if golangci-lint is installed
+check_golanci_lint:
+	{ \
+	if ( ! ( command -v golangci-lint >/dev/null )); then \
+		echo "Seems like you don't have golanci-lint installed. Make sure you install it via 'go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gci
+# Internal helper target - check if gci is installed
+check_gci:
+	{ \
+	if ( ! ( command -v gci >/dev/null )); then \
+		echo "Seems like you don't have gci installed. Make sure you install it via 'go install github.com/daixiang0/gci@latest' before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gofumpt
+# Internal helper target - check if gofumpt is installed
+check_gofumpt:
+	{ \
+	if ( ! ( command -v gofumpt >/dev/null )); then \
+		echo "Seems like you don't have gofumpt installed. Make sure you install it via 'go install mvdan.cc/gofumpt@latest' before continuing"; \
 		exit 1; \
 	fi; \
 	}
@@ -149,11 +180,16 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 ###############
 
 .PHONY: go_lint
-go_lint: ## Run all go linters
-	golangci-lint run --timeout 5m --build-tags test
+go_lint: check_golanci_lint ## Run all go linters
+	golangci-lint run --allow-parallel-runners -c .golangci.yml ./...
 
-go_imports: check_go_version ## Run goimports on all go files
-	go run ./tools/scripts/goimports
+.PHONY: go_gci
+go_gci: check_gci ## Run gci (import ordering) on all applicable files, this writes changes in place
+	go run ./tools/scripts/gci
+
+.PHONY: go_gofumpt
+go_gofumpt: check_gofumpt ## Run gofumpt (stricter gofmt) on all applicable files, this writes changes in place
+	go run ./tools/scripts/gofumpt
 
 #############
 ### Tests ###

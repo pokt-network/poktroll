@@ -5,12 +5,13 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Dummy variable to avoid unused import error.
@@ -21,9 +22,13 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-// networkWithApplicationsAndSupplier creates a new network with a given number of supplier & application objects.
-// It returns the network and a slice of the created supplier & application objects.
-func networkWithApplicationsAndSupplier(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier, []apptypes.Application) {
+// networkWithApplicationsAndSupplier creates a new network with a given number
+// of supplier & application objects. It returns the network and a slice of the
+// created supplier & application objects.
+func networkWithApplicationsAndSupplier(
+	t *testing.T,
+	n int,
+) (*network.Network, []sharedtypes.Supplier, []apptypes.Application) {
 	t.Helper()
 	cfg := network.DefaultConfig()
 

@@ -100,7 +100,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// https://github.com/pokt-network/poktroll/issues/275#issuecomment-1863519333
 	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
 	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
-
 	if err != nil {
 		return err
 	}

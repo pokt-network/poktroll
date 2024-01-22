@@ -18,11 +18,13 @@ var (
 	_               = strconv.Itoa(0) // Part of the default ignite imports
 )
 
+// CmdStakeSupplier creates a new stake-supplier command.
 func CmdStakeSupplier() *cobra.Command {
 	// fromAddress & signature is retrieved via `flags.FlagFrom` in the `clientCtx`
 	cmd := &cobra.Command{
 		Use:   "stake-supplier --config <config_file.yaml>",
 		Short: "Stake a supplier",
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Stake an supplier with the provided parameters. This is a broadcast operation that
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 

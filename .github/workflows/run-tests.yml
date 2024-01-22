@@ -9,6 +9,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 env:
   GKE_CLUSTER: protocol-us-central1
   GKE_ZONE: us-central1
@@ -44,8 +49,19 @@ jobs:
       - name: Generate mocks
         run: make go_mockgen
 
-      - name: Run golangci-lint
-        run: make go_lint
+      - name: Fix imports
+        run: make go_gci
+
+      - name: Format the repo
+        run: make go_gofumpt
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          only-new-issues: true
+          args: --timeout 15m --issues-exit-code=1
+          skip-cache: true
 
       - name: Test
         run: make go_test

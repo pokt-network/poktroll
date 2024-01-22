@@ -7,15 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pokt-network/poktroll/tools/scripts/goimports/filters"
+	"github.com/pokt-network/poktroll/tools/scripts/gci/filters"
 )
 
-// defaultArgs are always passed to goimports.
-// -w: write result to (source) file instead of stdout
-// -local: put imports beginning with this string after 3rd-party packages (comma-separated list)
-// (see: goimports -h for more info)
 var (
-	defaultArgs           = []string{"-w", "-local", "github.com/pokt-network/poktroll"}
+	defaultArgs = []string{
+		"-w",
+	}
 	defaultIncludeFilters = []filters.FilterFn{
 		filters.PathMatchesGoExtension,
 	}
@@ -23,11 +21,15 @@ var (
 		filters.PathMatchesProtobufGo,
 		filters.PathMatchesProtobufGatewayGo,
 		filters.PathMatchesMockGo,
-		filters.PathMatchesTestGo,
 		filters.ContentMatchesEmptyImportScaffold,
 	}
 )
 
+// main is the entry point for the gofumpt tool to format all files in the repo
+// according to the filters defined in the filters package. gofumpt is a more
+// strict version of gofmt and formats files according to a stricter set of
+// rules - the only flag passed is `-w` which tells the gofumpt to write changes
+// in place, instead of writing the diff to stdout.
 func main() {
 	root := "."
 	var filesToProcess []string
@@ -44,15 +46,23 @@ func main() {
 		return
 	}
 
-	// Run goimports on all accumulated files
+	// Run gofumpt on all accumulated files - this writes changes in place
 	if len(filesToProcess) > 0 {
-		cmd := exec.Command("goimports", append(defaultArgs, filesToProcess...)...)
-		if err := cmd.Run(); err != nil {
-			fmt.Printf("Failed running goimports: %v\n", err)
+		cmd := exec.Command("gofumpt", append(defaultArgs, filesToProcess...)...)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf("%s\nFailed running gofumpt: %v\n", out, err)
 		}
 	}
 }
 
+// walkRepoRootFn defines a walk function that is supplied to filepath.Walk
+// this essentially determines whether a given path should be added to the
+// list of files to be processed, based on the include and exclude filters
+// provided. filepath.Walk, recursively walks down the path it is provided
+// according to the filepath.WalkFunc passed to it - in this case it simply
+// adds files to format to the provided filesToProcess slice according to the
+// filters provided and only skips if the path's directory starts with `.`.
 func walkRepoRootFn(
 	rootPath string,
 	includeFilters []filters.FilterFn,

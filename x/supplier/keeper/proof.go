@@ -22,7 +22,9 @@ func (k Keeper) UpsertProof(ctx sdk.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	logger.Info(fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey))
+	logger.Info(
+		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey),
+	)
 
 	// Update the address index: supplierAddress -> [ProofPrimaryKey]
 	addressStoreIndex := prefix.NewStore(parentStore, types.KeyPrefix(types.ProofSupplierAddressPrefix))

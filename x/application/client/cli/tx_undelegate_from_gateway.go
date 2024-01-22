@@ -3,12 +3,12 @@ package cli
 import (
 	"strconv"
 
-	"github.com/pokt-network/poktroll/x/application/types"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/spf13/cobra"
+
+	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 var _ = strconv.Itoa(0)
@@ -17,6 +17,7 @@ func CmdUndelegateFromGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "undelegate-from-gateway [gateway address]",
 		Short: "Undelegate an application from a gateway",
+		//nolint:lll // Not liniting as this is the long description of the command.
 		Long: `Undelegate an application from the gateway with the provided address. This is a broadcast operation
 that removes the authority from the gateway specified to sign relays requests for the application, disallowing the gateway
 act on the behalf of the application during a session.

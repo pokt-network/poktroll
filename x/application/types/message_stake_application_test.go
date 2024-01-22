@@ -40,7 +40,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 			},
 			err: ErrAppInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - valid stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
@@ -49,7 +50,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
 			},
-		}, {
+		},
+		{
 			name: "valid address - zero stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
@@ -59,7 +61,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 			},
 			err: ErrAppInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - negative stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
@@ -69,7 +72,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 			},
 			err: ErrAppInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - invalid stake denom",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
@@ -79,7 +83,8 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				},
 			},
 			err: ErrAppInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),

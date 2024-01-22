@@ -14,7 +14,6 @@ import (
 // It can be simplified by splitting it into smaller tests where the common
 // fields don't need to be explicitly specified from test to test.
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
-
 	defaultServicesList := []*sharedtypes.SupplierServiceConfig{
 		{
 			Service: &sharedtypes.Service{
@@ -27,7 +26,8 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					Configs: make([]*sharedtypes.ConfigOption, 0),
 				},
 			},
-		}}
+		},
+	}
 
 	tests := []struct {
 		name string
@@ -54,14 +54,16 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - valid stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
 				Services: defaultServicesList,
 			},
-		}, {
+		},
+		{
 			name: "valid address - zero stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
@@ -69,7 +71,8 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - negative stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
@@ -77,7 +80,8 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - invalid stake denom",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
@@ -85,7 +89,8 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Services: defaultServicesList,
 			},
 			err: ErrSupplierInvalidStake,
-		}, {
+		},
+		{
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
