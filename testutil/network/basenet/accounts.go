@@ -111,10 +111,12 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	val := net.Validators[0]
 
 	args := []string{
+		// In-memory network account flags.
 		fmt.Sprintf("--%s=true", flags.FlagOffline),
 		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
 		fmt.Sprintf("--%s=%d", flags.FlagSequence, memnet.NextValidatorTxSequenceNumber(t)),
 
+		// Transaction related flags.
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
