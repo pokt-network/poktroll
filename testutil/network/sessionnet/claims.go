@@ -66,7 +66,7 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 	// Create a new session tree with NumRelaysPerSession number of relay nodes inserted.
 	// Base64-encode it's root hash for use with the CLI command.
 	sessionTree := newSessionTreeRoot(t, memnet.Config.NumRelaysPerSession, sessionHeader)
-	rootHash, rootHashEncoded := getSessionTreeRoot(t, sessionTree)
+	rootHash, rootHashEncoded := getEncodedSessionTreeRoot(t, sessionTree)
 
 	// Base64-encode the session header for use with the CLI command.
 	sessionHeaderEncoded := cliEncodeSessionHeader(t, sessionHeader)

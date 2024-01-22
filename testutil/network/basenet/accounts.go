@@ -125,7 +125,7 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	amount := memnet.NewBondDenomCoins(t, 200)
 	responseRaw, err := testcli.MsgSendExec(clientCtx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	
+
 	var responseJSON map[string]any
 	require.NoError(t, json.Unmarshal(responseRaw.Bytes(), &responseJSON))
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
