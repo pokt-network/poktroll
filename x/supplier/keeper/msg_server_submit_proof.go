@@ -68,7 +68,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertProof(ctx, proof)
 
-		// TODO_BLOCKER(@bryanchriswhite, @Olshansk): Call `tokenomics.SettleSessionAccounting()` here
+	// TODO_BLOCKER(@bryanchriswhite, @Olshansk): Call `tokenomics.SettleSessionAccounting()` here
 
 	logger.
 		With(
