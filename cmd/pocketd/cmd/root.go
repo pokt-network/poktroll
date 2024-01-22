@@ -109,7 +109,7 @@ func initRootCmd(
 	encodingConfig appparams.EncodingConfig,
 ) {
 	// Set config
-	InitSDKConfig()
+	InitCosmosSDKConfig()
 
 	gentxModule := app.ModuleBasics[genutiltypes.ModuleName].(genutil.AppModuleBasic)
 	rootCmd.AddCommand(

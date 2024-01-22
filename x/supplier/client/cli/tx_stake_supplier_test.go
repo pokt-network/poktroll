@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,29 +9,31 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
 	"github.com/pokt-network/poktroll/testutil/yaml"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_StakeSupplier(t *testing.T) {
-	net, _ := networkWithSupplierObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	ctx := context.Background()
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(t, &network.InMemoryNetworkConfig{})
+	memnet.Start(ctx, t)
 
-	// Create a keyring and add an account for the supplier to be staked
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	supplierAccount := accounts[0]
+	clientCtx := memnet.GetClientCtx(t)
+	net := memnet.GetNetwork(t)
 
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	preGeneratedAcct := memnet.CreateNewOnChainAccount(t)
+	supplier := sharedtypes.Supplier{
+		Address: preGeneratedAcct.Address.String(),
+	}
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -57,29 +60,30 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		// Happy Paths
 		{
 			desc:    "stake supplier: valid",
-			address: supplierAccount.Address.String(),
+			address: supplier.Address,
 			config:  defaultConfig,
 		},
 
 		// Error Paths - Address Related
 		{
 			desc: "stake supplier: missing address",
-			// address:     "explicitly missing",
-			err:    types.ErrSupplierInvalidAddress,
+			// address:     "explicitly omitted",
+			err:    suppliertypes.ErrSupplierInvalidAddress,
 			config: defaultConfig,
 		},
 		{
 			desc:    "stake supplier: invalid address",
 			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
+			err:     suppliertypes.ErrSupplierInvalidAddress,
 			config:  defaultConfig,
 		},
 
 		// Error Paths - Stake Related
 		{
 			desc:    "stake supplier: missing stake",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidStake,
+			// stakeString:    "explicitly omitted",
 			config: `
 				# explicitly omitted stake
 				services:
@@ -91,8 +95,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "stake supplier: invalid stake denom",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: 1000invalid
 				services:
@@ -104,8 +108,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "stake supplier: invalid stake amount (zero)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: 0upokt
 				services:
@@ -117,8 +121,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "stake supplier: invalid stake amount (negative)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: -1000upokt
 				services:
@@ -132,7 +136,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		// Happy Paths - Service Related
 		{
 			desc:    "services_test: valid multiple services",
-			address: supplierAccount.Address.String(),
+			address: supplier.GetAddress(),
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -148,7 +152,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: valid localhost",
-			address: supplierAccount.Address.String(),
+			address: supplier.GetAddress(),
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -160,7 +164,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: valid loopback",
-			address: supplierAccount.Address.String(),
+			address: supplier.GetAddress(),
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -172,7 +176,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: valid without a pork",
-			address: supplierAccount.Address.String(),
+			address: supplier.GetAddress(),
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -186,8 +190,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		// Error Paths - Service Related
 		{
 			desc:    "services_test: invalid services (missing argument)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			// servicesString: "explicitly omitted",
 			config: `
 				stake_amount: 1000upokt
@@ -195,8 +199,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: invalid services (empty string)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -204,8 +208,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: invalid URL",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -217,8 +221,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: missing URLs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -228,8 +232,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: missing service IDs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -243,8 +247,8 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		},
 		{
 			desc:    "services_test: missing rpc type",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			address: supplier.GetAddress(),
+			err:     suppliertypes.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -254,9 +258,6 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 	}
-
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -275,7 +276,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeSupplier(), args)
+			outStake, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdStakeSupplier(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {

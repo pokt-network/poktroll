@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -15,23 +16,28 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/gatewaynet"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 	"github.com/pokt-network/poktroll/x/gateway/client/cli"
-	"github.com/pokt-network/poktroll/x/gateway/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestCLI_StakeGateway(t *testing.T) {
-	net, _ := networkWithGatewayObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	ctx := context.Background()
+	memnet := gatewaynet.NewInMemoryNetworkWithGateways(
+		t, &network.InMemoryNetworkConfig{
+			NumGateways: 5,
+		},
+	)
+	memnet.Start(ctx, t)
 
-	// Create a keyring and add an account for the gateway to be staked
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	gatewayAccount := accounts[0]
+	clientCtx := memnet.GetClientCtx(t)
+	net := memnet.GetNetwork(t)
 
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	gatewayAccount := network.GetGenesisState[*gatewaytypes.GenesisState](t, gatewaytypes.ModuleName, memnet).GatewayList[0]
+
+	t.Logf("val addr: %s", net.Validators[0].Address.String())
+	t.Logf("gateway addr: %s", gatewayAccount.GetAddress())
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -52,65 +58,63 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidAddress,
+			expectedError: gatewaytypes.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
-			// address:     gatewayAccount.Address.String(),
+			// address: intentionally omitted,
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidAddress,
+			expectedError: gatewaytypes.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 			inputConfig: `
 			  stake_amount: 0upokt
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 			inputConfig: `
 			  stake_amount: -1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 			inputConfig: `
 			  stake_amount: 1000invalid
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 			inputConfig: `
 			  stake_amount: 1000
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
-			desc:          "stake gateway: invalid stake missing stake",
-			address:       gatewayAccount.Address.String(),
+			desc:    "stake gateway: invalid stake missing stake",
+			address: gatewayAccount.GetAddress(),
+			// inputConfig intentionally empty,
 			inputConfig:   ``,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedError: gatewaytypes.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
-			address: gatewayAccount.Address.String(),
+			address: gatewayAccount.GetAddress(),
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
 		},
 	}
-
-	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, gatewayAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -130,7 +134,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outStake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdStakeGateway(), args)
+			outStake, err := clitestutil.ExecTestCLICmd(clientCtx, cli.CmdStakeGateway(), args)
 			if tt.expectedError != nil {
 				stat, ok := status.FromError(tt.expectedError)
 				require.True(t, ok)

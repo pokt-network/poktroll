@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 )
 
 var (
@@ -28,8 +27,6 @@ var (
 
 // init initializes the SDK configuration upon package import.
 func init() {
-	cmd.InitSDKConfig()
-
 	// If SEQUENCER_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
 	if endpoint := os.Getenv("SEQUENCER_RPC_ENDPOINT"); endpoint != "" {
 		CometLocalTCPURL = fmt.Sprintf("tcp://%s", endpoint)

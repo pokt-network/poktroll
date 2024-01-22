@@ -1,35 +1,39 @@
 package cli_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
 	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/testutil"
-	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	testcli "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/network"
+	"github.com/pokt-network/poktroll/testutil/network/sessionnet"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/client/cli"
-	"github.com/pokt-network/poktroll/x/supplier/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func TestCLI_UnstakeSupplier(t *testing.T) {
-	net, _ := networkWithSupplierObjects(t, 2)
-	val := net.Validators[0]
-	ctx := val.ClientCtx
+	ctx := context.Background()
+	memnet := sessionnet.NewInMemoryNetworkWithSessions(
+		t, &network.InMemoryNetworkConfig{},
+	)
+	memnet.Start(ctx, t)
 
-	// Create a keyring and add an account for the supplier to be unstaked
-	kr := ctx.Keyring
-	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
-	supplierAccount := accounts[0]
+	clientCtx := memnet.GetClientCtx(t)
+	net := memnet.GetNetwork(t)
 
-	// Update the context with the new keyring
-	ctx = ctx.WithKeyring(kr)
+	preGeneratedAcct := memnet.CreateNewOnChainAccount(t)
+	supplier := sharedtypes.Supplier{
+		Address: preGeneratedAcct.Address.String(),
+	}
 
 	// Common args used for all requests
 	commonArgs := []string{
@@ -45,22 +49,19 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	}{
 		{
 			desc:    "unstake supplier: valid",
-			address: supplierAccount.Address.String(),
+			address: supplier.GetAddress(),
 		},
 		{
 			desc: "unstake supplier: missing address",
 			// address: supplierAccount.Address.String(),
-			err: types.ErrSupplierInvalidAddress,
+			err: suppliertypes.ErrSupplierInvalidAddress,
 		},
 		{
 			desc:    "unstake supplier: invalid address",
 			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
+			err:     suppliertypes.ErrSupplierInvalidAddress,
 		},
 	}
-
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
 
 	// Run the tests
 	for _, tt := range tests {
@@ -75,7 +76,7 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 			args = append(args, commonArgs...)
 
 			// Execute the command
-			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdUnstakeSupplier(), args)
+			outUnstake, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdUnstakeSupplier(), args)
 
 			// Validate the error if one is expected
 			if tt.err != nil {
