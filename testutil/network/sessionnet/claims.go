@@ -70,6 +70,8 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 
 	// Base64-encode the session header for use with the CLI command.
 	sessionHeaderEncoded := cliEncodeSessionHeader(t, sessionHeader)
+
+	// Prepare CLI arguments
 	args := []string{
 		sessionHeaderEncoded,
 		rootHashEncoded,
@@ -82,7 +84,8 @@ func (memnet *inMemoryNetworkWithSessions) CreateClaim(
 	clientCtx := memnet.GetClientCtx(t)
 	responseRaw, err := testcli.ExecTestCLICmd(clientCtx, cli.CmdCreateClaim(), args)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
+
+	var responseJson map[string]any
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)

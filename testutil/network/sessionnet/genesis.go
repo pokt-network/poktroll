@@ -15,7 +15,7 @@ import (
 )
 
 // configureSupplierModuleGenesisState generates and populates the in-memory
-// network's application module's GenesisState object with the number of suppliers
+// network's supplier module's GenesisState object with the number of suppliers
 // specified by the InMemoryConfig, each of which is staked for a unique service.
 // It returns the genesis state object.
 func (memnet *inMemoryNetworkWithSessions) configureSupplierModuleGenesisState(t *testing.T) *suppliertypes.GenesisState {

@@ -123,9 +123,9 @@ func (memnet *BaseInMemoryNetwork) FundAddress(
 	amount := memnet.NewBondDenomCoins(t, 200)
 	responseRaw, err := testcli.MsgSendExec(clientCtx, val.Address, addr, amount, args...)
 	require.NoError(t, err)
-	var responseJSON map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
-	require.NoError(t, err)
+	
+	var responseJSON map[string]any
+	require.NoError(t, json.Unmarshal(responseRaw.Bytes(), &responseJSON))
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
 }
 
@@ -195,5 +195,5 @@ func (memnet *BaseInMemoryNetwork) FundGatewayAccounts(
 func (memnet *BaseInMemoryNetwork) NewBondDenomCoins(t *testing.T, numCoins int64) sdk.Coins {
 	t.Helper()
 
-	return sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, math.NewInt(numCoins)))
+	return sdk.NewCoins(sdk.NewCoin(memnet.GetNetwork(t).Config.BondDenom, sdk.NewInt(numCoins)))
 }

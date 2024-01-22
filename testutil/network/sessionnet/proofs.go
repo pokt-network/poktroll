@@ -18,7 +18,7 @@ import (
 var TestProofPath = []byte{1, 0, 1, 0, 1, 0}
 
 // SubmitProofs generates and submits a proof for each claim in the provided
-// list of claims. Claims are paired with session trees by index but is otherwise
+// list of claims. Claims are implicitly paired with session trees by index but are otherwise
 // arbitrary (any session tree could be used for any claim).
 func (memnet *inMemoryNetworkWithSessions) SubmitProofs(
 	t *testing.T,
@@ -68,7 +68,8 @@ func (memnet *inMemoryNetworkWithSessions) SubmitProof(
 	ctx := memnet.GetClientCtx(t)
 	responseRaw, err := testcli.ExecTestCLICmd(ctx, cli.CmdSubmitProof(), args)
 	require.NoError(t, err)
-	var responseJson map[string]interface{}
+
+	var responseJson map[string]any
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJson["code"], "code is not 0 in the response: %v", responseJson)
