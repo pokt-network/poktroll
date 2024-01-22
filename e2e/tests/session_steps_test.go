@@ -138,6 +138,7 @@ func (s *suite) AfterTheSupplierSubmitsAProofForTheSessionForServiceForApplicati
 func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
+	// Retrieve all on-chain proofs for supplierName
 	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{
 		Filter: &suppliertypes.QueryAllProofsRequest_SupplierAddress{
 			SupplierAddress: accNameToAddrMap[supplierName],
@@ -152,13 +153,12 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
-	// these values are appropriately adjusted
+	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
 	require.Greater(s, len(allProofsRes.Proof), len(preExistingProofs), "number of proofs must have increased")
 
 	// TODO_IMPROVE: assert that the root hash of the proof contains the correct
-	// SMST sum. The sum can be retrieved by parsing the last 8 bytes as a
-	// binary-encoded uint64; e.g. something like:
-	// `binary.Uvarint(proof.RootHash[len(proof.RootHash-8):])`
+	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
+	// by the SMT.
 
 	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
 	// them into the scenarioState key(s).

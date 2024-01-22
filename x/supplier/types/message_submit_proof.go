@@ -44,9 +44,7 @@ func (msg *MsgSubmitProof) GetSignBytes() []byte {
 // ValidateBasic ensures that the bech32 address strings for the supplier and
 // application addresses are valid and that the proof and service ID are not empty.
 //
-// TODO_CONSIDERATION: additional assertions:
-// * session ID is not empty
-// * session end - start height == on-chain NumBlocksPerSession (for that session)
+// TODO_TECHDEBT: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
 	var errMsg string
 	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())

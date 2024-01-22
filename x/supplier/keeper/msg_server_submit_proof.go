@@ -18,7 +18,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 	logger.Debug("submitting proof")
 
 	/*
-			INCOMPLETE: Handling the message
+		TODO_INCOMPLETE: Handling the message
 
 		## Actions (error if anything fails)
 		1. Retrieve a fully hydrated `session` from on-chain store using `msg` metadata
@@ -64,9 +64,11 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// TODO_CONSIDERATION: check if this proof already exists and return an appropriate error
+	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertProof(ctx, proof)
+
+		// TODO_BLOCKER(@bryanchriswhite, @Olshansk): Call `tokenomics.SettleSessionAccounting()` here
 
 	logger.
 		With(
@@ -88,7 +90,7 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 	// values are guaranteed to match.
 	claim, found := k.GetClaim(sdkCtx, sessionId, proof.GetSupplierAddress())
 	if !found {
-		return suppliertypes.ErrSupplierClaimNotFound.Wrapf("no claim found for session ID %q", sessionId)
+		return suppliertypes.ErrSupplierClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
 	}
 
 	// Ensure session start heights match.
