@@ -186,6 +186,7 @@ func (s *suite) sendRelaysForSession(
 	}
 }
 
+// waitForMessageAction waits for an event to be observed which has the given message action.
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
@@ -193,37 +194,33 @@ func (s *suite) waitForMessageAction(action string) {
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
 
-	eventsSequenceObs := eventsReplayClient.EventsSequence(ctx)
-
+	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*abci.TxResult](
-		ctx, eventsSequenceObs,
+		ctx, eventsReplayClient.EventsSequence(ctx),
 		func(_ context.Context, txEvent *abci.TxResult) {
 			if txEvent == nil {
 				return
 			}
 
-			var found bool
+			// Range over each event's attributes to find the "action" attribute
+			// and compare its value to that of the action provided.
 			for _, event := range txEvent.Result.Events {
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
 						if attribute.Value == action {
-							found = true
-							break
+							done()
+							return
 						}
 					}
-				}
-				if found {
-					done()
-					break
 				}
 			}
 		},
 	)
 
 	select {
-	case <-ctx.Done():
-		// Success; message detected before timeout.
 	case <-time.After(txEventTimeout):
 		s.Fatalf("timed out waiting for message with action %q", action)
+	case <-ctx.Done():
+		s.Log("Success; message detected before timeout.")
 	}
 }

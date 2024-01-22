@@ -1,7 +1,6 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -46,7 +45,6 @@ func (msg *MsgSubmitProof) GetSignBytes() []byte {
 //
 // TODO_TECHDEBT: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	var errMsg string
 	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
@@ -72,9 +70,8 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 	if len(msg.GetProof()) == 0 {
 		return sdkerrors.ErrInvalidRequest.Wrap("proof cannot be empty")
 	}
-	if errMsg != "" {
-		return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, errMsg)
-	}
+
+	// TODO_BLOCKER: attempt to deserialize the proof for additional validation.
 
 	return nil
 }
