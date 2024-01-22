@@ -39,10 +39,11 @@ It includes lower-level interfaces for working with transactions and subscribing
 
 ## Architecture Overview
 
+Visual representations often make it easier to understand the design and flow of a package. Below are the architecture diagrams that explain the high-level structure and interactions in this package:
+
+### Component Diagram Legend
+
 ```mermaid
----
-title: Component Diagram Legend
----
 flowchart
 
 c[Component]
@@ -57,10 +58,9 @@ c --> s
 
 > **Figure 1**: A legend for the component diagrams in this document.
 
+### Client Components Dependency Tree
+
 ```mermaid
----
-title: Clients Dependency Tree
----
 flowchart
 sup[SupplierClient]
 tx[TxClient]
@@ -87,10 +87,9 @@ dial --"(returns)"--> conn
 
 > **Figure 2**: An overview which articulates the dependency relationships between the various client interfaces and their subcompnents.
 
+### Network Component Interaction
+
 ```mermaid
----
-title: Network Interaction
----
 flowchart
 
 txctx[[TxContext]]
