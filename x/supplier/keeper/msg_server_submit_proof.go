@@ -26,7 +26,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 		3. Retrieve `relay.Req` and `relay.Res` from deserializing `proof.ClosestValueHash`
 
 		## Basic Validations (metadata only)
-		1. proof.testSessionId == claim.testSessionId
+		1. proof.sessionId == claim.sessionId
 		2. msg.supplier in session.suppliers
 		3. relay.Req.signer == session.appAddr
 		4. relay.Res.signer == msg.supplier
@@ -37,7 +37,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 
 		## Relay Mining validation
 		1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
-		2. verify(proof.ValueHash, expectedDiffictul); governance based
+		2. verify(proof.ValueHash, expectedDiffictulty); governance based
 		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
 
@@ -86,7 +86,7 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *suppliertypes.Proof) error {
 	sessionId := proof.GetSessionHeader().GetSessionId()
 	// NB: no need to assert the testSessionId or supplier address as it is retrieved
-	// by respective values of the give proof. I.e., if the claim exists, then these
+	// by respective values of the given proof. I.e., if the claim exists, then these
 	// values are guaranteed to match.
 	claim, found := k.GetClaim(sdkCtx, sessionId, proof.GetSupplierAddress())
 	if !found {
