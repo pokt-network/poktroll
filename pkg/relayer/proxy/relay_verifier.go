@@ -7,9 +7,8 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
 
+	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
-	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -97,28 +96,17 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	currentBlockHeight := rp.blockClient.LastNBlocks(ctx, 1)[0].Height()
-	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
-	var session *sessiontypes.Session
-
-	// Check if the `RelayRequest`'s session has expired.
-	if sessionEndblockHeight < currentBlockHeight {
-		// Do not process the `RelayRequest` if the session has expired and the current
-		// block height is past the session's grace period.
-		if sessionEndblockHeight < currentBlockHeight-sessionkeeper.SessionGracePeriod {
-			return ErrRelayerProxyInvalidSession.Wrapf(
-				"session expired, expecting: %d, got: %d",
-				sessionEndblockHeight,
-				currentBlockHeight,
-			)
-		}
-
-		// Use the graced session to verify the relay request.
-		session, err = rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, sessionEndblockHeight)
-	} else {
-		// Session has not expired, so use the current block height to verify the relay request.
-		session, err = rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlockHeight)
+	sessionBlockHeight, err := rp.getTargetSessionBlockHeight(ctx, relayRequest)
+	if err != nil {
+		return err
 	}
+
+	session, err := rp.sessionQuerier.GetSession(
+		ctx,
+		appAddress,
+		service.Id,
+		sessionBlockHeight,
+	)
 
 	if err != nil {
 		return err
@@ -147,4 +135,34 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	return ErrRelayerProxyInvalidSupplier
+}
+
+// getTargetSessionBlockHeight returns the block height at which the session
+// for the given relayRequest should be processed. If the session is within the
+// grace period, the session's end block height is returned. Otherwise,
+// the current block height is returned.
+// If the session has expired, then return an error.
+func (rp *relayerProxy) getTargetSessionBlockHeight(
+	ctx context.Context,
+	relayRequest *types.RelayRequest,
+) (sessionBlockHeight int64, err error) {
+	currentBlockHeight := rp.blockClient.LastNBlocks(ctx, 1)[0].Height()
+	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+
+	// Check if the `RelayRequest`'s session has expired.
+	if sessionEndblockHeight < currentBlockHeight {
+		// Do not process the `RelayRequest` if the session has expired and the current
+		// block height is outside the session's grace period.
+		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+			return sessionEndblockHeight, nil
+		}
+
+		return 0, ErrRelayerProxyInvalidSession.Wrapf(
+			"session expired, expecting: %d, got: %d",
+			sessionEndblockHeight,
+			currentBlockHeight,
+		)
+	}
+
+	return currentBlockHeight, nil
 }

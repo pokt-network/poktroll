@@ -79,7 +79,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	// createClaimWindowStartHeight has to systematically start after the session's
 	// grace period ends to ensure the Claim creation is done after the session
 	// has been finalized.
-	createClaimWindowStartHeight := sessionEndHeight + sessionkeeper.SessionGracePeriod
+	createClaimWindowStartHeight := sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
 	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
