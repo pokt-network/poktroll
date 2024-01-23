@@ -21,7 +21,7 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func TokenomicsKeeper(t testing.TB) (*keeper.TokenomicsKeeper, sdk.Context) {
+func TokenomicsKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
 
@@ -60,7 +60,7 @@ func TokenomicsKeeper(t testing.TB) (*keeper.TokenomicsKeeper, sdk.Context) {
 		memStoreKey,
 		"TokenomicsParams",
 	)
-	k := keeper.NewTokenomicsKeeper(
+	k := keeper.NewKeeper(
 		cdc,
 		storeKey,
 		memStoreKey,

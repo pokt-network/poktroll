@@ -287,7 +287,7 @@ type App struct {
 
 	GatewayKeeper gatewaymodulekeeper.Keeper
 
-	TokenomicsKeeper tokenomicsmodulekeeper.TokenomicsKeeper
+	TokenomicsKeeper tokenomicsmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -645,7 +645,7 @@ func New(
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
 
-	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewTokenomicsKeeper(
+	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
 		appCodec,
 		keys[tokenomicsmoduletypes.StoreKey],
 		keys[tokenomicsmoduletypes.MemStoreKey],

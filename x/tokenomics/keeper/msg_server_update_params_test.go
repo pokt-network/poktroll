@@ -12,7 +12,7 @@ import (
 )
 
 func TestUpdateParams_Validity(t *testing.T) {
-	Keeper, ctx := testkeeper.Keeper(t)
+	Keeper, ctx := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*Keeper)
 
 	params := types.DefaultParams()
@@ -109,7 +109,7 @@ func TestUpdateParams_Validity(t *testing.T) {
 }
 
 func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
-	Keeper, ctx := testkeeper.Keeper(t)
+	Keeper, ctx := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*Keeper)
 
 	// Set the default params

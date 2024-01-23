@@ -11,7 +11,7 @@ import (
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx := testkeeper.Keeper(t)
+	k, ctx := testkeeper.TokenomicsKeeper(t)
 	params := types.DefaultParams()
 
 	k.SetParams(ctx, params)
@@ -21,7 +21,7 @@ func TestGetParams(t *testing.T) {
 }
 
 func TestParamsQuery(t *testing.T) {
-	keeper, ctx := testkeeper.Keeper(t)
+	keeper, ctx := testkeeper.TokenomicsKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
 	params := types.DefaultParams()
 	keeper.SetParams(ctx, params)
