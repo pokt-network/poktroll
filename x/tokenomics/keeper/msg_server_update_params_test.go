@@ -3,15 +3,16 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestUpdateParams_Validity(t *testing.T) {
-	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
+	tokenomicsKeeper, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
 
 	params := types.DefaultParams()
@@ -108,7 +109,7 @@ func TestUpdateParams_Validity(t *testing.T) {
 }
 
 func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
-	tokenomicsKeeper, ctx := testkeeper.TokenomicsKeeper(t)
+	tokenomicsKeeper, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	srv := keeper.NewMsgServerImpl(*tokenomicsKeeper)
 
 	// Set the default params

@@ -42,7 +42,9 @@ type TokenomicsKeeper struct {
 	paramstore paramtypes.Subspace
 
 	// keeper dependencies
-	bankKeeper types.BankKeeper
+	bankKeeper     types.BankKeeper
+	appKeeper      types.ApplicationKeeper
+	supplierKeeper types.SupplierKeeper
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this
 	// should be the x/gov module account.
@@ -57,6 +59,8 @@ func NewTokenomicsKeeper(
 
 	// keeper dependencies
 	bankKeeper types.BankKeeper,
+	appKeeper types.ApplicationKeeper,
+	supplierKeeper types.SupplierKeeper,
 
 	authority string,
 ) *TokenomicsKeeper {
@@ -71,7 +75,9 @@ func NewTokenomicsKeeper(
 		memKey:     memKey,
 		paramstore: ps,
 
-		bankKeeper: bankKeeper,
+		bankKeeper:     bankKeeper,
+		appKeeper:      appKeeper,
+		supplierKeeper: supplierKeeper,
 
 		authority: authority,
 	}

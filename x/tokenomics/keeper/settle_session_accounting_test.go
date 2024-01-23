@@ -14,66 +14,104 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_BLOCKER, TODO_ADDTEST(@Olshansk): Add E2E and integration tests for
-// the actual address values when the bank and account keeper is not mocked.
+// TODO_IN_THIS_PR: Evaluate what other tests we need to add in this iteration.
+
+func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
+	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
+	// Assert that `suppliertypes.ModuleName` account module balance is *unchanged*
+	// Assert that `supplierAddress` account balance has *increased* by the appropriate amount
+	// Assert that `supplierAddress` staked balance is *unchanged*
+	// Assert that `apptypes.ModuleName` account module balance is *unchanged*
+	// Assert that `applicationAddress` account balance is *unchanged*
+	// Assert that `applicationAddress` staked balance has decreased by the appropriate amount
+}
+
+func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
+	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
+	// Assert that `suppliertypes.Address` account balance has *increased* by the appropriate amount
+	// Assert that `applicationAddress` account staked balance has gone to zero
+	// Assert on whatever logic we have for slashing the application or other
+}
+
+func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
+	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeper(t)
+	wctx := sdk.WrapSDKContext(ctx)
+
+	// The base claim whose root will be customized for testing purposes
+	claim := suppliertypes.Claim{
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: sample.AccAddress(), // Random address
+			Service: &sharedtypes.Service{
+				Id:   "svc1",
+				Name: "svcName1",
+			},
+			SessionStartBlockHeight: 1,
+			SessionId:               "1",
+			SessionEndBlockHeight:   5,
+		},
+		RootHash: smstRootWithSum(42),
+	}
+
+	err := keeper.SettleSessionAccounting(wctx, &claim)
+	require.Error(t, err)
+	require.ErrorIs(t, err, types.ErrTokenomicsApplicationNotFound)
+}
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
-	keeper, ctx := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
 
 	// Define test cases
 	testCases := []struct {
-		desc      string
-		root      []byte // smst.MerkleRoot
-		expectErr bool
+		desc        string
+		root        []byte // smst.MerkleRoot
+		errExpected bool
 	}{
 		{
-			desc:      "Nil Root",
-			root:      nil,
-			expectErr: true,
+			desc:        "Nil Root",
+			root:        nil,
+			errExpected: true,
 		},
 		{
-			desc:      "Less than 40 bytes",
-			root:      []byte("less than 40 bytes"),
-			expectErr: true,
+			desc:        "Less than 40 bytes",
+			root:        []byte("less than 40 bytes"),
+			errExpected: true,
 		},
-		{
-			desc: "More than 40 bytes",
-			root: []byte("more than 40 bytes, this string is too long"),
-			// TODO_IN_THIS_PR: This should be true, but we need to fix it on the SMT side
-			expectErr: false,
-		},
-		{
-			desc: "40 bytes but empty",
-			root: func() []byte {
-				root := [40]byte{}
-				return root[:]
-			}(),
-			// TODO_IN_THIS_PR: This should be true, but we need to fix it on the SMT side
-			expectErr: false,
-		},
+		// TODO_IN_THIS_PR_DISCUSS: Should this error? Should it be on the SMT side?
+		// {
+		// 	desc:      "More than 40 bytes",
+		// 	root:      []byte("more than 40 bytes, meaning this is way too long"),
+		// 	errExpected: true,
+		// },
+		// TODO_IN_THIS_PR_DISCUSS: Should this error? Should it be on the SMT side?
+		// {
+		// 	desc: "40 bytes but empty",
+		// 	root: func() []byte {
+		// 		root := [40]byte{}
+		// 		return root[:]
+		// 	}(),
+		// 	errExpected: true,
+		// },
 		{
 			desc: "40 bytes but has an invalid value",
 			root: func() []byte {
 				var root [40]byte
-				copy(root[:], []byte("exact 40 byte string............."))
+				copy(root[:], []byte("This text is exactly 40 characters!!!!!!"))
 				return root[:]
 			}(),
-			expectErr: true,
+			errExpected: true,
 		},
 		{
 			desc: "40 bytes and has a valid value",
 			root: func() []byte {
-				var root [40]byte
-				// Put unsigned value of 100 into the first 8 bytes
-				binary.BigEndian.PutUint64(root[:8], 100)
-				// Copy additional bytes if needed
-				copy(root[8:], []byte("exact 40 byte string..."))
+				root := smstRootWithSum(42)
 				return root[:]
 			}(),
-			expectErr: false,
+			errExpected: false,
 		},
 	}
 
@@ -87,20 +125,9 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 				}
 			}()
 
-			// Setup claim
-			claim := suppliertypes.Claim{
-				SupplierAddress: sample.AccAddress(),
-				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svc1",
-					},
-					SessionStartBlockHeight: 1,
-					SessionId:               "1",
-					SessionEndBlockHeight:   5,
-				},
-				RootHash: smt.MerkleRoot(tc.root[:]),
-			}
+			// Setup claim by copying the baseClaim and updating the root
+			claim := baseClaim(appAddr, supplierAddr, 0)
+			claim.RootHash = smt.MerkleRoot(tc.root[:])
 
 			// Execute test function
 			err := func() (err error) {
@@ -113,62 +140,80 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			}()
 
 			// Assert the error
-			if tc.expectErr {
-				require.Error(t, err, "Test case: %s", tc.desc)
+			if tc.errExpected {
+				require.Error(t, err)
 			} else {
-				require.NoError(t, err, "Test case: %s", tc.desc)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
-	keeper, ctx := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
-
-	var root [40]byte
-	binary.BigEndian.PutUint64(root[:8], 100)
-	copy(root[8:], []byte("exact 40 byte string..."))
-	merkleRoot := smt.MerkleRoot(root[:])
-
-	claim := suppliertypes.Claim{
-		SupplierAddress: sample.AccAddress(),
-		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress: sample.AccAddress(),
-			Service: &sharedtypes.Service{
-				Id: "svc1",
-			},
-			SessionStartBlockHeight: 1,
-			SessionId:               "1",
-			SessionEndBlockHeight:   5,
-		},
-		RootHash: merkleRoot,
-	}
 
 	// Define test cases
 	testCases := []struct {
-		desc      string
-		claim     *suppliertypes.Claim
-		expectErr bool
+		desc        string
+		claim       *suppliertypes.Claim
+		errExpected bool
+		expectErr   error
 	}{
+
 		{
-			desc:      "Nil Claim",
-			claim:     nil,
-			expectErr: true,
-		},
-		{
-			desc: "Claim with nil root",
+			desc: "Valid Claim",
 			claim: func() *suppliertypes.Claim {
-				c := claim
-				c.RootHash = nil
-				return &c
+				claim := baseClaim(appAddr, supplierAddr, 42)
+				return &claim
 			}(),
-			expectErr: true,
+			errExpected: false,
 		},
 		{
-			desc:      "Valid Claim",
-			claim:     &claim,
-			expectErr: false,
+			desc:        "Nil Claim",
+			claim:       nil,
+			errExpected: true,
+			expectErr:   types.ErrTokenomicsClaimNil,
+		},
+		{
+			desc: "Claim with nil session header",
+			claim: func() *suppliertypes.Claim {
+				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim.SessionHeader = nil
+				return &claim
+			}(),
+			errExpected: true,
+			expectErr:   types.ErrTokenomicsSessionHeaderNil,
+		},
+		{
+			desc: "Claim with invalid session id",
+			claim: func() *suppliertypes.Claim {
+				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim.SessionHeader.SessionId = ""
+				return &claim
+			}(),
+			errExpected: true,
+			expectErr:   types.ErrTokenomicsSessionHeaderInvalid,
+		},
+		{
+			desc: "Claim with invalid application address",
+			claim: func() *suppliertypes.Claim {
+				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim.SessionHeader.ApplicationAddress = "invalid address"
+				return &claim
+			}(),
+			errExpected: true,
+			expectErr:   types.ErrTokenomicsSessionHeaderInvalid,
+		},
+		{
+			desc: "Claim with invalid supplier address",
+			claim: func() *suppliertypes.Claim {
+				claim := baseClaim(appAddr, supplierAddr, 42)
+				claim.SupplierAddress = "invalid address"
+				return &claim
+			}(),
+			errExpected: true,
+			expectErr:   types.ErrTokenomicsSupplierAddressInvalid,
 		},
 	}
 
@@ -193,11 +238,36 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 			}()
 
 			// Assert the error
-			if tc.expectErr {
-				require.Error(t, err, "Test case: %s", tc.desc)
+			if tc.errExpected {
+				require.Error(t, err)
+				require.ErrorIs(t, err, tc.expectErr)
 			} else {
-				require.NoError(t, err, "Test case: %s", tc.desc)
+				require.NoError(t, err)
 			}
 		})
 	}
+}
+
+func baseClaim(appAddr, supplierAddr string, sum uint64) suppliertypes.Claim {
+	return suppliertypes.Claim{
+		SupplierAddress: supplierAddr,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: appAddr,
+			Service: &sharedtypes.Service{
+				Id:   "svc1",
+				Name: "svcName1",
+			},
+			SessionStartBlockHeight: 1,
+			SessionId:               "1",
+			SessionEndBlockHeight:   5,
+		},
+		RootHash: smstRootWithSum(42),
+	}
+}
+
+func smstRootWithSum(sum uint64) smt.MerkleRoot {
+	var root [40]byte
+	copy(root[:32], []byte("This is exactly 32 characters!!!"))
+	binary.BigEndian.PutUint64(root[32:], sum)
+	return smt.MerkleRoot(root[:])
 }
