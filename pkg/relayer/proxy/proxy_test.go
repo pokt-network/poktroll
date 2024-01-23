@@ -348,7 +348,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	// grace period and within the second session's grace period
 	var blockWithinTheThirdSession int64 = blockHeight +
 		sessionkeeper.NumBlocksPerSession +
-		sessionkeeper.SessionGracePeriod
+		sessionkeeper.GetSessionGracePeriodBlockCount()
 
 	tests := []struct {
 		desc string
@@ -480,7 +480,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 				// blockHeight is past the first session but within its session grace period
 				testproxy.WithRelayerProxyDependenciesForBlockHeight(
 					supplierKeyName,
-					blockHeight+sessionkeeper.SessionGracePeriod,
+					blockHeight+sessionkeeper.GetSessionGracePeriodBlockCount(),
 				),
 				testproxy.WithRelayerProxiedServices(proxiedServices),
 				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
