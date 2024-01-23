@@ -9,6 +9,13 @@ signing_key_name: supplier1
 # SMT KV store exists on disk.
 smt_store_path: smt_stores
 
+# Prometheus exporter configuration
+metrics:
+  # Turn on/off the metrics exporter
+  enabled: true
+  # The address that the metrics exporter will listen on. Can be just a port, or host:port
+  addr: :9090
+
 pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
@@ -21,12 +28,12 @@ pocket_node:
 
 # Proxies are endpoints that expose different suppliers to the internet.
 proxies:
-    # Name of the proxy. It will be used to reference in a supplier.
-    # Must be unique.
-    # Required.
-    # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-    # become handy in the future.
-    # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+  # Name of the proxy. It will be used to reference in a supplier.
+  # Must be unique.
+  # Required.
+  # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
+  # become handy in the future.
+  # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
   - proxy_name: http-example
     # Type of proxy: currently only http is supported but will support more
     # (https, tcp, quic ...) in the future.
@@ -53,10 +60,10 @@ proxies:
 # When a supplier is configured to use a proxy and staked appropriately,
 # the relays will start flowing through RelayMiner.
 suppliers:
-    # The serviceId the supplier offered to the network .
-    # It must match the Service.Id of the service that has been staked for.
-    # Must be unique.
-    # Required.
+  # The serviceId the supplier offered to the network .
+  # It must match the Service.Id of the service that has been staked for.
+  # Must be unique.
+  # Required.
   - service_id: ethereum
     # Type of how the supplier offers service through the network.
     # Must match the type of the proxy the supplier is connected to.

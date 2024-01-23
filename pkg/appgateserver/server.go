@@ -14,7 +14,6 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
@@ -132,11 +131,6 @@ func (app *appGateServer) Start(ctx context.Context) error {
 
 	// Set the HTTP handler.
 	app.server.Handler = middlewarestd.Handler("", mm, app)
-
-	// Serve metrics.
-	// TODO_IN_THIS_PR: make the endpoint configurable
-	app.logger.Info().Str("endpoint", ":9090").Msg("serving metrics")
-	go http.ListenAndServe(":9090", promhttp.Handler())
 
 	// Start the HTTP server.
 	return app.server.ListenAndServe()

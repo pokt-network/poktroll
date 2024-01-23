@@ -77,7 +77,6 @@ func (sync *synchronousRPCServer) Start(ctx context.Context) error {
 
 	// Set the HTTP handler.
 	sync.server.Handler = sync
-	// sync.server.Handler = sync.metricsMiddleware(sync)
 
 	return sync.server.ListenAndServe()
 }

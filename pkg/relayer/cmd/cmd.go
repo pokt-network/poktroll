@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -122,9 +123,22 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Serve metrics.
-	// TODO_IN_THIS_PR: make the endpoint configurable
-	logger.Info().Str("endpoint", ":9090").Msg("serving metrics")
-	go http.ListenAndServe(":9090", promhttp.Handler())
+	if relayMinerConfig.Metrics.Enabled {
+		ln, err := net.Listen("tcp", relayMinerConfig.Metrics.Addr)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to listen on address for metrics")
+			return err
+		}
+
+		// If no error, start the server in a new goroutine
+		go func() {
+			logger.Info().Str("endpoint", relayMinerConfig.Metrics.Addr).Msg("serving metrics")
+			if err := http.Serve(ln, promhttp.Handler()); err != nil {
+				logger.Error().Err(err).Msg("metrics server failed")
+				return
+			}
+		}()
+	}
 
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")

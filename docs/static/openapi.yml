@@ -47279,12 +47279,14 @@ paths:
                                         - GRPC
                                         - WEBSOCKET
                                         - JSON_RPC
+                                        - REST
                                       default: UNKNOWN_RPC
                                       description: |-
                                         - UNKNOWN_RPC: Undefined RPC type
                                          - GRPC: gRPC
                                          - WEBSOCKET: WebSocket
                                          - JSON_RPC: JSON-RPC
+                                         - REST: REST
                                     configs:
                                       type: array
                                       items:
@@ -47922,15 +47924,24 @@ paths:
           in: query
           required: false
           type: boolean
+        - name: supplier_address
+          in: query
+          required: false
+          type: string
+        - name: session_id
+          in: query
+          required: false
+          type: string
+        - name: session_end_height
+          in: query
+          required: false
+          type: string
+          format: uint64
       tags:
         - Query
-  /pocket/supplier/proof/{index}:
+  /pocket/supplier/proof/{session_id}/{supplier_address}:
     get:
-      summary: >-
-        TODO_UPNEXT(@Olshansk): Update these endpoints after implementing proof
-        persistence
-
-        Queries a list of Proof items.
+      summary: Queries a list of Proof items.
       operationId: PocketSupplierProof
       responses:
         '200':
@@ -48014,7 +48025,11 @@ paths:
                       type: string
                   additionalProperties: {}
       parameters:
-        - name: index
+        - name: session_id
+          in: path
+          required: true
+          type: string
+        - name: supplier_address
           in: path
           required: true
           type: string
@@ -77805,12 +77820,14 @@ definitions:
                                 - GRPC
                                 - WEBSOCKET
                                 - JSON_RPC
+                                - REST
                               default: UNKNOWN_RPC
                               description: |-
                                 - UNKNOWN_RPC: Undefined RPC type
                                  - GRPC: gRPC
                                  - WEBSOCKET: WebSocket
                                  - JSON_RPC: JSON-RPC
+                                 - REST: REST
                             configs:
                               type: array
                               items:
@@ -78057,12 +78074,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78209,6 +78228,7 @@ definitions:
        - GRPC: gRPC
        - WEBSOCKET: WebSocket
        - JSON_RPC: JSON-RPC
+       - REST: REST
     title: Enum to define RPC types
   pocket.shared.Supplier:
     type: object
@@ -78277,6 +78297,7 @@ definitions:
                        - GRPC: gRPC
                        - WEBSOCKET: WebSocket
                        - JSON_RPC: JSON-RPC
+                       - REST: REST
                   configs:
                     type: array
                     items:
@@ -78335,6 +78356,7 @@ definitions:
            - GRPC: gRPC
            - WEBSOCKET: WebSocket
            - JSON_RPC: JSON-RPC
+           - REST: REST
       configs:
         type: array
         items:
@@ -78407,6 +78429,7 @@ definitions:
                  - GRPC: gRPC
                  - WEBSOCKET: WebSocket
                  - JSON_RPC: JSON-RPC
+                 - REST: REST
             configs:
               type: array
               items:
