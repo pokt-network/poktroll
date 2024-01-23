@@ -18,7 +18,7 @@ func TestGenesis(t *testing.T) {
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
-	k, ctx := keepertest.Keeper(t)
+	k, ctx := keepertest.TokenomicsKeeper(t)
 	tokenomics.InitGenesis(ctx, *k, genesisState)
 	got := tokenomics.ExportGenesis(ctx, *k)
 	require.NotNil(t, got)
