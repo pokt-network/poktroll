@@ -123,9 +123,9 @@ type EventsObservable[T any] observable.ReplayObservable[T]
 
 // EventsReplayClient is an interface which provides notifications about newly received
 // events as well as direct access to the latest event via some blockchain API.
-type EventsReplayClient[T any, R observable.ReplayObservable[T]] interface {
+type EventsReplayClient[T any] interface {
 	// EventsSequence returns an observable which emits new events.
-	EventsSequence(context.Context) R
+	EventsSequence(context.Context) observable.ReplayObservable[T]
 	// LastNEvents returns the latest N events that has been received.
 	LastNEvents(ctx context.Context, n int) []T
 	// Close unsubscribes all observers of the events sequence observable
