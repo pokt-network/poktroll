@@ -138,7 +138,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 }
 
 // getTargetSessionBlockHeight returns the block height at which the session
-// for the given relayRequest should be processed. If the session is in the
+// for the given relayRequest should be processed. If the session is within the
 // grace period, the session's end block height is returned. Otherwise,
 // the current block height is returned.
 // If the session has expired, then return an error.
