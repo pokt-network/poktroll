@@ -11,11 +11,11 @@ type AccountKeeper interface {
 	GetAccount(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
 }
 
-// BankKeeper defines the expected interface needed to retrieve account balances,
-// and delegate coins from one account to another account
+// BankKeeper defines the expected interface needed to retrieve account
+// balances, and send coins from one account to a module's account.
 type BankKeeper interface {
 	SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	DelegateCoinsFromAccountToModule(
+	SendCoinsFromAccountToModule(
 		ctx sdk.Context,
 		senderAddr sdk.AccAddress,
 		recipientModule string,

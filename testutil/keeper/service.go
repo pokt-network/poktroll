@@ -29,7 +29,7 @@ var (
 )
 
 // ServiceKeeper returns an instance of the keeper for the service module
-// with a mocked dependency of the BankModule, this is used for testing purposes.
+// with a mocked dependency of the BankModule for testing purposes.
 func ServiceKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
 	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
@@ -57,7 +57,7 @@ func ServiceKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		}).
 		AnyTimes()
 	mockBankKeeper.EXPECT().
-		DelegateCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).
+		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).
 		DoAndReturn(func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 			mapMu.Lock()
 			defer mapMu.Unlock()

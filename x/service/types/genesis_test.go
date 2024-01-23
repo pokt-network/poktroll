@@ -67,7 +67,7 @@ func TestGenesisState_Validate(t *testing.T) {
 			expectedError: types.ErrServiceDuplicateIndex,
 		},
 		{
-			desc: "invalid - invalid add service fee parameter",
+			desc: "invalid - invalid add service fee parameter (below minimum)",
 			genState: &types.GenesisState{
 				Params: types.Params{
 					AddServiceFee: 999999, // 0.999999 POKT

@@ -13,8 +13,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// oneUPOKTGreaterThanFee is 1 upokt more than the AddServiceFee of 10000000000
-const oneUPOKTGreaterThanFee = 10000000001
+// oneUPOKTGreaterThanFee is 1 upokt more than the AddServiceFee
+const oneUPOKTGreaterThanFee = types.DefaultAddServiceFee + 1
 
 func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
@@ -52,14 +52,14 @@ func TestMsgServer_AddService(t *testing.T) {
 
 	tests := []struct {
 		desc          string
-		preFn         func(t *testing.T)
+		setup         func(t *testing.T)
 		address       string
 		service       sharedtypes.Service
 		expectedError error
 	}{
 		{
 			desc: "valid - service added successfully",
-			preFn: func(t *testing.T) {
+			setup: func(t *testing.T) {
 				// Add 10000000001 upokt to the account
 				keepertest.AddAccToAccMapCoins(t, validAddr1, "upokt", oneUPOKTGreaterThanFee)
 			},
@@ -69,7 +69,7 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:    "invalid - service supplier address is empty",
-			preFn:   func(t *testing.T) {},
+			setup:   func(t *testing.T) {},
 			address: "", // explicitly set to empty string
 			service: sharedtypes.Service{
 				Id:   "svc1",
@@ -79,14 +79,14 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:          "invalid - invalid service supplier address",
-			preFn:         func(t *testing.T) {},
+			setup:         func(t *testing.T) {},
 			address:       "invalid address",
 			service:       svc1,
 			expectedError: types.ErrServiceInvalidAddress,
 		},
 		{
 			desc:    "invalid - missing service ID",
-			preFn:   func(t *testing.T) {},
+			setup:   func(t *testing.T) {},
 			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				// Explicitly omitting Id field
@@ -96,7 +96,7 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:    "invalid - empty service ID",
-			preFn:   func(t *testing.T) {},
+			setup:   func(t *testing.T) {},
 			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id:   "", // explicitly set to empty string
@@ -106,7 +106,7 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:    "invalid - missing service name",
-			preFn:   func(t *testing.T) {},
+			setup:   func(t *testing.T) {},
 			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id: "svc1",
@@ -116,7 +116,7 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:    "invalid - empty service name",
-			preFn:   func(t *testing.T) {},
+			setup:   func(t *testing.T) {},
 			address: sample.AccAddress(),
 			service: sharedtypes.Service{
 				Id:   "svc1",
@@ -126,28 +126,28 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc:          "invalid - service already exists (same service supplier)",
-			preFn:         func(t *testing.T) {},
+			setup:         func(t *testing.T) {},
 			address:       addr,
 			service:       preExistingService,
 			expectedError: types.ErrServiceAlreadyExists,
 		},
 		{
 			desc:          "invalid - service already exists (different service supplier)",
-			preFn:         func(t *testing.T) {},
+			setup:         func(t *testing.T) {},
 			address:       sample.AccAddress(),
 			service:       preExistingService,
 			expectedError: types.ErrServiceAlreadyExists,
 		},
 		{
 			desc:          "invalid - no spendable coins",
-			preFn:         func(t *testing.T) {},
+			setup:         func(t *testing.T) {},
 			address:       sample.AccAddress(),
 			service:       svc1,
 			expectedError: types.ErrServiceNotEnoughFunds,
 		},
 		{
 			desc: "invalid - insufficient upokt balance",
-			preFn: func(t *testing.T) {
+			setup: func(t *testing.T) {
 				// Add 999999999 upokt to the account (one less than AddServiceFee)
 				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", oneUPOKTGreaterThanFee-2)
 			},
@@ -157,9 +157,9 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc: "invalid - account has exactly AddServiceFee",
-			preFn: func(t *testing.T) {
-				// Add 10000000000 upokt to the account
-				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", oneUPOKTGreaterThanFee-1)
+			setup: func(t *testing.T) {
+				// Add the exact fee in upokt to the account
+				keepertest.AddAccToAccMapCoins(t, validAddr2, "upokt", types.DefaultAddServiceFee)
 			},
 			address:       validAddr2,
 			service:       svc1,
@@ -167,7 +167,7 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 		{
 			desc: "invalid - sufficient balance of different denom",
-			preFn: func(t *testing.T) {
+			setup: func(t *testing.T) {
 				// Adds 10000000001 wrong coins to the account
 				keepertest.AddAccToAccMapCoins(t, validAddr2, "wrong", oneUPOKTGreaterThanFee)
 			},
@@ -179,7 +179,7 @@ func TestMsgServer_AddService(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			tt.preFn(t)
+			tt.setup(t)
 			_, err := srv.AddService(wctx, &types.MsgAddService{
 				Address: tt.address,
 				Service: tt.service,

@@ -8,7 +8,7 @@ import (
 
 // DefaultAddServiceFee is the default value for the add service fee
 // parameter in the genesis state of the service module.
-// TODO: Revisit default param values
+// TODO_BLOCKER: Revisit default param values for service fee
 const DefaultAddServiceFee = 1000000000 // 1000 POKT
 
 var _ paramtypes.ParamSet = (*Params)(nil)
@@ -36,10 +36,11 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 // Validate validates the set of params
 func (p Params) Validate() error {
 	// TODO(@h5law): Look into better validation
-	if p.AddServiceFee < 1000000 { // 1 POKT
+	if p.AddServiceFee < DefaultAddServiceFee {
 		return sdkerrors.Wrapf(
 			ErrServiceInvalidServiceFee,
-			"AddServiceFee param < 1000000 uPOKT: got %d",
+			"AddServiceFee param %d uPOKT: got %d",
+			DefaultAddServiceFee,
 			p.AddServiceFee,
 		)
 	}

@@ -11,10 +11,10 @@ import (
 
 // AddService handles MsgAddService and adds a service to the network storing
 // it in the service keeper's store using the provided ID from the message.
-// If the message's address does not have enough funds (upokt) to cover the
-// AddServiceFee parameter set in the service module it will not be able to add
-// the service. If it does, the fee will be deducted and debited to the service
-// module's account, then the service will be added on-chain.
+// If the transaction's signer does not have enough funds (upokt) to cover the
+// AddServiceFee service module's governance parameter, it will not be able to
+// add the service. If it does, the fee will be deducted and debited to the
+// service module's account, then the service will be added on-chain.
 func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,
@@ -34,7 +34,7 @@ func (k msgServer) AddService(
 	if _, found := k.GetService(ctx, msg.Service.Id); found {
 		logger.Error(fmt.Sprintf("Service already exists: %v", msg.Service))
 		return nil, types.ErrServiceAlreadyExists.Wrapf(
-			"duplicate ID: %s", msg.Service.Id,
+			"duplicate service ID: %s", msg.Service.Id,
 		)
 	}
 
@@ -58,7 +58,8 @@ func (k msgServer) AddService(
 
 	// Check the balance of upokt is enough to cover the AddServiceFee.
 	accBalance := accCoins.AmountOf("upokt")
-	if accBalance.LTE(sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)) {
+	addServiceFee := sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
+	if accBalance.LTE(addServiceFee) {
 		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", msg.Address, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(
 			"account has %d uPOKT, but the service fee is %d uPOKT",
@@ -67,8 +68,8 @@ func (k msgServer) AddService(
 	}
 
 	// Deduct the service fee from the actor's balance.
-	serviceFee := sdk.Coins{sdk.NewCoin("upokt", sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee))}
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, accAddr, types.ModuleName, serviceFee)
+	serviceFee := sdk.Coins{sdk.NewCoin("upokt", addServiceFee)}
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, accAddr, types.ModuleName, serviceFee)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to deduct service fee from actor's balance: %v", err))
 		return nil, types.ErrServiceFailedToDeductFee.Wrapf(
