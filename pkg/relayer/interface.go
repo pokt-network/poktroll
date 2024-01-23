@@ -143,4 +143,8 @@ type SessionTree interface {
 	// WARNING: This function should be called only after the proof has been successfully
 	// submitted on-chain and the servicer has confirmed that it has been rewarded.
 	Delete() error
+
+	// ClaimOnce adds the session to the list of sessions to be claimed.
+	// It returns the updated list of sessions.
+	ClaimOnce(sessionTreesToClaim []SessionTree) []SessionTree
 }

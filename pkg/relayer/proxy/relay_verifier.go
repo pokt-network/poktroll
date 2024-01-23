@@ -7,8 +7,8 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
 
+	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -153,15 +153,15 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	if sessionEndblockHeight < currentBlockHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
 		// block height is outside the session's grace period.
-		if sessionEndblockHeight < currentBlockHeight-sessionkeeper.SessionGracePeriod {
-			return 0, ErrRelayerProxyInvalidSession.Wrapf(
-				"session expired, expecting: %d, got: %d",
-				sessionEndblockHeight,
-				currentBlockHeight,
-			)
+		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+			return sessionEndblockHeight, nil
 		}
 
-		return sessionEndblockHeight, nil
+		return 0, ErrRelayerProxyInvalidSession.Wrapf(
+			"session expired, expecting: %d, got: %d",
+			sessionEndblockHeight,
+			currentBlockHeight,
+		)
 	}
 
 	return currentBlockHeight, nil

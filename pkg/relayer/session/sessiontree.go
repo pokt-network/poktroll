@@ -55,6 +55,8 @@ type sessionTree struct {
 	// we pass this callback from the session manager to the sessionTree so
 	// it can remove itself from the RelayerSessionsManager when it is no longer needed.
 	removeFromRelayerSessions func(sessionHeader *sessiontypes.SessionHeader)
+
+	isClaiming bool
 }
 
 // NewSessionTree creates a new sessionTree from a Session and a storePrefix. It also takes a function
@@ -205,4 +207,19 @@ func (st *sessionTree) Delete() error {
 
 	// Delete the KVStore from disk
 	return os.RemoveAll(filepath.Dir(st.storePath))
+}
+
+// ClaimOnce adds the sessionTree to the list of sessionTrees to be claimed.
+// It returns the updated list of sessionTrees or the original list if the sessionTree
+// is already included in a list for sessions to be claimed.
+func (st *sessionTree) ClaimOnce(sessionTreesToClaim []relayer.SessionTree) []relayer.SessionTree {
+	st.sessionMu.Lock()
+	defer st.sessionMu.Unlock()
+
+	if st.isClaiming {
+		return sessionTreesToClaim
+	}
+
+	st.isClaiming = true
+	return append(sessionTreesToClaim, st)
 }

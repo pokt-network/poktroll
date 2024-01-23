@@ -22,8 +22,9 @@ var SHA3HashLen = crypto.SHA3_256.Size()
 const (
 	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
 	// when they will be replaced by governance params
-	NumBlocksPerSession         = 4
-	SessionGracePeriod          = NumBlocksPerSession
+	NumBlocksPerSession = 4
+	// Duration of the grace period in sessions
+	SessionGracePeriod          = 1
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -284,6 +285,12 @@ func GetSessionId(
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 
 	return sessionId, sessionIdBz
+}
+
+// GetSessionGracePeriodBlockCount returns the number of blocks in the session
+// grace period.
+func GetSessionGracePeriodBlockCount() int64 {
+	return SessionGracePeriod * NumBlocksPerSession
 }
 
 // getSessionStartBlockHeightBz returns the bytes representation of the session
