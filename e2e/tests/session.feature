@@ -14,20 +14,21 @@ Feature: Session Namespace
 #     Given the user has the pocketd binary installed
 #     And the parameter "NumBlockPerSession" is "4"
 #     And the parameter "SessionGracePeriod" is "1"
-#     When the supplier "supplier1" has serviced a session with service "svc1" for application "app1" with session number "1"
-#     And we have waited "5" block
-#     And the application "app1" sends a relay request to supplier "supplier1" for service "svc" with session number "1"
-#     Then the application "app1" receives a successful relay response signed by "supplier1" for session number "1"
+#     When the application "app1" sends a relay request to supplier "supplier1" for service "svc1" with session number "1"
+#     And the supplier "supplier1" waits "5" blocks
+#     And the supllier "supplier1" calls GetSession and gets session number "2"
+#     Then the supplier "supplier1" replys with a relay response for service "svc1" for application "app1" with session number "1"
+#     And the application "app1" receives a successful relay response signed by "supplier1" for session number "1"
 #     And after the supplier "supplier1" updates a claim for session number "1" for service "svc1" for application "app1"
 #     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
 #
-# # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
 # Scenario: A late Relay outside the SessionGracePeriod is rejected
 #     Given the user has the pocketd binary installed
 #     And the parameter "NumBlockPerSession" is "4"
 #     And the parameter "SessionGracePeriod" is "1"
-#     When the supplier "supplier1" has serviced a session with service "svc1" for application "app1" with session number "1"
-#     And we have waited "10" block
-#     And the application "app1" sends a relay request to supplier "supplier1" for service "svc" with session number "1"
-#     Then the application "app1" receives a failed relay response
-#     And the supplier "supplier1" fails to update a claim for session number "1" for service "svc1" for application "app1"
+#     When the application "app1" sends a relay request to supplier "supplier1" for service "svc1" with session number "1"
+#     And the supplier "supplier1" waits "10" blocks
+#     And the supllier "supplier1" calls GetSession and gets session number "3"
+#     Then the supplier "supplier1" replys to application "app1" with a "session mismatch" error relay response
+#     And the application "app1" receives a failed relay response with a "session mismatch" error
+#     And the supplier "supplier1" do not update a claim for session number "1" for service "svc1" for application "app1"
