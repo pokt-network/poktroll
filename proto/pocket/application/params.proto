@@ -9,5 +9,6 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 message Params {
   option (gogoproto.goproto_stringer) = false;
 
-  int64 max_delegated_gateways = 1 [(gogoproto.jsontag) = "max_delegated_gateways"]; // The maximum number of gateways an application can delegate trust to
+   // The maximum number of gateways an application can delegate trust to
+  int64 max_delegated_gateways = 1 [(gogoproto.jsontag) = "max_delegated_gateways", (gogoproto.moretags) = "yaml:\"max_delegated_gateways\""];
 }
