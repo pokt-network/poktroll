@@ -152,7 +152,7 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	// Check if the `RelayRequest`'s session has expired.
 	if sessionEndblockHeight < currentBlockHeight {
 		// Do not process the `RelayRequest` if the session has expired and the current
-		// block height is past the session's grace period.
+		// block height is outside the session's grace period.
 		if sessionEndblockHeight < currentBlockHeight-sessionkeeper.SessionGracePeriod {
 			return 0, ErrRelayerProxyInvalidSession.Wrapf(
 				"session expired, expecting: %d, got: %d",
