@@ -268,6 +268,6 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 
 // checkGracePeriodEnd checks if the grace period for the session has ended
 // and signals whether it is time to create a claim for it.
-func checkGracePeriodEnd(endBlockHeight, currentBlockHeight int64) bool {
+func checkGracePeriodEnd(sessionEndBlockHeight, currentBlockHeight int64) bool {
 	return endBlockHeight == currentBlockHeight-sessionkeeper.SessionGracePeriod
 }
