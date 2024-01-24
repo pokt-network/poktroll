@@ -15,4 +15,4 @@ groups:
             version: "1.19"
         output:
           location: local-file-system
-          path: ../../sdk/go
+          path: ../sdk/go
