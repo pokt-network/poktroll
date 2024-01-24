@@ -78,24 +78,22 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		},
 		{
 			desc:        "Less than 40 bytes",
-			root:        []byte("less than 40 bytes"),
+			root:        make([]byte, 39), // Less than 40 bytes
 			errExpected: true,
 		},
-		// TODO_IN_THIS_PR_DISCUSS: Should this error? Should it be on the SMT side?
-		// {
-		// 	desc:      "More than 40 bytes",
-		// 	root:      []byte("more than 40 bytes, meaning this is way too long"),
-		// 	errExpected: true,
-		// },
-		// TODO_IN_THIS_PR_DISCUSS: Should this error? Should it be on the SMT side?
-		// {
-		// 	desc: "40 bytes but empty",
-		// 	root: func() []byte {
-		// 		root := make([]byte, 40) // 40-byte slice of all 0s
-		// 		return root[:]
-		// 	}(),
-		// 	errExpected: true,
-		// },
+		{
+			desc:        "More than 40 bytes",
+			root:        make([]byte, 41), // More than 40 bytes
+			errExpected: true,
+		},
+		{
+			desc: "40 bytes but empty",
+			root: func() []byte {
+				root := make([]byte, 40) // 40-byte slice of all 0s
+				return root[:]
+			}(),
+			errExpected: false,
+		},
 		{
 			desc: "40 bytes but has an invalid value",
 			root: func() []byte {

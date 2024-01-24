@@ -12,6 +12,13 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+const (
+	// TODO_TECHDEBT: Retrieve this from the SMT package
+	// The number of bytes expected to be contained in the root hash being
+	// claimed in order to represent both the digest and the sum.
+	smstRootSize = 40
+)
+
 // TODO_IN_THIS_PR: Rollback state changes if we find out that this function is not
 // atomic.if this function is not atomic.
 
@@ -60,6 +67,11 @@ func (k Keeper) SettleSessionAccounting(
 		return types.ErrTokenomicsApplicationAddressInvalid
 	}
 	root := (smt.MerkleRoot)(claim.RootHash)
+
+	if len(root) != smstRootSize {
+		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
+		return types.ErrTokenomicsRootHashInvalid
+	}
 
 	// Retrieve the application
 	application, found := k.appKeeper.GetApplication(ctx, applicationAddress.String())

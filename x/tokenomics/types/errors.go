@@ -22,4 +22,5 @@ var (
 	ErrTokenomicsApplicationUndelegationFailed = sdkerrors.Register(ModuleName, 12, "failed to undelegate uPOKT from the application module to the application account")
 	ErrTokenomicsApplicationAddressInvalid     = sdkerrors.Register(ModuleName, 13, "the application address in the claim is not a valid bech32 address")
 	ErrTokenomicsParamsInvalid                 = sdkerrors.Register(ModuleName, 14, "provided params are invalid")
+	ErrTokenomicsRootHashInvalid               = sdkerrors.Register(ModuleName, 15, "the root hash in the claim is invalid")
 )

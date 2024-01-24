@@ -25,10 +25,6 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// func init() {
-// 	cmd.InitSDKConfig()
-// }
-
 func TokenomicsKeeper(t testing.TB) (
 	k *keeper.Keeper, s sdk.Context,
 	appAddr, supplierAddr string,
