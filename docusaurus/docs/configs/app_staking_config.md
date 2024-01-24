@@ -6,8 +6,8 @@ sidebar_position: 4
 # Application staking config <!-- omit in toc -->
 
 This document describes the configuration file used by the `Application` actor
-to submit a `stake`` transaction required to allow it to use the Pocket Network's
-RPC services.
+to submit a `stake` transaction, **which is a prerequisite** for it to use the
+Pocket Network's RPC services.
 
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -23,7 +23,7 @@ that points to a `yaml` configuration file that defines the `stake_amount` and
 
 :::warning
 
-TestNet is not ready as of writing this documentation so you may
+TestNet is not ready as of writing this documentation, so you may
 need to adjust the command below appropriately.
 
 :::
@@ -40,8 +40,8 @@ poktrolld tx application stake-application \
 ## Configuration
 
 The configuration file consists of a `stake_amount` entry denominated in `upokt`
-and a `service_ids` list defining the services the `Application` is willing to
-consume.
+and a `service_ids` list defining the services the `Application` is interested
+in consuming.
 
 ### `stake_amount`
 
@@ -69,8 +69,8 @@ Defines the list of services the `Application` is willing to consume on the
 Pocket network. Each entry in the list is a `service_id` that identifies a service
 that is available on the Pocket network.
 
-It MUST be a string of at most 8 characters or less allowing only alphanumeric
-characters, underscores, and dashes (i.e. matching the regex `^[a-zA-Z0-9_-]{1,8}$`).
+It MUST be a string of 8 or fewer alphanumeric characters, underscores, and
+dashes (i.e. matching the regex `^[a-zA-Z0-9_-]{1,8}$`).
 
 ## Example
 

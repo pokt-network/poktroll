@@ -10,9 +10,9 @@ import (
 var _ paramtypes.ParamSet = (*Params)(nil)
 
 var (
-	KeyComputeToTokensMultiplier = []byte("ComputeToTokensMultiplier")
+	KeyComputeUnitsToTokensMultiplier = []byte("ComputeUnitsToTokensMultiplier")
 	// TODO: Determine the default value
-	DefaultComputeToTokensMultiplier uint64 = 0
+	DefaultComputeUnitsToTokensMultiplier uint64 = 42
 )
 
 // ParamKeyTable the param key table for launch module
@@ -22,30 +22,30 @@ func ParamKeyTable() paramtypes.KeyTable {
 
 // NewParams creates a new Params instance
 func NewParams(
-	computeToTokensMultiplier uint64,
+	computeUnitsToTokensMultiplier uint64,
 ) Params {
 	return Params{
-		ComputeToTokensMultiplier: computeToTokensMultiplier,
+		ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
 	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
 	return NewParams(
-		DefaultComputeToTokensMultiplier,
+		DefaultComputeUnitsToTokensMultiplier,
 	)
 }
 
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(KeyComputeToTokensMultiplier, &p.ComputeToTokensMultiplier, validateComputeToTokensMultiplier),
+		paramtypes.NewParamSetPair(KeyComputeUnitsToTokensMultiplier, &p.ComputeUnitsToTokensMultiplier, validateComputeUnitsToTokensMultiplier),
 	}
 }
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	if err := validateComputeToTokensMultiplier(p.ComputeToTokensMultiplier); err != nil {
+	if err := validateComputeUnitsToTokensMultiplier(p.ComputeUnitsToTokensMultiplier); err != nil {
 		return err
 	}
 
@@ -58,15 +58,16 @@ func (p Params) String() string {
 	return string(out)
 }
 
-// validateComputeToTokensMultiplier validates the ComputeToTokensMultiplier param
-func validateComputeToTokensMultiplier(v interface{}) error {
-	computeToTokensMultiplier, ok := v.(uint64)
+// validateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier param
+func validateComputeUnitsToTokensMultiplier(v interface{}) error {
+	computeUnitsToTokensMultiplier, ok := v.(uint64)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO implement validation
-	_ = computeToTokensMultiplier
+	if computeUnitsToTokensMultiplier <= 0 {
+		return fmt.Errorf("invalid compute to tokens multiplier: %d", computeUnitsToTokensMultiplier)
+	}
 
 	return nil
 }
