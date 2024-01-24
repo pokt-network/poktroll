@@ -91,7 +91,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 		// {
 		// 	desc: "40 bytes but empty",
 		// 	root: func() []byte {
-		// 		root := [40]byte{}
+		// 		root := make([]byte, 40) // 40-byte slice of all 0s
 		// 		return root[:]
 		// 	}(),
 		// 	errExpected: true,
@@ -266,8 +266,8 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) suppliertypes.Claim {
 }
 
 func smstRootWithSum(sum uint64) smt.MerkleRoot {
-	var root [40]byte
+	root := make([]byte, 40)
 	copy(root[:32], []byte("This is exactly 32 characters!!!"))
 	binary.BigEndian.PutUint64(root[32:], sum)
-	return smt.MerkleRoot(root[:])
+	return smt.MerkleRoot(root)
 }

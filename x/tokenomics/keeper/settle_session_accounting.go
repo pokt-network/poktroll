@@ -12,6 +12,9 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// TODO_IN_THIS_PR: Rollback state changes if we find out that this function is not
+// atomic.if this function is not atomic.
+
 // SettleSessionAccounting is responsible for all of the post-session accounting
 // necessary to burn, mint or transfer tokens depending on the amount of work
 // done. The amount of "work done" complete is dictated by `sum` of `root`.
