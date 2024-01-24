@@ -33,7 +33,7 @@ func (k msgServer) UpdateParams(goCtx context.Context, msg *types.MsgUpdateParam
 }
 
 // GetParams get all parameters as types.Params
-func (k TokenomicsKeeper) GetParams(ctx sdk.Context) types.Params {
+func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 	return types.NewParams(
 		k.ComputeUnitsToTokensMultiplier(ctx),
 	)
@@ -42,12 +42,12 @@ func (k TokenomicsKeeper) GetParams(ctx sdk.Context) types.Params {
 // SetParams set the params
 // TODO_IMPROVE: We are following a pattern from `Cosmos v0.50` that does not
 // return errors. Opportunity to investigate better approaches.
-func (k TokenomicsKeeper) SetParams(ctx sdk.Context, params types.Params) {
+func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.paramstore.SetParamSet(ctx, &params)
 }
 
 // ComputeUnitsToTokensMultiplier returns the ComputeUnitsToTokensMultiplier param
-func (k TokenomicsKeeper) ComputeUnitsToTokensMultiplier(ctx sdk.Context) (res uint64) {
-	k.paramstore.Get(ctx, types.KeyComputeUnitsToTokensMultiplier, &res)
+func (k Keeper) ComputeUnitsToTokensMultiplier(ctx sdk.Context) (param uint64) {
+	k.paramstore.Get(ctx, types.KeyComputeUnitsToTokensMultiplier, &param)
 	return
 }

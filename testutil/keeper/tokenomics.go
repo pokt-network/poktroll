@@ -31,7 +31,7 @@ func init() {
 }
 
 func TokenomicsKeeper(t testing.TB) (
-	k *keeper.TokenomicsKeeper, s sdk.Context,
+	k *keeper.Keeper, s sdk.Context,
 	appAddr, supplierAddr string,
 ) {
 	storeKey := sdk.NewKVStoreKey(types.StoreKey)
@@ -110,7 +110,7 @@ func TokenomicsKeeper(t testing.TB) (
 		memStoreKey,
 		"TokenomicsParams",
 	)
-	tokenomicsKeeper := keeper.NewTokenomicsKeeper(
+	tokenomicsKeeper := keeper.NewKeeper(
 		cdc,
 		storeKey,
 		memStoreKey,

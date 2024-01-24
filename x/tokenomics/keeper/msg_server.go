@@ -5,13 +5,13 @@ import (
 )
 
 type msgServer struct {
-	TokenomicsKeeper
+	Keeper
 }
 
 // NewMsgServerImpl returns an implementation of the MsgServer interface
 // for the provided Keeper.
-func NewMsgServerImpl(keeper TokenomicsKeeper) types.MsgServer {
-	return &msgServer{TokenomicsKeeper: keeper}
+func NewMsgServerImpl(keeper Keeper) types.MsgServer {
+	return &msgServer{Keeper: keeper}
 }
 
 var _ types.MsgServer = msgServer{}
