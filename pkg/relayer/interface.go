@@ -144,7 +144,7 @@ type SessionTree interface {
 	// submitted on-chain and the servicer has confirmed that it has been rewarded.
 	Delete() error
 
-	// ClaimOnce adds the session to the list of sessions to be claimed.
-	// It returns the updated list of sessions.
-	ClaimOnce(sessionTreesToClaim []SessionTree) []SessionTree
+	// MarkAsClaimed marks the session tree as claimed
+	// It returns an error if it has already been marked as claimed.
+	MarkAsClaimed() error
 }

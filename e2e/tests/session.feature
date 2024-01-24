@@ -9,10 +9,10 @@ Feature: Session Namespace
 #    And an event should be emitted...
 #  TODO_INCOMPLETE: add step(s) for proof validation.
 
-# # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
-# # One way to exercise this behavior is to close the `RelayMiner` port to prevent
-# # the `RelayRequest` from being received and processed then reopen it after the
-# # the defined number of blocks has passed.
+# TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
+# One way to exercise this behavior is to close the `RelayMiner` port to prevent
+# the `RelayRequest` from being received and processed then reopen it after the
+# the defined number of blocks has passed.
 # Scenario: A late Relay inside the SessionGracePeriod is handled
 #     Given the user has the pocketd binary installed
 #     And the parameter "NumBlockPerSession" is "4"

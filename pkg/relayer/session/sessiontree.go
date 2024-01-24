@@ -209,17 +209,16 @@ func (st *sessionTree) Delete() error {
 	return os.RemoveAll(filepath.Dir(st.storePath))
 }
 
-// ClaimOnce adds the sessionTree to the list of sessionTrees to be claimed.
-// It returns the updated list of sessionTrees or the original list if the sessionTree
-// is already included in a list for sessions to be claimed.
-func (st *sessionTree) ClaimOnce(sessionTreesToClaim []relayer.SessionTree) []relayer.SessionTree {
+// MarkAsClaimed marks the session tree as claimed
+// It returns an error if it has already been marked as claimed.
+func (st *sessionTree) MarkAsClaimed() error {
 	st.sessionMu.Lock()
 	defer st.sessionMu.Unlock()
 
 	if st.isClaiming {
-		return sessionTreesToClaim
+		return ErrSessionTreeAlreadyMarkedAsClaimed
 	}
 
 	st.isClaiming = true
-	return append(sessionTreesToClaim, st)
+	return nil
 }
