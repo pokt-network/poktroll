@@ -30,7 +30,7 @@ configuration `.yaml` file that will be used to initialize the `AppGateServer`.
 
 :::warning
 
-TestNet is not ready as of writing this documentation so you may
+TestNet is not ready as of writing this documentation, so you may
 need to adjust the command below appropriately.
 
 :::

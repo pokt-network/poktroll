@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
 	sdkmath "cosmossdk.io/math"
 	tmdb "github.com/cometbft/cometbft-db"
 	tmrand "github.com/cometbft/cometbft/libs/rand"
@@ -29,6 +30,7 @@ import (
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 type (
@@ -207,6 +209,12 @@ func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *
 	return state
 }
 
+func DefaultTokenomicsModuleGenesisState(t *testing.T) *tokenomicstypes.GenesisState {
+	t.Helper()
+	state := tokenomicstypes.DefaultGenesis()
+	return state
+}
+
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given
 // number of gateways. It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
@@ -346,4 +354,11 @@ func UndelegateAppFromGateway(
 	require.NotNil(t, resp)
 	require.NotNil(t, resp.TxHash)
 	require.Equal(t, uint32(0), resp.Code)
+}
+
+// TODO_TECHDEBT: Reuse this helper in all test helpers where appropriate.
+func NewBondDenomCoins(t *testing.T, net *network.Network, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	return sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(numCoins)))
 }
