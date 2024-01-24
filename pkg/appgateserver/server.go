@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
 	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
 	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
@@ -160,8 +162,6 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	path := request.URL.Path
 	serviceId := strings.Split(path, "/")[1]
 
-	relaysTotal.With("service_id", serviceId).Add(1)
-
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -169,12 +169,12 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			ctx,
 			requestPayloadBz,
 			writer,
+			serviceId,
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed reading relay request body")
 
-		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
 	app.logger.Debug().
@@ -188,11 +188,10 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(ctx, requestPayloadBz, writer, ErrAppGateMissingAppAddress)
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, ErrAppGateMissingAppAddress)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Msg("no application address provided")
 
-		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
 
@@ -205,11 +204,10 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// concurrent requests from numerous applications?
 	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, requestPayloadBz, request, writer); err != nil {
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(ctx, requestPayloadBz, writer, err)
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, err)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
-		relaysErrorsTotal.With("service_id", serviceId).Add(1)
 		return
 	}
 
@@ -225,6 +223,26 @@ func (app *appGateServer) validateConfig() error {
 	if app.listeningEndpoint == nil {
 		return ErrAppGateMissingListeningEndpoint
 	}
+	return nil
+}
+
+// Starts a metrics server on the given address.
+func (app *appGateServer) ServeMetrics(addr string) error {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		app.logger.Error().Err(err).Msg("failed to listen on address for metrics")
+		return err
+	}
+
+	// If no error, start the server in a new goroutine
+	go func() {
+		app.logger.Info().Str("endpoint", addr).Msg("serving metrics")
+		if err := http.Serve(ln, promhttp.Handler()); err != nil {
+			app.logger.Error().Err(err).Msg("metrics server failed")
+			return
+		}
+	}()
+
 	return nil
 }
 

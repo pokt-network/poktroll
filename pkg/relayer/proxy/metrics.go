@@ -20,13 +20,30 @@ var (
 	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: "relayminer",
 		Name:      "requests_total",
+		Help:      "Total number of requests processed by the relay miner, labeled by proxy name and service ID.",
+	}, []string{"proxy_name", "service_id"})
+
+	// relaysErrorsTotal is a counter metric representing the total number of error events encountered by the relay miner.
+	// This Counter increments whenever an error occurs during the request processing. It is crucial for identifying and monitoring
+	// the health and reliability of the relay miner. Errors could range from client-side issues, such as malformed requests,
+	// to server-side issues like internal processing errors. The metric is labeled by 'proxy_name' and 'service_id',
+	// which allows for pinpointing error-prone areas across different proxies and services. This granularity is essential
+	// for targeted troubleshooting and improving the overall reliability of the system.
+	//
+	// Example of usage:
+	// - Tracking the frequency and distribution of different types of errors.
+	// - Identifying trends or spikes in error rates, which may indicate systemic issues.
+	// - Comparing error rates across different services or proxy instances for reliability analysis.
+	relaysErrorsTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: "relayminer",
+		Name:      "errors_total",
+		Help:      "Total number of error events encountered by the relay miner.",
 	}, []string{"proxy_name", "service_id"})
 
 	// relaysDurationSeconds is a histogram metric used to observe the distribution of request durations in the relay miner.
 	// It measures the time taken for requests to be processed, in seconds. This metric is vital for performance monitoring,
 	// as it helps in understanding the response time characteristics of the relay miner under different load conditions.
 	// The histogram is labeled by 'proxy_name' and 'service_id', enabling detailed analysis per proxy instance and service.
-	// Analyzing the distribution of request durations can help in identifying performance bottlenecks and areas for optimization.
 	//
 	// The buckets for this histogram are configured as follows:
 	// - 0.1 seconds: Captures very fast responses.
@@ -35,19 +52,15 @@ var (
 	// - 2 seconds: Slower, but acceptable response time.
 	// - 5 seconds: Captures relatively long response times.
 	// - 15 seconds: Captures the upper limit of expected response times.
-	// This range of buckets was chosen to balance granularity with the need to avoid high cardinality, capturing a broad spectrum of response times while keeping the number of unique time series manageable.
 	//
 	// Example of usage:
 	// - Determining the typical request response times.
 	// - Identifying long-tail latency issues or outliers in request processing.
 	// - Comparing performance across different services or deployment environments.
-	//
-	// Note: It is recommended to place the bucket sizes in a configuration file for easier,
-	// dynamic adjustments without source code modification, which is particularly useful
-	// for adapting to different data patterns or deployment environments.
 	relaysDurationSeconds metrics.Histogram = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
 		Subsystem: "relayminer",
 		Name:      "request_duration_seconds",
+		Help:      "Histogram of request durations in the relay miner for performance analysis.",
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
 	}, []string{"proxy_name", "service_id"})
 

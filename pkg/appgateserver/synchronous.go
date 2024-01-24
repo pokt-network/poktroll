@@ -27,6 +27,8 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
 	}
 
+	relaysTotal.With("service_id", serviceId, "request_type", string(requestType)).Add(1)
+
 	// TODO_TECHDEBT: log additional info?
 	app.logger.Debug().
 		Str("request_type", requestType.String()).

@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
 
 	"cosmossdk.io/depinject"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
@@ -111,23 +109,6 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	ctx = logger.WithContext(ctx)
 	cmd.SetContext(ctx)
 
-	if appGateConfigs.Metrics.Enabled {
-		ln, err := net.Listen("tcp", appGateConfigs.Metrics.Addr)
-		if err != nil {
-			logger.Error().Err(err).Msg("failed to listen on address for metrics")
-			return err
-		}
-
-		// If no error, start the server in a new goroutine
-		go func() {
-			logger.Info().Str("endpoint", appGateConfigs.Metrics.Addr).Msg("serving metrics")
-			if err := http.Serve(ln, promhttp.Handler()); err != nil {
-				logger.Error().Err(err).Msg("metrics server failed")
-				return
-			}
-		}()
-	}
-
 	// Setup the AppGate server dependencies.
 	appGateServerDeps, err := setupAppGateServerDependencies(ctx, cmd, appGateConfigs)
 	if err != nil {
@@ -155,6 +136,13 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	logger.Info().
 		Str("listening_endpoint", appGateConfigs.ListeningEndpoint.String()).
 		Msg("Starting AppGate server...")
+
+	if appGateConfigs.Metrics.Enabled {
+		err = appGateServer.ServeMetrics(appGateConfigs.Metrics.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+		}
+	}
 
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {

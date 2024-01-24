@@ -18,7 +18,7 @@ var (
 	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: "appgateserver",
 		Name:      "requests_total",
-	}, []string{"service_id"})
+	}, []string{"service_id", "request_type"})
 
 	// relaysErrorsTotal is a counter metric that tracks the total number of errors encountered by the AppGate server.
 	// This metric increments each time an error occurs, providing insight into the health and stability of the server.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,7 +12,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
@@ -124,20 +122,10 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// Serve metrics.
 	if relayMinerConfig.Metrics.Enabled {
-		ln, err := net.Listen("tcp", relayMinerConfig.Metrics.Addr)
+		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
-			logger.Error().Err(err).Msg("failed to listen on address for metrics")
-			return err
+			return fmt.Errorf("failed to start metrics endpoint: %w", err)
 		}
-
-		// If no error, start the server in a new goroutine
-		go func() {
-			logger.Info().Str("endpoint", relayMinerConfig.Metrics.Addr).Msg("serving metrics")
-			if err := http.Serve(ln, promhttp.Handler()); err != nil {
-				logger.Error().Err(err).Msg("metrics server failed")
-				return
-			}
-		}()
 	}
 
 	// Start the relay miner
