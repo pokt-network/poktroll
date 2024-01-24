@@ -14,7 +14,7 @@ import (
 
 // Keeper is the structure that implements the `KeeperI` interface.
 
-// TODO_TECHDEBT(#240): See `x/auth/keeper.keeper.go` in the Cosmos SDK on how
+// TODO_TECHDEBT(#240): See `x/nft/keeper.keeper.go` in the Cosmos SDK on how
 // we should refactor all our keepers. This keeper has started following a small
 // subset of those patterns.
 type Keeper struct {
