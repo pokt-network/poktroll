@@ -22,7 +22,7 @@ that points to a `yaml` configuration file that defines the `stake_amount` the
 
 :::warning
 
-TestNet is not ready as of writing this documentation so you may
+TestNet is not ready as of writing this documentation, so you may
 need to adjust the command below appropriately.
 
 :::

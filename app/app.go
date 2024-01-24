@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	// this line is used by starport scaffolding # stargate/app/moduleImport
-
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
 	reflectionv1 "cosmossdk.io/api/cosmos/reflection/v1"
 	dbm "github.com/cometbft/cometbft-db"
@@ -218,6 +216,7 @@ var (
 		servicemoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		applicationmoduletypes.ModuleName: {authtypes.Minter, authtypes.Burner, authtypes.Staking},
 		gatewaymoduletypes.ModuleName:     {authtypes.Minter, authtypes.Burner, authtypes.Staking},
+		tokenomicsmoduletypes.ModuleName:  {authtypes.Minter, authtypes.Burner},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 )
@@ -346,6 +345,11 @@ func New(
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	memKeys := sdk.NewMemoryStoreKeys(capabilitytypes.MemStoreKey)
+
+	// TODO_BLOCKER(#322): Change this to `authtypes.NewModuleAddress(govtypes.ModuleName)`
+	// once we figure out the MVP for on-chain parameter governance.
+	pnfAddress := "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw"
+	authority := pnfAddress
 
 	app := &App{
 		BaseApp:           bApp,
@@ -646,6 +650,8 @@ func New(
 		keys[tokenomicsmoduletypes.StoreKey],
 		keys[tokenomicsmoduletypes.MemStoreKey],
 		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+		app.BankKeeper,
+		authority,
 	)
 	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
 

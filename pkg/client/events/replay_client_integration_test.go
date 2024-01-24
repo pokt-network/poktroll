@@ -110,7 +110,7 @@ func TestReplayClient_Remapping(t *testing.T) {
 	deps := depinject.Supply(queryClient)
 
 	// Create the replay client
-	replayClient, err := events.NewEventsReplayClient[messageEvent, messageEventReplayObs](
+	replayClient, err := events.NewEventsReplayClient[messageEvent](
 		ctx,
 		deps,
 		"", // subscription query string
