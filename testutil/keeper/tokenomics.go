@@ -16,7 +16,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	mocks "github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -26,9 +25,9 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-func init() {
-	cmd.InitSDKConfig()
-}
+// func init() {
+// 	cmd.InitSDKConfig()
+// }
 
 func TokenomicsKeeper(t testing.TB) (
 	k *keeper.Keeper, s sdk.Context,
