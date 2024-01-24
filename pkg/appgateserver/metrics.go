@@ -32,5 +32,5 @@ var (
 	relaysErrorsTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: "appgateserver",
 		Name:      "errors_total",
-	}, []string{"service_id"})
+	}, []string{"service_id", "request_type"})
 )

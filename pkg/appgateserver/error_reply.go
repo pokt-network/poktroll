@@ -16,6 +16,7 @@ func (app *appGateServer) replyWithError(
 	payloadBz []byte,
 	writer http.ResponseWriter,
 	serviceId string,
+	requestType string,
 	err error,
 ) {
 	relaysErrorsTotal.With("service_id", serviceId).Add(1)

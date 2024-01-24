@@ -13,6 +13,7 @@ import (
 	"cosmossdk.io/depinject"
 
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -170,6 +171,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			requestPayloadBz,
 			writer,
 			serviceId,
+			"unknown",
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
 		// TODO_TECHDEBT: log additional info?
@@ -182,13 +184,26 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		Str("payload", string(requestPayloadBz)).
 		Msg("handling relay")
 
+	// TODO_TECHDEBT: log additional info?
+	app.logger.Debug().Msg("determining request type")
+
+	// Get the type of the request by doing a partial unmarshal of the payload
+	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
+	if err != nil {
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
+		// TODO_TECHDEBT: log additional info?
+		app.logger.Error().Err(err).Msg("failed getting request type")
+
+		return
+	}
+
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
 	if appAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, ErrAppGateMissingAppAddress)
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Msg("no application address provided")
 
@@ -202,9 +217,11 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// the request type here.
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?
-	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, requestPayloadBz, request, writer); err != nil {
+	if err := app.handleSynchronousRelay(
+		ctx, appAddress, serviceId, requestPayloadBz, requestType, request, writer); err != nil {
+
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, err)
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)
 		// TODO_TECHDEBT: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
