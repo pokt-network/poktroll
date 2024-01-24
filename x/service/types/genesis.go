@@ -20,13 +20,19 @@ func DefaultGenesis() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in services
-	serviceIndexMap := make(map[string]struct{})
+	serviceIDIndexMap := make(map[string]struct{})
+	serviceNameIndexMap := make(map[string]struct{})
 	for _, service := range gs.ServiceList {
-		index := string(ServiceKey(service.Id))
-		if _, ok := serviceIndexMap[index]; ok {
-			return ErrServiceDuplicateIndex.Wrapf("duplicated index for service: %s", index)
+		idIndex := string(ServiceKey(service.Id))
+		if _, ok := serviceIDIndexMap[idIndex]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated ID for service: %v", service)
 		}
-		serviceIndexMap[index] = struct{}{}
+		serviceIDIndexMap[idIndex] = struct{}{}
+		nameIndex := string(ServiceKey(service.Name))
+		if _, ok := serviceNameIndexMap[nameIndex]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated name for service: %v", service)
+		}
+		serviceNameIndexMap[nameIndex] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

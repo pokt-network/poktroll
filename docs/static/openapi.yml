@@ -47043,6 +47043,11 @@ paths:
               params:
                 description: params holds all the parameters of this module.
                 type: object
+                properties:
+                  add_service_fee:
+                    type: string
+                    format: uint64
+                    title: The amount of uPOKT required to add a new service
             description: >-
               QueryParamsResponse is response type for the Query/Params RPC
               method.
@@ -77784,6 +77789,11 @@ definitions:
     type: object
   pocket.service.Params:
     type: object
+    properties:
+      add_service_fee:
+        type: string
+        format: uint64
+        title: The amount of uPOKT required to add a new service
     description: Params defines the parameters for the module.
   pocket.service.QueryParamsResponse:
     type: object
@@ -77791,6 +77801,11 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
+        properties:
+          add_service_fee:
+            type: string
+            format: uint64
+            title: The amount of uPOKT required to add a new service
     description: QueryParamsResponse is response type for the Query/Params RPC method.
   pocket.session.Params:
     type: object

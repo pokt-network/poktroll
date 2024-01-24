@@ -113,3 +113,6 @@ genesis:
           stake:
             amount: "1000"
             denom: upokt
+    service:
+      params:
+        addServiceFee: 1000000000
