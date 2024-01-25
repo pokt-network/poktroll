@@ -21,5 +21,6 @@ var (
 	ErrSupplierInvalidQueryRequest       = sdkerrors.Register(ModuleName, 11, "invalid query request")
 	ErrSupplierClaimNotFound             = sdkerrors.Register(ModuleName, 12, "claim not found")
 	ErrSupplierProofNotFound             = sdkerrors.Register(ModuleName, 13, "proof not found")
-	ErrSupplierInvalidClosestMerkleProof = sdkerrors.Register(ModuleName, 14, "invalid closest merkle proof")
+	ErrSupplierInvalidProof              = sdkerrors.Register(ModuleName, 14, "invalid proof")
+	ErrSupplierInvalidClosestMerkleProof = sdkerrors.Register(ModuleName, 15, "invalid closest merkle proof")
 )

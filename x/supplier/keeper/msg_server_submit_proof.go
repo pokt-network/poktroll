@@ -35,9 +35,9 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 		1. Validate Proof submission is not too early; governance-based param + pseudo-random variation
 		2. Validate Proof submission is not too late; governance-based param + pseudo-random variation
 
-## Relay Signature validation
-1. verify(relay.Req.Signature, appRing)
-2. verify(relay.Res.Signature, supplier.pubKey)
+		## Relay Signature validation
+		1. verify(relay.Req.Signature, appRing)
+		2. verify(relay.Res.Signature, supplier.pubKey)
 
 		## Relay Mining validation
 		1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data

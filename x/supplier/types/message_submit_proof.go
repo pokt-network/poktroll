@@ -68,7 +68,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 	}
 
 	if len(msg.GetProof()) == 0 {
-		return sdkerrors.ErrInvalidRequest.Wrap("proof cannot be empty")
+		return ErrSupplierInvalidProof.Wrap("proof cannot be empty")
 	}
 
 	// TODO_BLOCKER: attempt to deserialize the proof for additional validation.
