@@ -1,7 +1,0 @@
-syntax = "proto3";
-package pocket.pocket;
-
-option go_package = "github.com/pokt-network/poktroll/x/pocket/types";
-
-// Msg defines the Msg service.
-service Msg {}
