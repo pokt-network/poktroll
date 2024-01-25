@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"cosmossdk.io/depinject"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // relayMiner is the main struct that encapsulates the relayer's responsibilities (i.e. Relay Mining).
