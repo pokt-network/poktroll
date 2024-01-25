@@ -54,7 +54,7 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 
 	// Validate the session header
 	sessionHeader := msg.SessionHeader
-	if sessionHeader.SessionStartBlockHeight < 1 {
+	if sessionHeader.SessionStartBlockHeight < 0 {
 		return sdkerrors.Wrapf(ErrSupplierInvalidSessionStartHeight, "%d", sessionHeader.SessionStartBlockHeight)
 	}
 	if len(sessionHeader.SessionId) == 0 {

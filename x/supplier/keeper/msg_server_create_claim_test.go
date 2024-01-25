@@ -120,7 +120,7 @@ func newTestClaimMsg(t *testing.T, sessionId string) *suppliertypes.MsgCreateCla
 		sample.AccAddress(),
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      sample.AccAddress(),
-			SessionStartBlockHeight: 1,
+			SessionStartBlockHeight: 0,
 			SessionId:               sessionId,
 			Service: &sharedtypes.Service{
 				Id:   "svc1",
