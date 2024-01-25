@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	// relaysTotal is a counter metric that represents the total number of requests processed by the AppGate server.
-	// It is a Counter type metric, which means it is used to accumulate counts of events (in this case, the total number of requests).
+	// relaysTotal couts the total number of requests processed by the AppGate server.
+	// It is a Counter type metric, which means it monotonically increases
 	// This metric is crucial for understanding the overall workload and traffic handled by the server.
-	// It is labeled by 'service_id', which allows for distinguishing and aggregating request counts across different services managed by the AppGate server.
+	// It is labeled by 'service_id' in order to distinguish aggregates requests across different services managed by the AppGate server.
 	//
 	// Example of usage:
 	// - Monitoring the aggregate load and request rate over time.
