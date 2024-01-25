@@ -27,18 +27,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: 'yarn'
           cache-dependency-path: docusaurus/yarn.lock
 
       - name: Install dependencies
         run: |
           cd docusaurus
-          npm ci
+          yarn install
 
       - name: Build
         run: |
           cd docusaurus
-          npm run build
+          yarn build
 
       # 👆 Build steps
 
