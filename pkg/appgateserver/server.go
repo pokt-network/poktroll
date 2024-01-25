@@ -184,7 +184,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		Str("payload", string(requestPayloadBz)).
 		Msg("handling relay")
 
-	// TODO_TECHDEBT: log additional info?
+	// TODO_IMPROVE: log additional info?
 	app.logger.Debug().Msg("determining request type")
 
 	// Get the type of the request by doing a partial unmarshal of the payload
