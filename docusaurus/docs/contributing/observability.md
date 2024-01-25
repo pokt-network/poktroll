@@ -15,6 +15,10 @@ We are still refining our observability guidelines. If in doubt - please reach o
   - [Types of Metrics](#types-of-metrics)
   - [High Cardinality Considerations](#high-cardinality-considerations)
   - [Best Practices](#best-practices)
+  - [\[TODO(@okdas)\] Examples](#todookdas-examples)
+  - [Counter](#counter)
+  - [Gauage](#gauage)
+  - [Histogram](#histogram)
 - [Logs](#logs)
 
 
@@ -52,6 +56,24 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 - **Clarity and Relevance:** Ensure that each metric provides clear and relevant information for observability.
 - **Documentation:** Document each custom metric, including its purpose and any labels used.
 - **Consistency:** Maintain naming conventions and label configurations consistently across different metrics.
+
+### [TODO(@okdas)] Examples
+
+:::warning
+This is a placeholder section so our team remembers to add it in the future.
+:::
+
+### Counter
+
+TODO: Add a code example, link to usage, and screenshot of the output.
+
+### Gauage
+
+TODO: Add a code example, link to usage, and screenshot of the output.
+
+### Histogram
+
+TODO: Add a code example, link to usage, and screenshot of the output.
 
 ## Logs
 

@@ -164,12 +164,22 @@ k8s_resource(
     "relayminers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["8545", "40005", "9094:9090"],
+    port_forwards=[
+        "8545",
+        "40005",
+        # Run `curl localhost:9094` to see the current snapshot of relayminer metrics.
+        "9094:9090"
+    ],
 )
 k8s_resource(
     "appgateservers",
     labels=["blockchains"],
     resource_deps=["sequencer"],
-    port_forwards=["42069", "40006", "9093:9090"],
+    port_forwards=[
+        "42069",
+        "40006",
+        # Run `curl localhost:9093` to see the current snapshot of appgateserver metrics.
+        "9093:9090"
+    ],
 )
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
