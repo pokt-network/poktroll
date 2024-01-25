@@ -181,7 +181,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// against concurrent access by the sessionsTreesMu such that the first
 				// call that marks the session as claimed will be the only one to add the
 				// sessionTree to the list.
-				if err := sessionTree.MarkAsClaimed(); err != nil {
+				if err := sessionTree.StartClaiming(); err != nil {
 					sessionTrees = append(sessionTrees, sessionTree)
 				}
 			}
@@ -270,5 +270,5 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 // IsWithinGracePeriod checks if the grace period for the session has ended
 // and signals whether it is time to create a claim for it.
 func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount() >= currentBlockHeight
+	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }

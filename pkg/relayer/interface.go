@@ -144,7 +144,8 @@ type SessionTree interface {
 	// submitted on-chain and the servicer has confirmed that it has been rewarded.
 	Delete() error
 
-	// MarkAsClaimed marks the session tree as claimed
-	// It returns an error if it has already been marked as claimed.
-	MarkAsClaimed() error
+	// StartClaiming marks the session tree as being picked up for claiming,
+	// so it won't be picked up by the relayer again.
+	// It returns an error if it has already been marked as such.
+	StartClaiming() error
 }
