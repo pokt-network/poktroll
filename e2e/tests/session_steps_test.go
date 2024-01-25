@@ -28,7 +28,7 @@ const (
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
 	// This is used by an events replay client to subscribe to tx events from the supplier.
-	// See: https://docs.cosmos.network/v0.46/core/events.html#subscribing-to-events.
+	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 	testEventsReplayClientBufferSize  = 100
 	testServiceId                     = "anvil"
@@ -156,7 +156,7 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
 	require.Greater(s, len(allProofsRes.Proof), len(preExistingProofs), "number of proofs must have increased")
 
-	// TODO_IMPROVE: assert that the root hash of the proof contains the correct
+	// TODO_UPNEXT(@bryanchriswhite): assert that the root hash of the proof contains the correct
 	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
 	// by the SMT.
 
