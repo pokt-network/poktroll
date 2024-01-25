@@ -32,8 +32,8 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
-	// Not doing additinal validation on metrics, as the server would not start if the value is invalid,
-	// providing the user with a descriptive error message.
+	// No additional validation on metrics. The server would fail to start if they are invalid
+	// which is the intended behaviour.
 	relayMinerConfig.Metrics = &RelayMinerMetricsConfig{
 		Enabled: yamlRelayMinerConfig.Metrics.Enabled,
 		Addr:    yamlRelayMinerConfig.Metrics.Addr,
