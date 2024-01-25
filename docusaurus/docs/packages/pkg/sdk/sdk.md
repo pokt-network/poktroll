@@ -27,36 +27,36 @@ and `Application`s to interact with the `Supplier`s of the Pocket Network, allow
 them to do so in a way that complies with the Pocket Network's protocol.
 
 It takes care of providing a list of `Supplier`s that are allowed to serve the
-`Application` based on the service requested and the current block height. It
+`Application`; based on the service requested and the current block height. It
 also takes care of signing the relay requests, forwarding them to the selected
 `Supplier` and verifying the response signature.
 
-It lets `Application` and `Gateway` developers to easily integrate the
-Pocket Network into their workflow while leaving room for customization of the
+It lets `Application` and `Gateway` developers to easily integrate the Pocket
+relaying mechanism into their workflow while leaving room for customization of the
 different aspects of the relay request and response lifecycle.
 
 ## Target audience
 
-`POKTRollSDK` is intended to be used by `Gateway`s and `Application`s that want
-to interact with the Pocket Network in a way that complies with the Pocket Network's
-protocol.
+`POKTRollSDK` is intended to be used by `Gateway`s and `Application`s developers
+who want to interact with the Pocket Network in a way that complies with the
+Pocket Network's protocol.
 
 ### Applications
 
 `Application`s that want to use the Pocket Network to query the services provided
-by the Pokt Network's `Supplier`s without resorting to a `Gateway` can integrate the
-`POKTRollSDK` into their code in order to permissionlessly interact with the
+by its `Supplier`s; without resorting to a `Gateway` can integrate the
+`POKTRollSDK` into their code and permissionlessly interact with the
 available `Supplier`s, Given that they staked the required amount of POKT for
 the services they want to use.
 
 The `POKTRollSDK` takes care of the following:
 
-* Providing them with a list of `Supplier`s that are allowed to serve the `Application`.
-It is up to the `Application` to implement the desired strategy of selecting the
-`Supplier` that will serve the request.
-* It also handles the proper signing of the relay requests
-* Forwards them to the selected `Supplier`
-* Verifies the response signature.
+* Providing a list of `Supplier`s that are allowed to serve the `Application`.
+It is up to the `Application` logic to implement the desired strategy of selecting
+the `Supplier` that will be serving them.
+* Handling the proper signing of the relay requests.
+* Sending the `RelayRequest` to the selected `Supplier`.
+* Verifying the `RelayResponse` signature.
 
 The following diagram shows the different components involved in the case of an
 `Application` integrating the `POKTRollSDK` into their workflow.
@@ -149,13 +149,13 @@ at the following directory [pkg/sdk/](https://github.com/pokt-network/poktroll/b
 
 ```
 pkg/sdk/
-├── deps_builder.go   // Logic to build the dependencies of the SDK
+├── deps_builder.go   // Logic for auto-building the dependencies of the SDK
 ├── errors.go         // Errors returned by the SDK
 ├── interface.go      // POKTRollSDK interface
-├── relay_verifier.go // Logic to verify the relay response
-├── sdk.go            // POKTRollSDK implementation
-├── send_relay.go     // Logic to send the relay request
-├── session.go        // Logic to handle the session and retrieve the suppliers list
+├── relay_verifier.go // Logic to verify relay responses
+├── sdk.go            // POKTRollSDK implementation and initialization function
+├── send_relay.go     // Logic to send relay requests
+├── session.go        // Logic to handle sessions and retrieve the suppliers list
 └── urls.go           // Helpers to parse the urls used by the SDK to interact with the Pocket Network
 ```
 
@@ -171,7 +171,7 @@ the list returned by the `GetSessionSupplierEndpoints` method.
 
 ### SendRelay
 
-Once the `Supplier` is selected, the `POKTRollSDK` consumer can pass the corresponding
+Once a `Supplier` is selected, the `POKTRollSDK` consumer can then pass the corresponding
 `SingleSupplierEndpoint` to the `SendRelay` method which will take care of constructing
 the `RelayRequest`, sending it to the `Supplier` and verifying the response signature.
 
@@ -190,9 +190,10 @@ and the `POKTRollSDK` considers them as valid responses.
 
 ### NewPOKTRollSDK
 
-`NewPOKTRollSDK` is an initializing function that returns a fully functional
-`POKTRollSDK` implementation provided its `POKTRollSDKConfig` struct which contains
-the necessary information to build the dependencies of the `POKTRollSDK` implementation.
+`NewPOKTRollSDK` is the initializing function that returns a fully functional
+`POKTRollSDK` implementation given it's provided a valid `POKTRollSDKConfig` struct
+which contains the necessary information to build the dependencies of the
+`POKTRollSDK` implementation.
 
 ```go
 func NewPOKTRollSDK(
@@ -219,9 +220,9 @@ It consists of the following fields:
 
 * `QueryNodeGRPCUrl` is the url of the Pocket Node's gRPC endpoint, used to query
 the Pocket Network's state for sessions, account information, delegations, etc.
-* `QueryNodeUrl` is the url of the Pocket Node's HTTP endpoint, used to subscribe
-to the Pocket Network's new block events needed to keep the `POKTRollSDK` session
-information up to date.
+* `QueryNodeUrl` is the url of the Pocket Node's websocket endpoint, used to
+subscribe to the Pocket Network's new block events needed to keep the
+`POKTRollSDK` session information up to date.
 * `PrivateKey` is the private key used to sign the relay requests. It could be
 either the `Gateway` or the `Application` private key depending on the use case.
 * `Deps` is a `depinject.Config` struct that contains the dependencies needed by
@@ -235,7 +236,7 @@ In order to use the `POKTRollSDK` the consumer needs to:
 
 1. Import the `POKTRollSDK` package
 2. Initialize a new `POKTRollSDK` instance by calling the `NewPOKTRollSDK` function
-and providing the necessary `POKTRollSDKConfig` struct.
+and providing an adequate `POKTRollSDKConfig` struct.
 3. Call the `GetSessionSupplierEndpoints` method to get the `SessionSuppliers`.
 4. Select a `Supplier` from the list of `SingleSupplierEndpoint`s returned.
 5. Call the `SendRelay` method providing the selected `SingleSupplierEndpoint` and
@@ -276,14 +277,14 @@ func main() {
   poktrollSDK, err := sdk.NewPOKTRollSDK(ctx, &sdkConfig)
 
   // Get the session and the corresponding list of suppliers
-  sessionSupplier, err := poktrollSDK.GetSessionSupplierEndpoints(
+  sessionSuppliers, err := poktrollSDK.GetSessionSupplierEndpoints(
     ctx,
     appAddress,
     serviceId,
   )
 
   // Naively select the first supplier from the list of SingleSupplierEndpoints
-  selectedSupplier := sessionSupplier.SuppliersEndpoints[0]
+  selectedSupplier := sessionSuppliers.SuppliersEndpoints[0]
 
   // Send the request to the selected supplier and wait for the response
   response, err := poktrollSDK.SendRelay(ctx, selectedSupplier, httpRequest)
@@ -297,7 +298,7 @@ or a `Gateway` uses the `POKTRollSDK` to interact with the Pocket Network.
 
 ```mermaid
 sequenceDiagram
-    participant G as "Gateway/Application"
+    participant GA as Gateway/Application
     participant SDK as POKTRollSDK
     participant Node as PocketNode
     participant Network as PocketNetwork
@@ -307,26 +308,24 @@ sequenceDiagram
 	    Network -->> Node: Blocks subscription
 	    Node -->> SDK: Blocks subscription
 		end
-		%% Session Retrieval
-		alt only when a new block is commited
-			SDK -->> G: Block
-	    G ->> +SDK: GetSession
-	    SDK ->> +Node: GetSession
-	    Node ->> -SDK: Session
-			SDK ->> -G: Session
-		end
+		%% Session Suppliers Retrieval
+    GA ->> +SDK: GetSessionSupplierEndpoints
+    SDK ->> +Node: GetSession
+    Node ->> -SDK: Session
+    SDK ->> -GA: SessionSuppliers
+
 		%% Relay Propagation
-    G ->> +SDK: SendRelay
+    GA ->> +SDK: SendRelay
     SDK ->> +S: RelayRequest
     S ->> -SDK: RelayResponse
-		SDK ->> -G: RelayResponse
+		SDK ->> -GA: RelayResponse
 ```
 
 ## How to contribute
 
-If you want to contribute to the `POKTRollSDK` you can find the current issues
-and the project's roadmap in the [Issues](https://github.com/pokt-network/poktroll/labels/sdk)
-section of the repository.
+If you want to contribute to the `POKTRollSDK` you can take a look at the
+[current issues](https://github.com/pokt-network/poktroll/labels/sdk)
+and the project's [roadmap](https://github.com/orgs/pokt-network/projects/144)
 
 Feel free to open a new ticket and add the `sdk` label to it if you find a bug or
 have a feature request.
@@ -335,7 +334,7 @@ You can also open a PR if you want to contribute with a new feature or a bug fix
 
 ## Where to get help
 
-If you want to discuss the `POKTRollSDK`, you can join the [Pocket Network Discord](https://discord.gg/build-with-grove) and join the `#protocol-public` channel.
+If you want to discuss the `POKTRollSDK`, you can join the [Pocket Network Discord](https://discord.gg/build-with-grove) server and head to the `#protocol-public` channel.
 
 :::note
 
