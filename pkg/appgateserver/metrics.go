@@ -7,28 +7,27 @@ import (
 )
 
 var (
-	// relaysTotal couts the total number of requests processed by the AppGate server.
-	// It is a Counter type metric, which means it monotonically increases
-	// This metric is crucial for understanding the overall workload and traffic handled by the server.
-	// It is labeled by 'service_id' in order to distinguish aggregates requests across different services managed by the AppGate server.
+	// relaysTotal is a Counter metric for the total requests processed by the AppGate server.
+	// Crucial for understanding server workload and traffic, it increments monotonically.
+	// Labeled by 'service_id' and 'request_type', it facilitates nuanced analysis of requests
+	// across various services and request types.
 	//
-	// Example usage:
-	// - Monitoring the aggregate load and request rate over time.
-	// - Comparing request volumes across different services managed by the AppGate server.
+	// Usage:
+	// - Monitor aggregate load and request rates.
+	// - Compare request volumes by service and request type.
 	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: "appgateserver",
 		Name:      "requests_total",
 	}, []string{"service_id", "request_type"})
 
-	// relaysErrorsTotal is a counter metric that tracks the total number of errors encountered by the AppGate server.
-	// This metric increments each time an error occurs, providing insight into the health and stability of the server.
-	// Tracking error rates is essential for maintaining the reliability of the server and for identifying issues that require attention.
-	// The metric is labeled by 'service_id', which allows for tracking and analyzing error rates per service,
-	// enabling targeted troubleshooting and performance optimization.
+	// relaysErrorsTotal is a Counter metric tracking errors on the AppGate server.
+	// Incrementing with each error, it's vital for server health and stability assessment.
+	// With 'service_id' and 'request_type' labels, it allows precise error rate analysis and troubleshooting
+	// across services and request types.
 	//
-	// Example of usage:
-	// - Monitoring the overall health and error rates of the server.
-	// - Identifying services with higher error rates for targeted debugging and improvement.
+	// Usage:
+	// - Monitor health and error rates by service and request type.
+	// - Identify and address high-error areas.
 	relaysErrorsTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: "appgateserver",
 		Name:      "errors_total",

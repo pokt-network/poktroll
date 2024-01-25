@@ -174,7 +174,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			"unknown",
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed reading relay request body")
 
 		return
@@ -191,7 +191,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
 	if err != nil {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed getting request type")
 
 		return
@@ -204,7 +204,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	}
 	if appAddress == "" {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Msg("no application address provided")
 
 		return
@@ -222,13 +222,13 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
 
 		return
 	}
 
-	// TODO_TECHDEBT: log additional info?
+	// TODO_IMPROVE: log additional info?
 	app.logger.Info().Msg("request serviced successfully")
 }
 

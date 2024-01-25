@@ -21,7 +21,7 @@ func (app *appGateServer) handleSynchronousRelay(
 ) error {
 	relaysTotal.With("service_id", serviceId, "request_type", requestType.String()).Add(1)
 
-	// TODO_TECHDEBT: log additional info?
+	// TODO_IMPROVE: log additional info?
 	app.logger.Debug().
 		Str("request_type", requestType.String()).
 		Msg("got request type")
