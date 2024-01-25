@@ -11,7 +11,7 @@ smt_store_path: smt_stores
 
 # Prometheus exporter configuration
 metrics:
-  # Turn on/off the metrics exporter
+  # Turn the metrics exporter on/off
   enabled: true
   # The address that the metrics exporter will listen on. Can be just a port, or host:port
   addr: :9090
