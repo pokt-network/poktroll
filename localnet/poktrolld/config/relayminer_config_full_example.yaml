@@ -60,7 +60,7 @@ proxies:
 # When a supplier is configured to use a proxy and staked appropriately,
 # the relays will start flowing through RelayMiner.
 suppliers:
-  # The serviceId the supplier offered to the network .
+  # The serviceId the supplier is offering on the network .
   # It must match the Service.Id of the service that has been staked for.
   # Must be unique.
   # Required.
