@@ -142,7 +142,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 			[]byte{},
 			writer,
 			sync.proxyConfig.ProxyName,
-			supplierService.Id,
+			"unknown",
 			ErrRelayerProxyServiceEndpointNotHandled,
 		)
 		return
