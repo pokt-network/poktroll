@@ -31,7 +31,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					SessionStartBlockHeight: 0, // Invalid start height
+					SessionStartBlockHeight: -1, // Invalid start height
 				},
 			},
 			err: ErrSupplierInvalidSessionStartHeight,
