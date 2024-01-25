@@ -12,7 +12,7 @@ var (
 	// This metric is crucial for understanding the overall workload and traffic handled by the server.
 	// It is labeled by 'service_id' in order to distinguish aggregates requests across different services managed by the AppGate server.
 	//
-	// Example of usage:
+	// Example usage:
 	// - Monitoring the aggregate load and request rate over time.
 	// - Comparing request volumes across different services managed by the AppGate server.
 	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
