@@ -37,7 +37,7 @@ spec:
       # TODO: Add resource limits
       containers:
         - name: celestia
-          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.1
+          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.5
           ports:
             - containerPort: 26657
             - containerPort: 26658
@@ -46,7 +46,7 @@ spec:
             - name: bridge-volume
               mountPath: /home/celestia/bridge
         - name: secret-update-sidecar
-          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.1
+          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.5
           command: ["/bin/bash", "-c", "--"]
           # TODO(@okdas): Very scary line. Basically, waits until the node key (NJ3XILLTMVRXEZLUFZVHO5A) exists, signs the JWT and pushes it to k8s secret.
           args:
