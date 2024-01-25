@@ -251,6 +251,12 @@ errors or how to select a `Supplier` from the list of `SingleSupplierEndpoint`s
 
 :::
 
+:::tip
+
+For a complete integration example, please refer to the [AppGateServer](https://github.com/pokt-network/poktroll/blob/main/pkg/appgateserver) package.
+
+:::
+
 ```go
 package main
 
@@ -322,8 +328,8 @@ If you want to contribute to the `POKTRollSDK` you can find the current issues
 and the project's roadmap in the [Issues](https://github.com/pokt-network/poktroll/labels/sdk)
 section of the repository.
 
-Feel free to open a new issue and add the `sdk` label if you find a bug or if
-you have a feature request.
+Feel free to open a new ticket and add the `sdk` label to it if you find a bug or
+have a feature request.
 
 You can also open a PR if you want to contribute with a new feature or a bug fix.
 
