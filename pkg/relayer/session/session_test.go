@@ -17,6 +17,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
 	"github.com/pokt-network/poktroll/testutil/testrelayer"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 func TestRelayerSessionsManager_Start(t *testing.T) {
@@ -62,18 +63,22 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	noopBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
+	// Calculate the session grace period end block height to emit that block height
+	// to the blockPublishCh to trigger claim creation for the session.
+	sessionGracePeriodEndBlockHeight := int64(sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount())
+
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
-	// TODO_TECHDEBT: assumes claiming at sessionEndHeight is valid. This will
-	// likely change in future work.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionEndHeight)
+	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
+	// This will likely change in future work.
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionGracePeriodEndBlockHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
 
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
-	// TODO_TECHDEBT: assumes proving at sessionEndHeight is valid. This will
-	// likely change in future work.
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionEndHeight+1)
+	// TODO_TECHDEBT: assumes proving at sessionGracePeriodEndBlockHeight + 1 is valid.
+	// This will likely change in future work.
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionGracePeriodEndBlockHeight+1)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

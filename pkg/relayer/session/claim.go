@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 // createClaims maps over the sessionsToClaimObs observable. For each claim, it:
@@ -74,7 +75,12 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 
 	// TODO_TECHDEBT: refactor this logic to a shared package.
 
-	createClaimWindowStartHeight := sessionEndHeight
+	// TODO_TECHDEBT: query the on-chain governance SessionGracePeriod parameter once available.
+	// createClaimWindowStartHeight has to systematically start after the session's
+	// grace period ends to ensure the Claim creation is done after the session
+	// has been finalized.
+	createClaimWindowStartHeight := sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
 	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
 
