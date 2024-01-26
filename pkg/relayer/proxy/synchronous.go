@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 
@@ -90,6 +91,7 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 // when synchronousRPCServer is used as an http.Handler with an http.Server.
 // (see https://pkg.go.dev/net/http#Handler)
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	startTime := time.Now()
 	ctx := request.Context()
 
 	var originHost string
@@ -135,9 +137,27 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	if supplierService == nil || serviceUrl == nil {
-		sync.replyWithError(ctx, []byte{}, writer, ErrRelayerProxyServiceEndpointNotHandled)
+		sync.replyWithError(
+			ctx,
+			[]byte{},
+			writer,
+			sync.proxyConfig.ProxyName,
+			"unknown",
+			ErrRelayerProxyServiceEndpointNotHandled,
+		)
 		return
 	}
+
+	// Increment the relays counter.
+	relaysTotal.With("proxy_name", sync.proxyConfig.ProxyName, "service_id", supplierService.Id).Add(1)
+	defer func() {
+		duration := time.Since(startTime).Seconds()
+
+		// Capture the relay request duration metric.
+		relaysDurationSeconds.With(
+			"proxy_name", sync.proxyConfig.ProxyName,
+			"service_id", supplierService.Id).Observe(duration)
+	}()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
 
@@ -145,7 +165,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		sync.replyWithError(ctx, []byte{}, writer, err)
+		sync.replyWithError(ctx, []byte{}, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
@@ -155,7 +175,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 			ErrRelayerProxyInvalidRelayRequest,
 			"missing meta from relay request: %v", relayRequest,
 		)
-		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("relay request metadata is nil which could be a result of failed unmashaling")
 		return
 	}
@@ -164,14 +184,14 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}

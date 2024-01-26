@@ -137,6 +137,13 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		Str("listening_endpoint", appGateConfigs.ListeningEndpoint.String()).
 		Msg("Starting AppGate server...")
 
+	if appGateConfigs.Metrics.Enabled {
+		err = appGateServer.ServeMetrics(appGateConfigs.Metrics.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+		}
+	}
+
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start app gate server: %w", err)

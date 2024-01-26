@@ -252,13 +252,13 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to ensure session tree")
 		return err, false
 	}
 
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to update smt")
 		return err, false
 	}
