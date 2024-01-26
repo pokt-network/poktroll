@@ -1,7 +1,6 @@
 package types
 
 import (
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -48,8 +47,7 @@ func (msg *MsgAddService) GetSignBytes() []byte {
 // ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return sdkerrors.Wrapf(
-			ErrServiceInvalidAddress,
+		return ErrServiceInvalidAddress.Wrapf(
 			"invalid supplier address %s; (%v)", msg.Address, err,
 		)
 	}
@@ -60,6 +58,5 @@ func (msg *MsgAddService) ValidateBasic() error {
 	if msg.Service.Name == "" {
 		return ErrServiceMissingName
 	}
-
 	return nil
 }

@@ -16,11 +16,16 @@ func (sync *synchronousRPCServer) replyWithError(
 	ctx context.Context,
 	payloadBz []byte,
 	writer http.ResponseWriter,
+	proxyName string,
+	serviceId string,
 	err error,
 ) {
+	relaysErrorsTotal.With("service_id", serviceId, "proxy_name", proxyName).Add(1)
+
 	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
 	if err != nil {
-		sync.logger.Error().Err(err).Msg("failed getting error reply")
+		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("proxy_name", proxyName).Msg(
+			"failed getting error reply")
 		return
 	}
 
@@ -28,12 +33,14 @@ func (sync *synchronousRPCServer) replyWithError(
 
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		sync.logger.Error().Err(err).Msg("failed marshaling relay response")
+		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("proxy_name", proxyName).Msg(
+			"failed marshaling relay response")
 		return
 	}
 
 	if _, err = writer.Write(relayResponseBz); err != nil {
-		sync.logger.Error().Err(err).Msg("failed writing relay response")
+		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("proxy_name", proxyName).Msg(
+			"failed writing relay response")
 		return
 	}
 }

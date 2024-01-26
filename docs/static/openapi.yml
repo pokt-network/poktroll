@@ -47043,6 +47043,14 @@ paths:
               params:
                 description: params holds all the parameters of this module.
                 type: object
+                properties:
+                  add_service_fee:
+                    type: string
+                    format: uint64
+                    description: |-
+                      The amount of uPOKT required to add a new service.
+                      This will be deducted from the signer's account balance,
+                      and transferred to the pocket network foundation.
             description: >-
               QueryParamsResponse is response type for the Query/Params RPC
               method.
@@ -47176,7 +47184,7 @@ paths:
                             service:
                               title: >-
                                 The Service for which the application is
-                                configured for
+                                configured
                               type: object
                               properties:
                                 id:
@@ -47243,7 +47251,7 @@ paths:
                               service:
                                 title: >-
                                   The Service for which the supplier is
-                                  configured for
+                                  configured
                                 type: object
                                 properties:
                                   id:
@@ -47279,12 +47287,14 @@ paths:
                                         - GRPC
                                         - WEBSOCKET
                                         - JSON_RPC
+                                        - REST
                                       default: UNKNOWN_RPC
                                       description: |-
                                         - UNKNOWN_RPC: Undefined RPC type
                                          - GRPC: gRPC
                                          - WEBSOCKET: WebSocket
                                          - JSON_RPC: JSON-RPC
+                                         - REST: REST
                                     configs:
                                       type: array
                                       items:
@@ -77784,6 +77794,14 @@ definitions:
     type: object
   pocket.service.Params:
     type: object
+    properties:
+      add_service_fee:
+        type: string
+        format: uint64
+        description: |-
+          The amount of uPOKT required to add a new service.
+          This will be deducted from the signer's account balance,
+          and transferred to the pocket network foundation.
     description: Params defines the parameters for the module.
   pocket.service.QueryParamsResponse:
     type: object
@@ -77791,6 +77809,14 @@ definitions:
       params:
         description: params holds all the parameters of this module.
         type: object
+        properties:
+          add_service_fee:
+            type: string
+            format: uint64
+            description: |-
+              The amount of uPOKT required to add a new service.
+              This will be deducted from the signer's account balance,
+              and transferred to the pocket network foundation.
     description: QueryParamsResponse is response type for the Query/Params RPC method.
   pocket.session.Params:
     type: object
@@ -77892,7 +77918,7 @@ definitions:
                   type: object
                   properties:
                     service:
-                      title: The Service for which the application is configured for
+                      title: The Service for which the application is configured
                       type: object
                       properties:
                         id:
@@ -77956,7 +77982,7 @@ definitions:
                     type: object
                     properties:
                       service:
-                        title: The Service for which the supplier is configured for
+                        title: The Service for which the supplier is configured
                         type: object
                         properties:
                           id:
@@ -77991,12 +78017,14 @@ definitions:
                                 - GRPC
                                 - WEBSOCKET
                                 - JSON_RPC
+                                - REST
                               default: UNKNOWN_RPC
                               description: |-
                                 - UNKNOWN_RPC: Undefined RPC type
                                  - GRPC: gRPC
                                  - WEBSOCKET: WebSocket
                                  - JSON_RPC: JSON-RPC
+                                 - REST: REST
                             configs:
                               type: array
                               items:
@@ -78146,7 +78174,7 @@ definitions:
               type: object
               properties:
                 service:
-                  title: The Service for which the application is configured for
+                  title: The Service for which the application is configured
                   type: object
                   properties:
                     id:
@@ -78208,7 +78236,7 @@ definitions:
                 type: object
                 properties:
                   service:
-                    title: The Service for which the supplier is configured for
+                    title: The Service for which the supplier is configured
                     type: object
                     properties:
                       id:
@@ -78243,12 +78271,14 @@ definitions:
                             - GRPC
                             - WEBSOCKET
                             - JSON_RPC
+                            - REST
                           default: UNKNOWN_RPC
                           description: |-
                             - UNKNOWN_RPC: Undefined RPC type
                              - GRPC: gRPC
                              - WEBSOCKET: WebSocket
                              - JSON_RPC: JSON-RPC
+                             - REST: REST
                         configs:
                           type: array
                           items:
@@ -78395,6 +78425,7 @@ definitions:
        - GRPC: gRPC
        - WEBSOCKET: WebSocket
        - JSON_RPC: JSON-RPC
+       - REST: REST
     title: Enum to define RPC types
   pocket.shared.Supplier:
     type: object
@@ -78423,7 +78454,7 @@ definitions:
           type: object
           properties:
             service:
-              title: The Service for which the supplier is configured for
+              title: The Service for which the supplier is configured
               type: object
               properties:
                 id:
@@ -78463,6 +78494,7 @@ definitions:
                        - GRPC: gRPC
                        - WEBSOCKET: WebSocket
                        - JSON_RPC: JSON-RPC
+                       - REST: REST
                   configs:
                     type: array
                     items:
@@ -78521,6 +78553,7 @@ definitions:
            - GRPC: gRPC
            - WEBSOCKET: WebSocket
            - JSON_RPC: JSON-RPC
+           - REST: REST
       configs:
         type: array
         items:
@@ -78554,7 +78587,7 @@ definitions:
     type: object
     properties:
       service:
-        title: The Service for which the supplier is configured for
+        title: The Service for which the supplier is configured
         type: object
         properties:
           id:
@@ -78593,6 +78626,7 @@ definitions:
                  - GRPC: gRPC
                  - WEBSOCKET: WebSocket
                  - JSON_RPC: JSON-RPC
+                 - REST: REST
             configs:
               type: array
               items:
