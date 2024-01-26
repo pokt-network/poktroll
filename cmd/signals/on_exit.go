@@ -7,11 +7,11 @@ import (
 )
 
 // GoOnExitSignal calls the given callback when the process receives an interrupt
-// or kill signal.
+// or terminate signal.
 func GoOnExitSignal(onInterrupt func()) {
 	go func() {
 		// Set up sigCh to receive when this process receives an interrupt or
-		// kill signal.
+		// terminate signal.
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 

@@ -11,7 +11,7 @@ POCKET_ADDR_PREFIX = pokt
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen`
+install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
@@ -37,6 +37,9 @@ help: ## Prints all the targets in all the Makefiles
 ##############
 ### Checks ###
 ##############
+
+# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
+# on the user's OS and enviornment.
 
 .PHONY: check_go_version
 # Internal helper target - check go version
@@ -101,6 +104,17 @@ check_npm:
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_jq
+# Internal helper target - check if jq is installed
+check_jq:
+	{ \
+	if ( ! ( command -v jq >/dev/null )); then \
+		echo "Seems like you don't have jq installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: check_node
 # Internal helper target - check if node is installed
@@ -214,6 +228,8 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
+	go generate ./x/service/types/
+	go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
@@ -539,6 +555,25 @@ claim_list_height_5: ## List all the claims at height 5
 .PHONY: claim_list_session
 claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+
+##############
+### Params ###
+##############
+
+MODULES := application gateway pocket service session supplier tokenomics
+
+# TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
+.PHONY: update_tokenomics_params
+update_tokenomics_params: ## Update the tokenomics module params
+	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE)
+
+.PHONY: query_all_params
+query_all_params: check_jq ## Query the params from all available modules
+	@for module in $(MODULES); do \
+	    echo "~~~ Querying $$module module params ~~~"; \
+	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \
+	    echo ""; \
+	done
 
 ######################
 ### Ignite Helpers ###
