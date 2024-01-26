@@ -224,12 +224,9 @@ func WithDefaultSessionSupplier(
 	}
 }
 
-// WithSuccessiveSessions adds multiple sessions to the sessionsMap given a
-// sessionsCount.
-// The sessions are added with the same supplier list and serviceId for the
-// application.
-// The sessions are added with their respective SessionNumber starting from 0
-// and ending at sessionsCount - 1.
+// WithSuccessiveSessions creates sessions with SessionNumber 0 through SessionCount -1
+// and adds all of them to the sessionMap.
+// Each session is configured for the same serviceId and application provided.
 func WithSuccessiveSessions(
 	supplierKeyName string,
 	serviceId string,
