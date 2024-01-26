@@ -71,10 +71,14 @@ func AddToExistingSessions(
 		Header: &sessiontypes.SessionHeader{
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
-			SessionStartBlockHeight: blockHeight,
+			SessionId:               sessionId,
+			SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
 		},
-		SessionId: sessionId,
-		Suppliers: []*sharedtypes.Supplier{},
+		NumBlocksPerSession: sessionkeeper.NumBlocksPerSession,
+		SessionNumber:       sessionkeeper.GetSessionNumber(blockHeight),
+		SessionId:           sessionId,
+		Suppliers:           []*sharedtypes.Supplier{},
 	}
 
 	for _, supplierAddress := range suppliersAddress {

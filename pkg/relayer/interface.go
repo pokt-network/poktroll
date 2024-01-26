@@ -143,4 +143,9 @@ type SessionTree interface {
 	// WARNING: This function should be called only after the proof has been successfully
 	// submitted on-chain and the servicer has confirmed that it has been rewarded.
 	Delete() error
+
+	// StartClaiming marks the session tree as being picked up for claiming,
+	// so it won't be picked up by the relayer again.
+	// It returns an error if it has already been marked as such.
+	StartClaiming() error
 }
