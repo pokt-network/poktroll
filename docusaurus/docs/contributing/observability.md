@@ -55,7 +55,7 @@ the memory usage and reduce the performance of the Prometheus server. To mitigat
 
 - **Clarity and Relevance:** Ensure that each metric provides clear and relevant information for observability.
 - **Documentation:** Document each custom metric, including its purpose and any labels used.
-- **Consistency:** Maintain naming conventions and label configurations consistently across different metrics.
+- **Consistency:** Follow the Prometheus Metric and Label Naming Guide for consistent naming and labeling. See more at [Prometheus Naming Guide](https://prometheus.io/docs/practices/naming/).
 
 ### [TODO(@okdas)] Examples
 
