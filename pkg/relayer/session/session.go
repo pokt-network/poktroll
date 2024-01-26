@@ -175,7 +175,15 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 			// Iterate over the sessionsTrees that have grace period ending at this
 			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-				sessionTrees = sessionTree.ClaimOnce(sessionTrees)
+				// Mark the session as claimed and add it to the list of sessionTrees to be published.
+				// If the session has already been claimed, it will be skipped.
+				// Appending the sessionTree to the list of sessionTrees is protected
+				// against concurrent access by the sessionsTreesMu such that the first
+				// call that marks the session as claimed will be the only one to add the
+				// sessionTree to the list.
+				if err := sessionTree.StartClaiming(); err != nil {
+					sessionTrees = append(sessionTrees, sessionTree)
+				}
 			}
 		}
 	}
@@ -262,5 +270,5 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 // IsWithinGracePeriod checks if the grace period for the session has ended
 // and signals whether it is time to create a claim for it.
 func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
-	return sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount() >= currentBlockHeight
+	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }
