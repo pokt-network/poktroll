@@ -51,31 +51,33 @@ the services they want to use.
 
 The `POKTRollSDK` takes care of the following:
 
-* Providing a list of `Supplier`s that are allowed to serve the `Application`.
-It is up to the `Application` logic to implement the desired strategy of selecting
-the `Supplier` that will be serving them.
-* Handling the proper signing of the relay requests.
-* Sending the `RelayRequest` to the selected `Supplier`.
-* Verifying the `RelayResponse` signature.
+- Providing a list of `Supplier`s that are allowed to serve the `Application`.
+  It is up to the `Application` logic to implement the desired strategy of selecting
+  the `Supplier` that will be serving them.
+- Handling the proper signing of the relay requests.
+- Sending the `RelayRequest` to the selected `Supplier`.
+- Verifying the `RelayResponse` signature.
 
 The following diagram shows the different components involved in the case of an
 `Application` integrating the `POKTRollSDK` into their workflow.
 
 ```mermaid
 flowchart RL
-	SDK[POKTRollSDK]
-  A[Application logic]
-  S[Supplier]
+	SDK(POKTRollSDK)
+  App([Application logic])
+  Sup[Supplier]
   Node[PocketNode]
 
   subgraph Application runtime
-      A -- Suppliers list --> SDK
-      A <-- Relay Req/Res --> SDK
+      SDK -. Suppliers list .-> App
+      App <-- Relay Req/Res <br> (selected Supplier)--> SDK
   end
+
+  SDK -. Txs .-> Node
+  Node -. Session .-> SDK
   Node <-. websocket subscription .-> SDK
-  SDK -- Session --> Node
-  SDK -- RelayRequest --> S
-  S -- RelayResponse --> SDK
+
+  SDK <-- Relay Req/Res --> Sup
 ```
 
 ### Gateways
@@ -89,16 +91,16 @@ setup a `Gateway` that complies with the Pocket Network's protocol.
 Given that they staked the required amount of POKT and have `Application`s delegating
 POKT tokens to them, `Gateway`s can customize:
 
-* The way they authenticate their users.
-* How they charge them for the service provided
-* How they select the `Supplier` that will serve the request by running QoS tests.
+- The way they authenticate their users.
+- How they charge them for the service provided
+- How they select the `Supplier` that will serve the request by running QoS tests.
 
 While having the `POKTRollSDK` takeing care of:
 
-* Providing a list of `Supplier`s that are allowed to serve the `Application`.
-* Handling the proper signing of the `RelayRequests`.
-* Forwarding them to the selected `Supplier`
-* Verifying the `RelayResponse` signature.
+- Providing a list of `Supplier`s that are allowed to serve the `Application`.
+- Handling the proper signing of the `RelayRequests`.
+- Forwarding them to the selected `Supplier`
+- Verifying the `RelayResponse` signature.
 
 The following diagram shows the different components involved in the case of a
 `Gateway` integrating the `POKTRollSDK` into their workflow.
@@ -218,17 +220,17 @@ type POKTRollSDKConfig struct {
 
 It consists of the following fields:
 
-* `QueryNodeGRPCUrl` is the url of the Pocket Node's gRPC endpoint, used to query
-the Pocket Network's state for sessions, account information, delegations, etc.
-* `QueryNodeUrl` is the url of the Pocket Node's websocket endpoint, used to
-subscribe to the Pocket Network's new block events needed to keep the
-`POKTRollSDK` session information up to date.
-* `PrivateKey` is the private key used to sign the relay requests. It could be
-either the `Gateway` or the `Application` private key depending on the use case.
-* `Deps` is a `depinject.Config` struct that contains the dependencies needed by
-the `POKTRollSDK` implementation. It is used to inject the dependencies into the
-`POKTRollSDK` implementation. This field is optional and if not provided, the
-`POKTRollSDK` implementation will use the default dependencies.
+- `QueryNodeGRPCUrl` is the url of the Pocket Node's gRPC endpoint, used to query
+  the Pocket Network's state for sessions, account information, delegations, etc.
+- `QueryNodeUrl` is the url of the Pocket Node's websocket endpoint, used to
+  subscribe to the Pocket Network's new block events needed to keep the
+  `POKTRollSDK` session information up to date.
+- `PrivateKey` is the private key used to sign the relay requests. It could be
+  either the `Gateway` or the `Application` private key depending on the use case.
+- `Deps` is a `depinject.Config` struct that contains the dependencies needed by
+  the `POKTRollSDK` implementation. It is used to inject the dependencies into the
+  `POKTRollSDK` implementation. This field is optional and if not provided, the
+  `POKTRollSDK` implementation will use the default dependencies.
 
 ## POKTRollSDK usage
 
@@ -236,11 +238,11 @@ In order to use the `POKTRollSDK` the consumer needs to:
 
 1. Import the `POKTRollSDK` package
 2. Initialize a new `POKTRollSDK` instance by calling the `NewPOKTRollSDK` function
-and providing an adequate `POKTRollSDKConfig` struct.
+   and providing an adequate `POKTRollSDKConfig` struct.
 3. Call the `GetSessionSupplierEndpoints` method to get the `SessionSuppliers`.
 4. Select a `Supplier` from the list of `SingleSupplierEndpoint`s returned.
 5. Call the `SendRelay` method providing the selected `SingleSupplierEndpoint` and
-the request to send.
+   the request to send.
 
 ### Example usage
 
@@ -343,3 +345,5 @@ will try to keep the changes to a minimum and to keep the community informed of
 any changes that could affect the `POKTRollSDK` consumers.
 
 :::
+
+- Add a link to fern
