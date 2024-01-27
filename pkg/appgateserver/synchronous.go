@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/pokt-network/poktroll/pkg/partials"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // handleSynchronousRelay handles relay requests for synchronous protocols, where
@@ -15,19 +15,13 @@ func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
 	payloadBz []byte,
+	requestType sharedtypes.RPCType,
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
-	// TODO_TECHDEBT: log additional info?
-	app.logger.Debug().Msg("determining request type")
+	relaysTotal.With("service_id", serviceId, "request_type", requestType.String()).Add(1)
 
-	// Get the type of the request by doing a partial unmarshal of the payload
-	requestType, err := partials.GetRequestType(ctx, payloadBz)
-	if err != nil {
-		return ErrAppGateHandleRelay.Wrapf("getting request type: %s", err)
-	}
-
-	// TODO_TECHDEBT: log additional info?
+	// TODO_IMPROVE: log additional info?
 	app.logger.Debug().
 		Str("request_type", requestType.String()).
 		Msg("got request type")
