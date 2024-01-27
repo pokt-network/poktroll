@@ -21,6 +21,7 @@ It is responsible for multiple things:
   - [`self_signing`](#self_signing)
   - [`signing_key`](#signing_key)
   - [`listening_endpoint`](#listening_endpoint)
+  - [`metrics`](#metrics)
 
 ## Usage
 
@@ -51,6 +52,10 @@ query_node_grpc_url: tcp://<hostname>:<port>
 self_signing: <boolean>
 signing_key: <string>
 listening_endpoint: http://<hostname>:<port>
+metrics:
+  enabled: true
+  addr: :9090
+
 ```
 
 ### `query_node_rpc_url`
@@ -110,3 +115,24 @@ The key name must be present in the keyring that is specified when the
 _`Required`_
 
 The endpoint that the `AppGateServer` will listen on for incoming requests.
+
+### `metrics`
+
+_`Optional`_
+
+This section configures a Prometheus exporter endpoint, enabling the collection 
+and export of metrics data. The `addr` field specifies the network address for 
+the exporter to bind to. It can be either a port number, which assumes binding
+to all interfaces, or a specific host:port combination.
+
+Example configuration:
+
+```yaml
+metrics:
+  enabled: true
+  addr: :9090
+```
+
+When `enabled` is set to `true`, the exporter is active. The addr `value` of
+`:9090` implies the exporter is bound to port 9090 on all available network
+interfaces.

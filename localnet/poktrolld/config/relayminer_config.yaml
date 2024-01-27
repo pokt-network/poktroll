@@ -17,3 +17,7 @@ suppliers:
       - http-proxy
     hosts:
       - tcp://relayminers:8545
+metrics:
+  enabled: true
+  addr: :9090
+  

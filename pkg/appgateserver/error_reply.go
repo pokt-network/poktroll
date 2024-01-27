@@ -15,16 +15,19 @@ func (app *appGateServer) replyWithError(
 	ctx context.Context,
 	payloadBz []byte,
 	writer http.ResponseWriter,
+	serviceId string,
+	requestType string,
 	err error,
 ) {
+	relaysErrorsTotal.With("service_id", serviceId).Add(1)
 	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
 	if err != nil {
-		app.logger.Error().Err(err).Msg("failed getting error reply")
+		app.logger.Error().Err(err).Str("service_id", serviceId).Msg("failed getting error reply")
 		return
 	}
 
 	if _, err = writer.Write(responseBz); err != nil {
-		app.logger.Error().Err(err).Msg("failed writing relay response")
+		app.logger.Error().Err(err).Str("service_id", serviceId).Msg("failed writing relay response")
 		return
 	}
 }

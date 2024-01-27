@@ -16,6 +16,7 @@ type YAMLRelayMinerConfig struct {
 	PocketNode     YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	SigningKeyName string                         `yaml:"signing_key_name"`
 	SmtStorePath   string                         `yaml:"smt_store_path"`
+	Metrics        YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
 	Proxies        []YAMLRelayMinerProxyConfig    `yaml:"proxies"`
 	Suppliers      []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
 }
@@ -35,6 +36,13 @@ type YAMLRelayMinerProxyConfig struct {
 	Type                 string `yaml:"type"`
 	Host                 string `yaml:"host"`
 	XForwardedHostLookup bool   `yaml:"x_forwarded_host_lookup"`
+}
+
+// YAMLRelayMinerMetricsConfig is the structure used to unmarshal the metrics
+// section of the RelayMiner config file
+type YAMLRelayMinerMetricsConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Addr    string `yaml:"addr"`
 }
 
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
@@ -66,9 +74,10 @@ type YAMLRelayMinerSupplierServiceAuthentication struct {
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
 	PocketNode     *RelayMinerPocketNodeConfig
+	Proxies        map[string]*RelayMinerProxyConfig
+	Metrics        *RelayMinerMetricsConfig
 	SigningKeyName string
 	SmtStorePath   string
-	Proxies        map[string]*RelayMinerProxyConfig
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -98,6 +107,13 @@ type RelayMinerProxyConfig struct {
 	XForwardedHostLookup bool
 	// Suppliers is a map of serviceIds -> RelayMinerSupplierConfig
 	Suppliers map[string]*RelayMinerSupplierConfig
+}
+
+// RelayMinerMetricsConfig is the structure resulting from parsing the metrics
+// section of the RelayMiner config file
+type RelayMinerMetricsConfig struct {
+	Enabled bool
+	Addr    string
 }
 
 // RelayMinerSupplierConfig is the structure resulting from parsing the supplier

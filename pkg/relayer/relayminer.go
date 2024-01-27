@@ -2,8 +2,11 @@ package relayer
 
 import (
 	"context"
+	"net"
+	"net/http"
 
 	"cosmossdk.io/depinject"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -72,4 +75,24 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 func (rel *relayMiner) Stop(ctx context.Context) error {
 	rel.relayerSessionsManager.Stop()
 	return rel.relayerProxy.Stop(ctx)
+}
+
+// Starts a metrics server on the given address.
+func (rel *relayMiner) ServeMetrics(addr string) error {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		rel.logger.Error().Err(err).Msg("failed to listen on address for metrics")
+		return err
+	}
+
+	// If no error, start the server in a new goroutine
+	go func() {
+		rel.logger.Info().Str("endpoint", addr).Msg("serving metrics")
+		if err := http.Serve(ln, promhttp.Handler()); err != nil {
+			rel.logger.Error().Err(err).Msg("metrics server failed")
+			return
+		}
+	}()
+
+	return nil
 }

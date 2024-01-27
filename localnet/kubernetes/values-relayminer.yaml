@@ -1,6 +1,9 @@
 config:
   signing_key_name: supplier1
   smt_store_path: smt_stores
+  metrics:
+    enabled: true
+    addr: :9090
   pocket_node:
     query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
     query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
