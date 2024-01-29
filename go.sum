@@ -353,6 +353,8 @@ github.com/bombsimon/wsl/v3 v3.3.0/go.mod h1:st10JtZYLE4D5sC7b8xV4zTKZwAQjCH/Hy2
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/breml/bidichk v0.2.3/go.mod h1:8u2C6DnAy0g2cEq+k/A2+tr9O1s+vHGxWn0LTc70T2A=
 github.com/breml/errchkjson v0.3.0/go.mod h1:9Cogkyv9gcT8HREpzi3TiqBxCqDzo8awa92zSDFcofU=
+github.com/bryanchriswhite/cosmos-sdk v0.50.1-fix-sequencer-check h1:F+o3sTVGPa+H0T81ewP+R0IwEiKZ/7yWUgS/uDU2iqM=
+github.com/bryanchriswhite/cosmos-sdk v0.50.1-fix-sequencer-check/go.mod h1:XGySaVuQoLe3plWUIm/i51pJIptOIeoQ9s+xF53qVck=
 github.com/btcsuite/btcd v0.0.0-20190523000118-16327141da8c/go.mod h1:3J08xEfcugPacsc34/LKRU2yO7YmuT8yt28J8k2+rrI=
 github.com/btcsuite/btcd v0.20.1-beta/go.mod h1:wVuoA8VJLEcwgqHBwHmzLRazpKxTv13Px/pDuV7OomQ=
 github.com/btcsuite/btcd v0.21.0-beta/go.mod h1:ZSWyehm27aAuS9bvkATT+Xte3hjHZ+MRgMY/8NJ7K94=
@@ -1805,8 +1807,6 @@ github.com/rogpeppe/go-internal v1.8.1/go.mod h1:JeRgkft04UBgHMgCIwADu4Pn6Mtm5d4
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
-github.com/rollkit/cosmos-sdk v0.50.1-rollkit-v0.11.9-no-fraud-proofs h1:j3+3DiVPI097Zy4bkkR6gsC/ix647Ey3KJkZNzMWbig=
-github.com/rollkit/cosmos-sdk v0.50.1-rollkit-v0.11.9-no-fraud-proofs/go.mod h1:XGySaVuQoLe3plWUIm/i51pJIptOIeoQ9s+xF53qVck=
 github.com/rollkit/go-da v0.0.0-20231207150926-93600f28d67d h1:VeAbAkj+1+9OMc80BMIt7TokIAJudJrqI/59gTpMeuI=
 github.com/rollkit/go-da v0.0.0-20231207150926-93600f28d67d/go.mod h1:cy1LA9kCyCJHgszKkTh9hJn816l5Oa87GMA2c1imfqA=
 github.com/rollkit/rollkit v0.11.9 h1:2EY0A1jblAfP51qBDFcWL3PSmIDPwL8HMIQ7AEqUx+A=
