@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"context"
-	"fmt"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 
@@ -44,8 +43,6 @@ func (sdk *poktrollSDK) verifyResponse(
 		Str("service", relayResponse.Meta.SessionHeader.Service.Id).
 		Int64("end_height", relayResponse.Meta.SessionHeader.SessionEndBlockHeight).
 		Msg("About to verify relay response signature.")
-
-	logger.Debug().Msg(fmt.Sprintf("OLSH %v", supplierPubKey))
 
 	// Verify the relay response signature.
 	if !supplierPubKey.VerifySignature(responseSignableBz[:], supplierSignature) {
