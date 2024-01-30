@@ -40,7 +40,6 @@ localnet/*/config/*.json
 .vscode
 .env
 .idea/
-.mise.local.toml
 
 # Compiled protos
 **/*.pb.go
@@ -65,7 +64,7 @@ localnet_config.yaml
 # Ref: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
 localnet_config.yaml-e
 
-# Relase artifacts produced by `ignite chain build --release`
+# Release artifacts produced by `ignite chain build --release`
 release
 
 # Only keep one go module in our codebase
