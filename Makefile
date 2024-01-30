@@ -195,7 +195,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e
-test_e2e: ## Run all E2E tests
+test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
@@ -357,7 +357,6 @@ app_list: ## List all the staked applications
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
-# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
@@ -540,7 +539,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@echo "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK !!!\n"\
+	@echo "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
 	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############
