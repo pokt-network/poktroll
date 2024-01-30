@@ -49,8 +49,8 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
-		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ne 21 ] ; then \
+		echo "Invalid Go version. Expected 1.21.x but found $$GO_VERSION"; \
 		exit 1; \
 	fi
 
