@@ -173,6 +173,9 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
+    PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "900000000", "name": "sequencer1"}]' $(POKTROLLD_HOME)/config/genesis.json > temp.json && mv temp.json $(POKTROLLD_HOME)/config/genesis.json
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -224,16 +227,16 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
-	go generate ./x/application/types/
+	# go generate ./x/application/types/
 	go generate ./x/gateway/types/
-	go generate ./x/supplier/types/
-	go generate ./x/session/types/
-	go generate ./x/service/types/
-	go generate ./x/tokenomics/types/
-	go generate ./pkg/client/interface.go
-	go generate ./pkg/miner/interface.go
-	go generate ./pkg/relayer/interface.go
-	go generate ./pkg/crypto/rings/interface.go
+	# go generate ./x/supplier/types/
+	# go generate ./x/session/types/
+	# go generate ./x/service/types/
+	# go generate ./x/tokenomics/types/
+	# go generate ./pkg/client/interface.go
+	# go generate ./pkg/miner/interface.go
+	# go generate ./pkg/relayer/interface.go
+	# go generate ./pkg/crypto/rings/interface.go
 
 .PHONY: go_testgen_fixtures
 go_testgen_fixtures: ## Generate fixture data for unit tests
@@ -250,7 +253,7 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
 .PHONY: load_test_simple
-load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
 	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
