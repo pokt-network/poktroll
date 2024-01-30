@@ -1,12 +1,15 @@
 syntax = "proto3";
-package pocket.gateway;
+package poktroll.gateway;
 
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
 
 // Params defines the parameters for the module.
 message Params {
-  option (gogoproto.goproto_stringer) = false;
+  option (amino.name) = "poktroll/x/gateway/Params";
+  option (gogoproto.equal) = true;
 
+  
 }
