@@ -166,7 +166,7 @@ localnet_down: ## Delete resources created by localnet
 	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
-localnet_regenesis: ## Regenerate the localnet genesis file
+localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init
 	mkdir -p $(POKTROLLD_HOME)/config/
@@ -516,6 +516,32 @@ acc_balance_query_app1: ## Query the balance of app1
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
+
+# NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
+# to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
+# We attempted using a `tx multi-sen`d from the `faucet` to all accounts, but
+# that also did not solve this problem because the account itself must sign the
+# transaction for its public key to be populated in the account keeper. As such,
+# the solution is to send funds from every account in genesis to some address
+# (PNF was selected ambigously) to make sure their public keys are populated.
+
+.PHONY: acc_initialize_pubkeys
+acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
+	$(eval ADDRESSES=$(shell make ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
+	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
+	# @echo "Addresses: ${ADDRESSES}"
+	$(foreach addr, $(ADDRESSES),\
+		echo $(addr);\
+		poktrolld tx bank send \
+			$(addr) $(PNF_ADDR) 1000upokt \
+			--yes \
+			--home=$(POKTROLLD_HOME) \
+			--node $(POCKET_NODE);)
+
+.PHONY: acc_initialize_pubkeys_warn_message
+acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+	@echo "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK !!!\n"\
+	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############
 ### Claims ###
