@@ -1,12 +1,23 @@
 package cmd
 
 import (
+	"sync"
+
 	cmtcfg "github.com/cometbft/cometbft/config"
 	serverconfig "github.com/cosmos/cosmos-sdk/server/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/app"
 )
+
+var once sync.Once
+
+// InitSDKConfig initializes the SDK config, only once.
+func InitSDKConfig() {
+	once.Do(func() {
+		initSDKConfig()
+	})
+}
 
 func initSDKConfig() {
 	// Set prefixes
