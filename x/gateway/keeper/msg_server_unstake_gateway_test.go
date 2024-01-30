@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -14,8 +15,7 @@ import (
 
 func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
 	addr := sample.AccAddress()
@@ -25,14 +25,14 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	require.False(t, isGatewayFound)
 
 	// Prepare the gateway
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
-		Stake:   &initialStake,
+		Stake:   initialStake,
 	}
 
 	// Stake the gateway
-	_, err := srv.StakeGateway(wctx, stakeMsg)
+	_, err := srv.StakeGateway(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the gateway exists
@@ -43,7 +43,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 	// Unstake the gateway
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
-	_, err = srv.UnstakeGateway(wctx, unstakeMsg)
+	_, err = srv.UnstakeGateway(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the gateway can no longer be found after unstaking
@@ -53,8 +53,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 
 func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 	k, ctx := keepertest.GatewayKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the gateway
 	addr := sample.AccAddress()
@@ -65,7 +64,7 @@ func TestMsgServer_UnstakeGateway_FailIfNotStaked(t *testing.T) {
 
 	// Unstake the gateway
 	unstakeMsg := &types.MsgUnstakeGateway{Address: addr}
-	_, err := srv.UnstakeGateway(wctx, unstakeMsg)
+	_, err := srv.UnstakeGateway(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrGatewayNotFound)
 

@@ -71,6 +71,6 @@ func TestGatewayGetAll(t *testing.T) {
 	gateways := createNGateway(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(gateways),
-		nullify.Fill(keeper.GetAllGateway(ctx)),
+		nullify.Fill(keeper.GetAllGateways(ctx)),
 	)
 }

@@ -18,8 +18,9 @@ service Msg {
   
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams  (MsgUpdateParams ) returns (MsgUpdateParamsResponse );
-  rpc StakeGateway  (MsgStakeGateway ) returns (MsgStakeGatewayResponse );
+  rpc UpdateParams   (MsgUpdateParams  ) returns (MsgUpdateParamsResponse  );
+  rpc StakeGateway   (MsgStakeGateway  ) returns (MsgStakeGatewayResponse  );
+  rpc UnstakeGateway (MsgUnstakeGateway) returns (MsgUnstakeGatewayResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -42,7 +43,15 @@ message MsgUpdateParamsResponse {}
 message MsgStakeGateway {
   option (cosmos.msg.v1.signer) = "address";
   string                   address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  cosmos.base.v1beta1.Coin stake   = 2 [(gogoproto.nullable)  = false                 ];
+  cosmos.base.v1beta1.Coin stake   = 2 [(gogoproto.nullable)  = false];
 }
 
 message MsgStakeGatewayResponse {}
+
+message MsgUnstakeGateway {
+  option (cosmos.msg.v1.signer) = "address";
+  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+message MsgUnstakeGatewayResponse {}
+

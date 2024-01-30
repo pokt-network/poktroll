@@ -51,8 +51,8 @@ func (k Keeper) RemoveGateway(
 	))
 }
 
-// GetAllGateway returns all gateway
-func (k Keeper) GetAllGateway(ctx context.Context) (list []types.Gateway) {
+// GetAllGateways returns all gateway
+func (k Keeper) GetAllGateways(ctx context.Context) (list []types.Gateway) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})

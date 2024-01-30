@@ -11,10 +11,12 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
+// SimulateMsgUnstakeGateway simulates the unstake gateway operation.
+// TODO_TECHDEBT: Implement simulation logic.
 func SimulateMsgUnstakeGateway(
-	ak types.AccountKeeper,
-	bk types.BankKeeper,
-	k keeper.Keeper,
+	_ types.AccountKeeper,
+	_ types.BankKeeper,
+	_ keeper.Keeper,
 ) simtypes.Operation {
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
@@ -25,6 +27,10 @@ func SimulateMsgUnstakeGateway(
 
 		// TODO: Handling the UnstakeGateway simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, msg.Type(), "UnstakeGateway simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(
+			types.ModuleName,
+			sdk.MsgTypeURL(msg),
+			"UnstakeGateway simulation not implemented",
+		), nil, nil
 	}
 }
