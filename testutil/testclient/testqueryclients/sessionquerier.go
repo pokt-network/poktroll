@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -15,7 +14,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const blockHash = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
+// blockHashBz is the []byte representation of the block hash used in the tests.
+var blockHashBz []byte
 
 // sessionsMap is a map of: sessionId -> Session.
 // If a sessionId is not present in the map, it implies we have not encountered
@@ -24,6 +24,11 @@ var sessionsMap map[string]*sessiontypes.Session
 
 func init() {
 	sessionsMap = make(map[string]*sessiontypes.Session)
+
+	var err error
+	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
+		panic(fmt.Errorf("error while trying to decode block hash: %w", err))
+	}
 }
 
 // NewTestSessionQueryClient creates a mock of the SessionQueryClient
@@ -42,10 +47,6 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			blockHashBz, err := hex.DecodeString(blockHash)
-			if err != nil {
-				return nil, fmt.Errorf("error while trying to decode block hash: %w", err)
-			}
 			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
@@ -71,8 +72,6 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	blockHashBz, err := hex.DecodeString(blockHash)
-	require.NoError(t, err)
 	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	session := sessiontypes.Session{

@@ -160,10 +160,10 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		8: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
 	}
 
+	store := ctx.KVStore(storeKey)
 	for height, hash := range blockHash {
 		hashBz, err := hex.DecodeString(hash)
 		require.NoError(t, err)
-		store := ctx.KVStore(storeKey)
 		store.Set(keeper.GetBlockHashKey(height), hashBz)
 	}
 

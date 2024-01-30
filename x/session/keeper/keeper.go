@@ -54,7 +54,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// BeginBlocker is called at the beginning of every block
+// BeginBlocker is called at the beginning of every block.
 // It fetches the block hash from the committed block ans saves its hash
 // in the store.
 func (k Keeper) BeginBlocker(ctx sdk.Context) {
@@ -62,7 +62,7 @@ func (k Keeper) BeginBlocker(ctx sdk.Context) {
 	hash := ctx.BlockHeader().LastBlockId.Hash
 	// ctx.BlockHeight() is the height of the current block being processed,
 	// decrementing it by 1 gives us the height of the last block committed.
-	height := ctx.BlockHeight() - 1
+	height := ctx.BlockHeader().Height - 1
 	// If height is 0, ctx.BlockHeader().LastBlockId.Hash will be nil,
 	// fall back to an empty byte slice.
 	if height == 0 {
@@ -71,15 +71,4 @@ func (k Keeper) BeginBlocker(ctx sdk.Context) {
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(GetBlockHashKey(height), hash)
-}
-
-// GetBlockHashKey returns the key used to store the block hash for a given height.
-func GetBlockHashKey(height int64) []byte {
-	return []byte(fmt.Sprintf("Blockhash:%d", height))
-}
-
-// GetBlockHash returns the hash of the block at the given height.
-func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) []byte {
-	store := ctx.KVStore(k.storeKey)
-	return store.Get(GetBlockHashKey(height))
 }

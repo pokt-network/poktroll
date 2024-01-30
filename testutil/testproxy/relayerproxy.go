@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -50,10 +51,18 @@ type TestBehavior struct {
 	proxiedServices map[string]*http.Server
 }
 
-const (
-	blockHeight = 1
-	blockHash   = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
-)
+// blockHeight is the default block height used in the tests.
+const blockHeight = 1
+
+// blockHashBz is the []byte representation of the block hash used in the tests.
+var blockHashBz []byte
+
+func init() {
+	var err error
+	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
+		panic(fmt.Errorf("error while trying to decode block hash: %w", err))
+	}
+}
 
 // NewRelayerProxyTestBehavior creates a TestBehavior with the provided set of
 // behavior function that are used to instrument the tested subject's dependencies
@@ -336,8 +345,6 @@ func GenerateRelayRequest(
 	payload []byte,
 ) *servicetypes.RelayRequest {
 	appAddress := GetAddressFromPrivateKey(test, privKey)
-	blockHashBz, err := hex.DecodeString(blockHash)
-	require.NoError(test.t, err)
 	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
