@@ -1,28 +1,32 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"context"
+
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-// SetGateway set a specific gateway in the store from its index
-func (k Keeper) SetGateway(ctx sdk.Context, gateway types.Gateway) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
+// SetGateway set a specific gateway in the store from its address
+func (k Keeper) SetGateway(ctx context.Context, gateway types.Gateway) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 	b := k.cdc.MustMarshal(&gateway)
 	store.Set(types.GatewayKey(
 		gateway.Address,
 	), b)
 }
 
-// GetGateway returns a gateway from its index
+// GetGateway returns a gateway from its address
 func (k Keeper) GetGateway(
-	ctx sdk.Context,
+	ctx context.Context,
 	address string,
-
 ) (val types.Gateway, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 
 	b := store.Get(types.GatewayKey(
 		address,
@@ -37,20 +41,21 @@ func (k Keeper) GetGateway(
 
 // RemoveGateway removes a gateway from the store
 func (k Keeper) RemoveGateway(
-	ctx sdk.Context,
+	ctx context.Context,
 	address string,
-
 ) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 	store.Delete(types.GatewayKey(
 		address,
 	))
 }
 
-// GetAllGateway returns all gateways
-func (k Keeper) GetAllGateway(ctx sdk.Context) (list []types.Gateway) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.GatewayKeyPrefix))
-	iterator := sdk.KVStorePrefixIterator(store, []byte{})
+// GetAllGateway returns all gateway
+func (k Keeper) GetAllGateway(ctx context.Context) (list []types.Gateway) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()
 

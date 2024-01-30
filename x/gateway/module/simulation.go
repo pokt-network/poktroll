@@ -27,6 +27,18 @@ const (
 	// TODO: Determine the simulation weight value
 	defaultWeightMsgStakeGateway int = 100
 
+	opWeightMsgCreateGateway = "op_weight_msg_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgCreateGateway int = 100
+
+	opWeightMsgUpdateGateway = "op_weight_msg_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgUpdateGateway int = 100
+
+	opWeightMsgDeleteGateway = "op_weight_msg_gateway"
+	// TODO: Determine the simulation weight value
+	defaultWeightMsgDeleteGateway int = 100
+
 	// this line is used by starport scaffolding # simapp/module/const
 )
 
@@ -38,6 +50,16 @@ func (AppModule) GenerateGenesisState(simState *module.SimulationState) {
 	}
 	gatewayGenesis := types.GenesisState{
 		Params: types.DefaultParams(),
+		GatewayList: []types.Gateway{
+			{
+				Address: sample.AccAddress(),
+				Index:   "0",
+			},
+			{
+				Address: sample.AccAddress(),
+				Index:   "1",
+			},
+		},
 		// this line is used by starport scaffolding # simapp/module/genesisState
 	}
 	simState.GenState[types.ModuleName] = simState.Cdc.MustMarshalJSON(&gatewayGenesis)
@@ -66,6 +88,39 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 		gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper),
 	))
 
+	var weightMsgCreateGateway int
+	simState.AppParams.GetOrGenerate(opWeightMsgCreateGateway, &weightMsgCreateGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgCreateGateway = defaultWeightMsgCreateGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgCreateGateway,
+		gatewaysimulation.SimulateMsgCreateGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
+	var weightMsgUpdateGateway int
+	simState.AppParams.GetOrGenerate(opWeightMsgUpdateGateway, &weightMsgUpdateGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgUpdateGateway = defaultWeightMsgUpdateGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgUpdateGateway,
+		gatewaysimulation.SimulateMsgUpdateGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
+	var weightMsgDeleteGateway int
+	simState.AppParams.GetOrGenerate(opWeightMsgDeleteGateway, &weightMsgDeleteGateway, nil,
+		func(_ *rand.Rand) {
+			weightMsgDeleteGateway = defaultWeightMsgDeleteGateway
+		},
+	)
+	operations = append(operations, simulation.NewWeightedOperation(
+		weightMsgDeleteGateway,
+		gatewaysimulation.SimulateMsgDeleteGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+	))
+
 	// this line is used by starport scaffolding # simapp/module/operation
 
 	return operations
@@ -79,6 +134,30 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			defaultWeightMsgStakeGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
 				gatewaysimulation.SimulateMsgStakeGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgCreateGateway,
+			defaultWeightMsgCreateGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				gatewaysimulation.SimulateMsgCreateGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgUpdateGateway,
+			defaultWeightMsgUpdateGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				gatewaysimulation.SimulateMsgUpdateGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				return nil
+			},
+		),
+		simulation.NewWeightedProposalMsg(
+			opWeightMsgDeleteGateway,
+			defaultWeightMsgDeleteGateway,
+			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
+				gatewaysimulation.SimulateMsgDeleteGateway(am.accountKeeper, am.bankKeeper, am.keeper)
 				return nil
 			},
 		),

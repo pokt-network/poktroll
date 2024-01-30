@@ -8,6 +8,7 @@ import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/gateway/params.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "poktroll/gateway/gateway.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
 
@@ -17,8 +18,8 @@ service Msg {
   
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc StakeGateway (MsgStakeGateway) returns (MsgStakeGatewayResponse);
+  rpc UpdateParams  (MsgUpdateParams ) returns (MsgUpdateParamsResponse );
+  rpc StakeGateway  (MsgStakeGateway ) returns (MsgStakeGatewayResponse );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -40,9 +41,8 @@ message MsgUpdateParamsResponse {}
 
 message MsgStakeGateway {
   option (cosmos.msg.v1.signer) = "address";
-                   string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  cosmos.base.v1beta1.Coin stake  = 2 [(gogoproto.nullable) = false];
+  string                   address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  cosmos.base.v1beta1.Coin stake   = 2 [(gogoproto.nullable)  = false                 ];
 }
 
 message MsgStakeGatewayResponse {}
-

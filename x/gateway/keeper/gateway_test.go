@@ -1,18 +1,18 @@
 package keeper_test
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
@@ -22,14 +22,14 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNGateway(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Gateway {
-	items := make([]types.Gateway, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
+func createNGateway(keeper keeper.Keeper, ctx context.Context, n int) []types.Gateway {
+	gateways := make([]types.Gateway, n)
+	for i := range gateways {
+		gateways[i].Address = strconv.Itoa(i)
 
-		keeper.SetGateway(ctx, items[i])
+		keeper.SetGateway(ctx, gateways[i])
 	}
-	return items
+	return gateways
 }
 
 func TestGatewayModuleAddress(t *testing.T) {
@@ -39,8 +39,8 @@ func TestGatewayModuleAddress(t *testing.T) {
 
 func TestGatewayGet(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
-	for _, item := range items {
+	gateways := createNGateway(keeper, ctx, 10)
+	for _, item := range gateways {
 		rst, found := keeper.GetGateway(ctx,
 			item.Address,
 		)
@@ -54,13 +54,13 @@ func TestGatewayGet(t *testing.T) {
 
 func TestGatewayRemove(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
-	for _, item := range items {
+	gateways := createNGateway(keeper, ctx, 10)
+	for _, gateway := range gateways {
 		keeper.RemoveGateway(ctx,
-			item.Address,
+			gateway.Address,
 		)
 		_, found := keeper.GetGateway(ctx,
-			item.Address,
+			gateway.Address,
 		)
 		require.False(t, found)
 	}
@@ -68,9 +68,9 @@ func TestGatewayRemove(t *testing.T) {
 
 func TestGatewayGetAll(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
+	gateways := createNGateway(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(gateways),
 		nullify.Fill(keeper.GetAllGateway(ctx)),
 	)
 }
