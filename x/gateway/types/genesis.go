@@ -1,8 +1,6 @@
 package types
 
-import (
-	"fmt"
-)
+import sdk "github.com/cosmos/cosmos-sdk/types"
 
 // DefaultAddress is the default global index
 const DefaultAddress uint64 = 1
@@ -20,14 +18,46 @@ func DefaultGenesis() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in gateway
-	gatewayAddressMap := make(map[string]struct{})
+	gatewayIndexMap := make(map[string]struct{})
 
 	for _, gateway := range gs.GatewayList {
-		addr := string(GatewayKey(gateway.Address))
-		if _, ok := gatewayAddressMap[addr]; ok {
-			return fmt.Errorf("duplicated address for gateway")
+		// Check for duplicated index in gateway
+		index := string(GatewayKey(gateway.Address))
+		if _, ok := gatewayIndexMap[index]; ok {
+			return ErrGatewayInvalidAddress.Wrapf(
+				"duplicated gateway address in genesis state",
+			)
 		}
-		gatewayAddressMap[addr] = struct{}{}
+		gatewayIndexMap[index] = struct{}{}
+
+		// Validate the stake of each gateway
+		stake, err := sdk.ParseCoinNormalized(gateway.Stake.String())
+		if !stake.IsValid() {
+			return ErrGatewayInvalidStake.Wrapf(
+				"invalid stake amount for gateway %v; (%v)",
+				gateway.Stake,
+				stake.Validate(),
+			)
+		}
+		if err != nil {
+			return ErrGatewayInvalidStake.Wrapf(
+				"cannot parse stake amount for gateway %v; (%v)",
+				gateway.Stake,
+				err,
+			)
+		}
+		if stake.IsZero() || stake.IsNegative() {
+			return ErrGatewayInvalidStake.Wrapf(
+				"invalid stake amount for gateway: %v <= 0",
+				gateway.Stake,
+			)
+		}
+		if stake.Denom != "upokt" {
+			return ErrGatewayInvalidStake.Wrapf(
+				"invalid stake amount denom for gateway %v",
+				gateway.Stake,
+			)
+		}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

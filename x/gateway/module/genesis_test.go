@@ -3,11 +3,15 @@ package gateway_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/gateway/module"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	gateway "github.com/pokt-network/poktroll/x/gateway/module"
 	"github.com/pokt-network/poktroll/x/gateway/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {
@@ -16,10 +20,12 @@ func TestGenesis(t *testing.T) {
 
 		GatewayList: []types.Gateway{
 			{
-				Index: "0",
+				Address: sample.AccAddress(),
+				Stake:   sdk.NewCoin("upokt", math.NewInt(1000)),
 			},
 			{
-				Index: "1",
+				Address: sample.AccAddress(),
+				Stake:   sdk.NewCoin("upokt", math.NewInt(1000)),
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

@@ -18,15 +18,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "Shows the parameters of the module",
 				},
 				{
-					RpcMethod: "GatewayAll",
+					RpcMethod: "AllGateways",
 					Use:       "list-gateway",
 					Short:     "List all gateway",
 				},
 				{
 					RpcMethod:      "Gateway",
-					Use:            "show-gateway [id]",
+					Use:            "show-gateway [gateway address]",
 					Short:          "Shows a gateway",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{
+						{ProtoField: "address"},
+					},
 				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
@@ -41,27 +43,38 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod:      "StakeGateway",
-					Use:            "stake-gateway [address] [amount]",
-					Short:          "Send a stake-gateway tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}, {ProtoField: "amount"}},
+					Use:            "stake-gateway --config [stake config]",
+					Short:          "Stake a Gateway",
+					Long: `Stake a gateway with the provided parameters. This is a broadcast operation that
+will stake the tokens and associate them with the gateway specified by the 'from' address.`,
+					Example: `$ poktrolld tx gateway stake-gateway --config stake_config.yaml --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"from": {
+							Name: "from",
+							DefaultValue: "", 
+							Usage: "The address of the gateway",
+						},
+						"config": {
+							Name: "config", 
+							DefaultValue: "", 
+							Usage: "The path to the config file",
+						},
+					},
 				},
 				{
-					RpcMethod:      "CreateGateway",
-					Use:            "create-gateway [index] [stake]",
-					Short:          "Create a new gateway",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}, {ProtoField: "stake"}},
-				},
-				{
-					RpcMethod:      "UpdateGateway",
-					Use:            "update-gateway [index] [stake]",
-					Short:          "Update gateway",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}, {ProtoField: "stake"}},
-				},
-				{
-					RpcMethod:      "DeleteGateway",
-					Use:            "delete-gateway [index]",
-					Short:          "Delete gateway",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+					RpcMethod:      "UnstakeGateway",
+					Use:            "unstake-gateway",
+					Short:          "Unstake a Gateway",
+					Long: `Unstake a gateway. This is a broadcast operation that will unstake the gateway
+specified by the 'from' address.`,
+					Example:`poktrolld tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"from": {
+							Name: "from", 
+							DefaultValue: "", 
+							Usage: "The address of the gateway",
+						},
+					},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
