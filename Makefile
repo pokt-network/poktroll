@@ -1,8 +1,8 @@
 .SILENT:
 
-POKTROLLD_HOME := ./localnet/poktrolld
-POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
-APPGATE_SERVER = http://localhost:42069
+POKTROLLD_HOME ?= ./localnet/poktrolld
+POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 
 ####################
