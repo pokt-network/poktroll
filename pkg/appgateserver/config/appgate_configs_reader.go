@@ -9,20 +9,36 @@ import (
 // YAMLAppGateServerConfig is the structure used to unmarshal the AppGateServer config file
 // TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files.
 type YAMLAppGateServerConfig struct {
-	QueryNodeRPCUrl   string `yaml:"query_node_rpc_url"`
-	QueryNodeGRPCUrl  string `yaml:"query_node_grpc_url"`
-	SigningKey        string `yaml:"signing_key"`
-	SelfSigning       bool   `yaml:"self_signing"`
-	ListeningEndpoint string `yaml:"listening_endpoint"`
+	ListeningEndpoint string                         `yaml:"listening_endpoint"`
+	Metrics           YAMLAppGateServerMetricsConfig `yaml:"metrics"`
+	QueryNodeGRPCUrl  string                         `yaml:"query_node_grpc_url"`
+	QueryNodeRPCUrl   string                         `yaml:"query_node_rpc_url"`
+	SelfSigning       bool                           `yaml:"self_signing"`
+	SigningKey        string                         `yaml:"signing_key"`
+}
+
+// YAMLAppGateServerMetricsConfig is the structure used to unmarshal the metrics
+// section of the AppGateServer config file
+type YAMLAppGateServerMetricsConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Addr    string `yaml:"addr"`
 }
 
 // AppGateServerConfig is the structure describing the AppGateServer config
 type AppGateServerConfig struct {
-	QueryNodeRPCUrl   *url.URL
-	QueryNodeGRPCUrl  *url.URL
-	SigningKey        string
-	SelfSigning       bool
 	ListeningEndpoint *url.URL
+	Metrics           *AppGateServerMetricsConfig
+	QueryNodeGRPCUrl  *url.URL
+	QueryNodeRPCUrl   *url.URL
+	SelfSigning       bool
+	SigningKey        string
+}
+
+// AppGateServerMetricsConfig is the structure resulting from parsing the metrics
+// section of the AppGateServer config file
+type AppGateServerMetricsConfig struct {
+	Enabled bool
+	Addr    string
 }
 
 // ParseAppGateServerConfigs parses the stake config file into a AppGateConfig
@@ -77,6 +93,13 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 		SigningKey:        yamlAppGateServerConfig.SigningKey,
 		SelfSigning:       yamlAppGateServerConfig.SelfSigning,
 		ListeningEndpoint: listeningEndpoint,
+	}
+
+	// Not doing additinal validation on metrics, as the server would not start if the value is invalid,
+	// providing the user with a descriptive error message.
+	appGateServerConfig.Metrics = &AppGateServerMetricsConfig{
+		Enabled: yamlAppGateServerConfig.Metrics.Enabled,
+		Addr:    yamlAppGateServerConfig.Metrics.Addr,
 	}
 
 	return appGateServerConfig, nil

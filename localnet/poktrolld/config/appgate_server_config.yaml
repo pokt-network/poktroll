@@ -3,3 +3,6 @@ query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
 signing_key: app1
 self_signing: true
 listening_endpoint: http://localhost:42069
+metrics:
+  enabled: true
+  addr: :9090

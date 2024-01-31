@@ -85,10 +85,15 @@ func NewRelayerProxyTestBehavior(
 	return test
 }
 
-// WithRelayerProxyDependencies creates the dependencies for the relayer proxy
+// WithRelayerProxyDependenciesForBlockHeight creates the dependencies for the relayer proxy
 // from the TestBehavior.mocks so they have the right interface and can be
 // used by the dependency injection framework.
-func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
+// blockHeight being the block height that will be returned by the block client's
+// LastNBlock method
+func WithRelayerProxyDependenciesForBlockHeight(
+	keyName string,
+	blockHeight int64,
+) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		logger := polylog.Ctx(test.ctx)
 		accountQueryClient := testqueryclients.NewTestAccountQueryClient(test.t)
@@ -96,7 +101,7 @@ func WithRelayerProxyDependencies(keyName string) func(*TestBehavior) {
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
 
-		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, 1)
+		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
@@ -229,6 +234,46 @@ func WithDefaultSessionSupplier(
 	}
 }
 
+// WithSuccessiveSessions creates sessions with SessionNumber 0 through SessionCount -1
+// and adds all of them to the sessionMap.
+// Each session is configured for the same serviceId and application provided.
+func WithSuccessiveSessions(
+	supplierKeyName string,
+	serviceId string,
+	appPrivateKey *secp256k1.PrivKey,
+	sessionsCount int,
+) func(*TestBehavior) {
+	return func(test *TestBehavior) {
+		appAddress := GetAddressFromPrivateKey(test, appPrivateKey)
+
+		sessionSuppliers := []string{}
+		var keyring keyringtypes.Keyring
+		err := depinject.Inject(test.Deps, &keyring)
+		require.NoError(test.t, err)
+
+		supplierAccount, err := keyring.Key(supplierKeyName)
+		require.NoError(test.t, err)
+
+		supplierAccAddress, err := supplierAccount.GetAddress()
+		require.NoError(test.t, err)
+
+		supplierAddress := supplierAccAddress.String()
+		sessionSuppliers = append(sessionSuppliers, supplierAddress)
+
+		// Adding `sessionCount` sessions to the sessionsMap to make them available
+		// to the MockSessionQueryClient.
+		for i := 0; i < sessionsCount; i++ {
+			testqueryclients.AddToExistingSessions(
+				test.t,
+				appAddress,
+				serviceId,
+				sessionkeeper.NumBlocksPerSession*int64(i),
+				sessionSuppliers,
+			)
+		}
+	}
+}
+
 // TODO_TECHDEBT(@red-0ne): This function only supports JSON-RPC requests and
 // needs to have its http.Request "Content-Type" header passed-in as a parameter
 // and take out the GetRelayResponseError function which parses JSON-RPC responses
@@ -350,9 +395,11 @@ func GenerateRelayRequest(
 	return &servicetypes.RelayRequest{
 		Meta: &servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
-				ApplicationAddress: appAddress,
-				SessionId:          string(sessionId[:]),
-				Service:            &sharedtypes.Service{Id: serviceId},
+				ApplicationAddress:      appAddress,
+				SessionId:               string(sessionId[:]),
+				Service:                 &sharedtypes.Service{Id: serviceId},
+				SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
+				SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
 			},
 			// The returned relay is unsigned and must be signed elsewhere for functionality
 			Signature: []byte(""),

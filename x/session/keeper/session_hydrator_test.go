@@ -26,7 +26,7 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, keepertest.TestServiceId1, sessionHeader.Service.Id)
 	require.Equal(t, "", sessionHeader.Service.Name)
 	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
-	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
+	require.Equal(t, int64(11), sessionHeader.SessionEndBlockHeight)
 	require.Equal(t, "f621ad93e2d9ebf2e967eb16b8ea2bc470baa1d4e13a82f348f34c6fc93eae7f", sessionHeader.SessionId)
 
 	// Check the session
@@ -69,7 +69,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
-			expectedSessionEndBlock:     4,
+			expectedSessionEndBlock:     3,
 			errExpected:                 nil,
 		},
 		{
@@ -79,7 +79,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
-			expectedSessionEndBlock:     4,
+			expectedSessionEndBlock:     3,
 			errExpected:                 nil,
 		},
 		{
@@ -89,7 +89,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
-			expectedSessionEndBlock:     8,
+			expectedSessionEndBlock:     7,
 			errExpected:                 nil,
 		},
 		{
@@ -99,7 +99,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       1,
 			expectedSessionStartBlock:   4,
-			expectedSessionEndBlock:     8,
+			expectedSessionEndBlock:     7,
 			errExpected:                 nil,
 		},
 		{

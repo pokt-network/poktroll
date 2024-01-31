@@ -8,7 +8,6 @@ import (
 	"cosmossdk.io/depinject"
 
 	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
@@ -73,10 +72,7 @@ func ExampleNewEventsReplayClient() {
 
 	// Create a new instance of the EventsReplayClient
 	// See: https://pkg.go.dev/github.com/pokt-network/poktroll/pkg/client/events/#NewEventsReplayClient
-	client, err := events.NewEventsReplayClient[
-		EventType,
-		observable.ReplayObservable[EventType],
-	](
+	client, err := events.NewEventsReplayClient[EventType](
 		ctx,
 		depConfig,
 		eventQueryString,

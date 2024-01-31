@@ -6,6 +6,8 @@ import (
 	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
+
+	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -94,18 +96,24 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		}).
 		Msg("verifying relay request session")
 
-	// TODO_BLOCKER(#275): Need to either slow down blocks, increase num blocks
-	// per session, BlocksPerSession. See the following comment for more details:
-	// https://github.com/pokt-network/poktroll/issues/275#issuecomment-1863519333
-	currentBlock := rp.blockClient.LastNBlocks(ctx, 1)[0]
-	session, err := rp.sessionQuerier.GetSession(ctx, appAddress, service.Id, currentBlock.Height())
+	sessionBlockHeight, err := rp.getTargetSessionBlockHeight(ctx, relayRequest)
+	if err != nil {
+		return err
+	}
+
+	session, err := rp.sessionQuerier.GetSession(
+		ctx,
+		appAddress,
+		service.Id,
+		sessionBlockHeight,
+	)
 
 	if err != nil {
 		return err
 	}
 
 	// Since the retrieved sessionId was in terms of:
-	// - the current block height (which is not provided by the relayRequest)
+	// - the current block height and sessionGracePeriod (which are not provided by the relayRequest)
 	// - serviceId (which is not provided by the relayRequest)
 	// - applicationAddress (which is used to to verify the relayRequest signature)
 	// we can reduce the session validity check to checking if the retrieved session's sessionId
@@ -127,4 +135,34 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 
 	return ErrRelayerProxyInvalidSupplier
+}
+
+// getTargetSessionBlockHeight returns the block height at which the session
+// for the given relayRequest should be processed. If the session is within the
+// grace period, the session's end block height is returned. Otherwise,
+// the current block height is returned.
+// If the session has expired, then return an error.
+func (rp *relayerProxy) getTargetSessionBlockHeight(
+	ctx context.Context,
+	relayRequest *types.RelayRequest,
+) (sessionBlockHeight int64, err error) {
+	currentBlockHeight := rp.blockClient.LastNBlocks(ctx, 1)[0].Height()
+	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
+
+	// Check if the `RelayRequest`'s session has expired.
+	if sessionEndblockHeight < currentBlockHeight {
+		// Do not process the `RelayRequest` if the session has expired and the current
+		// block height is outside the session's grace period.
+		if sessiontypes.IsWithinGracePeriod(sessionEndblockHeight, currentBlockHeight) {
+			return sessionEndblockHeight, nil
+		}
+
+		return 0, ErrRelayerProxyInvalidSession.Wrapf(
+			"session expired, expecting: %d, got: %d",
+			sessionEndblockHeight,
+			currentBlockHeight,
+		)
+	}
+
+	return currentBlockHeight, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
@@ -165,20 +166,24 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	defer rs.sessionsTreesMu.Unlock()
 
 	// Check if there are sessions that need to enter the claim/proof phase
-	// as their end block height was the one before the last committed block.
+	// as their end block height was the one before the last committed block or
+	// earlier.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-		// TODO_BLOCKER(@red-0ne): We need this to be == instead of <= because we don't want to keep sending
-		// the same session while waiting the next step. This does not address the case
-		// where the block client misses the target block which should be handled by the
-		// retry mechanism. See the discussion in the following GitHub thread for next
-		// steps: https://github.com/pokt-network/poktroll/pull/177/files?show-viewed-files=true&file-filters%5B%5D=#r1391957041
-		if endBlockHeight == block.Height() {
-			// Iterate over the sessionsTrees that end at this block height (or
-			// less) and add them to the list of sessionTrees to be published.
+		if IsWithinGracePeriod(endBlockHeight, block.Height()) {
+			// Iterate over the sessionsTrees that have grace period ending at this
+			// block height and add them to the list of sessionTrees to be published.
 			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-				sessionTrees = append(sessionTrees, sessionTree)
+				// Mark the session as claimed and add it to the list of sessionTrees to be published.
+				// If the session has already been claimed, it will be skipped.
+				// Appending the sessionTree to the list of sessionTrees is protected
+				// against concurrent access by the sessionsTreesMu such that the first
+				// call that marks the session as claimed will be the only one to add the
+				// sessionTree to the list.
+				if err := sessionTree.StartClaiming(); err != nil {
+					sessionTrees = append(sessionTrees, sessionTree)
+				}
 			}
 		}
 	}
@@ -247,17 +252,23 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to ensure session tree")
 		return err, false
 	}
 
 	if err := smst.Update(relay.Hash, relay.Bytes, 1); err != nil {
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		rs.logger.Error().Err(err).Msg("failed to update smt")
 		return err, false
 	}
 
 	// Skip because this map function only outputs errors.
 	return nil, true
+}
+
+// IsWithinGracePeriod checks if the grace period for the session has ended
+// and signals whether it is time to create a claim for it.
+func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
+	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }

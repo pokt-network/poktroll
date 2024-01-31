@@ -32,6 +32,13 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 	relayMinerConfig.SmtStorePath = yamlRelayMinerConfig.SmtStorePath
 
+	// No additional validation on metrics. The server would fail to start if they are invalid
+	// which is the intended behaviour.
+	relayMinerConfig.Metrics = &RelayMinerMetricsConfig{
+		Enabled: yamlRelayMinerConfig.Metrics.Enabled,
+		Addr:    yamlRelayMinerConfig.Metrics.Addr,
+	}
+
 	// Hydrate the pocket node urls
 	if err := relayMinerConfig.HydratePocketNodeUrls(&yamlRelayMinerConfig.PocketNode); err != nil {
 		return nil, err
