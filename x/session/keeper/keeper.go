@@ -60,7 +60,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 func (k Keeper) BeginBlocker(ctx sdk.Context) {
 	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
 	hash := ctx.BlockHeader().LastBlockId.Hash
-	// ctx.BlockHeight() is the height of the current block being processed,
+	// ctx.BlockHeader().Height is the height of the current block being processed,
 	// decrementing it by 1 gives us the height of the last block committed.
 	height := ctx.BlockHeader().Height - 1
 	// If height is 0, ctx.BlockHeader().LastBlockId.Hash will be nil,
