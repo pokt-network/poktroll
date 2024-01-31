@@ -9,4 +9,5 @@ var (
 	ErrSessionTreeStorePathExists          = sdkerrors.Register(codespace, 3, "session tree store path already exists")
 	ErrSessionTreeProofPathMismatch        = sdkerrors.Register(codespace, 4, "session tree proof path mismatch")
 	ErrSessionTreeUndefinedStoresDirectory = sdkerrors.Register(codespace, 5, "session tree key-value store directory undefined for where they will be saved on disk")
+	ErrSessionTreeAlreadyMarkedAsClaimed   = sdkerrors.Register(codespace, 6, "session tree already marked as claimed")
 )
