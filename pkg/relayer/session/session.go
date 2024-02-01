@@ -181,7 +181,7 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// against concurrent access by the sessionsTreesMu such that the first
 				// call that marks the session as claimed will be the only one to add the
 				// sessionTree to the list.
-				if err := sessionTree.StartClaiming(); err != nil {
+				if err := sessionTree.StartClaiming(); err == nil {
 					sessionTrees = append(sessionTrees, sessionTree)
 				}
 			}
