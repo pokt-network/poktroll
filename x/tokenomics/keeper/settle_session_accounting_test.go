@@ -17,7 +17,8 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_IN_THIS_PR: Evaluate what other tests we need to add in this iteration.
+// TODO_TEST(@bryanchriswhite, @Olshansk): Improve tokenomics tests (i.e. checking balances)
+// once
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")

@@ -19,7 +19,6 @@ const (
 	smstRootSize = 40
 )
 
-// TODO_IN_THIS_PR: Rollback state changes if we find out that this function is not
 // atomic.if this function is not atomic.
 
 // SettleSessionAccounting is responsible for all of the post-session accounting
