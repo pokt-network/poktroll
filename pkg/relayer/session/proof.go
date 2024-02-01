@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 // submitProofs maps over the given claimedSessions observable.
@@ -67,7 +68,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
 ) {
-	submitProofWindowStartHeight := createClaimHeight
+	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 

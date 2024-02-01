@@ -109,11 +109,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
 func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
-	// TODO_BLOCKER: Need to retrieve the block hash at SessionStartBlockHeight, but this requires
-	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
-	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
-	// prevHashBz := ctx.HeaderHash()
-	prevHash := "TODO_BLOCKER: See the comment above"
+	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
@@ -125,7 +121,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
-		prevHash,
+		prevHashBz,
 		sh.blockHeight,
 	)
 
@@ -266,13 +262,12 @@ func GetSessionNumber(blockHeight int64) int64 {
 // that is used to get the session start block height.
 func GetSessionId(
 	appPubKey,
-	serviceId,
-	blockHash string,
+	serviceId string,
+	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
 	appPubKeyBz := []byte(appPubKey)
 	serviceIdBz := []byte(serviceId)
-	blockHashBz := []byte(blockHash)
 
 	blockHeightBz := getSessionStartBlockHeightBz(blockHeight)
 	sessionIdBz = concatWithDelimiter(

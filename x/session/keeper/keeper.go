@@ -53,3 +53,22 @@ func NewKeeper(
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
+
+// BeginBlocker is called at the beginning of every block.
+// It fetches the block hash from the committed block ans saves its hash
+// in the store.
+func (k Keeper) BeginBlocker(ctx sdk.Context) {
+	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
+	hash := ctx.BlockHeader().LastBlockId.Hash
+	// ctx.BlockHeader().Height is the height of the current block being processed,
+	// decrementing it by 1 gives us the height of the last block committed.
+	height := ctx.BlockHeader().Height - 1
+	// If height is 0, ctx.BlockHeader().LastBlockId.Hash will be nil,
+	// fall back to an empty byte slice.
+	if height == 0 {
+		hash = []byte{}
+	}
+
+	store := ctx.KVStore(k.storeKey)
+	store.Set(GetBlockHashKey(height), hash)
+}
