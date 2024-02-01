@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 
 	tmdb "github.com/cometbft/cometbft-db"
@@ -151,6 +152,26 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 
 	// Initialize params
 	k.SetParams(ctx, types.DefaultParams())
+
+	// In prod, the hashes of all block heights are stored in the hash store while
+	// the block hashes below are hardcoded to match the hardcoded session IDs used
+	// in the `session_hydrator_test.go`.
+	// TODO_IMPROVE: Use fixtures populated by block hashes and their corresponding
+	// session IDs for each block height in the [0, N] interval, instead of using
+	// in-place hardcoded values.
+	// Store block hashes to be used in tests
+	blockHash := map[int64]string{
+		0: "",
+		4: "261594ddc3c8afc5b4c63f59ee58e89d3a115bcd164c83fd79349de0b1ffd21d",
+		8: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
+	}
+
+	store := ctx.KVStore(storeKey)
+	for height, hash := range blockHash {
+		hashBz, err := hex.DecodeString(hash)
+		require.NoError(t, err)
+		store.Set(keeper.GetBlockHashKey(height), hashBz)
+	}
 
 	return k, ctx
 }
