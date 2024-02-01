@@ -64,15 +64,14 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 		ClosestMerkleProof: msg.Proof,
 	}
 
-	if err := k.queryAndValidateClaimForProof(ctx, &proof); err != nil {
+	claim, err := k.queryAndValidateClaimForProof(ctx, &proof)
+	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertProof(ctx, proof)
-
-	// TODO_UPNEXT(@Olshansk, #359): Call `tokenomics.SettleSessionAccounting()` here
 
 	logger.
 		With(
@@ -82,24 +81,30 @@ func (k msgServer) SubmitProof(goCtx context.Context, msg *suppliertypes.MsgSubm
 		).
 		Debug("created proof")
 
+	// TODO_IN_THIS_PR: Discuss whether this should be called in an `EndBlocker` function
+	// or directly here.
+	if err := k.Keeper.tokenomicsKeeper.SettleSessionAccounting(goCtx, claim); err != nil {
+		return nil, err
+	}
+
 	return &suppliertypes.MsgSubmitProofResponse{}, nil
 }
 
 // queryAndValidateClaimForProof ensures that  a claim corresponding to the given proof's
 // session exists & has a matching supplier address and session header.
-func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *suppliertypes.Proof) error {
+func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *suppliertypes.Proof) (*suppliertypes.Claim, error) {
 	sessionId := proof.GetSessionHeader().GetSessionId()
 	// NB: no need to assert the testSessionId or supplier address as it is retrieved
 	// by respective values of the given proof. I.e., if the claim exists, then these
 	// values are guaranteed to match.
 	claim, found := k.GetClaim(sdkCtx, sessionId, proof.GetSupplierAddress())
 	if !found {
-		return suppliertypes.ErrSupplierClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
+		return nil, suppliertypes.ErrSupplierClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
 	}
 
 	// Ensure session start heights match.
 	if claim.GetSessionHeader().GetSessionStartBlockHeight() != proof.GetSessionHeader().GetSessionStartBlockHeight() {
-		return suppliertypes.ErrSupplierInvalidSessionStartHeight.Wrapf(
+		return nil, suppliertypes.ErrSupplierInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claim.GetSessionHeader().GetSessionStartBlockHeight(),
 			proof.GetSessionHeader().GetSessionStartBlockHeight(),
@@ -108,7 +113,7 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 
 	// Ensure session end heights match.
 	if claim.GetSessionHeader().GetSessionEndBlockHeight() != proof.GetSessionHeader().GetSessionEndBlockHeight() {
-		return suppliertypes.ErrSupplierInvalidSessionEndHeight.Wrapf(
+		return nil, suppliertypes.ErrSupplierInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claim.GetSessionHeader().GetSessionEndBlockHeight(),
 			proof.GetSessionHeader().GetSessionEndBlockHeight(),
@@ -117,7 +122,7 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 
 	// Ensure application addresses match.
 	if claim.GetSessionHeader().GetApplicationAddress() != proof.GetSessionHeader().GetApplicationAddress() {
-		return suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+		return nil, suppliertypes.ErrSupplierInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claim.GetSessionHeader().GetApplicationAddress(),
 			proof.GetSessionHeader().GetApplicationAddress(),
@@ -126,12 +131,12 @@ func (k msgServer) queryAndValidateClaimForProof(sdkCtx sdk.Context, proof *supp
 
 	// Ensure service IDs match.
 	if claim.GetSessionHeader().GetService().GetId() != proof.GetSessionHeader().GetService().GetId() {
-		return suppliertypes.ErrSupplierInvalidService.Wrapf(
+		return nil, suppliertypes.ErrSupplierInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claim.GetSessionHeader().GetService().GetId(),
 			proof.GetSessionHeader().GetService().GetId(),
 		)
 	}
 
-	return nil
+	return &claim, nil
 }

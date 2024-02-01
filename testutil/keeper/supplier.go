@@ -72,6 +72,11 @@ func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress
 			},
 		).AnyTimes()
 
+	mockTokenomicsKeeper := mocks.NewMockTokenomicsKeeper(ctrl)
+	mockTokenomicsKeeper.EXPECT().
+		SettleSessionAccounting(gomock.AssignableToTypeOf(sdk.Context{}), gomock.Any()).
+		AnyTimes()
+
 	paramsSubspace := typesparams.NewSubspace(cdc,
 		types.Amino,
 		storeKey,
@@ -85,6 +90,8 @@ func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress
 		paramsSubspace,
 
 		mockBankKeeper,
+		mockSessionKeeper,
+		mockTokenomicsKeeper,
 	)
 	k.SupplySessionKeeper(mockSessionKeeper)
 

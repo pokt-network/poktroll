@@ -1,6 +1,6 @@
 package types
 
-//go:generate mockgen -destination ../../../testutil/supplier/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,SessionKeeper
+//go:generate mockgen -destination ../../../testutil/supplier/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,SessionKeeper,TokenomicsKeeper
 
 import (
 	"context"
@@ -25,4 +25,8 @@ type BankKeeper interface {
 
 type SessionKeeper interface {
 	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
+}
+
+type TokenomicsKeeper interface {
+	SettleSessionAccounting(context.Context, *Claim) error
 }

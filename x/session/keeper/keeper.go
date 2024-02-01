@@ -58,6 +58,8 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 // It fetches the block hash from the committed block ans saves its hash
 // in the store.
 func (k Keeper) BeginBlocker(ctx sdk.Context) {
+	logger := k.Logger(ctx).With("method", "BeginBlocker")
+
 	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
 	hash := ctx.BlockHeader().LastBlockId.Hash
 	// ctx.BlockHeader().Height is the height of the current block being processed,
@@ -71,4 +73,6 @@ func (k Keeper) BeginBlocker(ctx sdk.Context) {
 
 	store := ctx.KVStore(k.storeKey)
 	store.Set(GetBlockHashKey(height), hash)
+
+	logger.Debug(fmt.Sprintf("saved block hash %X for height %d", hash, height))
 }
