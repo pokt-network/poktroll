@@ -29,7 +29,6 @@ const (
 // against a proof BEFORE calling this function.
 //
 // TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
-// TODO_UPNEXT(#323, @Olshansk): Implement this function
 func (k Keeper) SettleSessionAccounting(
 	goCtx context.Context,
 	claim *suppliertypes.Claim,
