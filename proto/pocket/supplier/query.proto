@@ -93,6 +93,7 @@ message QueryAllClaimsRequest {
 }
 
 message QueryAllClaimsResponse {
+  // TODO_IMPROVE: Rename to `Claims` (plural).
   repeated Claim                                  claim      = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
@@ -116,6 +117,7 @@ message QueryAllProofsRequest {
 }
 
 message QueryAllProofsResponse {
+  // TODO_IMPROVE: Rename to `Proofs` (plural).
   repeated Proof                                  proof      = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

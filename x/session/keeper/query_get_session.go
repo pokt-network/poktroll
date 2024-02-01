@@ -16,7 +16,7 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 	}
 
 	if err := req.ValidateBasic(); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
