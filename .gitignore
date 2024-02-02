@@ -49,10 +49,6 @@ localnet/*/config/*.json
 # Frontend utils
 ts-client/
 
-# Proto artifacts
-**/*.pb.go
-**/*.pb.gw.go
-
 # Mock
 **/*_mock.go
 
