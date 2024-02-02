@@ -47,7 +47,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 }
 
 // ComputeUnitsToTokensMultiplier returns the ComputeUnitsToTokensMultiplier param
-func (k Keeper) ComputeUnitsToTokensMultiplier(ctx sdk.Context) (res uint64) {
-	k.paramstore.Get(ctx, types.KeyComputeUnitsToTokensMultiplier, &res)
+func (k Keeper) ComputeUnitsToTokensMultiplier(ctx sdk.Context) (param uint64) {
+	k.paramstore.Get(ctx, types.KeyComputeUnitsToTokensMultiplier, &param)
 	return
 }
