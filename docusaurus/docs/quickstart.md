@@ -196,9 +196,9 @@ If you re-run, `make app_list` you should see that `SHANNON_ADDRESS` is now stak
 
 ### Send a relay
 
-:::danger
-Please run `make supplier1_stake && make app1_stake` before sending a relay.
-This is related to some techdebt(#180) that will be fixed soon.
+:::warning
+You must run `make acc_initialize_pubkeys` before sending a relay in order for
+the public keys to be initialized correctly.
 :::
 
 If you look in `localnet/poktrolld/config/appgate_server_config.yaml`, you'll find

@@ -18,7 +18,7 @@ import (
 )
 
 // TODO_TEST(@bryanchriswhite, @Olshansk): Improve tokenomics tests (i.e. checking balances)
-// once
+// once in-memory network integration tests are supported.
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
@@ -260,7 +260,7 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) suppliertypes.Claim {
 			SessionId:               "1",
 			SessionEndBlockHeight:   5,
 		},
-		RootHash: smstRootWithSum(42),
+		RootHash: smstRootWithSum(sum),
 	}
 }
 

@@ -124,7 +124,10 @@ func (k Keeper) SettleSessionAccounting(
 		upoktCoins = sdk.NewCoins(*application.Stake)
 	}
 
-	// Undelegate the amount of coins that need to be burnt
+	// Undelegate the amount of coins that need to be burnt from the application stake.
+	// Since the application commits a certain amount of stake to the network to be able
+	// to pay for relay mining, this stake is taken from the funds "in escrow" rather
+	// than its balance.
 	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, apptypes.ModuleName, applicationAddress, upoktCoins); err != nil {
 		logger.Error(fmt.Sprintf("THIS SHOULD NOT HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v", applicationAddress, upoktCoins, application.Stake))
 
