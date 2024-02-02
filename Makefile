@@ -518,7 +518,7 @@ acc_balance_total_supply: ## Query the total supply of the network
 
 # NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
 # to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
-# We attempted using a `tx multi-sen`d from the `faucet` to all accounts, but
+# We attempted using a `tx multi-send` from the `faucet` to all accounts, but
 # that also did not solve this problem because the account itself must sign the
 # transaction for its public key to be populated in the account keeper. As such,
 # the solution is to send funds from every account in genesis to some address
