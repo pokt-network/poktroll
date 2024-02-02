@@ -1,5 +1,6 @@
 .SILENT:
 
+SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
@@ -526,9 +527,9 @@ acc_balance_total_supply: ## Query the total supply of the network
 
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
-	$(eval ADDRESSES=$(shell make ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
+	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
-	# @echo "Addresses: ${ADDRESSES}"
+	# @printf "Addresses: ${ADDRESSES}"
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
@@ -539,7 +540,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@echo "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
+	@printf "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
 	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############
