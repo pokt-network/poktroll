@@ -5,7 +5,9 @@ Feature: Session Namespace
   Scenario: Supplier completes claim/proof lifecycle for a valid session
     Given the user has the pocketd binary installed
     When the supplier "supplier1" has serviced a session with "5" relays for service "svc1" for application "app1"
-    And the user should wait for "5" seconds
+    And the user should wait for "10" seconds
+    # TODO_IN_THIS_PR: Can I change this to wait a certain number of blocks?
+    # And the user should wait for "15" seconds
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
 #  TODO_IMPROVE: ...
 #    And an event should be emitted...

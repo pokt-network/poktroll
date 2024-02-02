@@ -24,7 +24,8 @@ const (
 	// when they will be replaced by governance params
 	NumBlocksPerSession = 4
 	// Duration of the grace period in number of sessions
-	SessionGracePeriod          = 1
+	// TODO_IN_THIS_PR: Revert this
+	SessionGracePeriod          = 0 // 1
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
