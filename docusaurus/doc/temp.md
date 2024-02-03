@@ -8,6 +8,12 @@
 
 ## TODOs in my own list
 
+- Quote
+  > The only thing that grows faster than computer performance is human expectation
+  - https://www.stroustrup.com/quotes.html
+- The Right To Win
+  - Why pocket has the right to win
+  -
 - TCP up for the internet
 - Configs are a setting enforced by gateways
 - Tiered token models
