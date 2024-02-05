@@ -77,11 +77,23 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	var err error
 	var deps depinject.Config
 
+	if config.PrivateKey == nil {
+		return nil, ErrSDKInvalidConfig.Wrap("missing PrivateKey in config")
+	}
+
+	if config.QueryNodeGRPCUrl == nil {
+		return nil, ErrSDKInvalidConfig.Wrap("missing QueryNodeGRPCURL in config")
+	}
+
+	if config.QueryNodeUrl == nil {
+		return nil, ErrSDKInvalidConfig.Wrap("missing QueryNodeRPCURL in config")
+	}
+
 	// Build the dependencies if they are not provided in the config.
 	if config.Deps != nil {
 		deps = config.Deps
 	} else if deps, err = sdk.buildDeps(ctx, config); err != nil {
-		return nil, err
+		return nil, ErrSDKInvalidConfig.Wrapf("%s", err)
 	}
 
 	if err := depinject.Inject(
@@ -92,7 +104,7 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 		&sdk.accountQuerier,
 		&sdk.blockClient,
 	); err != nil {
-		return nil, err
+		return nil, ErrSDKInvalidConfig.Wrapf("%s", err)
 	}
 
 	// Store the private key as a ring scalar to be used for ring signatures.

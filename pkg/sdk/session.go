@@ -71,7 +71,7 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 		latestBlockHeight,
 	)
 	if err != nil {
-		return nil, err
+		return nil, ErrSDKInvalidSession.Wrapf("%s", err)
 	}
 
 	// Override the old Session and SessionSuppliers and construct the new one.
