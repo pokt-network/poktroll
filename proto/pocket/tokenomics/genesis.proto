@@ -1,12 +1,13 @@
 syntax = "proto3";
-package poktroll.tokenomics;
+package pocket.tokenomics;
 
 import "gogoproto/gogo.proto";
-import "poktroll/tokenomics/params.proto";
+import "pocket/tokenomics/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 // GenesisState defines the tokenomics module's genesis state.
 message GenesisState {
+  // params defines all the parameters of the module.
   Params params = 1 [(gogoproto.nullable) = false];
 }

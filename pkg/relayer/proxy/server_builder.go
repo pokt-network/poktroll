@@ -62,11 +62,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		}
 	}
 
+	rp.supplierAddress = supplier.Address
+
 	if rp.proxyServers, err = rp.initializeProxyServers(supplier.Services); err != nil {
 		return err
 	}
-
-	rp.supplierAddress = supplier.Address
 
 	return nil
 }

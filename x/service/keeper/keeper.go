@@ -13,6 +13,7 @@ import (
 )
 
 type (
+	// Keeper defines the keeper, and its dependencies, for the service module.
 	Keeper struct {
 		cdc        codec.BinaryCodec
 		storeKey   storetypes.StoreKey
@@ -23,6 +24,7 @@ type (
 	}
 )
 
+// NewKeeper creates a new Service module Keeper instance.
 func NewKeeper(
 	cdc codec.BinaryCodec,
 	storeKey,
@@ -46,6 +48,7 @@ func NewKeeper(
 	}
 }
 
+// Logger provides a module-specific logger from the context's logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }

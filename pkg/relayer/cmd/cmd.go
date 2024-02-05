@@ -120,6 +120,14 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	// Serve metrics.
+	if relayMinerConfig.Metrics.Enabled {
+		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+		}
+	}
+
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {

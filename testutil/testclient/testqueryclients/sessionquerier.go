@@ -2,6 +2,7 @@ package testqueryclients
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -13,7 +14,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const blockHash = "1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"
+// blockHashBz is the []byte representation of the block hash used in the tests.
+var blockHashBz []byte
 
 // sessionsMap is a map of: sessionId -> Session.
 // If a sessionId is not present in the map, it implies we have not encountered
@@ -22,6 +24,11 @@ var sessionsMap map[string]*sessiontypes.Session
 
 func init() {
 	sessionsMap = make(map[string]*sessiontypes.Session)
+
+	var err error
+	if blockHashBz, err = hex.DecodeString("1B1051B7BF236FEA13EFA65B6BE678514FA5B6EA0AE9A7A4B68D45F95E4F18E0"); err != nil {
+		panic(fmt.Errorf("error while trying to decode block hash: %w", err))
+	}
 }
 
 // NewTestSessionQueryClient creates a mock of the SessionQueryClient
@@ -40,7 +47,7 @@ func NewTestSessionQueryClient(
 			serviceId string,
 			blockHeight int64,
 		) (session *sessiontypes.Session, err error) {
-			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHash, blockHeight)
+			sessionId, _ := sessionkeeper.GetSessionId(address, serviceId, blockHashBz, blockHeight)
 
 			session, ok := sessionsMap[sessionId]
 			if !ok {
@@ -65,16 +72,20 @@ func AddToExistingSessions(
 ) {
 	t.Helper()
 
-	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHash, blockHeight)
+	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	session := sessiontypes.Session{
 		Header: &sessiontypes.SessionHeader{
 			Service:                 &sharedtypes.Service{Id: serviceId},
 			ApplicationAddress:      appAddress,
-			SessionStartBlockHeight: blockHeight,
+			SessionId:               sessionId,
+			SessionStartBlockHeight: sessionkeeper.GetSessionStartBlockHeight(blockHeight),
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(blockHeight),
 		},
-		SessionId: sessionId,
-		Suppliers: []*sharedtypes.Supplier{},
+		NumBlocksPerSession: sessionkeeper.NumBlocksPerSession,
+		SessionNumber:       sessionkeeper.GetSessionNumber(blockHeight),
+		SessionId:           sessionId,
+		Suppliers:           []*sharedtypes.Supplier{},
 	}
 
 	for _, supplierAddress := range suppliersAddress {

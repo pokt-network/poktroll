@@ -1,8 +1,9 @@
 .SILENT:
 
-POKTROLLD_HOME := ./localnet/poktrolld
-POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
-APPGATE_SERVER = http://localhost:42069
+SHELL = /bin/sh
+POKTROLLD_HOME ?= ./localnet/poktrolld
+POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 
 ####################
@@ -11,7 +12,7 @@ POCKET_ADDR_PREFIX = pokt
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
 .PHONY: install_ci_deps
-install_ci_deps: ## Installs `mockgen`
+install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
@@ -38,6 +39,9 @@ help: ## Prints all the targets in all the Makefiles
 ### Checks ###
 ##############
 
+# TODO_DOCUMENT: All of the `check_` helpers can be installed differently depending
+# on the user's OS and enviornment.
+
 .PHONY: check_go_version
 # Internal helper target - check go version
 check_go_version:
@@ -50,6 +54,27 @@ check_go_version:
 		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
 		exit 1; \
 	fi
+
+.PHONY: check_act
+# Internal helper target - check if `act` is installed
+check_act:
+	{ \
+	if ( ! ( command -v act >/dev/null )); then \
+		echo "Seems like you don't have `act` installed. Please visit https://github.com/nektos/act before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
+.PHONY: check_gh
+# Internal helper target - check if `gh` is installed
+check_gh:
+	{ \
+	if ( ! ( command -v gh >/dev/null )); then \
+		echo "Seems like you don't have `gh` installed. Please visit https://cli.github.com/ before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: check_docker
 # Internal helper target - check if docker is installed
@@ -80,6 +105,17 @@ check_npm:
 		exit 1; \
 	fi; \
 	}
+
+.PHONY: check_jq
+# Internal helper target - check if jq is installed
+check_jq:
+	{ \
+	if ( ! ( command -v jq >/dev/null )); then \
+		echo "Seems like you don't have jq installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
+
 
 .PHONY: check_node
 # Internal helper target - check if node is installed
@@ -131,7 +167,7 @@ localnet_down: ## Delete resources created by localnet
 	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
-localnet_regenesis: ## Regenerate the localnet genesis file
+localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	ignite chain init
 	mkdir -p $(POKTROLLD_HOME)/config/
@@ -160,7 +196,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e
-test_e2e: ## Run all E2E tests
+test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
@@ -193,6 +229,8 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/gateway/types/
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
+	go generate ./x/service/types/
+	go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
@@ -211,6 +249,10 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
+
+.PHONY: load_test_simple
+load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
 ### TODOS ###
@@ -316,7 +358,6 @@ app_list: ## List all the staked applications
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
-# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
@@ -476,6 +517,32 @@ acc_balance_query_app1: ## Query the balance of app1
 acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
 
+# NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
+# to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
+# We attempted using a `tx multi-send` from the `faucet` to all accounts, but
+# that also did not solve this problem because the account itself must sign the
+# transaction for its public key to be populated in the account keeper. As such,
+# the solution is to send funds from every account in genesis to some address
+# (PNF was selected ambigously) to make sure their public keys are populated.
+
+.PHONY: acc_initialize_pubkeys
+acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
+	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
+	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
+	# @printf "Addresses: ${ADDRESSES}"
+	$(foreach addr, $(ADDRESSES),\
+		echo $(addr);\
+		poktrolld tx bank send \
+			$(addr) $(PNF_ADDR) 1000upokt \
+			--yes \
+			--home=$(POKTROLLD_HOME) \
+			--node $(POCKET_NODE);)
+
+.PHONY: acc_initialize_pubkeys_warn_message
+acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
+	@printf "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
+	"\t\tmake acc_initialize_pubkeys\n"
+
 ##############
 ### Claims ###
 ##############
@@ -514,6 +581,25 @@ claim_list_height_5: ## List all the claims at height 5
 .PHONY: claim_list_session
 claim_list_session: ## List all the claims ending at a specific session (specified via SESSION variable)
 	poktrolld --home=$(POKTROLLD_HOME) q supplier list-claims --session-id $(SESSION) --node $(POCKET_NODE)
+
+##############
+### Params ###
+##############
+
+MODULES := application gateway pocket service session supplier tokenomics
+
+# TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
+.PHONY: update_tokenomics_params
+update_tokenomics_params: ## Update the tokenomics module params
+	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE)
+
+.PHONY: query_all_params
+query_all_params: check_jq ## Query the params from all available modules
+	@for module in $(MODULES); do \
+	    echo "~~~ Querying $$module module params ~~~"; \
+	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \
+	    echo ""; \
+	done
 
 ######################
 ### Ignite Helpers ###
@@ -556,3 +642,32 @@ docusaurus_start: check_npm check_node ## Start the Docusaurus server
 .PHONY: poktrolld_addr
 poktrolld_addr: ## Retrieve the address for an account by ACC_NAME
 	@echo $(shell poktrolld --home=$(POKTROLLD_HOME) keys show -a $(ACC_NAME))
+
+
+###################
+### Act Helpers ###
+###################
+
+.PHONY: detect_arch
+# Internal helper to avoid the caller needing to specify the architecture
+detect_arch:
+	@ARCH=`uname -m`; \
+	case $$ARCH in \
+	x86_64) \
+		echo linux/amd64 ;; \
+	arm64) \
+		echo linux/arm64 ;; \
+	*) \
+		echo "Unsupported architecture: $$ARCH" >&2; \
+		exit 1 ;; \
+	esac
+
+.PHONY: act_list
+act_list: check_act ## List all github actions that can be executed locally with act
+	act --list
+
+.PHONY: act_reviewdog
+act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so: `GITHUB_TOKEN=$(gh auth token) make act_reviewdog`
+	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
+	@echo "Detected architecture: $(CONTAINER_ARCH)"
+	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)

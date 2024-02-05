@@ -16,14 +16,15 @@ import (
 
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/regen-network/gocuke"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/regen-network/gocuke"
-	"github.com/stretchr/testify/require"
 )
 
 var (

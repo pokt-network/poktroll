@@ -5,13 +5,19 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"cosmossdk.io/depinject"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	metrics "github.com/slok/go-http-metrics/metrics/prometheus"
+	metricsmiddleware "github.com/slok/go-http-metrics/middleware"
+	middlewarestd "github.com/slok/go-http-metrics/middleware/std"
 
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
+	"github.com/pokt-network/poktroll/pkg/partials"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
 )
@@ -105,6 +111,8 @@ func NewAppGateServer(
 		app.signingInformation.AppAddress = appAddress.String()
 	}
 
+	// TODO_CONSIDERATION: Use app.listeningEndpoint scheme to determine which
+	// kind of server to create (HTTP, HTTPS, TCP, UNIX, etc...)
 	app.server = &http.Server{Addr: app.listeningEndpoint.Host}
 
 	return app, nil
@@ -119,8 +127,13 @@ func (app *appGateServer) Start(ctx context.Context) error {
 		app.server.Shutdown(ctx)
 	}()
 
+	// This hooks https://github.com/slok/go-http-metrics to the appgate server HTTP server.
+	mm := metricsmiddleware.New(metricsmiddleware.Config{
+		Recorder: metrics.NewRecorder(metrics.Config{}),
+	})
+
 	// Set the HTTP handler.
-	app.server.Handler = app
+	app.server.Handler = middlewarestd.Handler("", mm, app)
 
 	// Start the HTTP server.
 	return app.server.ListenAndServe()
@@ -157,10 +170,13 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 			ctx,
 			requestPayloadBz,
 			writer,
+			serviceId,
+			"unknown",
 			ErrAppGateHandleRelay.Wrapf("reading relay request body: %s", err),
 		)
-		// TODO_TECHDEBT: log additional info?
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed reading relay request body")
+
 		return
 	}
 	app.logger.Debug().
@@ -168,15 +184,29 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 		Str("payload", string(requestPayloadBz)).
 		Msg("handling relay")
 
+	// TODO_IMPROVE: log additional info?
+	app.logger.Debug().Msg("determining request type")
+
+	// Get the type of the request by doing a partial unmarshal of the payload
+	requestType, err := partials.GetRequestType(ctx, requestPayloadBz)
+	if err != nil {
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, "unknown", ErrAppGateHandleRelay)
+		// TODO_IMPROVE: log additional info?
+		app.logger.Error().Err(err).Msg("failed getting request type")
+
+		return
+	}
+
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
 	if appAddress == "" {
 		appAddress = request.URL.Query().Get("senderAddr")
 	}
 	if appAddress == "" {
-		app.replyWithError(ctx, requestPayloadBz, writer, ErrAppGateMissingAppAddress)
-		// TODO_TECHDEBT: log additional info?
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Msg("no application address provided")
+
 		return
 	}
 
@@ -187,15 +217,18 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// the request type here.
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?
-	if err := app.handleSynchronousRelay(ctx, appAddress, serviceId, requestPayloadBz, request, writer); err != nil {
+	if err := app.handleSynchronousRelay(
+		ctx, appAddress, serviceId, requestPayloadBz, requestType, request, writer); err != nil {
+
 		// Reply with an error response if there was an error handling the relay.
-		app.replyWithError(ctx, requestPayloadBz, writer, err)
-		// TODO_TECHDEBT: log additional info?
+		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)
+		// TODO_IMPROVE: log additional info?
 		app.logger.Error().Err(err).Msg("failed handling relay")
+
 		return
 	}
 
-	// TODO_TECHDEBT: log additional info?
+	// TODO_IMPROVE: log additional info?
 	app.logger.Info().Msg("request serviced successfully")
 }
 
@@ -207,6 +240,26 @@ func (app *appGateServer) validateConfig() error {
 	if app.listeningEndpoint == nil {
 		return ErrAppGateMissingListeningEndpoint
 	}
+	return nil
+}
+
+// Starts a metrics server on the given address.
+func (app *appGateServer) ServeMetrics(addr string) error {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		app.logger.Error().Err(err).Msg("failed to listen on address for metrics")
+		return err
+	}
+
+	// If no error, start the server in a new goroutine
+	go func() {
+		app.logger.Info().Str("endpoint", addr).Msg("serving metrics")
+		if err := http.Serve(ln, promhttp.Handler()); err != nil {
+			app.logger.Error().Err(err).Msg("metrics server failed")
+			return
+		}
+	}()
+
 	return nil
 }
 

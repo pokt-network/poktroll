@@ -1,3 +1,4 @@
+//go:generate mockgen -destination ../../../testutil/service/mocks/expected_keepers_mock.go -package mocks . BankKeeper
 package types
 
 import (
@@ -8,11 +9,16 @@ import (
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
 type AccountKeeper interface {
 	GetAccount(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
-	// Methods imported from account should be defined here
 }
 
-// BankKeeper defines the expected interface needed to retrieve account balances.
+// BankKeeper defines the expected interface needed to retrieve account
+// balances, and send coins from one account to a module's account.
 type BankKeeper interface {
 	SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	// Methods imported from bank should be defined here
+	SendCoinsFromAccountToModule(
+		ctx sdk.Context,
+		senderAddr sdk.AccAddress,
+		recipientModule string,
+		amt sdk.Coins,
+	) error
 }

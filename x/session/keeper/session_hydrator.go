@@ -18,9 +18,13 @@ import (
 
 var SHA3HashLen = crypto.SHA3_256.Size()
 
-// TODO(#21): Make these configurable governance param
+// TODO_BLOCKER(#21): Make these configurable governance param
 const (
-	NumBlocksPerSession         = 4
+	// TODO_BLOCKER: Remove direct usage of these constants in helper functions
+	// when they will be replaced by governance params
+	NumBlocksPerSession = 4
+	// Duration of the grace period in number of sessions
+	SessionGracePeriod          = 1
 	NumSupplierPerSession       = 15
 	SessionIDComponentDelimiter = "."
 )
@@ -96,21 +100,16 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
-	sh.session.SessionNumber = sh.blockHeight / NumBlocksPerSession
+	sh.session.SessionNumber = GetSessionNumber(sh.blockHeight)
 
-	// TODO_BLOCKER: SessionStartBlockHeight should be aligned to NumBlocksPerSession.
-	sh.sessionHeader.SessionStartBlockHeight = sh.blockHeight - (sh.blockHeight % NumBlocksPerSession)
-	sh.sessionHeader.SessionEndBlockHeight = sh.sessionHeader.SessionStartBlockHeight + NumBlocksPerSession
+	sh.sessionHeader.SessionStartBlockHeight = GetSessionStartBlockHeight(sh.blockHeight)
+	sh.sessionHeader.SessionEndBlockHeight = GetSessionEndBlockHeight(sh.blockHeight)
 	return nil
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
 func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
-	// TODO_BLOCKER: Need to retrieve the block hash at SessionStartBlockHeight, but this requires
-	// a bit of work and the `ctx` only gives access to the current block/header. See this thread
-	// for more details: https://github.com/pokt-network/poktroll/pull/78/files#r1369215667
-	// prevHashBz := ctx.HeaderHash()
-	prevHash := "TODO_BLOCKER: See the comment above"
+	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
@@ -122,8 +121,8 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
-		prevHash,
-		sh.sessionHeader.SessionStartBlockHeight,
+		prevHashBz,
+		sh.blockHeight,
 	)
 
 	return nil
@@ -243,23 +242,57 @@ func sha3Hash(bz []byte) []byte {
 	return hasher.Sum(nil)
 }
 
+// GetSessionStartBlockHeight returns the block height at which the session starts
+func GetSessionStartBlockHeight(blockHeight int64) int64 {
+	return blockHeight - (blockHeight % NumBlocksPerSession)
+}
+
+// GetSessionEndBlockHeight returns the block height at which the session ends
+func GetSessionEndBlockHeight(blockHeight int64) int64 {
+	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
+}
+
+// GetSessionNumber returns the session number given the block height
+func GetSessionNumber(blockHeight int64) int64 {
+	return blockHeight / NumBlocksPerSession
+}
+
 // GetSessionId returns the string and bytes representation of the sessionId
-// given the application public key, service ID, block hash, and block height.
+// given the application public key, service ID, block hash, and block height
+// that is used to get the session start block height.
 func GetSessionId(
 	appPubKey,
-	serviceId,
-	blockHash string,
+	serviceId string,
+	blockHashBz []byte,
 	blockHeight int64,
 ) (sessionId string, sessionIdBz []byte) {
 	appPubKeyBz := []byte(appPubKey)
 	serviceIdBz := []byte(serviceId)
-	blockHashBz := []byte(blockHash)
 
-	sessionHeightBz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(sessionHeightBz, uint64(blockHeight))
-
-	sessionIdBz = concatWithDelimiter(SessionIDComponentDelimiter, blockHashBz, serviceIdBz, appPubKeyBz, sessionHeightBz)
+	blockHeightBz := getSessionStartBlockHeightBz(blockHeight)
+	sessionIdBz = concatWithDelimiter(
+		SessionIDComponentDelimiter,
+		blockHashBz,
+		serviceIdBz,
+		appPubKeyBz,
+		blockHeightBz,
+	)
 	sessionId = hex.EncodeToString(sha3Hash(sessionIdBz))
 
 	return sessionId, sessionIdBz
+}
+
+// GetSessionGracePeriodBlockCount returns the number of blocks in the session
+// grace period.
+func GetSessionGracePeriodBlockCount() int64 {
+	return SessionGracePeriod * NumBlocksPerSession
+}
+
+// getSessionStartBlockHeightBz returns the bytes representation of the session
+// start block height given the block height.
+func getSessionStartBlockHeightBz(blockHeight int64) []byte {
+	sessionStartBlockHeight := GetSessionStartBlockHeight(blockHeight)
+	sessionStartBlockHeightBz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sessionStartBlockHeightBz, uint64(sessionStartBlockHeight))
+	return sessionStartBlockHeightBz
 }
