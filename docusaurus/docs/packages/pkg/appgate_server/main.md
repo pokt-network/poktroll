@@ -1,11 +1,11 @@
 ---
-title: AppGateServer
+title: AppGate Server
 sidebar_position: 1
 ---
 
 # AppGateServer <!-- omit in toc -->
 
-- [What is AppGateServer?](#what-is-appgateserver)
+- [What is AppGate Server?](#what-is-appgate-server)
   - [Starting the AppGateServer](#starting-the-appgateserver)
 - [AppGateServer as an Application](#appgateserver-as-an-application)
   - [RPC request schema](#rpc-request-schema)
@@ -13,15 +13,14 @@ sidebar_position: 1
   - [RPC request schema](#rpc-request-schema-1)
 - [POKTRollSDK integration](#poktrollsdk-integration)
 
-## What is AppGateServer?
+## What is AppGate Server?
 
-`AppGateServer` is a ready to use component that allows `Application`s and
-`Gateway`s to send RPC requests to the Pocket Network `Supplier`s without having
-to deal with the underlying logic of the protocol.
+`AppGate Server` is a ready to use component that allows `Application`s and
+`Gateway`s to relay RPC requests to the Pocket Network `Supplier`s without having
+to manage the underlying logic of the protocol.
 
-By providing it a path to the [configuration file](configs/appgate_server_config.md),
-the `AppGateServer` allows its operator to use the Pocket Network without having
-to implement the logic to do so.
+An operator only needs to specify a single [configuration file](configs/appgate_server_config.md),
+in order to run a sovereigen `Application` or a `Gateway` via an `AppGate Server`.
 
 ### Starting the AppGateServer
 
@@ -40,11 +39,12 @@ Launching the `AppGateServer` starts an HTTP server that listens for incoming
 RPC requests and forwards them to the appropriate Pocket Network `Supplier`s.
 
 It takes care of:
+
 - Querying and updating the list of `Supplier`s that are allowed to serve the
-`Application` given a `serviceId`.
+  `Application` given a `serviceId`.
 - Selecting a `Supplier` to send the RPC request to.
 - Appending the `Application`/`Gateway` ring-signature to the `RelayRequest`
-before sending it to the `Supplier`.
+  before sending it to the `Supplier`.
 - Sending the `RelayRequest` to the `Supplier`.
 - Verifying the `Supplier`'s signature.
 - Returning the `RelayResponse` to the requesting client
@@ -147,16 +147,18 @@ integrate the `POKTRollSDK` with a custom `Application` or `Gateway` logic to se
 RPC requests to the Pocket Network.
 
 The `AppGateServer`'s own logic is responsible for:
+
 - Exposing the HTTP server that listens for incoming RPC requests.
 - Extracting the `serviceId` and `Application` address from the RPC request.
 - Calling `POKTRollSDK.GetSessionSupplierEndpoints` to get the list of `Supplier`s
-that are allowed to serve the `Application`.
+  that are allowed to serve the `Application`.
 - Selecting a `Supplier` to send the RPC request to.
 - Calling the `POKTRollSDK.SendRelay` to send the `RelayRequest` to the selected
-`Supplier`.
+  `Supplier`.
 - Returning the verified `RelayResponse` to the RPC request sender.
 
 While leaving the underlying Pocket Network protocol logic to the `POKTRollSDK`:
+
 - Being up-to-date with the latest `Session`.
 - Maintaining the list of `Supplier`s that are allowed to serve the `Application`.
 - Forming the `RelayRequest` object.
