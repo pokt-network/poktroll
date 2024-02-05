@@ -12,17 +12,6 @@ import (
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
-const (
-	privateKey        = "2d00ef074d9b51e46886dc9a1df11e7b986611d0f336bdcf1f0adce3e037ec0a"
-	blockHeight       = 4
-	invalidAppAddress = "invalidAppAddress"
-	validAppAddress   = "validAppAddress"
-	invalidServiceID  = "invalidServiceID"
-	validServiceID    = "validServiceID"
-	rpcURL            = "https://localhost:8080"
-	grpcURL           = "https://localhost:8081"
-)
-
 func TestSDK_Dependencies(t *testing.T) {
 	tests := []struct {
 		desc                 string
@@ -91,21 +80,30 @@ func TestSDK_GetSessionSupplierEndpoints(t *testing.T) {
 		expectedErrorMessage string
 	}{
 		{
-			desc:          "Invalid application address",
-			sdkBehavior:   testsdk.NewTestBehavior(t),
-			inputScenario: callGetSessionSupplierEndpointsWith(invalidAppAddress, validServiceID),
+			desc:        "Invalid application address",
+			sdkBehavior: testsdk.NewTestBehavior(t),
+			inputScenario: callGetSessionSupplierEndpointsWith(
+				testsdk.InvalidAppAddress,
+				testsdk.ValidServiceID,
+			),
 			expectedError: sdk.ErrSDKInvalidSession,
 		},
 		{
-			desc:          "Invalid serviceId",
-			sdkBehavior:   testsdk.NewTestBehavior(t),
-			inputScenario: callGetSessionSupplierEndpointsWith(validAppAddress, invalidServiceID),
+			desc:        "Invalid serviceId",
+			sdkBehavior: testsdk.NewTestBehavior(t),
+			inputScenario: callGetSessionSupplierEndpointsWith(
+				testsdk.ValidAppAddress,
+				testsdk.InvalidServiceID,
+			),
 			expectedError: sdk.ErrSDKInvalidSession,
 		},
 		{
-			desc:          "Invalid session",
-			sdkBehavior:   testsdk.NewTestBehavior(t).WithDependencies(nonDefaultLatestBlockHeight),
-			inputScenario: callGetSessionSupplierEndpointsWith(validAppAddress, validServiceID),
+			desc:        "Invalid session",
+			sdkBehavior: testsdk.NewTestBehavior(t).WithDependencies(nonDefaultLatestBlockHeight),
+			inputScenario: callGetSessionSupplierEndpointsWith(
+				testsdk.ValidAppAddress,
+				testsdk.ValidServiceID,
+			),
 			expectedError: sdk.ErrSDKInvalidSession,
 		},
 		//{
@@ -238,7 +236,7 @@ func nonDefaultLatestBlockHeight(testBehavior *testsdk.TestBehavior) depinject.C
 	blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(
 		testBehavior.T,
 		[]byte{},
-		blockHeight+sessionkeeper.NumBlocksPerSession,
+		testsdk.BlockHeight+sessionkeeper.NumBlocksPerSession,
 	)
 	return depinject.Configs(testBehavior.SdkConfig.Deps, depinject.Supply(blockClient))
 }
