@@ -40,10 +40,38 @@ func (msg *MsgSubmitProof) GetSignBytes() []byte {
 	return sdk.MustSortJSON(bz)
 }
 
+// ValidateBasic ensures that the bech32 address strings for the supplier and
+// application addresses are valid and that the proof and service ID are not empty.
+//
+// TODO_TECHDEBT: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
-		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid supplierAddress address (%s)", err)
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"supplier address %q, error: %s",
+			msg.GetSupplierAddress(),
+			err,
+		)
 	}
+
+	_, err = sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress())
+	if err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"application address: %q, error: %s",
+			msg.GetSessionHeader().GetApplicationAddress(),
+			err,
+		)
+	}
+
+	if msg.GetSessionHeader().GetService().GetId() == "" {
+		return ErrSupplierInvalidService.Wrap("proof service ID %q cannot be empty")
+	}
+
+	if len(msg.GetProof()) == 0 {
+		return ErrSupplierInvalidProof.Wrap("proof cannot be empty")
+	}
+
+	// TODO_BLOCKER: attempt to deserialize the proof for additional validation.
+
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 func setupMsgServer(t testing.TB) (types.MsgServer, context.Context) {
-	k, ctx := testkeeper.TokenomicsKeeper(t)
+	k, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	return keeper.NewMsgServerImpl(*k), sdk.WrapSDKContext(ctx)
 }
 

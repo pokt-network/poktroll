@@ -4,14 +4,13 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx := testkeeper.TokenomicsKeeper(t)
+	k, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	params := types.DefaultParams()
 
 	k.SetParams(ctx, params)
@@ -21,7 +20,7 @@ func TestGetParams(t *testing.T) {
 }
 
 func TestParamsQuery(t *testing.T) {
-	keeper, ctx := testkeeper.TokenomicsKeeper(t)
+	keeper, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	wctx := sdk.WrapSDKContext(ctx)
 	params := types.DefaultParams()
 	keeper.SetParams(ctx, params)
