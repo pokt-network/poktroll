@@ -49,8 +49,8 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
-		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
+		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
 		exit 1; \
 	fi
 
@@ -163,7 +163,6 @@ localnet_up: ## Starts localnet
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
 localnet_regenesis: ## Regenerate the localnet genesis file
