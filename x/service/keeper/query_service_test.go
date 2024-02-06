@@ -29,14 +29,14 @@ func TestServiceQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[0].Index,
+				Index: msgs[0].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[1].Index,
+				Index: msgs[1].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[1]},
 		},
