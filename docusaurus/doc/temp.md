@@ -168,3 +168,33 @@ Questions
 - When do you feel that ecosystem builders will need to start preparing their tools for the Shannon transition?
 - What are the features right now in the gateway SDKs?
   - How does this compare/contrast Nodies’ gateway kit?
+
+```
+sequenceDiagram
+		title Pocket as a Rollup
+		actor A as Application
+		actor P as Portal
+		actor S as Servicer
+		participant DA as DA Layer
+		actor V as Validator
+
+		alt Relay (OFF-CHAIN)
+			A ->> +S: Trustless Relay Request
+			S ->> S: Update Local Merkle Tree
+			S ->> -A: Response
+		else
+			A ->> +P: Delegated Relay Request
+			P ->> +S: Relay Request
+			S ->> S: Update Local Merkle Tree
+			S ->> -P: Response
+			P ->> -A: Response
+		end
+
+		alt Claim & Proof (ON-CHAIN)
+			S -->> DA: Claim (Merkle Root)
+			S -->> DA: Proof (Random Branch)
+			DA ->> V: Claim & Proof
+			V ->> V: Validate Proof
+			V ->> DA: Update State
+		end
+```
