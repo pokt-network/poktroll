@@ -1,15 +1,13 @@
 package sdk_test
 
 import (
+	"net/http"
 	"testing"
 
-	"cosmossdk.io/depinject"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/sdk"
 	testsdk "github.com/pokt-network/poktroll/testutil/sdk"
-	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 func TestSDK_Dependencies(t *testing.T) {
@@ -99,19 +97,19 @@ func TestSDK_GetSessionSupplierEndpoints(t *testing.T) {
 		},
 		{
 			desc:        "Invalid session",
-			sdkBehavior: testsdk.NewTestBehavior(t).WithDependencies(nonDefaultLatestBlockHeight),
+			sdkBehavior: testsdk.NewTestBehavior(t).WithDependencies(testsdk.NonDefaultLatestBlockHeight),
 			inputScenario: callGetSessionSupplierEndpointsWith(
 				testsdk.ValidAppAddress,
 				testsdk.ValidServiceID,
 			),
 			expectedError: sdk.ErrSDKInvalidSession,
 		},
-		//{
-		//	desc:          "Successful session retrieval",
-		//	sdkBehavior:   testsdk.NewTestBehavior(t),
-		//	inputScenario: callGetSessionSupplierEndpointsWith(validAppAddress, validServiceID),
-		//	expectedError: nil,
-		//},
+		{
+			desc:          "Successful session retrieval",
+			sdkBehavior:   testsdk.NewTestBehavior(t),
+			inputScenario: callGetSessionSupplierEndpointsWith(testsdk.ValidAppAddress, testsdk.ValidServiceID),
+			expectedError: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -130,16 +128,18 @@ func TestSDK_GetSessionSupplierEndpoints(t *testing.T) {
 
 func TestSDK_SendRelay(t *testing.T) {
 	tests := []struct {
-		desc          string
-		SDKBehavior   *testsdk.TestBehavior
-		inputScenario func(behavior *testsdk.TestBehavior) error
-		expectedError error
+		desc                 string
+		SDKBehavior          *testsdk.TestBehavior
+		inputScenario        func(behavior *testsdk.TestBehavior) error
+		expectedError        error
+		expectedErrorMessage string
 	}{
 		{
-			desc:          "Invalid request body",
-			SDKBehavior:   testsdk.NewTestBehavior(t),
-			inputScenario: func(behavior *testsdk.TestBehavior) error { return nil },
-			expectedError: nil,
+			desc:                 "Invalid request body",
+			SDKBehavior:          testsdk.NewTestBehavior(t),
+			inputScenario:        callSendRelayWithInvalidBody,
+			expectedError:        sdk.ErrSDKHandleRelay,
+			expectedErrorMessage: "reading request body",
 		},
 		{
 			desc:          "Invalid app ring",
@@ -232,17 +232,9 @@ func TestSDK_SuccessfulRelay(t *testing.T) {
 	//
 }
 
-func nonDefaultLatestBlockHeight(testBehavior *testsdk.TestBehavior) depinject.Config {
-	blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(
-		testBehavior.T,
-		[]byte{},
-		testsdk.BlockHeight+sessionkeeper.NumBlocksPerSession,
-	)
-	return depinject.Configs(testBehavior.SdkConfig.Deps, depinject.Supply(blockClient))
-}
-
 func callGetSessionSupplierEndpointsWith(appAddress, serviceID string) func(*testsdk.TestBehavior) error {
 	return func(testBehavior *testsdk.TestBehavior) error {
+		testBehavior.SdkConfig.Deps = testBehavior.BuildDeps()
 		sdk, err := sdk.NewPOKTRollSDK(testBehavior.Ctx, testBehavior.SdkConfig)
 		require.NoError(testBehavior.T, err)
 
@@ -252,7 +244,30 @@ func callGetSessionSupplierEndpointsWith(appAddress, serviceID string) func(*tes
 	}
 }
 
+func callSendRelayWithInvalidBody(testBehavior *testsdk.TestBehavior) error {
+	testBehavior.SdkConfig.Deps = testBehavior.BuildDeps()
+	sdk, err := sdk.NewPOKTRollSDK(testBehavior.Ctx, testBehavior.SdkConfig)
+	require.NoError(testBehavior.T, err)
+
+	suppliers, err := sdk.GetSessionSupplierEndpoints(
+		testBehavior.Ctx,
+		testsdk.ValidAppAddress,
+		testsdk.ValidServiceID,
+	)
+	require.NoError(testBehavior.T, err)
+
+	requestWithInvalidBody := &http.Request{}
+	_, err = sdk.SendRelay(
+		testBehavior.Ctx,
+		suppliers.SuppliersEndpoints[0],
+		requestWithInvalidBody,
+	)
+
+	return err
+}
+
 func initializeSDK(testBehavior *testsdk.TestBehavior) error {
+	testBehavior.SdkConfig.Deps = testBehavior.BuildDeps()
 	_, err := sdk.NewPOKTRollSDK(testBehavior.Ctx, testBehavior.SdkConfig)
 	return err
 }

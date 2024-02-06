@@ -19,6 +19,7 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 const (
@@ -35,11 +36,12 @@ const (
 type TestBehavior struct {
 	T         *testing.T
 	SdkConfig *sdk.POKTRollSDKConfig
+	Deps      map[string]depinject.Config
 	Ctx       context.Context
 }
 
-func (tb *TestBehavior) WithDependencies(behavior func(*TestBehavior) depinject.Config) *TestBehavior {
-	tb.SdkConfig.Deps = behavior(tb)
+func (tb *TestBehavior) WithDependencies(behavior func(*TestBehavior) map[string]depinject.Config) *TestBehavior {
+	tb.Deps = behavior(tb)
 	return tb
 }
 
@@ -58,6 +60,23 @@ func (tb *TestBehavior) WithPrivateKey(behavior func(*TestBehavior) cryptotypes.
 	return tb
 }
 
+func (tb *TestBehavior) BuildDeps() depinject.Config {
+	deps := depinject.Configs()
+	if len(tb.Deps) == 0 {
+		return deps
+	}
+
+	for _, dep := range tb.Deps {
+		deps = depinject.Configs(deps, dep)
+	}
+
+	ringCache, err := rings.NewRingCache(deps)
+	require.NoError(tb.T, err)
+	deps = depinject.Configs(deps, depinject.Supply(ringCache))
+
+	return deps
+}
+
 func NewTestBehavior(t *testing.T) *TestBehavior {
 	ctx := context.TODO()
 	queryNodeGRPCURL, err := url.Parse(grpcURL)
@@ -67,19 +86,19 @@ func NewTestBehavior(t *testing.T) *TestBehavior {
 	decodedPrivateKey, err := hex.DecodeString(privateKey)
 	require.NoError(t, err)
 
-	deps := depinject.Configs()
+	deps := map[string]depinject.Config{}
 
 	logger := polylog.Ctx(ctx)
-	deps = depinject.Configs(deps, depinject.Supply(logger))
+	deps["logger"] = depinject.Supply(logger)
 
 	blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(t, []byte{}, BlockHeight)
-	deps = depinject.Configs(deps, depinject.Supply(blockClient))
+	deps["blockClient"] = depinject.Supply(blockClient)
 
 	accountQuerier := testqueryclients.NewTestAccountQueryClient(t)
-	deps = depinject.Configs(deps, depinject.Supply(accountQuerier))
+	deps["accountQuerier"] = depinject.Supply(accountQuerier)
 
 	applicationQuerier := testqueryclients.NewTestApplicationQueryClient(t)
-	deps = depinject.Configs(deps, depinject.Supply(applicationQuerier))
+	deps["applicationQuerier"] = depinject.Supply(applicationQuerier)
 
 	testqueryclients.AddToExistingSessions(
 		t,
@@ -89,7 +108,7 @@ func NewTestBehavior(t *testing.T) *TestBehavior {
 		[]string{},
 	)
 	sessionQuerier := testqueryclients.NewTestSessionQueryClient(t)
-	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
+	deps["sessionQuerier"] = depinject.Supply(sessionQuerier)
 
 	redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](ctx, 1)
 	delegationClient := testdelegation.NewAnyTimesRedelegationsSequence(
@@ -98,30 +117,26 @@ func NewTestBehavior(t *testing.T) *TestBehavior {
 		ValidAppAddress,
 		redelegationObs,
 	)
-	deps = depinject.Configs(deps, depinject.Supply(delegationClient))
+	deps["delegationClient"] = depinject.Supply(delegationClient)
 
 	_ = testdelegation.NewAnyTimesRedelegation(t, "", "")
-
-	ringCache, err := rings.NewRingCache(deps)
-	require.NoError(t, err)
-	deps = depinject.Configs(deps, depinject.Supply(ringCache))
 
 	config := &sdk.POKTRollSDKConfig{
 		QueryNodeGRPCUrl: queryNodeGRPCURL,
 		QueryNodeUrl:     queryNodeRPCURL,
 		PrivateKey:       &secp256k1.PrivKey{Key: decodedPrivateKey},
-		Deps:             deps,
 	}
 
 	return &TestBehavior{
 		T:         t,
 		SdkConfig: config,
+		Deps:      deps,
 		Ctx:       ctx,
 	}
 }
 
-func InvalidDependencies(testBehavior *TestBehavior) depinject.Config {
-	return depinject.Configs()
+func InvalidDependencies(testBehavior *TestBehavior) map[string]depinject.Config {
+	return map[string]depinject.Config{}
 }
 
 func MissingPrivateKey(testBehavior *TestBehavior) cryptotypes.PrivKey {
@@ -134,4 +149,16 @@ func MissingGRPCURL(testBehavior *TestBehavior) *url.URL {
 
 func MissingRPCURL(testBehavior *TestBehavior) *url.URL {
 	return nil
+}
+
+func NonDefaultLatestBlockHeight(testBehavior *TestBehavior) map[string]depinject.Config {
+	blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(
+		testBehavior.T,
+		[]byte{},
+		BlockHeight+sessionkeeper.NumBlocksPerSession,
+	)
+
+	testBehavior.Deps["blockClient"] = depinject.Supply(blockClient)
+
+	return testBehavior.Deps
 }
