@@ -1,0 +1,16 @@
+syntax = "proto3";
+package poktroll.service;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "poktroll/x/service/Params";
+  option (gogoproto.equal) = true;
+
+  
+  uint64 addServiceFee = 1 [(gogoproto.moretags) = "yaml:\"add_service_fee\""];
+}

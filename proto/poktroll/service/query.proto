@@ -1,9 +1,11 @@
 syntax = "proto3";
-package pocket.service;
+package poktroll.service;
 
+import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
-import "pocket/service/params.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "poktroll/service/params.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
@@ -11,7 +13,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 service Query {
   // Parameters queries the parameters of the module.
   rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
-    option (google.api.http).get = "/pocket/service/params";
+    option (google.api.http).get = "/pokt-network/poktroll/service/params";
   }
 }
 
@@ -21,5 +23,8 @@ message QueryParamsRequest {}
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
   // params holds all the parameters of this module.
-  Params params = 1 [(gogoproto.nullable) = false];
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
 }
