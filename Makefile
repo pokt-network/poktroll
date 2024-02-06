@@ -175,6 +175,9 @@ localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localn
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
+	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "900000000", "name": "sequencer1"}]' $(POKTROLLD_HOME)/config/genesis.json > temp.json && mv temp.json $(POKTROLLD_HOME)/config/genesis.json
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -252,7 +255,7 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
 .PHONY: load_test_simple
-load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
 	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
