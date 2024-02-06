@@ -3,14 +3,15 @@ title: AppGate Server
 sidebar_position: 1
 ---
 
-# AppGateServer <!-- omit in toc -->
+# AppGate Server <!-- omit in toc -->
 
 - [What is AppGate Server?](#what-is-appgate-server)
-  - [Starting the AppGateServer](#starting-the-appgateserver)
-- [AppGateServer as an Application](#appgateserver-as-an-application)
-  - [RPC request schema](#rpc-request-schema)
-- [Gateway](#gateway)
-  - [RPC request schema](#rpc-request-schema-1)
+- [Architecture Overview](#architecture-overview)
+  - [Starting the AppGate Server](#starting-the-appgate-server)
+- [Application Mode (self_signing = true)](#application-mode-self_signing--true)
+  - [Application RPC Request Schema](#application-rpc-request-schema)
+- [Gateway Mode (self_signing = false)](#gateway-mode-self_signing--false)
+  - [Gateway RPC Request Schema](#gateway-rpc-request-schema)
 - [POKTRollSDK integration](#poktrollsdk-integration)
 
 ## What is AppGate Server?
@@ -20,11 +21,40 @@ sidebar_position: 1
 to manage the underlying logic of the protocol.
 
 An operator only needs to specify a single [configuration file](configs/appgate_server_config.md),
-in order to run a sovereigen `Application` or a `Gateway` via an `AppGate Server`.
+in order to run a sovereign `Application` or a `Gateway` via an `AppGate Server`.
 
-### Starting the AppGateServer
+## Architecture Overview
 
-`AppGateServer` could be started by running the following command:
+The following diagram captures a high-level overview of the `AppGate Server`'s message flow.
+
+```mermaid
+flowchart TB
+    Client([Client])
+    AGS(AppGate Server)
+    SDK[[POKTRollSDK]]
+    FN[Full Node]
+    S[Supplier]
+
+    Client -- RPC Request --> AGS
+    AGS -- RPC Response --> Client
+
+    AGS -..-> |Check Config| Mode{self_signing?}
+    Mode -. true .-> ApplicationMode(Application Mode)
+    Mode -. false .-> GatewayMode(Gateway Mode)
+
+    ApplicationMode -- (AppAddr, ServiceId) --> SDK
+    GatewayMode -- (GatewayAddr, AppAddr, ServiceId) --> SDK
+
+    SDK <-. Query \n Supplier list .-> FN
+    SDK <-- RelayRequest \n RelayResponse --> S
+    SDK -- RPC Response \n (After Signature Verification) --> AGS
+```
+
+### Starting the AppGate Server
+
+The `AppGate Server` could be configured to act as a `Gateway` or as a `Application`.
+
+It can be started by running the following command:
 
 ```bash
 poktrolld appgate-server  \
@@ -32,16 +62,17 @@ poktrolld appgate-server  \
   --keyring-backend <keyring-type>
 ```
 
-Where `<config-file>` is the path to the `.yaml` [configuration file](configs/appgate_server_config.md)
-and `<keyring-type>` is the type of keyring to use.
+Where `<config-file>` is the path to the `.yaml` [appgate server config file](configs/appgate_server_config.md)
+and `<keyring-type>` is the backend to use for the keying. See the [cosmos documentation](https://docs.cosmos.network/v0.46/run-node/keyring.html)
+for the full available set.
 
-Launching the `AppGateServer` starts an HTTP server that listens for incoming
-RPC requests and forwards them to the appropriate Pocket Network `Supplier`s.
+Launching the `AppGate Server` starts an HTTP server that listens for incoming
+RPC requests, and forwards them to the appropriate Pocket Network `Supplier`s.
 
-It takes care of:
+It takes care of things such as:
 
 - Querying and updating the list of `Supplier`s that are allowed to serve the
-  `Application` given a `serviceId`.
+  `Application` for given a `serviceId` during a given `session`.
 - Selecting a `Supplier` to send the RPC request to.
 - Appending the `Application`/`Gateway` ring-signature to the `RelayRequest`
   before sending it to the `Supplier`.
@@ -49,37 +80,32 @@ It takes care of:
 - Verifying the `Supplier`'s signature.
 - Returning the `RelayResponse` to the requesting client
 
-The `AppGateServer` could be configured to act as a `Gateway` or as a `Application`
+## Application Mode (self_signing = true)
 
-## AppGateServer as an Application
+If the [`self_signing`](configs/appgate_server_config.md#self_signing) field is
+set to `true`, the `AppGate Server` will act as an `Application`. It will
+only serve the address derived from the [`signing_key`](configs/appgate_server_config.md#signing_key).
 
-If the `self_signing` field in the
-[configuration file (self_signing)](configs/appgate_server_config.md#self_signing)
-is set to `true`, the `AppGateServer` will act as an `Application`; serving only
-the address derived from the `signing_key` field in the
-[configuration file (signing_key)](configs/appgate_server_config.md#signing_key).
-
-`RelayRequests` sent to the `AppGateServer` will be signed with the `signing_key`
-resulting in a ring-signature that contains only the `Application`'s address.
+`RelayRequests` sent to the `AppGate Server` will be signed with the `signing_key`
+resulting in a ring-signature that is only associated with the `Application`'s address.
 
 :::warning
 
-The `AppGateServer` is able to serve RPC requests provided the `Application`
-is appropriately staked for the service requested on the Pocket Network.
+The `Application` MUST be sufficiently staked for the service being used as a
+pre-requisite for the `AppGate Server` to properly service these requests.
 
 :::
 
-### RPC request schema
+### Application RPC Request Schema
 
-When acting as an `Application`, the `AppGateServer` expects the RPC request to
-contain the `serviceId` as an URL path parameter and the request content as
-the body of the request.
+When acting as an `Application`, the `AppGate Server` expects:
 
-The RPC request should be sent to the `listening_endpoint` specified in the
-[configuration file (listening_endpoint)](configs/appgate_server_config.md#listening_endpoint).
+- The `serviceId` to be part of the URL path
+- The payload to be the body of the POST request
+- The request should be sent to the [`listening_endpoint`](configs/appgate_server_config.md#listening_endpoint) specified in the config file
 
 The following `curl` command demonstrates how to send a JSON-RPC type request
-to the `AppGateServer`:
+to the `AppGate Server`:
 
 ```bash
 curl -X POST \
@@ -93,19 +119,24 @@ curl -X POST \
   }'
 ```
 
-## Gateway
+## Gateway Mode (self_signing = false)
 
-If the `self_signing` field in the
-[configuration file (self_signing)](configs/appgate_server_config.md#self_signing)
-is set to `false`, then the `AppGateServer` will act as a `Gateway`, serving
+If the [`self_signing`](configs/appgate_server_config.md#self_signing) field
+is set to `false`, then the `AppGate Server` will act as a `Gateway`, serving
 `Application`s that delegated to the `Gateway` address represented by the
-`signing_key` field in the
-[configuration file (signing_key)](configs/appgate_server_config.md#signing_key).
+[`signing_key`](configs/appgate_server_config.md#signing_key).
 
-The `AppGateServer` will determine the `Application` address to use by extracting it
-from the `senderAddr` query parameter and use it along with the `signing_key` to
-generate a ring-signature that contains both the `Application`'s address and the
-`Gateway`'s address.
+The `AppGate Server` will determine the `Application` address to use by extracting
+it from the `senderAddr` query parameter and use it along with the `signing_key` to
+generate a ring-signature associated with the `Application`'s and `Gateway`'s address.
+
+:::warning
+
+The `Gateway` and `Application` MUST be appropriately staked for this to work
+with the `Application` also have sufficient stake to pay for the service in
+order for this to work.
+
+:::
 
 :::warning
 
@@ -115,17 +146,17 @@ interacting with.
 
 :::
 
-### RPC request schema
+### Gateway RPC Request Schema
 
-When acting as a `Gateway`, the `AppGateServer` expects the RPC request to
-contain the `serviceId` as an URL path parameter, the `Application` address as
-a query parameter and the request content as the body of the request.
+When acting as an `Gateway`, the `AppGate Server` expects:
 
-The RPC request should be sent to the `listening_endpoint` specified in the
-[configuration file (listening_endpoint)](configs/appgate_server_config.md#listening_endpoint).
+- The `serviceId` to be part of the URL path
+- The `payload` to be the body of the POST request
+- The `Application` address as a query parameter in the request URL
+- The request should be sent to the [`listening_endpoint`](configs/appgate_server_config.md#listening_endpoint) specified in the config file
 
 The following `curl` command demonstrates how to send a JSON-RPC type request
-to the `AppGateServer`:
+to the `AppGate Server`:
 
 ```bash
 curl -X POST \
@@ -141,23 +172,23 @@ curl -X POST \
 
 ## POKTRollSDK integration
 
-The `AppGateServer` implementation uses the [POKTRollSDK](packages/pkg/sdk/sdk.md) to
-interact with the Pocket Network and could be taken as a reference for how to
-integrate the `POKTRollSDK` with a custom `Application` or `Gateway` logic to send
+The `AppGate Server` implementation uses the [POKTRollSDK](packages/pkg/sdk/sdk.md) to
+interact with the Pocket Network. It can either be used directly or referenced on how
+the `POKTRollSDK` can be used with a custom build `Application` / `Gateway`.
 RPC requests to the Pocket Network.
 
-The `AppGateServer`'s own logic is responsible for:
+The `AppGate Server`'s own logic is responsible for:
 
 - Exposing the HTTP server that listens for incoming RPC requests.
 - Extracting the `serviceId` and `Application` address from the RPC request.
 - Calling `POKTRollSDK.GetSessionSupplierEndpoints` to get the list of `Supplier`s
-  that are allowed to serve the `Application`.
+  that are allowed to serve the `Application` at a specific point in time.
 - Selecting a `Supplier` to send the RPC request to.
 - Calling the `POKTRollSDK.SendRelay` to send the `RelayRequest` to the selected
   `Supplier`.
-- Returning the verified `RelayResponse` to the RPC request sender.
+- Verifying and returning the `RelayResponse` to the RPC request sender.
 
-While leaving the underlying Pocket Network protocol logic to the `POKTRollSDK`:
+While `POKTRollSDK` manages:
 
 - Being up-to-date with the latest `Session`.
 - Maintaining the list of `Supplier`s that are allowed to serve the `Application`.
@@ -166,5 +197,5 @@ While leaving the underlying Pocket Network protocol logic to the `POKTRollSDK`:
 - Sending the `RelayRequest` to the `Supplier`.
 - Verifying the `Supplier`'s signature.
 
-A sequence diagram demonstrating the interaction between the `AppGateServer` and
+A sequence diagram demonstrating the interaction between the `AppGate Server` and
 the `POKTRollSDK` can be found in the [POKTRollSDK documentation](packages/pkg/sdk/sdk.md#poktrollsdk-sequence-diagram).
