@@ -17,7 +17,7 @@ func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	b := k.cdc.MustMarshal(&service)
 	store.Set(types.ServiceKey(
-		service.Index,
+		service.Id,
 	), b)
 }
 

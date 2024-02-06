@@ -25,11 +25,11 @@ func (gs GenesisState) Validate() error {
 	serviceIndexMap := make(map[string]struct{})
 
 	for _, elem := range gs.ServiceList {
-		index := string(ServiceKey(elem.Index))
-		if _, ok := serviceIndexMap[index]; ok {
-			return fmt.Errorf("duplicated index for service")
+		id := string(ServiceKey(elem.Id))
+		if _, ok := serviceIndexMap[id]; ok {
+			return fmt.Errorf("duplicated id for service")
 		}
-		serviceIndexMap[index] = struct{}{}
+		serviceIndexMap[id] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
