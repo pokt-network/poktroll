@@ -1,0 +1,11 @@
+syntax = "proto3";
+package poktroll.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+
+message Service {
+  string index = 1; 
+  string name = 2; 
+  
+}
+
