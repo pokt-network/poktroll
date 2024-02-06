@@ -8,9 +8,9 @@ sidebar_position: 1
 - [What is AppGate Server?](#what-is-appgate-server)
 - [Architecture Overview](#architecture-overview)
   - [Starting the AppGate Server](#starting-the-appgate-server)
-- [Application Mode (self_signing = true)](#application-mode-self_signing--true)
+- [Application Mode (self\_signing = true)](#application-mode-self_signing--true)
   - [Application RPC Request Schema](#application-rpc-request-schema)
-- [Gateway Mode (self_signing = false)](#gateway-mode-self_signing--false)
+- [Gateway Mode (self\_signing = false)](#gateway-mode-self_signing--false)
   - [Gateway RPC Request Schema](#gateway-rpc-request-schema)
 - [POKTRollSDK integration](#poktrollsdk-integration)
 
@@ -42,8 +42,8 @@ flowchart TB
     Mode -. true .-> ApplicationMode(Application Mode)
     Mode -. false .-> GatewayMode(Gateway Mode)
 
-    ApplicationMode -- (AppAddr, ServiceId) --> SDK
-    GatewayMode -- (GatewayAddr, AppAddr, ServiceId) --> SDK
+    ApplicationMode -- (AppPrivKey, AppAddr, ServiceId) --> SDK
+    GatewayMode -- (GatewayPrivKey, AppAddr, ServiceId) --> SDK
 
     SDK <-. Query \n Supplier list .-> FN
     SDK <-- RelayRequest \n RelayResponse --> S
@@ -135,14 +135,6 @@ generate a ring-signature associated with the `Application`'s and `Gateway`'s ad
 The `Gateway` and `Application` MUST be appropriately staked for this to work
 with the `Application` also have sufficient stake to pay for the service in
 order for this to work.
-
-:::
-
-:::warning
-
-The `Gateway` must be appropriately staked and the `Application` must be staked
-for the requested service in addition to delegating to the `Gateway` it is
-interacting with.
 
 :::
 
