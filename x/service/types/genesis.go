@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -21,15 +19,20 @@ func DefaultGenesis() *GenesisState {
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
 func (gs GenesisState) Validate() error {
-	// Check for duplicated index in service
-	serviceIndexMap := make(map[string]struct{})
-
-	for _, elem := range gs.ServiceList {
-		id := string(ServiceKey(elem.Id))
-		if _, ok := serviceIndexMap[id]; ok {
-			return fmt.Errorf("duplicated id for service")
+	// Check for duplicated index in services
+	serviceIDIndexMap := make(map[string]struct{})
+	serviceNameIndexMap := make(map[string]struct{})
+	for _, service := range gs.ServiceList {
+		idIndex := string(ServiceKey(service.Id))
+		if _, ok := serviceIDIndexMap[idIndex]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated ID for service: %v", service)
 		}
-		serviceIndexMap[id] = struct{}{}
+		serviceIDIndexMap[idIndex] = struct{}{}
+		nameIndex := string(ServiceKey(service.Name))
+		if _, ok := serviceNameIndexMap[nameIndex]; ok {
+			return ErrServiceDuplicateIndex.Wrapf("duplicated name for service: %v", service)
+		}
+		serviceNameIndexMap[nameIndex] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
