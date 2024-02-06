@@ -1,69 +1,53 @@
 package keeper_test
 
 import (
-	"fmt"
+	"context"
 	"strconv"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/stretchr/testify/require"
-
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func init() {
-	cmd.InitSDKConfig()
-}
+func createNService(keeper keeper.Keeper, ctx context.Context, n int) []types.Service {
+	items := make([]types.Service, n)
+	for i := range items {
+		items[i].Index = strconv.Itoa(i)
 
-func createNServices(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Service {
-	services := make([]sharedtypes.Service, n)
-	for i := range services {
-		services[i].Id = fmt.Sprintf("svcId%d", i)
-		services[i].Name = fmt.Sprintf("svcName%d", i)
-
-		keeper.SetService(ctx, services[i])
+		keeper.SetService(ctx, items[i])
 	}
-	return services
-}
-
-func TestServiceModuleAddress(t *testing.T) {
-	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
-	require.Equal(t, "pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf", moduleAddress.String())
+	return items
 }
 
 func TestServiceGet(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNServices(keeper, ctx, 10)
-	for _, service := range services {
-		service, found := keeper.GetService(ctx,
-			service.Id,
+	items := createNService(keeper, ctx, 10)
+	for _, item := range items {
+		rst, found := keeper.GetService(ctx,
+			item.Index,
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&service),
-			nullify.Fill(&service),
+			nullify.Fill(&item),
+			nullify.Fill(&rst),
 		)
 	}
 }
-
 func TestServiceRemove(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNServices(keeper, ctx, 10)
-	for _, service := range services {
+	items := createNService(keeper, ctx, 10)
+	for _, item := range items {
 		keeper.RemoveService(ctx,
-			service.Id,
+			item.Index,
 		)
 		_, found := keeper.GetService(ctx,
-			service.Id,
+			item.Index,
 		)
 		require.False(t, found)
 	}
@@ -71,9 +55,9 @@ func TestServiceRemove(t *testing.T) {
 
 func TestServiceGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNServices(keeper, ctx, 10)
+	items := createNService(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(services),
-		nullify.Fill(keeper.GetAllServices(ctx)),
+		nullify.Fill(items),
+		nullify.Fill(keeper.GetAllService(ctx)),
 	)
 }

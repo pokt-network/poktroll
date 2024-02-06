@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package poktroll.service;
 
 import "amino/amino.proto";
@@ -6,25 +7,53 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/service/params.proto";
+import "poktroll/service/service.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 // Query defines the gRPC querier service.
 service Query {
+  
   // Parameters queries the parameters of the module.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/params";
+  
+  }
+  
+  // Queries a list of Service items.
+  rpc Service    (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/service/{index}";
+  
+  }
+  rpc ServiceAll (QueryAllServiceRequest) returns (QueryAllServiceResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/service/service";
+  
   }
 }
-
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
+  
   // params holds all the parameters of this module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
+
+message QueryGetServiceRequest {
+  string index = 1;
+}
+
+message QueryGetServiceResponse {
+  Service service = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllServiceRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllServiceResponse {
+  repeated Service                                service    = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
