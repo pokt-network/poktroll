@@ -6,7 +6,10 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
+
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -16,13 +19,13 @@ func (k Keeper) ServiceAll(ctx context.Context, req *types.QueryAllServiceReques
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var services []types.Service
+	var services []sharedtypes.Service
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	serviceStore := prefix.NewStore(store, types.KeyPrefix(types.ServiceKeyPrefix))
 
 	pageRes, err := query.Paginate(serviceStore, req.Pagination, func(key []byte, value []byte) error {
-		var service types.Service
+		var service sharedtypes.Service
 		if err := k.cdc.Unmarshal(value, &service); err != nil {
 			return err
 		}

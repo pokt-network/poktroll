@@ -7,6 +7,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/module"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +16,7 @@ func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
-		ServiceList: []types.Service{
+		ServiceList: []sharedtypes.Service{
 			{
 				Index: "0",
 			},
