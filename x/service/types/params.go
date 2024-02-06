@@ -3,19 +3,15 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
-
-// DefaultAddServiceFee is the default value for the add service fee
-// parameter in the genesis state of the service module.
-// TODO_BLOCKER: Revisit default param values for service fee
-const DefaultAddServiceFee = 1000000000 // 1000 POKT
 
 var _ paramtypes.ParamSet = (*Params)(nil)
 
 var (
 	KeyAddServiceFee = []byte("AddServiceFee")
+	// TODO: Determine the default value
+	DefaultAddServiceFee uint64 = 0
 )
 
 // ParamKeyTable the param key table for launch module
@@ -48,15 +44,10 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 
 // Validate validates the set of params
 func (p Params) Validate() error {
-	// TODO(@h5law): Look into better validation
-	if p.AddServiceFee < DefaultAddServiceFee {
-		return sdkerrors.Wrapf(
-			ErrServiceInvalidServiceFee,
-			"AddServiceFee param %d uPOKT: got %d",
-			DefaultAddServiceFee,
-			p.AddServiceFee,
-		)
+	if err := validateAddServiceFee(p.AddServiceFee); err != nil {
+		return err
 	}
+
 	return nil
 }
 

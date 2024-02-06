@@ -3,29 +3,17 @@ package service_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/module"
 	"github.com/pokt-network/poktroll/x/service/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
-		ServiceList: []sharedtypes.Service{
-			{
-				Id:   "svc1",
-				Name: "service one",
-			},
-			{
-				Id:   "svc2",
-				Name: "service two",
-			},
-		},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
@@ -37,6 +25,5 @@ func TestGenesis(t *testing.T) {
 	nullify.Fill(&genesisState)
 	nullify.Fill(got)
 
-	require.ElementsMatch(t, genesisState.ServiceList, got.ServiceList)
 	// this line is used by starport scaffolding # genesis/test/assert
 }

@@ -17,17 +17,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
-				{
-					RpcMethod: "ServiceAll",
-					Use:       "list-service",
-					Short:     "List all service",
-				},
-				{
-					RpcMethod:      "Service",
-					Use:            "show-service [id]",
-					Short:          "Shows a service",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
@@ -38,12 +27,6 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				{
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
-				},
-				{
-					RpcMethod:      "AddService",
-					Use:            "add-service",
-					Short:          "Send a add-service tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
