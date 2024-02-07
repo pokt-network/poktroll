@@ -46,7 +46,7 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetService(
+	service, found := k.GetService(
 		ctx,
 		req.Index,
 	)
@@ -54,5 +54,5 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 		return nil, status.Error(codes.NotFound, "not found")
 	}
 
-	return &types.QueryGetServiceResponse{Service: val}, nil
+	return &types.QueryGetServiceResponse{Service: service}, nil
 }
