@@ -4,13 +4,19 @@ import (
 	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	"github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ sdk.Msg = &MsgAddService{}
 
-func NewMsgAddService(address string) *MsgAddService {
+func NewMsgAddService(address, serviceId, serviceName string) *MsgAddService {
 	return &MsgAddService{
 		Address: address,
+		Service: types.Service{
+			Id:   serviceId,
+			Name: serviceName,
+		},
 	}
 }
 
