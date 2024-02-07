@@ -59,8 +59,8 @@ import (
 )
 
 const (
-	AccountAddressPrefix = "cosmos"
-	Name                 = "poktroll"
+	AccountAddressPrefix = "pokt"
+	Name                 = "pocket"
 )
 
 var (
