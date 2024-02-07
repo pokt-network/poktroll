@@ -32,10 +32,10 @@ const (
 	// struct that defaults to this but can be overridden via an option.
 	defaultTxReplayLimit = 100
 
-	// txWithApplicationAddrQueryFmt is the query used to subscribe to cometbft transactions
-	// events where the application address matches the interpolated address.
+	// txWithSenderAddrQueryFmt is the query used to subscribe to cometbft transactions
+	// events where the sender address matches the interpolated address.
 	// (see: https://docs.cosmos.network/v0.47/core/events#subscribing-to-events)
-	txWithApplicationAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
+	txWithSenderAddrQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 )
 
 // TODO_TECHDEBT(@bryanchriswhite/@h5law): Refactor this to use the EventsReplayClient
@@ -141,7 +141,7 @@ func NewTxClient(
 	}
 
 	// Form a query based on the client's signing address.
-	eventQuery := fmt.Sprintf(txWithApplicationAddrQueryFmt, tClient.signingAddr)
+	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, tClient.signingAddr)
 
 	// Initialize and events replay client.
 	tClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](

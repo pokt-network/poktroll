@@ -60,7 +60,7 @@ func NewOneTimeEventsQuery(
 
 // NewOneTimeTxEventsQueryClient creates a mock of the Events that expects to to
 // a single call to the EventsBytes method where the query is for transaction
-// events for application address matching that of the given key.
+// events for sender address matching that of the given key.
 // The caller can simulate blockchain events by sending on publishCh, the value
 // of which is set to the publish channel of the events bytes observable publish
 // channel.

@@ -58,12 +58,12 @@ func ServiceKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 		AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).
-		DoAndReturn(func(ctx sdk.Context, applicationAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+		DoAndReturn(func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 			mapMu.Lock()
 			defer mapMu.Unlock()
-			coins := mapAccAddrCoins[applicationAddr.String()]
+			coins := mapAccAddrCoins[senderAddr.String()]
 			if coins.AmountOf("upokt").GT(amt.AmountOf("upokt")) {
-				mapAccAddrCoins[applicationAddr.String()] = coins.Sub(amt...)
+				mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
 				return nil
 			}
 			return types.ErrServiceNotEnoughFunds
