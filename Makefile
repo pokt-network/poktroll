@@ -15,6 +15,7 @@ install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/mikefarah/yq/v4@latest
 
 ########################
 ### Makefile Helpers ###
@@ -174,7 +175,11 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
 	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
 	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
-	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "900000000", "name": "sequencer1"}]' $(POKTROLLD_HOME)/config/genesis.json > temp.json && mv temp.json $(POKTROLLD_HOME)/config/genesis.json
+	# NB: Currently the stake => power calculation is constant; however, cosmos-sdk \
+	# intends to make this parameterizable in the future. \
+	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,'); \
+	NAME=$$(yq ".validators[0].name" ./config.yml); \
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' $(POKTROLLD_HOME)/config/genesis.json > temp.json && mv temp.json $(POKTROLLD_HOME)/config/genesis.json
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
