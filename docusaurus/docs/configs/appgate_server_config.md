@@ -36,7 +36,7 @@ need to adjust the command below appropriately.
 :::
 
 ```bash
-poktrolld appgate-server start \
+poktrolld appgate-server  \
   --config ./appgate_server_config.yaml \
   --keyring-backend test
 ```
