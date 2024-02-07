@@ -169,6 +169,8 @@ Questions
 - What are the features right now in the gateway SDKs?
   - How does this compare/contrast Nodies’ gateway kit?
 
+## Rollup of Relays
+
 ```
 sequenceDiagram
 		title Pocket as a Rollup
@@ -198,3 +200,11 @@ sequenceDiagram
 			V ->> DA: Update State
 		end
 ```
+
+## Relay Mining Explanation
+
+- You do “free work” by servicing as many relays as possible
+- A small subset of relays meets the necessary difficulty (probabilistically speaking)
+- That subset of work goes on-chain as serviced work
+- On-chain will be a proxy (not a direct representation) of the amount of relays being done in actualy
+- Off-chain data (i.e. gateways) will be necessary to get a real “exact” number of relays in the network
