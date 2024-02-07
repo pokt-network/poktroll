@@ -239,6 +239,9 @@ type AccountQueryClient interface {
 type ApplicationQueryClient interface {
 	// GetApplication queries the chain for the details of the application provided
 	GetApplication(ctx context.Context, appAddress string) (apptypes.Application, error)
+
+	// GetAllApplications queries all on-chain applications
+	GetAllApplications(ctx context.Context) ([]apptypes.Application, error)
 }
 
 // SupplierQueryClient defines an interface that enables the querying of the
