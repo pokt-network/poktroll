@@ -96,7 +96,11 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	if sh.blockHeight > ctx.BlockHeight() {
-		return sdkerrors.Wrapf(types.ErrSessionHydration, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
+		return sdkerrors.Wrapf(
+			types.ErrSessionHydration,
+			"block height %d is ahead of the last committed block height %d",
+			sh.blockHeight, ctx.BlockHeight(),
+		)
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession
