@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -18,8 +17,7 @@ const oneUPOKTGreaterThanFee = types.DefaultAddServiceFee + 1
 
 func TestMsgServer_AddService(t *testing.T) {
 	k, ctx := keepertest.ServiceKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Create a service
 	svc1 := sharedtypes.Service{
@@ -37,7 +35,7 @@ func TestMsgServer_AddService(t *testing.T) {
 	// Mock adding a balance to the account
 	keepertest.AddAccToAccMapCoins(t, addr, "upokt", oneUPOKTGreaterThanFee)
 	// Add the service to the store
-	_, err := srv.AddService(wctx, &types.MsgAddService{
+	_, err := srv.AddService(ctx, &types.MsgAddService{
 		Address: addr,
 		Service: preExistingService,
 	})
@@ -180,7 +178,7 @@ func TestMsgServer_AddService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			tt.setup(t)
-			_, err := srv.AddService(wctx, &types.MsgAddService{
+			_, err := srv.AddService(ctx, &types.MsgAddService{
 				Address: tt.address,
 				Service: tt.service,
 			})
