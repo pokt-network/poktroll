@@ -57,6 +57,10 @@ type poktrollSDK struct {
 	// It is used to get the the supplier's public key to verify the relay response signature.
 	accountQuerier client.AccountQueryClient
 
+	// applicationQuerier is the querier for the application module.
+	// It is used to query a specific application or all applications
+	applicationQuerier client.ApplicationQueryClient
+
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
 	blockClient client.BlockClient
@@ -90,6 +94,7 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 		&sdk.ringCache,
 		&sdk.sessionQuerier,
 		&sdk.accountQuerier,
+		&sdk.applicationQuerier,
 		&sdk.blockClient,
 	); err != nil {
 		return nil, err
