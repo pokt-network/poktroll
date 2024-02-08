@@ -69,7 +69,10 @@ import (
 	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
+	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
+	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
 	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -111,6 +114,7 @@ var (
 		circuittypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -136,6 +140,7 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -155,6 +160,7 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -175,6 +181,7 @@ var (
 		{Account: ibcfeetypes.ModuleName},
 		{Account: icatypes.ModuleName},
 		{Account: servicemoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: gatewaymoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 
@@ -308,6 +315,10 @@ var (
 			{
 				Name:   servicemoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&servicemodulev1.Module{}),
+			},
+			{
+				Name:   gatewaymoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&gatewaymodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
