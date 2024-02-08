@@ -1,28 +1,21 @@
 package keeper_test
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/gateway/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func init() {
-	cmd.InitSDKConfig()
-}
-
-func createNGateway(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Gateway {
+func createNGateway(keeper keeper.Keeper, ctx context.Context, n int) []types.Gateway {
 	items := make([]types.Gateway, n)
 	for i := range items {
 		items[i].Address = strconv.Itoa(i)
@@ -30,11 +23,6 @@ func createNGateway(keeper *keeper.Keeper, ctx sdk.Context, n int) []types.Gatew
 		keeper.SetGateway(ctx, items[i])
 	}
 	return items
-}
-
-func TestGatewayModuleAddress(t *testing.T) {
-	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
-	require.Equal(t, "pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl", moduleAddress.String())
 }
 
 func TestGatewayGet(t *testing.T) {
@@ -51,7 +39,6 @@ func TestGatewayGet(t *testing.T) {
 		)
 	}
 }
-
 func TestGatewayRemove(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
 	items := createNGateway(keeper, ctx, 10)

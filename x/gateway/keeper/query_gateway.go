@@ -2,26 +2,23 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/store/prefix"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func (k Keeper) GatewayAll(goCtx context.Context, req *types.QueryAllGatewayRequest) (*types.QueryAllGatewayResponse, error) {
+func (k Keeper) GatewayAll(ctx context.Context, req *types.QueryAllGatewayRequest) (*types.QueryAllGatewayResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
 	var gateways []types.Gateway
-	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	store := ctx.KVStore(k.storeKey)
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	gatewayStore := prefix.NewStore(store, types.KeyPrefix(types.GatewayKeyPrefix))
 
 	pageRes, err := query.Paginate(gatewayStore, req.Pagination, func(key []byte, value []byte) error {
@@ -41,18 +38,17 @@ func (k Keeper) GatewayAll(goCtx context.Context, req *types.QueryAllGatewayRequ
 	return &types.QueryAllGatewayResponse{Gateway: gateways, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Gateway(goCtx context.Context, req *types.QueryGetGatewayRequest) (*types.QueryGetGatewayResponse, error) {
+func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) (*types.QueryGetGatewayResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
-	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	val, found := k.GetGateway(
 		ctx,
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
+		return nil, status.Error(codes.NotFound, "not found")
 	}
 
 	return &types.QueryGetGatewayResponse{Gateway: val}, nil

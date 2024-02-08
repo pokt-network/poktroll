@@ -17,6 +17,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
+				{
+					RpcMethod: "GatewayAll",
+					Use:       "list-gateway",
+					Short:     "List all gateway",
+				},
+				{
+					RpcMethod:      "Gateway",
+					Use:            "show-gateway [id]",
+					Short:          "Shows a gateway",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
