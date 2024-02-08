@@ -171,7 +171,7 @@ Questions
 
 ## Rollup of Relays
 
-```
+```mermaid
 sequenceDiagram
 		title Pocket as a Rollup
 		actor A as Application
