@@ -13,4 +13,5 @@ var (
 	ErrGatewayInvalidAddress = sdkerrors.Register(ModuleName, 1102, "invalid gateway address")
 	ErrGatewayInvalidStake   = sdkerrors.Register(ModuleName, 1103, "invalid gateway stake")
 	ErrGatewayUnauthorized   = sdkerrors.Register(ModuleName, 1104, "unauthorized signer")
+	ErrGatewayNotFound       = sdkerrors.Register(ModuleName, 1105, "gateway not found")
 )
