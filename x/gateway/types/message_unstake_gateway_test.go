@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {
@@ -19,11 +19,7 @@ func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {
 			msg: MsgUnstakeGateway{
 				Address: "invalid_address",
 			},
-			err: ErrGatewayInvalidAddress,
-		}, {
-			name: "missing address",
-			msg:  MsgUnstakeGateway{},
-			err:  ErrGatewayInvalidAddress,
+			err: sdkerrors.ErrInvalidAddress,
 		}, {
 			name: "valid address",
 			msg: MsgUnstakeGateway{
