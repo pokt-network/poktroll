@@ -4,6 +4,7 @@ package shared
 import (
 	v1beta1 "cosmossdk.io/api/cosmos/base/v1beta1"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -14,9 +15,59 @@ import (
 	sync "sync"
 )
 
+var _ protoreflect.List = (*_Supplier_3_list)(nil)
+
+type _Supplier_3_list struct {
+	list *[]*SupplierServiceConfig
+}
+
+func (x *_Supplier_3_list) Len() int {
+	if x.list == nil {
+		return 0
+	}
+	return len(*x.list)
+}
+
+func (x *_Supplier_3_list) Get(i int) protoreflect.Value {
+	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
+}
+
+func (x *_Supplier_3_list) Set(i int, value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
+	(*x.list)[i] = concreteValue
+}
+
+func (x *_Supplier_3_list) Append(value protoreflect.Value) {
+	valueUnwrapped := value.Message()
+	concreteValue := valueUnwrapped.Interface().(*SupplierServiceConfig)
+	*x.list = append(*x.list, concreteValue)
+}
+
+func (x *_Supplier_3_list) AppendMutable() protoreflect.Value {
+	v := new(SupplierServiceConfig)
+	*x.list = append(*x.list, v)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_Supplier_3_list) Truncate(n int) {
+	for i := n; i < len(*x.list); i++ {
+		(*x.list)[i] = nil
+	}
+	*x.list = (*x.list)[:n]
+}
+
+func (x *_Supplier_3_list) NewElement() protoreflect.Value {
+	v := new(SupplierServiceConfig)
+	return protoreflect.ValueOfMessage(v.ProtoReflect())
+}
+
+func (x *_Supplier_3_list) IsValid() bool {
+	return x.list != nil
+}
+
 var (
 	md_Supplier          protoreflect.MessageDescriptor
-	fd_Supplier_index    protoreflect.FieldDescriptor
 	fd_Supplier_address  protoreflect.FieldDescriptor
 	fd_Supplier_stake    protoreflect.FieldDescriptor
 	fd_Supplier_services protoreflect.FieldDescriptor
@@ -25,7 +76,6 @@ var (
 func init() {
 	file_poktroll_shared_supplier_proto_init()
 	md_Supplier = File_poktroll_shared_supplier_proto.Messages().ByName("Supplier")
-	fd_Supplier_index = md_Supplier.Fields().ByName("index")
 	fd_Supplier_address = md_Supplier.Fields().ByName("address")
 	fd_Supplier_stake = md_Supplier.Fields().ByName("stake")
 	fd_Supplier_services = md_Supplier.Fields().ByName("services")
@@ -96,12 +146,6 @@ func (x *fastReflection_Supplier) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Index != "" {
-		value := protoreflect.ValueOfString(x.Index)
-		if !f(fd_Supplier_index, value) {
-			return
-		}
-	}
 	if x.Address != "" {
 		value := protoreflect.ValueOfString(x.Address)
 		if !f(fd_Supplier_address, value) {
@@ -114,8 +158,8 @@ func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, pro
 			return
 		}
 	}
-	if x.Services != "" {
-		value := protoreflect.ValueOfString(x.Services)
+	if len(x.Services) != 0 {
+		value := protoreflect.ValueOfList(&_Supplier_3_list{list: &x.Services})
 		if !f(fd_Supplier_services, value) {
 			return
 		}
@@ -135,14 +179,12 @@ func (x *fastReflection_Supplier) Range(f func(protoreflect.FieldDescriptor, pro
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.shared.Supplier.index":
-		return x.Index != ""
 	case "poktroll.shared.Supplier.address":
 		return x.Address != ""
 	case "poktroll.shared.Supplier.stake":
 		return x.Stake != nil
 	case "poktroll.shared.Supplier.services":
-		return x.Services != ""
+		return len(x.Services) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -159,14 +201,12 @@ func (x *fastReflection_Supplier) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.shared.Supplier.index":
-		x.Index = ""
 	case "poktroll.shared.Supplier.address":
 		x.Address = ""
 	case "poktroll.shared.Supplier.stake":
 		x.Stake = nil
 	case "poktroll.shared.Supplier.services":
-		x.Services = ""
+		x.Services = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -183,9 +223,6 @@ func (x *fastReflection_Supplier) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.shared.Supplier.index":
-		value := x.Index
-		return protoreflect.ValueOfString(value)
 	case "poktroll.shared.Supplier.address":
 		value := x.Address
 		return protoreflect.ValueOfString(value)
@@ -193,8 +230,11 @@ func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) p
 		value := x.Stake
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.shared.Supplier.services":
-		value := x.Services
-		return protoreflect.ValueOfString(value)
+		if len(x.Services) == 0 {
+			return protoreflect.ValueOfList(&_Supplier_3_list{})
+		}
+		listValue := &_Supplier_3_list{list: &x.Services}
+		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -215,14 +255,14 @@ func (x *fastReflection_Supplier) Get(descriptor protoreflect.FieldDescriptor) p
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Supplier) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.shared.Supplier.index":
-		x.Index = value.Interface().(string)
 	case "poktroll.shared.Supplier.address":
 		x.Address = value.Interface().(string)
 	case "poktroll.shared.Supplier.stake":
 		x.Stake = value.Message().Interface().(*v1beta1.Coin)
 	case "poktroll.shared.Supplier.services":
-		x.Services = value.Interface().(string)
+		lv := value.List()
+		clv := lv.(*_Supplier_3_list)
+		x.Services = *clv.list
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -248,12 +288,14 @@ func (x *fastReflection_Supplier) Mutable(fd protoreflect.FieldDescriptor) proto
 			x.Stake = new(v1beta1.Coin)
 		}
 		return protoreflect.ValueOfMessage(x.Stake.ProtoReflect())
-	case "poktroll.shared.Supplier.index":
-		panic(fmt.Errorf("field index of message poktroll.shared.Supplier is not mutable"))
+	case "poktroll.shared.Supplier.services":
+		if x.Services == nil {
+			x.Services = []*SupplierServiceConfig{}
+		}
+		value := &_Supplier_3_list{list: &x.Services}
+		return protoreflect.ValueOfList(value)
 	case "poktroll.shared.Supplier.address":
 		panic(fmt.Errorf("field address of message poktroll.shared.Supplier is not mutable"))
-	case "poktroll.shared.Supplier.services":
-		panic(fmt.Errorf("field services of message poktroll.shared.Supplier is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -267,15 +309,14 @@ func (x *fastReflection_Supplier) Mutable(fd protoreflect.FieldDescriptor) proto
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Supplier) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.shared.Supplier.index":
-		return protoreflect.ValueOfString("")
 	case "poktroll.shared.Supplier.address":
 		return protoreflect.ValueOfString("")
 	case "poktroll.shared.Supplier.stake":
 		m := new(v1beta1.Coin)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.shared.Supplier.services":
-		return protoreflect.ValueOfString("")
+		list := []*SupplierServiceConfig{}
+		return protoreflect.ValueOfList(&_Supplier_3_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.Supplier"))
@@ -345,10 +386,6 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Index)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		l = len(x.Address)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
@@ -357,9 +394,11 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Stake)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.Services)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if len(x.Services) > 0 {
+			for _, e := range x.Services {
+				l = options.Size(e)
+				n += 1 + l + runtime.Sov(uint64(l))
+			}
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -391,11 +430,20 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.unknownFields)
 		}
 		if len(x.Services) > 0 {
-			i -= len(x.Services)
-			copy(dAtA[i:], x.Services)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Services)))
-			i--
-			dAtA[i] = 0x22
+			for iNdEx := len(x.Services) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Services[iNdEx])
+				if err != nil {
+					return protoiface.MarshalOutput{
+						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+						Buf:               input.Buf,
+					}, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+				i--
+				dAtA[i] = 0x1a
+			}
 		}
 		if x.Stake != nil {
 			encoded, err := options.Marshal(x.Stake)
@@ -409,19 +457,12 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], encoded)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x12
 		}
 		if len(x.Address) > 0 {
 			i -= len(x.Address)
 			copy(dAtA[i:], x.Address)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Address)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Index) > 0 {
-			i -= len(x.Index)
-			copy(dAtA[i:], x.Index)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Index)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -476,38 +517,6 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Index = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Address", wireType)
 				}
 				var stringLen uint64
@@ -538,7 +547,7 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 				}
 				x.Address = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
+			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Stake", wireType)
 				}
@@ -574,11 +583,11 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
-			case 4:
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Services", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -588,23 +597,25 @@ func (x *fastReflection_Supplier) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Services = string(dAtA[iNdEx:postIndex])
+				x.Services = append(x.Services, &SupplierServiceConfig{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Services[len(x.Services)-1]); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -654,15 +665,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Supplier is the type defining the actor in Pocket Network that provides RPC services.
 type Supplier struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Index    string        `protobuf:"bytes,1,opt,name=index,proto3" json:"index,omitempty"`
-	Address  string        `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	Stake    *v1beta1.Coin `protobuf:"bytes,3,opt,name=stake,proto3" json:"stake,omitempty"`
-	Services string        `protobuf:"bytes,4,opt,name=services,proto3" json:"services,omitempty"`
+	Address  string                   `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`   // The Bech32 address of the supplier using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Stake    *v1beta1.Coin            `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`       // The total amount of uPOKT the supplier has staked
+	Services []*SupplierServiceConfig `protobuf:"bytes,3,rep,name=services,proto3" json:"services,omitempty"` // The service configs this supplier can support
 }
 
 func (x *Supplier) Reset() {
@@ -685,13 +696,6 @@ func (*Supplier) Descriptor() ([]byte, []int) {
 	return file_poktroll_shared_supplier_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Supplier) GetIndex() string {
-	if x != nil {
-		return x.Index
-	}
-	return ""
-}
-
 func (x *Supplier) GetAddress() string {
 	if x != nil {
 		return x.Address
@@ -706,11 +710,11 @@ func (x *Supplier) GetStake() *v1beta1.Coin {
 	return nil
 }
 
-func (x *Supplier) GetServices() string {
+func (x *Supplier) GetServices() []*SupplierServiceConfig {
 	if x != nil {
 		return x.Services
 	}
-	return ""
+	return nil
 }
 
 var File_poktroll_shared_supplier_proto protoreflect.FileDescriptor
@@ -720,17 +724,23 @@ var file_poktroll_shared_supplier_proto_rawDesc = []byte{
 	0x64, 0x2f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x12, 0x0f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
 	0x64, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67,
-	0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f,
-	0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69,
-	0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x8d, 0x01, 0x0a, 0x08, 0x53, 0x75, 0x70, 0x70,
-	0x6c, 0x69, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64,
-	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x12, 0x35, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73,
-	0x65, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x42, 0x04,
-	0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x73,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x73,
+	0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x1a, 0x1e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x1a, 0x1d, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61,
+	0x72, 0x65, 0x64, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x22, 0xb3, 0x01, 0x0a, 0x08, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x12, 0x32,
+	0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x12, 0x2f, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x6b, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x19, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e,
+	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x43, 0x6f, 0x69, 0x6e, 0x52, 0x05, 0x73, 0x74,
+	0x61, 0x6b, 0x65, 0x12, 0x42, 0x0a, 0x08, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18,
+	0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x08, 0x73,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x42, 0xa3, 0x01, 0x0a, 0x13, 0x63, 0x6f, 0x6d, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x42,
 	0x0d, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
@@ -759,16 +769,18 @@ func file_poktroll_shared_supplier_proto_rawDescGZIP() []byte {
 
 var file_poktroll_shared_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_shared_supplier_proto_goTypes = []interface{}{
-	(*Supplier)(nil),     // 0: poktroll.shared.Supplier
-	(*v1beta1.Coin)(nil), // 1: cosmos.base.v1beta1.Coin
+	(*Supplier)(nil),              // 0: poktroll.shared.Supplier
+	(*v1beta1.Coin)(nil),          // 1: cosmos.base.v1beta1.Coin
+	(*SupplierServiceConfig)(nil), // 2: poktroll.shared.SupplierServiceConfig
 }
 var file_poktroll_shared_supplier_proto_depIdxs = []int32{
 	1, // 0: poktroll.shared.Supplier.stake:type_name -> cosmos.base.v1beta1.Coin
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 1: poktroll.shared.Supplier.services:type_name -> poktroll.shared.SupplierServiceConfig
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_shared_supplier_proto_init() }
@@ -776,6 +788,7 @@ func file_poktroll_shared_supplier_proto_init() {
 	if File_poktroll_shared_supplier_proto != nil {
 		return
 	}
+	file_poktroll_shared_service_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_shared_supplier_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Supplier); i {
