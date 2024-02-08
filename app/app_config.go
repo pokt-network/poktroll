@@ -72,6 +72,9 @@ import (
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
 	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
+	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
+	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
+	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
 	"google.golang.org/protobuf/types/known/durationpb"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
@@ -111,6 +114,7 @@ var (
 		circuittypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -136,6 +140,7 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -155,6 +160,7 @@ var (
 		ibcfeetypes.ModuleName,
 		// chain modules
 		servicemoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -308,6 +314,10 @@ var (
 			{
 				Name:   servicemoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&servicemodulev1.Module{}),
+			},
+			{
+				Name:   sessionmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&sessionmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

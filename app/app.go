@@ -54,6 +54,7 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -119,6 +120,7 @@ type App struct {
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
 	ServiceKeeper servicemodulekeeper.Keeper
+	SessionKeeper sessionmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -257,6 +259,7 @@ func New(
 		&app.ConsensusParamsKeeper,
 		&app.CircuitBreakerKeeper,
 		&app.ServiceKeeper,
+		&app.SessionKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
