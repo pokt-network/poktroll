@@ -1,0 +1,13 @@
+syntax = "proto3";
+package poktroll.gateway;
+
+option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+import "gogoproto/gogo.proto"; 
+import "cosmos/base/v1beta1/coin.proto"; 
+
+message Gateway {
+  string address = 1; 
+  cosmos.base.v1beta1.Coin stake = 2 [(gogoproto.nullable) = false]; 
+  
+}
+
