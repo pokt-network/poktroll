@@ -26,7 +26,7 @@ const (
 	// before the test should time out (fail).
 	txEventTimeout = 10 * time.Second
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
-	// cosmos-sdk event subscription "query" string for a given application address.
+	// cosmos-sdk event subscription "query" string for a given sender address.
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
