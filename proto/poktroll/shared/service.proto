@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+// NOTE that the `shared` package is not a Cosmos module,
+// but rather a manually created package to resolve circular dependencies.
+package poktroll.shared;
+
+option go_package = "github.com/pokt-network/poktroll/x/shared/types";
+
+// TODO_CLEANUP(@Olshansk): Add native optional identifiers once its supported; https://github.com/ignite/cli/issues/3698
+
+// Service message to encapsulate unique and semantic identifiers for a service on the network
+message Service {
+  // For example, what if we want to request a session for a certain service but with some additional configs that identify it?
+  string id = 1; // Unique identifier for the service
+
+  // TODO_TECHDEBT: Name is currently unused but acts as a reminder than an optional onchain representation of the service is necessary
+  string name = 2; // (Optional) Semantic human readable name for the service
+}
+
+// SupplierServiceConfig holds the service configuration the supplier stakes for
+message SupplierServiceConfig {
+  Service service = 1; // The Service for which the supplier is configured
+  repeated SupplierEndpoint endpoints = 2; // List of endpoints for the service
+  // TODO_RESEARCH: There is an opportunity for supplier to advertise the min
+  // they're willing to earn for a certain configuration/price, but this is outside of scope.
+}
+
+// SupplierEndpoint message to hold service configuration details
+message SupplierEndpoint {
+  string url = 1; // URL of the endpoint
+  RPCType rpc_type = 2; // Type of RPC exposed on the url above
+  repeated ConfigOption configs = 3; // Additional configuration options for the endpoint
+}
+
+// Enum to define RPC types
+enum RPCType {
+  UNKNOWN_RPC = 0; // Undefined RPC type
+  GRPC = 1; // gRPC
+  WEBSOCKET = 2; // WebSocket
+  JSON_RPC = 3; // JSON-RPC
+  REST = 4; // REST
+  // Add new RPC types here as needed
+}
+
+// Enum to define configuration options
+// TODO_RESEARCH: Should these be configs, SLAs or something else? There will be more discussion once we get closer to implementing on-chain QoS.
+enum ConfigOptions {
+  UNKNOWN_CONFIG = 0; // Undefined config option
+  TIMEOUT = 1; // Timeout setting
+  // Add new config options here as needed
+}
+
+// Key-value wrapper for config options, as proto maps can't be keyed by enums
+message ConfigOption {
+  ConfigOptions key = 1; // Config option key
+  string value = 2; // Config option value
+}
