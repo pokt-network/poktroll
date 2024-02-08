@@ -237,7 +237,7 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
 	# go generate ./x/application/types/
-	# go generate ./x/gateway/types/
+	go generate ./x/gateway/types/
 	# go generate ./x/supplier/types/
 	# go generate ./x/session/types/
 	go generate ./x/service/types/
