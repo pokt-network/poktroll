@@ -6,9 +6,11 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/pokt-network/poktroll/x/supplier/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k Keeper) SupplierAll(ctx context.Context, req *types.QueryAllSupplierRequest) (*types.QueryAllSupplierResponse, error) {
@@ -16,13 +18,13 @@ func (k Keeper) SupplierAll(ctx context.Context, req *types.QueryAllSupplierRequ
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var suppliers []types.Supplier
+	var suppliers []sharedtypes.Supplier
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyPrefix))
 
 	pageRes, err := query.Paginate(supplierStore, req.Pagination, func(key []byte, value []byte) error {
-		var supplier types.Supplier
+		var supplier sharedtypes.Supplier
 		if err := k.cdc.Unmarshal(value, &supplier); err != nil {
 			return err
 		}

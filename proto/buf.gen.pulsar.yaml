@@ -16,7 +16,7 @@ managed:
 plugins:
   - name: go-pulsar
     out: ./api
-    opt: paths=source_relative,Mpoktroll/shared/service.proto=github.com/pokt-network/poktroll/api/poktroll/shared
+    opt: paths=source_relative,Mpoktroll/shared/service.proto=github.com/pokt-network/poktroll/api/poktroll/shared,Mpoktroll/shared/supplier.proto=github.com/pokt-network/poktroll/api/poktroll/shared
   - name: go-grpc
     out: ./api
     opt: paths=source_relative
