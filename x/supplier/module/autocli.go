@@ -28,6 +28,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Shows a supplier",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
 				},
+				{
+					RpcMethod: "ClaimAll",
+					Use:       "list-claim",
+					Short:     "List all claim",
+				},
+				{
+					RpcMethod:      "Claim",
+					Use:            "show-claim [id]",
+					Short:          "Shows a claim",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
