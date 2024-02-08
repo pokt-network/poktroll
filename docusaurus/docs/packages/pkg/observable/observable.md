@@ -136,7 +136,7 @@ pb -."sink".-> notify2
 notify2 -."source".-> sb2
 ```
 
-> Figure 2: The diagram illustrates the buffering mechanisms within the observable and its observers. It highlights how published messages are buffered and how they propagate to the individual observers' buffers.
+> **Figure 2**: The diagram illustrates the buffering mechanisms within the observable and its observers. It highlights how published messages are buffered and how they propagate to the individual observers' buffers.
 
 ## Usage
 

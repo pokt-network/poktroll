@@ -200,7 +200,7 @@ func setupRelayerDependencies(
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
-	return config.SupplyConfig(ctx, cmd, supplierFuncs)
+	return config.SupplyConfig(ctx, cmd, supplierFuncs...)
 }
 
 // supplyMiner constructs a Miner instance and returns a new depinject.Config
