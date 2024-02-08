@@ -9,7 +9,10 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func (k msgServer) UpdateParams(goCtx context.Context, req *types.MsgUpdateParams) (*types.MsgUpdateParamsResponse, error) {
+func (k msgServer) UpdateParams(
+	goCtx context.Context,
+	req *types.MsgUpdateParams,
+) (*types.MsgUpdateParamsResponse, error) {
 	if k.GetAuthority() != req.Authority {
 		return nil, errorsmod.Wrapf(types.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
 	}
