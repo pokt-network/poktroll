@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
+
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -15,7 +16,7 @@ func (k Keeper) SetClaim(ctx context.Context, claim types.Claim) {
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimKeyPrefix))
 	b := k.cdc.MustMarshal(&claim)
 	store.Set(types.ClaimKey(
-		claim.Index,
+		claim.SupplierAddress,
 	), b)
 }
 
