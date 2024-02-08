@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -45,7 +46,7 @@ func TestGatewayQuerySingle(t *testing.T) {
 			request: &types.QueryGetGatewayRequest{
 				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", strconv.Itoa(100000))),
 		},
 		{
 			desc: "InvalidRequest",
