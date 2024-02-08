@@ -39,6 +39,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Shows a claim",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
 				},
+				{
+					RpcMethod: "ProofAll",
+					Use:       "list-proof",
+					Short:     "List all proof",
+				},
+				{
+					RpcMethod:      "Proof",
+					Use:            "show-proof [id]",
+					Short:          "Shows a proof",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

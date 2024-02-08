@@ -2,7 +2,6 @@
 package supplier
 
 import (
-	session "cosmossdk.io/api/poktroll/session"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"

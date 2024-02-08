@@ -7,6 +7,7 @@ import "gogoproto/gogo.proto";
 import "poktroll/supplier/params.proto";
 import "poktroll/shared/supplier.proto";
 import "poktroll/supplier/claim.proto";
+import "poktroll/supplier/proof.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
@@ -17,5 +18,6 @@ message GenesisState {
            Params                   params       = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
   repeated poktroll.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false] ;
   repeated Claim                    claimList    = 3 [(gogoproto.nullable) = false] ;
+  repeated Proof                    proofList    = 4 [(gogoproto.nullable) = false] ;
 }
 

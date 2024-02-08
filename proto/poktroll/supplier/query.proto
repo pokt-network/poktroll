@@ -10,6 +10,7 @@ import "poktroll/supplier/params.proto";
 import "poktroll/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
 import "poktroll/supplier/claim.proto";
+import "poktroll/supplier/proof.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
@@ -39,6 +40,16 @@ service Query {
   }
   rpc ClaimAll (QueryAllClaimRequest) returns (QueryAllClaimResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/claim";
+  
+  }
+  
+  // Queries a list of Proof items.
+  rpc Proof    (QueryGetProofRequest) returns (QueryGetProofResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/proof/{index}";
+  
+  }
+  rpc ProofAll (QueryAllProofRequest) returns (QueryAllProofResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/proof";
   
   }
 }
@@ -83,6 +94,23 @@ message QueryAllClaimRequest {
 
 message QueryAllClaimResponse {
   repeated Claim                                  claim      = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryGetProofRequest {
+  string index = 1;
+}
+
+message QueryGetProofResponse {
+  Proof proof = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllProofRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllProofResponse {
+  repeated Proof                                  proof      = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 

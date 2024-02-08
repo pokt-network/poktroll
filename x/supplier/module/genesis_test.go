@@ -30,6 +30,14 @@ func TestGenesis(t *testing.T) {
 				Index: "1",
 			},
 		},
+		ProofList: []types.Proof{
+			{
+				Index: "0",
+			},
+			{
+				Index: "1",
+			},
+		},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
@@ -43,5 +51,6 @@ func TestGenesis(t *testing.T) {
 
 	require.ElementsMatch(t, genesisState.SupplierList, got.SupplierList)
 	require.ElementsMatch(t, genesisState.ClaimList, got.ClaimList)
+	require.ElementsMatch(t, genesisState.ProofList, got.ProofList)
 	// this line is used by starport scaffolding # genesis/test/assert
 }
