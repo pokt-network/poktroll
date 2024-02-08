@@ -1584,8 +1584,6 @@ github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+
 github.com/oasisprotocol/curve25519-voi v0.0.0-20210609091139-0a56a4bca00b/go.mod h1:TLJifjWF6eotcfzDjKZsDqWJ+73Uvj/N85MvVyrvynM=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a h1:dlRvE5fWabOchtH7znfiFCcOvmIYgOeAS5ifBXBlh9Q=
 github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a/go.mod h1:hVoHR2EVESiICEMbg137etN/Lx+lSrHPTD39Z/uE+2s=
-github.com/okdas/cosmos-sdk v0.50.1-fix-sequencer-check-2 h1:p2Ycblr2baN1TbIEqMF+r5RN8+TQHmkVvCrLuQM72XU=
-github.com/okdas/cosmos-sdk v0.50.1-fix-sequencer-check-2/go.mod h1:FEBYsCT6onxNk7eNAdU8+O7jDrbn+XJAkO4S1zFoQv0=
 github.com/oklog/oklog v0.3.2/go.mod h1:FCV+B7mhrz4o+ueLpx+KqkyXRGMWOYEvfiXtdGtbWGs=
 github.com/oklog/run v1.0.0/go.mod h1:dlhp/R75TPv97u0XWUtDeV/lRKWPKSdTuV0TZvrmrQA=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=

@@ -39,6 +39,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/tools v0.17.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.1.0
 	google.golang.org/protobuf v1.32.0
 )
@@ -319,7 +320,6 @@ require (
 	golang.org/x/term v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
 	gonum.org/v1/gonum v0.12.0 // indirect
 	google.golang.org/api v0.153.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
