@@ -7,7 +7,7 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/supplier/params.proto";
-import "poktroll/supplier/supplier.proto";
+import "poktroll/shared/supplier.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
@@ -46,7 +46,7 @@ message QueryGetSupplierRequest {
 }
 
 message QueryGetSupplierResponse {
-  Supplier supplier = 1 [(gogoproto.nullable) = false];
+  poktroll.shared.Supplier supplier = 1 [(gogoproto.nullable) = false];
 }
 
 message QueryAllSupplierRequest {
@@ -54,7 +54,7 @@ message QueryAllSupplierRequest {
 }
 
 message QueryAllSupplierResponse {
-  repeated Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
-           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+  repeated poktroll.shared.Supplier                               supplier = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 

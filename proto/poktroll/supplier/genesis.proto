@@ -5,15 +5,15 @@ package poktroll.supplier;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/supplier/params.proto";
-import "poktroll/supplier/supplier.proto";
+import "poktroll/shared/supplier.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
 // GenesisState defines the supplier module's genesis state.
 message GenesisState {
-  
+
   // params defines all the parameters of the module.
-           Params   params       = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
-  repeated Supplier supplierList = 2 [(gogoproto.nullable) = false] ;
+  Params   params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated poktroll.shared.Supplier supplierList = 2 [(gogoproto.nullable) = false] ;
 }
 
