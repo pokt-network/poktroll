@@ -11,6 +11,9 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
+// TODO_TECHDEBT(#377): All the tests in this file assume genesis has a block
+// height of 0. Rewrite them in terms of height = 1 genesis.
+
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
@@ -61,8 +64,6 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
-	// TODO_TECHDEBT: These test assume that the genesis block has a height of 0,
-	// rewrite them in terms of height = 1 genesis.
 	tests := []test{
 		{
 			desc:        "blockHeight = 0",
@@ -155,8 +156,6 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
-	// TODO_TECHDEBT: These test assume that the genesis block has a height of 0,
-	// rewrite them in terms of height = 1 genesis.
 	tests := []test{
 		{
 			desc: "(app1, svc1): sessionId at first session block != sessionId at next session block",

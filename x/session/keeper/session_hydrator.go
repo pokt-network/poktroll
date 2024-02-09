@@ -16,6 +16,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TECHDEBT(#377): The business logic in this file assume that genesis has
+// a block height of 0. Revisit it and adjust, where/if necessary, accounting for the
+// fact that it's 1.
+
 var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO_BLOCKER(#21): Make these configurable governance param
@@ -247,15 +251,11 @@ func sha3Hash(bz []byte) []byte {
 }
 
 // GetSessionStartBlockHeight returns the block height at which the session starts
-// TODO_TECHDEBT: This function assumes that the genesis block has a height of 0,
-// rewrite this function to handle the genesis state having a height of 1.
 func GetSessionStartBlockHeight(blockHeight int64) int64 {
 	return blockHeight - (blockHeight % NumBlocksPerSession)
 }
 
 // GetSessionEndBlockHeight returns the block height at which the session ends
-// TODO_TECHDEBT: This function assumes that the genesis block has a height of 0,
-// rewrite this function to handle the genesis state having a height of 1.
 func GetSessionEndBlockHeight(blockHeight int64) int64 {
 	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
 }

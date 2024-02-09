@@ -26,7 +26,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	wctx := sdk.WrapSDKContext(ctx)
 
-	// TODO_TECHDEBT: These test assume that the genesis block has a height of 0,
+	// TODO_TECHDEBT(#377): These test assume that the genesis block has a height of 0,
 	// rewrite them in terms of height = 1 genesis.
 	type test struct {
 		name string
