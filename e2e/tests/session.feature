@@ -5,14 +5,16 @@ Feature: Session Namespace
   Scenario: Supplier completes claim/proof lifecycle for a valid session
     Given the user has the pocketd binary installed
     When the supplier "supplier1" has serviced a session with "5" relays for service "svc1" for application "app1"
-    And the user should wait for "5" seconds
+    # TODO_TECHDEBT: Once the session grace period is configurable, set it to 0 at the beginning of this test.
+    # The timeout for when a claim can be submitted on-chain depends on `createClaimWindowStartHeight`, which
+    # is a function of `SessionGracePeriod`. The higher this value, the higher this timeout needs to be. Since
+    # this test is not dependant on the grace period, setting it to 0 and having a lower grace period will simplify it.
+    And the user should wait for "7" seconds
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
-#  TODO_IMPROVE: ...
-#    And an event should be emitted...
+    # TODO_IMPROVE: And an event should be emitted...
     And after the supplier submits a proof for the session for service "svc1" for application "app1"
     Then the proof submitted by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
-#  TODO_IMPROVE: ...
-#    And an event should be emitted...
+    # TODO_IMPROVE: And an event should be emitted...
 
 # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test
 # One way to exercise this behavior is to close the `RelayMiner` port to prevent
