@@ -11,7 +11,7 @@ sidebar_position: 5
 
 ## Overview
 
-An `RelayMiner` is responsible for  for relaying requests between a client dApp
+An `RelayMiner` is responsible for for relaying requests between a client dApp
 (e.g. mobile app, web app, etc...) and the `Supplier`s on Pocket Network, handling
 all intermediary business logic.
 
@@ -21,7 +21,7 @@ implements the same functionality.
 
 ## Configuration
 
-Configurations to stake an `AppGate Server` can be found [app_staking_config.md](../configs/appgate_server_config.md).
+Configurations to stake an `AppGate Server` can be found [relayminer_config.md](../configs/relayminer_config.md).
 
 ## CLI
 

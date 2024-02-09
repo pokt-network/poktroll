@@ -1,6 +1,6 @@
 ---
 title: Session
-sidebar_position: 8
+sidebar_position: 1
 ---
 
 # Pocket Nodes in the Celestia Network <!-- omit in toc -->

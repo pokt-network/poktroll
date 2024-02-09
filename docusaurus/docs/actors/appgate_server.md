@@ -22,7 +22,7 @@ implements the same functionality.
 ## Configuration
 
 Configurations and additional documentation related to operating
-an `AppGate Server` can be found [app_staking_config.md](../configs/appgate_server_config.md).
+an `AppGate Server` can be found [appgate_server_config.md](../configs/appgate_server_config.md).
 
 ## CLI
 

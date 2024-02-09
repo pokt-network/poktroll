@@ -1,6 +1,6 @@
 {
   "label": "Protocol",
-  "position": 5,
+  "position": 7,
   "link": {
     "type": "generated-index",
     "description": "Documentation related to the Pocket Network protocol internals."

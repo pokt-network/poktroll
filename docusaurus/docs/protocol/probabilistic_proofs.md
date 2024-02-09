@@ -1,4 +1,4 @@
 ---
-title: Pocket Network RelayMiner Client
+title: Probabilistic Proofs
 sidebar_position: 5
 ---

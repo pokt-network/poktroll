@@ -1,6 +1,6 @@
 ---
 title: POKTRollSDK
-sidebar_position: 1
+sidebar_position: 5
 ---
 
 # POKTRollSDK <!-- omit in toc -->

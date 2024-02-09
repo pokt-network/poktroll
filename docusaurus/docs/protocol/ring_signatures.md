@@ -1,4 +1,4 @@
 ---
-title: Pocket Network RelayMiner Client
-sidebar_position: 5
+title: Ring Signatures
+sidebar_position: 4
 ---

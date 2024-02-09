@@ -15,10 +15,6 @@ sidebar_position: 3
 An `Gateway` is responsible for staking POKT in order to relay and sign
 requests on behalf of an `Application`.
 
-The `Application` is responsible for staking POKT to consume and pay for services
-available on Pocket Network as a function of volume and time, but the `Gateway`
-can help facilitate that access.
-
 ## Schema
 
 The on-chain for an `Gateway` can be found at [gateway.proto](./../../../proto/pocket/gateway/gateway.proto).

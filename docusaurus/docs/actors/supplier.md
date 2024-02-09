@@ -12,8 +12,8 @@ sidebar_position: 4
 
 ## Overview
 
-An `Supplier` is responsible for staking POKT in order to consume and pay for
-services available on Pocket Network as a function of volume and time.
+An `Supplier` is responsible for staking POKT in order to earn in exchange for
+providing services as a function of volume and time.
 
 ## Schema
 
@@ -21,7 +21,7 @@ The on-chain for an `Supplier` can be found at [supplier.proto](./../../../proto
 
 ## Configuration
 
-Configurations to stake an `Supplier` can be found [app_staking_config.md](../configs/supplier_staking_config.md).
+Configurations to stake an `Supplier` can be found [supplier_staking_config.md](../configs/supplier_staking_config.md).
 
 ## CLI
 

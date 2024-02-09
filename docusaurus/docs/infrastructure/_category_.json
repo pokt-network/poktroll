@@ -1,6 +1,6 @@
 {
   "label": "Infrastructure",
-  "position": 5,
+  "position": 8,
   "link": {
     "type": "generated-index",
     "description": "Everything related to LocalNet, DevNet & TestNet Infrastructure."
