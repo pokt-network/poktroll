@@ -151,7 +151,7 @@ func (app *appGateServer) Stop(ctx context.Context) error {
 // The serviceId is extracted from the request path.
 // The request's path should be of the form:
 //
-//	"<protocol>://host:port/serviceId[/other/path/segments]?senderAddr=<senderAddr>"
+//	"<protocol>://host:port/serviceId[/other/path/segments]?applicationAddr=<applicationAddr>"
 //
 // where the serviceId is the id of the service that the application is requesting
 // and the other (possible) path segments are the JSON RPC request path.
@@ -200,7 +200,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// Determine the application address.
 	appAddress := app.signingInformation.AppAddress
 	if appAddress == "" {
-		appAddress = request.URL.Query().Get("senderAddr")
+		appAddress = request.URL.Query().Get("applicationAddr")
 	}
 	if appAddress == "" {
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), ErrAppGateMissingAppAddress)
