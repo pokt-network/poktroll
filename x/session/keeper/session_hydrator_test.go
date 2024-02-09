@@ -61,6 +61,8 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
+	// TODO_TECHDEBT: These test assume that the genesis block has a height of 0,
+	// rewrite them in terms of height = 1 genesis.
 	tests := []test{
 		{
 			desc:        "blockHeight = 0",
@@ -153,6 +155,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 
 	// TODO_TECHDEBT: Extend these tests once `NumBlocksPerSession` is configurable.
 	// Currently assumes NumBlocksPerSession=4
+	// TODO_TECHDEBT: These test assume that the genesis block has a height of 0,
+	// rewrite them in terms of height = 1 genesis.
 	tests := []test{
 		{
 			desc: "(app1, svc1): sessionId at first session block != sessionId at next session block",

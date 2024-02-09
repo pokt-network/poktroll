@@ -62,9 +62,9 @@ func (k Keeper) BeginBlocker(ctx sdk.Context) {
 	hash := ctx.BlockHeader().LastBlockId.Hash
 	// ctx.BlockHeader().Height is the height of the last committed block.
 	height := ctx.BlockHeader().Height
-	// When height is 1, ctx.BlockHeader().LastBlockId.Hash will not be populated,
-	// and leads to a panic when trying to save the hash in the store.
-	// Explicitly setting hash to an empty byte slice when height is 1 prevents the panic.
+	// Block height 1 is the genesis block, there is no state root since there is
+	// no block preceding it.
+	// Fallback to an empty byte slice in this case.
 	if height == 1 {
 		hash = []byte{}
 	}
