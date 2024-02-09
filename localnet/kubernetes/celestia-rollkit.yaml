@@ -18,6 +18,10 @@ spec:
       name: gateway
       port: 26659
       targetPort: 26659
+    - protocol: TCP
+      name: grpc-da
+      port: 26650
+      targetPort: 26650
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -37,31 +41,13 @@ spec:
       # TODO: Add resource limits
       containers:
         - name: celestia
-          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.1
+          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.7
           ports:
+            # https://github.com/rollkit/local-celestia-devnet?tab=readme-ov-file#exposed-ports
             - containerPort: 26657
             - containerPort: 26658
             - containerPort: 26659
-          volumeMounts:
-            - name: bridge-volume
-              mountPath: /home/celestia/bridge
-        - name: secret-update-sidecar
-          image: ghcr.io/rollkit/local-celestia-devnet:v0.12.1
-          command: ["/bin/bash", "-c", "--"]
-          # TODO(@okdas): Very scary line. Basically, waits until the node key (NJ3XILLTMVRXEZLUFZVHO5A) exists, signs the JWT and pushes it to k8s secret.
-          args:
-            [
-              'while true; do if [ -f /home/celestia/bridge/keys/NJ3XILLTMVRXEZLUFZVHO5A ]; then OUTPUT=$(celestia bridge --node.store /home/celestia/bridge auth admin); BASE64_OUTPUT=$(echo -n $OUTPUT | base64 -w 0); TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token); PAYLOAD=$(echo -n ''{"apiVersion":"v1","kind":"Secret","metadata":{"name":"celestia-secret"},"data":{"auth_token":"''${BASE64_OUTPUT}''"}}''); RESPONSE=$(curl -k -H "Authorization: Bearer $TOKEN" -H ''Content-Type: application/json'' -X PUT -d "$PAYLOAD" https://kubernetes.default.svc.cluster.local/api/v1/namespaces/default/secrets/celestia-secret); echo $RESPONSE | grep ''"code": 404'' >/dev/null && curl -k -H "Authorization: Bearer $TOKEN" -H ''Content-Type: application/json'' -X POST -d "$PAYLOAD" https://kubernetes.default.svc.cluster.local/api/v1/namespaces/default/secrets; while true; do sleep 86400; done; fi; sleep 2; done;',
-            ]
-          volumeMounts:
-            - name: bridge-volume
-              mountPath: /home/celestia/bridge
-      volumes:
-        - name: bridge-volume
-          emptyDir: {}
-        - name: localnet-celestia-tokens
-          secret:
-            secretName: localnet-celestia-tokens
+            - containerPort: 26650
 ---
 apiVersion: v1
 kind: ServiceAccount
