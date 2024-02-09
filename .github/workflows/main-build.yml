@@ -17,8 +17,8 @@ jobs:
         # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
         run: |
           # curl https://get.ignite.com/cli! | bash
-          wget https://github.com/ignite/cli/releases/download/v0.27.2/ignite_0.27.2_linux_amd64.tar.gz
-          tar -xzf ignite_0.27.2_linux_amd64.tar.gz
+          wget https://github.com/ignite/cli/releases/download/v28.2.0/ignite_28.2.0_linux_amd64.tar.gz
+          tar -xzf ignite_28.2.0_linux_amd64.tar.gz
           sudo mv ignite /usr/local/bin/ignite
           ignite version
 
@@ -29,7 +29,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.20.10"
+          go-version: "1.21.6"
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -103,11 +103,11 @@ jobs:
           sparse-checkout: |
             .github
 
-      - id: 'auth'
-        name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v1'
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: '${{ secrets.GKE_PROTOCOL_US_CENTRAL }}'
+          credentials_json: "${{ secrets.GKE_PROTOCOL_US_CENTRAL }}"
 
       - uses: google-github-actions/get-gke-credentials@v1
         with:
