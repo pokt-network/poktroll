@@ -52,8 +52,8 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
-		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
+		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
 		exit 1; \
 	fi
 
@@ -166,23 +166,27 @@ localnet_up: ## Starts localnet
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
 localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-	ignite chain init
-	mkdir -p $(POKTROLLD_HOME)/config/
-	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
-	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
-	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
-	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json); \
-	# NB: Currently the stake => power calculation is constant; however, cosmos-sdk \
-	# intends to make this parameterizable in the future. \
-	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,'); \
-	NAME=$$(yq ".validators[0].name" ./config.yml); \
-	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' $(POKTROLLD_HOME)/config/genesis.json > temp.json && mv temp.json $(POKTROLLD_HOME)/config/genesis.json
+# NB: Currently the stake => power calculation is constant; however, cosmos-sdk
+# intends to make this parameterizable in the future.
+	@echo "Initializing chain..."
+	@set -e ;\
+	ignite chain init ;\
+	mkdir -p $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
+	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
+	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
+	NAME=$$(yq ".validators[0].name" ./config.yml) ;\
+	echo "Regenerating genesis file with new validator..." ;\
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
+	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
+	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
+
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
