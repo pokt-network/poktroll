@@ -2664,7 +2664,7 @@ type MsgUnstakeGateway struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the gateway
 }
 
 func (x *MsgUnstakeGateway) Reset() {
