@@ -59,7 +59,7 @@ necessary for the application<->gateway ring signature to function.
 If an application doesn't provide the 'self_signing' configuration directive,
 it can still send relays to the AppGate server and function as an Application,
 provided that:
-1. Each request contains the '?senderAddress=[address]' query parameter
+1. Each request contains the '?applicationAddr=[address]' query parameter
 2. The key associated with the 'signing_key' configuration directive belongs
    to the address provided in the request, otherwise the ring signature will not be valid.`,
 		Args: cobra.NoArgs,
