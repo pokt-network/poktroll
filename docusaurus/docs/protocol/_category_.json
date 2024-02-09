@@ -1,8 +1,8 @@
 {
-  "label": "Actors",
-  "position": 4,
+  "label": "Protocol",
+  "position": 5,
   "link": {
     "type": "generated-index",
-    "description": "Documentation related to the Pocket Network protocol actors."
+    "description": "Documentation related to the Pocket Network protocol internals."
   }
 }
