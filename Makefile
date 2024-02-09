@@ -1,9 +1,8 @@
 .SILENT:
 
-SHELL = /bin/sh
-POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
-APPGATE_SERVER ?= http://localhost:42069
+POKTROLLD_HOME := ./localnet/poktrolld
+POCKET_NODE = tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+APPGATE_SERVER = http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 
 ####################
@@ -11,12 +10,12 @@ POCKET_ADDR_PREFIX = pokt
 ####################
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
-# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/mikefarah/yq/v4@latest
 
 ########################
 ### Makefile Helpers ###
@@ -51,8 +50,8 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
-		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
+		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
 		exit 1; \
 	fi
 
@@ -165,16 +164,27 @@ localnet_up: ## Starts localnet
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
-localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-	ignite chain init
-	mkdir -p $(POKTROLLD_HOME)/config/
-	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
-	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+# NB: Currently the stake => power calculation is constant; however, cosmos-sdk
+# intends to make this parameterizable in the future.
+	@echo "Initializing chain..."
+	@set -e ;\
+	ignite chain init ;\
+	mkdir -p $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
+	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
+	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
+	NAME=$$(yq ".validators[0].name" ./config.yml) ;\
+	echo "Regenerating genesis file with new validator..." ;\
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
+	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
+	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
+
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -197,7 +207,7 @@ go_imports: check_go_version ## Run goimports on all go files
 #############
 
 .PHONY: test_e2e
-test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
+test_e2e: ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
@@ -226,12 +236,12 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
-	go generate ./x/application/types/
-	go generate ./x/gateway/types/
-	go generate ./x/supplier/types/
-	go generate ./x/session/types/
-	go generate ./x/service/types/
-	go generate ./x/tokenomics/types/
+	# go generate ./x/application/types/
+	# go generate ./x/gateway/types/
+	# go generate ./x/supplier/types/
+	# go generate ./x/session/types/
+	# go generate ./x/service/types/
+	# go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
@@ -252,7 +262,7 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
 .PHONY: load_test_simple
-load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
 	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
@@ -359,6 +369,7 @@ app_list: ## List all the staked applications
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
 	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
 
+# TODO_IMPROVE(#180): Make sure genesis-staked actors are available via AccountKeeper
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
 	APP=app1 SERVICES=application1_stake_config.yaml make app_stake
@@ -517,32 +528,6 @@ acc_balance_query_app1: ## Query the balance of app1
 .PHONY: acc_balance_total_supply
 acc_balance_total_supply: ## Query the total supply of the network
 	poktrolld --home=$(POKTROLLD_HOME) q bank total --node $(POCKET_NODE)
-
-# NB: Ignite does not populate `pub_key` in `accounts` within `genesis.json` leading
-# to queries like this to fail: `poktrolld query account pokt1<addr> --node $(POCKET_NODE).
-# We attempted using a `tx multi-send` from the `faucet` to all accounts, but
-# that also did not solve this problem because the account itself must sign the
-# transaction for its public key to be populated in the account keeper. As such,
-# the solution is to send funds from every account in genesis to some address
-# (PNF was selected ambigously) to make sure their public keys are populated.
-
-.PHONY: acc_initialize_pubkeys
-acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
-	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
-	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
-	# @printf "Addresses: ${ADDRESSES}"
-	$(foreach addr, $(ADDRESSES),\
-		echo $(addr);\
-		poktrolld tx bank send \
-			$(addr) $(PNF_ADDR) 1000upokt \
-			--yes \
-			--home=$(POKTROLLD_HOME) \
-			--node $(POCKET_NODE);)
-
-.PHONY: acc_initialize_pubkeys_warn_message
-acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@printf "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
-	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############
 ### Claims ###
