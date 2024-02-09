@@ -496,6 +496,441 @@ func (x *fastReflection_Service) ProtoMethods() *protoiface.Methods {
 	}
 }
 
+var (
+	md_ApplicationServiceConfig         protoreflect.MessageDescriptor
+	fd_ApplicationServiceConfig_service protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_shared_service_proto_init()
+	md_ApplicationServiceConfig = File_poktroll_shared_service_proto.Messages().ByName("ApplicationServiceConfig")
+	fd_ApplicationServiceConfig_service = md_ApplicationServiceConfig.Fields().ByName("service")
+}
+
+var _ protoreflect.Message = (*fastReflection_ApplicationServiceConfig)(nil)
+
+type fastReflection_ApplicationServiceConfig ApplicationServiceConfig
+
+func (x *ApplicationServiceConfig) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ApplicationServiceConfig)(x)
+}
+
+func (x *ApplicationServiceConfig) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_shared_service_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_ApplicationServiceConfig_messageType fastReflection_ApplicationServiceConfig_messageType
+var _ protoreflect.MessageType = fastReflection_ApplicationServiceConfig_messageType{}
+
+type fastReflection_ApplicationServiceConfig_messageType struct{}
+
+func (x fastReflection_ApplicationServiceConfig_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ApplicationServiceConfig)(nil)
+}
+func (x fastReflection_ApplicationServiceConfig_messageType) New() protoreflect.Message {
+	return new(fastReflection_ApplicationServiceConfig)
+}
+func (x fastReflection_ApplicationServiceConfig_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ApplicationServiceConfig
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_ApplicationServiceConfig) Descriptor() protoreflect.MessageDescriptor {
+	return md_ApplicationServiceConfig
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_ApplicationServiceConfig) Type() protoreflect.MessageType {
+	return _fastReflection_ApplicationServiceConfig_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_ApplicationServiceConfig) New() protoreflect.Message {
+	return new(fastReflection_ApplicationServiceConfig)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_ApplicationServiceConfig) Interface() protoreflect.ProtoMessage {
+	return (*ApplicationServiceConfig)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_ApplicationServiceConfig) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Service != nil {
+		value := protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+		if !f(fd_ApplicationServiceConfig_service, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_ApplicationServiceConfig) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		return x.Service != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ApplicationServiceConfig) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		x.Service = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_ApplicationServiceConfig) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		value := x.Service
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ApplicationServiceConfig) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		x.Service = value.Message().Interface().(*Service)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ApplicationServiceConfig) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		if x.Service == nil {
+			x.Service = new(Service)
+		}
+		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_ApplicationServiceConfig) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.shared.ApplicationServiceConfig.service":
+		m := new(Service)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.shared.ApplicationServiceConfig"))
+		}
+		panic(fmt.Errorf("message poktroll.shared.ApplicationServiceConfig does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_ApplicationServiceConfig) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.shared.ApplicationServiceConfig", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_ApplicationServiceConfig) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_ApplicationServiceConfig) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_ApplicationServiceConfig) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_ApplicationServiceConfig) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*ApplicationServiceConfig)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Service != nil {
+			l = options.Size(x.Service)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*ApplicationServiceConfig)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Service != nil {
+			encoded, err := options.Marshal(x.Service)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*ApplicationServiceConfig)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ApplicationServiceConfig: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ApplicationServiceConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Service", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Service == nil {
+					x.Service = &Service{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Service); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
 var _ protoreflect.List = (*_SupplierServiceConfig_2_list)(nil)
 
 type _SupplierServiceConfig_2_list struct {
@@ -569,7 +1004,7 @@ func (x *SupplierServiceConfig) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SupplierServiceConfig) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_shared_service_proto_msgTypes[1]
+	mi := &file_poktroll_shared_service_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1144,7 +1579,7 @@ func (x *SupplierEndpoint) ProtoReflect() protoreflect.Message {
 }
 
 func (x *SupplierEndpoint) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_shared_service_proto_msgTypes[2]
+	mi := &file_poktroll_shared_service_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1697,7 +2132,7 @@ func (x *ConfigOption) ProtoReflect() protoreflect.Message {
 }
 
 func (x *ConfigOption) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_shared_service_proto_msgTypes[3]
+	mi := &file_poktroll_shared_service_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2309,6 +2744,42 @@ func (x *Service) GetName() string {
 	return ""
 }
 
+// ApplicationServiceConfig holds the service configuration the application stakes for
+type ApplicationServiceConfig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Service *Service `protobuf:"bytes,1,opt,name=service,proto3" json:"service,omitempty"` // The Service for which the application is configured
+}
+
+func (x *ApplicationServiceConfig) Reset() {
+	*x = ApplicationServiceConfig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_shared_service_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ApplicationServiceConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplicationServiceConfig) ProtoMessage() {}
+
+// Deprecated: Use ApplicationServiceConfig.ProtoReflect.Descriptor instead.
+func (*ApplicationServiceConfig) Descriptor() ([]byte, []int) {
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ApplicationServiceConfig) GetService() *Service {
+	if x != nil {
+		return x.Service
+	}
+	return nil
+}
+
 // SupplierServiceConfig holds the service configuration the supplier stakes for
 type SupplierServiceConfig struct {
 	state         protoimpl.MessageState
@@ -2322,7 +2793,7 @@ type SupplierServiceConfig struct {
 func (x *SupplierServiceConfig) Reset() {
 	*x = SupplierServiceConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_shared_service_proto_msgTypes[1]
+		mi := &file_poktroll_shared_service_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2336,7 +2807,7 @@ func (*SupplierServiceConfig) ProtoMessage() {}
 
 // Deprecated: Use SupplierServiceConfig.ProtoReflect.Descriptor instead.
 func (*SupplierServiceConfig) Descriptor() ([]byte, []int) {
-	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{1}
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SupplierServiceConfig) GetService() *Service {
@@ -2367,7 +2838,7 @@ type SupplierEndpoint struct {
 func (x *SupplierEndpoint) Reset() {
 	*x = SupplierEndpoint{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_shared_service_proto_msgTypes[2]
+		mi := &file_poktroll_shared_service_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2381,7 +2852,7 @@ func (*SupplierEndpoint) ProtoMessage() {}
 
 // Deprecated: Use SupplierEndpoint.ProtoReflect.Descriptor instead.
 func (*SupplierEndpoint) Descriptor() ([]byte, []int) {
-	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{2}
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SupplierEndpoint) GetUrl() string {
@@ -2418,7 +2889,7 @@ type ConfigOption struct {
 func (x *ConfigOption) Reset() {
 	*x = ConfigOption{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_shared_service_proto_msgTypes[3]
+		mi := &file_poktroll_shared_service_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2432,7 +2903,7 @@ func (*ConfigOption) ProtoMessage() {}
 
 // Deprecated: Use ConfigOption.ProtoReflect.Descriptor instead.
 func (*ConfigOption) Descriptor() ([]byte, []int) {
-	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{3}
+	return file_poktroll_shared_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ConfigOption) GetKey() ConfigOptions {
@@ -2458,6 +2929,11 @@ var file_poktroll_shared_service_proto_rawDesc = []byte{
 	0x22, 0x2d, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69,
 	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e,
 	0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22,
+	0x4e, 0x0a, 0x18, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x32, 0x0a, 0x07, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x22,
 	0x8c, 0x01, 0x0a, 0x15, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76,
 	0x69, 0x63, 0x65, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x32, 0x0a, 0x07, 0x73, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b,
@@ -2516,26 +2992,28 @@ func file_poktroll_shared_service_proto_rawDescGZIP() []byte {
 }
 
 var file_poktroll_shared_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_poktroll_shared_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_poktroll_shared_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_poktroll_shared_service_proto_goTypes = []interface{}{
-	(RPCType)(0),                  // 0: poktroll.shared.RPCType
-	(ConfigOptions)(0),            // 1: poktroll.shared.ConfigOptions
-	(*Service)(nil),               // 2: poktroll.shared.Service
-	(*SupplierServiceConfig)(nil), // 3: poktroll.shared.SupplierServiceConfig
-	(*SupplierEndpoint)(nil),      // 4: poktroll.shared.SupplierEndpoint
-	(*ConfigOption)(nil),          // 5: poktroll.shared.ConfigOption
+	(RPCType)(0),                     // 0: poktroll.shared.RPCType
+	(ConfigOptions)(0),               // 1: poktroll.shared.ConfigOptions
+	(*Service)(nil),                  // 2: poktroll.shared.Service
+	(*ApplicationServiceConfig)(nil), // 3: poktroll.shared.ApplicationServiceConfig
+	(*SupplierServiceConfig)(nil),    // 4: poktroll.shared.SupplierServiceConfig
+	(*SupplierEndpoint)(nil),         // 5: poktroll.shared.SupplierEndpoint
+	(*ConfigOption)(nil),             // 6: poktroll.shared.ConfigOption
 }
 var file_poktroll_shared_service_proto_depIdxs = []int32{
-	2, // 0: poktroll.shared.SupplierServiceConfig.service:type_name -> poktroll.shared.Service
-	4, // 1: poktroll.shared.SupplierServiceConfig.endpoints:type_name -> poktroll.shared.SupplierEndpoint
-	0, // 2: poktroll.shared.SupplierEndpoint.rpc_type:type_name -> poktroll.shared.RPCType
-	5, // 3: poktroll.shared.SupplierEndpoint.configs:type_name -> poktroll.shared.ConfigOption
-	1, // 4: poktroll.shared.ConfigOption.key:type_name -> poktroll.shared.ConfigOptions
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 0: poktroll.shared.ApplicationServiceConfig.service:type_name -> poktroll.shared.Service
+	2, // 1: poktroll.shared.SupplierServiceConfig.service:type_name -> poktroll.shared.Service
+	5, // 2: poktroll.shared.SupplierServiceConfig.endpoints:type_name -> poktroll.shared.SupplierEndpoint
+	0, // 3: poktroll.shared.SupplierEndpoint.rpc_type:type_name -> poktroll.shared.RPCType
+	6, // 4: poktroll.shared.SupplierEndpoint.configs:type_name -> poktroll.shared.ConfigOption
+	1, // 5: poktroll.shared.ConfigOption.key:type_name -> poktroll.shared.ConfigOptions
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_shared_service_proto_init() }
@@ -2557,7 +3035,7 @@ func file_poktroll_shared_service_proto_init() {
 			}
 		}
 		file_poktroll_shared_service_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SupplierServiceConfig); i {
+			switch v := v.(*ApplicationServiceConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2569,7 +3047,7 @@ func file_poktroll_shared_service_proto_init() {
 			}
 		}
 		file_poktroll_shared_service_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SupplierEndpoint); i {
+			switch v := v.(*SupplierServiceConfig); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2581,6 +3059,18 @@ func file_poktroll_shared_service_proto_init() {
 			}
 		}
 		file_poktroll_shared_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SupplierEndpoint); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_shared_service_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ConfigOption); i {
 			case 0:
 				return &v.state
@@ -2599,7 +3089,7 @@ func file_poktroll_shared_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_shared_service_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
