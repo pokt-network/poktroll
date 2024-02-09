@@ -5,6 +5,8 @@ option go_package = "github.com/pokt-network/poktroll/x/session/types";
 
 import "cosmos_proto/cosmos.proto";
 import "poktroll/shared/service.proto";
+import "poktroll/application/application.proto";
+import "poktroll/shared/supplier.proto";
 
 // NOTE: Using signed integers for consistency with the cosmos SDK
 
@@ -17,4 +19,15 @@ message SessionHeader {
   // NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
   string session_id = 4; // A unique pseudoranom ID for this session
   int64 session_end_block_height = 5; // The height at which this session ended, this is the last block of the session
+}
+
+// Session is a fully hydrated session object that contains all the information for the Session
+// and its parcipants.
+message Session {
+  SessionHeader header = 1; // The header of the session containing lightweight data
+  string session_id = 2; // A unique pseudoranom ID for this session
+  int64 session_number = 3; // The session number since genesis
+  int64 num_blocks_per_session = 4;  // The number of blocks per session when this session started
+  poktroll.application.Application application = 5; // A fully hydrated application object this session is for
+  repeated poktroll.shared.Supplier suppliers = 6; // A fully hydrated set of servicers that are serving the application
 }
