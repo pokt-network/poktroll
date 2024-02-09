@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgStakeGateway{}
+var _ sdk.Msg = (*MsgStakeGateway)(nil)
 
 func NewMsgStakeGateway(address string, stake sdk.Coin) *MsgStakeGateway {
 	return &MsgStakeGateway{
