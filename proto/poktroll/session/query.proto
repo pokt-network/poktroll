@@ -7,6 +7,8 @@ import "google/api/annotations.proto";
 import "cosmos_proto/cosmos.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/session/params.proto";
+// TODO_IN_THIS_COMMIT: This import produces a redundant import in
+// api/poktroll/session/query.pulsar.go which causes a build error.
 import "poktroll/session/session.proto";
 import "poktroll/shared/service.proto";
 

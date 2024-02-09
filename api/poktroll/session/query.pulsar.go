@@ -8,7 +8,6 @@ import (
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	session "github.com/pokt-network/poktroll/api/poktroll/session"
 	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1514,7 +1513,7 @@ func (x *fastReflection_QueryGetSessionResponse) Get(descriptor protoreflect.Fie
 func (x *fastReflection_QueryGetSessionResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
 	case "poktroll.session.QueryGetSessionResponse.session":
-		x.Session = value.Message().Interface().(*session.Session)
+		x.Session = value.Message().Interface().(*Session)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1537,7 +1536,7 @@ func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDe
 	switch fd.FullName() {
 	case "poktroll.session.QueryGetSessionResponse.session":
 		if x.Session == nil {
-			x.Session = new(session.Session)
+			x.Session = new(Session)
 		}
 		return protoreflect.ValueOfMessage(x.Session.ProtoReflect())
 	default:
@@ -1554,7 +1553,7 @@ func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDe
 func (x *fastReflection_QueryGetSessionResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
 	case "poktroll.session.QueryGetSessionResponse.session":
-		m := new(session.Session)
+		m := new(Session)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
@@ -1751,7 +1750,7 @@ func (x *fastReflection_QueryGetSessionResponse) ProtoMethods() *protoiface.Meth
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Session == nil {
-					x.Session = &session.Session{}
+					x.Session = &Session{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Session); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1925,7 +1924,7 @@ type QueryGetSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Session *session.Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
+	Session *Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 }
 
 func (x *QueryGetSessionResponse) Reset() {
@@ -1948,7 +1947,7 @@ func (*QueryGetSessionResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_session_query_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueryGetSessionResponse) GetSession() *session.Session {
+func (x *QueryGetSessionResponse) GetSession() *Session {
 	if x != nil {
 		return x.Session
 	}
@@ -2042,7 +2041,7 @@ var file_poktroll_session_query_proto_goTypes = []interface{}{
 	(*QueryGetSessionResponse)(nil), // 3: poktroll.session.QueryGetSessionResponse
 	(*Params)(nil),                  // 4: poktroll.session.Params
 	(*shared.Service)(nil),          // 5: poktroll.shared.Service
-	(*session.Session)(nil),         // 6: poktroll.session.Session
+	(*Session)(nil),                 // 6: poktroll.session.Session
 }
 var file_poktroll_session_query_proto_depIdxs = []int32{
 	4, // 0: poktroll.session.QueryParamsResponse.params:type_name -> poktroll.session.Params
