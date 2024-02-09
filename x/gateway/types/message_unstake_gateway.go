@@ -4,7 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgUnstakeGateway{}
+var _ sdk.Msg = (*MsgUnstakeGateway)(nil)
 
 func NewMsgUnstakeGateway(address string) *MsgUnstakeGateway {
 	return &MsgUnstakeGateway{
