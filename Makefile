@@ -178,8 +178,8 @@ localnet_regenesis: ## Regenerate the localnet genesis file
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
 	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
 	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
-	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
-	NAME=$$(yq ".validators[0].name" ./config.yml) ;\
+	POWER=$$(yq -r ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
+	NAME=$$(yq -r ".validators[0].name" ./config.yml) ;\
 	echo "Regenerating genesis file with new validator..." ;\
 	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
 	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
