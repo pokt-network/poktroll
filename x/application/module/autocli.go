@@ -45,6 +45,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Send a stake-application tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "stake"}, {ProtoField: "services"}},
 				},
+				{
+					RpcMethod:      "UnstakeApplication",
+					Use:            "unstake-application",
+					Short:          "Send a unstake-application tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},

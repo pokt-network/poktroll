@@ -437,7 +437,6 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The maximum number of gateways an application can delegate trust to
 	MaxDelegatedGateways uint64 `protobuf:"varint,1,opt,name=maxDelegatedGateways,proto3" json:"maxDelegatedGateways,omitempty"`
 }
 
