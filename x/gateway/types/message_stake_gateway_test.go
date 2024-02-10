@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -11,7 +11,7 @@ import (
 )
 
 func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
-	coins := sdk.NewCoin("upokt", math.NewInt(100))
+	coins := sdk.NewCoin("upokt", sdkmath.NewInt(100))
 	tests := []struct {
 		name string
 		msg  MsgStakeGateway
@@ -35,28 +35,28 @@ func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
 			name: "valid address - zero stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(0)},
 			},
 			err: ErrGatewayInvalidStake,
 		}, {
 			name: "valid address - negative stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(-100)},
 			},
 			err: ErrGatewayInvalidStake,
 		}, {
 			name: "valid address - invalid stake denom",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdkmath.NewInt(100)},
 			},
 			err: ErrGatewayInvalidStake,
 		}, {
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "", Amount: sdkmath.NewInt(100)},
 			},
 			err: ErrGatewayInvalidStake,
 		}, {

@@ -19,11 +19,14 @@ func TestMsgUnstakeGateway_ValidateBasic(t *testing.T) {
 				Address: "invalid_address",
 			},
 			err: ErrGatewayInvalidAddress,
-		}, {
+		},
+		{
 			name: "missing address",
 			msg:  MsgUnstakeGateway{},
 			err:  ErrGatewayInvalidAddress,
-		}, {name: "valid address",
+		},
+		{
+			name: "valid address",
 			msg: MsgUnstakeGateway{
 				Address: sample.AccAddress(),
 			},

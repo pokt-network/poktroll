@@ -5,10 +5,16 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func (k msgServer) UnstakeGateway(goCtx context.Context, msg *types.MsgUnstakeGateway) (*types.MsgUnstakeGatewayResponse, error) {
+// TODO_TECHDEBT(#49): Add un-delegation from delegated apps
+// TODO(#73): Determine if a gateway needs an unbonding period after unstaking.
+func (k msgServer) UnstakeGateway(
+	goCtx context.Context,
+	msg *types.MsgUnstakeGateway,
+) (*types.MsgUnstakeGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "UnstakeGateway")
@@ -44,6 +50,5 @@ func (k msgServer) UnstakeGateway(goCtx context.Context, msg *types.MsgUnstakeGa
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
-
 	return &types.MsgUnstakeGatewayResponse{}, nil
 }
