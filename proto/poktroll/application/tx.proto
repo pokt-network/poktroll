@@ -17,10 +17,11 @@ service Msg {
   
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
-  rpc UpdateParams       (MsgUpdateParams      ) returns (MsgUpdateParamsResponse      );
-  rpc StakeApplication   (MsgStakeApplication  ) returns (MsgStakeApplicationResponse  );
-  rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
-  rpc DelegateToGateway  (MsgDelegateToGateway ) returns (MsgDelegateToGatewayResponse );
+  rpc UpdateParams          (MsgUpdateParams         ) returns (MsgUpdateParamsResponse         );
+  rpc StakeApplication      (MsgStakeApplication     ) returns (MsgStakeApplicationResponse     );
+  rpc UnstakeApplication    (MsgUnstakeApplication   ) returns (MsgUnstakeApplicationResponse   );
+  rpc DelegateToGateway     (MsgDelegateToGateway    ) returns (MsgDelegateToGatewayResponse    );
+  rpc UndelegateFromGateway (MsgUndelegateFromGateway) returns (MsgUndelegateFromGatewayResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -63,4 +64,12 @@ message MsgDelegateToGateway {
 }
 
 message MsgDelegateToGatewayResponse {}
+
+message MsgUndelegateFromGateway {
+  option (cosmos.msg.v1.signer) = "appAddress";
+  string appAddress     = 1;
+  string gatewayAddress = 2;
+}
+
+message MsgUndelegateFromGatewayResponse {}
 
