@@ -18,12 +18,12 @@ func SimulateMsgStakeGateway(
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
-		msg := &types.MsgStakeGateway{
+		stakeMsg := &types.MsgStakeGateway{
 			Address: simAccount.Address.String(),
 		}
 
 		// TODO: Handling the StakeGateway simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "StakeGateway simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(stakeMsg), "StakeGateway simulation not implemented"), nil, nil
 	}
 }

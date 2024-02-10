@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func (k msgServer) StakeGateway(goCtx context.Context, msg *types.MsgStakeGateway) (*types.MsgStakeGatewayResponse, error) {
+func (k msgServer) StakeGateway(
+	goCtx context.Context,
+	msg *types.MsgStakeGateway,
+) (*types.MsgStakeGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "StakeGateway")
@@ -74,13 +78,13 @@ func (k msgServer) updateGateway(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return types.ErrGatewayUnauthorized.Wrapf("msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
+		return sdkerrors.Wrapf(types.ErrGatewayUnauthorized, "msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
 	}
-	if msg.Stake.IsZero() {
-		return types.ErrGatewayInvalidStake.Wrap("stake amount cannot be 0")
+	if msg.Stake == nil {
+		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*gateway.Stake) {
-		return types.ErrGatewayInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
+		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
 	}
 	gateway.Stake = msg.Stake
 	return nil
