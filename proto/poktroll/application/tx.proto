@@ -20,6 +20,7 @@ service Msg {
   rpc UpdateParams       (MsgUpdateParams      ) returns (MsgUpdateParamsResponse      );
   rpc StakeApplication   (MsgStakeApplication  ) returns (MsgStakeApplicationResponse  );
   rpc UnstakeApplication (MsgUnstakeApplication) returns (MsgUnstakeApplicationResponse);
+  rpc DelegateToGateway  (MsgDelegateToGateway ) returns (MsgDelegateToGatewayResponse );
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -54,4 +55,12 @@ message MsgUnstakeApplication {
 }
 
 message MsgUnstakeApplicationResponse {}
+
+message MsgDelegateToGateway {
+  option (cosmos.msg.v1.signer) = "appAddress";
+  string appAddress     = 1;
+  string gatewayAddress = 2;
+}
+
+message MsgDelegateToGatewayResponse {}
 

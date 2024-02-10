@@ -51,6 +51,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Send a unstake-application tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
+				{
+					RpcMethod:      "DelegateToGateway",
+					Use:            "delegate-to-gateway [gateway-address]",
+					Short:          "Send a delegate-to-gateway tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "gatewayAddress"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},

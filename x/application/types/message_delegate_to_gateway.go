@@ -1,57 +1,24 @@
 package types
 
 import (
-	sdkerrors "cosmossdk.io/errors"
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-const TypeMsgDelegateToGateway = "delegate_to_gateway"
+var _ sdk.Msg = &MsgDelegateToGateway{}
 
-var _ sdk.Msg = (*MsgDelegateToGateway)(nil)
-
-func NewMsgDelegateToGateway(appAddress, gatewayAddress string) *MsgDelegateToGateway {
+func NewMsgDelegateToGateway(appAddress string, gatewayAddress string) *MsgDelegateToGateway {
 	return &MsgDelegateToGateway{
 		AppAddress:     appAddress,
 		GatewayAddress: gatewayAddress,
 	}
 }
 
-func (msg *MsgDelegateToGateway) Route() string {
-	return RouterKey
-}
-
-func (msg *MsgDelegateToGateway) Type() string {
-	return TypeMsgDelegateToGateway
-}
-
-func (msg *MsgDelegateToGateway) GetSigners() []sdk.AccAddress {
-	address, err := sdk.AccAddressFromBech32(msg.AppAddress)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{address}
-}
-
-func (msg *MsgDelegateToGateway) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
-func (msg *MsgDelegateToGateway) NewRedelegationEvent() *EventRedelegation {
-	return &EventRedelegation{
-		AppAddress:     msg.AppAddress,
-		GatewayAddress: msg.GatewayAddress,
-	}
-}
-
 func (msg *MsgDelegateToGateway) ValidateBasic() error {
-	// Validate the application address
-	if _, err := sdk.AccAddressFromBech32(msg.AppAddress); err != nil {
-		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.AppAddress, err)
-	}
-	// Validate the gateway address
-	if _, err := sdk.AccAddressFromBech32(msg.GatewayAddress); err != nil {
-		return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", msg.GatewayAddress, err)
+	_, err := sdk.AccAddressFromBech32(msg.AppAddress)
+	if err != nil {
+		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid appAddress address (%s)", err)
 	}
 	return nil
 }
