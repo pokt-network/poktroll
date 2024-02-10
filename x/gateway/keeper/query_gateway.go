@@ -7,9 +7,10 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
-	"github.com/pokt-network/poktroll/x/gateway/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func (k Keeper) GatewayAll(ctx context.Context, req *types.QueryAllGatewayRequest) (*types.QueryAllGatewayResponse, error) {
@@ -50,8 +51,6 @@ func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) 
 	)
 	if !found {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
-
 	}
-
 	return &types.QueryGetGatewayResponse{Gateway: val}, nil
 }

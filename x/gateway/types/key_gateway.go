@@ -5,7 +5,7 @@ import "encoding/binary"
 var _ binary.ByteOrder
 
 const (
-	// GatewayKeyPrefix is the prefix to retrieve all Gateway
+	// GatewayKeyPrefix is the prefix to retrieve all Gateways
 	GatewayKeyPrefix = "Gateway/value/"
 )
 
