@@ -17,6 +17,17 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
+				{
+					RpcMethod: "ApplicationAll",
+					Use:       "list-application",
+					Short:     "List all application",
+				},
+				{
+					RpcMethod:      "Application",
+					Use:            "show-application [id]",
+					Short:          "Shows a application",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "address"}},
+				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
