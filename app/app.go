@@ -56,6 +56,7 @@ import (
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 
+	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -120,8 +121,9 @@ type App struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
-	ServiceKeeper servicemodulekeeper.Keeper
-	GatewayKeeper gatewaymodulekeeper.Keeper
+	ServiceKeeper     servicemodulekeeper.Keeper
+	GatewayKeeper     gatewaymodulekeeper.Keeper
+	ApplicationKeeper applicationmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -262,6 +264,7 @@ func New(
 		&app.CircuitBreakerKeeper,
 		&app.ServiceKeeper,
 		&app.GatewayKeeper,
+		&app.ApplicationKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
