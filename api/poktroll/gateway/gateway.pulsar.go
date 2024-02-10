@@ -532,8 +532,8 @@ type Gateway struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
-	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`
+	Address string        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"` // The Bech32 address of the gateway
+	Stake   *v1beta1.Coin `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`     // The total amount of uPOKT the gateway has staked
 }
 
 func (x *Gateway) Reset() {

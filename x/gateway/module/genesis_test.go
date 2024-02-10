@@ -5,7 +5,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/gateway/module"
+	gateway "github.com/pokt-network/poktroll/x/gateway/module"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/stretchr/testify/require"
 )
