@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package poktroll.application;
 
 import "amino/amino.proto";
@@ -6,25 +7,54 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/application/params.proto";
+import "poktroll/application/application.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 // Query defines the gRPC querier service.
 service Query {
+  
   // Parameters queries the parameters of the module.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/params";
+  
+  }
+  
+  // Queries a list of Application items.
+  rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
+  
+  }
+  rpc ApplicationAll (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/application/application";
+  
   }
 }
-
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
+  
   // params holds all the parameters of this module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
+
+message QueryGetApplicationRequest {
+  string address = 1;
+}
+
+message QueryGetApplicationResponse {
+  Application application = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllApplicationRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllApplicationResponse {
+  repeated Application                            application = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination  = 2;
+}
+

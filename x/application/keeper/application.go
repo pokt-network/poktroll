@@ -1,15 +1,18 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"context"
 
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // SetApplication set a specific application in the store from its index
-func (k Keeper) SetApplication(ctx sdk.Context, application types.Application) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+func (k Keeper) SetApplication(ctx context.Context, application types.Application) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	b := k.cdc.MustMarshal(&application)
 	store.Set(types.ApplicationKey(
 		application.Address,
@@ -18,46 +21,49 @@ func (k Keeper) SetApplication(ctx sdk.Context, application types.Application) {
 
 // GetApplication returns a application from its index
 func (k Keeper) GetApplication(
-	ctx sdk.Context,
-	appAddr string,
+	ctx context.Context,
+	address string,
 
-) (app types.Application, found bool) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+) (val types.Application, found bool) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 
 	b := store.Get(types.ApplicationKey(
-		appAddr,
+		address,
 	))
 	if b == nil {
-		return app, false
+		return val, false
 	}
 
-	k.cdc.MustUnmarshal(b, &app)
-	return app, true
+	k.cdc.MustUnmarshal(b, &val)
+	return val, true
 }
 
 // RemoveApplication removes a application from the store
 func (k Keeper) RemoveApplication(
-	ctx sdk.Context,
-	appAddr string,
+	ctx context.Context,
+	address string,
 
 ) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	store.Delete(types.ApplicationKey(
-		appAddr,
+		address,
 	))
 }
 
 // GetAllApplication returns all application
-func (k Keeper) GetAllApplication(ctx sdk.Context) (apps []types.Application) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
-	iterator := sdk.KVStorePrefixIterator(store, []byte{})
+func (k Keeper) GetAllApplication(ctx context.Context) (list []types.Application) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
 		var val types.Application
 		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		apps = append(apps, val)
+		list = append(list, val)
 	}
 
 	return
