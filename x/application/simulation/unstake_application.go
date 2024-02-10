@@ -4,15 +4,12 @@ import (
 	"math/rand"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO(@Olshansk): Implement simulation for application staking
 func SimulateMsgUnstakeApplication(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
@@ -27,6 +24,6 @@ func SimulateMsgUnstakeApplication(
 
 		// TODO: Handling the UnstakeApplication simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, msg.Type(), "UnstakeApplication simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeApplication simulation not implemented"), nil, nil
 	}
 }
