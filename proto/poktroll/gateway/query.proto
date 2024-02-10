@@ -43,7 +43,7 @@ message QueryParamsResponse {
 }
 
 message QueryGetGatewayRequest {
-  string address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string address = 1;
 }
 
 message QueryGetGatewayResponse {

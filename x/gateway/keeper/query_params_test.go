@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestParamsQuery(t *testing.T) {
-	keeper, ctx := keepertest.GatewayKeeper(t)
+	keeper, ctx := testkeeper.GatewayKeeper(t)
 	params := types.DefaultParams()
 	require.NoError(t, keeper.SetParams(ctx, params))
 
