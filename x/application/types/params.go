@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -11,7 +12,7 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 var (
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
 	// TODO: Determine the default value
-	DefaultMaxDelegatedGateways uint64 = 0
+	DefaultMaxDelegatedGateways uint64 = 7
 )
 
 // ParamKeyTable the param key table for launch module
@@ -58,8 +59,9 @@ func validateMaxDelegatedGateways(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO implement validation
-	_ = maxDelegatedGateways
+	if maxDelegatedGateways < 1 {
+		return sdkerrors.Wrapf(ErrAppInvalidMaxDelegatedGateways, "MaxDelegatedGateways param < 1: got %d", maxDelegatedGateways)
+	}
 
 	return nil
 }

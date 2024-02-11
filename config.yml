@@ -91,8 +91,8 @@ genesis:
         maxDelegatedGateways: 7
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: []
-          service_configs:
+          delegateeGatewayAddresses: []
+          serviceConfigs:
             - service:
                 id: anvil
                 name: ""

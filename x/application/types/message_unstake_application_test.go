@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
@@ -15,16 +15,22 @@ func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
-			msg: MsgUnstakeApplication{
-				Address: "invalid_address",
-			},
-			err: sdkerrors.ErrInvalidAddress,
-		}, {
-			name: "valid address",
+			name: "valid",
 			msg: MsgUnstakeApplication{
 				Address: sample.AccAddress(),
 			},
+		},
+		{
+			name: "invalid - missing address",
+			msg:  MsgUnstakeApplication{},
+			err:  ErrAppInvalidAddress,
+		},
+		{
+			name: "invalid - invalid address",
+			msg: MsgUnstakeApplication{
+				Address: "invalid_address",
+			},
+			err: ErrAppInvalidAddress,
 		},
 	}
 	for _, tt := range tests {

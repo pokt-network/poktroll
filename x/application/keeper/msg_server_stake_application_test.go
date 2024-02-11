@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -15,8 +16,7 @@ import (
 
 func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
 	addr := sample.AccAddress()
@@ -28,7 +28,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -37,7 +37,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(wctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the application exists
@@ -51,7 +51,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare an updated application with a higher stake and another service
 	updateStakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(200)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -63,7 +63,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked application
-	_, err = srv.StakeApplication(wctx, updateStakeMsg)
+	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.NoError(t, err)
 	appFound, isAppFound = k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
@@ -75,15 +75,14 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 
 func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	appAddr := sample.AccAddress()
 
 	// Prepare the application stake message
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -92,18 +91,18 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(wctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Prepare the application stake message without any services
 	updateStakeMsg := &types.MsgStakeApplication{
 		Address:  appAddr,
-		Stake:    &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:    &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{},
 	}
 
 	// Fail updating the application when the list of services is empty
-	_, err = srv.StakeApplication(wctx, updateStakeMsg)
+	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.Error(t, err)
 
 	// Verify the app still exists and is staked for svc1
@@ -116,7 +115,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	// Prepare the application stake message with an invalid service ID
 	updateStakeMsg = &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
@@ -125,7 +124,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	}
 
 	// Fail updating the application when the list of services is empty
-	_, err = srv.StakeApplication(wctx, updateStakeMsg)
+	_, err = srv.StakeApplication(ctx, updateStakeMsg)
 	require.Error(t, err)
 
 	// Verify the app still exists and is staked for svc1
@@ -138,14 +137,13 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 
 func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Prepare the application
 	addr := sample.AccAddress()
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -154,7 +152,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	}
 
 	// Stake the application & verify that the application exists
-	_, err := srv.StakeApplication(wctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 	_, isAppFound := k.GetApplication(ctx, addr)
 	require.True(t, isAppFound)
@@ -162,7 +160,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	// Prepare an updated application with a lower stake
 	updateMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(50)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -171,7 +169,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	}
 
 	// Verify that it fails
-	_, err = srv.StakeApplication(wctx, updateMsg)
+	_, err = srv.StakeApplication(ctx, updateMsg)
 	require.Error(t, err)
 
 	// Verify that the application stake is unchanged

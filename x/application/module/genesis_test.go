@@ -3,11 +3,16 @@ package application_test
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/application/module"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	application "github.com/pokt-network/poktroll/x/application/module"
 	"github.com/pokt-network/poktroll/x/application/types"
-	"github.com/stretchr/testify/require"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 func TestGenesis(t *testing.T) {
@@ -16,10 +21,22 @@ func TestGenesis(t *testing.T) {
 
 		ApplicationList: []types.Application{
 			{
-				Address: "0",
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						Service: &sharedtypes.Service{Id: "svc1"},
+					},
+				},
 			},
 			{
-				Address: "1",
+				Address: sample.AccAddress(),
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+					{
+						Service: &sharedtypes.Service{Id: "svc2"},
+					},
+				},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

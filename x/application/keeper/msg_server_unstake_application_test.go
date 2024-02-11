@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -15,8 +16,7 @@ import (
 
 func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
 	addr := sample.AccAddress()
@@ -26,7 +26,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", sdkmath.NewInt(100))
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
 		Stake:   &initialStake,
@@ -38,7 +38,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	}
 
 	// Stake the application
-	_, err := srv.StakeApplication(wctx, stakeMsg)
+	_, err := srv.StakeApplication(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the application exists
@@ -50,7 +50,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
-	_, err = srv.UnstakeApplication(wctx, unstakeMsg)
+	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the app can no longer be found after unstaking
@@ -60,8 +60,7 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 
 func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
 	addr := sample.AccAddress()
@@ -72,7 +71,7 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 
 	// Unstake the application
 	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
-	_, err := srv.UnstakeApplication(wctx, unstakeMsg)
+	_, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrAppNotFound)
 
