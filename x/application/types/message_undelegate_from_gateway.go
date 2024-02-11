@@ -1,9 +1,8 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
+	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ sdk.Msg = &MsgUndelegateFromGateway{}
@@ -15,10 +14,21 @@ func NewMsgUndelegateFromGateway(appAddress string, gatewayAddress string) *MsgU
 	}
 }
 
+func (msg *MsgUndelegateFromGateway) NewRedelegationEvent() *EventRedelegation {
+	return &EventRedelegation{
+		AppAddress:     msg.AppAddress,
+		GatewayAddress: msg.GatewayAddress,
+	}
+}
+
 func (msg *MsgUndelegateFromGateway) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.AppAddress)
-	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid appAddress address (%s)", err)
+	// Validate the application address
+	if _, err := sdk.AccAddressFromBech32(msg.AppAddress); err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidAddress, "invalid application address %s; (%v)", msg.AppAddress, err)
+	}
+	// Validate the gateway address
+	if _, err := sdk.AccAddressFromBech32(msg.GatewayAddress); err != nil {
+		return sdkerrors.Wrapf(ErrAppInvalidGatewayAddress, "invalid gateway address %s; (%v)", msg.GatewayAddress, err)
 	}
 	return nil
 }

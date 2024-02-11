@@ -3,7 +3,6 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
 )
@@ -15,15 +14,34 @@ func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: "invalid_address",
+				// GatewayAddress: intentionally omitted,
 			},
-			err: sdkerrors.ErrInvalidAddress,
-		}, {
-			name: "valid address",
+			err: ErrAppInvalidAddress,
+		},
+		{
+			name: "valid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: sample.AccAddress(),
+				// GatewayAddress: intentionally omitted,
+			},
+			err: ErrAppInvalidGatewayAddress,
+		},
+		{
+			name: "valid app address - invalid gateway address",
+			msg: MsgDelegateToGateway{
+				AppAddress:     sample.AccAddress(),
+				GatewayAddress: "invalid_address",
+			},
+			err: ErrAppInvalidGatewayAddress,
+		},
+		{
+			name: "valid address",
+			msg: MsgDelegateToGateway{
+				AppAddress:     sample.AccAddress(),
+				GatewayAddress: sample.AccAddress(),
 			},
 		},
 	}
