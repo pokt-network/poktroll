@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgUndelegateFromGateway_ValidateBasic(t *testing.T) {
@@ -15,15 +15,31 @@ func TestMsgUndelegateFromGateway_ValidateBasic(t *testing.T) {
 		err  error
 	}{
 		{
-			name: "invalid address",
+			name: "invalid app address - no gateway address",
 			msg: MsgUndelegateFromGateway{
 				AppAddress: "invalid_address",
+				// GatewayAddress: sample.AccAddress(),
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrAppInvalidAddress,
+		}, {
+			name: "valid app address - no gateway address",
+			msg: MsgUndelegateFromGateway{
+				AppAddress: sample.AccAddress(),
+				// GatewayAddress: sample.AccAddress(),
+			},
+			err: ErrAppInvalidGatewayAddress,
+		}, {
+			name: "valid app address - invalid gateway address",
+			msg: MsgUndelegateFromGateway{
+				AppAddress:     sample.AccAddress(),
+				GatewayAddress: "invalid_address",
+			},
+			err: ErrAppInvalidGatewayAddress,
 		}, {
 			name: "valid address",
 			msg: MsgUndelegateFromGateway{
-				AppAddress: sample.AccAddress(),
+				AppAddress:     sample.AccAddress(),
+				GatewayAddress: sample.AccAddress(),
 			},
 		},
 	}

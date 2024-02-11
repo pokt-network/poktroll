@@ -1,14 +1,14 @@
 package types
 
+//go:generate mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper
+
 import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-)
 
-type GatewayKeeper interface {
-	// TODO Add methods imported from gateway should be defined here
-}
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+)
 
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
@@ -18,8 +18,13 @@ type AccountKeeper interface {
 
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
-	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
-	// Methods imported from bank should be defined here
+	DelegateCoinsFromAccountToModule(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
+	UndelegateCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+}
+
+// GatewayKeeper defines the expected interface needed to retrieve gateway information.
+type GatewayKeeper interface {
+	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
 }
 
 // ParamSubspace defines the expected Subspace interface for parameters.

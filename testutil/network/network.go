@@ -16,7 +16,9 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 type (
@@ -72,35 +74,33 @@ func DefaultConfig() network.Config {
 	return cfg
 }
 
-// InitAccountWithSequence initializes an Account by sending it some funds from
-// the validator in the network to the address provided
-func InitAccountWithSequence(
-	t *testing.T,
-	net *Network,
-	addr sdk.AccAddress,
-	signatureSequencerNumber int,
-) {
+// TODO_CLEANUP: Refactor the genesis state helpers below to consolidate usage
+// and reduce the code footprint.
+
+// DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
+// It returns the populated GenesisState object.
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
 	t.Helper()
-	val := net.Validators[0]
-	signerAccountNumber := 0
-	ctx := val.ClientCtx
-	args := []string{
-		fmt.Sprintf("--%s=true", flags.FlagOffline),
-		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
-		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
-		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
-		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
-		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	state := apptypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdkmath.NewInt(int64(i+1)))
+		application := apptypes.Application{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+				},
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+				},
+			},
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&application)
+		state.ApplicationList = append(state.ApplicationList, application)
 	}
-	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
-	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
-	require.NoError(t, err)
-	var responseJSON map[string]interface{}
-	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
-	require.NoError(t, err)
-	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+	return state
 }
 
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given
@@ -131,6 +131,38 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 	val := net.Validators[0]
 	ctx := val.ClientCtx
 	args := []string{
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
+	require.NoError(t, err)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
+// InitAccountWithSequence initializes an Account by sending it some funds from
+// the validator in the network to the address provided
+func InitAccountWithSequence(
+	t *testing.T,
+	net *Network,
+	addr sdk.AccAddress,
+	signatureSequencerNumber int,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	signerAccountNumber := 0
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=true", flags.FlagOffline),
+		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),

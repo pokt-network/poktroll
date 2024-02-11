@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
+// TODO(@Olshansk): Implement simulation for application staking
 func SimulateMsgStakeApplication(
 	ak types.AccountKeeper,
 	bk types.BankKeeper,
@@ -23,6 +24,7 @@ func SimulateMsgStakeApplication(
 		}
 
 		// TODO: Handling the StakeApplication simulation
+		// See the documentation here to simulate application staking: https://docs.cosmos.network/main/learn/advanced/simulation
 
 		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "StakeApplication simulation not implemented"), nil, nil
 	}
