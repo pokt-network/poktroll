@@ -14,21 +14,21 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 // Query defines the gRPC querier service.
 service Query {
-  
+
   // Parameters queries the parameters of the module.
   rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/params";
-  
+
   }
-  
+
   // Queries a list of Application items.
   rpc Application    (QueryGetApplicationRequest) returns (QueryGetApplicationResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
-  
+
   }
   rpc ApplicationAll (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application";
-  
+
   }
 }
 // QueryParamsRequest is request type for the Query/Params RPC method.
@@ -36,7 +36,7 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-  
+
   // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
