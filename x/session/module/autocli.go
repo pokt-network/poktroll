@@ -17,6 +17,13 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
 				},
+				{
+					RpcMethod:      "GetSession",
+					Use:            "get-session [application-address] [service-id] [block-height]",
+					Short:          "Query get-session",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "applicationAddress"}, {ProtoField: "serviceId"}, {ProtoField: "blockHeight"}},
+				},
+
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},
