@@ -90,6 +90,16 @@ func AddToExistingSessions(
 
 	for _, supplierAddress := range suppliersAddress {
 		supplier := &sharedtypes.Supplier{Address: supplierAddress}
+		supplier.Services = []*sharedtypes.SupplierServiceConfig{
+			{
+				Service: &sharedtypes.Service{Id: "validServiceID"},
+				Endpoints: []*sharedtypes.SupplierEndpoint{
+					{
+						Url: "http://testurl",
+					},
+				},
+			},
+		}
 		session.Suppliers = append(session.Suppliers, supplier)
 	}
 

@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testdelegation"
 	"github.com/pokt-network/poktroll/testutil/testclient/testqueryclients"
@@ -38,6 +39,28 @@ type TestBehavior struct {
 	SdkConfig *sdk.POKTRollSDKConfig
 	Deps      map[string]depinject.Config
 	Ctx       context.Context
+}
+
+// account is an internal struct used to define an (address, public_key) pairing
+type account struct {
+	address string
+	pubKey  cryptotypes.PubKey
+}
+
+// newAccount creates a new account for testing purposes on the desired curve
+func newAccount(curve string) account {
+	var addr string
+	var pubkey cryptotypes.PubKey
+	switch curve {
+	case "ed25519":
+		addr, pubkey = sample.AccAddressAndPubKeyEdd2519()
+	case "secp256k1":
+		addr, pubkey = sample.AccAddressAndPubKey()
+	}
+	return account{
+		address: addr,
+		pubKey:  pubkey,
+	}
 }
 
 func (tb *TestBehavior) WithDependencies(behavior func(*TestBehavior) map[string]depinject.Config) *TestBehavior {
@@ -97,6 +120,19 @@ func NewTestBehavior(t *testing.T) *TestBehavior {
 	accountQuerier := testqueryclients.NewTestAccountQueryClient(t)
 	deps["accountQuerier"] = depinject.Supply(accountQuerier)
 
+	appAccount := newAccount("secp256k1")
+	appAccount.address = "validAppAddress"
+	gatewayAccount := newAccount("secp256k1")
+
+	testqueryclients.AddAddressToApplicationMap(
+		t,
+		appAccount.address,
+		appAccount.pubKey,
+		map[string]cryptotypes.PubKey{
+			gatewayAccount.address: gatewayAccount.pubKey,
+		},
+	)
+
 	applicationQuerier := testqueryclients.NewTestApplicationQueryClient(t)
 	deps["applicationQuerier"] = depinject.Supply(applicationQuerier)
 
@@ -105,7 +141,7 @@ func NewTestBehavior(t *testing.T) *TestBehavior {
 		ValidAppAddress,
 		ValidServiceID,
 		BlockHeight,
-		[]string{},
+		[]string{"supplierAddress"},
 	)
 	sessionQuerier := testqueryclients.NewTestSessionQueryClient(t)
 	deps["sessionQuerier"] = depinject.Supply(sessionQuerier)
