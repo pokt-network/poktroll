@@ -120,7 +120,7 @@ type App struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
-	ServiceKeeper servicemodulekeeper.Keeper
+	ServiceKeeper  servicemodulekeeper.Keeper
 	SessionKeeper  sessionmodulekeeper.Keeper
 	SupplierKeeper suppliermodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration

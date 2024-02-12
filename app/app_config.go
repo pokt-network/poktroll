@@ -70,10 +70,10 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
-	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
-	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
 	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
+	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
+	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
 	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
 	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
 	_ "github.com/pokt-network/poktroll/x/supplier/module" // import for side-effects

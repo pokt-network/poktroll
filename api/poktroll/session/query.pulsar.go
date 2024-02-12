@@ -2042,7 +2042,7 @@ var file_poktroll_session_query_proto_goTypes = []interface{}{
 	(*QueryGetSessionResponse)(nil), // 3: poktroll.QueryGetSessionResponse
 	(*Params)(nil),                  // 4: poktroll.Params
 	(*shared.Service)(nil),          // 5: poktroll.shared.Service
-	(*Session)(nil),                 // 6: poktroll.Session
+	(*Session)(nil),         // 6: poktroll.Session
 }
 var file_poktroll_session_query_proto_depIdxs = []int32{
 	4, // 0: poktroll.QueryParamsResponse.params:type_name -> poktroll.Params
