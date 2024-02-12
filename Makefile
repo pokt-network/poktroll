@@ -140,12 +140,25 @@ warn_destructive: ## Print WARNING to the user
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
+	proto_fix_self_import
+
+.PHONY: proto_fix_self_import
+proto_fix_self_import: ## Remove self imports present in some of the generated .pulsar.go files
+	@for dir in $(wildcard ./api/poktroll/*/); do \
+		module=$$(basename $$dir); \
+		echo "Processing module $$module"; \
+		grep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+			echo "Modifying file: $$file"; \
+			sed -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+			sed -i 's,'$$module'\.,,g' "$$file"; \
+		done; \
+	done
 
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO: explain...
 	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
-	ignite generate proto-go --yes
+	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 #######################
@@ -245,7 +258,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
 	# go generate ./x/application/types/
 	# go generate ./x/gateway/types/
-	# go generate ./x/supplier/types/
+	go generate ./x/supplier/types/
 	# go generate ./x/session/types/
 	go generate ./x/service/types/
 	# go generate ./x/tokenomics/types/
