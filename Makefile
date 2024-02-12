@@ -141,6 +141,13 @@ proto_regen: ## Delete existing protobuf artifacts and regenerate them
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
 
+.PHONY: proto_clean_pulsar
+proto_clean_pulsar: ## TODO: explain...
+	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
+	ignite generate proto-go --yes
+	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+
 #######################
 ### Docker  Helpers ###
 #######################
