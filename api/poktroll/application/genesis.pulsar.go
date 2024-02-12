@@ -608,11 +608,7 @@ type GenesisState struct {
 
 	// params defines all the parameters of the module.
 	Params          *Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
-<<<<<<< HEAD
 	ApplicationList []*Application `protobuf:"bytes,2,rep,name=application_list,json=applicationList,proto3" json:"application_list,omitempty"`
-=======
-	ApplicationList []*Application `protobuf:"bytes,2,rep,name=applicationList,proto3" json:"applicationList,omitempty"`
->>>>>>> 87307009 (scaffold: module session --dep account,bank,application,supplier)
 }
 
 func (x *GenesisState) Reset() {
@@ -708,11 +704,7 @@ var file_poktroll_application_genesis_proto_goTypes = []interface{}{
 }
 var file_poktroll_application_genesis_proto_depIdxs = []int32{
 	1, // 0: poktroll.application.GenesisState.params:type_name -> poktroll.application.Params
-<<<<<<< HEAD
 	2, // 1: poktroll.application.GenesisState.application_list:type_name -> poktroll.application.Application
-=======
-	2, // 1: poktroll.application.GenesisState.applicationList:type_name -> poktroll.application.Application
->>>>>>> 87307009 (scaffold: module session --dep account,bank,application,supplier)
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
