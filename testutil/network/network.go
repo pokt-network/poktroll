@@ -1,19 +1,38 @@
 package network
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
+	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 type (
 	Network = network.Network
 	Config  = network.Config
 )
+
+var addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+
+func init() {
+	cmd.InitSDKConfig()
+}
 
 // New creates instance with fully configured cosmos network.
 // Accepts optional config, that will be used in place of the DefaultConfig() if provided.
@@ -59,6 +78,191 @@ func DefaultConfig() network.Config {
 	return cfg
 }
 
+// TODO_CLEANUP: Refactor the genesis state helpers below to consolidate usage
+// and reduce the code footprint.
+
+// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
+// a single application for each of the given addresses.
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for _, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+
+	return state
+}
+
+// DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
+// It returns the populated GenesisState object.
+func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", math.NewInt(int64(i+1)))
+		application := apptypes.Application{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+				},
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d%d", i, i)},
+				},
+			},
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&application)
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+	return state
+}
+
+// DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
+// It returns the populated GenesisState object.
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
+		supplier := sharedtypes.Supplier{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     fmt.Sprintf("http://localhost:%d", i),
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&supplier)
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+	return state
+}
+
+// SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
+// a single supplier for each of the given addresses.
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for _, addr := range addresses {
+		supplier := sharedtypes.Supplier{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     "http://localhost:1",
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+	return state
+}
+
+func DefaultTokenomicsModuleGenesisState(t *testing.T) *tokenomicstypes.GenesisState {
+	t.Helper()
+	state := tokenomicstypes.DefaultGenesis()
+	return state
+}
+
+// DefaultGatewayModuleGenesisState generates a GenesisState object with a given
+// number of gateways. It returns the populated GenesisState object.
+func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
+		gateway := gatewaytypes.Gateway{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&gateway)
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
+// TODO_CLEANUP: Consolidate all of the helpers below to use shared business
+// logic and move into its own helpers file.
+
+// InitAccount initializes an Account by sending it some funds from the validator
+// in the network to the address provided
+func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
+	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
+	require.NoError(t, err)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
+// InitAccountWithSequence initializes an Account by sending it some funds from
+// the validator in the network to the address provided
+func InitAccountWithSequence(
+	t *testing.T,
+	net *Network,
+	addr sdk.AccAddress,
+	signatureSequencerNumber int,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	signerAccountNumber := 0
+	ctx := val.ClientCtx
+	args := []string{
+		fmt.Sprintf("--%s=true", flags.FlagOffline),
+		fmt.Sprintf("--%s=%d", flags.FlagAccountNumber, signerAccountNumber),
+		fmt.Sprintf("--%s=%d", flags.FlagSequence, signatureSequencerNumber),
+
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+	}
+	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
+	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
+	require.NoError(t, err)
+	var responseJSON map[string]interface{}
+	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
+	require.NoError(t, err)
+	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
 // freePorts return the available ports based on the number of requested ports.
 func freePorts(n int) ([]string, error) {
 	closeFns := make([]func() error, n)
@@ -77,4 +281,11 @@ func freePorts(n int) ([]string, error) {
 		}
 	}
 	return ports, nil
+}
+
+// TODO_TECHDEBT: Reuse this helper in all test helpers where appropriate.
+func NewBondDenomCoins(t *testing.T, net *network.Network, numCoins int64) sdk.Coins {
+	t.Helper()
+
+	return sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(numCoins)))
 }
