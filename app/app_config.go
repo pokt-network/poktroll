@@ -79,6 +79,8 @@ import (
 	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
 	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
+	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
+	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
 	_ "github.com/pokt-network/poktroll/x/supplier/module" // import for side-effects
 	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -123,6 +125,7 @@ var (
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -151,6 +154,7 @@ var (
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -173,6 +177,7 @@ var (
 		gatewaymoduletypes.ModuleName,
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -196,6 +201,9 @@ var (
 		{Account: gatewaymoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: applicationmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		{Account: suppliermoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
 		// this line is used by starport scaffolding # stargate/app/maccPerms
 	}
 
@@ -341,6 +349,10 @@ var (
 			{
 				Name:   suppliermoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&suppliermodulev1.Module{}),
+			},
+			{
+				Name:   sessionmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&sessionmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
