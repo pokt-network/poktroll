@@ -140,7 +140,7 @@ warn_destructive: ## Print WARNING to the user
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
-	proto_fix_self_import
+	$(MAKE) proto_fix_self_import
 
 .PHONY: proto_fix_self_import
 proto_fix_self_import: ## Remove self imports present in some of the generated .pulsar.go files
