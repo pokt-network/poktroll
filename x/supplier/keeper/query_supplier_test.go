@@ -18,8 +18,8 @@ import (
 var _ = strconv.IntSize
 
 func TestSupplierQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSupplier(keeper, ctx, 2)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	suppliers := createNSuppliers(keeper, ctx, 2)
 	tests := []struct {
 		desc     string
 		request  *types.QueryGetSupplierRequest
@@ -29,23 +29,23 @@ func TestSupplierQuerySingle(t *testing.T) {
 		{
 			desc: "First",
 			request: &types.QueryGetSupplierRequest{
-				Index: msgs[0].Index,
+				Address: suppliers[0].Address,
 			},
-			response: &types.QueryGetSupplierResponse{Supplier: msgs[0]},
+			response: &types.QueryGetSupplierResponse{Supplier: suppliers[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetSupplierRequest{
-				Index: msgs[1].Index,
+				Address: suppliers[1].Address,
 			},
-			response: &types.QueryGetSupplierResponse{Supplier: msgs[1]},
+			response: &types.QueryGetSupplierResponse{Supplier: suppliers[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetSupplierRequest{
-				Index: strconv.Itoa(100000),
+				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "supplier with address \"100000\""),
 		},
 		{
 			desc: "InvalidRequest",
@@ -69,8 +69,8 @@ func TestSupplierQuerySingle(t *testing.T) {
 }
 
 func TestSupplierQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSupplier(keeper, ctx, 5)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	suppliers := createNSuppliers(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSupplierRequest {
 		return &types.QueryAllSupplierRequest{
@@ -84,12 +84,12 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			resp, err := keeper.SupplierAll(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 		}
@@ -97,12 +97,12 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(msgs); i += step {
+		for i := 0; i < len(suppliers); i += step {
 			resp, err := keeper.SupplierAll(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Supplier), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
+				nullify.Fill(suppliers),
 				nullify.Fill(resp.Supplier),
 			)
 			next = resp.Pagination.NextKey
@@ -111,9 +111,9 @@ func TestSupplierQueryPaginated(t *testing.T) {
 	t.Run("Total", func(t *testing.T) {
 		resp, err := keeper.SupplierAll(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
-		require.Equal(t, len(msgs), int(resp.Pagination.Total))
+		require.Equal(t, len(suppliers), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(msgs),
+			nullify.Fill(suppliers),
 			nullify.Fill(resp.Supplier),
 		)
 	})

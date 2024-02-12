@@ -2,62 +2,78 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNProof(keeper keeper.Keeper, ctx context.Context, n int) []types.Proof {
-	items := make([]types.Proof, n)
-	for i := range items {
-		items[i].Index = strconv.Itoa(i)
+func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Proof {
+	proofs := make([]types.Proof, n)
+	for i := range proofs {
+		proofs[i] = types.Proof{
+			SupplierAddress: sample.AccAddress(),
+			SessionHeader: &sessiontypes.SessionHeader{
+				ApplicationAddress:      sample.AccAddress(),
+				Service:                 &sharedtypes.Service{Id: testServiceId},
+				SessionId:               fmt.Sprintf("session-%d", i),
+				SessionStartBlockHeight: 1,
+				SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			},
+			ClosestMerkleProof: nil,
+		}
 
-		keeper.SetProof(ctx, items[i])
+		keeper.UpsertProof(ctx, proofs[i])
 	}
-	return items
+	return proofs
 }
 
 func TestProofGet(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetProof(ctx,
-			item.Index,
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	proofs := createNProofs(keeper, ctx, 10)
+	for _, proof := range proofs {
+		rst, found := keeper.GetProof(
+			ctx,
+			proof.GetSessionHeader().GetSessionId(),
+			proof.GetSupplierAddress(),
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&proof),
 			nullify.Fill(&rst),
 		)
 	}
 }
+
 func TestProofRemove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
-	for _, item := range items {
-		keeper.RemoveProof(ctx,
-			item.Index,
-		)
-		_, found := keeper.GetProof(ctx,
-			item.Index,
-		)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	proofs := createNProofs(keeper, ctx, 10)
+	for _, proof := range proofs {
+		sessionId := proof.GetSessionHeader().GetSessionId()
+		keeper.RemoveProof(ctx, sessionId, proof.GetSupplierAddress())
+		_, found := keeper.GetProof(ctx, sessionId, proof.GetSupplierAddress())
 		require.False(t, found)
 	}
 }
 
 func TestProofGetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	items := createNProof(keeper, ctx, 10)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	items := createNProofs(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllProof(ctx)),
+		nullify.Fill(keeper.GetAllProofs(ctx)),
 	)
 }

@@ -29,7 +29,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
 				},
 				{
-					RpcMethod: "ClaimAll",
+					RpcMethod: "AllClaims",
 					Use:       "list-claim",
 					Short:     "List all claim",
 				},
@@ -40,7 +40,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
 				},
 				{
-					RpcMethod: "ProofAll",
+					RpcMethod: "AllProofs",
 					Use:       "list-proof",
 					Short:     "List all proof",
 				},

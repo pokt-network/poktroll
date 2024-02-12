@@ -11,6 +11,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -18,45 +19,124 @@ import (
 var _ = strconv.IntSize
 
 func TestClaimQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNClaim(keeper, ctx, 2)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	claims := createNClaims(keeper, ctx, 2)
+	var wrongSupplierAddr = sample.AccAddress()
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetClaimRequest
-		response *types.QueryGetClaimResponse
-		err      error
+		desc string
+
+		request *types.QueryGetClaimRequest
+
+		response    *types.QueryGetClaimResponse
+		expectedErr error
 	}{
 		{
-			desc: "First",
+			desc: "First Claim",
+
 			request: &types.QueryGetClaimRequest{
-				Index: msgs[0].Index,
+				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
+				SupplierAddress: claims[0].SupplierAddress,
 			},
-			response: &types.QueryGetClaimResponse{Claim: msgs[0]},
+
+			response:    &types.QueryGetClaimResponse{Claim: claims[0]},
+			expectedErr: nil,
 		},
 		{
-			desc: "Second",
+			desc: "Second Claim",
+
 			request: &types.QueryGetClaimRequest{
-				Index: msgs[1].Index,
+				SessionId:       claims[1].GetSessionHeader().GetSessionId(),
+				SupplierAddress: claims[1].SupplierAddress,
 			},
-			response: &types.QueryGetClaimResponse{Claim: msgs[1]},
+
+			response:    &types.QueryGetClaimResponse{Claim: claims[1]},
+			expectedErr: nil,
 		},
 		{
-			desc: "KeyNotFound",
+			desc: "Claim Not Found - Random SessionId",
+
 			request: &types.QueryGetClaimRequest{
-				Index: strconv.Itoa(100000),
+				SessionId:       "not a real session id",
+				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					// TODO_CONSIDERATION: factor out error message format strings to constants.
+					"session ID %q and supplier %q",
+					"not a real session id",
+					claims[0].GetSupplierAddress(),
+				).Error(),
+			),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc: "Claim Not Found - Wrong Supplier Address",
+
+			request: &types.QueryGetClaimRequest{
+				SessionId:       claims[0].GetSessionHeader().GetSessionId(),
+				SupplierAddress: wrongSupplierAddr,
+			},
+
+			expectedErr: status.Error(
+				codes.NotFound,
+				types.ErrSupplierClaimNotFound.Wrapf(
+					"session ID %q and supplier %q",
+					claims[0].GetSessionHeader().GetSessionId(),
+					wrongSupplierAddr,
+				).Error(),
+			),
+		},
+		{
+			desc: "InvalidRequest - Missing SessionId",
+			request: &types.QueryGetClaimRequest{
+				// SessionId:       Intentionally Omitted
+				SupplierAddress: claims[0].GetSupplierAddress(),
+			},
+
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidSessionId.Wrapf(
+					"invalid session ID for claim being retrieved %s",
+					"",
+				).Error(),
+			),
+		},
+		{
+			desc: "InvalidRequest - Missing SupplierAddress",
+			request: &types.QueryGetClaimRequest{
+				SessionId: claims[0].GetSessionHeader().GetSessionId(),
+				// SupplierAddress: Intentionally Omitted,
+			},
+
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidAddress.Wrap(
+					"invalid supplier address for claim being retrieved ; (empty address string is not allowed)",
+				).Error(),
+			),
+		},
+		{
+			desc:    "InvalidRequest - nil QueryGetClaimRequest",
+			request: nil,
+
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrSupplierInvalidQueryRequest.Wrap(
+					"request cannot be nil",
+				).Error(),
+			),
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			response, err := keeper.Claim(ctx, tc.request)
-			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+			if tc.expectedErr != nil {
+				actualStatus, ok := status.FromError(err)
+				require.True(t, ok)
+
+				require.ErrorIs(t, actualStatus.Err(), tc.expectedErr)
+				require.ErrorContains(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
@@ -69,11 +149,11 @@ func TestClaimQuerySingle(t *testing.T) {
 }
 
 func TestClaimQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNClaim(keeper, ctx, 5)
+	keeper, ctx := keepertest.SupplierKeeper(t, nil)
+	claims := createNClaims(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimRequest {
-		return &types.QueryAllClaimRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimsRequest {
+		return &types.QueryAllClaimsRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,
@@ -84,41 +164,71 @@ func TestClaimQueryPaginated(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ClaimAll(ctx, request(nil, uint64(i), uint64(step), false))
+		for i := 0; i < len(claims); i += step {
+			resp, err := keeper.AllClaims(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
-			require.LessOrEqual(t, len(resp.Claim), step)
+			require.LessOrEqual(t, len(resp.Claims), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
-				nullify.Fill(resp.Claim),
+				nullify.Fill(claims),
+				nullify.Fill(resp.Claims),
 			)
 		}
 	})
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ClaimAll(ctx, request(next, 0, uint64(step), false))
+		for i := 0; i < len(claims); i += step {
+			resp, err := keeper.AllClaims(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
-			require.LessOrEqual(t, len(resp.Claim), step)
+			require.LessOrEqual(t, len(resp.Claims), step)
 			require.Subset(t,
-				nullify.Fill(msgs),
-				nullify.Fill(resp.Claim),
+				nullify.Fill(claims),
+				nullify.Fill(resp.Claims),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		resp, err := keeper.ClaimAll(ctx, request(nil, 0, 0, true))
+		resp, err := keeper.AllClaims(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
-		require.Equal(t, len(msgs), int(resp.Pagination.Total))
+		require.Equal(t, len(claims), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(msgs),
-			nullify.Fill(resp.Claim),
+			nullify.Fill(claims),
+			nullify.Fill(resp.Claims),
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
-		_, err := keeper.ClaimAll(ctx, nil)
+		_, err := keeper.AllClaims(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
+	})
+
+	t.Run("BySupplierAddress", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SupplierAddress{
+			SupplierAddress: claims[0].SupplierAddress,
+		}
+		resp, err := keeper.AllClaims(ctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
+	})
+
+	t.Run("BySessionId", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SessionId{
+			SessionId: claims[0].GetSessionHeader().GetSessionId(),
+		}
+		resp, err := keeper.AllClaims(ctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
+	})
+
+	t.Run("BySessionEndHeight", func(t *testing.T) {
+		req := request(nil, 0, 0, true)
+		req.Filter = &types.QueryAllClaimsRequest_SessionEndHeight{
+			SessionEndHeight: uint64(claims[0].GetSessionHeader().GetSessionEndBlockHeight()),
+		}
+		resp, err := keeper.AllClaims(ctx, req)
+		require.NoError(t, err)
+		require.Equal(t, 1, int(resp.Pagination.Total))
 	})
 }

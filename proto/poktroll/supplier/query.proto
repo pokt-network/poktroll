@@ -39,7 +39,7 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/claim/{session_id}/{supplier_address}";
 
   }
-  rpc ClaimAll (QueryAllClaimRequest) returns (QueryAllClaimResponse) {
+  rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/claim";
 
   }
@@ -49,7 +49,7 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/proof/{session_id}/{supplier_address}";
 
   }
-  rpc ProofAll (QueryAllProofRequest) returns (QueryAllProofResponse) {
+  rpc AllProofs (QueryAllProofsRequest) returns (QueryAllProofsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/proof";
 
   }
@@ -90,11 +90,16 @@ message QueryGetClaimResponse {
   Claim claim = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllClaimRequest {
+message QueryAllClaimsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  oneof filter {
+    string supplier_address = 2;
+    string session_id = 3;
+    uint64 session_end_height = 4;
+  }
 }
 
-message QueryAllClaimResponse {
+message QueryAllClaimsResponse {
   repeated Claim claims = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
@@ -108,11 +113,16 @@ message QueryGetProofResponse {
   Proof proof = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllProofRequest {
+message QueryAllProofsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  oneof filter {
+    string supplier_address = 2;
+    string session_id = 3;
+    uint64 session_end_height = 4;
+  }
 }
 
-message QueryAllProofResponse {
+message QueryAllProofsResponse {
   repeated Proof proofs = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }

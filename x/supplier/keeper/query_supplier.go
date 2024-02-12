@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -32,7 +33,6 @@ func (k Keeper) SupplierAll(ctx context.Context, req *types.QueryAllSupplierRequ
 		suppliers = append(suppliers, supplier)
 		return nil
 	})
-
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -45,13 +45,15 @@ func (k Keeper) Supplier(ctx context.Context, req *types.QueryGetSupplierRequest
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetSupplier(
+	supplier, found := k.GetSupplier(
 		ctx,
-		req.Index,
+		req.GetAddress(),
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		// TODO_TECHDEBT(#181): conform to logging conventions once established
+		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
+		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	return &types.QueryGetSupplierResponse{Supplier: val}, nil
+	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
 }
