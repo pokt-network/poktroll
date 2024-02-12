@@ -69,6 +69,27 @@ import (
 	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
+	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
+	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
+	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
+	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
+	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
+	tokenomicsmodulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
+	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
+	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
+	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
+	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
+	_ "github.com/pokt-network/poktroll/x/proof/module" // import for side-effects
+	proofmoduletypes "github.com/pokt-network/poktroll/x/proof/types"
+	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
+	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
+	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
+	sessionmoduletypes "github.com/pokt-network/poktroll/x/session/types"
+	_ "github.com/pokt-network/poktroll/x/supplier/module" // import for side-effects
+	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
+	_ "github.com/pokt-network/poktroll/x/tokenomics/module" // import for side-effects
+	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 	"google.golang.org/protobuf/types/known/durationpb"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
@@ -107,6 +128,13 @@ var (
 		consensusparamtypes.ModuleName,
 		circuittypes.ModuleName,
 		// chain modules
+		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -131,6 +159,13 @@ var (
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
 		// chain modules
+		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -149,6 +184,13 @@ var (
 		icatypes.ModuleName,
 		ibcfeetypes.ModuleName,
 		// chain modules
+		servicemoduletypes.ModuleName,
+		gatewaymoduletypes.ModuleName,
+		applicationmoduletypes.ModuleName,
+		suppliermoduletypes.ModuleName,
+		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
+		tokenomicsmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -168,7 +210,13 @@ var (
 		{Account: ibctransfertypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner}},
 		{Account: ibcfeetypes.ModuleName},
 		{Account: icatypes.ModuleName},
-		// this line is used by starport scaffolding # stargate/app/maccPerms
+		{Account: servicemoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: gatewaymoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: applicationmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: suppliermoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: sessionmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		{Account: tokenomicsmoduletypes.ModuleName, Permissions: []string{authtypes.Minter, authtypes.Burner, authtypes.Staking}},
+		// this line is used by starport scaffolding # stargate/app/maccPerms	}
 	}
 
 	// blocked account addresses
@@ -297,6 +345,34 @@ var (
 			{
 				Name:   circuittypes.ModuleName,
 				Config: appconfig.WrapAny(&circuitmodulev1.Module{}),
+			},
+			{
+				Name:   servicemoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&servicemodulev1.Module{}),
+			},
+			{
+				Name:   gatewaymoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&gatewaymodulev1.Module{}),
+			},
+			{
+				Name:   applicationmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&applicationmodulev1.Module{}),
+			},
+			{
+				Name:   suppliermoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&suppliermodulev1.Module{}),
+			},
+			{
+				Name:   sessionmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&sessionmodulev1.Module{}),
+			},
+			{
+				Name:   proofmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&proofmodulev1.Module{}),
+			},
+			{
+				Name:   tokenomicsmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&tokenomicsmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

@@ -142,12 +142,25 @@ warn_destructive: ## Print WARNING to the user
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
+	$(MAKE) proto_fix_self_import
+
+.PHONY: proto_fix_self_import
+proto_fix_self_import: ## TODO: explain
+	@for dir in $(wildcard ./api/poktroll/*/); do \
+			module=$$(basename $$dir); \
+			echo "Processing module $$module"; \
+			grep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+					echo "Modifying file: $$file"; \
+					sed -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					sed -i 's,'$$module'\.,,g' "$$file"; \
+			done; \
+	done
 
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO: explain...
 	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
-	ignite generate proto-go --yes
+	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 #######################
@@ -177,7 +190,7 @@ localnet_down: ## Delete resources created by localnet
 .PHONY: localnet_regenesis
 localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-# NB: Currently the stake => power calculation is constant; however, cosmos-sdk
+# TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
 # intends to make this parameterizable in the future.
 	@echo "Initializing chain..."
 	@set -e ;\
@@ -187,8 +200,8 @@ localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localn
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
 	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
 	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
-	POWER=$$(yq ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
-	NAME=$$(yq ".validators[0].name" ./config.yml) ;\
+	POWER=$$(yq -r ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
+	NAME=$$(yq -r ".validators[0].name" ./config.yml) ;\
 	echo "Regenerating genesis file with new validator..." ;\
 	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
 	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
@@ -245,12 +258,13 @@ itest: check_go_version ## Run tests iteratively (see usage for more)
 .PHONY: go_mockgen
 go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all the modules.
 	find . -name "*_mock.go" | xargs --no-run-if-empty rm
-	# go generate ./x/application/types/
-	# go generate ./x/gateway/types/
-	# go generate ./x/supplier/types/
-	# go generate ./x/session/types/
-	# go generate ./x/service/types/
-	# go generate ./x/tokenomics/types/
+	go generate ./x/application/types/
+	go generate ./x/gateway/types/
+	go generate ./x/supplier/types/
+	go generate ./x/session/types/
+	go generate ./x/service/types/
+	go generate ./x/proof/types/
+	go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go

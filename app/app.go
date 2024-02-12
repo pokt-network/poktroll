@@ -53,6 +53,14 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
+	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
+	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
+	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
+	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -60,7 +68,7 @@ import (
 
 const (
 	AccountAddressPrefix = "pokt"
-	Name                 = "pocket"
+	Name                 = "poktroll"
 	// TODO_CLEANUP: Find a way to centralize the use of `upokt` throughout the codebase
 	DenomuPOKT = "upokt"
 )
@@ -117,6 +125,13 @@ type App struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
+	ServiceKeeper     servicemodulekeeper.Keeper
+	GatewayKeeper     gatewaymodulekeeper.Keeper
+	ApplicationKeeper applicationmodulekeeper.Keeper
+	SupplierKeeper    suppliermodulekeeper.Keeper
+	SessionKeeper     sessionmodulekeeper.Keeper
+	ProofKeeper       proofmodulekeeper.Keeper
+	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -176,6 +191,7 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
+		// TODO_BLOCKER(@Olshansk): Revisit the advanced configuration and understand if/where it fits in Shannon
 		appConfig = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(
@@ -254,6 +270,13 @@ func New(
 		&app.GroupKeeper,
 		&app.ConsensusParamsKeeper,
 		&app.CircuitBreakerKeeper,
+		&app.ServiceKeeper,
+		&app.GatewayKeeper,
+		&app.ApplicationKeeper,
+		&app.SupplierKeeper,
+		&app.SessionKeeper,
+		&app.ProofKeeper,
+		&app.TokenomicsKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
