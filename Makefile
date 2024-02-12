@@ -10,10 +10,11 @@ POCKET_ADDR_PREFIX = pokt
 ####################
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
+# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
 	go install github.com/mikefarah/yq/v4@latest
 
