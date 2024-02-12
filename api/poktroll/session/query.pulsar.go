@@ -5,8 +5,10 @@ import (
 	_ "cosmossdk.io/api/amino"
 	_ "cosmossdk.io/api/cosmos/base/query/v1beta1"
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
@@ -808,18 +810,18 @@ func (x *fastReflection_QueryParamsResponse) ProtoMethods() *protoiface.Methods 
 }
 
 var (
-	md_QueryGetSessionRequest                    protoreflect.MessageDescriptor
-	fd_QueryGetSessionRequest_applicationAddress protoreflect.FieldDescriptor
-	fd_QueryGetSessionRequest_serviceId          protoreflect.FieldDescriptor
-	fd_QueryGetSessionRequest_blockHeight        protoreflect.FieldDescriptor
+	md_QueryGetSessionRequest                     protoreflect.MessageDescriptor
+	fd_QueryGetSessionRequest_application_address protoreflect.FieldDescriptor
+	fd_QueryGetSessionRequest_service             protoreflect.FieldDescriptor
+	fd_QueryGetSessionRequest_block_height        protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_session_query_proto_init()
 	md_QueryGetSessionRequest = File_poktroll_session_query_proto.Messages().ByName("QueryGetSessionRequest")
-	fd_QueryGetSessionRequest_applicationAddress = md_QueryGetSessionRequest.Fields().ByName("applicationAddress")
-	fd_QueryGetSessionRequest_serviceId = md_QueryGetSessionRequest.Fields().ByName("serviceId")
-	fd_QueryGetSessionRequest_blockHeight = md_QueryGetSessionRequest.Fields().ByName("blockHeight")
+	fd_QueryGetSessionRequest_application_address = md_QueryGetSessionRequest.Fields().ByName("application_address")
+	fd_QueryGetSessionRequest_service = md_QueryGetSessionRequest.Fields().ByName("service")
+	fd_QueryGetSessionRequest_block_height = md_QueryGetSessionRequest.Fields().ByName("block_height")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryGetSessionRequest)(nil)
@@ -889,19 +891,19 @@ func (x *fastReflection_QueryGetSessionRequest) Interface() protoreflect.ProtoMe
 func (x *fastReflection_QueryGetSessionRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.ApplicationAddress != "" {
 		value := protoreflect.ValueOfString(x.ApplicationAddress)
-		if !f(fd_QueryGetSessionRequest_applicationAddress, value) {
+		if !f(fd_QueryGetSessionRequest_application_address, value) {
 			return
 		}
 	}
-	if x.ServiceId != "" {
-		value := protoreflect.ValueOfString(x.ServiceId)
-		if !f(fd_QueryGetSessionRequest_serviceId, value) {
+	if x.Service != nil {
+		value := protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+		if !f(fd_QueryGetSessionRequest_service, value) {
 			return
 		}
 	}
-	if x.BlockHeight != "" {
-		value := protoreflect.ValueOfString(x.BlockHeight)
-		if !f(fd_QueryGetSessionRequest_blockHeight, value) {
+	if x.BlockHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.BlockHeight)
+		if !f(fd_QueryGetSessionRequest_block_height, value) {
 			return
 		}
 	}
@@ -920,12 +922,12 @@ func (x *fastReflection_QueryGetSessionRequest) Range(f func(protoreflect.FieldD
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryGetSessionRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
+	case "poktroll.session.QueryGetSessionRequest.application_address":
 		return x.ApplicationAddress != ""
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		return x.ServiceId != ""
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
-		return x.BlockHeight != ""
+	case "poktroll.session.QueryGetSessionRequest.service":
+		return x.Service != nil
+	case "poktroll.session.QueryGetSessionRequest.block_height":
+		return x.BlockHeight != int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -942,12 +944,12 @@ func (x *fastReflection_QueryGetSessionRequest) Has(fd protoreflect.FieldDescrip
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
+	case "poktroll.session.QueryGetSessionRequest.application_address":
 		x.ApplicationAddress = ""
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		x.ServiceId = ""
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
-		x.BlockHeight = ""
+	case "poktroll.session.QueryGetSessionRequest.service":
+		x.Service = nil
+	case "poktroll.session.QueryGetSessionRequest.block_height":
+		x.BlockHeight = int64(0)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -964,15 +966,15 @@ func (x *fastReflection_QueryGetSessionRequest) Clear(fd protoreflect.FieldDescr
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryGetSessionRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
+	case "poktroll.session.QueryGetSessionRequest.application_address":
 		value := x.ApplicationAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		value := x.ServiceId
-		return protoreflect.ValueOfString(value)
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
+	case "poktroll.session.QueryGetSessionRequest.service":
+		value := x.Service
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.session.QueryGetSessionRequest.block_height":
 		value := x.BlockHeight
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -993,12 +995,12 @@ func (x *fastReflection_QueryGetSessionRequest) Get(descriptor protoreflect.Fiel
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
+	case "poktroll.session.QueryGetSessionRequest.application_address":
 		x.ApplicationAddress = value.Interface().(string)
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		x.ServiceId = value.Interface().(string)
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
-		x.BlockHeight = value.Interface().(string)
+	case "poktroll.session.QueryGetSessionRequest.service":
+		x.Service = value.Message().Interface().(*shared.Service)
+	case "poktroll.session.QueryGetSessionRequest.block_height":
+		x.BlockHeight = value.Int()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -1019,12 +1021,15 @@ func (x *fastReflection_QueryGetSessionRequest) Set(fd protoreflect.FieldDescrip
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
-		panic(fmt.Errorf("field applicationAddress of message poktroll.session.QueryGetSessionRequest is not mutable"))
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		panic(fmt.Errorf("field serviceId of message poktroll.session.QueryGetSessionRequest is not mutable"))
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
-		panic(fmt.Errorf("field blockHeight of message poktroll.session.QueryGetSessionRequest is not mutable"))
+	case "poktroll.session.QueryGetSessionRequest.service":
+		if x.Service == nil {
+			x.Service = new(shared.Service)
+		}
+		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
+	case "poktroll.session.QueryGetSessionRequest.application_address":
+		panic(fmt.Errorf("field application_address of message poktroll.session.QueryGetSessionRequest is not mutable"))
+	case "poktroll.session.QueryGetSessionRequest.block_height":
+		panic(fmt.Errorf("field block_height of message poktroll.session.QueryGetSessionRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -1038,12 +1043,13 @@ func (x *fastReflection_QueryGetSessionRequest) Mutable(fd protoreflect.FieldDes
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryGetSessionRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.applicationAddress":
+	case "poktroll.session.QueryGetSessionRequest.application_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.session.QueryGetSessionRequest.serviceId":
-		return protoreflect.ValueOfString("")
-	case "poktroll.session.QueryGetSessionRequest.blockHeight":
-		return protoreflect.ValueOfString("")
+	case "poktroll.session.QueryGetSessionRequest.service":
+		m := new(shared.Service)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.session.QueryGetSessionRequest.block_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
@@ -1117,13 +1123,12 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.ServiceId)
-		if l > 0 {
+		if x.Service != nil {
+			l = options.Size(x.Service)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.BlockHeight)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
+		if x.BlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.BlockHeight))
 		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
@@ -1154,17 +1159,22 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.BlockHeight) > 0 {
-			i -= len(x.BlockHeight)
-			copy(dAtA[i:], x.BlockHeight)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.BlockHeight)))
+		if x.BlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.BlockHeight))
 			i--
-			dAtA[i] = 0x1a
+			dAtA[i] = 0x18
 		}
-		if len(x.ServiceId) > 0 {
-			i -= len(x.ServiceId)
-			copy(dAtA[i:], x.ServiceId)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.ServiceId)))
+		if x.Service != nil {
+			encoded, err := options.Marshal(x.Service)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
 			i--
 			dAtA[i] = 0x12
 		}
@@ -1258,9 +1268,9 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 				iNdEx = postIndex
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ServiceId", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Service", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1270,29 +1280,33 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ServiceId = string(dAtA[iNdEx:postIndex])
+				if x.Service == nil {
+					x.Service = &shared.Service{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Service); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
 			case 3:
-				if wireType != 2 {
+				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
 				}
-				var stringLen uint64
+				x.BlockHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1302,24 +1316,11 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					x.BlockHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.BlockHeight = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1356,12 +1357,14 @@ func (x *fastReflection_QueryGetSessionRequest) ProtoMethods() *protoiface.Metho
 }
 
 var (
-	md_QueryGetSessionResponse protoreflect.MessageDescriptor
+	md_QueryGetSessionResponse         protoreflect.MessageDescriptor
+	fd_QueryGetSessionResponse_session protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_session_query_proto_init()
 	md_QueryGetSessionResponse = File_poktroll_session_query_proto.Messages().ByName("QueryGetSessionResponse")
+	fd_QueryGetSessionResponse_session = md_QueryGetSessionResponse.Fields().ByName("session")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryGetSessionResponse)(nil)
@@ -1429,6 +1432,12 @@ func (x *fastReflection_QueryGetSessionResponse) Interface() protoreflect.ProtoM
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_QueryGetSessionResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Session != nil {
+		value := protoreflect.ValueOfMessage(x.Session.ProtoReflect())
+		if !f(fd_QueryGetSessionResponse_session, value) {
+			return
+		}
+	}
 }
 
 // Has reports whether a field is populated.
@@ -1444,6 +1453,8 @@ func (x *fastReflection_QueryGetSessionResponse) Range(f func(protoreflect.Field
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryGetSessionResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		return x.Session != nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1460,6 +1471,8 @@ func (x *fastReflection_QueryGetSessionResponse) Has(fd protoreflect.FieldDescri
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		x.Session = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1476,6 +1489,9 @@ func (x *fastReflection_QueryGetSessionResponse) Clear(fd protoreflect.FieldDesc
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryGetSessionResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		value := x.Session
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1496,6 +1512,8 @@ func (x *fastReflection_QueryGetSessionResponse) Get(descriptor protoreflect.Fie
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		x.Session = value.Message().Interface().(*Session)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1516,6 +1534,11 @@ func (x *fastReflection_QueryGetSessionResponse) Set(fd protoreflect.FieldDescri
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		if x.Session == nil {
+			x.Session = new(Session)
+		}
+		return protoreflect.ValueOfMessage(x.Session.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1529,6 +1552,9 @@ func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDe
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryGetSessionResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.session.QueryGetSessionResponse.session":
+		m := new(Session)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
@@ -1598,6 +1624,10 @@ func (x *fastReflection_QueryGetSessionResponse) ProtoMethods() *protoiface.Meth
 		var n int
 		var l int
 		_ = l
+		if x.Session != nil {
+			l = options.Size(x.Session)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -1626,6 +1656,20 @@ func (x *fastReflection_QueryGetSessionResponse) ProtoMethods() *protoiface.Meth
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Session != nil {
+			encoded, err := options.Marshal(x.Session)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1676,6 +1720,42 @@ func (x *fastReflection_QueryGetSessionResponse) ProtoMethods() *protoiface.Meth
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryGetSessionResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Session", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Session == nil {
+					x.Session = &Session{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Session); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -1793,9 +1873,9 @@ type QueryGetSessionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ApplicationAddress string `protobuf:"bytes,1,opt,name=applicationAddress,proto3" json:"applicationAddress,omitempty"`
-	ServiceId          string `protobuf:"bytes,2,opt,name=serviceId,proto3" json:"serviceId,omitempty"`
-	BlockHeight        string `protobuf:"bytes,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Service            *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                                                 // The service id to query the session for
+	BlockHeight        int64           `protobuf:"varint,3,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`                     // The block height to query the session for
 }
 
 func (x *QueryGetSessionRequest) Reset() {
@@ -1825,24 +1905,26 @@ func (x *QueryGetSessionRequest) GetApplicationAddress() string {
 	return ""
 }
 
-func (x *QueryGetSessionRequest) GetServiceId() string {
+func (x *QueryGetSessionRequest) GetService() *shared.Service {
 	if x != nil {
-		return x.ServiceId
+		return x.Service
 	}
-	return ""
+	return nil
 }
 
-func (x *QueryGetSessionRequest) GetBlockHeight() string {
+func (x *QueryGetSessionRequest) GetBlockHeight() int64 {
 	if x != nil {
 		return x.BlockHeight
 	}
-	return ""
+	return 0
 }
 
 type QueryGetSessionResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	Session *Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 }
 
 func (x *QueryGetSessionResponse) Reset() {
@@ -1865,6 +1947,13 @@ func (*QueryGetSessionResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_session_query_proto_rawDescGZIP(), []int{3}
 }
 
+func (x *QueryGetSessionResponse) GetSession() *Session {
+	if x != nil {
+		return x.Session
+	}
+	return nil
+}
+
 var File_poktroll_session_query_proto protoreflect.FileDescriptor
 
 var file_poktroll_session_query_proto_rawDesc = []byte{
@@ -1875,61 +1964,70 @@ var file_poktroll_session_query_proto_rawDesc = []byte{
 	0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67,
 	0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
 	0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x2a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f,
-	0x62, 0x61, 0x73, 0x65, 0x2f, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74,
-	0x61, 0x31, 0x2f, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x1a, 0x1d, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x52, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x3b, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8,
-	0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x88, 0x01, 0x0a,
-	0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2e, 0x0a, 0x12, 0x61, 0x70, 0x70, 0x6c, 0x69,
-	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x12, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x49, 0x64, 0x12, 0x20, 0x0a, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65,
-	0x69, 0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63,
-	0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0x19, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x32, 0xd5, 0x02, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x84, 0x01, 0x0a,
-	0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25, 0x2f, 0x70,
-	0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x12, 0xc4, 0x01, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65,
-	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x61, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x5b, 0x12,
-	0x59, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70,
+	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x1a, 0x2a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f,
+	0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x70, 0x61,
+	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f,
-	0x67, 0x65, 0x74, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f, 0x7b, 0x61, 0x70, 0x70,
-	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x7d,
-	0x2f, 0x7b, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x49, 0x64, 0x7d, 0x2f, 0x7b, 0x62, 0x6c,
-	0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x7d, 0x42, 0xa6, 0x01, 0x0a, 0x14, 0x63,
-	0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
-	0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
-	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73,
-	0x73, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x10,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
-	0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2f, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x14, 0x0a, 0x12,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x22, 0x52, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x06, 0x70, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06,
+	0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0xba, 0x01, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x49, 0x0a, 0x13, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x12, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x32, 0x0a, 0x07,
+	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x21, 0x0a, 0x0c, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0b, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x22, 0x4e, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x33,
+	0x0a, 0x07, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x32, 0xa6, 0x02, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x84, 0x01,
+	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f, 0x70, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x12, 0x95, 0x01, 0x0a, 0x0a, 0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x32, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2c,
+	0x12, 0x2a, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x2f, 0x67, 0x65, 0x74, 0x5f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0xa6, 0x01, 0x0a,
+	0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74,
+	0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69,
+	0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x10, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0xca,
+	0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1951,18 +2049,22 @@ var file_poktroll_session_query_proto_goTypes = []interface{}{
 	(*QueryGetSessionRequest)(nil),  // 2: poktroll.session.QueryGetSessionRequest
 	(*QueryGetSessionResponse)(nil), // 3: poktroll.session.QueryGetSessionResponse
 	(*Params)(nil),                  // 4: poktroll.session.Params
+	(*shared.Service)(nil),          // 5: poktroll.shared.Service
+	(*Session)(nil),                 // 6: poktroll.session.Session
 }
 var file_poktroll_session_query_proto_depIdxs = []int32{
 	4, // 0: poktroll.session.QueryParamsResponse.params:type_name -> poktroll.session.Params
-	0, // 1: poktroll.session.Query.Params:input_type -> poktroll.session.QueryParamsRequest
-	2, // 2: poktroll.session.Query.GetSession:input_type -> poktroll.session.QueryGetSessionRequest
-	1, // 3: poktroll.session.Query.Params:output_type -> poktroll.session.QueryParamsResponse
-	3, // 4: poktroll.session.Query.GetSession:output_type -> poktroll.session.QueryGetSessionResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	5, // 1: poktroll.session.QueryGetSessionRequest.service:type_name -> poktroll.shared.Service
+	6, // 2: poktroll.session.QueryGetSessionResponse.session:type_name -> poktroll.session.Session
+	0, // 3: poktroll.session.Query.Params:input_type -> poktroll.session.QueryParamsRequest
+	2, // 4: poktroll.session.Query.GetSession:input_type -> poktroll.session.QueryGetSessionRequest
+	1, // 5: poktroll.session.Query.Params:output_type -> poktroll.session.QueryParamsResponse
+	3, // 6: poktroll.session.Query.GetSession:output_type -> poktroll.session.QueryGetSessionResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_session_query_proto_init() }
@@ -1971,6 +2073,7 @@ func file_poktroll_session_query_proto_init() {
 		return
 	}
 	file_poktroll_session_params_proto_init()
+	file_poktroll_session_session_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_session_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsRequest); i {
