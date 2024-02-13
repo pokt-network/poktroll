@@ -71,9 +71,9 @@ func TestServiceRemove(t *testing.T) {
 
 func TestServiceGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	items := createNService(keeper, ctx, 10)
+	services := createNService(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(services),
 		nullify.Fill(keeper.GetAllService(ctx)),
 	)
 }

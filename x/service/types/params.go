@@ -67,7 +67,7 @@ func validateAddServiceFee(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	// TODO implement validation
+	// TODO_BLOCKER: implement validation
 	_ = addServiceFee
 
 	return nil

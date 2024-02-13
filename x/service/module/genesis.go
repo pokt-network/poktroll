@@ -10,8 +10,8 @@ import (
 // InitGenesis initializes the module's state from a provided genesis state.
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) {
 	// Set all the service
-	for _, elem := range genState.ServiceList {
-		k.SetService(ctx, elem)
+	for _, service := range genState.ServiceList {
+		k.SetService(ctx, service)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
