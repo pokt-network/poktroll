@@ -6,22 +6,23 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
-func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
-	if len(services) == 0 {
-		return fmt.Errorf("no services configs provided for application: %v", services)
-	}
-	for _, serviceConfig := range services {
-		if serviceConfig == nil {
-			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
-		}
-		// Check the Service
-		if !IsValidService(serviceConfig.Service) {
-			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
-		}
-	}
-	return nil
-}
+// TODO_IN_THIS_COMMIT: uncomment
+//// ValidateAppServiceConfigs returns an error if any of the application service configs are invalid
+//func ValidateAppServiceConfigs(services []*sharedtypes.ApplicationServiceConfig) error {
+//	if len(services) == 0 {
+//		return fmt.Errorf("no services configs provided for application: %v", services)
+//	}
+//	for _, serviceConfig := range services {
+//		if serviceConfig == nil {
+//			return fmt.Errorf("serviceConfig cannot be nil: %v", services)
+//		}
+//		// Check the Service
+//		if !IsValidService(serviceConfig.Service) {
+//			return fmt.Errorf("invalid service: %v", serviceConfig.Service)
+//		}
+//	}
+//	return nil
+//}
 
 // ValidateSupplierServiceConfigs returns an error if any of the supplier service configs are invalid
 func ValidateSupplierServiceConfigs(services []*sharedtypes.SupplierServiceConfig) error {
