@@ -81,12 +81,9 @@ func SupplierKeeper(t testing.TB, sessionByAppAddr supplier.SessionsByAppAddress
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
 		authority.String(),
-		nil,
-		nil,
+		mockBankKeeper,
+		mockSessionKeeper,
 	)
-	// TODO:
-	// TODO_IN_THIS_COMMIT: depinject?
-	//k.SupplySessionKeeper(mockSessionKeeper)
 
 	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())
 

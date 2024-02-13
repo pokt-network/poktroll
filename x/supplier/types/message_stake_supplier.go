@@ -1,25 +1,56 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	servicehelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 var _ sdk.Msg = &MsgStakeSupplier{}
 
-func NewMsgStakeSupplier(address string, stake sdk.Coin, services string) *MsgStakeSupplier {
+func NewMsgStakeSupplier(
+	address string,
+	stake sdk.Coin,
+	services []*sharedtypes.SupplierServiceConfig,
+) *MsgStakeSupplier {
 	return &MsgStakeSupplier{
 		Address:  address,
-		Stake:    stake,
+		Stake:    &stake,
 		Services: services,
 	}
 }
 
 func (msg *MsgStakeSupplier) ValidateBasic() error {
+	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid address address (%s)", err)
+		return ErrSupplierInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
+
+	// TODO_TECHDEBT: Centralize stake related verification and share across different parts of the source code
+	// Validate the stake amount
+	if msg.Stake == nil {
+		return ErrSupplierInvalidStake.Wrapf("nil supplier stake; (%v)", err)
+	}
+	stake, err := sdk.ParseCoinNormalized(msg.Stake.String())
+	if !stake.IsValid() {
+		return ErrSupplierInvalidStake.Wrapf("invalid supplier stake %v; (%v)", msg.Stake, stake.Validate())
+	}
+	if err != nil {
+		return ErrSupplierInvalidStake.Wrapf("cannot parse supplier stake %v; (%v)", msg.Stake, err)
+	}
+	if stake.IsZero() || stake.IsNegative() {
+		return ErrSupplierInvalidStake.Wrapf("invalid stake amount for supplier: %v <= 0", msg.Stake)
+	}
+	if stake.Denom != "upokt" {
+		return ErrSupplierInvalidStake.Wrapf("invalid stake amount denom for supplier %v", msg.Stake)
+	}
+
+	// Validate the supplier service configs
+	if err := servicehelpers.ValidateSupplierServiceConfigs(msg.Services); err != nil {
+		return ErrSupplierInvalidServiceConfig.Wrapf(err.Error())
+	}
+
 	return nil
 }
