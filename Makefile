@@ -169,7 +169,7 @@ localnet_down: ## Delete resources created by localnet
 .PHONY: localnet_regenesis
 localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-# NB: Currently the stake => power calculation is constant; however, cosmos-sdk
+# TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
 # intends to make this parameterizable in the future.
 	@echo "Initializing chain..."
 	@set -e ;\
