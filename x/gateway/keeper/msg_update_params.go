@@ -14,7 +14,7 @@ func (k msgServer) UpdateParams(
 	req *types.MsgUpdateParams,
 ) (*types.MsgUpdateParamsResponse, error) {
 	if k.GetAuthority() != req.Authority {
-		return nil, errorsmod.Wrapf(types.ErrInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
+		return nil, errorsmod.Wrapf(types.ErrGatewayInvalidSigner, "invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)

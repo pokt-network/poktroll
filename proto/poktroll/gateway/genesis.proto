@@ -13,6 +13,6 @@ option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
 message GenesisState {
   // params defines all the parameters of the module.
            Params  params      = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
-  repeated Gateway gatewayList = 2 [(gogoproto.nullable) = false] ;
+  repeated Gateway gateway_list = 2 [(gogoproto.nullable) = false] ;
 }
 

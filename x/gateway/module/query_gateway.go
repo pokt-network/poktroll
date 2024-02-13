@@ -12,6 +12,10 @@ func CmdListGateway() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-gateway",
 		Short: "list all gateways",
+		Long: `List all the gateways that the node being queried has in its state.
+
+Example:
+$ poktrolld q gateway list-gateway --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {

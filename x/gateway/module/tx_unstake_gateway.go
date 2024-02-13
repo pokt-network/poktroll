@@ -21,7 +21,7 @@ func CmdUnstakeGateway() *cobra.Command {
 		Long: `Unstake a gateway. This is a broadcast operation that will unstake the gateway specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)`,
+$ poktrolld tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {
 			clientCtx, err := client.GetClientTxContext(cmd)
