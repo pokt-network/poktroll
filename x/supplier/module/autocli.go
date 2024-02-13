@@ -18,7 +18,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "Shows the parameters of the module",
 				},
 				{
-					RpcMethod: "SupplierAll",
+					RpcMethod: "AllSuppliers",
 					Use:       "list-supplier",
 					Short:     "List all supplier",
 				},
