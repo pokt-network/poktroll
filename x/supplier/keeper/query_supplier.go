@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -13,7 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) SupplierAll(ctx context.Context, req *types.QueryAllSupplierRequest) (*types.QueryAllSupplierResponse, error) {
+func (k Keeper) AllSuppliers(ctx context.Context, req *types.QueryAllSuppliersRequest) (*types.QueryAllSuppliersResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -37,7 +38,7 @@ func (k Keeper) SupplierAll(ctx context.Context, req *types.QueryAllSupplierRequ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllSupplierResponse{Supplier: suppliers, Pagination: pageRes}, nil
+	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Supplier(ctx context.Context, req *types.QueryGetSupplierRequest) (*types.QueryGetSupplierResponse, error) {
@@ -45,13 +46,15 @@ func (k Keeper) Supplier(ctx context.Context, req *types.QueryGetSupplierRequest
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetSupplier(
+	supplier, found := k.GetSupplier(
 		ctx,
-		req.Index,
+		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		// TODO_TECHDEBT(#181): conform to logging conventions once established
+		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
+		return nil, status.Error(codes.NotFound, msg)
 	}
 
-	return &types.QueryGetSupplierResponse{Supplier: val}, nil
+	return &types.QueryGetSupplierResponse{Supplier: supplier}, nil
 }
