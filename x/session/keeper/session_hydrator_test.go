@@ -11,6 +11,9 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
+// TODO_TECHDEBT(#377): All the tests in this file assume genesis has a block
+// height of 0. Rewrite them in terms of height = 1 genesis.
+
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors

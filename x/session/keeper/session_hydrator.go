@@ -16,6 +16,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TECHDEBT(#377): The business logic in this file assume that genesis has
+// a block height of 0. Revisit it and adjust, where/if necessary, accounting for the
+// fact that it's 1.
+
 var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO_BLOCKER(#21): Make these configurable governance param
@@ -97,7 +101,11 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
 	if sh.blockHeight > ctx.BlockHeight() {
-		return sdkerrors.Wrapf(types.ErrSessionHydration, "block height %d is ahead of the current block height %d", sh.blockHeight, ctx.BlockHeight())
+		return sdkerrors.Wrapf(
+			types.ErrSessionHydration,
+			"block height %d is ahead of the last committed block height %d",
+			sh.blockHeight, ctx.BlockHeight(),
+		)
 	}
 
 	sh.session.NumBlocksPerSession = NumBlocksPerSession

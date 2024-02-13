@@ -36,7 +36,7 @@ need to adjust the command below appropriately.
 :::
 
 ```bash
-poktrolld appgate-server start \
+poktrolld appgate-server  \
   --config ./appgate_server_config.yaml \
   --keyring-backend test
 ```
@@ -55,7 +55,6 @@ listening_endpoint: http://<hostname>:<port>
 metrics:
   enabled: true
   addr: :9090
-
 ```
 
 ### `query_node_rpc_url`
@@ -97,7 +96,7 @@ forwarding them to a `RelayMiner`.
 
 If `false`, the `AppGateServer` will act as a `Gateway` and will generate a
 ring-signer from both its address and the `Application`'s address provided in
-the request's `senderAddr` query parameter then use it to sign the `RelayRequests`
+the request's `applicationAddr` query parameter then use it to sign the `RelayRequests`
 before forwarding them to a `RelayMiner`.
 
 ### `signing_key`
@@ -120,8 +119,8 @@ The endpoint that the `AppGateServer` will listen on for incoming requests.
 
 _`Optional`_
 
-This section configures a Prometheus exporter endpoint, enabling the collection 
-and export of metrics data. The `addr` field specifies the network address for 
+This section configures a Prometheus exporter endpoint, enabling the collection
+and export of metrics data. The `addr` field specifies the network address for
 the exporter to bind to. It can be either a port number, which assumes binding
 to all interfaces, or a specific host:port combination.
 

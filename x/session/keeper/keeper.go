@@ -62,12 +62,12 @@ func (k Keeper) BeginBlocker(ctx sdk.Context) {
 
 	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
 	hash := ctx.BlockHeader().LastBlockId.Hash
-	// ctx.BlockHeader().Height is the height of the current block being processed,
-	// decrementing it by 1 gives us the height of the last block committed.
-	height := ctx.BlockHeader().Height - 1
-	// If height is 0, ctx.BlockHeader().LastBlockId.Hash will be nil,
-	// fall back to an empty byte slice.
-	if height == 0 {
+	// ctx.BlockHeader().Height is the height of the last committed block.
+	height := ctx.BlockHeader().Height
+	// Block height 1 is the first committed block which uses `genesis.json` as its parent.
+	// See the explanation here for more details: https://github.com/pokt-network/poktroll/issues/377#issuecomment-1936607294
+	// Fallback to an empty byte slice during the genesis block.
+	if height == 1 {
 		hash = []byte{}
 	}
 
