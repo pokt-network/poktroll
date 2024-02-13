@@ -106,6 +106,35 @@ func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.Genesis
 	return state
 }
 
+// DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
+// It returns the populated GenesisState object.
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", sdkmath.NewInt(int64(i)))
+		supplier := sharedtypes.Supplier{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     fmt.Sprintf("http://localhost:%d", i),
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&supplier)
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+	return state
+}
+
 // DefaultGatewayModuleGenesisState generates a GenesisState object with a given
 // number of gateways. It returns the populated GenesisState object.
 func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.GenesisState {
