@@ -10,13 +10,11 @@ const (
 )
 
 // ServiceKey returns the store key to retrieve a Service from the index fields
-func ServiceKey(
-	index string,
-) []byte {
+func ServiceKey(serviceID string) []byte {
 	var key []byte
 
-	indexBytes := []byte(index)
-	key = append(key, indexBytes...)
+	serviceIDBz := []byte(serviceID)
+	key = append(key, serviceIDBz...)
 	key = append(key, []byte("/")...)
 
 	return key

@@ -3,35 +3,53 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestMsgAddService_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgAddService
-		err  error
+		desc        string
+		msg         MsgAddService
+		expectedErr error
 	}{
 		{
-			name: "invalid address",
+			desc: "invalid service supplier address - no service",
 			msg: MsgAddService{
 				Address: "invalid_address",
+				// Service: intentionally omitted,
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			expectedErr: ErrServiceInvalidAddress,
 		}, {
-			name: "valid address",
+			desc: "valid service supplier address - no service ID",
 			msg: MsgAddService{
 				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
 			},
+			expectedErr: ErrServiceMissingID,
+		}, {
+			desc: "valid service supplier address - no service name",
+			msg: MsgAddService{
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
+			},
+			expectedErr: ErrServiceMissingName,
+		}, {
+			desc: "valid service supplier address and service",
+			msg: MsgAddService{
+				Address: sample.AccAddress(),
+				Service: sharedtypes.Service{Id: "svc1", Name: "service name"},
+			},
+			expectedErr: nil,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+			if tt.expectedErr != nil {
+				require.ErrorIs(t, err, tt.expectedErr)
 				return
 			}
 			require.NoError(t, err)

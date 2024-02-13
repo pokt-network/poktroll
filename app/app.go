@@ -178,6 +178,7 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
+		// TODO_BLOCKER(@Olshansk): Revisit the advanced configuration and understand if/where it fits in Shannon
 		appConfig = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(

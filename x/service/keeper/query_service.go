@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// ServiceAll queries all services.
 func (k Keeper) ServiceAll(ctx context.Context, req *types.QueryAllServiceRequest) (*types.QueryAllServiceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
@@ -41,6 +42,7 @@ func (k Keeper) ServiceAll(ctx context.Context, req *types.QueryAllServiceReques
 	return &types.QueryAllServiceResponse{Service: services, Pagination: pageRes}, nil
 }
 
+// Service returns the requested service if it exists.
 func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) (*types.QueryGetServiceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
