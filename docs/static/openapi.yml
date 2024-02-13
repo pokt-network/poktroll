@@ -47603,6 +47603,7 @@ paths:
                   title: >-
                     Claim is the serialized object stored on-chain for claims
                     pending to be proven
+                description: 'TODO_IMPROVE: Rename to `Claims` (plural).'
               pagination:
                 type: object
                 properties:
@@ -47827,6 +47828,7 @@ paths:
                       description: >-
                         The serialized SMST proof from the `#ClosestProof()`
                         method.
+                description: 'TODO_IMPROVE: Rename to `Proofs` (plural).'
               pagination:
                 type: object
                 properties:
@@ -78830,6 +78832,7 @@ definitions:
           title: >-
             Claim is the serialized object stored on-chain for claims pending to
             be proven
+        description: 'TODO_IMPROVE: Rename to `Claims` (plural).'
       pagination:
         type: object
         properties:
@@ -78913,6 +78916,7 @@ definitions:
               type: string
               format: byte
               description: The serialized SMST proof from the `#ClosestProof()` method.
+        description: 'TODO_IMPROVE: Rename to `Proofs` (plural).'
       pagination:
         type: object
         properties:
