@@ -22,6 +22,8 @@ import (
 )
 
 func SupplierKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+	t.Helper()
+
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
