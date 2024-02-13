@@ -67,7 +67,7 @@ func NewSessionHydrator(
 // GetSession implements of the exposed `UtilityModule.GetSession` function
 // TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
 func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
-	logger := k.Logger(ctx).With("method", "hydrateSession")
+	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session metadata: %v", err)
@@ -138,7 +138,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
 func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
-	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
+	app, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
 		return sdkerrors.Wrapf(types.ErrSessionAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
 	}
@@ -155,7 +155,7 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
 func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
-	logger := k.Logger(ctx).With("method", "hydrateSessionSuppliers")
+	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
 	// TODO_TECHDEBT(@Olshansk, @bryanchriswhite): Need to retrieve the suppliers at SessionStartBlockHeight,
 	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
@@ -180,7 +180,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	}
 
 	if len(candidateSuppliers) == 0 {
-		logger.Error(fmt.Sprintf("[ERROR] no suppliers found for session"))
+		logger.Error("[ERROR] no suppliers found for session")
 		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
 	}
 

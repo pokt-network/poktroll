@@ -3,10 +3,9 @@ package keeper_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/session/types"
@@ -24,7 +23,6 @@ func init() {
 func TestSession_GetSession_Success(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// TODO_TECHDEBT(#377): These test assume that the genesis block has a height of 0,
 	// rewrite them in terms of height = 1 genesis.
@@ -65,7 +63,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 				BlockHeight: 1,
 			}
 
-			response, err := keeper.GetSession(wctx, req)
+			response, err := keeper.GetSession(ctx, req)
 			require.NoError(t, err)
 			require.NotNil(t, response)
 
@@ -79,7 +77,6 @@ func TestSession_GetSession_Success(t *testing.T) {
 func TestSession_GetSession_Failure(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
-	wctx := sdk.WrapSDKContext(ctx)
 
 	type test struct {
 		name string
@@ -160,7 +157,7 @@ func TestSession_GetSession_Failure(t *testing.T) {
 				BlockHeight: tt.blockHeight,
 			}
 
-			res, err := keeper.GetSession(wctx, req)
+			res, err := keeper.GetSession(ctx, req)
 			require.Error(t, err)
 			require.Contains(t, err.Error(), tt.expectedErrContains)
 			require.Equal(t, expectedRes, res)

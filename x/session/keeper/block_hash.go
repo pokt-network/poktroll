@@ -1,14 +1,15 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 )
 
 // GetBlockHash returns the hash of the block at the given height.
-func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) []byte {
-	store := ctx.KVStore(k.storeKey)
+func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
+	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	return store.Get(GetBlockHashKey(height))
 }
 

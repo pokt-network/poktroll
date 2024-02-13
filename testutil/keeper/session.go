@@ -5,15 +5,19 @@ import (
 	"encoding/hex"
 	"testing"
 
-	tmdb "github.com/cometbft/cometbft-db"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	"cosmossdk.io/log"
+	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/store"
+	"cosmossdk.io/store/metrics"
+	storetypes "cosmossdk.io/store/types"
+	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/store"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	typesparams "github.com/cosmos/cosmos-sdk/x/params/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -24,8 +28,6 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-type option[V any] func(k *keeper.Keeper)
 
 var (
 	TestServiceId1  = "svc1"  // staked for by app1 & supplier1
@@ -39,7 +41,7 @@ var (
 	TestApp1Address = "pokt1mdccn4u38eyjdxkk4h0jaddw4n3c72u82m5m9e" // Generated via sample.AccAddress()
 	TestApp1        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},
@@ -56,7 +58,7 @@ var (
 	TestApp2Address = "pokt133amv5suh75zwkxxcq896azvmmwszg99grvk9f" // Generated via sample.AccAddress()
 	TestApp2        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId2},
@@ -74,7 +76,7 @@ var (
 	TestSupplierAddress = sample.AccAddress()
 	TestSupplier        = sharedtypes.Supplier{
 		Address: TestSupplierAddress,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},
@@ -110,34 +112,43 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
-	storeKey := sdk.NewKVStoreKey(types.StoreKey)
-	memStoreKey := storetypes.NewMemoryStoreKey(types.MemStoreKey)
+func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
-	db := tmdb.NewMemDB()
-	stateStore := store.NewCommitMultiStore(db)
+	db := dbm.NewMemDB()
+	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
 	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
-	stateStore.MountStoreWithDB(memStoreKey, storetypes.StoreTypeMemory, nil)
 	require.NoError(t, stateStore.LoadLatestVersion())
 
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
+
+	ctrl := gomock.NewController(t)
+	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
+
+	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
+	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockAppKeeper := defaultAppKeeperMock(t)
 	mockSupplierKeeper := defaultSupplierKeeperMock(t)
 
-	paramsSubspace := typesparams.NewSubspace(cdc,
-		types.Amino,
-		storeKey,
-		memStoreKey,
-		"SessionParams",
-	)
+	// TODO_CONSOLIDATE: This was passed-in instead of authority.String() in the
+	// original code. It's not clear what the difference is.
+	// paramsSubspace := typesparams.NewSubspace(cdc,
+	// 	types.Amino,
+	// 	storeKey,
+	// 	memStoreKey,
+	// 	"SessionParams",
+	// )
+
 	k := keeper.NewKeeper(
 		cdc,
-		storeKey,
-		memStoreKey,
-		paramsSubspace,
-
+		runtime.NewKVStoreService(storeKey),
+		log.NewNopLogger(),
+		authority.String(),
+		mockAccountKeeper,
+		mockBankKeeper,
 		mockAppKeeper,
 		mockSupplierKeeper,
 	)
@@ -148,7 +159,7 @@ func SessionKeeper(t testing.TB) (*keeper.Keeper, sdk.Context) {
 	// 	opt(k)
 	// }
 
-	ctx := sdk.NewContext(stateStore, tmproto.Header{}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
 	k.SetParams(ctx, types.DefaultParams())

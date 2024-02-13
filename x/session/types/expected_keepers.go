@@ -1,18 +1,15 @@
 package types
 
+//go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
+
 import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
-
-type ApplicationKeeper interface {
-	// TODO Add methods imported from application should be defined here
-}
-
-type SupplierKeeper interface {
-	// TODO Add methods imported from supplier should be defined here
-}
 
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
@@ -30,4 +27,12 @@ type BankKeeper interface {
 type ParamSubspace interface {
 	Get(context.Context, []byte, interface{})
 	Set(context.Context, []byte, interface{})
+}
+
+type ApplicationKeeper interface {
+	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
+}
+
+type SupplierKeeper interface {
+	GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Supplier)
 }
