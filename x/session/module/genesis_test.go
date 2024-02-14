@@ -3,27 +3,39 @@ package session_test
 import (
 	"testing"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/nullify"
-	session "github.com/pokt-network/poktroll/x/session/module"
 	"github.com/pokt-network/poktroll/x/session/types"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenesis(t *testing.T) {
-	genesisState := types.GenesisState{
-		Params: types.DefaultParams(),
+func TestGenesisState_Validate(t *testing.T) {
+	tests := []struct {
+		desc     string
+		genState *types.GenesisState
+		valid    bool
+	}{
+		{
+			desc:     "default is valid",
+			genState: types.DefaultGenesis(),
+			valid:    true,
+		},
+		{
+			desc:     "valid genesis state",
+			genState: &types.GenesisState{
 
-		// this line is used by starport scaffolding # genesis/test/state
+				// this line is used by starport scaffolding # types/genesis/validField
+			},
+			valid: true,
+		},
+		// this line is used by starport scaffolding # types/genesis/testcase
 	}
-
-	k, ctx := keepertest.SessionKeeper(t)
-	session.InitGenesis(ctx, k, genesisState)
-	got := session.ExportGenesis(ctx, k)
-	require.NotNil(t, got)
-
-	nullify.Fill(&genesisState)
-	nullify.Fill(got)
-
-	// this line is used by starport scaffolding # genesis/test/assert
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.genState.Validate()
+			if tc.valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
 }

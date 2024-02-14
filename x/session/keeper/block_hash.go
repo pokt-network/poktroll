@@ -13,7 +13,5 @@ import (
 func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
-	return store.Get(types.SessionKey(
-		height,
-	))
+	return store.Get(types.SessionKey(height))
 }
