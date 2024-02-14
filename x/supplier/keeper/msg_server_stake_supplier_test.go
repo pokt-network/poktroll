@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -14,8 +15,8 @@ import (
 )
 
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 	wctx := sdk.WrapSDKContext(ctx)
 
 	// Generate an address for the supplier
@@ -28,7 +29,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare the stakeMsg
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{
@@ -62,7 +63,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare an updated supplier with a higher stake and a different URL for the service
 	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(200)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{
@@ -92,16 +93,15 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	supplierAddr := sample.AccAddress()
 
 	// Prepare the supplier stake message
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{
@@ -119,13 +119,13 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	}
 
 	// Stake the supplier
-	_, err := srv.StakeSupplier(wctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Prepare the supplier stake message without any service endpoints
 	updateStakeMsg := &types.MsgStakeSupplier{
 		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service:   &sharedtypes.Service{Id: "svcId"},
@@ -135,7 +135,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	}
 
 	// Fail updating the supplier when the list of service endpoints is empty
-	_, err = srv.StakeSupplier(wctx, updateStakeMsg)
+	_, err = srv.StakeSupplier(ctx, updateStakeMsg)
 	require.Error(t, err)
 
 	// Verify the supplierFound still exists and is staked for svc1
@@ -150,7 +150,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	// Prepare the supplier stake message with an invalid service ID
 	updateStakeMsg = &types.MsgStakeSupplier{
 		Address: supplierAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
@@ -159,7 +159,7 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 	}
 
 	// Fail updating the supplier when the list of services is empty
-	_, err = srv.StakeSupplier(wctx, updateStakeMsg)
+	_, err = srv.StakeSupplier(ctx, updateStakeMsg)
 	require.Error(t, err)
 
 	// Verify the supplier still exists and is staked for svc1
@@ -173,15 +173,14 @@ func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T)
 }
 
 func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Prepare the supplier
 	addr := sample.AccAddress()
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{
@@ -199,7 +198,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	}
 
 	// Stake the supplier & verify that the supplier exists
-	_, err := srv.StakeSupplier(wctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 	_, isSupplierFound := k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)
@@ -207,7 +206,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	// Prepare an updated supplier with a lower stake
 	updateMsg := &types.MsgStakeSupplier{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(50)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{
@@ -225,7 +224,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	}
 
 	// Verify that it fails
-	_, err = srv.StakeSupplier(wctx, updateMsg)
+	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.Error(t, err)
 
 	// Verify that the supplier stake is unchanged
