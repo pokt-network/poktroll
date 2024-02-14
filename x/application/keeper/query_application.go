@@ -48,7 +48,7 @@ func (k Keeper) Application(ctx context.Context, req *types.QueryGetApplicationR
 		req.Address,
 	)
 	if !found {
-		return nil, status.Error(codes.NotFound, "not found")
+		return nil, status.Error(codes.NotFound, "application not found")
 	}
 
 	return &types.QueryGetApplicationResponse{Application: val}, nil
