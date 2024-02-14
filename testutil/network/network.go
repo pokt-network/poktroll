@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
@@ -17,12 +17,16 @@ import (
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 type (
 	Network = network.Network
 	Config  = network.Config
 )
+
+var addrCodec = addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 
 func init() {
 	cmd.InitSDKConfig()
@@ -91,9 +95,9 @@ func InitAccountWithSequence(
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
-	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
+	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
 	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
 	require.NoError(t, err)
@@ -109,7 +113,7 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 	t.Helper()
 	state := gatewaytypes.DefaultGenesis()
 	for i := 0; i < n; i++ {
-		stake := sdk.NewCoin("upokt", sdkmath.NewInt(int64(i)))
+		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
 		gateway := gatewaytypes.Gateway{
 			Address: sample.AccAddress(),
 			Stake:   &stake,
@@ -134,10 +138,9 @@ func InitAccount(t *testing.T, net *Network, addr sdk.AccAddress) {
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
-	amount := sdk.NewCoins(sdk.NewCoin("stake", sdkmath.NewInt(200)))
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	amount := sdk.NewCoins(sdk.NewCoin("stake", math.NewInt(200)))
 	responseRaw, err := clitestutil.MsgSendExec(ctx, val.Address, addr, amount, addrCodec, args...)
 	require.NoError(t, err)
 	var responseJSON map[string]interface{}
@@ -164,4 +167,33 @@ func freePorts(n int) ([]string, error) {
 		}
 	}
 	return ports, nil
+}
+
+// DefaultSupplierModuleGenesisState generates a GenesisState object with a given number of suppliers.
+// It returns the populated GenesisState object.
+func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for i := 0; i < n; i++ {
+		stake := sdk.NewCoin("upokt", math.NewInt(int64(i)))
+		supplier := sharedtypes.Supplier{
+			Address: sample.AccAddress(),
+			Stake:   &stake,
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     fmt.Sprintf("http://localhost:%d", i),
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		// TODO_CONSIDERATION: Evaluate whether we need `nullify.Fill` or if we should enforce `(gogoproto.nullable) = false` everywhere
+		// nullify.Fill(&supplier)
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+	return state
 }
