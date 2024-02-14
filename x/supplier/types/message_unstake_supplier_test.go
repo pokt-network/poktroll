@@ -3,9 +3,9 @@ package types
 import (
 	"testing"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
 )
 
 func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
@@ -19,7 +19,11 @@ func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 			msg: MsgUnstakeSupplier{
 				Address: "invalid_address",
 			},
-			err: sdkerrors.ErrInvalidAddress,
+			err: ErrSupplierInvalidAddress,
+		}, {
+			name: "missing address",
+			msg:  MsgUnstakeSupplier{},
+			err:  ErrSupplierInvalidAddress,
 		}, {
 			name: "valid address",
 			msg: MsgUnstakeSupplier{
