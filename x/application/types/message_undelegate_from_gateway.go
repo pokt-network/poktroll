@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ sdk.Msg = &MsgUndelegateFromGateway{}
+var _ sdk.Msg = (*MsgUndelegateFromGateway)(nil)
 
 func NewMsgUndelegateFromGateway(appAddress string, gatewayAddress string) *MsgUndelegateFromGateway {
 	return &MsgUndelegateFromGateway{

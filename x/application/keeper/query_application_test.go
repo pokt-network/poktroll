@@ -45,7 +45,7 @@ func TestApplicationQuerySingle(t *testing.T) {
 			request: &types.QueryGetApplicationRequest{
 				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "application not found"),
 		},
 		{
 			desc: "InvalidRequest",

@@ -16,38 +16,38 @@ import (
 var _ = strconv.IntSize
 
 func createNApplication(keeper keeper.Keeper, ctx context.Context, n int) []types.Application {
-	items := make([]types.Application, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
+	apps := make([]types.Application, n)
+	for i := range apps {
+		apps[i].Address = strconv.Itoa(i)
 
-		keeper.SetApplication(ctx, items[i])
+		keeper.SetApplication(ctx, apps[i])
 	}
-	return items
+	return apps
 }
 
 func TestApplicationGet(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
 		rst, found := keeper.GetApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
+			nullify.Fill(&app),
 			nullify.Fill(&rst),
 		)
 	}
 }
 func TestApplicationRemove(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
-	for _, item := range items {
+	apps := createNApplication(keeper, ctx, 10)
+	for _, app := range apps {
 		keeper.RemoveApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		_, found := keeper.GetApplication(ctx,
-			item.Address,
+			app.Address,
 		)
 		require.False(t, found)
 	}
@@ -55,9 +55,9 @@ func TestApplicationRemove(t *testing.T) {
 
 func TestApplicationGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ApplicationKeeper(t)
-	items := createNApplication(keeper, ctx, 10)
+	apps := createNApplication(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
+		nullify.Fill(apps),
 		nullify.Fill(keeper.GetAllApplication(ctx)),
 	)
 }

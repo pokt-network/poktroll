@@ -8,8 +8,8 @@ import (
 
 // x/application module sentinel errors
 var (
-	ErrInvalidSigner                  = sdkerrors.Register(ModuleName, 1100, "expected gov account as only signer for proposal message")
-	ErrSample                         = sdkerrors.Register(ModuleName, 1101, "sample error")
+	ErrAppInvalidSigner               = sdkerrors.Register(ModuleName, 1100, "expected gov account as only signer for proposal message")
+	ErrAppSample                      = sdkerrors.Register(ModuleName, 1101, "sample error")
 	ErrAppInvalidStake                = sdkerrors.Register(ModuleName, 1102, "invalid application stake")
 	ErrAppInvalidAddress              = sdkerrors.Register(ModuleName, 1103, "invalid application address")
 	ErrAppUnauthorized                = sdkerrors.Register(ModuleName, 1104, "unauthorized application signer")

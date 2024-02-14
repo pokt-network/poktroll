@@ -18,10 +18,10 @@ func SimulateMsgUndelegateFromGateway(
 ) simtypes.Operation {
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
-		simAccount, _ := simtypes.RandomAcc(r, accs)
+		simAppAccount, _ := simtypes.RandomAcc(r, accs)
 		simGatewayAccount, _ := simtypes.RandomAcc(r, accs)
 		msg := &types.MsgUndelegateFromGateway{
-			AppAddress:     simAccount.Address.String(),
+			AppAddress:     simAppAccount.Address.String(),
 			GatewayAddress: simGatewayAccount.Address.String(),
 		}
 
