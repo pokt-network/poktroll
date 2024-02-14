@@ -15,11 +15,9 @@ var _ = strconv.Itoa(0)
 
 func CmdGetSession() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get-session <application_address> <service_id> [block_height]",
+		Use:   "get-session <application_address> <service_id> <block_height>",
 		Short: "Query get-session",
 		Long: `Query the session data for a specific (app, service, height) tuple.
-
-[block_height] is optional. If unspecified, or set to 0, it defaults to the latest height of the node being queried.
 
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 
