@@ -1,0 +1,15 @@
+syntax = "proto3";
+package poktroll.supplier;
+
+option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
+import "gogoproto/gogo.proto"; 
+import "cosmos/base/v1beta1/coin.proto"; 
+
+message Supplier {
+  string index = 1; 
+  string address = 2; 
+  cosmos.base.v1beta1.Coin stake = 3 [(gogoproto.nullable) = false]; 
+  string services = 4; 
+  
+}
+
