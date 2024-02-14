@@ -6,6 +6,7 @@ import (
 
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
+	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -85,6 +86,13 @@ func (k Keeper) BeginBlocker(goCtx context.Context) {
 		hash = []byte{}
 	}
 
-	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store.Set(GetBlockHashKey(height), hash)
+	// TODO_HACK: This is a temporary hack to to prevent panic because of the
+	// ctx.BlockHeader().LastBlockId.Hash being nil.
+	hash = []byte{}
+
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
+	store.Set(types.SessionKey(
+		height,
+	), hash)
 }

@@ -9,6 +9,7 @@ import (
 	sdkmath "cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
+	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
@@ -133,15 +134,6 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	mockAppKeeper := defaultAppKeeperMock(t)
 	mockSupplierKeeper := defaultSupplierKeeperMock(t)
 
-	// TODO_CONSOLIDATE: This was passed-in instead of authority.String() in the
-	// original code. It's not clear what the difference is.
-	// paramsSubspace := typesparams.NewSubspace(cdc,
-	// 	types.Amino,
-	// 	storeKey,
-	// 	memStoreKey,
-	// 	"SessionParams",
-	// )
-
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -177,11 +169,12 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		8: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
 	}
 
-	store := ctx.KVStore(storeKey)
+	storeAdapter := runtime.KVStoreAdapter(runtime.NewKVStoreService(storeKey).OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
 	for height, hash := range blockHash {
 		hashBz, err := hex.DecodeString(hash)
 		require.NoError(t, err)
-		store.Set(keeper.GetBlockHashKey(height), hashBz)
+		store.Set(types.SessionKey(height), hashBz)
 	}
 
 	return k, ctx
