@@ -11,9 +11,9 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 // GenesisState defines the application module's genesis state.
 message GenesisState {
-  
-  // params defines all the parameters of the module.
+
+           // params defines all the parameters of the module.
            Params      params          = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
-  repeated Application applicationList = 2 [(gogoproto.nullable) = false] ;
+  repeated Application application_list = 2 [(gogoproto.nullable) = false] ;
 }
 

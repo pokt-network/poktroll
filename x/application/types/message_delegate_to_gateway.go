@@ -7,7 +7,7 @@ import (
 
 var _ sdk.Msg = (*MsgDelegateToGateway)(nil)
 
-func NewMsgDelegateToGateway(appAddress string, gatewayAddress string) *MsgDelegateToGateway {
+func NewMsgDelegateToGateway(appAddress, gatewayAddress string) *MsgDelegateToGateway {
 	return &MsgDelegateToGateway{
 		AppAddress:     appAddress,
 		GatewayAddress: gatewayAddress,

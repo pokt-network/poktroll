@@ -10,7 +10,5 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 message Params {
   option (amino.name) = "poktroll/x/application/Params";
   option (gogoproto.equal) = true;
-
-  
-  uint64 maxDelegatedGateways = 1 [(gogoproto.moretags) = "yaml:\"max_delegated_gateways\""];
+  uint64 max_delegated_gateways = 1 [(gogoproto.moretags) = "yaml:\"max_delegated_gateways\""];
 }

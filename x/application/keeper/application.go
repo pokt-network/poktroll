@@ -23,38 +23,38 @@ func (k Keeper) SetApplication(ctx context.Context, application types.Applicatio
 // GetApplication returns a application from its index
 func (k Keeper) GetApplication(
 	ctx context.Context,
-	address string,
+	appAddr string,
 
-) (val types.Application, found bool) {
+) (app types.Application, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 
 	b := store.Get(types.ApplicationKey(
-		address,
+		appAddr,
 	))
 	if b == nil {
-		return val, false
+		return app, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(b, &app)
+	return app, true
 }
 
 // RemoveApplication removes a application from the store
 func (k Keeper) RemoveApplication(
 	ctx context.Context,
-	address string,
+	appAddr string,
 
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	store.Delete(types.ApplicationKey(
-		address,
+		appAddr,
 	))
 }
 
 // GetAllApplication returns all application
-func (k Keeper) GetAllApplication(ctx context.Context) (list []types.Application) {
+func (k Keeper) GetAllApplication(ctx context.Context) (apps []types.Application) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -64,7 +64,7 @@ func (k Keeper) GetAllApplication(ctx context.Context) (list []types.Application
 	for ; iterator.Valid(); iterator.Next() {
 		var val types.Application
 		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		apps = append(apps, val)
 	}
 
 	return

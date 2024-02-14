@@ -12,7 +12,11 @@ func CmdQueryParams() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "shows the parameters of the module",
-		Args:  cobra.NoArgs,
+		Long: `Shows all the parameters related to the application module.
+
+Example:
+$ poktrolld q application params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
