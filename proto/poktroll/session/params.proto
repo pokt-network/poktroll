@@ -10,5 +10,4 @@ option go_package = "github.com/pokt-network/poktroll/x/session/types";
 message Params {
   option (amino.name) = "poktroll/x/session/Params";
   option (gogoproto.equal) = true;
-
 }

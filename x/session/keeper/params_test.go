@@ -5,12 +5,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestGetParams(t *testing.T) {
-	k, ctx := keepertest.SessionKeeper(t)
+	k, ctx := testkeeper.SessionKeeper(t)
 	params := types.DefaultParams()
 
 	require.NoError(t, k.SetParams(ctx, params))
