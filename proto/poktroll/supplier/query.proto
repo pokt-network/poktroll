@@ -1,4 +1,5 @@
 syntax = "proto3";
+
 package poktroll.supplier;
 
 import "amino/amino.proto";
@@ -6,25 +7,54 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/supplier/params.proto";
+import "poktroll/supplier/supplier.proto";
+import "cosmos/base/v1beta1/coin.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/supplier/types";
 
 // Query defines the gRPC querier service.
 service Query {
+  
   // Parameters queries the parameters of the module.
-  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/supplier/params";
+  
+  }
+  
+  // Queries a list of Supplier items.
+  rpc Supplier    (QueryGetSupplierRequest) returns (QueryGetSupplierResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier/{index}";
+  
+  }
+  rpc SupplierAll (QueryAllSupplierRequest) returns (QueryAllSupplierResponse) {
+    option (google.api.http).get = "/pokt-network/poktroll/supplier/supplier";
+  
   }
 }
-
 // QueryParamsRequest is request type for the Query/Params RPC method.
 message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
+  
   // params holds all the parameters of this module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
+
+message QueryGetSupplierRequest {
+  string index = 1;
+}
+
+message QueryGetSupplierResponse {
+  Supplier supplier = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllSupplierRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllSupplierResponse {
+  repeated Supplier                               supplier   = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
