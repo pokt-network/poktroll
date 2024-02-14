@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -22,16 +24,24 @@ func (k Keeper) GetApplication(
 	appAddr string,
 
 ) (app types.Application, found bool) {
+	logger := k.Logger(ctx).With("Func", "GetApplication").With("appAddr", appAddr)
+	logger.Info("OLSH1")
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefix(types.ApplicationKeyPrefix))
+	logger.Info("OLSH2")
 
 	b := store.Get(types.ApplicationKey(
 		appAddr,
 	))
+	logger.Info("OLSH3")
 	if b == nil {
+		logger.Info("OLSH4")
 		return app, false
 	}
-
+	logger.Info("OLSH5")
+	logger.Info(fmt.Sprintf("%v", b))
+	logger.Info("OLSH6")
 	k.cdc.MustUnmarshal(b, &app)
+	logger.Info("OLSH7")
 	return app, true
 }
 

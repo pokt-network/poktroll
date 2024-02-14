@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
-
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	autocliv1 "cosmossdk.io/api/cosmos/autocli/v1"
@@ -619,6 +618,22 @@ func New(
 		app.BankKeeper,
 	)
 
+	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
+		appCodec,
+		keys[tokenomicsmoduletypes.StoreKey],
+		keys[tokenomicsmoduletypes.MemStoreKey],
+		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
+		app.BankKeeper,
+		app.ApplicationKeeper,
+		authority,
+	)
+	tokenomicsModule := tokenomicsmodule.NewAppModule(
+		appCodec,
+		app.TokenomicsKeeper,
+		app.AccountKeeper,
+		app.BankKeeper,
+	)
+
 	// TODO_TECHDEBT: Evaluate if this NB goes away after we upgrade to cosmos 0.5x
 	// NB: there is a circular dependency between the supplier and session keepers.
 	// Because the keepers are values (as opposed to pointers), they are copied
@@ -657,18 +672,6 @@ func New(
 
 	supplierModule := suppliermodule.NewAppModule(appCodec, app.SupplierKeeper, app.AccountKeeper, app.BankKeeper)
 	sessionModule := sessionmodule.NewAppModule(appCodec, app.SessionKeeper, app.AccountKeeper, app.BankKeeper)
-
-	app.TokenomicsKeeper = *tokenomicsmodulekeeper.NewKeeper(
-		appCodec,
-		keys[tokenomicsmoduletypes.StoreKey],
-		keys[tokenomicsmoduletypes.MemStoreKey],
-		app.GetSubspace(tokenomicsmoduletypes.ModuleName),
-		app.BankKeeper,
-		app.ApplicationKeeper,
-		app.SupplierKeeper,
-		authority,
-	)
-	tokenomicsModule := tokenomicsmodule.NewAppModule(appCodec, app.TokenomicsKeeper, app.AccountKeeper, app.BankKeeper)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 

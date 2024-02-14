@@ -28,5 +28,5 @@ type SessionKeeper interface {
 }
 
 type TokenomicsKeeper interface {
-	SettleSessionAccounting(context.Context, *Claim) error
+	SettleSessionAccounting(ctx sdk.Context, claim *Claim) error
 }

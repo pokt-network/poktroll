@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
@@ -30,7 +31,7 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 	// is being proposed.
 	blockHeight := req.BlockHeight
 
-	k.Logger(ctx).Info("Getting session for height: %d", blockHeight)
+	k.Logger(ctx).Info(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)

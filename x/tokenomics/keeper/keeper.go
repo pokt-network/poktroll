@@ -24,9 +24,8 @@ type Keeper struct {
 	paramstore paramtypes.Subspace
 
 	// keeper dependencies
-	appKeeper      types.ApplicationKeeper
-	supplierKeeper types.SupplierKeeper
-	bankKeeper     types.BankKeeper
+	bankKeeper types.BankKeeper
+	appKeeper  types.ApplicationKeeper
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this
 	// should be the x/gov module account.
@@ -42,7 +41,6 @@ func NewKeeper(
 	// keeper dependencies
 	bankKeeper types.BankKeeper,
 	appKeeper types.ApplicationKeeper,
-	supplierKeeper types.SupplierKeeper,
 
 	authority string,
 ) *Keeper {
@@ -57,9 +55,8 @@ func NewKeeper(
 		memKey:     memKey,
 		paramstore: ps,
 
-		bankKeeper:     bankKeeper,
-		appKeeper:      appKeeper,
-		supplierKeeper: supplierKeeper,
+		bankKeeper: bankKeeper,
+		appKeeper:  appKeeper,
 
 		authority: authority,
 	}

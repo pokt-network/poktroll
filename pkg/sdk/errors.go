@@ -6,9 +6,6 @@ import (
 
 // TODO_TECHDEBT: Do a source code wise find-replace using regex pattern match
 // of `sdkerrors\.Wrapf\(([a-zA-Z]+), ` with `$1.Wrapf(`
-
-// TODO_TECHDEBT: Do a source code wise find-replace using regex pattern match
-// of `sdkerrors\.Wrapf\(([a-zA-Z]+), ` with `$1.Wrapf(`
 var (
 	codespace                           = "poktrollsdk"
 	ErrSDKHandleRelay                   = sdkerrors.Register(codespace, 1, "internal error handling relay request")

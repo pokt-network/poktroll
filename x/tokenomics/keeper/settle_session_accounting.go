@@ -1,11 +1,11 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
+
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -18,8 +18,6 @@ const (
 	smstRootSize = 40
 )
 
-// atomic.if this function is not atomic.
-
 // SettleSessionAccounting is responsible for all of the post-session accounting
 // necessary to burn, mint or transfer tokens depending on the amount of work
 // done. The amount of "work done" complete is dictated by `sum` of `root`.
@@ -29,12 +27,12 @@ const (
 //
 // TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
 func (k Keeper) SettleSessionAccounting(
-	goCtx context.Context,
+	ctx sdk.Context,
 	claim *suppliertypes.Claim,
 ) error {
-	// Parse the context
-	ctx := sdk.UnwrapSDKContext(goCtx)
 	logger := k.Logger(ctx).With("method", "SettleSessionAccounting")
+
+	logger.Info(ctx.ChainID(), string(ctx.TxBytes()))
 
 	if claim == nil {
 		logger.Error("received a nil claim")
@@ -63,22 +61,40 @@ func (k Keeper) SettleSessionAccounting(
 	if err != nil {
 		return types.ErrTokenomicsApplicationAddressInvalid
 	}
-	root := (smt.MerkleRoot)(claim.RootHash)
 
+	// Retrieve the sum of the root as a proxy into the amount of work done
+	root := (smt.MerkleRoot)(claim.RootHash)
 	if len(root) != smstRootSize {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
 		return types.ErrTokenomicsRootHashInvalid
 	}
+	claimComputeUnits := root.Sum()
+
+	// Helpers for logging the same metadata throughout this function calls
+	logger = logger.With(
+		"compute_units", claimComputeUnits,
+		"session_id", sessionHeader.GetSessionId(),
+		"supplier", supplierAddress,
+		"application", applicationAddress,
+	)
+
+	logger.Info("About to start session settlement accounting")
 
 	// Retrieve the application
+	logger.Info(fmt.Sprintf("appKeeper pointer: %p; ctx pointer: %p", &k.appKeeper, &ctx))
+	if k.appKeeper == nil {
+		logger.Error("appKeeper is nil")
+		return types.ErrTokenomicsApplicationNotFound
+	}
+	if applicationAddress == nil {
+		logger.Error("applicationAddress is nil")
+		return types.ErrTokenomicsApplicationAddressInvalid
+	}
 	application, found := k.appKeeper.GetApplication(ctx, applicationAddress.String())
 	if !found {
 		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
 		return types.ErrTokenomicsApplicationNotFound
 	}
-
-	// Retrieve the sum of the root as a proxy into the amount of work done
-	claimComputeUnits := root.Sum()
 
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 

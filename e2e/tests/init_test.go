@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -148,15 +149,27 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amoun
 		s.Fatalf("no previous balance found for %s", accName)
 	}
 
-	bal := s.getAccBalance(accName)
+	currBalance := s.getAccBalance(accName)
+	prevBalance, ok := prev.(int)
+	if !ok {
+		s.Fatalf("previous balance for %s is not an int", accName)
+	}
+	deltaBalance := int64(math.Abs(float64(currBalance - prevBalance)))
+
 	switch condition {
 	case "more":
-		if bal <= prev.(int) {
-			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, bal, prev)
+		if currBalance <= prevBalance {
+			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, currBalance, prevBalance)
+		}
+		if deltaBalance != amount {
+			s.Fatalf("account %s balance expected to increase by %d, but only increased by %d", accName, amount, deltaBalance)
 		}
 	case "less":
-		if bal >= prev.(int) {
-			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, bal, prev)
+		if currBalance >= prevBalance {
+			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, currBalance, prevBalance)
+		}
+		if deltaBalance != amount {
+			s.Fatalf("account %s balance expected to decrease by %d, but only decreased by %d", accName, amount, deltaBalance)
 		}
 	default:
 		s.Fatalf("unknown condition %s", condition)

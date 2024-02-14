@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -39,7 +38,6 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// The base claim whose root will be customized for testing purposes
 	claim := suppliertypes.Claim{
@@ -57,14 +55,13 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 		RootHash: smstRootWithSum(42),
 	}
 
-	err := keeper.SettleSessionAccounting(wctx, &claim)
+	err := keeper.SettleSessionAccounting(ctx, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrTokenomicsApplicationNotFound)
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// Define test cases
 	testCases := []struct {
@@ -135,7 +132,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(wctx, &claim)
+				return keeper.SettleSessionAccounting(ctx, &claim)
 			}()
 
 			// Assert the error
@@ -150,7 +147,6 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// Define test cases
 	testCases := []struct {
@@ -233,7 +229,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(wctx, tc.claim)
+				return keeper.SettleSessionAccounting(ctx, tc.claim)
 			}()
 
 			// Assert the error

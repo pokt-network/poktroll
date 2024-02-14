@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
-	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 // AccountKeeper defines the expected account keeper used for simulations (noalias)
@@ -28,8 +27,4 @@ type BankKeeper interface {
 type ApplicationKeeper interface {
 	GetApplication(ctx sdk.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx sdk.Context, app apptypes.Application)
-}
-
-type SupplierKeeper interface {
-	GetSupplier(ctx sdk.Context, suppAddr string) (supplier sharedtypes.Supplier, found bool)
 }
