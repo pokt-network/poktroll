@@ -2858,8 +2858,8 @@ type QueryAllApplicationResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Application []*Application        `protobuf:"bytes,1,rep,name=application,proto3" json:"application,omitempty"`
-	Pagination  *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	Application []*Application `protobuf:"bytes,1,rep,name=application,proto3" json:"application,omitempty"`
+	Pagination  *v1beta1.PageResponse      `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
 func (x *QueryAllApplicationResponse) Reset() {
@@ -3019,15 +3019,15 @@ var file_poktroll_application_query_proto_goTypes = []interface{}{
 	(*QueryAllApplicationRequest)(nil),  // 4: poktroll.application.QueryAllApplicationRequest
 	(*QueryAllApplicationResponse)(nil), // 5: poktroll.application.QueryAllApplicationResponse
 	(*Params)(nil),                      // 6: poktroll.application.Params
-	(*Application)(nil),                 // 7: poktroll.application.Application
+	(*Application)(nil),     // 7: poktroll.Application
 	(*v1beta1.PageRequest)(nil),         // 8: cosmos.base.query.v1beta1.PageRequest
 	(*v1beta1.PageResponse)(nil),        // 9: cosmos.base.query.v1beta1.PageResponse
 }
 var file_poktroll_application_query_proto_depIdxs = []int32{
 	6, // 0: poktroll.application.QueryParamsResponse.params:type_name -> poktroll.application.Params
-	7, // 1: poktroll.application.QueryGetApplicationResponse.application:type_name -> poktroll.application.Application
+	7, // 1: poktroll.application.QueryGetApplicationResponse.application:type_name -> poktroll.Application
 	8, // 2: poktroll.application.QueryAllApplicationRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	7, // 3: poktroll.application.QueryAllApplicationResponse.application:type_name -> poktroll.application.Application
+	7, // 3: poktroll.application.QueryAllApplicationResponse.application:type_name -> poktroll.Application
 	9, // 4: poktroll.application.QueryAllApplicationResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	0, // 5: poktroll.application.Query.Params:input_type -> poktroll.application.QueryParamsRequest
 	2, // 6: poktroll.application.Query.Application:input_type -> poktroll.application.QueryGetApplicationRequest
@@ -3048,7 +3048,6 @@ func file_poktroll_application_query_proto_init() {
 		return
 	}
 	file_poktroll_application_params_proto_init()
-	file_poktroll_application_application_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_application_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsRequest); i {

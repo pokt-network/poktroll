@@ -2050,12 +2050,12 @@ var file_poktroll_session_query_proto_goTypes = []interface{}{
 	(*QueryGetSessionResponse)(nil), // 3: poktroll.session.QueryGetSessionResponse
 	(*Params)(nil),                  // 4: poktroll.session.Params
 	(*shared.Service)(nil),          // 5: poktroll.shared.Service
-	(*Session)(nil),                 // 6: poktroll.session.Session
+	(*Session)(nil),         // 6: poktroll.Session
 }
 var file_poktroll_session_query_proto_depIdxs = []int32{
 	4, // 0: poktroll.session.QueryParamsResponse.params:type_name -> poktroll.session.Params
 	5, // 1: poktroll.session.QueryGetSessionRequest.service:type_name -> poktroll.shared.Service
-	6, // 2: poktroll.session.QueryGetSessionResponse.session:type_name -> poktroll.session.Session
+	6, // 2: poktroll.session.QueryGetSessionResponse.session:type_name -> poktroll.Session
 	0, // 3: poktroll.session.Query.Params:input_type -> poktroll.session.QueryParamsRequest
 	2, // 4: poktroll.session.Query.GetSession:input_type -> poktroll.session.QueryGetSessionRequest
 	1, // 5: poktroll.session.Query.Params:output_type -> poktroll.session.QueryParamsResponse
@@ -2073,7 +2073,6 @@ func file_poktroll_session_query_proto_init() {
 		return
 	}
 	file_poktroll_session_params_proto_init()
-	file_poktroll_session_session_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_session_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*QueryParamsRequest); i {

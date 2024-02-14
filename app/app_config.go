@@ -72,6 +72,7 @@ import (
 	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
 	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
+	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
 	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
 	_ "github.com/pokt-network/poktroll/x/application/module" // import for side-effects
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"

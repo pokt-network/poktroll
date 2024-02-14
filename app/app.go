@@ -56,6 +56,7 @@ import (
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
+	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 
 	// this line is used by starport scaffolding # stargate/app/moduleImport
