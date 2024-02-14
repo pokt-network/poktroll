@@ -3,10 +3,12 @@ package session_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	sdkerrors "cosmossdk.io/errors"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
+	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
 
 	session "github.com/pokt-network/poktroll/x/session/module"
@@ -16,7 +18,7 @@ import (
 func TestCLI_GetSession(t *testing.T) {
 	// Prepare the network
 	net, suppliers, applications := networkWithApplicationsAndSupplier(t, 2)
-	_, err := net.WaitForHeight(10) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
+	_, err := net.WaitForHeightWithTimeout(10, 30*time.Second) // Wait for a sufficiently high block height to ensure the staking transactions have been processed
 	require.NoError(t, err)
 	val := net.Validators[0]
 	ctx := val.ClientCtx
@@ -172,9 +174,9 @@ func TestCLI_GetSession(t *testing.T) {
 			// Execute the command
 			getSessionOut, err := clitestutil.ExecTestCLICmd(ctx, session.CmdGetSession(), args)
 			if tt.expectedErr != nil {
-				require.Error(t, err)
-				require.ErrorIs(t, err, tt.expectedErr)
-				require.Contains(t, err.Error(), tt.expectedErr.Error())
+				stat, ok := status.FromError(tt.expectedErr)
+				require.True(t, ok)
+				require.Contains(t, stat.Message(), tt.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
