@@ -11,26 +11,25 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// AccountKeeper defines the expected interface for the Account module.
+// AccountKeeper defines the expected account keeper used for simulations (noalias)
 type AccountKeeper interface {
 	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI // only used for simulation
 }
 
-// BankKeeper defines the expected interface for the Bank module.
-type BankKeeper interface {
-	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
-}
+// BankKeeper defines the expected interface needed to retrieve account balances.
+type BankKeeper interface{}
 
-// ParamSubspace defines the expected Subspace interface for parameters.
-type ParamSubspace interface {
-	Get(context.Context, []byte, interface{})
-	Set(context.Context, []byte, interface{})
-}
-
+// ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)
 }
 
 type SupplierKeeper interface {
 	GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Supplier)
+}
+
+// ParamSubspace defines the expected Subspace interface for parameters.
+type ParamSubspace interface {
+	Get(context.Context, []byte, interface{})
+	Set(context.Context, []byte, interface{})
 }
