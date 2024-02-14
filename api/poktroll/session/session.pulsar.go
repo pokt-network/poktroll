@@ -2,10 +2,10 @@
 package session
 
 import (
-	application "cosmossdk.io/api/poktroll/application"
 	fmt "fmt"
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
+	application "github.com/pokt-network/poktroll/api/poktroll/application"
 	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"

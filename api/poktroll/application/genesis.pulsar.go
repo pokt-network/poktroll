@@ -607,7 +607,7 @@ type GenesisState struct {
 	unknownFields protoimpl.UnknownFields
 
 	// params defines all the parameters of the module.
-	Params          *Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	Params          *Params                    `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	ApplicationList []*Application `protobuf:"bytes,2,rep,name=application_list,json=applicationList,proto3" json:"application_list,omitempty"`
 }
 
@@ -698,13 +698,13 @@ func file_poktroll_application_genesis_proto_rawDescGZIP() []byte {
 
 var file_poktroll_application_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_application_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil), // 0: poktroll.application.GenesisState
-	(*Params)(nil),       // 1: poktroll.application.Params
-	(*Application)(nil),  // 2: poktroll.application.Application
+	(*GenesisState)(nil),            // 0: poktroll.application.GenesisState
+	(*Params)(nil),                  // 1: poktroll.application.Params
+	(*Application)(nil), // 2: poktroll.Application
 }
 var file_poktroll_application_genesis_proto_depIdxs = []int32{
 	1, // 0: poktroll.application.GenesisState.params:type_name -> poktroll.application.Params
-	2, // 1: poktroll.application.GenesisState.application_list:type_name -> poktroll.application.Application
+	2, // 1: poktroll.application.GenesisState.application_list:type_name -> poktroll.Application
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -718,7 +718,6 @@ func file_poktroll_application_genesis_proto_init() {
 		return
 	}
 	file_poktroll_application_params_proto_init()
-	file_poktroll_application_application_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_poktroll_application_genesis_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GenesisState); i {
