@@ -11,12 +11,12 @@ const (
 
 // SupplierKey returns the store key to retrieve a Supplier from the index fields
 func SupplierKey(
-	address string,
+	index string,
 ) []byte {
 	var key []byte
 
-	addressBytes := []byte(address)
-	key = append(key, addressBytes...)
+	indexBytes := []byte(index)
+	key = append(key, indexBytes...)
 	key = append(key, []byte("/")...)
 
 	return key

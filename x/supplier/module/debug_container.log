@@ -1,0 +1,379 @@
+Initializing logger
+Registering providers
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84)
+  Registering resolver for simple type codec.Codec
+  Registering resolver for simple type *codec.LegacyAmino
+  Registering resolver for simple type *runtime.AppBuilder
+  Registering resolver for simple type *baseapp.MsgServiceRouter
+  Registering resolver for one-per-module type appmodule.AppModule
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Registering resolver for simple type protodesc.Resolver
+  Registering resolver for simple type protoregistry.MessageTypeResolver
+ Registering resolver for many-per-container type signing.CustomGetSigner
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161)
+  Registering resolver for simple type types.InterfaceRegistry
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198)
+  Registering resolver for module-scoped type *types.KVStoreKey
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:213)
+  Registering resolver for module-scoped type *types.TransientStoreKey
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideMemoryStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:219)
+  Registering resolver for module-scoped type *types.MemoryStoreKey
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideGenesisTxHandler (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:226)
+  Registering resolver for simple type genesis.TxHandler
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+  Registering resolver for module-scoped type store.KVStoreService
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideMemoryStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:234)
+  Registering resolver for module-scoped type store.MemoryStoreService
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:239)
+  Registering resolver for module-scoped type store.TransientStoreService
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideEventService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:244)
+  Registering resolver for simple type event.Service
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideHeaderInfoService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:253)
+  Registering resolver for simple type header.Service
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideCometInfoService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:249)
+  Registering resolver for simple type comet.BlockInfoService
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideBasicManager (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:257)
+  Registering resolver for simple type module.BasicManager
+ Registering github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281)
+  Registering resolver for simple type address.Codec
+  Registering resolver for simple type runtime.ValidatorAddressCodec
+  Registering resolver for simple type runtime.ConsensusAddressCodec
+ Registering github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+  Registering resolver for simple type keeper.AccountKeeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Registering github.com/cosmos/cosmos-sdk/x/auth/vesting.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/vesting/module.go:140)
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+  Registering resolver for simple type keeper.BaseKeeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+  Registering resolver for simple type *keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/slashing.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/slashing/module.go:230)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Registering resolver for one-per-module type types.StakingHooksWrapper
+  Found resolver for types.StakingHooksWrapper: *depinject.onePerModuleResolver
+ Registering github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Registering resolver for many-per-container type v1beta1.HandlerRoute
+  Found resolver for v1beta1.HandlerRoute: *depinject.groupResolver
+ Registering resolver for one-per-module type types.KeyTable
+ Registering module-scoped provider: github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+  Registering resolver for module-scoped type types.Subspace
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type tx.BankKeeper
+ Implicitly registering resolver keeper.AccountKeeper for interface type ante.AccountKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68)
+  Registering resolver for simple type client.TxConfig
+  Registering resolver for simple type tx.ConfigOptions
+  Registering resolver for many-per-container type runtime.BaseAppOption
+  Found resolver for runtime.BaseAppOption: *depinject.groupResolver
+ Registering github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideProtoRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:65)
+  Registering resolver for simple type signing.ProtoFileResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/genutil.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/genutil/module.go:138)
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type authz.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type authz.BankKeeper
+ Implicitly registering resolver *baseapp.MsgServiceRouter for interface type baseapp.MessageRouter
+ Registering github.com/cosmos/cosmos-sdk/x/authz/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/authz/module/module.go:178)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Registering cosmossdk.io/x/upgrade.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/upgrade@v0.1.1/module.go:194)
+  Registering resolver for simple type *keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Found resolver for runtime.BaseAppOption: *depinject.groupResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Implicitly registering resolver types.Subspace for interface type exported.Subspace
+ Registering github.com/cosmos/cosmos-sdk/x/distribution.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/distribution/module.go:232)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Found resolver for types.StakingHooksWrapper: *depinject.onePerModuleResolver
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Implicitly registering resolver keeper.Keeper for interface type types.SlashingKeeper
+ Registering cosmossdk.io/x/evidence.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/evidence@v0.1.0/module.go:210)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver types.Subspace for interface type exported.Subspace
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/mint.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/mint/module.go:221)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type group.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type group.BankKeeper
+ Registering github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/group/module/module.go:208)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type feegrant.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type feegrant.BankKeeper
+ Registering cosmossdk.io/x/feegrant/module.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/feegrant@v0.1.0/module/module.go:184)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Implicitly registering resolver *keeper.Keeper for interface type types.StakingKeeper
+ Implicitly registering resolver keeper.Keeper for interface type types.DistributionKeeper
+ Implicitly registering resolver types.Subspace for interface type types.ParamSubspace
+ Registering github.com/cosmos/cosmos-sdk/x/gov.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:189)
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Registering resolver for simple type *keeper.Keeper
+  Found resolver for v1beta1.HandlerRoute: *depinject.groupResolver
+ Registering github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+  Found resolver for types.KeyTable: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.SupplyKeeper
+ Implicitly registering resolver types.Subspace for interface type exported.Subspace
+ Registering github.com/cosmos/cosmos-sdk/x/crisis.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/crisis/module.go:201)
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Registering resolver for simple type *keeper.Keeper
+ Registering github.com/cosmos/cosmos-sdk/x/consensus.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/consensus/module.go:117)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Found resolver for runtime.BaseAppOption: *depinject.groupResolver
+ Registering cosmossdk.io/x/circuit.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/circuit@v0.1.0/module.go:154)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+  Found resolver for runtime.BaseAppOption: *depinject.groupResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Implicitly registering resolver keeper.BaseKeeper for interface type types.BankKeeper
+ Registering github.com/pokt-network/poktroll/x/service/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/service/module/module.go:194)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+ Implicitly registering resolver keeper.AccountKeeper for interface type types.AccountKeeper
+ Registering github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194)
+  Registering resolver for simple type keeper.Keeper
+  Found resolver for appmodule.AppModule: *depinject.onePerModuleResolver
+Registering outputs
+ Registering github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:186)
+Building container
+Resolving dependencies for github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:186)
+ Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig
+ Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84)
+  Providing types.InterfaceRegistry from github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161) to github.com/cosmos/cosmos-sdk/runtime.ProvideApp
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161)
+   Providing address.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry
+   Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281)
+    Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec
+    Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec
+    Providing zero value for optional dependency func() address.Codec
+    Providing zero value for optional dependency func() runtime.ValidatorAddressCodec
+    Providing zero value for optional dependency func() runtime.ConsensusAddressCodec
+   Calling github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281)
+   Providing runtime.ValidatorAddressCodec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry
+   Providing many-per-container type slice []signing.CustomGetSigner to github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry from:
+  Calling github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161)
+ Calling github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84)
+ Providing client.TxConfig from github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68) to github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig
+ Resolving dependencies for github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68)
+  Supplying *configv1.Config from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Providing address.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Providing runtime.ValidatorAddressCodec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Providing signing.ProtoFileResolver from github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideProtoRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:65) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideProtoRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:65)
+  Calling github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideProtoRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:65)
+  Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+   Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+    Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+    Providing ModuleKey bank
+    Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+   Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+   Implicitly registering resolver log.nopLogger for interface type log.Logger
+   Supplying log.nopLogger from github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:189) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Resolving dependencies for github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+    Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/x/auth.ProvideModule
+    Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to github.com/cosmos/cosmos-sdk/x/auth.ProvideModule
+    Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+     Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+     Providing ModuleKey auth
+     Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+    Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+    Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/auth.ProvideModule
+    Providing address.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/x/auth.ProvideModule
+    Providing zero value for optional dependency types.RandomGenesisAccountsFn
+    Providing zero value for optional dependency func() types.AccountI
+    Implicitly registering resolver types.Subspace for interface type exported.Subspace
+    Providing types.Subspace from github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146) to github.com/cosmos/cosmos-sdk/x/auth.ProvideModule
+    Resolving dependencies for github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+     Providing ModuleKey auth
+     Providing keeper.Keeper from github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129) to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace
+     Resolving dependencies for github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129)
+      Providing *types.KVStoreKey from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198) to github.com/cosmos/cosmos-sdk/x/params.ProvideModule
+      Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198)
+       Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey
+       Providing ModuleKey params
+       Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey
+      Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198)
+      Providing *types.TransientStoreKey from github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:213) to github.com/cosmos/cosmos-sdk/x/params.ProvideModule
+      Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:213)
+       Providing ModuleKey params
+       Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreKey
+      Calling github.com/cosmos/cosmos-sdk/runtime.ProvideTransientStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:213)
+      Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/params.ProvideModule
+      Providing *codec.LegacyAmino from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/params.ProvideModule
+     Calling github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129)
+     Providing one-per-module type map map[string]types.KeyTable to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace from:
+      gov: github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+     Resolving dependencies for github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+     Calling github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+    Calling github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+   Calling github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+   Implicitly registering resolver types.Subspace for interface type exported.Subspace
+   Providing types.Subspace from github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146) to github.com/cosmos/cosmos-sdk/x/bank.ProvideModule
+   Resolving dependencies for github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+    Providing ModuleKey bank
+    Providing keeper.Keeper from github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129) to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace
+    Providing one-per-module type map map[string]types.KeyTable to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace from:
+     gov: github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+   Calling github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+  Calling github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+  Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Implicitly registering resolver keeper.Keeper for interface type ante.FeegrantKeeper
+  Providing keeper.Keeper from cosmossdk.io/x/feegrant/module.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/feegrant@v0.1.0/module/module.go:184) to github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule
+  Resolving dependencies for cosmossdk.io/x/feegrant/module.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/feegrant@v0.1.0/module/module.go:184)
+   Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to cosmossdk.io/x/feegrant/module.ProvideModule
+   Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+    Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+    Providing ModuleKey feegrant
+    Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+   Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+   Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to cosmossdk.io/x/feegrant/module.ProvideModule
+   Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to cosmossdk.io/x/feegrant/module.ProvideModule
+   Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to cosmossdk.io/x/feegrant/module.ProvideModule
+   Providing types.InterfaceRegistry from github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161) to cosmossdk.io/x/feegrant/module.ProvideModule
+  Calling cosmossdk.io/x/feegrant/module.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/feegrant@v0.1.0/module/module.go:184)
+  Providing zero value for optional dependency func() []signing.SignModeHandler
+ Calling github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68)
+ Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig
+ Providing *codec.LegacyAmino from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig
+ Providing types.InterfaceRegistry from github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161) to github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig
+Calling github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:186)
+Done building container
+Calling invokers
+Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:138)
+ Supplying *appv1alpha1.Config from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:55) to github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder
+ Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder
+ Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder
+ Providing one-per-module type map map[string]appmodule.AppModule to github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder from:
+  distribution: github.com/cosmos/cosmos-sdk/x/distribution.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/distribution/module.go:232)
+  crisis: github.com/cosmos/cosmos-sdk/x/crisis.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/crisis/module.go:201)
+  consensus: github.com/cosmos/cosmos-sdk/x/consensus.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/consensus/module.go:117)
+  runtime: github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84)
+  bank: github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+  slashing: github.com/cosmos/cosmos-sdk/x/slashing.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/slashing/module.go:230)
+  genutil: github.com/cosmos/cosmos-sdk/x/genutil.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/genutil/module.go:138)
+  authz: github.com/cosmos/cosmos-sdk/x/authz/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/authz/module/module.go:178)
+  mint: github.com/cosmos/cosmos-sdk/x/mint.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/mint/module.go:221)
+  gov: github.com/cosmos/cosmos-sdk/x/gov.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:189)
+  circuit: cosmossdk.io/x/circuit.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/circuit@v0.1.0/module.go:154)
+  auth: github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+  staking: github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+  feegrant: cosmossdk.io/x/feegrant/module.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/feegrant@v0.1.0/module/module.go:184)
+  vesting: github.com/cosmos/cosmos-sdk/x/auth/vesting.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/vesting/module.go:140)
+  params: github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129)
+  upgrade: cosmossdk.io/x/upgrade.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/upgrade@v0.1.1/module.go:194)
+  evidence: cosmossdk.io/x/evidence.ProvideModule (/home/bwhite/go/pkg/mod/cosmossdk.io/x/evidence@v0.1.0/module.go:210)
+  group: github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/group/module/module.go:208)
+  service: github.com/pokt-network/poktroll/x/service/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/service/module/module.go:194)
+  supplier: github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194)
+ Resolving dependencies for github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+  Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing runtime.ValidatorAddressCodec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing runtime.ConsensusAddressCodec from github.com/cosmos/cosmos-sdk/runtime.ProvideAddressCodec (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:281) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+   Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+   Providing ModuleKey staking
+   Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+  Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+  Implicitly registering resolver types.Subspace for interface type exported.Subspace
+  Providing types.Subspace from github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146) to github.com/cosmos/cosmos-sdk/x/staking.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+   Providing ModuleKey staking
+   Providing keeper.Keeper from github.com/cosmos/cosmos-sdk/x/params.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:129) to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace
+   Providing one-per-module type map map[string]types.KeyTable to github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace from:
+    gov: github.com/cosmos/cosmos-sdk/x/gov.ProvideKeyTable (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/gov/module.go:218)
+  Calling github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+ Calling github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+ Resolving dependencies for github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/group/module/module.go:208)
+  Supplying *modulev1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Providing *types.KVStoreKey from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198)
+   Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey
+   Providing ModuleKey group
+   Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey
+  Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreKey (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:198)
+  Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Providing types.InterfaceRegistry from github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+  Providing *baseapp.MsgServiceRouter from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule
+ Calling github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/group/module/module.go:208)
+ Resolving dependencies for github.com/pokt-network/poktroll/x/service/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/service/module/module.go:194)
+  Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+   Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+   Providing ModuleKey service
+   Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+  Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+  Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+  Supplying *module.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+  Supplying log.nopLogger from github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:189) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+  Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+  Providing keeper.BaseKeeper from github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227) to github.com/pokt-network/poktroll/x/service/module.ProvideModule
+ Calling github.com/pokt-network/poktroll/x/service/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/service/module/module.go:194)
+ Resolving dependencies for github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194)
+  Providing store.KVStoreService from github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229) to github.com/pokt-network/poktroll/x/supplier/module.ProvideModule
+  Resolving dependencies for github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+   Supplying *runtimev1alpha1.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+   Providing ModuleKey supplier
+   Providing *runtime.AppBuilder from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService
+  Calling github.com/cosmos/cosmos-sdk/runtime.ProvideKVStoreService (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:229)
+  Providing codec.Codec from github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84) to github.com/pokt-network/poktroll/x/supplier/module.ProvideModule
+  Supplying *module.Module from cosmossdk.io/core/appconfig.Compose (/home/bwhite/go/pkg/mod/cosmossdk.io/core@v0.11.0/appconfig/config.go:95) to github.com/pokt-network/poktroll/x/supplier/module.ProvideModule
+  Supplying log.nopLogger from github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:189) to github.com/pokt-network/poktroll/x/supplier/module.ProvideModule
+  Providing keeper.AccountKeeper from github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209) to github.com/pokt-network/poktroll/x/supplier/module.ProvideModule
+  Error: can't resolve type github.com/pokt-network/poktroll/x/supplier/types/types.BankKeeper for github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194):
+	while resolving:
+		types.BankKeeper for github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194)
+		store.KVStoreService for github.com/pokt-network/poktroll/x/supplier/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/supplier/module/module.go:194)
+		store.KVStoreService for github.com/pokt-network/poktroll/x/service/module.ProvideModule (/home/bwhite/Projects/pokt/poktroll/x/service/module/module.go:194)
+		*types.KVStoreKey for github.com/cosmos/cosmos-sdk/x/group/module.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/group/module/module.go:208)
+		exported.Subspace for github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+		store.KVStoreService for github.com/cosmos/cosmos-sdk/x/staking.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/staking/module.go:221)
+		map[string]appmodule.AppModule for github.com/cosmos/cosmos-sdk/runtime.SetupAppBuilder (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:138)
+		ante.FeegrantKeeper for github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68)
+		depinject.ModuleKey for github.com/cosmos/cosmos-sdk/x/params.ProvideSubspace (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/params/module.go:146)
+		exported.Subspace for github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+		func() types.AccountI for github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+		types.RandomGenesisAccountsFn for github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+		store.KVStoreService for github.com/cosmos/cosmos-sdk/x/auth.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/module.go:209)
+		types.AccountKeeper for github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+		store.KVStoreService for github.com/cosmos/cosmos-sdk/x/bank.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/bank/module.go:227)
+		types.BankKeeper for github.com/cosmos/cosmos-sdk/x/auth/tx/config.ProvideModule (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/x/auth/tx/config/config.go:68)
+		client.TxConfig for github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:186)
+		address.Codec for github.com/cosmos/cosmos-sdk/runtime.ProvideInterfaceRegistry (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:161)
+		types.InterfaceRegistry for github.com/cosmos/cosmos-sdk/runtime.ProvideApp (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/runtime/module.go:84)
+		*runtime.AppBuilder for github.com/cosmos/cosmos-sdk/testutil/network.DefaultConfigWithAppConfig (/home/bwhite/go/pkg/mod/github.com/rollkit/cosmos-sdk@v0.50.1-rollkit-v0.11.19-no-fraud-proofs/testutil/network/network.go:186)
+  Saved graph of container to /home/bwhite/Projects/pokt/poktroll/x/supplier/module/debug_container.dot
