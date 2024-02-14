@@ -65,14 +65,6 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		},
 	).AnyTimes()
 
-	// TODO_CONSOLIDATE: This was passed-in instead of authority.String() in the
-	// original code. It's not clear what the difference is.
-	// paramsSubspace := typesparams.NewSubspace(cdc,
-	// 	types.Amino,
-	// 	storeKey,
-	// 	memStoreKey,
-	// 	"ApplicationParams",
-	// )
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
