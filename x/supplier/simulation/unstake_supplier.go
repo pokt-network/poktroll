@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-
 	"github.com/pokt-network/poktroll/x/supplier/keeper"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -25,6 +24,6 @@ func SimulateMsgUnstakeSupplier(
 
 		// TODO: Handling the UnstakeSupplier simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, msg.Type(), "UnstakeSupplier simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeSupplier simulation not implemented"), nil, nil
 	}
 }
