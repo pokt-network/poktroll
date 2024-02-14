@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -14,9 +15,8 @@ import (
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the supplier
 	addr := sample.AccAddress()
@@ -26,7 +26,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	require.False(t, isSupplierFound)
 
 	// Prepare the supplier
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeSupplier{
 		Address: addr,
 		Stake:   &initialStake,
@@ -47,7 +47,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	}
 
 	// Stake the supplier
-	_, err := srv.StakeSupplier(wctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
@@ -59,7 +59,7 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 
 	// Unstake the supplier
 	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}
-	_, err = srv.UnstakeSupplier(wctx, unstakeMsg)
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier can no longer be found after unstaking
@@ -68,9 +68,8 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the supplier
 	addr := sample.AccAddress()
@@ -81,7 +80,7 @@ func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
 
 	// Unstake the supplier
 	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}
-	_, err := srv.UnstakeSupplier(wctx, unstakeMsg)
+	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrSupplierNotFound)
 
