@@ -75,24 +75,12 @@ func (k Keeper) Logger() log.Logger {
 func (k Keeper) BeginBlocker(goCtx context.Context) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
-	hash := ctx.BlockHeader().LastBlockId.Hash
+	// ctx.BlockHeader().AppHash is the hash of the last block committed
+	hash := ctx.BlockHeader().AppHash
 	// ctx.BlockHeader().Height is the height of the last committed block.
 	height := ctx.BlockHeader().Height
-	// Block height 1 is the first committed block which uses `genesis.json` as its parent.
-	// See the explanation here for more details: https://github.com/pokt-network/poktroll/issues/377#issuecomment-1936607294
-	// Fallback to an empty byte slice during the genesis block.
-	if height == 1 {
-		hash = []byte{}
-	}
-
-	// TODO_HACK: This is a temporary hack to to prevent panic because of the
-	// ctx.BlockHeader().LastBlockId.Hash being nil.
-	hash = []byte{}
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
-	store.Set(types.SessionKey(
-		height,
-	), hash)
+	store.Set(types.SessionKey(height), hash)
 }
