@@ -5,7 +5,7 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	"github.com/pokt-network/poktroll/x/session/module"
+	session "github.com/pokt-network/poktroll/x/session/module"
 	"github.com/pokt-network/poktroll/x/session/types"
 	"github.com/stretchr/testify/require"
 )
