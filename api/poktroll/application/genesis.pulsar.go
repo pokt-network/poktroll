@@ -6,6 +6,7 @@ import (
 	fmt "fmt"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -170,15 +171,15 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		return x.Params != nil
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		return len(x.ApplicationList) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -190,15 +191,15 @@ func (x *fastReflection_GenesisState) Has(fd protoreflect.FieldDescriptor) bool 
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		x.Params = nil
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		x.ApplicationList = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -210,10 +211,10 @@ func (x *fastReflection_GenesisState) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		if len(x.ApplicationList) == 0 {
 			return protoreflect.ValueOfList(&_GenesisState_2_list{})
 		}
@@ -221,9 +222,9 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -239,17 +240,17 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		x.Params = value.Message().Interface().(*Params)
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		lv := value.List()
 		clv := lv.(*_GenesisState_2_list)
 		x.ApplicationList = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -265,12 +266,12 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		if x.Params == nil {
 			x.Params = new(Params)
 		}
 		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		if x.ApplicationList == nil {
 			x.ApplicationList = []*Application{}
 		}
@@ -278,9 +279,9 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -289,17 +290,17 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.GenesisState.params":
+	case "poktroll.GenesisState.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.application.GenesisState.application_list":
+	case "poktroll.GenesisState.application_list":
 		list := []*Application{}
 		return protoreflect.ValueOfList(&_GenesisState_2_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.GenesisState"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.GenesisState"))
 		}
-		panic(fmt.Errorf("message poktroll.application.GenesisState does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.GenesisState does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -309,7 +310,7 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 func (x *fastReflection_GenesisState) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.GenesisState", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.GenesisState", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -698,13 +699,13 @@ func file_poktroll_application_genesis_proto_rawDescGZIP() []byte {
 
 var file_poktroll_application_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_application_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil),            // 0: poktroll.application.GenesisState
-	(*Params)(nil),                  // 1: poktroll.application.Params
+	(*GenesisState)(nil),            // 0: poktroll.GenesisState
+	(*Params)(nil),                  // 1: poktroll.Params
 	(*Application)(nil), // 2: poktroll.Application
 }
 var file_poktroll_application_genesis_proto_depIdxs = []int32{
-	1, // 0: poktroll.application.GenesisState.params:type_name -> poktroll.application.Params
-	2, // 1: poktroll.application.GenesisState.application_list:type_name -> poktroll.Application
+	1, // 0: poktroll.GenesisState.params:type_name -> poktroll.Params
+	2, // 1: poktroll.GenesisState.application_list:type_name -> poktroll.Application
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
