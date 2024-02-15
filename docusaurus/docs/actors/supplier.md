@@ -12,16 +12,16 @@ sidebar_position: 4
 
 ## Overview
 
-An `Supplier` is responsible for staking POKT in order to earn in exchange for
+A `Supplier` is responsible for staking POKT in order to earn in exchange for
 providing services as a function of volume and time.
 
 ## Schema
 
-The on-chain for an `Supplier` can be found at [supplier.proto](./../../../proto/pocket/supplier/supplier.proto).
+The on-chain representation of a `Supplier` can be found at [supplier.proto](./../../../proto/pocket/supplier/supplier.proto).
 
 ## Configuration
 
-Configurations to stake an `Supplier` can be found [supplier_staking_config.md](../configs/supplier_staking_config.md).
+Configurations to stake an `Supplier` can be found at [supplier_staking_config.md](../configs/supplier_staking_config.md).
 
 ## CLI
 
@@ -32,7 +32,7 @@ viewed by running:
 poktrolld query supplier
 ```
 
-All of the write (i.e. tx) based operations for the `Application` actor can be
+All of the write (i.e. tx) based operations for the `Suplier` actor can be
 viewed by running:
 
 ```bash

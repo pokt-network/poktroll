@@ -11,21 +11,21 @@ sidebar_position: 5
 
 ## Overview
 
-An `RelayMiner` is responsible for for relaying requests between a client dApp
-(e.g. mobile app, web app, etc...) and the `Supplier`s on Pocket Network, handling
-all intermediary business logic.
+An `RelayMiner` is responsible for proxying `RelayRequests` between an `AppGate Server`
+and the supplied `Service`.
 
-A `Gateway` operator or a sovereign `Application` interested in accessing Pocket
-Network directly would need to run an `AppGate Server` or custom software that
-implements the same functionality.
+[Suppliers](./supplier.md) interested in providing `Service`s on th Pocket Network
+would need to run a `RelayMiner` in addition to the software that provides the said `Service`.
 
 ## Configuration
 
-Configurations to stake an `AppGate Server` can be found [relayminer_config.md](../configs/relayminer_config.md).
+Configurations and additional documentation related to operating a `RelayMiner`
+can be found at [relayminer_config.md](../configs/relayminer_config.md).
 
 ## CLI
 
-All of the operations needed to start and operate an `AppGate Server` can be viewed by running:
+All of the operations needed to start and operate a `RelayMiner` can be viewed
+by running:
 
 ```bash
 poktrolld relayminer --help

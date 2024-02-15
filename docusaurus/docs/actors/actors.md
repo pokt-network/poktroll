@@ -63,4 +63,4 @@ _"Web2"_ part of Pocket.
 They can be thought of as `servers`, `processes` or `clients`.
 
 Off-chain actors play a key role in executing off-chain business logic that is
-verified on-chain and drives on-chain state transitions:
+verified on-chain and drives on-chain state transitions.

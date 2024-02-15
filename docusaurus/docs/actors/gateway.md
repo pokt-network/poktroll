@@ -12,16 +12,16 @@ sidebar_position: 3
 
 ## Overview
 
-An `Gateway` is responsible for staking POKT in order to relay and sign
-requests on behalf of an `Application`.
+A `Gateway` is responsible for staking POKT in order to relay and sign requests
+on behalf of an [Application](./application.md).
 
 ## Schema
 
-The on-chain for an `Gateway` can be found at [gateway.proto](./../../../proto/pocket/gateway/gateway.proto).
+The on-chain representation of a `Gateway` can be found at[gateway.proto](./../../../proto/pocket/gateway/gateway.proto).
 
 ## Configuration
 
-Configurations to stake an `Gateway` can be found [gateway_staking_config.md](../configs/gateway_staking_config.md).
+Configurations to stake a `Gateway` can be found at [gateway_staking_config.md](../configs/gateway_staking_config.md).
 
 ## CLI
 
@@ -32,7 +32,7 @@ viewed by running:
 poktrolld query gateway --help
 ```
 
-All of the write (i.e. tx) based operations for the `Application` actor can be
+All of the write (i.e. tx) based operations for the `Gateway` actor can be
 viewed by running:
 
 ```bash
