@@ -81,6 +81,6 @@ func (k Keeper) BeginBlocker(goCtx context.Context) {
 	height := ctx.BlockHeader().Height
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
-	store.Set(types.SessionKey(height), hash)
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
+	store.Set(types.BlockHashKey(height), hash)
 }

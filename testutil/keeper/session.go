@@ -170,11 +170,11 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	}
 
 	storeAdapter := runtime.KVStoreAdapter(runtime.NewKVStoreService(storeKey).OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
 	for height, hash := range blockHash {
 		hashBz, err := hex.DecodeString(hash)
 		require.NoError(t, err)
-		store.Set(types.SessionKey(height), hashBz)
+		store.Set(types.BlockHashKey(height), hashBz)
 	}
 
 	return k, ctx

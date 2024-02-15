@@ -12,6 +12,6 @@ import (
 // GetBlockHash returns the hash of the block at the given height.
 func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SessionKeyPrefix))
-	return store.Get(types.SessionKey(height))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
+	return store.Get(types.BlockHashKey(height))
 }
