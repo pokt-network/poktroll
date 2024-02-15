@@ -16,6 +16,10 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "Params",
 					Use:       "params",
 					Short:     "Shows the parameters of the module",
+					Long: `Shows all the parameters related to the tokenomics module.
+
+Example:
+$ poktrolld q tokenomics params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
