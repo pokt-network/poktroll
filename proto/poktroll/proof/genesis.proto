@@ -1,17 +1,19 @@
 syntax = "proto3";
+
 package poktroll.proof;
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "poktroll/proof/params.proto";
+import "poktroll/proof/claim.proto";
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
 // GenesisState defines the proof module's genesis state.
 message GenesisState {
+  
   // params defines all the parameters of the module.
-  Params params = 1 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+           Params params    = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated Claim  claimList = 2 [(gogoproto.nullable) = false] ;
 }
+
