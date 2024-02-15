@@ -50,6 +50,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
 				},
+				{
+					RpcMethod:      "CreateClaim",
+					Use:            "create-claim [session-header] [root-hash]",
+					Short:          "Send a create-claim tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "rootHash"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
