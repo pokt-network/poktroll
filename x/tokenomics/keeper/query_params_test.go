@@ -5,12 +5,22 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+func TestGetParams(t *testing.T) {
+	k, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
+	params := types.DefaultParams()
+
+	k.SetParams(ctx, params)
+
+	require.EqualValues(t, params, k.GetParams(ctx))
+	require.EqualValues(t, params.ComputeUnitsToTokensMultiplier, k.ComputeUnitsToTokensMultiplier(ctx))
+}
+
 func TestParamsQuery(t *testing.T) {
-	keeper, ctx := keepertest.TokenomicsKeeper(t)
+	keeper, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
 	params := types.DefaultParams()
 	require.NoError(t, keeper.SetParams(ctx, params))
 

@@ -3,62 +3,134 @@ package keeper_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 func TestMsgUpdateParams(t *testing.T) {
-	k, ms, ctx := setupMsgServer(t)
+	tokenomicsKeeper, srv, ctx := setupMsgServer(t)
 	params := types.DefaultParams()
-	require.NoError(t, k.SetParams(ctx, params))
-	wctx := sdk.UnwrapSDKContext(ctx)
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, params))
 
-	// default params
-	testCases := []struct {
-		name      string
-		input     *types.MsgUpdateParams
-		expErr    bool
-		expErrMsg string
+	tests := []struct {
+		desc string
+
+		req *types.MsgUpdateParams
+
+		expectErr     bool
+		expectedPanic bool
+		expErrMsg     string
 	}{
 		{
-			name: "invalid authority",
-			input: &types.MsgUpdateParams{
+			desc: "invalid authority address",
+
+			req: &types.MsgUpdateParams{
 				Authority: "invalid",
-				Params:    params,
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
 			},
-			expErr:    true,
-			expErrMsg: "invalid authority",
+
+			expectErr:     true,
+			expectedPanic: false,
+			expErrMsg:     "invalid authority",
 		},
 		{
-			name: "send enabled param",
-			input: &types.MsgUpdateParams{
-				Authority: k.GetAuthority(),
-				Params:    types.Params{},
+			desc: "incorrect authority address",
+
+			req: &types.MsgUpdateParams{
+				Authority: sample.AccAddress(),
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 1,
+				},
 			},
-			expErr: false,
+
+			expectErr:     true,
+			expectedPanic: false,
+			expErrMsg:     "the provided authority address does not match the on-chain governance address",
 		},
 		{
-			name: "all good",
-			input: &types.MsgUpdateParams{
-				Authority: k.GetAuthority(),
-				Params:    params,
+			desc: "invalid ComputeUnitsToTokensMultiplier",
+
+			req: &types.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 0,
+				},
 			},
-			expErr: false,
+
+			expectErr:     true,
+			expectedPanic: true,
+			expErrMsg:     "invalid compute to tokens multiplier",
+		},
+		{
+			desc: "successful param update",
+
+			req: &types.MsgUpdateParams{
+				Authority: tokenomicsKeeper.GetAuthority(),
+
+				Params: types.Params{
+					ComputeUnitsToTokensMultiplier: 1000000,
+				},
+			},
+
+			expectedPanic: false,
+			expectErr:     false,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := ms.UpdateParams(wctx, tc.input)
-
-			if tc.expErr {
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			if tt.expectedPanic {
+				defer func() {
+					if r := recover(); r != nil {
+						_, err := srv.UpdateParams(ctx, tt.req)
+						require.Error(t, err)
+					}
+				}()
+				return
+			}
+			_, err := srv.UpdateParams(ctx, tt.req)
+			if tt.expectErr {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tc.expErrMsg)
+				require.ErrorContains(t, err, tt.expErrMsg)
 			} else {
-				require.NoError(t, err)
+				require.Nil(t, err)
 			}
 		})
 	}
+}
+
+func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
+	tokenomicsKeeper, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
+	srv := keeper.NewMsgServerImpl(tokenomicsKeeper)
+
+	// Set the default params
+	tokenomicsKeeper.SetParams(ctx, types.DefaultParams())
+
+	// Verify the default value for ComputeUnitsToTokensMultiplier
+	getParamsReq := &types.QueryParamsRequest{}
+	getParamsRes, err := tokenomicsKeeper.Params(ctx, getParamsReq)
+	require.Nil(t, err)
+	require.Equal(t, uint64(42), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
+
+	// Update the value for ComputeUnitsToTokensMultiplier
+	updateParamsReq := &types.MsgUpdateParams{
+		Authority: tokenomicsKeeper.GetAuthority(),
+		Params: types.Params{
+			ComputeUnitsToTokensMultiplier: 69,
+		},
+	}
+	_, err = srv.UpdateParams(ctx, updateParamsReq)
+	require.Nil(t, err)
+
+	// Verify that ComputeUnitsToTokensMultiplier was updated
+	getParamsRes, err = tokenomicsKeeper.Params(ctx, getParamsReq)
+	require.Nil(t, err)
+	require.Equal(t, uint64(69), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
 }

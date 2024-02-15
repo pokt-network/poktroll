@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	math "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -31,11 +33,11 @@ const (
 // TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
 func (k Keeper) SettleSessionAccounting(
 	goCtx context.Context,
-	claim *suppliertypes.Claim,
+	claim *prooftypes.Claim,
 ) error {
 	// Parse the context
 	ctx := sdk.UnwrapSDKContext(goCtx)
-	logger := k.Logger(ctx).With("method", "SettleSessionAccounting")
+	logger := k.Logger().With("method", "SettleSessionAccounting")
 
 	if claim == nil {
 		logger.Error("received a nil claim")
@@ -72,7 +74,7 @@ func (k Keeper) SettleSessionAccounting(
 	}
 
 	// Retrieve the application
-	application, found := k.appKeeper.GetApplication(ctx, applicationAddress.String())
+	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !found {
 		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
 		return types.ErrTokenomicsApplicationNotFound
@@ -87,7 +89,7 @@ func (k Keeper) SettleSessionAccounting(
 	params := k.GetParams(ctx)
 
 	// Calculate the amount of tokens to mint & burn
-	upokt := sdk.NewInt(int64(claimComputeUnits * params.ComputeUnitsToTokensMultiplier))
+	upokt := math.NewInt(int64(claimComputeUnits * params.ComputeUnitsToTokensMultiplier))
 	upoktCoin := sdk.NewCoin("upokt", upokt)
 	upoktCoins := sdk.NewCoins(upoktCoin)
 
@@ -152,7 +154,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Update the application's on-chain stake
 	newAppStake := (*application.Stake).Sub(upoktCoin)
 	application.Stake = &newAppStake
-	k.appKeeper.SetApplication(ctx, application)
+	k.applicationKeeper.SetApplication(ctx, application)
 
 	return nil
 }

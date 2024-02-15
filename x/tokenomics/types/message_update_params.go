@@ -5,8 +5,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-const TypeMsgUpdateParams = "update_params"
-
 var _ sdk.Msg = (*MsgUpdateParams)(nil)
 
 func NewMsgUpdateParams(
@@ -21,27 +19,7 @@ func NewMsgUpdateParams(
 	}
 }
 
-func (msg *MsgUpdateParams) Route() string {
-	return RouterKey
-}
-
-func (msg *MsgUpdateParams) Type() string {
-	return TypeMsgUpdateParams
-}
-
-func (msg *MsgUpdateParams) GetSigners() []sdk.AccAddress {
-	authority, err := sdk.AccAddressFromBech32(msg.Authority)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{authority}
-}
-
-func (msg *MsgUpdateParams) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
+// ValidateBasic does a sanity check on the provided data.
 func (msg *MsgUpdateParams) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Authority)
