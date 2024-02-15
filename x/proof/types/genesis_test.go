@@ -3,11 +3,17 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/x/proof/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
+	randSupplierAddr := sample.AccAddress()
+	mockSessionId := "mock_session_id"
+
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
@@ -24,10 +30,12 @@ func TestGenesisState_Validate(t *testing.T) {
 
 				ClaimList: []types.Claim{
 					{
-						Index: "0",
-					},
-					{
-						Index: "1",
+						SupplierAddress: sample.AccAddress(),
+						SessionHeader: &sessiontypes.SessionHeader{
+							SessionId:          mockSessionId,
+							ApplicationAddress: sample.AccAddress(),
+						},
+						RootHash: []byte{1, 2, 3},
 					},
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
@@ -39,10 +47,52 @@ func TestGenesisState_Validate(t *testing.T) {
 			genState: &types.GenesisState{
 				ClaimList: []types.Claim{
 					{
-						Index: "0",
+						SupplierAddress: randSupplierAddr,
+						SessionHeader: &sessiontypes.SessionHeader{
+							SessionId:          mockSessionId,
+							ApplicationAddress: sample.AccAddress(),
+						},
+						RootHash: []byte{1, 2, 3},
 					},
 					{
-						Index: "0",
+						SupplierAddress: randSupplierAddr,
+						SessionHeader: &sessiontypes.SessionHeader{
+							SessionId:          mockSessionId,
+							ApplicationAddress: sample.AccAddress(),
+						},
+						RootHash: []byte{1, 2, 3},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "empty root hash",
+			genState: &types.GenesisState{
+				ClaimList: []types.Claim{
+					{
+						SupplierAddress: sample.AccAddress(),
+						SessionHeader: &sessiontypes.SessionHeader{
+							SessionId:          mockSessionId,
+							ApplicationAddress: sample.AccAddress(),
+						},
+						RootHash: []byte{},
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "nil root hash",
+			genState: &types.GenesisState{
+				ClaimList: []types.Claim{
+					{
+						SupplierAddress: sample.AccAddress(),
+						SessionHeader: &sessiontypes.SessionHeader{
+							SessionId:          mockSessionId,
+							ApplicationAddress: sample.AccAddress(),
+						},
+						RootHash: nil,
 					},
 				},
 			},

@@ -5,6 +5,7 @@ package poktroll.proof;
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
+import "cosmos_proto/cosmos.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
 import "poktroll/proof/params.proto";
 import "poktroll/proof/claim.proto";
@@ -22,10 +23,10 @@ service Query {
   
   // Queries a list of Claim items.
   rpc Claim    (QueryGetClaimRequest) returns (QueryGetClaimResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/proof/claim/{index}";
+    option (google.api.http).get = "/pokt-network/poktroll/proof/claim/{session_id}/{supplier_address}";
   
   }
-  rpc ClaimAll (QueryAllClaimRequest) returns (QueryAllClaimResponse) {
+  rpc AllClaims (QueryAllClaimsRequest) returns (QueryAllClaimsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/proof/claim";
   
   }
@@ -41,19 +42,25 @@ message QueryParamsResponse {
 }
 
 message QueryGetClaimRequest {
-  string index = 1;
+  string session_id = 1;
+  string supplier_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
 }
 
 message QueryGetClaimResponse {
   Claim claim = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllClaimRequest {
+message QueryAllClaimsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  oneof filter {
+    string supplier_address = 2;
+    string session_id = 3;
+    uint64 session_end_height = 4;
+  }
 }
 
-message QueryAllClaimResponse {
-  repeated Claim                                  claim      = 1 [(gogoproto.nullable) = false];
+message QueryAllClaimsResponse {
+  repeated Claim                                  claims      = 1 [(gogoproto.nullable) = false];
            cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 
