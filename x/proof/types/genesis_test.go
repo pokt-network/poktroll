@@ -38,6 +38,14 @@ func TestGenesisState_Validate(t *testing.T) {
 						RootHash: []byte{1, 2, 3},
 					},
 				},
+				ProofList: []types.Proof{
+					{
+						Index: "0",
+					},
+					{
+						Index: "1",
+					},
+				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			valid: true,
@@ -93,6 +101,20 @@ func TestGenesisState_Validate(t *testing.T) {
 							ApplicationAddress: sample.AccAddress(),
 						},
 						RootHash: nil,
+					},
+				},
+			},
+			valid: false,
+		},
+		{
+			desc: "duplicated proof",
+			genState: &types.GenesisState{
+				ProofList: []types.Proof{
+					{
+						Index: "0",
+					},
+					{
+						Index: "0",
 					},
 				},
 			},
