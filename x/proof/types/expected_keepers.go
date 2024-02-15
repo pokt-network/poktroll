@@ -4,10 +4,12 @@ import (
 	"context"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 type SessionKeeper interface {
-	// TODO Add methods imported from session should be defined here
+	GetSession(context.Context, *sessiontypes.QueryGetSessionRequest) (*sessiontypes.QueryGetSessionResponse, error)
 }
 
 // AccountKeeper defines the expected interface for the Account module.
