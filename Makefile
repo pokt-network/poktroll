@@ -263,7 +263,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/session/types/
 	go generate ./x/service/types/
 	go generate ./x/proof/types/
-	# go generate ./x/tokenomics/types/
+	go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
