@@ -71,6 +71,7 @@ import (
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
 	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
+	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
 	servicemodulev1 "github.com/pokt-network/poktroll/api/poktroll/service/module"
 	sessionmodulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
 	suppliermodulev1 "github.com/pokt-network/poktroll/api/poktroll/supplier/module"
@@ -78,6 +79,8 @@ import (
 	applicationmoduletypes "github.com/pokt-network/poktroll/x/application/types"
 	_ "github.com/pokt-network/poktroll/x/gateway/module" // import for side-effects
 	gatewaymoduletypes "github.com/pokt-network/poktroll/x/gateway/types"
+	_ "github.com/pokt-network/poktroll/x/proof/module" // import for side-effects
+	proofmoduletypes "github.com/pokt-network/poktroll/x/proof/types"
 	_ "github.com/pokt-network/poktroll/x/service/module" // import for side-effects
 	servicemoduletypes "github.com/pokt-network/poktroll/x/service/types"
 	_ "github.com/pokt-network/poktroll/x/session/module" // import for side-effects
@@ -127,6 +130,7 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -156,6 +160,7 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -179,6 +184,7 @@ var (
 		applicationmoduletypes.ModuleName,
 		suppliermoduletypes.ModuleName,
 		sessionmoduletypes.ModuleName,
+		proofmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -352,6 +358,10 @@ var (
 			{
 				Name:   sessionmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&sessionmodulev1.Module{}),
+			},
+			{
+				Name:   proofmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&proofmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
