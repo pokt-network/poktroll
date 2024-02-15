@@ -55,11 +55,12 @@ import (
 
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
+	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
+	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 
-	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -130,6 +131,7 @@ type App struct {
 	SupplierKeeper    suppliermodulekeeper.Keeper
 	SessionKeeper     sessionmodulekeeper.Keeper
 	ProofKeeper       proofmodulekeeper.Keeper
+	TokenomicsKeeper  tokenomicsmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -274,6 +276,7 @@ func New(
 		&app.SupplierKeeper,
 		&app.SessionKeeper,
 		&app.ProofKeeper,
+		&app.TokenomicsKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
