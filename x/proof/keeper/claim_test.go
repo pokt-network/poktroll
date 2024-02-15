@@ -34,7 +34,7 @@ func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Cla
 }
 
 func TestClaimGet(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		foundClaim, isClaimFound := keeper.GetClaim(ctx,
@@ -49,7 +49,7 @@ func TestClaimGet(t *testing.T) {
 	}
 }
 func TestClaimRemove(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 	for _, claim := range claims {
 		sessionId := claim.GetSessionHeader().GetSessionId()
@@ -66,7 +66,7 @@ func TestClaimRemove(t *testing.T) {
 }
 
 func TestClaimGetAll(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	claims := createNClaims(keeper, ctx, 10)
 
 	// Get all the claims and check if they match
