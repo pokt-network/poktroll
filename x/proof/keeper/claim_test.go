@@ -2,62 +2,77 @@ package keeper_test
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+
 	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
 var _ = strconv.IntSize
 
-func createNClaim(keeper keeper.Keeper, ctx context.Context, n int) []types.Claim {
-	items := make([]types.Claim, n)
-	for i := range items {
-		items[i].Index = strconv.Itoa(i)
-
-		keeper.SetClaim(ctx, items[i])
+func createNClaims(keeper keeper.Keeper, ctx context.Context, n int) []types.Claim {
+	claims := make([]types.Claim, n)
+	for i := range claims {
+		claims[i].SupplierAddress = sample.AccAddress()
+		claims[i].SessionHeader = &sessiontypes.SessionHeader{
+			SessionId:             fmt.Sprintf("session-%d", i),
+			SessionEndBlockHeight: int64(i),
+		}
+		claims[i].RootHash = []byte(fmt.Sprintf("rootHash-%d", i))
+		keeper.UpsertClaim(ctx, claims[i])
 	}
-	return items
+	return claims
 }
 
 func TestClaimGet(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetClaim(ctx,
-			item.Index,
+	claims := createNClaims(keeper, ctx, 10)
+	for _, claim := range claims {
+		foundClaim, isClaimFound := keeper.GetClaim(ctx,
+			claim.GetSessionHeader().GetSessionId(),
+			claim.SupplierAddress,
 		)
-		require.True(t, found)
+		require.True(t, isClaimFound)
 		require.Equal(t,
-			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&claim),
+			nullify.Fill(&foundClaim),
 		)
 	}
 }
 func TestClaimRemove(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
-	for _, item := range items {
+	claims := createNClaims(keeper, ctx, 10)
+	for _, claim := range claims {
+		sessionId := claim.GetSessionHeader().GetSessionId()
 		keeper.RemoveClaim(ctx,
-			item.Index,
+			sessionId,
+			claim.SupplierAddress,
 		)
-		_, found := keeper.GetClaim(ctx,
-			item.Index,
+		_, isClaimFound := keeper.GetClaim(ctx,
+			sessionId,
+			claim.SupplierAddress,
 		)
-		require.False(t, found)
+		require.False(t, isClaimFound)
 	}
 }
 
 func TestClaimGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t)
-	items := createNClaim(keeper, ctx, 10)
+	claims := createNClaims(keeper, ctx, 10)
+
+	// Get all the claims and check if they match
+	allFoundClaims := keeper.GetAllClaims(ctx)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllClaim(ctx)),
+		nullify.Fill(claims),
+		nullify.Fill(allFoundClaims),
 	)
 }

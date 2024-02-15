@@ -18,7 +18,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "Shows the parameters of the module",
 				},
 				{
-					RpcMethod: "ClaimAll",
+					RpcMethod: "AllClaims",
 					Use:       "list-claim",
 					Short:     "List all claim",
 				},

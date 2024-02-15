@@ -5,21 +5,28 @@ import (
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
+	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {
+	mockSessionId := "mock_session_id"
+
 	genesisState := types.GenesisState{
 		Params: types.DefaultParams(),
 
 		ClaimList: []types.Claim{
 			{
-				Index: "0",
-			},
-			{
-				Index: "1",
+				SupplierAddress: sample.AccAddress(),
+				SessionHeader: &sessiontypes.SessionHeader{
+					SessionId:          mockSessionId,
+					ApplicationAddress: sample.AccAddress(),
+				},
+				RootHash: []byte{1, 2, 3},
 			},
 		},
 		// this line is used by starport scaffolding # genesis/test/state

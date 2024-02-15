@@ -22,12 +22,24 @@ func (gs GenesisState) Validate() error {
 	// Check for duplicated index in claim
 	claimIndexMap := make(map[string]struct{})
 
-	for _, elem := range gs.ClaimList {
-		index := string(ClaimKey(elem.Index))
-		if _, ok := claimIndexMap[index]; ok {
-			return fmt.Errorf("duplicated index for claim")
+	// Ensure claims are unique with respect to a given session ID and supplier address.
+	for _, claim := range gs.ClaimList {
+		// TODO_BLOCKER: ensure the corresponding supplier exists and is staked.
+
+		if claim.GetRootHash() == nil {
+			return fmt.Errorf("root hash cannot be nil")
 		}
-		claimIndexMap[index] = struct{}{}
+
+		if len(claim.GetRootHash()) == 0 {
+			return fmt.Errorf("root hash cannot be empty")
+		}
+
+		sessionId := claim.GetSessionHeader().GetSessionId()
+		primaryKey := string(ClaimPrimaryKey(sessionId, claim.SupplierAddress))
+		if _, ok := claimIndexMap[primaryKey]; ok {
+			return fmt.Errorf("duplicated supplierAddr for claim")
+		}
+		claimIndexMap[primaryKey] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

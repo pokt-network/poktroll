@@ -3,7 +3,9 @@ package proof
 
 import (
 	fmt "fmt"
+	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
+	session "github.com/pokt-network/poktroll/api/poktroll/session"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -13,20 +15,18 @@ import (
 )
 
 var (
-	md_Claim                 protoreflect.MessageDescriptor
-	fd_Claim_index           protoreflect.FieldDescriptor
-	fd_Claim_supplierAddress protoreflect.FieldDescriptor
-	fd_Claim_sessionHeader   protoreflect.FieldDescriptor
-	fd_Claim_rootHash        protoreflect.FieldDescriptor
+	md_Claim                  protoreflect.MessageDescriptor
+	fd_Claim_supplier_address protoreflect.FieldDescriptor
+	fd_Claim_session_header   protoreflect.FieldDescriptor
+	fd_Claim_root_hash        protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_proof_claim_proto_init()
 	md_Claim = File_poktroll_proof_claim_proto.Messages().ByName("Claim")
-	fd_Claim_index = md_Claim.Fields().ByName("index")
-	fd_Claim_supplierAddress = md_Claim.Fields().ByName("supplierAddress")
-	fd_Claim_sessionHeader = md_Claim.Fields().ByName("sessionHeader")
-	fd_Claim_rootHash = md_Claim.Fields().ByName("rootHash")
+	fd_Claim_supplier_address = md_Claim.Fields().ByName("supplier_address")
+	fd_Claim_session_header = md_Claim.Fields().ByName("session_header")
+	fd_Claim_root_hash = md_Claim.Fields().ByName("root_hash")
 }
 
 var _ protoreflect.Message = (*fastReflection_Claim)(nil)
@@ -94,27 +94,21 @@ func (x *fastReflection_Claim) Interface() protoreflect.ProtoMessage {
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_Claim) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Index != "" {
-		value := protoreflect.ValueOfString(x.Index)
-		if !f(fd_Claim_index, value) {
-			return
-		}
-	}
 	if x.SupplierAddress != "" {
 		value := protoreflect.ValueOfString(x.SupplierAddress)
-		if !f(fd_Claim_supplierAddress, value) {
+		if !f(fd_Claim_supplier_address, value) {
 			return
 		}
 	}
-	if x.SessionHeader != "" {
-		value := protoreflect.ValueOfString(x.SessionHeader)
-		if !f(fd_Claim_sessionHeader, value) {
+	if x.SessionHeader != nil {
+		value := protoreflect.ValueOfMessage(x.SessionHeader.ProtoReflect())
+		if !f(fd_Claim_session_header, value) {
 			return
 		}
 	}
-	if x.RootHash != "" {
-		value := protoreflect.ValueOfString(x.RootHash)
-		if !f(fd_Claim_rootHash, value) {
+	if len(x.RootHash) != 0 {
+		value := protoreflect.ValueOfBytes(x.RootHash)
+		if !f(fd_Claim_root_hash, value) {
 			return
 		}
 	}
@@ -133,14 +127,12 @@ func (x *fastReflection_Claim) Range(f func(protoreflect.FieldDescriptor, protor
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_Claim) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.proof.Claim.index":
-		return x.Index != ""
-	case "poktroll.proof.Claim.supplierAddress":
+	case "poktroll.proof.Claim.supplier_address":
 		return x.SupplierAddress != ""
-	case "poktroll.proof.Claim.sessionHeader":
-		return x.SessionHeader != ""
-	case "poktroll.proof.Claim.rootHash":
-		return x.RootHash != ""
+	case "poktroll.proof.Claim.session_header":
+		return x.SessionHeader != nil
+	case "poktroll.proof.Claim.root_hash":
+		return len(x.RootHash) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -157,14 +149,12 @@ func (x *fastReflection_Claim) Has(fd protoreflect.FieldDescriptor) bool {
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Claim) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.proof.Claim.index":
-		x.Index = ""
-	case "poktroll.proof.Claim.supplierAddress":
+	case "poktroll.proof.Claim.supplier_address":
 		x.SupplierAddress = ""
-	case "poktroll.proof.Claim.sessionHeader":
-		x.SessionHeader = ""
-	case "poktroll.proof.Claim.rootHash":
-		x.RootHash = ""
+	case "poktroll.proof.Claim.session_header":
+		x.SessionHeader = nil
+	case "poktroll.proof.Claim.root_hash":
+		x.RootHash = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -181,18 +171,15 @@ func (x *fastReflection_Claim) Clear(fd protoreflect.FieldDescriptor) {
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_Claim) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.proof.Claim.index":
-		value := x.Index
-		return protoreflect.ValueOfString(value)
-	case "poktroll.proof.Claim.supplierAddress":
+	case "poktroll.proof.Claim.supplier_address":
 		value := x.SupplierAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.proof.Claim.sessionHeader":
+	case "poktroll.proof.Claim.session_header":
 		value := x.SessionHeader
-		return protoreflect.ValueOfString(value)
-	case "poktroll.proof.Claim.rootHash":
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.proof.Claim.root_hash":
 		value := x.RootHash
-		return protoreflect.ValueOfString(value)
+		return protoreflect.ValueOfBytes(value)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -213,14 +200,12 @@ func (x *fastReflection_Claim) Get(descriptor protoreflect.FieldDescriptor) prot
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Claim) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.proof.Claim.index":
-		x.Index = value.Interface().(string)
-	case "poktroll.proof.Claim.supplierAddress":
+	case "poktroll.proof.Claim.supplier_address":
 		x.SupplierAddress = value.Interface().(string)
-	case "poktroll.proof.Claim.sessionHeader":
-		x.SessionHeader = value.Interface().(string)
-	case "poktroll.proof.Claim.rootHash":
-		x.RootHash = value.Interface().(string)
+	case "poktroll.proof.Claim.session_header":
+		x.SessionHeader = value.Message().Interface().(*session.SessionHeader)
+	case "poktroll.proof.Claim.root_hash":
+		x.RootHash = value.Bytes()
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -241,14 +226,15 @@ func (x *fastReflection_Claim) Set(fd protoreflect.FieldDescriptor, value protor
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_Claim) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.Claim.index":
-		panic(fmt.Errorf("field index of message poktroll.proof.Claim is not mutable"))
-	case "poktroll.proof.Claim.supplierAddress":
-		panic(fmt.Errorf("field supplierAddress of message poktroll.proof.Claim is not mutable"))
-	case "poktroll.proof.Claim.sessionHeader":
-		panic(fmt.Errorf("field sessionHeader of message poktroll.proof.Claim is not mutable"))
-	case "poktroll.proof.Claim.rootHash":
-		panic(fmt.Errorf("field rootHash of message poktroll.proof.Claim is not mutable"))
+	case "poktroll.proof.Claim.session_header":
+		if x.SessionHeader == nil {
+			x.SessionHeader = new(session.SessionHeader)
+		}
+		return protoreflect.ValueOfMessage(x.SessionHeader.ProtoReflect())
+	case "poktroll.proof.Claim.supplier_address":
+		panic(fmt.Errorf("field supplier_address of message poktroll.proof.Claim is not mutable"))
+	case "poktroll.proof.Claim.root_hash":
+		panic(fmt.Errorf("field root_hash of message poktroll.proof.Claim is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -262,14 +248,13 @@ func (x *fastReflection_Claim) Mutable(fd protoreflect.FieldDescriptor) protoref
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_Claim) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.Claim.index":
+	case "poktroll.proof.Claim.supplier_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.proof.Claim.supplierAddress":
-		return protoreflect.ValueOfString("")
-	case "poktroll.proof.Claim.sessionHeader":
-		return protoreflect.ValueOfString("")
-	case "poktroll.proof.Claim.rootHash":
-		return protoreflect.ValueOfString("")
+	case "poktroll.proof.Claim.session_header":
+		m := new(session.SessionHeader)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.proof.Claim.root_hash":
+		return protoreflect.ValueOfBytes(nil)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.Claim"))
@@ -339,16 +324,12 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		l = len(x.Index)
-		if l > 0 {
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		l = len(x.SupplierAddress)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		l = len(x.SessionHeader)
-		if l > 0 {
+		if x.SessionHeader != nil {
+			l = options.Size(x.SessionHeader)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		l = len(x.RootHash)
@@ -389,26 +370,26 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.RootHash)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.RootHash)))
 			i--
-			dAtA[i] = 0x22
-		}
-		if len(x.SessionHeader) > 0 {
-			i -= len(x.SessionHeader)
-			copy(dAtA[i:], x.SessionHeader)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SessionHeader)))
-			i--
 			dAtA[i] = 0x1a
+		}
+		if x.SessionHeader != nil {
+			encoded, err := options.Marshal(x.SessionHeader)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0x12
 		}
 		if len(x.SupplierAddress) > 0 {
 			i -= len(x.SupplierAddress)
 			copy(dAtA[i:], x.SupplierAddress)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SupplierAddress)))
-			i--
-			dAtA[i] = 0x12
-		}
-		if len(x.Index) > 0 {
-			i -= len(x.Index)
-			copy(dAtA[i:], x.Index)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Index)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -463,38 +444,6 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
-				}
-				var stringLen uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + intStringLen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				x.Index = string(dAtA[iNdEx:postIndex])
-				iNdEx = postIndex
-			case 2:
-				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierAddress", wireType)
 				}
 				var stringLen uint64
@@ -525,11 +474,11 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 				}
 				x.SupplierAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
-			case 3:
+			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionHeader", wireType)
 				}
-				var stringLen uint64
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -539,29 +488,33 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.SessionHeader = string(dAtA[iNdEx:postIndex])
+				if x.SessionHeader == nil {
+					x.SessionHeader = &session.SessionHeader{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.SessionHeader); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
 				iNdEx = postIndex
-			case 4:
+			case 3:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field RootHash", wireType)
 				}
-				var stringLen uint64
+				var byteLen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -571,23 +524,25 @@ func (x *fastReflection_Claim) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					stringLen |= uint64(b&0x7F) << shift
+					byteLen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				intStringLen := int(stringLen)
-				if intStringLen < 0 {
+				if byteLen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + intStringLen
+				postIndex := iNdEx + byteLen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.RootHash = string(dAtA[iNdEx:postIndex])
+				x.RootHash = append(x.RootHash[:0], dAtA[iNdEx:postIndex]...)
+				if x.RootHash == nil {
+					x.RootHash = []byte{}
+				}
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -637,15 +592,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Claim is the serialized object stored on-chain for claims pending to be proven
 type Claim struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Index           string `protobuf:"bytes,1,opt,name=index,proto3" json:"index,omitempty"`
-	SupplierAddress string `protobuf:"bytes,2,opt,name=supplierAddress,proto3" json:"supplierAddress,omitempty"`
-	SessionHeader   string `protobuf:"bytes,3,opt,name=sessionHeader,proto3" json:"sessionHeader,omitempty"`
-	RootHash        string `protobuf:"bytes,4,opt,name=rootHash,proto3" json:"rootHash,omitempty"`
+	SupplierAddress string `protobuf:"bytes,1,opt,name=supplier_address,json=supplierAddress,proto3" json:"supplier_address,omitempty"` // the address of the supplier that submitted this claim
+	// The session header of the session that this claim is for.
+	SessionHeader *session.SessionHeader `protobuf:"bytes,2,opt,name=session_header,json=sessionHeader,proto3" json:"session_header,omitempty"`
+	// Root hash returned from smt.SMST#Root().
+	RootHash []byte `protobuf:"bytes,3,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
 }
 
 func (x *Claim) Reset() {
@@ -668,13 +625,6 @@ func (*Claim) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_claim_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Claim) GetIndex() string {
-	if x != nil {
-		return x.Index
-	}
-	return ""
-}
-
 func (x *Claim) GetSupplierAddress() string {
 	if x != nil {
 		return x.SupplierAddress
@@ -682,18 +632,18 @@ func (x *Claim) GetSupplierAddress() string {
 	return ""
 }
 
-func (x *Claim) GetSessionHeader() string {
+func (x *Claim) GetSessionHeader() *session.SessionHeader {
 	if x != nil {
 		return x.SessionHeader
 	}
-	return ""
+	return nil
 }
 
-func (x *Claim) GetRootHash() string {
+func (x *Claim) GetRootHash() []byte {
 	if x != nil {
 		return x.RootHash
 	}
-	return ""
+	return nil
 }
 
 var File_poktroll_proof_claim_proto protoreflect.FileDescriptor
@@ -701,26 +651,32 @@ var File_poktroll_proof_claim_proto protoreflect.FileDescriptor
 var file_poktroll_proof_claim_proto_rawDesc = []byte{
 	0x0a, 0x1a, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66,
 	0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x22, 0x89, 0x01, 0x0a,
-	0x05, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x12, 0x28, 0x0a, 0x0f,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41,
-	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x24, 0x0a, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
-	0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x73,
-	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08,
-	0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08,
-	0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x42, 0x9a, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42,
-	0x0a, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02,
-	0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64,
-	0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a,
-	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x19, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2f, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb1, 0x01, 0x0a, 0x05, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x12, 0x43, 0x0a, 0x10, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x46, 0x0a, 0x0e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52,
+	0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x1b,
+	0x0a, 0x09, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x0c, 0x52, 0x08, 0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x42, 0x9a, 0x01, 0x0a, 0x12,
+	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x42, 0x0a, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
+	0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61,
+	0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f,
+	0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -737,14 +693,16 @@ func file_poktroll_proof_claim_proto_rawDescGZIP() []byte {
 
 var file_poktroll_proof_claim_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_proof_claim_proto_goTypes = []interface{}{
-	(*Claim)(nil), // 0: poktroll.proof.Claim
+	(*Claim)(nil),                 // 0: poktroll.proof.Claim
+	(*session.SessionHeader)(nil), // 1: poktroll.session.SessionHeader
 }
 var file_poktroll_proof_claim_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: poktroll.proof.Claim.session_header:type_name -> poktroll.session.SessionHeader
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_proof_claim_proto_init() }
