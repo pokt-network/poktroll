@@ -11,12 +11,12 @@ POCKET_ADDR_PREFIX = pokt
 ####################
 
 # TODO: Add other dependencies (ignite, docker, k8s, etc) here
-# TODO(@okdas): bump `golangci-lint` when we upgrade golang to 1.21+
 .PHONY: install_ci_deps
 install_ci_deps: ## Installs `mockgen` and other go tools
 	go install "github.com/golang/mock/mockgen@v1.6.0" && mockgen --version
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3 && golangci-lint --version
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && golangci-lint --version
 	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/mikefarah/yq/v4@latest
 
 ########################
 ### Makefile Helpers ###
@@ -51,8 +51,8 @@ check_go_version:
 	MAJOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 1) && \
 	MINOR_VERSION=$$(echo $$GO_VERSION | cut -d "." -f 2) && \
 	\
-	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -ge 21 ] ||  [ "$$MINOR_VERSION" -le 18 ] ; then \
-		echo "Invalid Go version. Expected 1.19.x or 1.20.x but found $$GO_VERSION"; \
+	if [ "$$MAJOR_VERSION" -ne 1 ] || [ "$$MINOR_VERSION" -le 20 ] ; then \
+		echo "Invalid Go version. Expected 1.21.x or newer but found $$GO_VERSION"; \
 		exit 1; \
 	fi
 
@@ -141,6 +141,26 @@ warn_destructive: ## Print WARNING to the user
 proto_regen: ## Delete existing protobuf artifacts and regenerate them
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 	ignite generate proto-go --yes
+	$(MAKE) proto_fix_self_import
+
+.PHONY: proto_fix_self_import
+proto_fix_self_import: ## TODO: explain
+	@for dir in $(wildcard ./api/poktroll/*/); do \
+			module=$$(basename $$dir); \
+			echo "Processing module $$module"; \
+			grep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+					echo "Modifying file: $$file"; \
+					sed -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					sed -i 's,'$$module'\.,,g' "$$file"; \
+			done; \
+	done
+
+.PHONY: proto_clean_pulsar
+proto_clean_pulsar: ## TODO: explain...
+	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
+	$(MAKE) proto_regen
+	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 #######################
 ### Docker  Helpers ###
@@ -165,16 +185,27 @@ localnet_up: ## Starts localnet
 .PHONY: localnet_down
 localnet_down: ## Delete resources created by localnet
 	tilt down
-	kubectl delete secret celestia-secret || exit 1
 
 .PHONY: localnet_regenesis
 localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-	ignite chain init
-	mkdir -p $(POKTROLLD_HOME)/config/
-	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
-	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/
+# TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
+# intends to make this parameterizable in the future.
+	@echo "Initializing chain..."
+	@set -e ;\
+	ignite chain init ;\
+	mkdir -p $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
+	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
+	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
+	POWER=$$(yq -r ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
+	NAME=$$(yq -r ".validators[0].name" ./config.yml) ;\
+	echo "Regenerating genesis file with new validator..." ;\
+	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
+	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
+	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
+
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -231,7 +262,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/supplier/types/
 	go generate ./x/session/types/
 	go generate ./x/service/types/
-	go generate ./x/tokenomics/types/
+	# go generate ./x/tokenomics/types/
 	go generate ./pkg/client/interface.go
 	go generate ./pkg/miner/interface.go
 	go generate ./pkg/relayer/interface.go
@@ -252,7 +283,7 @@ go_develop: proto_regen go_mockgen ## Generate protos and mocks
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
 .PHONY: load_test_simple
-load_test_simple: ## Runs the simpliest load test through the whole stack (appgate -> relayminer -> anvil)
+load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
 	k6 run load-testing/tests/appGateServerEtherium.js
 
 #############
