@@ -50,3 +50,45 @@ func (query *QueryAllClaimsRequest) ValidateBasic() error {
 
 	return nil
 }
+
+func (query *QueryGetProofRequest) ValidateBasic() error {
+	// Validate the supplier address
+	if _, err := sdk.AccAddressFromBech32(query.SupplierAddress); err != nil {
+		return ErrProofInvalidAddress.Wrapf("invalid supplier address for proof being retrieved %s; (%v)", query.SupplierAddress, err)
+	}
+
+	// TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it
+	if query.SessionId == "" {
+		return ErrProofInvalidSessionId.Wrapf("invalid session ID for proof being retrieved %s", query.SessionId)
+	}
+
+	return nil
+}
+
+func (query *QueryAllProofsRequest) ValidateBasic() error {
+	// TODO_TECHDEBT: update function signature to receive a context.
+	logger := polylog.Ctx(context.TODO())
+
+	switch filter := query.Filter.(type) {
+	case *QueryAllProofsRequest_SupplierAddress:
+		if _, err := sdk.AccAddressFromBech32(filter.SupplierAddress); err != nil {
+			return ErrProofInvalidAddress.Wrapf("invalid supplier address for proofs being retrieved %s; (%v)", filter.SupplierAddress, err)
+		}
+
+	case *QueryAllProofsRequest_SessionId:
+		logger.Warn().
+			Str("session_id", filter.SessionId).
+			Msg("TODO_TECHDEBT: Validate the session ID once we have a deterministic way to generate it")
+
+	case *QueryAllProofsRequest_SessionEndHeight:
+		if filter.SessionEndHeight < 0 {
+			return ErrProofInvalidSessionEndHeight.Wrapf("invalid session end height for proofs being retrieved %d", filter.SessionEndHeight)
+		}
+
+	default:
+		// No filter is set
+		logger.Debug().Msg("No specific filter set when requesting proofs")
+	}
+
+	return nil
+}

@@ -2972,14 +2972,16 @@ func (x *fastReflection_QueryAllClaimsResponse) ProtoMethods() *protoiface.Metho
 }
 
 var (
-	md_QueryGetProofRequest       protoreflect.MessageDescriptor
-	fd_QueryGetProofRequest_index protoreflect.FieldDescriptor
+	md_QueryGetProofRequest                  protoreflect.MessageDescriptor
+	fd_QueryGetProofRequest_session_id       protoreflect.FieldDescriptor
+	fd_QueryGetProofRequest_supplier_address protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_proof_query_proto_init()
 	md_QueryGetProofRequest = File_poktroll_proof_query_proto.Messages().ByName("QueryGetProofRequest")
-	fd_QueryGetProofRequest_index = md_QueryGetProofRequest.Fields().ByName("index")
+	fd_QueryGetProofRequest_session_id = md_QueryGetProofRequest.Fields().ByName("session_id")
+	fd_QueryGetProofRequest_supplier_address = md_QueryGetProofRequest.Fields().ByName("supplier_address")
 }
 
 var _ protoreflect.Message = (*fastReflection_QueryGetProofRequest)(nil)
@@ -3047,9 +3049,15 @@ func (x *fastReflection_QueryGetProofRequest) Interface() protoreflect.ProtoMess
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_QueryGetProofRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Index != "" {
-		value := protoreflect.ValueOfString(x.Index)
-		if !f(fd_QueryGetProofRequest_index, value) {
+	if x.SessionId != "" {
+		value := protoreflect.ValueOfString(x.SessionId)
+		if !f(fd_QueryGetProofRequest_session_id, value) {
+			return
+		}
+	}
+	if x.SupplierAddress != "" {
+		value := protoreflect.ValueOfString(x.SupplierAddress)
+		if !f(fd_QueryGetProofRequest_supplier_address, value) {
 			return
 		}
 	}
@@ -3068,8 +3076,10 @@ func (x *fastReflection_QueryGetProofRequest) Range(f func(protoreflect.FieldDes
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryGetProofRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
-		return x.Index != ""
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		return x.SessionId != ""
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
+		return x.SupplierAddress != ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryGetProofRequest"))
@@ -3086,8 +3096,10 @@ func (x *fastReflection_QueryGetProofRequest) Has(fd protoreflect.FieldDescripto
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetProofRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
-		x.Index = ""
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		x.SessionId = ""
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
+		x.SupplierAddress = ""
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryGetProofRequest"))
@@ -3104,8 +3116,11 @@ func (x *fastReflection_QueryGetProofRequest) Clear(fd protoreflect.FieldDescrip
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryGetProofRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
-		value := x.Index
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		value := x.SessionId
+		return protoreflect.ValueOfString(value)
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
+		value := x.SupplierAddress
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
@@ -3127,8 +3142,10 @@ func (x *fastReflection_QueryGetProofRequest) Get(descriptor protoreflect.FieldD
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetProofRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
-		x.Index = value.Interface().(string)
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		x.SessionId = value.Interface().(string)
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
+		x.SupplierAddress = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryGetProofRequest"))
@@ -3149,8 +3166,10 @@ func (x *fastReflection_QueryGetProofRequest) Set(fd protoreflect.FieldDescripto
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetProofRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
-		panic(fmt.Errorf("field index of message poktroll.proof.QueryGetProofRequest is not mutable"))
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		panic(fmt.Errorf("field session_id of message poktroll.proof.QueryGetProofRequest is not mutable"))
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
+		panic(fmt.Errorf("field supplier_address of message poktroll.proof.QueryGetProofRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryGetProofRequest"))
@@ -3164,7 +3183,9 @@ func (x *fastReflection_QueryGetProofRequest) Mutable(fd protoreflect.FieldDescr
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryGetProofRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryGetProofRequest.index":
+	case "poktroll.proof.QueryGetProofRequest.session_id":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.QueryGetProofRequest.supplier_address":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
@@ -3235,7 +3256,11 @@ func (x *fastReflection_QueryGetProofRequest) ProtoMethods() *protoiface.Methods
 		var n int
 		var l int
 		_ = l
-		l = len(x.Index)
+		l = len(x.SessionId)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.SupplierAddress)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
@@ -3268,10 +3293,17 @@ func (x *fastReflection_QueryGetProofRequest) ProtoMethods() *protoiface.Methods
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Index) > 0 {
-			i -= len(x.Index)
-			copy(dAtA[i:], x.Index)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Index)))
+		if len(x.SupplierAddress) > 0 {
+			i -= len(x.SupplierAddress)
+			copy(dAtA[i:], x.SupplierAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SupplierAddress)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.SessionId) > 0 {
+			i -= len(x.SessionId)
+			copy(dAtA[i:], x.SessionId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SessionId)))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -3326,7 +3358,7 @@ func (x *fastReflection_QueryGetProofRequest) ProtoMethods() *protoiface.Methods
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Index", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -3354,7 +3386,39 @@ func (x *fastReflection_QueryGetProofRequest) ProtoMethods() *protoiface.Methods
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Index = string(dAtA[iNdEx:postIndex])
+				x.SessionId = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.SupplierAddress = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -3827,25 +3891,31 @@ func (x *fastReflection_QueryGetProofResponse) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_QueryAllProofRequest            protoreflect.MessageDescriptor
-	fd_QueryAllProofRequest_pagination protoreflect.FieldDescriptor
+	md_QueryAllProofsRequest                    protoreflect.MessageDescriptor
+	fd_QueryAllProofsRequest_pagination         protoreflect.FieldDescriptor
+	fd_QueryAllProofsRequest_supplier_address   protoreflect.FieldDescriptor
+	fd_QueryAllProofsRequest_session_id         protoreflect.FieldDescriptor
+	fd_QueryAllProofsRequest_session_end_height protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_proof_query_proto_init()
-	md_QueryAllProofRequest = File_poktroll_proof_query_proto.Messages().ByName("QueryAllProofRequest")
-	fd_QueryAllProofRequest_pagination = md_QueryAllProofRequest.Fields().ByName("pagination")
+	md_QueryAllProofsRequest = File_poktroll_proof_query_proto.Messages().ByName("QueryAllProofsRequest")
+	fd_QueryAllProofsRequest_pagination = md_QueryAllProofsRequest.Fields().ByName("pagination")
+	fd_QueryAllProofsRequest_supplier_address = md_QueryAllProofsRequest.Fields().ByName("supplier_address")
+	fd_QueryAllProofsRequest_session_id = md_QueryAllProofsRequest.Fields().ByName("session_id")
+	fd_QueryAllProofsRequest_session_end_height = md_QueryAllProofsRequest.Fields().ByName("session_end_height")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllProofRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllProofsRequest)(nil)
 
-type fastReflection_QueryAllProofRequest QueryAllProofRequest
+type fastReflection_QueryAllProofsRequest QueryAllProofsRequest
 
-func (x *QueryAllProofRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllProofRequest)(x)
+func (x *QueryAllProofsRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllProofsRequest)(x)
 }
 
-func (x *QueryAllProofRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllProofsRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_proof_query_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -3857,43 +3927,43 @@ func (x *QueryAllProofRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllProofRequest_messageType fastReflection_QueryAllProofRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllProofRequest_messageType{}
+var _fastReflection_QueryAllProofsRequest_messageType fastReflection_QueryAllProofsRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllProofsRequest_messageType{}
 
-type fastReflection_QueryAllProofRequest_messageType struct{}
+type fastReflection_QueryAllProofsRequest_messageType struct{}
 
-func (x fastReflection_QueryAllProofRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllProofRequest)(nil)
+func (x fastReflection_QueryAllProofsRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllProofsRequest)(nil)
 }
-func (x fastReflection_QueryAllProofRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllProofRequest)
+func (x fastReflection_QueryAllProofsRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllProofsRequest)
 }
-func (x fastReflection_QueryAllProofRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllProofRequest
+func (x fastReflection_QueryAllProofsRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllProofsRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllProofRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllProofRequest
+func (x *fastReflection_QueryAllProofsRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllProofsRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllProofRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllProofRequest_messageType
+func (x *fastReflection_QueryAllProofsRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllProofsRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllProofRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryAllProofRequest)
+func (x *fastReflection_QueryAllProofsRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryAllProofsRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllProofRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllProofRequest)(x)
+func (x *fastReflection_QueryAllProofsRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllProofsRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -3901,11 +3971,33 @@ func (x *fastReflection_QueryAllProofRequest) Interface() protoreflect.ProtoMess
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllProofRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryAllProofsRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllProofRequest_pagination, value) {
+		if !f(fd_QueryAllProofsRequest_pagination, value) {
 			return
+		}
+	}
+	if x.Filter != nil {
+		switch o := x.Filter.(type) {
+		case *QueryAllProofsRequest_SupplierAddress:
+			v := o.SupplierAddress
+			value := protoreflect.ValueOfString(v)
+			if !f(fd_QueryAllProofsRequest_supplier_address, value) {
+				return
+			}
+		case *QueryAllProofsRequest_SessionId:
+			v := o.SessionId
+			value := protoreflect.ValueOfString(v)
+			if !f(fd_QueryAllProofsRequest_session_id, value) {
+				return
+			}
+		case *QueryAllProofsRequest_SessionEndHeight:
+			v := o.SessionEndHeight
+			value := protoreflect.ValueOfUint64(v)
+			if !f(fd_QueryAllProofsRequest_session_end_height, value) {
+				return
+			}
 		}
 	}
 }
@@ -3921,15 +4013,39 @@ func (x *fastReflection_QueryAllProofRequest) Range(f func(protoreflect.FieldDes
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllProofRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllProofsRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		return x.Pagination != nil
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		if x.Filter == nil {
+			return false
+		} else if _, ok := x.Filter.(*QueryAllProofsRequest_SupplierAddress); ok {
+			return true
+		} else {
+			return false
+		}
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		if x.Filter == nil {
+			return false
+		} else if _, ok := x.Filter.(*QueryAllProofsRequest_SessionId); ok {
+			return true
+		} else {
+			return false
+		}
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		if x.Filter == nil {
+			return false
+		} else if _, ok := x.Filter.(*QueryAllProofsRequest_SessionEndHeight); ok {
+			return true
+		} else {
+			return false
+		}
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3939,15 +4055,21 @@ func (x *fastReflection_QueryAllProofRequest) Has(fd protoreflect.FieldDescripto
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllProofsRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		x.Pagination = nil
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		x.Filter = nil
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		x.Filter = nil
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		x.Filter = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -3957,16 +4079,40 @@ func (x *fastReflection_QueryAllProofRequest) Clear(fd protoreflect.FieldDescrip
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllProofRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		if x.Filter == nil {
+			return protoreflect.ValueOfString("")
+		} else if v, ok := x.Filter.(*QueryAllProofsRequest_SupplierAddress); ok {
+			return protoreflect.ValueOfString(v.SupplierAddress)
+		} else {
+			return protoreflect.ValueOfString("")
+		}
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		if x.Filter == nil {
+			return protoreflect.ValueOfString("")
+		} else if v, ok := x.Filter.(*QueryAllProofsRequest_SessionId); ok {
+			return protoreflect.ValueOfString(v.SessionId)
+		} else {
+			return protoreflect.ValueOfString("")
+		}
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		if x.Filter == nil {
+			return protoreflect.ValueOfUint64(uint64(0))
+		} else if v, ok := x.Filter.(*QueryAllProofsRequest_SessionEndHeight); ok {
+			return protoreflect.ValueOfUint64(v.SessionEndHeight)
+		} else {
+			return protoreflect.ValueOfUint64(uint64(0))
+		}
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -3980,15 +4126,24 @@ func (x *fastReflection_QueryAllProofRequest) Get(descriptor protoreflect.FieldD
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllProofsRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageRequest)
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		cv := value.Interface().(string)
+		x.Filter = &QueryAllProofsRequest_SupplierAddress{SupplierAddress: cv}
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		cv := value.Interface().(string)
+		x.Filter = &QueryAllProofsRequest_SessionId{SessionId: cv}
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		cv := value.Uint()
+		x.Filter = &QueryAllProofsRequest_SessionEndHeight{SessionEndHeight: cv}
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4002,44 +4157,68 @@ func (x *fastReflection_QueryAllProofRequest) Set(fd protoreflect.FieldDescripto
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageRequest)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		panic(fmt.Errorf("field supplier_address of message poktroll.proof.QueryAllProofsRequest is not mutable"))
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		panic(fmt.Errorf("field session_id of message poktroll.proof.QueryAllProofsRequest is not mutable"))
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		panic(fmt.Errorf("field session_end_height of message poktroll.proof.QueryAllProofsRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllProofRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofRequest.pagination":
+	case "poktroll.proof.QueryAllProofsRequest.pagination":
 		m := new(v1beta1.PageRequest)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	case "poktroll.proof.QueryAllProofsRequest.supplier_address":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.QueryAllProofsRequest.session_id":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.QueryAllProofsRequest.session_end_height":
+		return protoreflect.ValueOfUint64(uint64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllProofRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllProofsRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
+	case "poktroll.proof.QueryAllProofsRequest.filter":
+		if x.Filter == nil {
+			return nil
+		}
+		switch x.Filter.(type) {
+		case *QueryAllProofsRequest_SupplierAddress:
+			return x.Descriptor().Fields().ByName("supplier_address")
+		case *QueryAllProofsRequest_SessionId:
+			return x.Descriptor().Fields().ByName("session_id")
+		case *QueryAllProofsRequest_SessionEndHeight:
+			return x.Descriptor().Fields().ByName("session_end_height")
+		}
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.QueryAllProofRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.QueryAllProofsRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -4047,7 +4226,7 @@ func (x *fastReflection_QueryAllProofRequest) WhichOneof(d protoreflect.OneofDes
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllProofRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllProofsRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -4058,7 +4237,7 @@ func (x *fastReflection_QueryAllProofRequest) GetUnknown() protoreflect.RawField
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllProofsRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -4070,7 +4249,7 @@ func (x *fastReflection_QueryAllProofRequest) SetUnknown(fields protoreflect.Raw
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllProofRequest) IsValid() bool {
+func (x *fastReflection_QueryAllProofsRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -4080,9 +4259,9 @@ func (x *fastReflection_QueryAllProofRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllProofsRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllProofRequest)
+		x := input.Message.Interface().(*QueryAllProofsRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4098,6 +4277,25 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 			l = options.Size(x.Pagination)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
+		switch x := x.Filter.(type) {
+		case *QueryAllProofsRequest_SupplierAddress:
+			if x == nil {
+				break
+			}
+			l = len(x.SupplierAddress)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *QueryAllProofsRequest_SessionId:
+			if x == nil {
+				break
+			}
+			l = len(x.SessionId)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *QueryAllProofsRequest_SessionEndHeight:
+			if x == nil {
+				break
+			}
+			n += 1 + runtime.Sov(uint64(x.SessionEndHeight))
+		}
 		if x.unknownFields != nil {
 			n += len(x.unknownFields)
 		}
@@ -4108,7 +4306,7 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllProofRequest)
+		x := input.Message.Interface().(*QueryAllProofsRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4126,6 +4324,24 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 		if x.unknownFields != nil {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
+		}
+		switch x := x.Filter.(type) {
+		case *QueryAllProofsRequest_SupplierAddress:
+			i -= len(x.SupplierAddress)
+			copy(dAtA[i:], x.SupplierAddress)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SupplierAddress)))
+			i--
+			dAtA[i] = 0x12
+		case *QueryAllProofsRequest_SessionId:
+			i -= len(x.SessionId)
+			copy(dAtA[i:], x.SessionId)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SessionId)))
+			i--
+			dAtA[i] = 0x1a
+		case *QueryAllProofsRequest_SessionEndHeight:
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionEndHeight))
+			i--
+			dAtA[i] = 0x20
 		}
 		if x.Pagination != nil {
 			encoded, err := options.Marshal(x.Pagination)
@@ -4152,7 +4368,7 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllProofRequest)
+		x := input.Message.Interface().(*QueryAllProofsRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4184,10 +4400,10 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofsRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -4226,6 +4442,90 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SupplierAddress", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Filter = &QueryAllProofsRequest_SupplierAddress{string(dAtA[iNdEx:postIndex])}
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Filter = &QueryAllProofsRequest_SessionId{string(dAtA[iNdEx:postIndex])}
+				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndHeight", wireType)
+				}
+				var v uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				x.Filter = &QueryAllProofsRequest_SessionEndHeight{v}
 			default:
 				iNdEx = preIndex
 				skippy, err := runtime.Skip(dAtA[iNdEx:])
@@ -4261,79 +4561,79 @@ func (x *fastReflection_QueryAllProofRequest) ProtoMethods() *protoiface.Methods
 	}
 }
 
-var _ protoreflect.List = (*_QueryAllProofResponse_1_list)(nil)
+var _ protoreflect.List = (*_QueryAllProofsResponse_1_list)(nil)
 
-type _QueryAllProofResponse_1_list struct {
+type _QueryAllProofsResponse_1_list struct {
 	list *[]*Proof
 }
 
-func (x *_QueryAllProofResponse_1_list) Len() int {
+func (x *_QueryAllProofsResponse_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_QueryAllProofResponse_1_list) Get(i int) protoreflect.Value {
+func (x *_QueryAllProofsResponse_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_QueryAllProofResponse_1_list) Set(i int, value protoreflect.Value) {
+func (x *_QueryAllProofsResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Proof)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_QueryAllProofResponse_1_list) Append(value protoreflect.Value) {
+func (x *_QueryAllProofsResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Proof)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_QueryAllProofResponse_1_list) AppendMutable() protoreflect.Value {
+func (x *_QueryAllProofsResponse_1_list) AppendMutable() protoreflect.Value {
 	v := new(Proof)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllProofResponse_1_list) Truncate(n int) {
+func (x *_QueryAllProofsResponse_1_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_QueryAllProofResponse_1_list) NewElement() protoreflect.Value {
+func (x *_QueryAllProofsResponse_1_list) NewElement() protoreflect.Value {
 	v := new(Proof)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllProofResponse_1_list) IsValid() bool {
+func (x *_QueryAllProofsResponse_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_QueryAllProofResponse            protoreflect.MessageDescriptor
-	fd_QueryAllProofResponse_proof      protoreflect.FieldDescriptor
-	fd_QueryAllProofResponse_pagination protoreflect.FieldDescriptor
+	md_QueryAllProofsResponse            protoreflect.MessageDescriptor
+	fd_QueryAllProofsResponse_proofs     protoreflect.FieldDescriptor
+	fd_QueryAllProofsResponse_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_proof_query_proto_init()
-	md_QueryAllProofResponse = File_poktroll_proof_query_proto.Messages().ByName("QueryAllProofResponse")
-	fd_QueryAllProofResponse_proof = md_QueryAllProofResponse.Fields().ByName("proof")
-	fd_QueryAllProofResponse_pagination = md_QueryAllProofResponse.Fields().ByName("pagination")
+	md_QueryAllProofsResponse = File_poktroll_proof_query_proto.Messages().ByName("QueryAllProofsResponse")
+	fd_QueryAllProofsResponse_proofs = md_QueryAllProofsResponse.Fields().ByName("proofs")
+	fd_QueryAllProofsResponse_pagination = md_QueryAllProofsResponse.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllProofResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllProofsResponse)(nil)
 
-type fastReflection_QueryAllProofResponse QueryAllProofResponse
+type fastReflection_QueryAllProofsResponse QueryAllProofsResponse
 
-func (x *QueryAllProofResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllProofResponse)(x)
+func (x *QueryAllProofsResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllProofsResponse)(x)
 }
 
-func (x *QueryAllProofResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllProofsResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_proof_query_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -4345,43 +4645,43 @@ func (x *QueryAllProofResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllProofResponse_messageType fastReflection_QueryAllProofResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllProofResponse_messageType{}
+var _fastReflection_QueryAllProofsResponse_messageType fastReflection_QueryAllProofsResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllProofsResponse_messageType{}
 
-type fastReflection_QueryAllProofResponse_messageType struct{}
+type fastReflection_QueryAllProofsResponse_messageType struct{}
 
-func (x fastReflection_QueryAllProofResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllProofResponse)(nil)
+func (x fastReflection_QueryAllProofsResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllProofsResponse)(nil)
 }
-func (x fastReflection_QueryAllProofResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllProofResponse)
+func (x fastReflection_QueryAllProofsResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllProofsResponse)
 }
-func (x fastReflection_QueryAllProofResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllProofResponse
+func (x fastReflection_QueryAllProofsResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllProofsResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllProofResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllProofResponse
+func (x *fastReflection_QueryAllProofsResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllProofsResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllProofResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllProofResponse_messageType
+func (x *fastReflection_QueryAllProofsResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllProofsResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllProofResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryAllProofResponse)
+func (x *fastReflection_QueryAllProofsResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryAllProofsResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllProofResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllProofResponse)(x)
+func (x *fastReflection_QueryAllProofsResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllProofsResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -4389,16 +4689,16 @@ func (x *fastReflection_QueryAllProofResponse) Interface() protoreflect.ProtoMes
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllProofResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Proof) != 0 {
-		value := protoreflect.ValueOfList(&_QueryAllProofResponse_1_list{list: &x.Proof})
-		if !f(fd_QueryAllProofResponse_proof, value) {
+func (x *fastReflection_QueryAllProofsResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.Proofs) != 0 {
+		value := protoreflect.ValueOfList(&_QueryAllProofsResponse_1_list{list: &x.Proofs})
+		if !f(fd_QueryAllProofsResponse_proofs, value) {
 			return
 		}
 	}
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllProofResponse_pagination, value) {
+		if !f(fd_QueryAllProofsResponse_pagination, value) {
 			return
 		}
 	}
@@ -4415,17 +4715,17 @@ func (x *fastReflection_QueryAllProofResponse) Range(f func(protoreflect.FieldDe
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllProofResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllProofsResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
-		return len(x.Proof) != 0
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
+		return len(x.Proofs) != 0
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4435,17 +4735,17 @@ func (x *fastReflection_QueryAllProofResponse) Has(fd protoreflect.FieldDescript
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllProofsResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
-		x.Proof = nil
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
+		x.Proofs = nil
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4455,22 +4755,22 @@ func (x *fastReflection_QueryAllProofResponse) Clear(fd protoreflect.FieldDescri
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllProofResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
-		if len(x.Proof) == 0 {
-			return protoreflect.ValueOfList(&_QueryAllProofResponse_1_list{})
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
+		if len(x.Proofs) == 0 {
+			return protoreflect.ValueOfList(&_QueryAllProofsResponse_1_list{})
 		}
-		listValue := &_QueryAllProofResponse_1_list{list: &x.Proof}
+		listValue := &_QueryAllProofsResponse_1_list{list: &x.Proofs}
 		return protoreflect.ValueOfList(listValue)
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -4484,19 +4784,19 @@ func (x *fastReflection_QueryAllProofResponse) Get(descriptor protoreflect.Field
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllProofsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
 		lv := value.List()
-		clv := lv.(*_QueryAllProofResponse_1_list)
-		x.Proof = *clv.list
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+		clv := lv.(*_QueryAllProofsResponse_1_list)
+		x.Proofs = *clv.list
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageResponse)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -4510,53 +4810,53 @@ func (x *fastReflection_QueryAllProofResponse) Set(fd protoreflect.FieldDescript
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
-		if x.Proof == nil {
-			x.Proof = []*Proof{}
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
+		if x.Proofs == nil {
+			x.Proofs = []*Proof{}
 		}
-		value := &_QueryAllProofResponse_1_list{list: &x.Proof}
+		value := &_QueryAllProofsResponse_1_list{list: &x.Proofs}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageResponse)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllProofResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllProofsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.proof.QueryAllProofResponse.proof":
+	case "poktroll.proof.QueryAllProofsResponse.proofs":
 		list := []*Proof{}
-		return protoreflect.ValueOfList(&_QueryAllProofResponse_1_list{list: &list})
-	case "poktroll.proof.QueryAllProofResponse.pagination":
+		return protoreflect.ValueOfList(&_QueryAllProofsResponse_1_list{list: &list})
+	case "poktroll.proof.QueryAllProofsResponse.pagination":
 		m := new(v1beta1.PageResponse)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.QueryAllProofsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.proof.QueryAllProofResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.proof.QueryAllProofsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllProofResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllProofsResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.QueryAllProofResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.QueryAllProofsResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -4564,7 +4864,7 @@ func (x *fastReflection_QueryAllProofResponse) WhichOneof(d protoreflect.OneofDe
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllProofResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllProofsResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -4575,7 +4875,7 @@ func (x *fastReflection_QueryAllProofResponse) GetUnknown() protoreflect.RawFiel
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllProofResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllProofsResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -4587,7 +4887,7 @@ func (x *fastReflection_QueryAllProofResponse) SetUnknown(fields protoreflect.Ra
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllProofResponse) IsValid() bool {
+func (x *fastReflection_QueryAllProofsResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -4597,9 +4897,9 @@ func (x *fastReflection_QueryAllProofResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllProofsResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllProofResponse)
+		x := input.Message.Interface().(*QueryAllProofsResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4611,8 +4911,8 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 		var n int
 		var l int
 		_ = l
-		if len(x.Proof) > 0 {
-			for _, e := range x.Proof {
+		if len(x.Proofs) > 0 {
+			for _, e := range x.Proofs {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -4631,7 +4931,7 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllProofResponse)
+		x := input.Message.Interface().(*QueryAllProofsResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4664,9 +4964,9 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.Proof) > 0 {
-			for iNdEx := len(x.Proof) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Proof[iNdEx])
+		if len(x.Proofs) > 0 {
+			for iNdEx := len(x.Proofs) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Proofs[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4691,7 +4991,7 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllProofResponse)
+		x := input.Message.Interface().(*QueryAllProofsResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -4723,15 +5023,15 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofsResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllProofsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Proof", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Proofs", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -4758,8 +5058,8 @@ func (x *fastReflection_QueryAllProofResponse) ProtoMethods() *protoiface.Method
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Proof = append(x.Proof, &Proof{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Proof[len(x.Proof)-1]); err != nil {
+				x.Proofs = append(x.Proofs, &Proof{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Proofs[len(x.Proofs)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -5128,7 +5428,8 @@ type QueryGetProofRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Index string `protobuf:"bytes,1,opt,name=index,proto3" json:"index,omitempty"`
+	SessionId       string `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SupplierAddress string `protobuf:"bytes,2,opt,name=supplier_address,json=supplierAddress,proto3" json:"supplier_address,omitempty"`
 }
 
 func (x *QueryGetProofRequest) Reset() {
@@ -5151,9 +5452,16 @@ func (*QueryGetProofRequest) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_query_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *QueryGetProofRequest) GetIndex() string {
+func (x *QueryGetProofRequest) GetSessionId() string {
 	if x != nil {
-		return x.Index
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *QueryGetProofRequest) GetSupplierAddress() string {
+	if x != nil {
+		return x.SupplierAddress
 	}
 	return ""
 }
@@ -5193,16 +5501,22 @@ func (x *QueryGetProofResponse) GetProof() *Proof {
 	return nil
 }
 
-type QueryAllProofRequest struct {
+type QueryAllProofsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Pagination *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	// Types that are assignable to Filter:
+	//
+	//	*QueryAllProofsRequest_SupplierAddress
+	//	*QueryAllProofsRequest_SessionId
+	//	*QueryAllProofsRequest_SessionEndHeight
+	Filter isQueryAllProofsRequest_Filter `protobuf_oneof:"filter"`
 }
 
-func (x *QueryAllProofRequest) Reset() {
-	*x = QueryAllProofRequest{}
+func (x *QueryAllProofsRequest) Reset() {
+	*x = QueryAllProofsRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_proof_query_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5210,35 +5524,85 @@ func (x *QueryAllProofRequest) Reset() {
 	}
 }
 
-func (x *QueryAllProofRequest) String() string {
+func (x *QueryAllProofsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllProofRequest) ProtoMessage() {}
+func (*QueryAllProofsRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryAllProofRequest.ProtoReflect.Descriptor instead.
-func (*QueryAllProofRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllProofsRequest.ProtoReflect.Descriptor instead.
+func (*QueryAllProofsRequest) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_query_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *QueryAllProofRequest) GetPagination() *v1beta1.PageRequest {
+func (x *QueryAllProofsRequest) GetPagination() *v1beta1.PageRequest {
 	if x != nil {
 		return x.Pagination
 	}
 	return nil
 }
 
-type QueryAllProofResponse struct {
+func (x *QueryAllProofsRequest) GetFilter() isQueryAllProofsRequest_Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
+func (x *QueryAllProofsRequest) GetSupplierAddress() string {
+	if x, ok := x.GetFilter().(*QueryAllProofsRequest_SupplierAddress); ok {
+		return x.SupplierAddress
+	}
+	return ""
+}
+
+func (x *QueryAllProofsRequest) GetSessionId() string {
+	if x, ok := x.GetFilter().(*QueryAllProofsRequest_SessionId); ok {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *QueryAllProofsRequest) GetSessionEndHeight() uint64 {
+	if x, ok := x.GetFilter().(*QueryAllProofsRequest_SessionEndHeight); ok {
+		return x.SessionEndHeight
+	}
+	return 0
+}
+
+type isQueryAllProofsRequest_Filter interface {
+	isQueryAllProofsRequest_Filter()
+}
+
+type QueryAllProofsRequest_SupplierAddress struct {
+	SupplierAddress string `protobuf:"bytes,2,opt,name=supplier_address,json=supplierAddress,proto3,oneof"`
+}
+
+type QueryAllProofsRequest_SessionId struct {
+	SessionId string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3,oneof"`
+}
+
+type QueryAllProofsRequest_SessionEndHeight struct {
+	SessionEndHeight uint64 `protobuf:"varint,4,opt,name=session_end_height,json=sessionEndHeight,proto3,oneof"`
+}
+
+func (*QueryAllProofsRequest_SupplierAddress) isQueryAllProofsRequest_Filter() {}
+
+func (*QueryAllProofsRequest_SessionId) isQueryAllProofsRequest_Filter() {}
+
+func (*QueryAllProofsRequest_SessionEndHeight) isQueryAllProofsRequest_Filter() {}
+
+type QueryAllProofsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Proof      []*Proof              `protobuf:"bytes,1,rep,name=proof,proto3" json:"proof,omitempty"`
+	Proofs     []*Proof              `protobuf:"bytes,1,rep,name=proofs,proto3" json:"proofs,omitempty"`
 	Pagination *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryAllProofResponse) Reset() {
-	*x = QueryAllProofResponse{}
+func (x *QueryAllProofsResponse) Reset() {
+	*x = QueryAllProofsResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_proof_query_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -5246,25 +5610,25 @@ func (x *QueryAllProofResponse) Reset() {
 	}
 }
 
-func (x *QueryAllProofResponse) String() string {
+func (x *QueryAllProofsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllProofResponse) ProtoMessage() {}
+func (*QueryAllProofsResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryAllProofResponse.ProtoReflect.Descriptor instead.
-func (*QueryAllProofResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllProofsResponse.ProtoReflect.Descriptor instead.
+func (*QueryAllProofsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_query_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *QueryAllProofResponse) GetProof() []*Proof {
+func (x *QueryAllProofsResponse) GetProofs() []*Proof {
 	if x != nil {
-		return x.Proof
+		return x.Proofs
 	}
 	return nil
 }
 
-func (x *QueryAllProofResponse) GetPagination() *v1beta1.PageResponse {
+func (x *QueryAllProofsResponse) GetPagination() *v1beta1.PageResponse {
 	if x != nil {
 		return x.Pagination
 	}
@@ -5334,84 +5698,100 @@ var file_poktroll_proof_query_proto_rawDesc = []byte{
 	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72,
 	0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65,
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x22, 0x2c, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72,
-	0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6e,
-	0x64, 0x65, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x69, 0x6e, 0x64, 0x65, 0x78,
-	0x22, 0x4a, 0x0a, 0x15, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x6f,
-	0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x05, 0x70, 0x72, 0x6f,
-	0x6f, 0x66, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42,
-	0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x22, 0x5e, 0x0a, 0x14,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71,
+	0x6f, 0x6e, 0x22, 0x7a, 0x0a, 0x14, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72,
+	0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
+	0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x43, 0x0a, 0x10, 0x73, 0x75, 0x70,
+	0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f, 0x73,
+	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x4a,
+	0x0a, 0x15, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x04, 0xc8,
+	0xde, 0x1f, 0x00, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x22, 0xe7, 0x01, 0x0a, 0x15, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x73, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
 	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62,
 	0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x93, 0x01, 0x0a,
-	0x15, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x31, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x04, 0xc8, 0xde,
-	0x1f, 0x00, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67,
-	0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72,
-	0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x32, 0xc4, 0x05, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x7e, 0x0a, 0x06,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x22, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x2b, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x25, 0x12, 0x23, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0xa0, 0x01, 0x0a,
-	0x05, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74,
-	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x4a, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x44, 0x12, 0x42, 0x2f, 0x70, 0x6f,
-	0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x2f,
-	0x7b, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x7d, 0x2f, 0x7b, 0x73, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x7d, 0x12,
-	0x86, 0x01, 0x0a, 0x09, 0x41, 0x6c, 0x6c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12, 0x25, 0x2e,
+	0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x2b, 0x0a, 0x10,
+	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x1f, 0x0a, 0x0a, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52,
+	0x09, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x2e, 0x0a, 0x12, 0x73, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x04, 0x48, 0x00, 0x52, 0x10, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x45, 0x6e, 0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x42, 0x08, 0x0a, 0x06, 0x66, 0x69,
+	0x6c, 0x74, 0x65, 0x72, 0x22, 0x96, 0x01, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c,
+	0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x33, 0x0a, 0x06, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x06, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x73, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62,
+	0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0xdf, 0x05,
+	0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x7e, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x12, 0x22, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
+	0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2b, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x25, 0x12, 0x23, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
+	0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0xa0, 0x01, 0x0a, 0x05, 0x43, 0x6c, 0x61, 0x69,
+	0x6d, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65,
+	0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4a,
+	0x82, 0xd3, 0xe4, 0x93, 0x02, 0x44, 0x12, 0x42, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70,
+	0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x2f, 0x7b, 0x73, 0x65, 0x73, 0x73,
+	0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x7d, 0x2f, 0x7b, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x7d, 0x12, 0x86, 0x01, 0x0a, 0x09, 0x41,
+	0x6c, 0x6c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x12, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41,
+	0x6c, 0x6c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2a, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12,
+	0x22, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x63, 0x6c,
+	0x61, 0x69, 0x6d, 0x12, 0xa0, 0x01, 0x0a, 0x05, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x24, 0x2e,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x43, 0x6c,
-	0x61, 0x69, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2a, 0x82, 0xd3,
-	0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77,
-	0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f,
-	0x6f, 0x66, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x88, 0x01, 0x0a, 0x05, 0x50, 0x72, 0x6f,
-	0x6f, 0x66, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72,
-	0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x6f,
-	0x66, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47,
-	0x65, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x32, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2c, 0x12, 0x2a, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x7b, 0x69, 0x6e, 0x64,
-	0x65, 0x78, 0x7d, 0x12, 0x83, 0x01, 0x0a, 0x08, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x41, 0x6c, 0x6c,
-	0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f,
-	0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c,
-	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2a, 0x82,
-	0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74,
-	0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72,
-	0x6f, 0x6f, 0x66, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x9a, 0x01, 0x0a, 0x12, 0x63, 0x6f,
-	0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
-	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2,
-	0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
-	0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70,
+	0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x50, 0x72, 0x6f,
+	0x6f, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x4a, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x44, 0x12, 0x42, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
+	0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x7b, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x69, 0x64, 0x7d, 0x2f, 0x7b, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x7d, 0x12, 0x86, 0x01, 0x0a, 0x09, 0x41, 0x6c, 0x6c, 0x50, 0x72,
+	0x6f, 0x6f, 0x66, 0x73, 0x12, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72,
+	0x6f, 0x6f, 0x66, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x26, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x41, 0x6c, 0x6c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x2a, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x24, 0x12, 0x22, 0x2f, 0x70, 0x6f,
+	0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42,
+	0x9a, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
+	0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e, 0x50, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02, 0x0e, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2, 0x02, 0x1a,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x5c, 0x47,
+	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -5436,8 +5816,8 @@ var file_poktroll_proof_query_proto_goTypes = []interface{}{
 	(*QueryAllClaimsResponse)(nil), // 5: poktroll.proof.QueryAllClaimsResponse
 	(*QueryGetProofRequest)(nil),   // 6: poktroll.proof.QueryGetProofRequest
 	(*QueryGetProofResponse)(nil),  // 7: poktroll.proof.QueryGetProofResponse
-	(*QueryAllProofRequest)(nil),   // 8: poktroll.proof.QueryAllProofRequest
-	(*QueryAllProofResponse)(nil),  // 9: poktroll.proof.QueryAllProofResponse
+	(*QueryAllProofsRequest)(nil),  // 8: poktroll.proof.QueryAllProofsRequest
+	(*QueryAllProofsResponse)(nil), // 9: poktroll.proof.QueryAllProofsResponse
 	(*Params)(nil),                 // 10: poktroll.proof.Params
 	(*Claim)(nil),                  // 11: poktroll.proof.Claim
 	(*v1beta1.PageRequest)(nil),    // 12: cosmos.base.query.v1beta1.PageRequest
@@ -5451,19 +5831,19 @@ var file_poktroll_proof_query_proto_depIdxs = []int32{
 	11, // 3: poktroll.proof.QueryAllClaimsResponse.claims:type_name -> poktroll.proof.Claim
 	13, // 4: poktroll.proof.QueryAllClaimsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	14, // 5: poktroll.proof.QueryGetProofResponse.proof:type_name -> poktroll.proof.Proof
-	12, // 6: poktroll.proof.QueryAllProofRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	14, // 7: poktroll.proof.QueryAllProofResponse.proof:type_name -> poktroll.proof.Proof
-	13, // 8: poktroll.proof.QueryAllProofResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	12, // 6: poktroll.proof.QueryAllProofsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	14, // 7: poktroll.proof.QueryAllProofsResponse.proofs:type_name -> poktroll.proof.Proof
+	13, // 8: poktroll.proof.QueryAllProofsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	0,  // 9: poktroll.proof.Query.Params:input_type -> poktroll.proof.QueryParamsRequest
 	2,  // 10: poktroll.proof.Query.Claim:input_type -> poktroll.proof.QueryGetClaimRequest
 	4,  // 11: poktroll.proof.Query.AllClaims:input_type -> poktroll.proof.QueryAllClaimsRequest
 	6,  // 12: poktroll.proof.Query.Proof:input_type -> poktroll.proof.QueryGetProofRequest
-	8,  // 13: poktroll.proof.Query.ProofAll:input_type -> poktroll.proof.QueryAllProofRequest
+	8,  // 13: poktroll.proof.Query.AllProofs:input_type -> poktroll.proof.QueryAllProofsRequest
 	1,  // 14: poktroll.proof.Query.Params:output_type -> poktroll.proof.QueryParamsResponse
 	3,  // 15: poktroll.proof.Query.Claim:output_type -> poktroll.proof.QueryGetClaimResponse
 	5,  // 16: poktroll.proof.Query.AllClaims:output_type -> poktroll.proof.QueryAllClaimsResponse
 	7,  // 17: poktroll.proof.Query.Proof:output_type -> poktroll.proof.QueryGetProofResponse
-	9,  // 18: poktroll.proof.Query.ProofAll:output_type -> poktroll.proof.QueryAllProofResponse
+	9,  // 18: poktroll.proof.Query.AllProofs:output_type -> poktroll.proof.QueryAllProofsResponse
 	14, // [14:19] is the sub-list for method output_type
 	9,  // [9:14] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
@@ -5577,7 +5957,7 @@ func file_poktroll_proof_query_proto_init() {
 			}
 		}
 		file_poktroll_proof_query_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllProofRequest); i {
+			switch v := v.(*QueryAllProofsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5589,7 +5969,7 @@ func file_poktroll_proof_query_proto_init() {
 			}
 		}
 		file_poktroll_proof_query_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllProofResponse); i {
+			switch v := v.(*QueryAllProofsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -5605,6 +5985,11 @@ func file_poktroll_proof_query_proto_init() {
 		(*QueryAllClaimsRequest_SupplierAddress)(nil),
 		(*QueryAllClaimsRequest_SessionId)(nil),
 		(*QueryAllClaimsRequest_SessionEndHeight)(nil),
+	}
+	file_poktroll_proof_query_proto_msgTypes[8].OneofWrappers = []interface{}{
+		(*QueryAllProofsRequest_SupplierAddress)(nil),
+		(*QueryAllProofsRequest_SessionId)(nil),
+		(*QueryAllProofsRequest_SessionEndHeight)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

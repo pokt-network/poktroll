@@ -3,11 +3,14 @@ package poktroll.proof;
 
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
+import "cosmos_proto/cosmos.proto";
+import "poktroll/session/session.proto";
+
 message Proof {
-  string index = 1; 
-  string supplierAddress = 2; 
-  string sessionHeader = 3; 
-  string closestMerkleProof = 4; 
-  
+  string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // The session header of the session that this claim is for.
+  poktroll.session.SessionHeader session_header = 2;
+  // The serialized SMST proof from the `#ClosestProof()` method.
+  bytes closest_merkle_proof = 3;
 }
 

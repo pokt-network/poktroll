@@ -19,7 +19,7 @@ var (
 	ErrProofInvalidSessionEndHeight = sdkerrors.Register(ModuleName, 10, "invalid session ending height")
 	ErrProofInvalidQueryRequest     = sdkerrors.Register(ModuleName, 11, "invalid query request")
 	ErrProofClaimNotFound           = sdkerrors.Register(ModuleName, 12, "claim not found")
-	//ErrSupplierProofNotFound             = sdkerrors.Register(ModuleName, 13, "proof not found")
+	ErrProofProofNotFound           = sdkerrors.Register(ModuleName, 13, "proof not found")
 	//ErrSupplierInvalidProof              = sdkerrors.Register(ModuleName, 14, "invalid proof")
 	//ErrSupplierInvalidClosestMerkleProof = sdkerrors.Register(ModuleName, 15, "invalid closest merkle proof")
 	ErrInvalidSigner = sdkerrors.Register(ModuleName, 1100, "expected gov account as only signer for proposal message")

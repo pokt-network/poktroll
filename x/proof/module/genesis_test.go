@@ -29,14 +29,15 @@ func TestGenesis(t *testing.T) {
 				RootHash: []byte{1, 2, 3},
 			},
 		},
-		ProofList: []types.Proof{
-			{
-				Index: "0",
-			},
-			{
-				Index: "1",
-			},
-		},
+		// TODO_BLOCKER: finish genesis proof list validation.
+		//ProofList: []types.Proof{
+		//	{
+		//		Index: "0",
+		//	},
+		//	{
+		//		Index: "1",
+		//	},
+		//},
 		// this line is used by starport scaffolding # genesis/test/state
 	}
 
