@@ -11,6 +11,11 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+// Keeper is the structure that implements the `KeeperI` interface.
+
+// TODO_TECHDEBT(#240): See `x/nft/keeper.keeper.go` in the Cosmos SDK on how
+// we should refactor all our keepers. This keeper has started following a small
+// subset of those patterns.
 type (
 	Keeper struct {
 		cdc          codec.BinaryCodec
@@ -56,12 +61,12 @@ func NewKeeper(
 	}
 }
 
-// GetAuthority returns the module's authority.
-func (k Keeper) GetAuthority() string {
-	return k.authority
-}
-
 // Logger returns a module-specific logger.
 func (k Keeper) Logger() log.Logger {
 	return k.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// GetAuthority returns the x/tokenomics module's authority.
+func (k Keeper) GetAuthority() string {
+	return k.authority
 }
