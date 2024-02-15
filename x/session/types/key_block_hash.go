@@ -8,12 +8,12 @@ import (
 var _ binary.ByteOrder
 
 const (
-	// ServiceKeyPrefix is the prefix to retrieve all Service
-	SessionKeyPrefix = "Session/value/"
+	// BlockHashKeyPrefix is the prefix to retrieve all BlockHash
+	BlockHashKeyPrefix = "BlockHash/value/"
 )
 
-// ServiceKey returns the store key to retrieve a Service from the index fields
-func SessionKey(blockHeight int64) []byte {
+// BlockHashKey returns the store key to retrieve a BlockHash from the index fields
+func BlockHashKey(blockHeight int64) []byte {
 	var key []byte
 
 	serviceIDBz := []byte(fmt.Sprintf("%d", blockHeight))
