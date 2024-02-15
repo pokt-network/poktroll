@@ -1,14 +1,21 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
+
+const TypeMsgCreateClaim = "create_claim"
 
 var _ sdk.Msg = &MsgCreateClaim{}
 
-func NewMsgCreateClaim(supplierAddress string, sessionHeader string, rootHash string) *MsgCreateClaim {
+func NewMsgCreateClaim(
+	supplierAddress string,
+	sessionHeader *sessiontypes.SessionHeader,
+	rootHash []byte,
+) *MsgCreateClaim {
 	return &MsgCreateClaim{
 		SupplierAddress: supplierAddress,
 		SessionHeader:   sessionHeader,
@@ -17,9 +24,29 @@ func NewMsgCreateClaim(supplierAddress string, sessionHeader string, rootHash st
 }
 
 func (msg *MsgCreateClaim) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	// Validate the supplier address
+	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid supplierAddress address (%s)", err)
+		return ErrProofInvalidAddress.Wrapf("%s", msg.GetSupplierAddress())
 	}
+
+	// Validate the session header
+	sessionHeader := msg.SessionHeader
+	if sessionHeader.SessionStartBlockHeight < 0 {
+		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
+	}
+	if len(sessionHeader.SessionId) == 0 {
+		return ErrProofInvalidSessionId.Wrapf("%s", sessionHeader.SessionId)
+	}
+	if !sharedhelpers.IsValidService(sessionHeader.Service) {
+		return ErrProofInvalidService.Wrapf("%v", sessionHeader.Service)
+	}
+
+	// Validate the root hash
+	// TODO_IMPROVE: Only checking to make sure a non-nil hash was provided for now, but we can validate the length as well.
+	if len(msg.RootHash) == 0 {
+		return ErrProofInvalidClaimRootHash.Wrapf("%v", msg.RootHash)
+	}
+
 	return nil
 }

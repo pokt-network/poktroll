@@ -20,7 +20,7 @@ import (
 var _ = strconv.IntSize
 
 func TestProofQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	proofs := createNProofs(keeper, ctx, 2)
 
 	var randSupplierAddr = sample.AccAddress()
@@ -135,7 +135,7 @@ func TestProofQuerySingle(t *testing.T) {
 }
 
 func TestProofQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t)
+	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	proofs := createNProofs(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllProofsRequest {
