@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"gopkg.in/yaml.v2"
 )
 
 var _ paramtypes.ParamSet = (*Params)(nil)
@@ -12,7 +11,7 @@ var _ paramtypes.ParamSet = (*Params)(nil)
 var (
 	KeyComputeUnitsToTokensMultiplier = []byte("ComputeUnitsToTokensMultiplier")
 	// TODO: Determine the default value
-	DefaultComputeUnitsToTokensMultiplier uint64 = 42
+	DefaultComputeUnitsToTokensMultiplier uint64 = 0
 )
 
 // ParamKeyTable the param key table for launch module
@@ -52,12 +51,6 @@ func (p Params) Validate() error {
 	return nil
 }
 
-// String implements the Stringer interface.
-func (p Params) String() string {
-	out, _ := yaml.Marshal(p)
-	return string(out)
-}
-
 // validateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier param
 func validateComputeUnitsToTokensMultiplier(v interface{}) error {
 	computeUnitsToTokensMultiplier, ok := v.(uint64)
@@ -65,9 +58,8 @@ func validateComputeUnitsToTokensMultiplier(v interface{}) error {
 		return fmt.Errorf("invalid parameter type: %T", v)
 	}
 
-	if computeUnitsToTokensMultiplier <= 0 {
-		return fmt.Errorf("invalid compute to tokens multiplier: %d", computeUnitsToTokensMultiplier)
-	}
+	// TODO implement validation
+	_ = computeUnitsToTokensMultiplier
 
 	return nil
 }

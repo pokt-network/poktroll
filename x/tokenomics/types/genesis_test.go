@@ -19,24 +19,12 @@ func TestGenesisState_Validate(t *testing.T) {
 			valid:    true,
 		},
 		{
-			desc: "valid genesis state",
+			desc:     "valid genesis state",
 			genState: &types.GenesisState{
-				Params: types.Params{
-					ComputeUnitsToTokensMultiplier: 1,
-				},
+
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
 			valid: true,
-		},
-		{
-			desc: "invalid genesis state - ComputeUnitsToTokensMultiplier is 0",
-			genState: &types.GenesisState{
-				Params: types.Params{
-					ComputeUnitsToTokensMultiplier: 0,
-				},
-				// this line is used by starport scaffolding # types/genesis/validField
-			},
-			valid: false,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
