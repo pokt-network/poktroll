@@ -53,13 +53,14 @@ $ poktrolld q application show-application $(APP_ADDRESS) --node $(POCKET_NODE) 
 				},
 				{
 					RpcMethod: "StakeApplication",
-					Use:       "stake-application",
+					Use:       "stake-application [stake] [services]",
 					Short:     "Send a stake-application tx",
 					Long: `Stake an application using a config file. This is a broadcast operation that will stake
 the tokens and serviceIds and associate them with the application specified by the 'from' address.
 
 Example:
 $ poktrolld tx application stake-application --config app_stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "stake"}, {ProtoField: "services"}},
 				},
 				{
 					RpcMethod: "UnstakeApplication",
@@ -70,10 +71,11 @@ the application specified by the 'from' address.
 
 Example:
 $ poktrolld tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{},
 				},
 				{
 					RpcMethod: "DelegateToGateway",
-					Use:       "delegate-to-gateway [delegatee-gateway-address]",
+					Use:       "delegate-to-gateway [gateway-address]",
 					Short:     "Send a delegate-to-gateway tx",
 					Long: `Delegate an application to the gateway with the provided address. This is a broadcast operation
 that delegates authority to the gateway specified to sign relays requests for the application, allowing the gateway
@@ -81,11 +83,11 @@ act on the behalf of the application during a session.
 
 Example:
 $ poktrolld tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "delegatee_gateway_address"}},
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "gateway_address"}},
 				},
 				{
 					RpcMethod: "UndelegateFromGateway",
-					Use:       "undelegate-from-gateway [delegatee-gateway-address]",
+					Use:       "undelegate-from-gateway [gateway-address]",
 					Short:     "Send a undelegate-from-gateway tx",
 					Long: `Undelegate an application from the gateway with the provided address. This is a broadcast operation
 that removes the authority from the gateway specified to sign relays requests for the application, disallowing the gateway
@@ -93,7 +95,7 @@ act on the behalf of the application during a session.
 
 Example:
 $ poktrolld tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "delegatee-gateway-address"}},
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "gateway_address"}},
 				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
