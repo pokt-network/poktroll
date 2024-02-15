@@ -13,6 +13,10 @@ func InitGenesis(ctx sdk.Context, k keeper.Keeper, genState types.GenesisState) 
 	for _, claim := range genState.ClaimList {
 		k.UpsertClaim(ctx, claim)
 	}
+	// Set all the proof
+	for _, elem := range genState.ProofList {
+		k.SetProof(ctx, elem)
+	}
 	// this line is used by starport scaffolding # genesis/module/init
 	k.SetParams(ctx, genState.Params)
 }
@@ -23,6 +27,7 @@ func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	genesis.Params = k.GetParams(ctx)
 
 	genesis.ClaimList = k.GetAllClaims(ctx)
+	genesis.ProofList = k.GetAllProof(ctx)
 	// this line is used by starport scaffolding # genesis/module/export
 
 	return genesis
