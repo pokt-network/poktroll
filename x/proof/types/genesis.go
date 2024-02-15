@@ -45,12 +45,15 @@ func (gs GenesisState) Validate() error {
 	// Check for duplicated index in proof
 	proofIndexMap := make(map[string]struct{})
 
-	for _, elem := range gs.ProofList {
-		index := string(ProofKey(elem.Index))
-		if _, ok := proofIndexMap[index]; ok {
-			return fmt.Errorf("duplicated index for proof")
+	for _, proof := range gs.ProofList {
+		primaryKey := string(ProofPrimaryKey(
+			proof.GetSessionHeader().GetSessionId(),
+			proof.GetSupplierAddress(),
+		))
+		if _, ok := proofIndexMap[primaryKey]; ok {
+			return fmt.Errorf("duplicated primaryKey for proof")
 		}
-		proofIndexMap[index] = struct{}{}
+		proofIndexMap[primaryKey] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 
