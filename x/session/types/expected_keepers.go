@@ -17,7 +17,9 @@ type AccountKeeper interface {
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
-type BankKeeper interface{}
+type BankKeeper interface {
+	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
+}
 
 // ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
