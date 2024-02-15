@@ -19,15 +19,15 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod: "GetSession",
-					Use:       "get-session [application-address] [service-id] [block-height]",
+					Use:       "get-session [application-address] [service] [block-height]",
 					Short:     "Query get-session",
 					Long: `Query the session data for a specific (app, service, height) tuple.
 
 This is a query operation that will not result in a state transition but simply gives a view into the chain state.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE)`,
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "applicationAddress"}, {ProtoField: "serviceId"}, {ProtoField: "blockHeight"}},
+$ poktrolld q session get-session pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4 svc1 42 --node $(POCKET_NODE) --home $(POKTROLLD_HOME) `,
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "application_address"}, {ProtoField: "service"}, {ProtoField: "block_height"}},
 				},
 
 				// this line is used by ignite scaffolding # autocli/query
