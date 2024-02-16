@@ -10,8 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 var _ client.SupplierClient = (*supplierClient)(nil)
@@ -74,7 +74,9 @@ func (sClient *supplierClient) SubmitProof(
 		return err
 	}
 
-	msg := &suppliertypes.MsgSubmitProof{
+	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
+	//  with off-chain pkgs/nomenclature.
+	msg := &prooftypes.MsgSubmitProof{
 		SupplierAddress: sClient.signingKeyAddr.String(),
 		SessionHeader:   &sessionHeader,
 		Proof:           proofBz,
@@ -108,7 +110,9 @@ func (sClient *supplierClient) CreateClaim(
 ) error {
 	logger := polylog.Ctx(ctx)
 
-	msg := &suppliertypes.MsgCreateClaim{
+	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
+	//  with off-chain pkgs/nomenclature.
+	msg := &prooftypes.MsgCreateClaim{
 		SupplierAddress: sClient.signingKeyAddr.String(),
 		SessionHeader:   &sessionHeader,
 		RootHash:        rootHash,
