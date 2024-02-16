@@ -43,5 +43,3 @@ sequenceDiagram
 ```
 
 ## Free Work
-
-It is i

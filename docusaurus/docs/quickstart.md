@@ -221,12 +221,6 @@ If everything worked as expected, you should see output similar to the following
 
 ### Send a relay a shannon
 
-:::danger
-TODO(#275): The E2E relay is unlikely to work as of writing this so please see
-[this comment](https://github.com/pokt-network/poktroll/issues/275#issuecomment-1863519333)
-for details and a workaround.
-:::
-
 However, the appgate server above is not configured to sign relays on behalf of `SHANNON_ADDRESS`.
 
 To do so, you'll need to create a similar configuration like so:
