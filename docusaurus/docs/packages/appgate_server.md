@@ -164,7 +164,7 @@ curl -X POST \
 
 ## POKTRollSDK integration
 
-The `AppGate Server` implementation uses the [POKTRollSDK](packages/pkg/sdk/sdk.md) to
+The `AppGate Server` implementation uses the [POKTRollSDK](./../packages/pkg/sdk/sdk.md) to
 interact with the Pocket Network. It can either be used directly or referenced on how
 the `POKTRollSDK` can be used with a custom build `Application` / `Gateway`.
 RPC requests to the Pocket Network.
@@ -190,4 +190,4 @@ While `POKTRollSDK` manages:
 - Verifying the `Supplier`'s signature.
 
 A sequence diagram demonstrating the interaction between the `AppGate Server` and
-the `POKTRollSDK` can be found in the [POKTRollSDK documentation](packages/pkg/sdk/sdk.md#poktrollsdk-sequence-diagram).
+the `POKTRollSDK` can be found in the [POKTRollSDK documentation](./../packages/pkg/sdk/sdk.md#poktrollsdk-sequence-diagram).
