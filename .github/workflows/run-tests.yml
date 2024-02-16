@@ -9,10 +9,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
-env:
-  GKE_CLUSTER: protocol-us-central1
-  GKE_ZONE: us-central1
-
 jobs:
   go-test:
     runs-on: ubuntu-latest

@@ -62,7 +62,7 @@ localnet_config.yaml
 localnet_config.yaml-e
 
 # Relase artifacts produced by `ignite chain build --release`
-release
+/release*
 
 # Only keep one go module in our codebase
 go.work.sum
