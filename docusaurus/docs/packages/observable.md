@@ -1,6 +1,6 @@
 ---
 title: Observable Package
-sidebar_position: 1
+sidebar_position: 4
 ---
 
 ## `pocket/pkg/observable` Package <!-- omit in toc -->

@@ -1,8 +1,0 @@
-{
-  "label": "client",
-  "position": 1,
-  "link": {
-    "type": "generated-index",
-    "description": "Documentation about the client package.",
-  }
-}
