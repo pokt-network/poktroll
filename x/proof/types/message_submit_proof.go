@@ -1,14 +1,15 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
 var _ sdk.Msg = &MsgSubmitProof{}
 
-func NewMsgSubmitProof(supplierAddress string, sessionHeader string, proof string) *MsgSubmitProof {
+func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
 		SupplierAddress: supplierAddress,
 		SessionHeader:   sessionHeader,
@@ -17,9 +18,33 @@ func NewMsgSubmitProof(supplierAddress string, sessionHeader string, proof strin
 }
 
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.SupplierAddress)
+	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
 	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid supplierAddress address (%s)", err)
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"supplier address %q, error: %s",
+			msg.GetSupplierAddress(),
+			err,
+		)
 	}
+
+	_, err = sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress())
+	if err != nil {
+		return sdkerrors.ErrInvalidAddress.Wrapf(
+			"application address: %q, error: %s",
+			msg.GetSessionHeader().GetApplicationAddress(),
+			err,
+		)
+	}
+
+	if msg.GetSessionHeader().GetService().GetId() == "" {
+		return ErrProofInvalidService.Wrap("proof service ID %q cannot be empty")
+	}
+
+	if len(msg.GetProof()) == 0 {
+		return ErrProofInvalidProof.Wrap("proof cannot be empty")
+	}
+
+	// TODO_BLOCKER: attempt to deserialize the proof for additional validation.
+
 	return nil
 }

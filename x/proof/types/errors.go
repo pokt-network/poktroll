@@ -20,7 +20,7 @@ var (
 	ErrProofInvalidQueryRequest       = sdkerrors.Register(ModuleName, 11, "invalid query request")
 	ErrProofClaimNotFound             = sdkerrors.Register(ModuleName, 12, "claim not found")
 	ErrProofProofNotFound             = sdkerrors.Register(ModuleName, 13, "proof not found")
-	//ErrProofInvalidProof              = sdkerrors.Register(ModuleName, 14, "invalid proof")
+	ErrProofInvalidProof              = sdkerrors.Register(ModuleName, 14, "invalid proof")
 	//ErrProofInvalidClosestMerkleProof = sdkerrors.Register(ModuleName, 15, "invalid closest merkle proof")
 	ErrInvalidSigner = sdkerrors.Register(ModuleName, 1100, "expected gov account as only signer for proposal message")
 )
