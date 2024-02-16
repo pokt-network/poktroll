@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -93,7 +94,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -127,7 +128,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 func TestTxClient_NewTxClient_Error(t *testing.T) {
 	// Construct an empty in-memory keyring.
-	memKeyring := cosmoskeyring.NewInMemory(testclient.EncodingConfig.Marshaler)
+	memKeyring := cosmoskeyring.NewInMemory(testclient.Marshaler)
 
 	tests := []struct {
 		name           string
@@ -310,7 +311,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -378,7 +379,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,

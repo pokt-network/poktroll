@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"cosmossdk.io/math"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
@@ -44,7 +45,7 @@ func NewTestApplicationQueryClient(
 			}
 			return apptypes.Application{
 				Address: appAddress,
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 					{
 						Service: &sharedtypes.Service{
