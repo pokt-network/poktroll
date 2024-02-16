@@ -23,8 +23,8 @@ func (am AppModule) GetQueryCmd() *cobra.Command {
 	cmd.AddCommand(CmdQueryParams())
 	cmd.AddCommand(CmdListClaims())
 	cmd.AddCommand(CmdShowClaim())
-	// cmd.AddCommand(CmdListProof())
-	// cmd.AddCommand(CmdShowProof())
+	cmd.AddCommand(CmdListProof())
+	cmd.AddCommand(CmdShowProof())
 	// this line is used by starport scaffolding # 1
 
 	return cmd
