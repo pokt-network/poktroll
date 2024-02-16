@@ -16,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	appmodule "github.com/pokt-network/poktroll/x/application/module"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -207,6 +208,22 @@ func DefaultGatewayModuleGenesisState(t *testing.T, n int) *gatewaytypes.Genesis
 	return state
 }
 
+// GatewayModuleGenesisStateWithAddresses generates a GenesisState object with
+// a gateway list full of gateways with the given addresses.
+// It returns the populated GenesisState object.
+func GatewayModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *gatewaytypes.GenesisState {
+	t.Helper()
+	state := gatewaytypes.DefaultGenesis()
+	for _, addr := range addresses {
+		gateway := gatewaytypes.Gateway{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+		}
+		state.GatewayList = append(state.GatewayList, gateway)
+	}
+	return state
+}
+
 // TODO_CLEANUP: Consolidate all of the helpers below to use shared business
 // logic and move into its own helpers file.
 
@@ -261,6 +278,58 @@ func InitAccountWithSequence(
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJSON)
 	require.NoError(t, err)
 	require.Equal(t, float64(0), responseJSON["code"], "code is not 0 in the response: %v", responseJSON)
+}
+
+// DelegateAppToGateway delegates the provided application to the provided gateway
+func DelegateAppToGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdDelegateToGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
+}
+
+// UndelegateAppFromGateway undelegates the provided application from the provided gateway
+func UndelegateAppFromGateway(
+	t *testing.T,
+	net *Network,
+	appAddr string,
+	gatewayAddr string,
+) {
+	t.Helper()
+	val := net.Validators[0]
+	ctx := val.ClientCtx
+	args := []string{
+		gatewayAddr,
+		fmt.Sprintf("--%s=%s", flags.FlagFrom, appAddr),
+		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
+		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
+	}
+	responseRaw, err := clitestutil.ExecTestCLICmd(ctx, appmodule.CmdUndelegateFromGateway(), args)
+	require.NoError(t, err)
+	var resp sdk.TxResponse
+	require.NoError(t, net.Config.Codec.UnmarshalJSON(responseRaw.Bytes(), &resp))
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.TxHash)
+	require.Equal(t, uint32(0), resp.Code)
 }
 
 // freePorts return the available ports based on the number of requested ports.
