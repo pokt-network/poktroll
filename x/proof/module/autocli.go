@@ -50,18 +50,19 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					RpcMethod: "UpdateParams",
 					Skip:      true, // skipped because authority gated
 				},
-				{
-					RpcMethod:      "CreateClaim",
-					Use:            "create-claim [session-header] [root-hash]",
-					Short:          "Send a create-claim tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "rootHash"}},
-				},
-				{
-					RpcMethod:      "SubmitProof",
-					Use:            "submit-proof [session-header] [proof]",
-					Short:          "Send a submit-proof tx",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "proof"}},
-				},
+				// TODO_TECHDEBT(#370): Integrate with AutoCLI
+				//{
+				//	RpcMethod:      "CreateClaim",
+				//	Use:            "create-claim [session-header] [root-hash]",
+				//	Short:          "Send a create-claim tx",
+				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "rootHash"}},
+				//},
+				//{
+				//	RpcMethod:      "SubmitProof",
+				//	Use:            "submit-proof [session-header] [proof]",
+				//	Short:          "Send a submit-proof tx",
+				//	PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "proof"}},
+				//},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
