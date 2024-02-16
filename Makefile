@@ -179,6 +179,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 
 .PHONY: localnet_up
 localnet_up: ## Starts localnet
+	make proto_regen
 	make localnet_regenesis
 	tilt up
 
@@ -193,7 +194,7 @@ localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localn
 # intends to make this parameterizable in the future.
 	@echo "Initializing chain..."
 	@set -e ;\
-	ignite chain init ;\
+	ignite chain init --skip-proto ;\
 	mkdir -p $(POKTROLLD_HOME)/config/ ;\
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
 	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
@@ -569,7 +570,8 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			$(addr) $(PNF_ADDR) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
-			--node $(POCKET_NODE);)
+			--node $(POCKET_NODE) \
+			--chain-id poktroll;)
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
