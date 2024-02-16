@@ -22,6 +22,7 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -62,10 +63,10 @@ func TestMain(m *testing.M) {
 type suite struct {
 	gocuke.TestingT
 	// TODO_TECHDEBT: rename to `poktrolld`.
-	pocketd             *pocketdBin
-	scenarioState       map[string]any // temporary state for each scenario
-	cdc                 codec.Codec
-	supplierQueryClient suppliertypes.QueryClient
+	pocketd          *pocketdBin
+	scenarioState    map[string]any // temporary state for each scenario
+	cdc              codec.Codec
+	proofQueryClient prooftypes.QueryClient
 }
 
 func (s *suite) Before() {
@@ -78,7 +79,7 @@ func (s *suite) Before() {
 
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	s.supplierQueryClient = suppliertypes.NewQueryClient(clientCtx)
+	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -385,7 +386,7 @@ func (s *suite) buildSupplierMap() {
 		s.Fatalf("error getting supplier list: %s", err)
 	}
 	s.pocketd.result = res
-	var resp suppliertypes.QueryAllSupplierResponse
+	var resp suppliertypes.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, supplier := range resp.Supplier {
