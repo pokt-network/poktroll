@@ -43,15 +43,15 @@ localnet/*/config/*.json
 .mise.local.toml
 
 # Compiled protos
-**/*.pb.go
-**/*.pb.gw.go
+#**/*.pb.go
+#**/*.pb.gw.go
 
 # Frontend utils
 ts-client/
 
 # Proto artifacts
-**/*.pb.go
-**/*.pb.gw.go
+#**/*.pb.go
+#**/*.pb.gw.go
 
 # Mock
 **/*_mock.go
