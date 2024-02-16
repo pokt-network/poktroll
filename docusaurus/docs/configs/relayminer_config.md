@@ -15,6 +15,7 @@ queries from and which services it forwards requests to._
 - [Top level options](#top-level-options)
   - [`signing_key_name`](#signing_key_name)
   - [`smt_store_path`](#smt_store_path)
+  - [`metrics`](#metrics)
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
@@ -71,6 +72,28 @@ _`Required`_
 The relative or absolute path to the directory where the `RelayMiner` will store
 the `SparseMerkleTree` data on disk. This directory is used to persist the `SMT`
 in a BadgerDB KV store data files.
+
+## `metrics`
+
+_`Optional`_
+
+This section configures a Prometheus exporter endpoint, enabling the collection 
+and export of metrics data. The `addr` field specifies the network address for 
+the exporter to bind to. It can be either a port number, which assumes binding
+to all interfaces, or a specific host:port combination.
+
+Example configuration:
+
+```yaml
+metrics:
+  enabled: true
+  addr: :9090
+```
+
+When `enabled` is set to `true`, the exporter is active. The addr `value` of
+`:9090` implies the exporter is bound to port 9090 on all available network
+interfaces.
+
 
 # Pocket node connectivity
 
