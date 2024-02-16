@@ -192,9 +192,12 @@ func (tClient *txClient) SignAndBroadcast(
 ) either.AsyncError {
 	var validationErrs error
 	for i, msg := range msgs {
-		if err := msg.ValidateBasic(); err != nil {
-			validationErr := ErrInvalidMsg.Wrapf("in msg with index %d: %s", i, err)
-			validationErrs = multierr.Append(validationErrs, validationErr)
+		validatableMsg, ok := msg.(cosmostypes.HasValidateBasic)
+		if ok {
+			if err := validatableMsg.ValidateBasic(); err != nil {
+				validationErr := ErrInvalidMsg.Wrapf("in msg with index %d: %s", i, err)
+				validationErrs = multierr.Append(validationErrs, validationErr)
+			}
 		}
 	}
 	if validationErrs != nil {
