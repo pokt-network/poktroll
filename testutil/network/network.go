@@ -80,6 +80,27 @@ func DefaultConfig() network.Config {
 // TODO_CLEANUP: Refactor the genesis state helpers below to consolidate usage
 // and reduce the code footprint.
 
+// ApplicationModuleGenesisStateWithAccount generates a GenesisState object with
+// a single application for each of the given addresses.
+func ApplicationModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *apptypes.GenesisState {
+	t.Helper()
+	state := apptypes.DefaultGenesis()
+	for _, addr := range addresses {
+		application := apptypes.Application{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+				},
+			},
+		}
+		state.ApplicationList = append(state.ApplicationList, application)
+	}
+
+	return state
+}
+
 // DefaultApplicationModuleGenesisState generates a GenesisState object with a given number of applications.
 // It returns the populated GenesisState object.
 func DefaultApplicationModuleGenesisState(t *testing.T, n int) *apptypes.GenesisState {
@@ -132,6 +153,33 @@ func DefaultSupplierModuleGenesisState(t *testing.T, n int) *suppliertypes.Genes
 		// nullify.Fill(&supplier)
 		state.SupplierList = append(state.SupplierList, supplier)
 	}
+	return state
+}
+
+// SupplierModuleGenesisStateWithAddresses generates a GenesisState object with
+// a single supplier for each of the given addresses.
+func SupplierModuleGenesisStateWithAddresses(t *testing.T, addresses []string) *suppliertypes.GenesisState {
+	t.Helper()
+	state := suppliertypes.DefaultGenesis()
+	for _, addr := range addresses {
+		supplier := sharedtypes.Supplier{
+			Address: addr,
+			Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(10000)},
+			Services: []*sharedtypes.SupplierServiceConfig{
+				{
+					Service: &sharedtypes.Service{Id: "svc1"},
+					Endpoints: []*sharedtypes.SupplierEndpoint{
+						{
+							Url:     "http://localhost:1",
+							RpcType: sharedtypes.RPCType_JSON_RPC,
+						},
+					},
+				},
+			},
+		}
+		state.SupplierList = append(state.SupplierList, supplier)
+	}
+
 	return state
 }
 
