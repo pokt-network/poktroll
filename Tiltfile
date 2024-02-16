@@ -72,7 +72,7 @@ k8s_yaml(
 # Hot reload protobuf changes
 local_resource(
     "hot-reload: generate protobufs",
-    "ignite generate proto-go -y",
+    "make proto_regen",
     deps=["proto"],
     labels=["hot-reloading"],
 )
