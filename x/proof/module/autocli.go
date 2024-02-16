@@ -56,6 +56,12 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:          "Send a create-claim tx",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "rootHash"}},
 				},
+				{
+					RpcMethod:      "SubmitProof",
+					Use:            "submit-proof [session-header] [proof]",
+					Short:          "Send a submit-proof tx",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "sessionHeader"}, {ProtoField: "proof"}},
+				},
 				// this line is used by ignite scaffolding # autocli/tx
 			},
 		},
