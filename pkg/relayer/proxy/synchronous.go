@@ -8,8 +8,13 @@ import (
 	"net/url"
 	"time"
 
+	"cosmossdk.io/depinject"
 	sdkerrors "cosmossdk.io/errors"
+	"cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/codec"
 
+	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
@@ -17,7 +22,24 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
+var (
+	_         relayer.RelayServer = (*synchronousRPCServer)(nil)
+	marshaler codec.Codec
+)
+
+func init() {
+	cmd.InitSDKConfig()
+	deps := depinject.Configs(
+		app.AppConfig(),
+		depinject.Supply(
+			app.AppConfig(),
+			log.NewNopLogger(),
+		),
+	)
+	if err := depinject.Inject(deps, &marshaler); err != nil {
+		panic(err)
+	}
+}
 
 // synchronousRPCServer is the struct that holds the state of the synchronous
 // RPC server. It is used to listen for and respond to relay requests where
@@ -274,8 +296,7 @@ func (sync *synchronousRPCServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
-	cdc := types.ModuleCdc
-	relayResponseBz, err := cdc.Marshal(relayResponse)
+	relayResponseBz, err := marshaler.Marshal(relayResponse)
 	if err != nil {
 		return err
 	}

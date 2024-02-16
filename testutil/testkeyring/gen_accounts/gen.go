@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -10,13 +8,15 @@ import (
 	"os"
 	"strings"
 
+	"cosmossdk.io/depinject"
+	sdklog "cosmossdk.io/log"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/testutil/testkeyring"
-
 	"github.com/pokt-network/poktroll/app"
+	"github.com/pokt-network/poktroll/testutil/testkeyring"
 )
 
 var (
@@ -33,7 +33,15 @@ func init() {
 func main() {
 	flag.Parse()
 
-	kr := keyring.NewInMemory(app.MakeEncodingConfig().Marshaler)
+	var marshaler codec.Codec
+	deps := depinject.Configs(
+		app.AppConfig(),
+		depinject.Supply(sdklog.NewNopLogger()),
+	)
+	if err := depinject.Inject(deps, &marshaler); err != nil {
+		log.Fatal(err)
+	}
+	kr := keyring.NewInMemory(marshaler)
 
 	preGeneratedAccountLines := make([]string, flagAccountsLimit)
 	for i := range preGeneratedAccountLines {

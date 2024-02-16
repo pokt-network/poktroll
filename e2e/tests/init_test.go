@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/depinject"
+	sdklog "cosmossdk.io/log"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
@@ -72,7 +74,14 @@ type suite struct {
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
 	s.scenarioState = make(map[string]any)
-	s.cdc = app.MakeEncodingConfig().Marshaler
+	deps := depinject.Configs(
+		app.AppConfig(),
+		depinject.Supply(
+			sdklog.NewTestLogger(s),
+		),
+	)
+	err := depinject.Inject(deps, &s.cdc)
+	require.NoError(s, err)
 	s.buildAddrMap()
 	s.buildAppMap()
 	s.buildSupplierMap()
