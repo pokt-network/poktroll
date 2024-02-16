@@ -14,7 +14,7 @@ sidebar_position: 5
 An `RelayMiner` is responsible for proxying `RelayRequests` between an `AppGate Server`
 and the supplied `Service`.
 
-[Suppliers](./supplier.md) interested in providing `Service`s on th Pocket Network
+[Suppliers](./supplier.md) interested in providing `Service`s on Pocket Network
 would need to run a `RelayMiner` in addition to the software that provides the said `Service`.
 
 ## Configuration

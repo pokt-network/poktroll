@@ -17,12 +17,12 @@ Network, handling all intermediary business logic.
 
 A [Gateway](./gateway.md) operator or a sovereign [Application](./application.md)
 interested in accessing Pocket Network directly would need to run an
-`AppGate Server` or custom software that implements the same functionality.[POKTRollSDK](../packages/sdk.md) could be leveraged to build such software.
+`AppGate Server` or custom software that implements the same functionality.[POKTRollSDK](../packages/sdk.md) could be leverage or referenced to build such software.
 
 ## Configuration
 
 Configurations and additional documentation related to operating an `AppGate Server`
-can be found at [appgate_server_config.md](../configs/appgate_server_config.md)
+can be found at [appgate_server_config.md](../configs/appgate_server_config.md).
 
 ## CLI
 

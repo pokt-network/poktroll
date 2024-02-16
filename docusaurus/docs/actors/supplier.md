@@ -12,7 +12,7 @@ sidebar_position: 4
 
 ## Overview
 
-A `Supplier` is responsible for staking POKT in order to earn in exchange for
+A `Supplier` is responsible for staking POKT in order to earn POKT in exchange for
 providing services as a function of volume and time.
 
 ## Schema
