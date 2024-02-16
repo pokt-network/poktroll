@@ -20,6 +20,7 @@ func (am AppModule) GetQueryCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
+	cmd.AddCommand(CmdQueryParams())
 	cmd.AddCommand(CmdListSupplier())
 	cmd.AddCommand(CmdShowSupplier())
 	// this line is used by starport scaffolding # 1
