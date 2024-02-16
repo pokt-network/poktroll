@@ -11,18 +11,8 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-const (
-	numBlocksPerSession = 4
-	testServiceId       = "svc1"
-)
-
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
-
-// init initializes the SDK configuration.
-//func init() {
-//	cmd.InitSDKConfig()
-//}
 
 // networkWithSupplierObjects creates a new network with a given number of supplier objects.
 // It returns the network and a slice of the created supplier objects.
