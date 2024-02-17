@@ -5,6 +5,7 @@ POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
+CHAIN_ID = poktroll
 
 ####################
 ### Dependencies ###
@@ -207,6 +208,11 @@ localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localn
 	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
 	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
 
+.PHONY: send_relay
+send_relay:
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+	http://localhost:42069/anvil
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -390,7 +396,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)

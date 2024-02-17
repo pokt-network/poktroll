@@ -25,6 +25,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/pokt-network/poktroll/app"
+	appgateservercmd "github.com/pokt-network/poktroll/pkg/appgateserver/cmd"
+	relayercmd "github.com/pokt-network/poktroll/pkg/relayer/cmd"
 )
 
 // NewRootCmd creates a new root command for poktrolld. It is called once in the main function.
@@ -121,6 +123,16 @@ func NewRootCmd() *cobra.Command {
 	if err := autoCliOpts.EnhanceRootCommand(rootCmd); err != nil {
 		panic(err)
 	}
+
+	// add relayer command
+	rootCmd.AddCommand(
+		relayercmd.RelayerCmd(),
+	)
+
+	// add the appgate server command
+	rootCmd.AddCommand(
+		appgateservercmd.AppGateServerCmd(),
+	)
 
 	return rootCmd
 }
