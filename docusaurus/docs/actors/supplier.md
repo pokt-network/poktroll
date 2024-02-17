@@ -17,7 +17,7 @@ providing services as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of a `Supplier` can be found at [supplier.proto](./../../../proto/pocket/supplier/supplier.proto).
+The on-chain representation of a `Supplier` can be found at [supplier.proto](./../../../proto/pocket/shared/supplier.proto).
 
 ## Configuration
 
