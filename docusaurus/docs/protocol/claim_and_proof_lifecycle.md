@@ -11,8 +11,7 @@ This part of the documentation is just an initial draft and requires deep
 understanding of the Pocket Network protocol. It is currently not intended to be
 exhaustive or easily approachable to all readers.
 
-TODO(@Olshansk): Iterate on these docs. Link & mention the necessary governance
-params.
+TODO(@Olshansk): Update this doc with the relevant governance params once added.
 
 :::
 
@@ -30,10 +29,10 @@ params.
   - [SubmitProof Transaction](#submitproof-transaction)
   - [SubmitProof Validation](#submitproof-validation)
   - [Proof Window](#proof-window)
-- [Security](#security)
-  - [Merkle Proof Selection](#merkle-proof-selection)
+- [Proof Security](#proof-security)
   - [Merkle Leaf Validation](#merkle-leaf-validation)
-  - [Examples](#examples)
+  - [Merkle Proof Selection](#merkle-proof-selection)
+    - [Example: Example Sparse Merkle Sum Trie (SMST)](#example-example-sparse-merkle-sum-trie-smst)
     - [Example 1: Path to leaf at full depth](#example-1-path-to-leaf-at-full-depth)
     - [Example 2: Path to leaf at partial depth](#example-2-path-to-leaf-at-partial-depth)
     - [Example 3: Path to empty node](#example-3-path-to-empty-node)
@@ -61,14 +60,16 @@ title: Claim & Proof Lifecycle
 sequenceDiagram
     actor A as Application(s)
     actor S as Supplier(s)
-    participant PN as Pocket Network<br>Distributed Ledger
+    participant PN as Pocket Network<br>(Distributed Ledger)
 
     loop Session Duration
+        note over A,S: off-chain
         A ->> +S: Relay Request
+        S ->> S: Insert Leaf into <br> Sparse Merkle Sum Trie
         S ->> -A: Relay Response
     end
 
-    par For every (App, Supplier)
+    par For every (App, Supplier, Service)
         note over S, PN: Claim Window (Wait a few blocks)
         S ->> PN: CreateClaim(Session, MerkleRootHash)
         PN -->> S: Seed for merkle branch
@@ -88,44 +89,36 @@ See [Session](./session.md) for more details.
 ### Session Duration
 
 After a session is initiated, the majority of it is handled `off-chain`,
-as `Applications`/`Gateways` make RPC requests (`relays`) to the `Supplier`.
+as `Applications` make RPC requests (`relays`) to the `Supplier`.
 
 ### Session End
 
-The following is a non-technical high-level idea of what happens when a session
-intended to provide an idea of the steps involved.
+After a session ends, the Claim & Proof Lifecycle can be decomposed, at a high-level,
+into the following steps.
 
 ```Mermaid
----
-title: Session Ends
----
-graph LR
-    A(Session Ends) --> |"Sparse Merkle Sum Tree (SMST)"| B
-    B[Commit Tree to Disk] --> |SMST Root Hash| C
-    C[Send Claim Transaction] -.-> |Get Seed From Chain| D
-    D[Send Proof Transaction] --> |Validate Proof| E(Settle Rewards)
-```
-
-```Mermaid
----
-title: After Session Ends
----
 timeline
-    title Claim & Proof Timeline
+    title Supplier Post Session Timleine
     Session Ends
+        : Recompute SMST root & sum (compute units)
+        : Flush and store SMST on local disk
+    CreateClaim
         : Wait a few blocks
-    SubmitClaim
-        : Facebook : Google
-    Generate Proof
-        : Wait a few blocks
-        : Protocol generate on-chain entropy
-        : Supplier retrives branch to prove
+        : CreateClaim Tx containing <br>(root, sum, session, app, supplier, service)
+        : Claim stored on-chain
     SubmitProof
-        : Validate Proof
-        : Store Proof On-Chain
-    ValidateProof
-        : Burn Application Stake
-        : Inflate Supplier Stake
+        : Wait a few blocks
+        : Retrieve seed from on-chain (e.g. block hash)
+        : Generate Merkle Proof local SMST for path based on seed
+        : SubmitProof Tx containing <br>(session, merkle proof, leaf)
+        : Proof stored on-chain
+    Proof Validation
+        : Retrieve on-chain Claim corresponding to on-chain Proof
+        : Validate Merkle Proof
+        : Validate App Signature on Relay Request Leaf
+        : Validate Supplier Signature on Relay Request Leaf
+        : Burn Application Stake proportional to sum
+        : Inflate Supplier Balance  proportional to sum
 ```
 
 ## Claim
@@ -135,9 +128,9 @@ some amount of work in servicing `relays` for `Application`.
 
 Exactly one claim exists for every `(Application, Supplier, Session)`.
 
-A `Claim` forces a `Supplier` to commit to have done `X` work during a `Session` for
+A `Claim` forces a `Supplier` to commit to have done `sum` work during a `Session` for
 a certain `Application`. The `sum` in the root of the SMST is the amount of work
-done. Each leaf has a different weight depending on the number of compute units
+done. Each leaf has a different `weight` depending on the number of _"compute units"_
 that were necessary to service that request.
 
 _TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it written._
@@ -156,7 +149,7 @@ You can find the definition for the [CreateClaim Transaction here](../../../prot
 
 ### CreateClaim Validation
 
-TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](./../../../x/supplier/keeper/msg_server_create_claim.go) is fully implemented.
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](./../../../x/supplier/keeper/msg_server_create_claim.go) is fully implemented._
 
 ### Claim Window
 
@@ -167,24 +160,23 @@ or too late, it will be rejected by the protocol.
 If a `Supplier` fails to submit a `Claim` during the Claim Window, it will forfeit
 any potential rewards it could earn in exchange for the work done.
 
-TODO(@Olshansk): Link to the governance params determining this.
+_TODO(@Olshansk): Link to the governance params governing this once implemented._
 
 ## Proof
 
 A `Proof` is a structure submitted on-chain by a `Supplier` containing a Merkle
-Proof to a single pseudo-randomly selected leaf. claiming to have done
-some amount of work in servicing `relays` for `Application`.
+Proof to a single pseudo-randomly selected leaf from the corresponding `Claim`.
 
-Exactly one claim exists for every `(Application, Supplier, Session)`.
+At most one `Proof` exists for every `Claim`.
 
-A `Claim` forces a `Supplier` to commit to have done `X` work during a `Session` for
-a certain `Application`. The `sum` in the root of the SMST is the amount of work
-done. Each leaf has a different weight depending on the number of compute units
-that were necessary to service that request.
+A `Proof` is necessary for the `Claim` to be validated so the `Supplier` can be
+rewarded for the work done.
 
 _TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it written._
 
 ### Proof Protobuf
+
+A serialized version of the `Proof` is stored on-chain.
 
 You can find the definition for the [Proof structure here](../../../proto/pocket/supplier/proof.proto)
 
@@ -192,89 +184,51 @@ You can find the definition for the [Proof structure here](../../../proto/pocket
 
 A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `on-chain`.
 
-If the `Proof` is invalid, or if there is corresponding `Claim` for the `Proof`, the
+If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
 transaction will be rejected.
 
 You can find the definition for the [SubmitProof Transaction here](../../../proto/pocket/supplier/tx.proto).
 
 ### SubmitProof Validation
 
-TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](./../../../x/supplier/keeper/msg_server_submit_proof.go) is fully implemented.
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](./../../../x/supplier/keeper/msg_server_submit_proof.go) is fully implemented._
 
 ### Proof Window
 
-After the `Claim Window` closes, a `Supplier` has several blocks, a `Proof Window`,
+After the `Proof Window` opens, a `Supplier` has several blocks, a `Proof Window`,
 to submit a `SubmitProof` transaction containing a `Proof`. If it is submitted too
 early or too late, it will be rejected by the protocol.
 
 If a `Supplier` fails to submit a `Proof` during the Proof Window, the Claim will
 expire and it it will forfeit any previously claimed work done.
 
-TODO(@Olshansk): Link to the governance params determining this.
+_TODO(@Olshansk): Link to the governance params governing this once implemented._
 
-## Security
+## Proof Security
 
-### Merkle Proof Selection
+In addition to basic validation as part of processing `SubmitProof` to determine
+whether or not the `Proof` should be stored on-chain, there are several additional
+deep cryptographic validations needed:
 
-- 🟥 - Root node
-- 🟦 - Extension/Inner node
-- 🟩 - Leaf node
-- ⬛ - Empty node
-- 🟨 - Part of Merkle Proof
+1. `Merkle Leaf Validation` - Proof of the off-chain `Supplier` <-> `Application` interaction during the Relay request & response.
+2. `Merkle Proof Selection` - Proof of the amount of work done by the `Supplier` during the `Session`.
 
-A few simplifications are being made in this diagram:
+:::note
 
-- Extension nodes & inner nodes are represented by the same node type
-- Leafs, which may or may not be single node subtrees, capture the whole path bound via `x` in the diagram
-- The key in the binary trie below can have at most 5 bits
+TODO: Link to tokenomics and data integrity checks for discussion once they are written.
 
-```mermaid
-graph TB
-    %% Define a class for red nodes
-    classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00ff00, color:#ffffff;
-    classDef blueNode fill:#0000ff, color:#ffffff;
-    classDef yellowNode fill:#fff500, color:#ffa500
-
-    %% Define root node
-    R[sum=9<br>root]
-
-    %% Height = 1
-    R --0--> N1[sum=5<br>0b0]
-    R --1--> N2[sum=4<br>0b1]
-
-    %% Height = 2
-    N1 --0--> E1[sum=0<br>0b00xxx]
-    N1 --1--> N3[sum=5<br>0b01]
-    N2 --0--> L1[sum=1<br>0b10xxx]
-    N2 --1--> N4[sum=3<br>0b11]
-
-    %% Height = 3
-    N3 --0--> L2[sum=2<br>0b010xx]
-    N3 --1--> L3[sum=3<br>0b011xx]
-    N4 --0--> E2[sum=0<br>0b100xx]
-    N4 --1--> N5[sum=3<br>0b111xx]
-
-    %% Height = 4
-    N5 --0--> L4[sum=1<br>0b1110x]
-    N5 --1--> N6[sum=2<br>0b1111x]
-
-    %% Height = 5
-    N6 --0--> L5[sum=1<br>0b11110]
-    N6 --1--> L6[sum=1<br>0b11111]
-
-    class R redNode;
-    class L1,L2,L3,L4,L5,L6 greenNode;
-    class N1,N2,N3,N4,N5,N6 blueNode;
-```
+:::
 
 ### Merkle Leaf Validation
 
 The key components of every leaf in the `Sparse Merkle Sum Trie` are shown below.
 
-When the leaf is validated, the `Application` signing the `Relay Request` is
-the one whose staked balance is burnt, and the `Supplier` signing the `Relay Response`
-is the one whose account balance is increased.
+After the leaf is validated, two things happen:
+
+1. The stake of `Application` signing the `Relay Request` is decreased through burn
+2. The account balance of the `Supplier` signing the `Relay Response` is increased through mint
+
+The validation on these signatures is done on-chain as part of `Proof Validation`.
 
 ```mermaid
 graph LR
@@ -295,11 +249,76 @@ graph LR
     end
 ```
 
-### Examples
+### Merkle Proof Selection
+
+Before the leaf itself is validated, we need to make sure if there is a valid
+Merkle Proof for the associated pseudo-random path computed on-chain.
+
+Since the path that needs to be proven uses an on-chain seed after the `Claim`
+has been submitted, it is impossible to know the path in advance.
 
 Assume a collision resistant hash function `H` that takes a the `block header hash`
-as the `seed` and maps it to a `path` in the `5-bit` space for the `Merkle Trie` in
-this example.
+as the `seed` and maps it to a `path` in the `Merkle Trie` key space.
+
+#### Example: Example Sparse Merkle Sum Trie (SMST)
+
+Below is an example of a `Sparse Merkle Sum Trie` where the paths can be at
+most `5` bits (for example purposes).
+
+:::note
+
+Extension nodes are ommitted and shown via `0bxxxxx` as part of the tree edges
+
+:::
+
+Legend:
+
+- 🟥 - Root node
+- 🟦 - Inner node
+- 🟩 - Leaf node
+- ⬛ - Empty node
+- 🟨 - Included in Merkle Proof
+- ⬚🟨 - Computed as Part of Merkle Proof
+
+```mermaid
+graph TB
+    %% Define a class for red nodes
+    classDef redNode fill:#ff0000, color:#ffffff;
+    classDef greenNode fill:#00ff00, color:#ffffff;
+    classDef blueNode fill:#0000ff, color:#ffffff;
+    classDef yellowNode fill:#fff500, color:#ffa500
+
+    %% Define root node
+    R[sum=9<br>root]
+
+    %% Height = 1
+    R -- 0 --> N1[sum=5<br>0b0]
+    R -- 1 --> N2[sum=4<br>0b1]
+
+    %% Height = 2
+    N1 -- 0 --> E1[sum=0<br>0b00xxx]
+    N1 -- 1 --> N3[sum=5<br>0b01]
+    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 1 --> N4[sum=3<br>0b11]
+
+    %% Height = 3
+    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
+    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N4 -- 0 --> E2[sum=0<br>0b100xx]
+    N4 -- 1 --> N5[sum=3<br>0b111]
+
+    %% Height = 4
+    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 1 --> N6[sum=2<br>0b1111]
+
+    %% Height = 5
+    N6 -- 0 --> L5[sum=1<br>0b11110]
+    N6 -- 1 --> L6[sum=1<br>0b11111]
+
+    class R redNode;
+    class L1,L2,L3,L4,L5,L6 greenNode;
+    class N1,N2,N3,N4,N5,N6 blueNode;
+```
 
 #### Example 1: Path to leaf at full depth
 
@@ -319,28 +338,28 @@ graph TB
     R[sum=9<br>root]
 
     %% Height = 1
-    R --0--> N1[sum=5<br>0b0]
-    R --1--> N2[sum=4<br>0b1]
+    R -- 0 --> N1[sum=5<br>0b0]
+    R -- 1 --> N2[sum=4<br>0b1]
 
     %% Height = 2
-    N1 --0--> E1[sum=0<br>0b00xxx]
-    N1 --1--> N3[sum=5<br>0b01]
-    N2 --0--> L1[sum=1<br>0b10xxx]
-    N2 --1--> N4[sum=3<br>0b11]
+    N1 -- 0 --> E1[sum=0<br>0b00xxx]
+    N1 -- 1 --> N3[sum=5<br>0b01]
+    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 --0--> L2[sum=2<br>0b010xx]
-    N3 --1--> L3[sum=3<br>0b011xx]
-    N4 --0--> E2[sum=0<br>0b100xx]
-    N4 --1--> N5[sum=3<br>0b111xx]
+    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
+    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N4 -- 0 --> E2[sum=0<br>0b100xx]
+    N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 --0--> L4[sum=1<br>0b1110x]
-    N5 --1--> N6[sum=2<br>0b1111x]
+    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 --0--> L5[sum=1<br>0b11110]
-    N6 --1--> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[sum=1<br>0b11110]
+    N6 -- 1 --> L6[sum=1<br>0b11111]
 
     class R redNode;
     class L1,L4,L5,E2,N1 yellowNode;
@@ -352,7 +371,7 @@ graph TB
 
 ```mermaid
 ---
-title: Path to leaf at partial depth (path=0b011xx)
+title: Path to leaf at partial depth (path=0b01100)
 ---
 graph TB
     %% Define a class for red nodes
@@ -366,28 +385,28 @@ graph TB
     R[sum=9<br>root]
 
     %% Height = 1
-    R --0--> N1[sum=5<br>0b0]
-    R --1--> N2[sum=4<br>0b1]
+    R -- 0 --> N1[sum=5<br>0b0]
+    R -- 1 --> N2[sum=4<br>0b1]
 
     %% Height = 2
-    N1 --0--> E1[sum=0<br>0b00xxx]
-    N1 --1--> N3[sum=5<br>0b01]
-    N2 --0--> L1[sum=1<br>0b10xxx]
-    N2 --1--> N4[sum=3<br>0b11]
+    N1 -- 0 --> E1[sum=0<br>0b00xxx]
+    N1 -- 1 --> N3[sum=5<br>0b01]
+    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 --0--> L2[sum=2<br>0b010xx]
-    N3 --1--> L3[sum=3<br>0b011xx]
-    N4 --0--> E2[sum=0<br>0b100xx]
-    N4 --1--> N5[sum=3<br>0b111xx]
+    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
+    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N4 -- 0 --> E2[sum=0<br>0b100xx]
+    N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 --0--> L4[sum=1<br>0b1110x]
-    N5 --1--> N6[sum=2<br>0b1111x]
+    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 --0--> L5[sum=1<br>0b11110]
-    N6 --1--> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[sum=1<br>0b11110]
+    N6 -- 1 --> L6[sum=1<br>0b11111]
 
     class R redNode;
     class E1,N2,L2 yellowNode;
@@ -399,7 +418,7 @@ graph TB
 
 ```mermaid
 ---
-title: Path to leaf at partial depth (path=0b100xx->0b10xxx)
+title: Path to leaf at partial depth (path=0b100xx->0b10000)
 ---
 graph TB
     %% Define a class for red nodes
@@ -414,28 +433,28 @@ graph TB
     R[sum=9<br>root]
 
     %% Height = 1
-    R --0--> N1[sum=5<br>0b0]
-    R --1--> N2[sum=4<br>0b1]
+    R -- 0 --> N1[sum=5<br>0b0]
+    R -- 1 --> N2[sum=4<br>0b1]
 
     %% Height = 2
-    N1 --0--> E1[sum=0<br>0b00xxx]
-    N1 --1--> N3[sum=5<br>0b01]
-    N2 --0--> L1[sum=1<br>0b10xxx]
-    N2 --1--> N4[sum=3<br>0b11]
+    N1 -- 0 --> E1[sum=0<br>0b00xxx]
+    N1 -- 1 --> N3[sum=5<br>0b01]
+    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 --0--> L2[sum=2<br>0b010xx]
-    N3 --1--> L3[sum=3<br>0b011xx]
-    N4 --0--> E2[sum=0<br>0b100xx]
-    N4 --1--> N5[sum=3<br>0b111xx]
+    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
+    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N4 -- 0 --> E2[sum=0<br>0b100xx]
+    N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 --0--> L4[sum=1<br>0b1110x]
-    N5 --1--> N6[sum=2<br>0b1111x]
+    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 --0--> L5[sum=1<br>0b11110]
-    N6 --1--> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[sum=1<br>0b11110]
+    N6 -- 1 --> L6[sum=1<br>0b11111]
 
     class R redNode;
     class N1,N5 yellowNode;
@@ -446,8 +465,9 @@ graph TB
 
 ## Full Lifecycle
 
-The following diagram shows the full lifecycle of a Relay Request, Claim, and Proof
-taken from the [Relay Mining whitepaper](https://arxiv.org/pdf/2305.10672.pdf).
+The following diagram was taken from the [Relay Mining whitepaper](https://arxiv.org/pdf/2305.10672.pdf),
+and is an alternative view of the full lifecycle described above.
+It is here for reference purposes.
 
 ```mermaid
 sequenceDiagram

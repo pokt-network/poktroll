@@ -2,24 +2,26 @@
 
 - [Intro Slide: Relay Mining Through Decentralized Gateways](#intro-slide-relay-mining-through-decentralized-gateways)
 - [Agenda](#agenda)
-  - [Why should you listen to us?](#why-should-you-listen-to-us)
-- [\[WIP\] Intro Slide: RPC](#wip-intro-slide-rpc)
-  - [General](#general)
-  - [Reads vs Writes](#reads-vs-writes)
-  - [Show the RPC Trilemma](#show-the-rpc-trilemma)
-  - [Open Problems with RPC](#open-problems-with-rpc)
+  - [Why listen to us?](#why-listen-to-us)
+- [Intro Slide: RPC](#intro-slide-rpc)
+  - [Types of RPC](#types-of-rpc)
+  - [Blockchains were designed for Writes](#blockchains-were-designed-for-writes)
+  - [RPC Nodes were build for reads](#rpc-nodes-were-build-for-reads)
+  - [RPC Trilemma](#rpc-trilemma)
 - [Intro Slide: Relay Mining](#intro-slide-relay-mining)
   - [Analogies](#analogies)
-  - [Rate Limiting](#rate-limiting)
+- [Relay Mining Steps](#relay-mining-steps)
+- [Tree Building](#tree-building)
 - [Claim \& Proof Lifecycle](#claim--proof-lifecycle)
+- [Proof Validation](#proof-validation)
 - [Intro Slide: Probabilistic Proof](#intro-slide-probabilistic-proof)
   - [Why is this necessary?](#why-is-this-necessary)
   - [Need to solve for the long tail](#need-to-solve-for-the-long-tail)
 - [Intro Slide: Decentralized Gateways](#intro-slide-decentralized-gateways)
   - [Whom do you trust?](#whom-do-you-trust)
   - [Which signatures?](#which-signatures)
-  - [Who else is doing work in this space?](#who-else-is-doing-work-in-this-space)
 - [Intro Slide: Future Work](#intro-slide-future-work)
+  - [Who else is doing work in this space?](#who-else-is-doing-work-in-this-space)
   - [Big Ideas](#big-ideas)
   - [Open Questions](#open-questions)
 - [Closing Slide](#closing-slide)
@@ -46,91 +48,135 @@ TODO:
 TODO:
 
 - Animate in the following two big questions:
-  1. How do we incentivize read RPC requests from full nodes?
-  2. How do we delegate and manage trust across multiple gateways?
+  1. How do we incentivize read-only RPC requests?
+  2. How do we delegate trust across multiple gateways?
 
 Speaker Notes:
 
-- There's no free RPC, and I will be discussing the tradeoffs we need to make
+- `Joke`: You might be able to get free lunch here at ETH denver, but there's no free RPC.
 
-### Why should you listen to us?
+### Why listen to us?
 
-- Pocket Network is the largest decentralized RPC network
-- Managing a validator set of 1,000 after hitting scaling issues at 10,000
-- Grove is the primary gateway that provides access to Pocket Network today
-- 3+ years on MainNet
-- 50+ blockchains
-- 400M+ daily relays
-- 700B+ total relays
-
-Speaker Notes:
-
-- Shannon (in progress) is a rewrite of Morse (in production)
-- Will be discussing a combination of things in prod & in progress
-- `Joke`: I mentioned that we'll be discussing Roni, but in reality they have lots of cousins
-
-## [WIP] Intro Slide: RPC
-
-- `Title`: RPC
-- `Subtitle`: Remote Procede Call
-
-- Show how big RPC is
-- Can I find stats on this specifically?
+- Creators of Pocket Network, powering Grove (Pocket's largest gateway)
+- Live MainNet for 3+ years
+- 700B+ total relays; 400M+ daily relays; 50+ blockchains
+- Actively manage a network of 1,000 validators after overcoming scaling issues of 10,000 validators
 
 TODO:
 
-- Add the animation that shows host and port
+- Add image from poktscan.com showing the number of nodes & validators
 
 Speaker Notes:
 
-### General
+- I'm here on behalf of a lot of people representing both Pocket Network & Grove
+- We're doing a full protocol rewrite to build something that'll outlive us
+- Will be discussing a combination of things in prod & in progress
+- `Joke`: Also, I'm already on stage so you don't really have a choice anyhow
 
-- https://rpclist.com/
-- The start to every developer's journey
-- We no longer run our own nodes
-- This is how development starts
-- Need an endpoint
-- Need a host & port
-- Show what an RPC is
-- What questions to developers actually start by asking:
-- How do I read data from a blockchain?
-- How do I write data to a blockchain?
-- How can I get an RPC node?
-- How much does it cost
-- What is the quality of his?
+## Intro Slide: RPC
 
-### Reads vs Writes
+- `Title`: RPC
+- `Subtitle`: Remote Procedure Call
+
+TODO:
+
+- Add the graphic that shows client, server, host and port
+
+### Types of RPC
+
+TODO:
+
+- Show Roni the in 3 states:
+  1. Carrying data w/ the request
+  2. Carrying data w/ the response
+  3. Triggering the server to do a lot of work
+
+Speaker Notes:
+
+- Animate a circle around the host and say:
+  - This is the thing we're trying to decentralize
+  - This is the thing we're trying to incentivize
+- A client asks a server to do something
+- Why do we want to decentralize it? Because ...
+
+### Blockchains were designed for Writes
+
+- Performant
+  - Latency: time-to-finality (block time)
+  - Performant: throughput as transactions / second
+- Reliable
+  - Safety - make the correct progress
+  - Liveness - make progress
+- Cost
+  - Cost of a transaction
+  - Cost of on-chain storage
+- Payment:
+  - Gas / Tx Fees
+  - Storage Fees
+  - Validator Rewards
+
+TODO:
+
+- Compare Near, Solana, Ethereum, and Aptos
+
+Speaker Notes:
 
 - Blockchains are optimized for `secure state transitions`
-- Blockchain scalability / usage is measured in writes
-  - EigenLayer: uses throughput
-  - L1s: use tx/s
-  - Ethereum: block times & gas fees
-- Actual blockchain usage can also be measured by the amount of reads
-- Block storage
-- Auctions
-- Paying for block storage
--
+- This is how we measure blockchain scalability
+- This is how we measure blockchain usage
+- This is one of the reasons gas & tx fees are seen as analogs
+  to auctions
+- BUT, these are all write operations
 
-### Show the RPC Trilemma
+References:
+
+- https://pontem.medium.com/a-detailed-guide-to-blockchain-speed-tps-vs-80c1d52402d0
+- https://shardeum.org/blog/latency-throughput-blockchain/#Latency_in_Blockchain
+- https://coincodex.com/article/14198/layer-1-performance-comparing-6-leading-blockchains/
+- https://medium.com/nearweek/near-protocol-other-layer-1-solutions-a-comparison-9a91a194dded
+
+### RPC Nodes were build for reads
+
+- Reliable:
+  - Availability & uptime
+  - Meeting SLAs & SLOs
+- Performant:
+  - Latency (round trip time)
+  - Censorship resistance
+- Cost:
+  - Per query, per request
+  - Per compute unit
+  - Per Token
+- Payment only through Gateway
+  - Reasoning why we got so many providers: https://rpclist.com/
+  - Provides: - API Keys - Dashboards - Bells & Whistles - Team Management - Rate Limiting
+
+Speaker Notes:
+
+- But when you're starting to build something, you usually want to read
+- Think about how you use the internet
+- Most
+- `Question`: Who here has ever been hit by rate limiting or large egress fees?
+
+### RPC Trilemma
 
 - Reliability
 - Performance
-- Cost-effectiveness
+- Cheap (Cost-effective)
+
+TODO:
+
+- Add a diagram of the RPC Trilemma
+
+Speaker Notes:
+
 - Add the triangle
 - Talk about how it relates to Web1, Web2, Web3
-
-### Open Problems with RPC
-
-- Quality of Service: SLA / SLOW
-- Incentivization: Free / Paid
-- Schema Validation: What's offered?
-- Cost, latency, verifiability
 
 ## Intro Slide: Relay Mining
 
 - `Title`: Relay Mining
-- `Subtitle`: Optimistic rate limiting
+- `Subtitle`: Optimistic Rate Limiting
 
 TODO:
 
@@ -139,7 +185,6 @@ TODO:
 
 Speaker Notes:
 
-- Different
 - `Joke`: Roni is not the one mining, but rather the one being mined for
 
 ### Analogies
@@ -168,17 +213,17 @@ Speaker Notes:
 - Web2: Rate Limiting
 - Web3: Relay Mining:
 
-### Rate Limiting
+## Relay Mining Steps
 
-- How do we do rate limiting in web2?
-- Charge per token (AIs)
-- Charge per request (anyone)
-- Charge for bandwidth (egress/increases)
-- Rate Limiting Algorithms
-  - Window
-  - Bucketing
-  - Trust
-  - `Question`: How many people here challenged what an API endpoint said your usage actually is?How many
+1. Tree Building (Find Roni)
+2. Claim & Proof Lifecycle (Commit to Roni)
+3. Proof Validation (Reveal Roni)
+
+Speaker Notes:
+
+- `Joke`: We talk about trust in blockchains, so lots of relationship analogies
+
+## Tree Building
 
 ## Claim & Proof Lifecycle
 
@@ -192,6 +237,8 @@ Speaker Notes:
 - References
   - Reference Ramiro's work in the paper for detailed analysis
   - Reference the other whitepaper I was given for KZG commitments
+
+## Proof Validation
 
 ## Intro Slide: Probabilistic Proof
 
@@ -235,13 +282,6 @@ Speaker Notes:
 - Options: Threshold signatures? Chain Signature? BLS? ECDSA?
 - Use the image from the blog post
 
-### Who else is doing work in this space?
-
-- near.io
-- ar.io
-- Permanent domains
-- END
-
 ## Intro Slide: Future Work
 
 - `Title`: Future Work
@@ -253,6 +293,13 @@ Speaker Notes:
 - No immediate timeline
 - Would love to work with others
 - Reach out
+
+### Who else is doing work in this space?
+
+- near.io
+- ar.io
+- Permanent domains
+- END
 
 ### Big Ideas
 
@@ -266,7 +313,13 @@ Speaker Notes:
 - Marketplace of Dynamic Pricing
 - Compute Units
 - Optimistic rate limiting -> multi-tenant rate limiting
+
   - Can GCP & AWS charge a single account?
+
+- Quality of Service: SLA / SLOW
+- Incentivization: Free / Paid
+- Schema Validation: What's offered?
+- Cost, latency, verifiability
 - Permissionless free markets
 
 ### Open Questions
