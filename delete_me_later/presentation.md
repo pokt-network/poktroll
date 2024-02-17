@@ -9,7 +9,7 @@
   - [RPC Nodes were build for reads](#rpc-nodes-were-build-for-reads)
   - [RPC Trilemma](#rpc-trilemma)
 - [Intro Slide: Relay Mining](#intro-slide-relay-mining)
-  - [Analogies](#analogies)
+  - [Intuition](#intuition)
 - [Relay Mining Steps](#relay-mining-steps)
 - [Tree Building](#tree-building)
 - [Claim \& Proof Lifecycle](#claim--proof-lifecycle)
@@ -36,6 +36,8 @@
 TODO:
 
 - `Joke` Add a screenshot of me last year showing a screenshot of me in the year before
+- Show Roni the Relay with a smiley face
+- Anthropomorphize Roni the Relay so it sticks and you remember them
 
 ## Agenda
 
@@ -151,6 +153,11 @@ References:
   - Reasoning why we got so many providers: https://rpclist.com/
   - Provides: - API Keys - Dashboards - Bells & Whistles - Team Management - Rate Limiting
 
+TODO:
+
+- Show a big circle with write relays (containing Tx)
+- Show a small circle showing writes (containing a query)
+
 Speaker Notes:
 
 - But when you're starting to build something, you usually want to read
@@ -187,7 +194,7 @@ Speaker Notes:
 
 - `Joke`: Roni is not the one mining, but rather the one being mined for
 
-### Analogies
+### Intuition
 
 - Big Circle: all relays incoming
 - Smaller circle: all relays handled (based on stake)
