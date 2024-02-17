@@ -10,7 +10,7 @@ import (
 )
 
 // GetQueryCmd returns the cli query commands for this module
-func (am AppModule) GetQueryCmd(queryRoute string) *cobra.Command {
+func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group gateway queries under a subcommand
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
