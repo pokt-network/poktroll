@@ -7,7 +7,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-var _ sdk.Msg = &MsgSubmitProof{}
+var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
 func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{
@@ -17,9 +17,12 @@ func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.Sessi
 	}
 }
 
+// ValidateBasic ensures that the bech32 address strings for the supplier and
+// application addresses are valid and that the proof and service ID are not empty.
+//
+// TODO_TECHDEBT: Call `msg.GetSessionHeader().ValidateBasic()` once its implemented
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"supplier address %q, error: %s",
 			msg.GetSupplierAddress(),
@@ -27,8 +30,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 		)
 	}
 
-	_, err = sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress())
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"application address: %q, error: %s",
 			msg.GetSessionHeader().GetApplicationAddress(),

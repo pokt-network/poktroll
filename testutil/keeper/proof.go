@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -25,7 +26,10 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-func ProofKeeper(t testing.TB, sessionByAppAddr proof.SessionsByAppAddress) (keeper.Keeper, sdk.Context) {
+func ProofKeeper(
+	t testing.TB,
+	sessionByAppAddr proof.SessionsByAppAddress,
+) (keeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
@@ -42,10 +46,10 @@ func ProofKeeper(t testing.TB, sessionByAppAddr proof.SessionsByAppAddress) (kee
 	ctrl := gomock.NewController(t)
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockSessionKeeper.EXPECT().
-		GetSession(gomock.AssignableToTypeOf(sdk.Context{}), gomock.Any()).
+		GetSession(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(
-				ctx sdk.Context,
+				ctx context.Context,
 				req *sessiontypes.QueryGetSessionRequest,
 			) (*sessiontypes.QueryGetSessionResponse, error) {
 				session, ok := sessionByAppAddr[req.GetApplicationAddress()]
@@ -81,7 +85,7 @@ func ProofKeeper(t testing.TB, sessionByAppAddr proof.SessionsByAppAddress) (kee
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	k.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	return k, ctx
 }

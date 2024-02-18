@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
-	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -25,18 +24,18 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	service := &sharedtypes.Service{Id: testServiceId}
 	sessionFixturesByAddr := proof.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
-	proofKeeper, sdkCtx := keepertest.ProofKeeper(t, sessionFixturesByAddr)
+	proofKeeper, ctx := keepertest.ProofKeeper(t, sessionFixturesByAddr)
 	srv := keeper.NewMsgServerImpl(proofKeeper)
 
 	claimMsg := newTestClaimMsg(t, testSessionId)
 	claimMsg.SupplierAddress = appSupplierPair.SupplierAddr
 	claimMsg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
 
-	createClaimRes, err := srv.CreateClaim(sdkCtx, claimMsg)
+	createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 	require.NotNil(t, createClaimRes)
 
-	claimRes, err := proofKeeper.AllClaims(sdkCtx, &types.QueryAllClaimsRequest{})
+	claimRes, err := proofKeeper.AllClaims(ctx, &types.QueryAllClaimsRequest{})
 	require.NoError(t, err)
 
 	claims := claimRes.GetClaims()
@@ -55,7 +54,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	}
 	sessionFixturesByAppAddr := proof.NewSessionFixturesWithPairings(t, service, appSupplierPair)
 
-	proofKeeper, sdkCtx := keepertest.ProofKeeper(t, sessionFixturesByAppAddr)
+	proofKeeper, ctx := keepertest.ProofKeeper(t, sessionFixturesByAppAddr)
 	srv := keeper.NewMsgServerImpl(proofKeeper)
 
 	tests := []struct {
@@ -96,19 +95,19 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			createClaimRes, err := srv.CreateClaim(sdkCtx, tt.claimMsgFn(t))
-			require.ErrorContains(t, err, tt.expectedErr.Error())
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
+			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, createClaimRes)
 		})
 	}
 }
 
-func newTestClaimMsg(t *testing.T, sessionId string) *prooftypes.MsgCreateClaim {
+func newTestClaimMsg(t *testing.T, sessionId string) *types.MsgCreateClaim {
 	t.Helper()
 
-	return prooftypes.NewMsgCreateClaim(
+	return types.NewMsgCreateClaim(
 		sample.AccAddress(),
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      sample.AccAddress(),

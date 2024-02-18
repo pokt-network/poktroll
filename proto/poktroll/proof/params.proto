@@ -1,15 +1,13 @@
 syntax = "proto3";
 package poktroll.proof;
 
+option go_package = "github.com/pokt-network/poktroll/x/proof/types";
+
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
-
-option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
 // Params defines the parameters for the module.
 message Params {
   option (amino.name) = "poktroll/x/proof/Params";
   option (gogoproto.equal) = true;
-
-  
 }

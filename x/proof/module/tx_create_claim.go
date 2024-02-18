@@ -44,10 +44,9 @@ func CmdCreateClaim() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			supplierAddress := clientCtx.GetFromAddress().String()
 
 			msg := types.NewMsgCreateClaim(
-				supplierAddress,
+				clientCtx.GetFromAddress().String(),
 				&sessionHeader,
 				rootHash,
 			)

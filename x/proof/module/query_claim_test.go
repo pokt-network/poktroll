@@ -19,18 +19,14 @@ import (
 )
 
 func TestClaim_Show(t *testing.T) {
-	sessionCount := 1
-	supplierCount := 3
-	appCount := 3
+	numSessions := 1
+	numSuppliers := 3
+	numApps := 3
 
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		appCount,
-		supplierCount,
-	)
+	net, claims := networkWithClaimObjects(t, numSessions, numApps, numSuppliers)
 
 	ctx := net.Validators[0].ClientCtx
-	common := []string{
+	commonArgs := []string{
 		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 	}
 
@@ -40,24 +36,20 @@ func TestClaim_Show(t *testing.T) {
 		sessionId    string
 		supplierAddr string
 
-		args        []string
-		expectedErr error
 		claim       types.Claim
+		expectedErr error
 	}{
 		{
 			desc:         "claim found",
 			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
 			supplierAddr: claims[0].GetSupplierAddress(),
 
-			args:  common,
 			claim: claims[0],
 		},
 		{
 			desc:         "claim not found (wrong session ID)",
 			sessionId:    "wrong_session_id",
 			supplierAddr: claims[0].GetSupplierAddress(),
-
-			args: common,
 
 			expectedErr: status.Error(
 				codes.NotFound,
@@ -73,7 +65,6 @@ func TestClaim_Show(t *testing.T) {
 			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
 			supplierAddr: "invalid_bech32_supplier_address",
 
-			args: common,
 			// NB: this is *NOT* a gRPC status error because the bech32 parse
 			// error occurs during request validation (i.e. client-side).
 			expectedErr: types.ErrProofInvalidAddress.Wrapf(
@@ -88,7 +79,6 @@ func TestClaim_Show(t *testing.T) {
 			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
 			supplierAddr: wrongSupplierAddr,
 
-			args: common,
 			expectedErr: status.Error(
 				codes.NotFound,
 				types.ErrProofClaimNotFound.Wrapf(
@@ -99,25 +89,26 @@ func TestClaim_Show(t *testing.T) {
 			),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
-				tc.sessionId,
-				tc.supplierAddr,
+				test.sessionId,
+				test.supplierAddr,
 			}
-			args = append(args, tc.args...)
+			args = append(args, commonArgs...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdShowClaim(), args)
-			if tc.expectedErr != nil {
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
+
 				var resp types.QueryGetClaimResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Claim)
 
-				require.Equal(t, tc.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
-				require.Equal(t, tc.claim.GetRootHash(), resp.Claim.GetRootHash())
-				require.Equal(t, tc.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
+				require.Equal(t, test.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
+				require.Equal(t, test.claim.GetRootHash(), resp.Claim.GetRootHash())
+				require.Equal(t, test.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
 			}
 		})
 	}
@@ -125,18 +116,14 @@ func TestClaim_Show(t *testing.T) {
 
 func TestClaim_List(t *testing.T) {
 	sessionCount := 2
-	supplierCount := 4
-	appCount := 3
-	serviceCount := 1
+	numSuppliers := 4
+	numApps := 3
+	numServices := 1
 	// Each supplier will submit a claim for each app x service combination (per session).
-	numClaimsPerSession := supplierCount * appCount * serviceCount
+	numClaimsPerSession := numSuppliers * numApps * numServices
 	totalClaims := sessionCount * numClaimsPerSession
 
-	net, claims := networkWithClaimObjects(
-		t, sessionCount,
-		supplierCount,
-		appCount,
-	)
+	net, claims := networkWithClaimObjects(t, sessionCount, numSuppliers, numApps)
 
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
@@ -193,7 +180,7 @@ func TestClaim_List(t *testing.T) {
 		}
 	})
 
-	t.Run("ByAddress", func(t *testing.T) {
+	t.Run("BySupplierAddress", func(t *testing.T) {
 		supplierAddr := claims[0].SupplierAddress
 		args := prepareArgs(nil, 0, uint64(totalClaims), true)
 		args = append(args, fmt.Sprintf("--%s=%s", proof.FlagSupplierAddress, supplierAddr))
@@ -215,7 +202,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, sessionCount*appCount, int(resp.Pagination.Total))
+		require.Equal(t, sessionCount*numApps, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -240,7 +227,7 @@ func TestClaim_List(t *testing.T) {
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, supplierCount, int(resp.Pagination.Total))
+		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {

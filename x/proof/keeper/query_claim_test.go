@@ -91,7 +91,7 @@ func TestClaimQuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetClaimRequest{
-				// SessionId:       Intentionally Omitted
+				// SessionId explicitly omitted
 				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
@@ -107,7 +107,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SupplierAddress",
 			request: &types.QueryGetClaimRequest{
 				SessionId: claims[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress: Intentionally Omitted,
+				// SupplierAddress explicitly omitted
 			},
 
 			expectedErr: status.Error(
@@ -129,19 +129,19 @@ func TestClaimQuerySingle(t *testing.T) {
 			),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			response, err := keeper.Claim(ctx, tc.request)
-			if tc.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			response, err := keeper.Claim(ctx, test.request)
+			if test.expectedErr != nil {
 				actualStatus, ok := status.FromError(err)
 				require.True(t, ok)
 
-				require.ErrorIs(t, actualStatus.Err(), tc.expectedErr)
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorIs(t, actualStatus.Err(), test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
-					nullify.Fill(tc.response),
+					nullify.Fill(test.response),
 					nullify.Fill(response),
 				)
 			}
