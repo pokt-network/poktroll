@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"sync"
 
-	"cosmossdk.io/api/tendermint/abci"
 	"cosmossdk.io/depinject"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"go.uber.org/multierr"
@@ -26,7 +26,7 @@ const (
 	// errored if it has not been committed.
 	DefaultCommitTimeoutHeightOffset = 5
 
-	// defaultTxReplayLimit is the number of abci.TxResult events that the replay
+	// defaultTxReplayLimit is the number of comettypes.EventDataTx events that the replay
 	// observable returned by LastNBlocks() will be able to replay.
 	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
 	// struct that defaults to this but can be overridden via an option.
@@ -69,7 +69,7 @@ type txClient struct {
 	// eventsReplayClient is the client used to subscribe to transactions events from this
 	// sender. It is used to receive notifications about transactions events corresponding
 	// to transactions which it has constructed, signed, and broadcast.
-	eventsReplayClient client.EventsReplayClient[*abci.TxResult]
+	eventsReplayClient client.EventsReplayClient[*comettypes.EventDataTx]
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
 	blockClient client.BlockClient
@@ -144,7 +144,7 @@ func NewTxClient(
 	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, tClient.signingAddr)
 
 	// Initialize and events replay client.
-	tClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
+	tClient.eventsReplayClient, err = events.NewEventsReplayClient[*comettypes.EventDataTx](
 		ctx,
 		deps,
 		eventQuery,
@@ -491,18 +491,25 @@ func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string
 // It checks if the given bytes correspond to a valid transaction event.
 // If the resulting TxResult has empty transaction bytes, it assumes that
 // the message was not a transaction results and returns an error.
-func unmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
-	txResult := new(abci.TxResult)
+func unmarshalTxResult(txResultBz []byte) (*comettypes.EventDataTx, error) {
+	rpcResult := new(rpctypes.RPCResponse)
+
+	// Try to deserialize the provided bytes into an RPCResponse.
+	if err := json.Unmarshal(txResultBz, rpcResult); err != nil {
+		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
+	}
+
+	txResult := new(comettypes.EventDataTx)
 
 	// Try to deserialize the provided bytes into a TxResult.
-	if err := json.Unmarshal(txResultBz, txResult); err != nil {
+	if err := json.Unmarshal(rpcResult.Result, txResult); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
 	// Check if the TxResult has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
 	if bytes.Equal(txResult.Tx, []byte{}) {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult event")
+		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an comettypes.EventDataTx event")
 	}
 
 	return txResult, nil

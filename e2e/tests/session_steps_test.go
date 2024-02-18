@@ -4,14 +4,14 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"cosmossdk.io/depinject"
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -44,7 +44,7 @@ const (
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
-	s.waitForMessageAction("/pocket.supplier.MsgCreateClaim")
+	s.waitForMessageAction("/poktroll.proof.MsgCreateClaim")
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -101,18 +101,24 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
 
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+	eventsReplayClient, err := events.NewEventsReplayClient[*comettypes.EventDataTx](
 		ctx,
 		deps,
 		msgSenderQuery,
-		func(eventBz []byte) (*abci.TxResult, error) {
-			if strings.Contains(string(eventBz), "jsonrpc") {
+		func(eventBz []byte) (*comettypes.EventDataTx, error) {
+			// Try to deserialize the provided bytes into an RPCResponse.
+			rpcResult := &rpctypes.RPCResponse{}
+			if err := json.Unmarshal(eventBz, rpcResult); err != nil {
+				return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
+			}
+
+			if string(rpcResult.Result) == "{}" {
 				return nil, nil
 			}
 
-			// Unmarshal event data into an ABCI TxResult object.
-			txResult := &abci.TxResult{}
-			err = json.Unmarshal(eventBz, txResult)
+			// Unmarshal event data into an comettype EventDataTx object.
+			txResult := &comettypes.EventDataTx{}
+			err = json.Unmarshal(rpcResult.Result, txResult)
 			require.NoError(s, err)
 
 			return txResult, nil
@@ -132,7 +138,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 }
 
 func (s *suite) AfterTheSupplierSubmitsAProofForTheSessionForServiceForApplication(a string, b string) {
-	s.waitForMessageAction("/pocket.supplier.MsgSubmitProof")
+	s.waitForMessageAction("/poktroll.proof.MsgSubmitProof")
 }
 
 func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
@@ -190,14 +196,14 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*abci.TxResult])
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*comettypes.EventDataTx])
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
+	channel.ForEach[*comettypes.EventDataTx](
 		ctx, eventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txEvent *abci.TxResult) {
+		func(_ context.Context, txEvent *comettypes.EventDataTx) {
 			if txEvent == nil {
 				return
 			}
