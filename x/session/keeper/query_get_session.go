@@ -3,7 +3,6 @@ package keeper
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -12,7 +11,7 @@ import (
 
 // GetSession should be deterministic and always return the same session for
 // the same block height.
-func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequest) (*types.QueryGetSessionResponse, error) {
+func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionRequest) (*types.QueryGetSessionResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -20,8 +19,6 @@ func (k Keeper) GetSession(goCtx context.Context, req *types.QueryGetSessionRequ
 	if err := req.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
-	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	// Note that `GetSession` is called via the `Query` service rather than the `Msg` server.
 	// The former is stateful but does not lead to state transitions, while the latter one

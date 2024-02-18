@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -11,12 +10,9 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
-var (
-	DefaultRelativePacketTimeoutTimestamp = uint64((time.Duration(10) * time.Minute).Nanoseconds())
-)
-
 // GetTxCmd returns the transaction commands for this module
-func GetTxCmd() *cobra.Command {
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+func (am AppModule) GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),

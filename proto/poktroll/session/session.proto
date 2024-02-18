@@ -4,6 +4,7 @@ package poktroll.session;
 option go_package = "github.com/pokt-network/poktroll/x/session/types";
 
 import "cosmos_proto/cosmos.proto";
+
 import "poktroll/shared/service.proto";
 import "poktroll/application/application.proto";
 import "poktroll/shared/supplier.proto";
