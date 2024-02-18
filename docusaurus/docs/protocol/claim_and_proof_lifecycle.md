@@ -8,10 +8,11 @@ sidebar_position: 2
 :::warning
 
 This part of the documentation is just an initial draft and requires deep
-understanding of the Pocket Network protocol. It is currently not intended to be
-exhaustive or easily approachable to all readers.
+understanding of the Pocket Network protocol. It is currently aiming to just
+be a reference and not provide a coherent narrative that is easily accessible
+to all readers.
 
-TODO(@Olshansk): Update this doc with the relevant governance params once added.
+TODO(@Olshansk): Iterate on this doc & link to governance params.
 
 :::
 

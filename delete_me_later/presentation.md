@@ -1,34 +1,39 @@
 # Presentation: Slide Overview <!-- omit in toc -->
 
-- [Intro Slide: Relay Mining Through Decentralized Gateways](#intro-slide-relay-mining-through-decentralized-gateways)
+- [Relay Mining Through Decentralized Gateways](#relay-mining-through-decentralized-gateways)
 - [Agenda](#agenda)
   - [Why listen to us?](#why-listen-to-us)
-- [Intro Slide: RPC](#intro-slide-rpc)
+- [RPC](#rpc)
   - [Types of RPC](#types-of-rpc)
-  - [Blockchains were designed for Writes](#blockchains-were-designed-for-writes)
+  - [Blockchains were designed for writes](#blockchains-were-designed-for-writes)
   - [RPC Nodes were build for reads](#rpc-nodes-were-build-for-reads)
   - [RPC Trilemma](#rpc-trilemma)
-- [Intro Slide: Relay Mining](#intro-slide-relay-mining)
-  - [Intuition](#intuition)
-- [Relay Mining Steps](#relay-mining-steps)
-- [Tree Building](#tree-building)
-- [Claim \& Proof Lifecycle](#claim--proof-lifecycle)
-- [Proof Validation](#proof-validation)
-- [Intro Slide: Probabilistic Proof](#intro-slide-probabilistic-proof)
-  - [Why is this necessary?](#why-is-this-necessary)
-  - [Need to solve for the long tail](#need-to-solve-for-the-long-tail)
-- [Intro Slide: Decentralized Gateways](#intro-slide-decentralized-gateways)
-  - [Whom do you trust?](#whom-do-you-trust)
-  - [Which signatures?](#which-signatures)
-- [Intro Slide: Future Work](#intro-slide-future-work)
-  - [Who else is doing work in this space?](#who-else-is-doing-work-in-this-space)
+- [Relay Mining](#relay-mining)
+  - [Relay Mining Intuition](#relay-mining-intuition)
+  - [Relay Mining at a Glance](#relay-mining-at-a-glance)
+  - [Tree Building](#tree-building)
+  - [Claim \& Proof Lifecycle](#claim--proof-lifecycle)
+  - [Proof Validation](#proof-validation)
+- [Probabilistic Proof](#probabilistic-proof)
+  - [Probabilistic Proof - Why?](#probabilistic-proof---why)
+  - [Probabilistic Proof - How?](#probabilistic-proof---how)
+- [Decentralized Gateways](#decentralized-gateways)
+  - [The First Hop Problem](#the-first-hop-problem)
+  - [Ring Signatures](#ring-signatures)
+  - [Types of Gateways](#types-of-gateways)
+- [Future Work](#future-work)
   - [Big Ideas](#big-ideas)
   - [Open Questions](#open-questions)
 - [Closing Slide](#closing-slide)
 
 ---
 
-## Intro Slide: Relay Mining Through Decentralized Gateways
+TODO:
+
+- Show that Applications stake
+- Show the actors involved
+
+## Relay Mining Through Decentralized Gateways
 
 - `Title`: Relay Mining Through Decentralized Gateways
 - `Subtitle`: The journey for Roni the Relay
@@ -75,7 +80,7 @@ Speaker Notes:
 - Will be discussing a combination of things in prod & in progress
 - `Joke`: Also, I'm already on stage so you don't really have a choice anyhow
 
-## Intro Slide: RPC
+## RPC
 
 - `Title`: RPC
 - `Subtitle`: Remote Procedure Call
@@ -101,7 +106,7 @@ Speaker Notes:
 - A client asks a server to do something
 - Why do we want to decentralize it? Because ...
 
-### Blockchains were designed for Writes
+### Blockchains were designed for writes
 
 - Performant
   - Latency: time-to-finality (block time)
@@ -180,7 +185,7 @@ Speaker Notes:
 - Add the triangle
 - Talk about how it relates to Web1, Web2, Web3
 
-## Intro Slide: Relay Mining
+## Relay Mining
 
 - `Title`: Relay Mining
 - `Subtitle`: Optimistic Rate Limiting
@@ -194,45 +199,75 @@ Speaker Notes:
 
 - `Joke`: Roni is not the one mining, but rather the one being mined for
 
-### Intuition
+### Relay Mining Intuition
 
-- Big Circle: all relays incoming
-- Smaller circle: all relays handled (based on stake)
-- Smaller circle: all relays that can be mined (based on difficulty)
-- Smaller circle: all relays that go on chain
-- Small circle with one relay: the relay that needs to be provend
+- `Application` stakes on-chain to put $ in escrow for future payments
+- `Supplier` stakes on-chain to put $ in escrow for slashing purposes
+- Optimistic (Web3) Rate Limiting
+- Incentive to maximize opportunity to do high-quality work
+- Disincentive to do any free work
 
-- Web2: Count and Rate Limit
-- Serve relays for free until you get paid for some of them
--
-- Compare it to Bitcoin & PoW
-- Compare it to Arweave & Proof of Access
-- Compare it to Chia & Proof of Space
-- `Question`: How do we incentivize doing work for read access?
-- `Questions`: How do we incentivize to provide high quality on both reads & writes?
+TODO:
+
+- Show a circle containing:
+  - All incoming relays
+  - Handled relays (based on App Stake)
+    --> If exceeded, don't respond
+  - Mineable relays (based on difficulty)
+    --> If unmet, can't be proven on chain
+    --> goes into tree
+    ---> Committed to on-chain
+  - Proven on-chain
+    ---> Single Relay
 
 Speaker Notes:
 
-- We're tackling problems with RPC from the user's POV
-  - Cost, QoS, Reliability, etc...
-- To do those, the other sides needs an incentive
-- Rate Limiting is a key part of this, and is at the foundation of this economic model
-- Web2: Rate Limiting
-- Web3: Relay Mining:
+- Web2 rate limiting techniques:
+  - Token Bucket, Leaky Bucket
+  - Fixed Window, Sliding Window
 
-## Relay Mining Steps
+### Relay Mining at a Glance
 
-1. Tree Building (Find Roni)
-2. Claim & Proof Lifecycle (Commit to Roni)
-3. Proof Validation (Reveal Roni)
+Steps (Left):
+
+1. Tree Building (Find Roni off-chain)
+2. Claim & Proof Lifecycle (Store Roni on-chain)
+3. Proof Validation (Validate Roni)
+
+Technology (Right):
+
+1. Collision Mining
+2. Sparse Merkle Trees
+3. Commit & Reveal Schemes
+4. Digital Signature Schemes
+5. (New) Sparse Merkle Sum Tries
+6. (New) Closest Merkle Proof
+
+TODO:
+
+- Check out our relay mining paper at arxiv w/ a link
 
 Speaker Notes:
 
 - `Joke`: We talk about trust in blockchains, so lots of relationship analogies
 
-## Tree Building
+### Tree Building
 
-## Claim & Proof Lifecycle
+TODO:
+
+- Show that Supplier can reject request
+- If a Supplier accepts (based on session & stake)
+- Visualize:
+  - Show Roni the Relay w/ a request
+  - Show getting a response
+  - Serialize it
+  - check it's difficult
+- Show that on-chain stake and session determine whether the Supplier should
+  be accepting / rejecting the Applications request
+
+Speaker Notes:
+
+### Claim & Proof Lifecycle
 
 - Show the relay mining process
   - Show the Claim & Proof Lifecycle
@@ -245,11 +280,27 @@ Speaker Notes:
   - Reference Ramiro's work in the paper for detailed analysis
   - Reference the other whitepaper I was given for KZG commitments
 
-## Proof Validation
+TODO:
 
-## Intro Slide: Probabilistic Proof
+- Show the timeline of the claim and proof lifecycle
 
-### Why is this necessary?
+### Proof Validation
+
+1. Hash(seed) -> path
+2. Proof may not necessarily exist
+3. We find the closest proof
+
+TODO:
+
+- Show a single Sparse Merkle Trie
+- Add an arrow from a leaf to what it contains (like an magnifying glass)
+
+## Probabilistic Proof
+
+- `Title`: Relay Mining
+- `Subtitle`: Optimistic Rate Limiting
+
+### Probabilistic Proof - Why?
 
 - Out of necessity to scale
 - Out of necessity to make things permissionless
@@ -263,19 +314,25 @@ Speaker Notes:
   - Bloat on the network
   - Self-dealing attacks on the network
 
-### Need to solve for the long tail
+### Probabilistic Proof - How?
 
 - Show that the issue is scalability
 - Show that we only do it sometime
 - These are configurable parameters
 - The network will self adjust them over time
 
-## Intro Slide: Decentralized Gateways
+Speaker Notes:
+
+- Not going to go through the details today,but you can check our papers & documentation
+
+## Decentralized Gateways
+
+- `Title`: Decentralized Gateways
+- `Subtitle`: A commitment to delegate trust
+
+### The First Hop Problem
 
 - Options: Threshold signatures? Chain Signature? BLS? ECDSA?
-
-### Whom do you trust?
-
 - You always need to trust someone
 - We talk about the cost of switching providers
 - The cost of switching gateways should be just the same
@@ -284,15 +341,25 @@ Speaker Notes:
   - Standards are "advertised" rather than well defined
   - For example, the Ethereum JSON-RPC API is not "on-chain" but all apps will break if you use themop
 
-### Which signatures?
+TODO:
+
+-
+
+Speaker Notes:
+
+-
+
+### Ring Signatures
 
 - Options: Threshold signatures? Chain Signature? BLS? ECDSA?
 - Use the image from the blog post
 
-## Intro Slide: Future Work
+### Types of Gateways
+
+## Future Work
 
 - `Title`: Future Work
-- `Subtitle`: Collaboration Opportunities
+- `Subtitle`: Open Problems & Collaboration Opportunities
 
 Speaker Notes:
 
@@ -300,13 +367,6 @@ Speaker Notes:
 - No immediate timeline
 - Would love to work with others
 - Reach out
-
-### Who else is doing work in this space?
-
-- near.io
-- ar.io
-- Permanent domains
-- END
 
 ### Big Ideas
 
@@ -328,6 +388,7 @@ Speaker Notes:
 - Schema Validation: What's offered?
 - Cost, latency, verifiability
 - Permissionless free markets
+- Other interesting gateway approaches: ar.io, near.io, ENS
 
 ### Open Questions
 
@@ -339,6 +400,12 @@ Speaker Notes:
   - More efficient security
 - KZG commitment to multiple leafs
   - As we expand to websockets
+- Privacy
+- Data Correctness
+
+Speaker Notes:
+
+- How do we differentiate between an inference on a Llama 70B vs 7B model?
 
 ## Closing Slide
 

@@ -6,10 +6,61 @@ sidebar_position: 1
 # Pocket Network Actors <!-- omit in toc -->
 
 - [Overview](#overview)
+- [On-Chain vs Off-Chain](#on-chain-vs-off-chain)
 - [On-Chain Actors](#on-chain-actors)
 - [Off-Chain Actors](#off-chain-actors)
 
 ## Overview
+
+```mermaid
+flowchart TD
+    subgraph DA[Data Availability Layer]
+        V[Validators]
+        B[Blockchain]
+    end
+
+    subgraph S[Supplier]
+        direction TB
+        S1[Supplier 1]
+        SN[Supplier N]
+    end
+
+    subgraph A[Applications]
+        direction TB
+        A1[Application 1]
+        AN[Application N]
+    end
+
+    subgraph G[Gateways]
+        direction TB
+        P1[Gateway 1]
+        PN[Gateway N]
+    end
+
+    A <----> |Delegated RPC| G
+    G <-- Proxied RPC --> S
+    A <--> |Trustless RPC| S
+
+    DA -- Data --> G
+    DA -- Data --> A
+    DA -- Data --> S
+
+    classDef blue fill:#0000FF
+    classDef brown fill:#A52A2A
+    classDef red fill:#FF0000
+    classDef yellow fill:#DC783D
+    classDef acqua fill:#00A3A3
+    classDef purple fill:#FF36FF
+
+    class V1,V,VN blue
+    class B1,B,BN brown
+    class S1,SN yellow
+    class P1,PN red
+    class F1,FN acqua
+    class A1,AN purple
+```
+
+## On-Chain vs Off-Chain
 
 Pocket Network protocol is composed of both on-chain and off-chain actors.
 

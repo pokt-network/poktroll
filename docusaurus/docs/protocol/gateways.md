@@ -1,138 +1,254 @@
 ---
-title: Ring Signatures
+title: Gateways
 sidebar_position: 4
 ---
 
+# Gateways <!-- omit in toc -->
+
 :::warning
 
-TODO(@Olshansk): This is just a placeholder
+This part of the documentation is just an initial draft and requires deep
+understanding of the Pocket Network protocol. It is currently aiming to just
+be a reference and not provide a coherent narrative that is easily accessible
+to all readers.
+
+TODO(@Olshansk): Iterate on this doc & link to governance params.
 
 :::
 
-### 3.5 Gateway Protocol
+The [Gateway Actor](./../actors/gateway.md) section covers what a Gateway is.
+Recall that it is a permissionless protocol actor to whom the Application can
+**optionally** delegate on-chain trust in order to perform off-chain operations.
 
-A `Gateway` is a permissionless protocol actor to whom the Application can **optionally** delegate on-chain trust in order to perform off-chain operations.
+This section aims to cover the cryptographic aspects of Gateway interactions,
+trust delegation, and how they fit into the Pocket Network protocol.
 
-#### 3.5.1 Gateway Responsibilities
+## Modes of Operation
 
-Pocket Network's Utilitarian Economy incentivizes data redundancy in a multi-chain ecosystem, with cheap, accessible and highly available multi-chain access. Depending on the level of trust, or lack thereof, an Application can optionally use a Gateway for various Pocket-specific operations such as, but not limited to, session dispatching or request signing.
+There are three modes of operation to interact with the Suppliers on the network:
 
-Delegation also enables free market off-chain economics where additional features, guarantees or payments can be made. This could, for example, include a contractual agreement between Applications and Gateways to execute [Client Side Validation](https://forum.pokt.network/t/client-side-validation/148) with every Nth request. It could also enable L2 services, such as data indexing, that are outside the scope of the Pocket ecosystem, but are closely related to the utility it provides.
+1. **Sovereign Application**
+2. **Delegating Application**
+3. **Gateway Application**
 
-Applications that requires just-in-time full data integrity guarantees may opt out of delegating to Gateways and operate in a completely permissionless manner. This may require them to maintain their own infrastructure (i.e. synching a full/light Pocket Node). Even with delegation, an Application would be able to continue operating permissionlessly (via a full or light node) as the two are not mutually exclusive.
+For the purposes of this discussion, it is important to note that an `Application`
+and `Gateway` are on-chain actors/records that stake POKT to participate in the
+network. The term `Client` is used to represent an application running on a user's
+device, such as a smartphone or a web browser.
 
-#### 3.5.2 OAuth
+The goal of Gateways is to enable free-market off-chain economics tie into
+on-chain interactions.
 
-[OAuth](https://oauth.net) is an open (Web2) protocol that authorizes clients or 3rd parties to gain access to restricted resources. It can be summarized via following flow:
+### Sovereign Application
 
-```mermaid
-sequenceDiagram
-    actor U as User
-    participant C as Client<br>(e.g. Smartphone App)
-    participant S as Authorization Server<br>(e.g. Google)
-    participant R as Resource Server<br>(e.g. Email)
+A Sovereign Application is one where the `Client` manages its own on-chain `Application`
+and interacts with the Pocket Supplier Network directly.
 
-    U ->> C: Request access<br>to protected resource
-    C ->> +S: Request authorization
-    S -->> U: Prompt for authorization
-    U -->> S: Grant authorization<br>(Username & Password)
-    S ->> C: Return authorization_code
-    C ->> S: Exchange authorization_code for access_token
-    S ->> -C: Return access_token
-    C ->> +R: Request protected resource
-    R -->> -C: Return protected resource
-```
+The Application is responsible for:
 
-For the sake of simplicity, we are omitting `refresh_token` related considerations.
-
-Some parallels can be drawn between existing centralized, trusted and permissioned systems relative to Pocket's Utilitarian Economy:
-
-- The `Client` remains as the `Client`
-- The `Application` is the `User`
-- The `Application` is a one-time `Authorization Server`
-- The `Gateways` is an ongoing `Authorization Server`
-- The `Servicer` is the `Resource Servicer`
-- The `Fisherman` is a separate monitoring party overlooking the `Resource Servicer` most often owned by the `Authorization Server`
-
-#### 3.5.3 Application w/o Gateway
-
-An Application that chooses to operate without a Gateway is responsible for dispatching sessions and signing RPC requests on its own. To do so, it will need to maintain a Pocket Full Node or a Pocket Light Client.
+- Protecting it's own `Application` private key on the `Client`
+- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Determining which `Supplier` to use from the available list in the session
 
 ```mermaid
 sequenceDiagram
-    actor AC as Application / Client
-    actor LN as Local Pocket Node / <br>Local Light Client
-    actor SN as Servicer
+    actor A as Application <br> (Client)
+    participant DA as Pocket DA Layer
+    actor S as Supplier(s)
 
-    AC ->> +LN: StartSession()
-    LN ->> -AC: SessionData([ServicerIDs], ...)
+    A ->> +DA: StartSession(App, Block, ...)
+    DA ->> -A: SessionData([Suppliers], ...)
 
     loop Session Duration
-        AC ->> AC: Sign Request
-
-        AC ->>+ SN: SignedRequest
-        SN ->> SN: Validate Signature<br>& Session Limits
-        SN ->> SN: Handle Request<br>& Sign Response
-        SN ->>- AC: SignedResponse
-
-        AC ->> AC: Process response
+        A ->> A: Sign Relay Request
+        A ->>+ S: Signed Relay Request
+        S ->> S: Validate App Signature & <br>App Session Limits
+        alt App exceeds session limits
+            S ->> A: Reject Request
+        else App within session limits
+            S ->> S: Handle Request &<br>Sign Response
+            S ->>- A: Signed Relay Response
+        end
     end
+
+    S -->> DA: Claim & Proof Lifecycle
 ```
 
-#### 3.5.4 Application Delegation
+### Delegating Application
 
-An Application that chooses to delegate trust to a Gateway will need to submit a one-time `DelegateMsg` transaction to delegate trust from the Application to the Gateway. It must include the PublicKey of the Gateway and be signed by the Application.
+A Delegated Application is one where an `Application` delegates to one or more
+`Gateways`. Agreements (authentication, payments, etc) between the `Client` and
+`Gateway` are then managed off-chain, but payment for the on-chain `Supplier`
+services still comes from the `Application`s stake.
+
+The Application is responsible for:
+
+- Protecting it's own `Application` private key somewhere in hot/cold storage
+- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Managing, through (un)delegation, which Gateway(s) can sign requests on ts behalf
+
+The Gateway is responsible for:
+
+- Providing tooling and infrastructure to coordinate with the `Client`
+- Determining which `Supplier` to use from the available list in the session
 
 ```mermaid
 sequenceDiagram
     actor A as Application
-    participant WS as World State
+    participant C as Client
+    actor G as Gateway(s)
+    participant DA as Pocket DA Layer
+    actor S as Supplier(s)
+
+    A -->> +DA: Delegate([Gateway])
+
+    G ->> +DA: StartSession(App, Block, ...)
+    DA ->> -G: SessionData([Suppliers], ...)
+
+    note over C,G: Client-Gateway Handshake <br> (e.g. OAuth, etc...)
+
+    loop Session Duration
+        C ->> G: Request
+        G ->> G: Sign Relay Request
+        G ->>+ S: Signed Relay Request
+        S ->> S: Validate Ring(App/Gateway) Signature & <br> App Session Limits
+        alt App exceeds session limits
+            S ->> G: Reject Request
+            G ->> C: Rejected Response <br>(or backup response)
+        else App within session limits
+            S ->> S: Handle Request &<br>Sign Response
+            S ->> -G: Signed Relay Response
+            G ->> C: Response
+        end
+    end
+
+    S -->> DA: Claim & Proof Lifecycle
+```
+
+### Gateway Application
+
+A Gateway Application is one where the `Gateway` takes full onus, on behalf of
+`Client`s to manage all on-chain `Application` interactions to access the
+Pocket `Supplier` Network. Agreements (authentication, payments, etc) between
+the `Client` and `Gateway` are then managed off-chain, and payment for the
+on-chain `Supplier` services will comes from the `Application`s stake, which
+is now maintained by the `Gateway`.
+
+It is responsible for:
+
+The Gateway is responsible for:
+
+- Protecting it's own `Application` private key somewhere in hot/cold storage
+- Maintaining and updating it's own on-chain stake to pay for `Supplier` services
+- Providing tooling and infrastructure to coordinate with the `Client`
+- Determining which `Supplier` to use from the available list in the session
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    actor G as Gateway(s) <br> (Application(s))
+    participant DA as Pocket DA Layer
+    actor S as Supplier(s)
+
+    G ->> +DA: StartSession(App, Block, ...)
+    DA ->> -G: SessionData([Suppliers], ...)
+
+    note over C,G: Client-Gateway Handshake <br> (e.g. OAuth, etc...)
+
+    loop Session Duration
+        C ->> G: Request
+        G ->> G: Sign Relay Request
+        G ->>+ S: Signed Relay Request
+        S ->> S: Validate Ring(App/Gateway) Signature & <br> App Session Limits
+        alt App exceeds session limits
+            S ->> G: Reject Request
+            G ->> C: Rejected Response <br>(or backup response)
+        else App within session limits
+            S ->> S: Handle Request &<br>Sign Response
+            S ->> -G: Signed Relay Response
+            G ->> C: Response
+        end
+    end
+
+    S -->> DA: Claim & Proof Lifecycle
+```
+
+## Application -> Gateway Delegation
+
+An Application that chooses to delegate trust to a gateway by submitting a
+one-time `DelegateMsg` transaction. Once this is done, the `Gateway` will be
+able to sign relay requests on behalf of the `Application` that'll use the
+`Application`s on-chain stake to pay for service to access the Pocket `Supplier` Network.
+
+This can be done any number of times, so an `Application` can delegate to multiple
+`Gateways` simultaneously.
+
+```mermaid
+---
+title: Application -> Gateway (un)Delegation
+---
+sequenceDiagram
+    actor A as Application
+    participant DA as Pocket DA Layer
     actor G as Gateway
-
-    A ->> A: Prepare Delegate Message
-    A ->> A: Sign Request
-
-    A ->>+ WS: Delegate(GatewayPubKey)
-    WS ->>- A: ok
+    A ->> A: Prepare & Sign <br> Delegation Transaction
+    A ->>+ DA: Delegate(GatewayPubKey)
+    DA ->>- A: ok
+    note over A,G: Gateway can now sign <br>relay requests on behalf of Application
+    A ->> A: Prepare & Sign <br> Undelegation Transaction
+    A ->>+ DA: Undelegate(GatewayPubKey)
+    DA ->>- A: ok
+    note over A,G: Gateway can now longer sign <br>relay requests on behalf of Application
 ```
 
-The following message will need to be signed by the Application's PrivateKey in order for it to be valid and committed to the world state.
-
-```go
-type DelegateMsg interface {
-  GetApplicationPublicKey() # The cryptographic ID of the Application
-  GetGatewayPublicKey()     # The cryptographic ID of the Gateway
-}
-```
-
-Once committed, the Application can be serviced on behalf of the Gateway. Though an Application can delegate to multiple Gateways simultaneously, the rate limiting for each session still remains at the Servicer level.
-
-#### 3.5.5 Application Servicing
-
-When an Application chooses to start a new session, the Gateway is responsible for dispatching the `StartSession` request using on-chain and use an off-chain mechanism (e.g. AccessTokens) to service the Application. Throughout the duration of the session, validation and communication between the Application and Gateway are done using off-chain mechanisms, which are outside the scope of this document.
+### Ring Signature Verification
 
 [Ring Signatures](https://en.wikipedia.org/wiki/Ring_signature) will be used in order to allow both the Application and the Gateway to sign the Relay.
 
 ```mermaid
 flowchart
-    subgraph Ring
-        Application <--> P1["Gateway 1"]
-        P1 <--> P2["Gateway 2"]
-        P2 <--> Application
-    end
-    Ring --Signature--> Servicer
-    Servicer--Validate Signature-->Servicer
-```
+    S[Supplier]
 
-Similar to to the [incognito sampling section of the Fisherman Protocol](#334-incognito-sampling) section, Ring Signatures enable the Servicer to validate the signed request. This enables permissioned (w/ a Gateway) and permissionless (w/o a Gateway) operations to co-exist, without being mutually exclusive, and without the Servicer needing knowledge of the Application's current mode of operation.
+    subgraph SA[Sovereign Application]
+        subgraph SARing[Ring Signature]
+            A1[Application 1]
+            A1 <--> A1
+        end
+    end
+
+    subgraph DA[Delegating Application]
+        subgraph DARing
+            A2[Application 2]
+            G1[Gateway 1]
+            G2[Gateway 2]
+            A2 <--> G1
+            G1 <--> G2
+            G2 <--> A2
+        end
+    end
+
+    subgraph AG[Application Gateway]
+        subgraph AGRing
+            G3["Gateway 3<br>(Application 3)"]
+            G3 <--> G3
+        end
+    end
+
+
+    AG --Signature--> S
+    DA --Signature--> S
+    SA --Signature--> S
+
+    S-->|Validate Signature| S
+```
 
 ```mermaid
 ---
-title: Signature Validation By Servicer
+title: Signature Validation for Delegating Application
 ---
 stateDiagram-v2
-    state "Get gateways the App<br>delegated to: [P1, P2]" as getGateways
-    state "Is relay signed by one of:<br>Application, Gateway1, Gateway2?" as sigCheck
+    state "Get Gateways the App<br>delegated to: [P1, P2]" as getGateways
+    state "Is Relay Request signed by one of:<br>[Application 2, Gateway1, Gateway2]?" as sigCheck
 
     state "Valid (should service relay)" as Valid
     state "Invalid (do not service relay)" as Invalid
@@ -144,62 +260,14 @@ stateDiagram-v2
     sigCheck --> Invalid: No
 ```
 
-Servicer's are incentivized to respond to any valid relay since it is applicable for reward distribution. The session tokens used for rate limiting by the Servicer will come out of the same bucket as described in the [rate limiting algorithm](#315-rate-limiting) regardless of who in the ring signed the request.
+## Gateway Off-Chain Operations
 
-```mermaid
-sequenceDiagram
-    actor A as Application
-    participant WS as World State
-    actor G as Gateway
-    actor S as Servicer
-
-    A ->>+ G: StartSession
-    G ->> G: StartSession
-    G ->>- A: AccessToken
-
-    loop Session Duration
-        A ->> +G: Request(AccessToken)
-        G ->> G: Sign Request
-        G ->> +S: SignedRequest
-        S ->> S: Validate Signature<br>& Session Limits
-        S ->> S: Handle Request<br>& Sign Response
-        S ->> -G: SignedResponse
-        G ->> G: ** Gateway specific features ** <br>(altruist, check, challenge, proof, etc...)
-        G ->> -A: Response
-    end
-```
-
-#### 3.5.6 Gateway Registration
-
-Registration differs from staking in the sense that the pubKey is known but there are no economic benefits/penalties in this stage of the protocol's progression.
-
-The Gateway must register on-chain in order for the Servicer to accept its signature as part of the ring. Future versions of the protocol may include on-chain rewards or penalties for the Gateway, but the current iteration will incentivize Gateways to provide a high quality, highly trusted service through free market economics.
-
-When staking, the Gateway must bond a certain amount of POKT to be able to participate in the network. The governance parameter, `StakePerAppDelegation` limits the number of Applications that can delegate to it, and it is the Gateway's responsibility to increase its stake as the number of Applications that trust it grow.
-
-For example, if `StakePerAppDelegation` is 100 POKT and the Gateway has staked 1000 POKT, a transaction by the 11th Application to delegate to it will be rejected until the stake is increased appropriately. However, if `StakePerAppDelegation` is 0 POKT, all Gateways, which are permissionless actors can have an unbounded number of Applications delegate to them.
-
-If `StakePerAppDelegation` changes such that a Gateway cannot support the existing numbers of delegating apps, they are all legacied in to continue operating as normal. However, new applications cannot delegate to the Gateway until the stake is sufficiently increased.
-
-```go
-type GatewayStakeMsg interface {
-  GetPublicKey() PublicKey   # The public cryptographic id of the Gateway account
-  GetStakeAmount() BigInt     # The amount of uPOKT in escrow (i.e. a security deposit)
-  GetServiceURL() ServiceURL  # The API endpoint where the Gateway service is provided
-}
-```
-
-#### 3.5.7 Gateway Unregistration
-
-A Gateway is able to submit an `UnstakeMsg` to exit and remove itself from the network. After a successful UnstakeMsg, the Gateway is no eligible sign relays on behalf of an Application. On-chain delegation from existing Applications will be removed from the world state. After the `GatewayUnstakingTime` unbonding time elapses, the remaining stake is returned to the Gateway's address.
-
-#### 3.5.8 Application Undelegation
-
-If a staked Application wants to stop using a Gateway, and prevent the Gateway from further signing relays on its behalf, it would simply submit an on-chain `UndelegateMsg`. Further relays signed by the Gateway on behalf of the Application would be rejected by the Servicers.
-
-```go
-type UndelegateMsg interface {
-  GetApplicationPublicKey() # The cryptographic ID of the Application
-  GetGatewayPublicKey()     # The cryptographic ID of the Gateway
-}
-```
+- altruist
+- Check
+- Client Side Challenge & Response
+- Proof w/ that
+- Etc.
+- Session dispatching
+- Pocket Network buisness logic
+- Supplier selection and QoS management
+-
