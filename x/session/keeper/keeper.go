@@ -69,16 +69,17 @@ func (k Keeper) Logger() log.Logger {
 	return k.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-// BeginBlocker is called at the beginning of every block.
+// StoreBlockHash is called at the end of every block.
 // It fetches the block hash from the committed block ans saves its hash
 // in the store.
-func (k Keeper) BeginBlocker(goCtx context.Context) {
+func (k Keeper) StoreBlockHash(goCtx context.Context) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	// ctx.BlockHeader().AppHash is the hash of the last block committed
-	hash := ctx.BlockHeader().AppHash
-	// ctx.BlockHeader().Height is the height of the last committed block.
-	height := ctx.BlockHeader().Height
+	// ctx.HeaderHash() is the hash of the block being validated.
+	hash := ctx.HeaderHash()
+
+	// ctx.BlocHeight() is the height of the block being validated.
+	height := ctx.BlockHeight()
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
