@@ -356,7 +356,7 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -372,7 +372,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -412,7 +412,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -428,7 +428,7 @@ app3_unstake: ## Unstake app3
 
 .PHONY: app_delegate
 app_delegate: ## Delegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application delegate-to-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_delegate_gateway1
 app1_delegate_gateway1: ## Delegate trust to gateway1
@@ -447,7 +447,7 @@ app3_delegate_gateway3: ## Delegate trust to gateway3
 
 .PHONY: app_undelegate
 app_undelegate: ## Undelegate trust to a gateway (must specify the APP and GATEWAY_ADDR env vars). Requires the app to be staked
-	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx application undelegate-from-gateway $(GATEWAY_ADDR) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_undelegate_gateway1
 app1_undelegate_gateway1: ## Undelegate trust to gateway1
@@ -474,7 +474,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
@@ -490,7 +490,7 @@ supplier3_stake: ## Stake supplier3
 
 .PHONY: supplier_unstake
 supplier_unstake: ## Unstake an supplier (must specify the SUPPLIER env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier unstake-supplier --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: supplier1_unstake
 supplier1_unstake: ## Unstake supplier1
@@ -577,7 +577,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--yes \
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE) \
-			--chain-id poktroll;)
+			--chain-id $(CHAIN_ID);)
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
@@ -632,7 +632,7 @@ MODULES := application gateway pocket service session supplier tokenomics
 # TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
 .PHONY: update_tokenomics_params
 update_tokenomics_params: ## Update the tokenomics module params
-	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE)
+	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: query_all_params
 query_all_params: check_jq ## Query the params from all available modules

@@ -41,6 +41,7 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
+	chainIdFlag      = "--chain-id=poktroll"
 	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
@@ -130,6 +131,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		accNameToAddrMap[accName2],
 		fmt.Sprintf("%dupokt", amount),
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -198,6 +200,7 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 		"--from",
 		accName,
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -222,6 +225,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 		"--from",
 		accName,
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
