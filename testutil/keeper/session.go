@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	"cosmossdk.io/store/prefix"
@@ -42,7 +42,7 @@ var (
 	TestApp1Address = "pokt1mdccn4u38eyjdxkk4h0jaddw4n3c72u82m5m9e" // Generated via sample.AccAddress()
 	TestApp1        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},
@@ -59,7 +59,7 @@ var (
 	TestApp2Address = "pokt133amv5suh75zwkxxcq896azvmmwszg99grvk9f" // Generated via sample.AccAddress()
 	TestApp2        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId2},
@@ -77,7 +77,7 @@ var (
 	TestSupplierAddress = sample.AccAddress()
 	TestSupplier        = sharedtypes.Supplier{
 		Address: TestSupplierAddress,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},
@@ -113,7 +113,8 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -154,7 +155,7 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	k.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	// In prod, the hashes of all block heights are stored in the hash store while
 	// the block hashes below are hardcoded to match the hardcoded session IDs used
@@ -209,7 +210,7 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	allSuppliers := []sharedtypes.Supplier{TestSupplier}
 
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes().Return(allSuppliers)
+	mockSupplierKeeper.EXPECT().GetAllSuppliers(gomock.Any()).AnyTimes().Return(allSuppliers)
 
 	return mockSupplierKeeper
 }

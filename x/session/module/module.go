@@ -145,14 +145,18 @@ func (AppModule) ConsensusVersion() uint64 { return 1 }
 
 // BeginBlock contains the logic that is automatically triggered at the beginning of each block.
 // The begin block implementation is optional.
-func (am AppModule) BeginBlock(ctx context.Context) error {
-	am.keeper.BeginBlocker(ctx)
+func (am AppModule) BeginBlock(_ context.Context) error {
 	return nil
 }
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(_ context.Context) error {
+func (am AppModule) EndBlock(ctx context.Context) error {
+	// Store the block hash at the end of every block, so we can query the block hash
+	// to construct the SessionID.
+	// EndBlock is preferred over BeginBlock to avoid wasting resources if the block
+	// does not get committed.
+	am.keeper.StoreBlockHash(ctx)
 	return nil
 }
 
@@ -167,10 +171,7 @@ func (am AppModule) IsAppModule() {}
 // ----------------------------------------------------------------------------
 
 func init() {
-	appmodule.Register(
-		&modulev1.Module{},
-		appmodule.Provide(ProvideModule),
-	)
+	appmodule.Register(&modulev1.Module{}, appmodule.Provide(ProvideModule))
 }
 
 type ModuleInputs struct {
