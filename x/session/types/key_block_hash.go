@@ -2,14 +2,14 @@ package types
 
 import (
 	"encoding/binary"
-	fmt "fmt"
+	"fmt"
 )
 
 var _ binary.ByteOrder
 
 const (
 	// BlockHashKeyPrefix is the prefix to retrieve all BlockHash
-	BlockHashKeyPrefix = "BlockHash/value/"
+	BlockHashKeyPrefix = "BlockHash/height/"
 )
 
 // BlockHashKey returns the store key to retrieve a BlockHash from the index fields

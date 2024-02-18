@@ -82,7 +82,7 @@ func TestCLI_GetSession(t *testing.T) {
 
 			appAddress: appSvc0.Address,
 			serviceId:  "svc0",
-			// blockHeight: intentionally omitted,
+			// blockHeight explicitly omitted,
 
 			expectedErr:          nil,
 			expectedNumSuppliers: 1,
@@ -129,7 +129,7 @@ func TestCLI_GetSession(t *testing.T) {
 		},
 		{
 			desc: "invalid - missing appAddress",
-			// appAddress: intentionally omitted
+			// appAddress explicitly omitted
 			serviceId:   "svc0",
 			blockHeight: 0,
 
@@ -148,7 +148,7 @@ func TestCLI_GetSession(t *testing.T) {
 		{
 			desc:       "invalid - missing service ID",
 			appAddress: appSvc0.Address, // dynamically getting address from applications
-			// serviceId:   intentionally omitted
+			// serviceId explicitly omitted
 			blockHeight: 0,
 
 			expectedErr: sessiontypes.ErrSessionInvalidService,
@@ -161,22 +161,22 @@ func TestCLI_GetSession(t *testing.T) {
 	}
 
 	// Run the tests
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.appAddress,
-				tt.serviceId,
-				fmt.Sprintf("%d", tt.blockHeight),
+				test.appAddress,
+				test.serviceId,
+				fmt.Sprintf("%d", test.blockHeight),
 			}
 			args = append(args, common...)
 
 			// Execute the command
 			getSessionOut, err := clitestutil.ExecTestCLICmd(ctx, session.CmdGetSession(), args)
-			if tt.expectedErr != nil {
-				stat, ok := status.FromError(tt.expectedErr)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedErr.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
@@ -190,9 +190,9 @@ func TestCLI_GetSession(t *testing.T) {
 			require.NotNil(t, session)
 
 			// Verify some data about the session
-			require.Equal(t, tt.appAddress, session.Application.Address)
-			require.Equal(t, tt.serviceId, session.Header.Service.Id)
-			require.Len(t, session.Suppliers, tt.expectedNumSuppliers)
+			require.Equal(t, test.appAddress, session.Application.Address)
+			require.Equal(t, test.serviceId, session.Header.Service.Id)
+			require.Len(t, session.Suppliers, test.expectedNumSuppliers)
 		})
 	}
 }
