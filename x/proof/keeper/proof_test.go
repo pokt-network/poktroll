@@ -28,6 +28,7 @@ var _ = strconv.IntSize
 
 func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Proof {
 	proofs := make([]types.Proof, n)
+
 	for i := range proofs {
 		proofs[i] = types.Proof{
 			SupplierAddress: sample.AccAddress(),
@@ -43,22 +44,24 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 
 		keeper.UpsertProof(ctx, proofs[i])
 	}
+
 	return proofs
 }
 
 func TestProofGet(t *testing.T) {
 	keeper, ctx := keepertest.ProofKeeper(t, nil)
 	proofs := createNProofs(keeper, ctx, 10)
+
 	for _, proof := range proofs {
-		rst, found := keeper.GetProof(
+		foundProof, isProofFound := keeper.GetProof(
 			ctx,
 			proof.GetSessionHeader().GetSessionId(),
 			proof.GetSupplierAddress(),
 		)
-		require.True(t, found)
+		require.True(t, isProofFound)
 		require.Equal(t,
 			nullify.Fill(&proof),
-			nullify.Fill(&rst),
+			nullify.Fill(&foundProof),
 		)
 	}
 }
@@ -68,8 +71,8 @@ func TestProofRemove(t *testing.T) {
 	for _, proof := range proofs {
 		sessionId := proof.GetSessionHeader().GetSessionId()
 		keeper.RemoveProof(ctx, sessionId, proof.GetSupplierAddress())
-		_, found := keeper.GetProof(ctx, sessionId, proof.GetSupplierAddress())
-		require.False(t, found)
+		_, isProofFound := keeper.GetProof(ctx, sessionId, proof.GetSupplierAddress())
+		require.False(t, isProofFound)
 	}
 }
 

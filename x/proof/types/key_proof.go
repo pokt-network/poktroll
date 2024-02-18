@@ -6,7 +6,8 @@ var _ binary.ByteOrder
 
 const (
 	// ProofPrimaryKeyPrefix is the prefix to retrieve the entire Proof object (the primary store)
-	ProofPrimaryKeyPrefix = "Proof/value/"
+	// TODO_TECHDEBT: consider renaming to ProofSessionIDPrefix.
+	ProofPrimaryKeyPrefix = "Proof/primary_key/"
 
 	// ProofSupplierAddressPrefix is the key to retrieve a Proof's Primary Key from the Address index
 	ProofSupplierAddressPrefix = "Proof/address/"
@@ -34,3 +35,5 @@ func ProofSupplierEndSessionHeightKey(sessionEndHeight int64, primaryKey []byte)
 
 	return KeyComposite(heightBz, primaryKey)
 }
+
+// TODO_TECHDEBT(@olshanks): add helpers for composing query-side key prefixes & document key/value prefix design.

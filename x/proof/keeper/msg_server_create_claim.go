@@ -3,18 +3,16 @@ package keeper
 import (
 	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
+func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
 	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
-	ctx := sdk.UnwrapSDKContext(goCtx)
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Debug("creating claim")
 
@@ -23,7 +21,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 	}
 
 	session, err := k.queryAndValidateSessionHeader(
-		goCtx,
+		ctx,
 		msg.GetSessionHeader(),
 		msg.GetSupplierAddress(),
 	)
@@ -55,7 +53,7 @@ func (k msgServer) CreateClaim(goCtx context.Context, msg *types.MsgCreateClaim)
 	claim := types.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
 		SessionHeader:   msg.GetSessionHeader(),
-		RootHash:        msg.RootHash,
+		RootHash:        msg.GetRootHash(),
 	}
 
 	// TODO_BLOCKER: check if this claim already exists and return an appropriate error

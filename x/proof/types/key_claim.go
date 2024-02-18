@@ -6,7 +6,8 @@ var _ binary.ByteOrder
 
 const (
 	// ClaimPrimaryKeyPrefix is the prefix to retrieve the entire Claim object (the primary store)
-	ClaimPrimaryKeyPrefix = "Claim/value/"
+	// TODO_TECHDEBT: consider renaming to ClaimSessionIDPrefix.
+	ClaimPrimaryKeyPrefix = "Claim/primary_key/"
 
 	// ClaimSupplierAddressPrefix is the key to retrieve a Claim's Primary Key from the Address index
 	ClaimSupplierAddressPrefix = "Claim/address/"
@@ -34,3 +35,5 @@ func ClaimSupplierEndSessionHeightKey(sessionEndHeight int64, primaryKey []byte)
 
 	return KeyComposite(heightBz, primaryKey)
 }
+
+// TODO_TECHDEBT(@olshanks): add helpers for composing query-side key prefixes & document key/value prefix design.

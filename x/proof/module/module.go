@@ -166,10 +166,7 @@ func (am AppModule) IsAppModule() {}
 // ----------------------------------------------------------------------------
 
 func init() {
-	appmodule.Register(
-		&modulev1.Module{},
-		appmodule.Provide(ProvideModule),
-	)
+	appmodule.Register(&modulev1.Module{}, appmodule.Provide(ProvideModule))
 }
 
 type ModuleInputs struct {

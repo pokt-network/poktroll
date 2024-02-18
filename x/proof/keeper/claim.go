@@ -26,25 +26,24 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	logger.Info(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
-	addressStoreIndex := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
-	addressKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
-	addressStoreIndex.Set(addressKey, primaryKey)
+	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
+	supplierAddrKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
+	supplierAddrStore.Set(supplierAddrKey, primaryKey)
 
 	logger.Info(fmt.Sprintf("indexed claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
-	sessionHeightStoreIndex := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
-	sessionEndBlockHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
-	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
-	sessionHeightStoreIndex.Set(heightKey, primaryKey)
+	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
+	sessionEndHeightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
+	sessionEndHeightStore.Set(sessionEndHeightKey, primaryKey)
 
-	logger.Info(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, sessionEndBlockHeight))
+	logger.Info(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, sessionEndHeight))
 }
 
 // GetClaim returns a claim from its index
-func (k Keeper) GetClaim(ctx context.Context, sessionId, supplierAddr string) (claim types.Claim, found bool) {
-	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
-	return k.getClaimByPrimaryKey(ctx, primaryKey)
+func (k Keeper) GetClaim(ctx context.Context, sessionId, supplierAddr string) (_ types.Claim, isClaimFound bool) {
+	return k.getClaimByPrimaryKey(ctx, types.ClaimPrimaryKey(sessionId, supplierAddr))
 }
 
 // RemoveClaim removes a claim from the store
@@ -56,24 +55,24 @@ func (k Keeper) RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
 
 	// Check if the claim exists
 	primaryKey := types.ClaimPrimaryKey(sessionId, supplierAddr)
-	claim, foundClaim := k.getClaimByPrimaryKey(ctx, primaryKey)
-	if !foundClaim {
+	foundClaim, isClaimFound := k.getClaimByPrimaryKey(ctx, primaryKey)
+	if !isClaimFound {
 		logger.Error(fmt.Sprintf("trying to delete non-existent claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
 		return
 	}
 
 	// Prepare the indices for deletion
-	addressStoreIndex := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
-	sessionHeightStoreIndex := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
+	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
+	sessionEndHeightStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSessionEndHeightPrefix))
 
-	addressKey := types.ClaimSupplierAddressKey(claim.GetSupplierAddress(), primaryKey)
-	sessionEndBlockHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
-	heightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndBlockHeight, primaryKey)
+	supplierAddrKey := types.ClaimSupplierAddressKey(foundClaim.GetSupplierAddress(), primaryKey)
+	sessionEndHeight := foundClaim.GetSessionHeader().GetSessionEndBlockHeight()
+	sessionEndHeightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
 
 	// Delete all the entries (primary store and secondary indices)
 	primaryStore.Delete(primaryKey)
-	addressStoreIndex.Delete(addressKey)
-	sessionHeightStoreIndex.Delete(heightKey)
+	supplierAddrStore.Delete(supplierAddrKey)
+	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
 	logger.Info(fmt.Sprintf("deleted claim with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
 }
@@ -92,17 +91,20 @@ func (k Keeper) GetAllClaims(ctx context.Context) (claims []types.Claim) {
 		claims = append(claims, claim)
 	}
 
-	return
+	return claims
 }
 
 // getClaimByPrimaryKey is a helper that retrieves, if exists, the Claim associated with the key provided
-func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (val types.Claim, found bool) {
+func (k Keeper) getClaimByPrimaryKey(ctx context.Context, primaryKey []byte) (claim types.Claim, isClaimFound bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimPrimaryKeyPrefix))
-	b := primaryStore.Get(primaryKey)
-	if b == nil {
-		return val, false
+	claimBz := primaryStore.Get(primaryKey)
+
+	if claimBz == nil {
+		return types.Claim{}, false
 	}
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+
+	k.cdc.MustUnmarshal(claimBz, &claim)
+
+	return claim, true
 }
