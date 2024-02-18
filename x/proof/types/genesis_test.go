@@ -17,17 +17,16 @@ func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
-		valid    bool
+		isValid  bool
 	}{
 		{
 			desc:     "default is valid",
 			genState: types.DefaultGenesis(),
-			valid:    true,
+			isValid:  true,
 		},
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
-
 				ClaimList: []types.Claim{
 					{
 						SupplierAddress: sample.AccAddress(),
@@ -51,7 +50,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				//},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
-			valid: true,
+			isValid: true,
 		},
 		{
 			desc: "duplicated claim",
@@ -75,7 +74,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "empty root hash",
@@ -91,7 +90,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "nil root hash",
@@ -107,7 +106,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		// TODO_BLOCKER: finish genesis proof list validation.
 		//{
@@ -126,10 +125,10 @@ func TestGenesisState_Validate(t *testing.T) {
 		//},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.genState.Validate()
-			if tc.valid {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.genState.Validate()
+			if test.isValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

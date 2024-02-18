@@ -79,7 +79,7 @@ func TestProofQuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetProofRequest{
-				// SessionId:       Intentionally Omitted
+				// SessionId explicitly omitted
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
 			expectedErr: status.Error(
@@ -94,7 +94,7 @@ func TestProofQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SupplierAddress",
 			request: &types.QueryGetProofRequest{
 				SessionId: proofs[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress: Intentionally Omitted,
+				// SupplierAddress explicitly omitted
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
@@ -108,25 +108,23 @@ func TestProofQuerySingle(t *testing.T) {
 			request: nil,
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidQueryRequest.Wrap(
-					"request cannot be nil",
-				).Error(),
+				types.ErrProofInvalidQueryRequest.Wrap("request cannot be nil").Error(),
 			),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			response, err := keeper.Proof(ctx, tc.request)
-			if tc.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			response, err := keeper.Proof(ctx, test.request)
+			if test.expectedErr != nil {
 				actualStatus, ok := status.FromError(err)
 				require.True(t, ok)
 
-				require.ErrorIs(t, actualStatus.Err(), tc.expectedErr)
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorIs(t, actualStatus.Err(), test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
-					nullify.Fill(tc.response),
+					nullify.Fill(test.response),
 					nullify.Fill(response),
 				)
 			}
@@ -148,6 +146,7 @@ func TestProofQueryPaginated(t *testing.T) {
 			},
 		}
 	}
+
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(proofs); i += step {
@@ -160,6 +159,7 @@ func TestProofQueryPaginated(t *testing.T) {
 			)
 		}
 	})
+
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte

@@ -18,7 +18,6 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -38,11 +37,6 @@ const (
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
 
-// init initializes the SDK configuration.
-func init() {
-	cmd.InitSDKConfig()
-}
-
 // TODO_CONSIDERATION: perhaps this (and/or other similar helpers) can be refactored
 // into something more generic and moved into a shared testutil package.
 // TODO_TECHDEBT: refactor; this function has more than a single responsibility,
@@ -50,9 +44,9 @@ func init() {
 // accounts, and claims set up logic can probably be factored out and/or reduced.
 func networkWithClaimObjects(
 	t *testing.T,
-	sessionCount int,
-	supplierCount int,
-	appCount int,
+	numSessions int,
+	numSuppliers int,
+	numApps int,
 ) (net *network.Network, claims []types.Claim) {
 	t.Helper()
 
@@ -63,8 +57,8 @@ func networkWithClaimObjects(
 	// to network start.
 	kr := keyring.NewInMemory(cfg.Codec)
 	// Populate the in-memmory keyring with as many pre-generated accounts as
-	// we expect to need for the test (i.e. appCount + supplierCount).
-	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, supplierCount+appCount)
+	// we expect to need for the test (i.e. numApps + numSuppliers).
+	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, numSuppliers+numApps)
 
 	// Use the pre-generated accounts iterator to populate the supplier and
 	// application accounts and addresses lists for use in genesis state construction.
@@ -72,19 +66,21 @@ func networkWithClaimObjects(
 
 	// Create a supplier for each session in numClaimsSessions and an app for each
 	// claim in numClaimsPerSession.
-	supplierAccts := make([]*testkeyring.PreGeneratedAccount, supplierCount)
-	supplierAddrs := make([]string, supplierCount)
+	supplierAccts := make([]*testkeyring.PreGeneratedAccount, numSuppliers)
+	supplierAddrs := make([]string, numSuppliers)
 	for i := range supplierAccts {
 		account, ok := preGeneratedAccts.Next()
 		require.True(t, ok)
+
 		supplierAccts[i] = account
 		supplierAddrs[i] = account.Address.String()
 	}
-	appAccts := make([]*testkeyring.PreGeneratedAccount, appCount)
-	appAddrs := make([]string, appCount)
+	appAccts := make([]*testkeyring.PreGeneratedAccount, numApps)
+	appAddrs := make([]string, numApps)
 	for i := range appAccts {
 		account, ok := preGeneratedAccts.Next()
 		require.True(t, ok)
+
 		appAccts[i] = account
 		appAddrs[i] = account.Address.String()
 	}
@@ -93,6 +89,7 @@ func networkWithClaimObjects(
 	supplierGenesisState := network.SupplierModuleGenesisStateWithAddresses(t, supplierAddrs)
 	supplierGenesisBuffer, err := cfg.Codec.MarshalJSON(supplierGenesisState)
 	require.NoError(t, err)
+
 	appGenesisState := network.ApplicationModuleGenesisStateWithAddresses(t, appAddrs)
 	appGenesisBuffer, err := cfg.Codec.MarshalJSON(appGenesisState)
 	require.NoError(t, err)
@@ -123,9 +120,9 @@ func networkWithClaimObjects(
 	// need to wait for the account to be initialized in the next block
 	require.NoError(t, net.WaitForNextBlock())
 
-	// Create sessionCount * numClaimsPerSession claims for the supplier
+	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
-	for sessionIdx := 0; sessionIdx < sessionCount; sessionIdx++ {
+	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
 		sessionEndHeight += numBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
@@ -155,7 +152,7 @@ func encodeSessionHeader(
 ) string {
 	t.Helper()
 
-	argSessionHeader := &sessiontypes.SessionHeader{
+	sessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      appAddr,
 		SessionStartBlockHeight: sessionStartHeight,
 		SessionId:               sessionId,
@@ -163,7 +160,7 @@ func encodeSessionHeader(
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
-	sessionHeaderBz := cdc.MustMarshalJSON(argSessionHeader)
+	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
 	return base64.StdEncoding.EncodeToString(sessionHeaderBz)
 }
 
@@ -174,14 +171,14 @@ func createClaim(
 	ctx client.Context,
 	supplierAddr string,
 	sessionEndHeight int64,
-	appAddress string,
+	appAddr string,
 ) *types.Claim {
 	t.Helper()
 
 	rootHash := []byte("root_hash")
 	sessionStartHeight := sessionEndHeight - numBlocksPerSession
-	sessionId := getSessionId(t, net, appAddress, supplierAddr, sessionStartHeight)
-	sessionHeaderEncoded := encodeSessionHeader(t, appAddress, sessionId, sessionStartHeight)
+	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
+	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
 
 	args := []string{
@@ -195,6 +192,9 @@ func createClaim(
 
 	responseRaw, err := testcli.ExecTestCLICmd(ctx, proof.CmdCreateClaim(), args)
 	require.NoError(t, err)
+
+	// Check the response, this test only asserts CLI command success and not
+	// the actual proof module state.
 	var responseJson map[string]interface{}
 	err = json.Unmarshal(responseRaw.Bytes(), &responseJson)
 	require.NoError(t, err)
@@ -204,7 +204,7 @@ func createClaim(
 	return &types.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
-			ApplicationAddress:      appAddress,
+			ApplicationAddress:      appAddr,
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
@@ -225,7 +225,7 @@ func getSessionId(
 	sessionStartHeight int64,
 ) string {
 	t.Helper()
-	ctx := context.TODO()
+	ctx := context.Background()
 
 	sessionQueryClient := sessiontypes.NewQueryClient(net.Validators[0].ClientCtx)
 	res, err := sessionQueryClient.GetSession(ctx, &sessiontypes.QueryGetSessionRequest{
@@ -235,14 +235,14 @@ func getSessionId(
 	})
 	require.NoError(t, err)
 
-	var found bool
+	var isSupplierFound bool
 	for _, supplier := range res.GetSession().GetSuppliers() {
 		if supplier.GetAddress() == supplierAddr {
-			found = true
+			isSupplierFound = true
 			break
 		}
 	}
-	require.Truef(t, found, "supplier address %s not found in session", supplierAddr)
+	require.Truef(t, isSupplierFound, "supplier address %s not found in session", supplierAddr)
 
 	return res.Session.SessionId
 }

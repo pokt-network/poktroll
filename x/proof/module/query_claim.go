@@ -26,10 +26,10 @@ func CmdListClaims() *cobra.Command {
 The claims can be optionally filtered by one of --session-end-height --session-id or --supplier-address flags
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --session-id <session_id> --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE)
-$ poktrolld --home=$(POKTROLLD_HOME) q claim list-claims --supplier-address <supplier_address> --node $(POCKET_NODE)`,
+$ poktrolld q claim list-claims --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q claim list-claims --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q claim list-claims --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q claim list-claims --supplier-address <supplier_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageReq, err := client.ReadPageRequest(cmd.Flags())

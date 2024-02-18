@@ -19,9 +19,7 @@ var (
 	KeyDelimiter = []byte("/")
 )
 
-func KeyPrefix(p string) []byte {
-	return []byte(p)
-}
+func KeyPrefix(p string) []byte { return []byte(p) }
 
 // KeyComposite combines the given keys into a single key for use with KVStore.
 func KeyComposite(keys ...[]byte) []byte {
