@@ -16,6 +16,18 @@ TODO(@Olshansk): Iterate on this doc & link to governance params.
 
 :::
 
+- [Introduction](#introduction)
+- [Modes of Operation](#modes-of-operation)
+  - [Sovereign Application](#sovereign-application)
+  - [Delegating Application](#delegating-application)
+  - [Gateway Application](#gateway-application)
+- [Application -\> Gateway Delegation](#application---gateway-delegation)
+- [Relay Signatures](#relay-signatures)
+  - [Delegating Application Example](#delegating-application-example)
+- [Gateway Off-Chain Operations](#gateway-off-chain-operations)
+
+## Introduction
+
 The [Gateway Actor](./../actors/gateway.md) section covers what a Gateway is.
 Recall that it is a permissionless protocol actor to whom the Application can
 **optionally** delegate on-chain trust in order to perform off-chain operations.
@@ -201,9 +213,18 @@ sequenceDiagram
     note over A,G: Gateway can now longer sign <br>relay requests on behalf of Application
 ```
 
-### Ring Signature Verification
+## Relay Signatures
 
-[Ring Signatures](https://en.wikipedia.org/wiki/Ring_signature) will be used in order to allow both the Application and the Gateway to sign the Relay.
+As explained in the [Claim & Proof Lifecycle](./../protocol/claim_and_proof_lifecycle.md) document,
+the `Application` that signs the relay request is the one whose stake is used to
+for access to services provided by the Pocket `Supplier` Network.
+
+The `Application` is the one paying for services, but a `Gateway` could potentially
+be the one proxing and signing the relay. [Ring Signatures](https://en.wikipedia.org/wiki/Ring_signature)
+are used to enable both since delegation happens at the public key level.
+
+Below we see what the Ring would look like in each of the three modes of operation
+described above:
 
 ```mermaid
 flowchart
@@ -242,13 +263,64 @@ flowchart
     S-->|Validate Signature| S
 ```
 
+### Delegating Application Example
+
+As an example, consider an `Application` that has delegated to two independent
+`Gateways`: Gateway 1 & Gateway 2. The diagrams below show a few things:
+
+- A client with the `Application` private can sign the relay itself or delegate
+  to a `Gateway` to sign the relay on its behalf.
+- A client without the `Application` private key can only delegate to a `Gateway`
+  to sign the relay on its behalf.
+- The `Supplier` does not know who signed the relay, but only that it was signed by
+  one of `Application`, `Gateway 1`, or `Gateway 2`.
+- The `Application` is always the one paying for the service.
+
+<!--
+TODO(@Olshansk): Figure out if there's a way to name the gateways big G (Google)
+and little g (grove) without distracting from the content.
+-->
+
+```mermaid
+flowchart
+    S[Supplier]
+
+    subgraph C1[Client 1]
+        APK[Application Private Key]
+    end
+
+    subgraph C2[Client 2]
+        NPK2[No Private Key]
+    end
+
+    subgraph G1[Gateway 1]
+        G1PK[Gateway 1 Private Key]
+    end
+
+    subgraph G2[Gateway 2]
+        G2PK[Gateway 2 Private Key]
+    end
+
+
+    C1 -->|Request| G1
+    C1 -->|Request| G2
+    C2 -->|Request| G1
+    C2 -->|Request| G1
+
+    C1 --Ring Signature signed by <br> Application--> S
+    G1 --Ring Signature signed by <br> Gateway 1--> S
+    G2 --Ring Signature signed by <br> Gateway 2--> S
+
+    S-->|Validate Signature| S
+```
+
 ```mermaid
 ---
 title: Signature Validation for Delegating Application
 ---
 stateDiagram-v2
-    state "Get Gateways the App<br>delegated to: [P1, P2]" as getGateways
-    state "Is Relay Request signed by one of:<br>[Application 2, Gateway1, Gateway2]?" as sigCheck
+    state "Get Gateways Application<br>delegated to: [G1, G2]" as getGateways
+    state "Is Relay Request signed by one of:<br>[Application, G1, G2]?" as sigCheck
 
     state "Valid (should service relay)" as Valid
     state "Invalid (do not service relay)" as Invalid
@@ -262,12 +334,18 @@ stateDiagram-v2
 
 ## Gateway Off-Chain Operations
 
-- altruist
-- Check
-- Client Side Challenge & Response
-- Proof w/ that
-- Etc.
-- Session dispatching
-- Pocket Network buisness logic
-- Supplier selection and QoS management
--
+TODO(@olshansk): Expand on this section.
+
+Gateways can design and manage off-chain operations to coordinate with the `Client`
+including by not limited to:
+
+- Dashboards & user management
+- API Keys
+- Second layer of rate limiting
+- Providing altruist backups
+- QoS (SLA, SLO) guarantees
+- Prove & validate data integrity
+- Provide additional off-chain services
+- Guarantee certain SLAs and SLOs
+- Manage on-chain Pocket logic (account top-ups, etc...)
+- Etc...

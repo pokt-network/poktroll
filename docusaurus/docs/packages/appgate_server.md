@@ -8,9 +8,9 @@ sidebar_position: 3
 - [What is AppGate Server?](#what-is-appgate-server)
 - [Architecture Overview](#architecture-overview)
   - [Starting the AppGate Server](#starting-the-appgate-server)
-- [Application Mode (self_signing = true)](#application-mode-self_signing--true)
+- [Application Mode (self\_signing = true)](#application-mode-self_signing--true)
   - [Application RPC Request Schema](#application-rpc-request-schema)
-- [Gateway Mode (self_signing = false)](#gateway-mode-self_signing--false)
+- [Gateway Mode (self\_signing = false)](#gateway-mode-self_signing--false)
   - [Gateway RPC Request Schema](#gateway-rpc-request-schema)
 - [POKTRollSDK integration](#poktrollsdk-integration)
 
