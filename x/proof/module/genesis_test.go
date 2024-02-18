@@ -6,7 +6,7 @@ import (
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/proof/module"
+	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 
