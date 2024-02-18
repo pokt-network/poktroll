@@ -2,7 +2,6 @@ package tx_test
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
@@ -11,6 +10,9 @@ import (
 	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
@@ -107,13 +109,23 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
-	txResultBz, err := json.Marshal(abci.TxResult{Tx: expectedTx})
+	txResult := abci.TxResult{Tx: expectedTx}
+	txEvent := &comettypes.EventDataTx{TxResult: txResult}
+
+	txResultBz, err := json.Marshal(txEvent)
+	require.NoError(t, err)
+
+	rpcResult := &rpctypes.RPCResponse{
+		Result: txResultBz,
+	}
+
+	rpcResultBz, err := json.Marshal(rpcResult)
 	require.NoError(t, err)
 
 	// Publish the transaction event bytes to the events query client so that the transaction client
 	// registers the transactions as committed (i.e. removes it from the timeout pool).
 	txResultsBzPublishChMu.Lock()
-	txResultsBzPublishCh <- either.Success[[]byte](txResultBz)
+	txResultsBzPublishCh <- either.Success[[]byte](rpcResultBz)
 	txResultsBzPublishChMu.Unlock()
 
 	// Assert that the error channel was closed without receiving.
