@@ -5,16 +5,16 @@ sidebar_position: 2
 
 # Claim & Proof Lifecycle <!-- omit in toc -->
 
-TODO_IN_THIS_PR: Replace `sum` with `weight` in the leafs of the diagrams.
-
 :::warning
 
-This part of the documentation is just an initial draft and requires deep
+This part of the documentation is just an INITIAL DRAFT and requires deep
 understanding of the Pocket Network protocol. It is currently aiming to just
 be a reference and not provide a coherent narrative that is easily accessible
 to all readers.
 
 TODO(@Olshansk): Iterate on this doc & link to governance params.
+
+TODO(@red-0ne): Review this document and submit a PR with updates & edits.
 
 :::
 
@@ -98,6 +98,11 @@ as `Applications` make RPC requests (`relays`) to the `Supplier`.
 
 After a session ends, the Claim & Proof Lifecycle can be decomposed, at a high-level,
 into the following steps.
+
+![pako_eNqNVGFr2zAQ_SuHPowUvJCkiZuGMVi7bgxWKHVZYeTLxT7XIrJkJHlbVvrfd7KS1tm8MX8I8ende3pPZz2K3BQkVsLLmpTUtNbAj5deEdwY5yEj56TRcGONKeELKlmg50IEHlavdOHgzca-hREDvcmNOomI8KzglnJTN60nyK6zO2AuD6_AtTWMDgutlt4dNX1QrasAdQHOG7tv9QaUyVFBId02oi8toadLhbLe7yF](https://github.com/pokt-network/poktroll/assets/1892194/7f75ed32-4873-4418-a2b1-ec50659fe34e)
+
+_TODO(@Olshansk): Figure out if we can replace the image above with the mermaid diagram
+below once we have an answer to [this comment](https://github.com/facebook/docusaurus/issues/9032#issuecomment-1953239016)._
 
 ```Mermaid
 timeline
@@ -214,8 +219,8 @@ In addition to basic validation as part of processing `SubmitProof` to determine
 whether or not the `Proof` should be stored on-chain, there are several additional
 deep cryptographic validations needed:
 
-1. `Merkle Leaf Validation` - Proof of the off-chain `Supplier` <-> `Application` interaction during the Relay request & response.
-2. `Merkle Proof Selection` - Proof of the amount of work done by the `Supplier` during the `Session`.
+1. `Merkle Leaf Validation`: Proof of the off-chain `Supplier`/`Application` interaction during the Relay request & response.
+2. `Merkle Proof Selection`: Proof of the amount of work done by the `Supplier` during the `Session`.
 
 :::note
 
@@ -284,9 +289,10 @@ Legend:
 - 🟥 - Root node
 - 🟦 - Inner node
 - 🟩 - Leaf node
-- ⬛ - Empty node
+- 🟫 - Empty Node
 - 🟨 - Included in Merkle Proof
 - ⬚🟨 - Computed as Part of Merkle Proof
+- ⬛ - Not used in the diagram node
 
 ```mermaid
 graph TB
@@ -294,6 +300,7 @@ graph TB
     classDef greenNode fill:#00b300, color:#ffffff;
     classDef blueNode fill:#0000ff, color:#ffffff;
     classDef yellowNode fill:#fff500, color:#ffa500
+    classDef brownNode fill:#964B00, color:#ffffff;
 
     %% Define root node
     R[sum=9<br>root]
@@ -325,6 +332,7 @@ graph TB
     class R redNode;
     class L1,L2,L3,L4,L5,L6 greenNode;
     class N1,N2,N3,N4,N5,N6 blueNode;
+    class E1,E2 brownNode;
 ```
 
 #### Example 1: Path to leaf at full depth
@@ -351,22 +359,22 @@ graph TB
     %% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
-    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
-    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N3 -- 0b010xx --> L2[weight=2<br>0b01000]
+    N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 -- 0 --> L5[sum=1<br>0b11110]
-    N6 -- 1 --> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[weight=1<br>0b11110]
+    N6 -- 1 --> L6[weight=1<br>0b11111]
 
     class R redNode;
     class L1,L4,L5,E2,N1 yellowNode;
@@ -398,22 +406,22 @@ graph TB
     %% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
-    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
-    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N3 -- 0b010xx --> L2[weight=2<br>0b01000]
+    N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 -- 0 --> L5[sum=1<br>0b11110]
-    N6 -- 1 --> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[weight=1<br>0b11110]
+    N6 -- 1 --> L6[weight=1<br>0b11111]
 
     class R redNode;
     class E1,N2,L2 yellowNode;

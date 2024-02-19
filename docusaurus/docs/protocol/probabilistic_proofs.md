@@ -11,12 +11,6 @@ TODO(@Olshansk): This is just a placeholder
 
 # Probabilistic Proofs <!-- omit in toc -->
 
-<p align="center">
-    @olshansk - Daniel Olshansky<br>
-    @RawthiL - Ramiro Rodríguez Colmeiro<br>
-    Feb 2023
-</p>
-
 This is a specification & proposal that will be submitted to [forum.pokt.network](https://forum.pokt.network) after peer-review.
 
 **tl;dr Values Selected**
@@ -46,7 +40,6 @@ This is a specification & proposal that will be submitted to [forum.pokt.network
   - [Example](#example)
   - [Model](#model)
   - [Geometric PDF](#geometric-pdf)
-  - [Geometric CDF](#geometric-cdf)
   - [Selecting Values](#selecting-values)
     - [Calculation](#calculation)
 - [Dissenting Opinions](#dissenting-opinions)
@@ -80,13 +73,13 @@ Three new governance parameters will need to be added:
 
 ### Parameter Usage
 
-$$
+```latex
 Probably(ProofRequired) =
   \begin{cases}
     ProbabilityOfProofRequest &\text{if } Claim < ProofRequiredThreshold  \\
     1 &\text{if } Claim >= ProofRequiredThreshold.
   \end{cases}
-$$
+```
 
 ### Flow
 
@@ -180,6 +173,7 @@ However, as pointed out by @RawthiL, what we're actually interested in is the li
 
 ### Geometric PDF
 
+```latex
 $$ p = ProofRequestProbability $$
 
 $$ q = 1 - p $$
@@ -199,6 +193,7 @@ $$ p = ProofRequestProbability $$
 $$ P(X<=k) = 1 - (1 - p)^{k} $$
 
 $$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
+```
 
 ![Geometric CDF](https://user-images.githubusercontent.com/1892194/221086054-df25a888-558a-497e-9c13-87c6e07cbe6d.png)
 
@@ -214,11 +209,13 @@ $$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
 
 `Pr(X<=k)` must be as high as possible while keeping `k` reasonably low since it'll impact the penalty for honest but faulty servicers that fail to submit a Claim within the expiration window. We are selecting `Pr(X<=k) = 0.99`
 
+```latex
 $$ k = \frac{log(1 - P(X<=k))}{log(1 - p)} $$
 
 $$ k = \frac{log(1 - 0.99)}{log(1 - 0.25)} $$
 
 $$ k ≈ 16 $$
+```
 
 Selecting `k = 16` implies that `99%` of the time, an attacker will get a penalty of `BurnForFailedClaimSubmission`, making it not worthwhile to take the risk.
 
@@ -341,5 +338,3 @@ plt.title('CDF - k failures or less until a single success')
 # Display the plot
 plt.show()
 ```
-
-----

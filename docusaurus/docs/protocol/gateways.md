@@ -7,12 +7,14 @@ sidebar_position: 4
 
 :::warning
 
-This part of the documentation is just an initial draft and requires deep
+This part of the documentation is just an INITIAL DRAFT and requires deep
 understanding of the Pocket Network protocol. It is currently aiming to just
 be a reference and not provide a coherent narrative that is easily accessible
 to all readers.
 
 TODO(@Olshansk): Iterate on this doc & link to governance params.
+
+TODO(@red-0ne): Review this document and submit a PR with updates & edits.
 
 :::
 
@@ -39,9 +41,9 @@ trust delegation, and how they fit into the Pocket Network protocol.
 
 There are three modes of operation to interact with the Suppliers on the network:
 
-1. **Sovereign Application**
-2. **Delegating Application**
-3. **Gateway Application**
+1. **Sovereign Application**: Client manages personal Application private key
+2. **Delegating Application**: Gateway abstracts all aspects of Pocket Network to Client
+3. **Gateway Application**: Client trusts Gateway to sign relays on behalf of its Application
 
 For the purposes of this discussion, it is important to note that an `Application`
 and `Gateway` are on-chain actors/records that stake POKT to participate in the
@@ -338,7 +340,7 @@ stateDiagram-v2
 
 ## Gateway Off-Chain Operations
 
-TODO(@olshansk): Expand on this section.
+TODO(@olshansk, @moatus): Expand on this section.
 
 Gateways can design and manage off-chain operations to coordinate with the `Client`
 including by not limited to:
