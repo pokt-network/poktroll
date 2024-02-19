@@ -5,6 +5,8 @@ sidebar_position: 2
 
 # Claim & Proof Lifecycle <!-- omit in toc -->
 
+TODO_IN_THIS_PR: Replace `sum` with `weight` in the leafs of the diagrams.
+
 :::warning
 
 This part of the documentation is just an initial draft and requires deep
@@ -99,25 +101,26 @@ into the following steps.
 
 ```Mermaid
 timeline
-    title Supplier Post Session Timleine
-    Session Ends
+    title Post Session Proof Validation
+    Session Ends <br> (Protocol)
         : Recompute SMST root & sum (compute units)
-        : Flush and store SMST on local disk
-    CreateClaim
-        : Wait a few blocks
-        : CreateClaim Tx containing <br>(root, sum, session, app, supplier, service)
+        : Flush and store SMST to local disk
+    CreateClaim <br> (Supplier)
+        : Wait for Claim Window to open
+        : Submit CreateClaim Transaction <br>(root, sum, session, app, supplier, service, etc...)
         : Claim stored on-chain
-    SubmitProof
-        : Wait a few blocks
-        : Retrieve seed from on-chain (e.g. block hash)
-        : Generate Merkle Proof local SMST for path based on seed
-        : SubmitProof Tx containing <br>(session, merkle proof, leaf)
+    SubmitProof <br> (Supplier)
+        : Wait for Proof Window to open
+        : Retrieve seed (entropy) from on-chain data (block hash)
+        : Generate Merkle Proof for path in SMST based on seed
+        : Submit SubmitProof Transaction <br>(session, merkle proof, leaf, etc...)
         : Proof stored on-chain
-    Proof Validation
-        : Retrieve on-chain Claim corresponding to on-chain Proof
+    Proof Validation <br> (Protocol)
+        : Retrieve on-chain Claims that need to be settled
+        : Retrieve corresponding on-chain Proof for every Claim
+        : Validate leaf difficulty
         : Validate Merkle Proof
-        : Validate App Signature on Relay Request Leaf
-        : Validate Supplier Signature on Relay Request Leaf
+        : Validate Leaf Signature
         : Burn Application Stake proportional to sum
         : Inflate Supplier Balance  proportional to sum
 ```
@@ -233,7 +236,11 @@ The validation on these signatures is done on-chain as part of `Proof Validation
 
 ```mermaid
 graph LR
-    subgraph Sparse Merkle Tree Leaf
+    subgraph Sparse Merkle Sum Trie Leaf
+        subgraph Metadata
+            S["Session"]
+            W["Weight (compute units)"]
+        end
         subgraph Signed Relay Request
             direction TB
             Req[Relay Request Data]
@@ -243,7 +250,7 @@ graph LR
 
         subgraph Signed Relay Response
             direction TB
-            Res[Relay Response Response]
+            Res[Relay Response Data]
             SupSig(SupplierSignature)
             SupSig o-.-o Res
         end
@@ -283,9 +290,8 @@ Legend:
 
 ```mermaid
 graph TB
-    %% Define a class for red nodes
     classDef redNode fill:#ff0000, color:#ffffff;
-    classDef greenNode fill:#00ff00, color:#ffffff;
+    classDef greenNode fill:#00b300, color:#ffffff;
     classDef blueNode fill:#0000ff, color:#ffffff;
     classDef yellowNode fill:#fff500, color:#ffa500
 
@@ -299,22 +305,22 @@ graph TB
     %% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
-    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
-    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N3 -- 0b010xx --> L2[weight=2<br>0b01000]
+    N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 -- 0 --> L5[sum=1<br>0b11110]
-    N6 -- 1 --> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[weight=1<br>0b11110]
+    N6 -- 1 --> L6[weight=1<br>0b11111]
 
     class R redNode;
     class L1,L2,L3,L4,L5,L6 greenNode;
@@ -422,7 +428,6 @@ graph TB
 title: Path to leaf at partial depth (path=0b100xx->0b10000)
 ---
 graph TB
-    %% Define a class for red nodes
     classDef redNode fill:#ff0000, color:#ffffff;
     classDef greenNode fill:#00ff00, color:#ffffff;
     classDef greenNodeDark fill:#067620, color:#ffffff;
@@ -440,22 +445,22 @@ graph TB
     %% Height = 2
     N1 -- 0 --> E1[sum=0<br>0b00xxx]
     N1 -- 1 --> N3[sum=5<br>0b01]
-    N2 -- 0b10xxx --> L1[sum=1<br>0b10000]
+    N2 -- 0b10xxx --> L1[weight=1<br>0b10000]
     N2 -- 1 --> N4[sum=3<br>0b11]
 
     %% Height = 3
-    N3 -- 0b010xx --> L2[sum=2<br>0b01000]
-    N3 -- 0b011xx --> L3[sum=3<br>0b01100]
+    N3 -- 0b010xx --> L2[weight=2<br>0b01000]
+    N3 -- 0b011xx --> L3[weight=3<br>0b01100]
     N4 -- 0 --> E2[sum=0<br>0b100xx]
     N4 -- 1 --> N5[sum=3<br>0b111]
 
     %% Height = 4
-    N5 -- 0b1110x --> L4[sum=1<br>0b11100]
+    N5 -- 0b1110x --> L4[weight=1<br>0b11100]
     N5 -- 1 --> N6[sum=2<br>0b1111]
 
     %% Height = 5
-    N6 -- 0 --> L5[sum=1<br>0b11110]
-    N6 -- 1 --> L6[sum=1<br>0b11111]
+    N6 -- 0 --> L5[weight=1<br>0b11110]
+    N6 -- 1 --> L6[weight=1<br>0b11111]
 
     class R redNode;
     class N1,N5 yellowNode;

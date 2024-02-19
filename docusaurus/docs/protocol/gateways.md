@@ -229,6 +229,7 @@ described above:
 ```mermaid
 flowchart
     S[Supplier]
+    C[Client]
 
     subgraph SA[Sovereign Application]
         subgraph SARing[Ring Signature]
@@ -238,7 +239,7 @@ flowchart
     end
 
     subgraph DA[Delegating Application]
-        subgraph DARing
+        subgraph DARing[Ring Signature]
             A2[Application 2]
             G1[Gateway 1]
             G2[Gateway 2]
@@ -249,16 +250,19 @@ flowchart
     end
 
     subgraph AG[Application Gateway]
-        subgraph AGRing
+        subgraph AGRing[Ring Signature]
             G3["Gateway 3<br>(Application 3)"]
             G3 <--> G3
         end
     end
 
+    C --->|Relay| SA
+    C -->|Relay| AG
+    C -->|Relay| DA
 
-    AG --Signature--> S
-    DA --Signature--> S
-    SA --Signature--> S
+    AG --->|Signature| S
+    DA --->|Signature| S
+    SA --->|Signature| S
 
     S-->|Validate Signature| S
 ```
