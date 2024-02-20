@@ -7,7 +7,7 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-var _ sdk.Msg = &MsgSubmitProof{}
+var _ sdk.Msg = (*MsgSubmitProof)(nil)
 
 func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.SessionHeader, proof []byte) *MsgSubmitProof {
 	return &MsgSubmitProof{

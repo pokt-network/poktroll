@@ -18,7 +18,6 @@ import (
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/testutil/testkeyring"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -37,11 +36,6 @@ const (
 
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
-
-// init initializes the SDK configuration.
-func init() {
-	cmd.InitSDKConfig()
-}
 
 // TODO_CONSIDERATION: perhaps this (and/or other similar helpers) can be refactored
 // into something more generic and moved into a shared testutil package.
