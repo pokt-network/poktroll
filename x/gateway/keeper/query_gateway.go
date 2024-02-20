@@ -37,7 +37,7 @@ func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequ
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllGatewaysResponse{Gateway: gateways, Pagination: pageRes}, nil
+	return &types.QueryAllGatewaysResponse{Gateways: gateways, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) (*types.QueryGetGatewayResponse, error) {

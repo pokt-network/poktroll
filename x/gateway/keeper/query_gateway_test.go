@@ -88,10 +88,10 @@ func TestGatewayQueryPaginated(t *testing.T) {
 		for i := 0; i < len(msgs); i += step {
 			resp, err := keeper.AllGateways(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
-			require.LessOrEqual(t, len(resp.Gateway), step)
+			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
 				nullify.Fill(msgs),
-				nullify.Fill(resp.Gateway),
+				nullify.Fill(resp.Gateways),
 			)
 		}
 	})
@@ -101,10 +101,10 @@ func TestGatewayQueryPaginated(t *testing.T) {
 		for i := 0; i < len(msgs); i += step {
 			resp, err := keeper.AllGateways(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
-			require.LessOrEqual(t, len(resp.Gateway), step)
+			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
 				nullify.Fill(msgs),
-				nullify.Fill(resp.Gateway),
+				nullify.Fill(resp.Gateways),
 			)
 			next = resp.Pagination.NextKey
 		}
@@ -115,7 +115,7 @@ func TestGatewayQueryPaginated(t *testing.T) {
 		require.Equal(t, len(msgs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(msgs),
-			nullify.Fill(resp.Gateway),
+			nullify.Fill(resp.Gateways),
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {

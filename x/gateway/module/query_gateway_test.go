@@ -102,10 +102,10 @@ func TestListGateway(t *testing.T) {
 			require.NoError(t, err)
 			var resp types.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Gateway), step)
+			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
 				nullify.Fill(objs),
-				nullify.Fill(resp.Gateway),
+				nullify.Fill(resp.Gateways),
 			)
 		}
 	})
@@ -118,10 +118,10 @@ func TestListGateway(t *testing.T) {
 			require.NoError(t, err)
 			var resp types.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Gateway), step)
+			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
 				nullify.Fill(objs),
-				nullify.Fill(resp.Gateway),
+				nullify.Fill(resp.Gateways),
 			)
 			next = resp.Pagination.NextKey
 		}
@@ -136,7 +136,7 @@ func TestListGateway(t *testing.T) {
 		require.Equal(t, len(objs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(objs),
-			nullify.Fill(resp.Gateway),
+			nullify.Fill(resp.Gateways),
 		)
 	})
 }
