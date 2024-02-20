@@ -84,7 +84,7 @@ const config = {
               },
               {
                 label: "Pocket Network",
-                href: 'https://docs.pokt.network/'
+                href: "https://docs.pokt.network/",
               },
             ],
           },
