@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -32,9 +33,10 @@ import (
 // mature to be explicit about the number of expected tests.
 
 func TokenomicsKeeper(t testing.TB) (
-	k keeper.Keeper, s sdk.Context,
+	k keeper.Keeper, s context.Context,
 	appAddr, supplierAddr string,
 ) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	// Initialize the in-memory database
