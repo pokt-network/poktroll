@@ -1,13 +1,14 @@
 syntax = "proto3";
 package poktroll.tokenomics;
 
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+
 import "amino/amino.proto";
 import "cosmos/msg/v1/msg.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
-import "poktroll/tokenomics/params.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+import "poktroll/tokenomics/params.proto";
 
 // Msg defines the Msg service.
 service Msg {
@@ -32,10 +33,7 @@ message MsgUpdateParams {
 
   // params defines the x/tokenomics parameters to update.
   // NOTE: All parameters must be supplied.
-  Params params = 2 [
-    (gogoproto.nullable) = false,
-    (amino.dont_omitempty) = true
-  ];
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
 
 // MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
