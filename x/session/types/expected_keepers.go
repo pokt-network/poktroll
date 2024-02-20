@@ -27,5 +27,5 @@ type ApplicationKeeper interface {
 }
 
 type SupplierKeeper interface {
-	GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Supplier)
+	GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier)
 }

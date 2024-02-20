@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -16,7 +17,8 @@ import (
 
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 	blockHeight := int64(10)
 
 	sessionHydrator := keeper.NewSessionHydrator(keepertest.TestApp1Address, keepertest.TestServiceId1, blockHeight)
@@ -116,7 +118,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 	appAddr := keepertest.TestApp1Address
 	serviceId := keepertest.TestServiceId1
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -205,7 +207,7 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	}
 
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -278,7 +280,7 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 
 	blockHeight := int64(10)
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
@@ -341,7 +343,7 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 
 	blockHeight := int64(10)
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {})

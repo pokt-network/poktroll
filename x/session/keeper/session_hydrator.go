@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"crypto"
 	"encoding/binary"
 	"encoding/hex"
@@ -8,9 +9,9 @@ import (
 	"math/rand"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -65,8 +66,8 @@ func NewSessionHydrator(
 }
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
-// TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
+// TECHDEBT(#519,#348): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
+func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
 	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
@@ -96,14 +97,15 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 }
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
-func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator) error {
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
-	if sh.blockHeight > ctx.BlockHeight() {
+	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	if sh.blockHeight > lastCommittedBlockHeight {
 		return sdkerrors.Wrapf(
 			types.ErrSessionHydration,
 			"block height %d is ahead of the last committed block height %d",
-			sh.blockHeight, ctx.BlockHeight(),
+			sh.blockHeight, lastCommittedBlockHeight,
 		)
 	}
 
@@ -116,7 +118,7 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
-func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
 	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
@@ -137,7 +139,7 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 }
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
-func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrator) error {
 	app, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
 		return types.ErrSessionAppNotFound.Wrapf("could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
@@ -154,7 +156,7 @@ func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) 
 }
 
 // hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
-func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
 	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
 	// TODO_TECHDEBT(@Olshansk, @bryanchriswhite): Need to retrieve the suppliers at SessionStartBlockHeight,
@@ -162,7 +164,7 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	// only retrieving the suppliers at the current block height which could create a discrepancy
 	// if new suppliers were staked mid session.
 	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
-	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
+	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {

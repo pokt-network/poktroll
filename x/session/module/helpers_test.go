@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -16,11 +15,6 @@ import (
 
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
-
-// init initializes the SDK configuration.
-func init() {
-	cmd.InitSDKConfig()
-}
 
 // networkWithApplicationsAndSupplier creates a new network with a given number of supplier & application objects.
 // It returns the network and a slice of the created supplier & application objects.

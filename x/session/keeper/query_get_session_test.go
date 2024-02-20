@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
@@ -22,7 +23,7 @@ func init() {
 
 func TestSession_GetSession_Success(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	// TODO_TECHDEBT(#377): These test assume that the genesis block has a height of 0,
 	// rewrite them in terms of height = 1 genesis.
@@ -76,7 +77,7 @@ func TestSession_GetSession_Success(t *testing.T) {
 
 func TestSession_GetSession_Failure(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
-	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
+	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
 	type test struct {
 		name string

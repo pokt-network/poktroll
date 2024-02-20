@@ -210,7 +210,7 @@ func defaultSupplierKeeperMock(t testing.TB) types.SupplierKeeper {
 	allSuppliers := []sharedtypes.Supplier{TestSupplier}
 
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().GetAllSupplier(gomock.Any()).AnyTimes().Return(allSuppliers)
+	mockSupplierKeeper.EXPECT().GetAllSuppliers(gomock.Any()).AnyTimes().Return(allSuppliers)
 
 	return mockSupplierKeeper
 }
