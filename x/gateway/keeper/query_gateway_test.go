@@ -22,10 +22,10 @@ func TestGatewayQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
 	gateways := createNGateways(keeper, ctx, 2)
 	tests := []struct {
-		desc          string
-		request       *types.QueryGetGatewayRequest
-		response      *types.QueryGetGatewayResponse
-		expectedError error
+		desc        string
+		request     *types.QueryGetGatewayRequest
+		response    *types.QueryGetGatewayResponse
+		expectedErr error
 	}{
 		{
 			desc: "First",
@@ -46,18 +46,18 @@ func TestGatewayQuerySingle(t *testing.T) {
 			request: &types.QueryGetGatewayRequest{
 				Address: strconv.Itoa(100000),
 			},
-			expectedError: status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", strconv.Itoa(100000))),
+			expectedErr: status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", strconv.Itoa(100000))),
 		},
 		{
-			desc:          "InvalidRequest",
-			expectedError: status.Error(codes.InvalidArgument, "invalid request"),
+			desc:        "InvalidRequest",
+			expectedErr: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			response, err := keeper.Gateway(ctx, test.request)
-			if test.expectedError != nil {
-				require.ErrorIs(t, err, test.expectedError)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
