@@ -378,10 +378,10 @@ func (s *suite) buildAppMap() {
 		s.Fatalf("error getting application list: %s", err)
 	}
 	s.pocketd.result = res
-	var resp apptypes.QueryAllApplicationResponse
+	var resp apptypes.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	for _, app := range resp.Application {
+	for _, app := range resp.Applications {
 		accNameToAppMap[accAddrToNameMap[app.Address]] = app
 	}
 }
