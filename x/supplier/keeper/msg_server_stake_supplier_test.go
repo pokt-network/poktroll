@@ -19,15 +19,15 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the supplier
-	addr := sample.AccAddress()
+	supplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, addr)
+	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Prepare the stakeMsg
 	stakeMsg := &types.MsgStakeSupplier{
-		Address: addr,
+		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -50,18 +50,18 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
-	supplierFound, isSupplierFound := k.GetSupplier(ctx, addr)
+	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, addr, supplierFound.Address)
-	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
-	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId", supplierFound.Services[0].Service.Id)
-	require.Len(t, supplierFound.Services[0].Endpoints, 1)
-	require.Equal(t, "http://localhost:8080", supplierFound.Services[0].Endpoints[0].Url)
+	require.Equal(t, supplierAddr, foundSupplier.Address)
+	require.Equal(t, int64(100), foundSupplier.Stake.Amount.Int64())
+	require.Len(t, foundSupplier.Services, 1)
+	require.Equal(t, "svcId", foundSupplier.Services[0].Service.Id)
+	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
+	require.Equal(t, "http://localhost:8080", foundSupplier.Services[0].Endpoints[0].Url)
 
 	// Prepare an updated supplier with a higher stake and a different URL for the service
 	updateMsg := &types.MsgStakeSupplier{
-		Address: addr,
+		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -82,13 +82,14 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Update the staked supplier
 	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.NoError(t, err)
-	supplierFound, isSupplierFound = k.GetSupplier(ctx, addr)
+
+	foundSupplier, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, int64(200), supplierFound.Stake.Amount.Int64())
-	require.Len(t, supplierFound.Services, 1)
-	require.Equal(t, "svcId2", supplierFound.Services[0].Service.Id)
-	require.Len(t, supplierFound.Services[0].Endpoints, 1)
-	require.Equal(t, "http://localhost:8082", supplierFound.Services[0].Endpoints[0].Url)
+	require.Equal(t, int64(200), foundSupplier.Stake.Amount.Int64())
+	require.Len(t, foundSupplier.Services, 1)
+	require.Equal(t, "svcId2", foundSupplier.Services[0].Service.Id)
+	require.Len(t, foundSupplier.Services[0].Endpoints, 1)
+	require.Equal(t, "http://localhost:8082", foundSupplier.Services[0].Endpoints[0].Url)
 }
 
 func TestMsgServer_StakeSupplier_FailRestakingDueToInvalidServices(t *testing.T) {
@@ -176,9 +177,9 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Prepare the supplier
-	addr := sample.AccAddress()
+	supplierAddr := sample.AccAddress()
 	stakeMsg := &types.MsgStakeSupplier{
-		Address: addr,
+		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -199,12 +200,13 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	// Stake the supplier & verify that the supplier exists
 	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
-	_, isSupplierFound := k.GetSupplier(ctx, addr)
+
+	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 
 	// Prepare an updated supplier with a lower stake
 	updateMsg := &types.MsgStakeSupplier{
-		Address: addr,
+		Address: supplierAddr,
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -227,7 +229,7 @@ func TestMsgServer_StakeSupplier_FailLoweringStake(t *testing.T) {
 	require.Error(t, err)
 
 	// Verify that the supplier stake is unchanged
-	supplierFound, isSupplierFound := k.GetSupplier(ctx, addr)
+	supplierFound, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
 	require.Equal(t, int64(100), supplierFound.Stake.Amount.Int64())
 	require.Len(t, supplierFound.Services, 1)

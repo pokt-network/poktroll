@@ -28,6 +28,9 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	supplierAccount := accounts[0]
 
+	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, supplierAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -39,9 +42,9 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		err     *sdkerrors.Error
+		desc        string
+		address     string
+		expectedErr *sdkerrors.Error
 	}{
 		{
 			desc:    "unstake supplier: valid",
@@ -50,17 +53,14 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 		{
 			desc: "unstake supplier: missing address",
 			// address: supplierAccount.Address.String(),
-			err: types.ErrSupplierInvalidAddress,
+			expectedErr: types.ErrSupplierInvalidAddress,
 		},
 		{
-			desc:    "unstake supplier: invalid address",
-			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
+			desc:        "unstake supplier: invalid address",
+			address:     "invalid",
+			expectedErr: types.ErrSupplierInvalidAddress,
 		},
 	}
-
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
 
 	// Run the tests
 	for _, test := range tests {
@@ -78,15 +78,16 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdUnstakeSupplier(), args)
 
 			// Validate the error if one is expected
-			if test.err != nil {
-				stat, ok := status.FromError(test.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), test.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
 
-			// Check the response
+			// Check the response, this test only asserts CLI command success and not
+			// the actual supplier module state.
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outUnstake.Bytes(), &resp))
 			require.NotNil(t, resp)

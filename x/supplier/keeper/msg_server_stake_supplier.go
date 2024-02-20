@@ -10,9 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k msgServer) StakeSupplier(goCtx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
+func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
@@ -25,6 +23,7 @@ func (k msgServer) StakeSupplier(goCtx context.Context, msg *types.MsgStakeSuppl
 	var err error
 	var coinsToDelegate sdk.Coin
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
+
 	if !isSupplierFound {
 		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %s", msg.Address))
 		supplier = k.createSupplier(ctx, msg)
@@ -61,7 +60,7 @@ func (k msgServer) StakeSupplier(goCtx context.Context, msg *types.MsgStakeSuppl
 }
 
 func (k msgServer) createSupplier(
-	ctx sdk.Context,
+	_ context.Context,
 	msg *types.MsgStakeSupplier,
 ) sharedtypes.Supplier {
 	return sharedtypes.Supplier{
@@ -72,7 +71,7 @@ func (k msgServer) createSupplier(
 }
 
 func (k msgServer) updateSupplier(
-	ctx sdk.Context,
+	_ context.Context,
 	supplier *sharedtypes.Supplier,
 	msg *types.MsgStakeSupplier,
 ) error {

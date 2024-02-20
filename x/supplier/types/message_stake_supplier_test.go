@@ -5,11 +5,10 @@ import (
 
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
@@ -28,74 +27,74 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 		}}
 
 	tests := []struct {
-		name string
-		msg  MsgStakeSupplier
-		err  error
+		desc        string
+		msg         MsgStakeSupplier
+		expectedErr error
 	}{
 		// address related tests
 		{
-			name: "invalid address - nil stake",
+			desc: "invalid address - nil stake",
 			msg: MsgStakeSupplier{
 				Address: "invalid_address",
-				// Stake explicitly nil
+				// Stake explicitly omitted
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidAddress,
+			expectedErr: ErrSupplierInvalidAddress,
 		},
 
 		// stake related tests
 		{
-			name: "valid address - nil stake",
+			desc: "valid address - nil stake",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
-				// Stake explicitly nil
+				// Stake explicitly omitted
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidStake,
+			expectedErr: ErrSupplierInvalidStake,
 		}, {
-			name: "valid address - valid stake",
+			desc: "valid address - valid stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: defaultServicesList,
 			},
 		}, {
-			name: "valid address - zero stake",
+			desc: "valid address - zero stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidStake,
+			expectedErr: ErrSupplierInvalidStake,
 		}, {
-			name: "valid address - negative stake",
+			desc: "valid address - negative stake",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidStake,
+			expectedErr: ErrSupplierInvalidStake,
 		}, {
-			name: "valid address - invalid stake denom",
+			desc: "valid address - invalid stake denom",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidStake,
+			expectedErr: ErrSupplierInvalidStake,
 		}, {
-			name: "valid address - invalid stake missing denom",
+			desc: "valid address - invalid stake missing denom",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 				Services: defaultServicesList,
 			},
-			err: ErrSupplierInvalidStake,
+			expectedErr: ErrSupplierInvalidStake,
 		},
 
 		// service related tests
 		{
-			name: "valid service configs - multiple services",
+			desc: "valid service configs - multiple services",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -128,25 +127,25 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid service configs - omitted",
+			desc: "invalid service configs - omitted",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
-				// Services: intentionally omitted
+				// Services explicitly omitted
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - empty",
+			desc: "invalid service configs - empty",
 			msg: MsgStakeSupplier{
 				Address:  sample.AccAddress(),
 				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.SupplierServiceConfig{},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - invalid service ID that's too long",
+			desc: "invalid service configs - invalid service ID that's too long",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -165,10 +164,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - invalid service Name that's too long",
+			desc: "invalid service configs - invalid service Name that's too long",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -188,10 +187,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - invalid service ID that contains invalid characters",
+			desc: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -210,10 +209,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - missing url",
+			desc: "invalid service configs - missing url",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -225,7 +224,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
-								// Url: intentionally omitted
+								// Url explicitly omitted
 								RpcType: sharedtypes.RPCType_JSON_RPC,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
@@ -233,10 +232,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - invalid url",
+			desc: "invalid service configs - invalid url",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -256,10 +255,10 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		{
-			name: "invalid service configs - missing rpc type",
+			desc: "invalid service configs - missing rpc type",
 			msg: MsgStakeSupplier{
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
@@ -272,23 +271,23 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{
 								Url: "http://localhost:8080",
-								// RpcType: intentionally omitted,
+								// RpcType explicitly omitted,
 								Configs: make([]*sharedtypes.ConfigOption, 0),
 							},
 						},
 					},
 				},
 			},
-			err: ErrSupplierInvalidServiceConfig,
+			expectedErr: ErrSupplierInvalidServiceConfig,
 		},
 		// TODO_TEST: Need to add more tests around config types
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
-			if test.err != nil {
-				require.ErrorIs(t, err, test.err)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)

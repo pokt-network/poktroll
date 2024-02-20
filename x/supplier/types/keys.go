@@ -11,8 +11,6 @@ const (
 	MemStoreKey = "mem_supplier"
 )
 
-var (
-	ParamsKey = []byte("p_supplier")
-)
+var ParamsKey = []byte("p_supplier")
 
 func KeyPrefix(p string) []byte { return []byte(p) }

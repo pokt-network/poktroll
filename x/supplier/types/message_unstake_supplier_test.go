@@ -10,32 +10,32 @@ import (
 
 func TestMsgUnstakeSupplier_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgUnstakeSupplier
-		err  error
+		desc        string
+		msg         MsgUnstakeSupplier
+		expectedErr error
 	}{
 		{
-			name: "invalid address",
+			desc: "invalid address",
 			msg: MsgUnstakeSupplier{
 				Address: "invalid_address",
 			},
-			err: ErrSupplierInvalidAddress,
+			expectedErr: ErrSupplierInvalidAddress,
 		}, {
-			name: "missing address",
-			msg:  MsgUnstakeSupplier{},
-			err:  ErrSupplierInvalidAddress,
+			desc:        "missing address",
+			msg:         MsgUnstakeSupplier{},
+			expectedErr: ErrSupplierInvalidAddress,
 		}, {
-			name: "valid address",
+			desc: "valid address",
 			msg: MsgUnstakeSupplier{
 				Address: sample.AccAddress(),
 			},
 		},
 	}
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.desc, func(t *testing.T) {
 			err := test.msg.ValidateBasic()
-			if test.err != nil {
-				require.ErrorIs(t, err, test.err)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)

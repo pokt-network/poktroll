@@ -10,11 +10,9 @@ import (
 )
 
 func (k msgServer) UnstakeSupplier(
-	goCtx context.Context,
+	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,
 ) (*types.MsgUnstakeSupplierResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
 	logger := k.Logger().With("method", "UnstakeSupplier")
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 

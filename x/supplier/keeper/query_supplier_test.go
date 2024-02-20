@@ -19,12 +19,12 @@ var _ = strconv.IntSize
 
 func TestSupplierQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSupplier(keeper, ctx, 2)
+	suppliers := createNSuppliers(keeper, ctx, 2)
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetSupplierRequest
-		response *types.QueryGetSupplierResponse
-		err      error
+		desc        string
+		request     *types.QueryGetSupplierRequest
+		response    *types.QueryGetSupplierResponse
+		expectedErr error
 	}{
 		{
 			desc: "First",
@@ -45,18 +45,18 @@ func TestSupplierQuerySingle(t *testing.T) {
 			request: &types.QueryGetSupplierRequest{
 				Address: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "supplier with address \"100000\""),
+			expectedErr: status.Error(codes.NotFound, "supplier with address \"100000\""),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc:        "InvalidRequest",
+			expectedErr: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			response, err := keeper.Supplier(ctx, test.request)
-			if test.err != nil {
-				require.ErrorIs(t, err, test.err)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
@@ -70,7 +70,7 @@ func TestSupplierQuerySingle(t *testing.T) {
 
 func TestSupplierQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	msgs := createNSupplier(keeper, ctx, 5)
+	msgs := createNSuppliers(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllSuppliersRequest {
 		return &types.QueryAllSuppliersRequest{

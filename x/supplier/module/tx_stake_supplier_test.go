@@ -29,6 +29,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	supplierAccount := accounts[0]
 
+	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, supplierAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -49,10 +52,10 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		`
 
 	tests := []struct {
-		desc    string
-		address string
-		config  string
-		err     *sdkerrors.Error
+		desc        string
+		address     string
+		config      string
+		expectedErr *sdkerrors.Error
 	}{
 		// Happy Paths
 		{
@@ -65,21 +68,21 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		{
 			desc: "stake supplier: missing address",
 			// address:     "explicitly missing",
-			err:    types.ErrSupplierInvalidAddress,
-			config: defaultConfig,
+			expectedErr: types.ErrSupplierInvalidAddress,
+			config:      defaultConfig,
 		},
 		{
-			desc:    "stake supplier: invalid address",
-			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
-			config:  defaultConfig,
+			desc:        "stake supplier: invalid address",
+			address:     "invalid",
+			expectedErr: types.ErrSupplierInvalidAddress,
+			config:      defaultConfig,
 		},
 
 		// Error Paths - Stake Related
 		{
-			desc:    "stake supplier: missing stake",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: missing stake",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidStake,
 			config: `
 				# explicitly omitted stake
 				services:
@@ -90,9 +93,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake denom",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake denom",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: 1000invalid
 				services:
@@ -103,9 +106,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake amount (zero)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake amount (zero)",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: 0upokt
 				services:
@@ -116,9 +119,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "stake supplier: invalid stake amount (negative)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidStake,
+			desc:        "stake supplier: invalid stake amount (negative)",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidStake,
 			config: `
 				stake_amount: -1000upokt
 				services:
@@ -185,27 +188,27 @@ func TestCLI_StakeSupplier(t *testing.T) {
 
 		// Error Paths - Service Related
 		{
-			desc:    "services_test: invalid services (missing argument)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
-			// servicesString: "explicitly omitted",
+			desc:        "services_test: invalid services (missing argument)",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
+			// servicesString explicitly omitted
 			config: `
 				stake_amount: 1000upokt
 				`,
 		},
 		{
-			desc:    "services_test: invalid services (empty string)",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: invalid services (empty string)",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
 			`,
 		},
 		{
-			desc:    "services_test: invalid URL",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: invalid URL",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -216,9 +219,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "services_test: missing URLs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing URLs",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -227,9 +230,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "services_test: missing service IDs",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing service IDs",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -242,9 +245,9 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 		{
-			desc:    "services_test: missing rpc type",
-			address: supplierAccount.Address.String(),
-			err:     types.ErrSupplierInvalidServiceConfig,
+			desc:        "services_test: missing rpc type",
+			address:     supplierAccount.Address.String(),
+			expectedErr: types.ErrSupplierInvalidServiceConfig,
 			config: `
 				stake_amount: 1000upokt
 				services:
@@ -254,9 +257,6 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				`,
 		},
 	}
-
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
 
 	// Run the tests
 	for _, test := range tests {
@@ -278,15 +278,16 @@ func TestCLI_StakeSupplier(t *testing.T) {
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdStakeSupplier(), args)
 
 			// Validate the error if one is expected
-			if test.err != nil {
-				stat, ok := status.FromError(test.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), test.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
 
-			// Check the response
+			// Check the response, this test only asserts CLI command success and not
+			// the actual supplier module state.
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outStake.Bytes(), &resp))
 			require.NotNil(t, resp)

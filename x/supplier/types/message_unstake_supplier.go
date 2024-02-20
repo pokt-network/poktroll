@@ -4,7 +4,7 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 
 const TypeMsgUnstakeSupplier = "unstake_supplier"
 
-var _ sdk.Msg = &MsgUnstakeSupplier{}
+var _ sdk.Msg = (*MsgUnstakeSupplier)(nil)
 
 func NewMsgUnstakeSupplier(address string) *MsgUnstakeSupplier {
 	return &MsgUnstakeSupplier{

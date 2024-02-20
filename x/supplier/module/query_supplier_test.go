@@ -13,9 +13,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/testutil/nullify"
-	supplier "github.com/pokt-network/poktroll/x/supplier/module"
-
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	supplier "github.com/pokt-network/poktroll/x/supplier/module"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -74,7 +73,7 @@ func TestShowSupplier(t *testing.T) {
 	}
 }
 
-func TestListSupplier(t *testing.T) {
+func TestListSuppliers(t *testing.T) {
 	net, suppliers := networkWithSupplierObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
@@ -97,7 +96,7 @@ func TestListSupplier(t *testing.T) {
 		step := 2
 		for i := 0; i < len(suppliers); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSuppliers(), args)
 			require.NoError(t, err)
 			var resp types.QueryAllSuppliersResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
@@ -113,7 +112,7 @@ func TestListSupplier(t *testing.T) {
 		var next []byte
 		for i := 0; i < len(suppliers); i += step {
 			args := request(next, 0, uint64(step), false)
-			out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSupplier(), args)
+			out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSuppliers(), args)
 			require.NoError(t, err)
 			var resp types.QueryAllSuppliersResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
@@ -127,7 +126,7 @@ func TestListSupplier(t *testing.T) {
 	})
 	t.Run("Total", func(t *testing.T) {
 		args := request(nil, 0, uint64(len(suppliers)), true)
-		out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSupplier(), args)
+		out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdListSuppliers(), args)
 		require.NoError(t, err)
 		var resp types.QueryAllSuppliersResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))

@@ -24,11 +24,11 @@ func (gs GenesisState) Validate() error {
 	// Check for duplicated index in supplier
 	supplierAddrMap := make(map[string]struct{})
 	for _, supplier := range gs.SupplierList {
-		address := string(SupplierKey(supplier.Address))
-		if _, ok := supplierAddrMap[address]; ok {
+		supplierAddr := string(SupplierKey(supplier.Address))
+		if _, ok := supplierAddrMap[supplierAddr]; ok {
 			return fmt.Errorf("duplicated index for supplier")
 		}
-		supplierAddrMap[address] = struct{}{}
+		supplierAddrMap[supplierAddr] = struct{}{}
 	}
 
 	// Check that the stake value for the suppliers is valid
