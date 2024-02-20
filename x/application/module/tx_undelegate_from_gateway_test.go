@@ -44,7 +44,7 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 		desc           string
 		appAddress     string
 		gatewayAddress string
-		err            *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 	}{
 		{
 			desc:           "undelegate from gateway: valid",
@@ -53,27 +53,27 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 		},
 		{
 			desc: "invalid - missing app address",
-			// appAddress:     appAccount.Address.String(),
+			// appAddress explicitly omitted
 			gatewayAddress: gatewayAccount.Address.String(),
-			err:            types.ErrAppInvalidAddress,
+			expectedErr:    types.ErrAppInvalidAddress,
 		},
 		{
 			desc:           "invalid - invalid app address",
 			appAddress:     "invalid address",
 			gatewayAddress: gatewayAccount.Address.String(),
-			err:            types.ErrAppInvalidAddress,
+			expectedErr:    types.ErrAppInvalidAddress,
 		},
 		{
 			desc:       "invalid - missing gateway address",
 			appAddress: appAccount.Address.String(),
-			// gatewayAddress: gatewayAccount.Address.String(),
-			err: types.ErrAppInvalidGatewayAddress,
+			// gatewayAddress explicitly omitted
+			expectedErr: types.ErrAppInvalidGatewayAddress,
 		},
 		{
 			desc:           "invalid - invalid gateway address",
 			appAddress:     appAccount.Address.String(),
 			gatewayAddress: "invalid address",
-			err:            types.ErrAppInvalidGatewayAddress,
+			expectedErr:    types.ErrAppInvalidGatewayAddress,
 		},
 	}
 
@@ -98,10 +98,10 @@ func TestCLI_UndelegateFromGateway(t *testing.T) {
 			undelegateOutput, err := clitestutil.ExecTestCLICmd(ctx, application.CmdUndelegateFromGateway(), args)
 
 			// Validate the error if one is expected
-			if test.err != nil {
-				stat, ok := status.FromError(test.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), test.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

@@ -9,15 +9,13 @@ import (
 )
 
 // TODO(#73): Determine if an application needs an unbonding period after unstaking.
-func (k msgServer) UnstakeApplication(goCtx context.Context, msg *types.MsgUnstakeApplication) (*types.MsgUnstakeApplicationResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
+func (k msgServer) UnstakeApplication(ctx context.Context, msg *types.MsgUnstakeApplication) (*types.MsgUnstakeApplicationResponse, error) {
 	logger := k.Logger().With("method", "UnstakeApplication")
 	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
 
 	// Check if the application already exists or not
 	var err error
-	app, isAppFound := k.GetApplication(ctx, msg.Address)
+	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found. Cannot unstake address %s", msg.Address))
 		return nil, types.ErrAppNotFound
@@ -32,15 +30,15 @@ func (k msgServer) UnstakeApplication(goCtx context.Context, msg *types.MsgUnsta
 	}
 
 	// Send the coins from the application pool back to the application
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, appAddress, []sdk.Coin{*app.Stake})
+	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, appAddress, []sdk.Coin{*foundApp.Stake})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", app.Stake, appAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", foundApp.Stake, appAddress, types.ModuleName, err))
 		return nil, err
 	}
 
 	// Update the Application in the store
 	k.RemoveApplication(ctx, appAddress.String())
-	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", app))
+	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
 
 	return &types.MsgUnstakeApplicationResponse{}, nil
 }

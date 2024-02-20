@@ -28,6 +28,9 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	appAccount := accounts[0]
 
+	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, appAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -39,28 +42,25 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		err     *sdkerrors.Error
+		desc        string
+		appAddr     string
+		expectedErr *sdkerrors.Error
 	}{
 		{
 			desc:    "unstake application: valid",
-			address: appAccount.Address.String(),
+			appAddr: appAccount.Address.String(),
 		},
 		{
 			desc: "unstake application: missing address",
-			// address:     "explicitly missing",
-			err: types.ErrAppInvalidAddress,
+			// address explicitly omitted
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 		{
-			desc:    "unstake application: invalid address",
-			address: "invalid",
-			err:     types.ErrAppInvalidAddress,
+			desc:        "unstake application: invalid address",
+			appAddr:     "invalid",
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 	}
-
-	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, appAccount.Address)
 
 	// Run the tests
 	for _, test := range tests {
@@ -70,7 +70,7 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.address),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.appAddr),
 			}
 			args = append(args, commonArgs...)
 
@@ -78,10 +78,10 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, application.CmdUnstakeApplication(), args)
 
 			// Validate the error if one is expected
-			if test.err != nil {
-				stat, ok := status.FromError(test.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), test.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

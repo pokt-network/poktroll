@@ -11,12 +11,12 @@ var _ sdk.Msg = (*MsgStakeApplication)(nil)
 
 // TODO_TECHDEBT: See `NewMsgStakeSupplier` and follow the same pattern for the `Services` parameter
 func NewMsgStakeApplication(
-	address string,
+	appAddr string,
 	stake sdk.Coin,
 	appServiceConfigs []*sharedtypes.ApplicationServiceConfig,
 ) *MsgStakeApplication {
 	return &MsgStakeApplication{
-		Address:  address,
+		Address:  appAddr,
 		Stake:    &stake,
 		Services: appServiceConfigs,
 	}

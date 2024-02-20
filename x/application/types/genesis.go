@@ -24,11 +24,11 @@ func (gs GenesisState) Validate() error {
 	applicationAddrMap := make(map[string]struct{})
 
 	for _, app := range gs.ApplicationList {
-		address := string(ApplicationKey(app.Address))
-		if _, ok := applicationAddrMap[address]; ok {
+		appAddr := string(ApplicationKey(app.Address))
+		if _, ok := applicationAddrMap[appAddr]; ok {
 			return fmt.Errorf("duplicated index for application")
 		}
-		applicationAddrMap[address] = struct{}{}
+		applicationAddrMap[appAddr] = struct{}{}
 	}
 
 	// Check that the stake value for the apps is valid and that the delegatee addresses are valid

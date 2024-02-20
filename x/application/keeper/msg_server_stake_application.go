@@ -5,12 +5,11 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) StakeApplication(goCtx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
+func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
 	logger := k.Logger().With("method", "StakeApplication")
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
 
@@ -20,17 +19,20 @@ func (k msgServer) StakeApplication(goCtx context.Context, msg *types.MsgStakeAp
 	}
 
 	// Check if the application already exists or not
-	var err error
-	var coinsToDelegate sdk.Coin
-	app, isAppFound := k.GetApplication(ctx, msg.Address)
+	var (
+		err             error
+		coinsToDelegate sdk.Coin
+	)
+
+	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %s", msg.Address))
-		app = k.createApplication(ctx, msg)
+		foundApp = k.createApplication(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
 		logger.Info(fmt.Sprintf("Application found. Updating application for address %s", msg.Address))
-		currAppStake := *app.Stake
-		if err = k.updateApplication(ctx, &app, msg); err != nil {
+		currAppStake := *foundApp.Stake
+		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
 			return nil, err
 		}
 		coinsToDelegate = (*msg.Stake).Sub(currAppStake)
@@ -52,14 +54,14 @@ func (k msgServer) StakeApplication(goCtx context.Context, msg *types.MsgStakeAp
 	}
 
 	// Update the Application in the store
-	k.SetApplication(ctx, app)
-	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", app))
+	k.SetApplication(ctx, foundApp)
+	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	return &types.MsgStakeApplicationResponse{}, nil
 }
 
 func (k msgServer) createApplication(
-	ctx sdk.Context,
+	_ context.Context,
 	msg *types.MsgStakeApplication,
 ) types.Application {
 	return types.Application{
@@ -71,7 +73,7 @@ func (k msgServer) createApplication(
 }
 
 func (k msgServer) updateApplication(
-	ctx sdk.Context,
+	_ context.Context,
 	app *types.Application,
 	msg *types.MsgStakeApplication,
 ) error {

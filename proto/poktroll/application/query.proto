@@ -27,7 +27,7 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
 
   }
-  rpc AllApplications (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
+  rpc AllApplications (QueryAllApplicationsRequest) returns (QueryAllApplicationsResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application";
 
   }
@@ -50,12 +50,12 @@ message QueryGetApplicationResponse {
   Application application = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllApplicationRequest {
+message QueryAllApplicationsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
 
-message QueryAllApplicationResponse {
-  repeated Application application = 1 [(gogoproto.nullable) = false];
+message QueryAllApplicationsResponse {
+  repeated Application applications = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination  = 2;
 }
 

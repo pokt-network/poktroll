@@ -13,8 +13,8 @@ const (
 func ApplicationKey(address string) []byte {
 	var key []byte
 
-	addressBytes := []byte(address)
-	key = append(key, addressBytes...)
+	addressBz := []byte(address)
+	key = append(key, addressBz...)
 	key = append(key, []byte("/")...)
 
 	return key

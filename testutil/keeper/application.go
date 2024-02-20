@@ -32,7 +32,8 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-func ApplicationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()

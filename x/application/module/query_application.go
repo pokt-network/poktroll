@@ -29,7 +29,7 @@ $ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTRO
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllApplicationRequest{
+			params := &types.QueryAllApplicationsRequest{
 				Pagination: pageReq,
 			}
 

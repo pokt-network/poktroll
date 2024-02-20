@@ -9,9 +9,7 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelegateToGateway) (*types.MsgDelegateToGatewayResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
+func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegateToGateway) (*types.MsgDelegateToGatewayResponse, error) {
 	logger := k.Logger().With("method", "DelegateToGateway")
 	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %v", msg))
 
@@ -60,7 +58,9 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	// Emit the application redelegation event
 	event := msg.NewRedelegationEvent()
 	logger.Info(fmt.Sprintf("Emitting application redelegation event %v", event))
-	if err := ctx.EventManager().EmitTypedEvent(event); err != nil {
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
 		return nil, err
 	}

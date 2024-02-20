@@ -28,9 +28,7 @@ func NewParams(maxDelegatedGateways uint64) Params {
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(
-		DefaultMaxDelegatedGateways,
-	)
+	return NewParams(DefaultMaxDelegatedGateways)
 }
 
 // ParamSetPairs get the params.ParamSet

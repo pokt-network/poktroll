@@ -51,8 +51,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		inputConfig  string
-		inputAddress string
+		appConfig string
+		appAddr   string
 
 		expectedErr *sdkerrors.Error
 	}{
@@ -60,8 +60,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "valid",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig:  defaultConfig,
+			appAddr:   appAccount.Address.String(),
+			appConfig: defaultConfig,
 
 			expectedErr: nil,
 		},
@@ -69,16 +69,16 @@ func TestCLI_StakeApplication(t *testing.T) {
 		// Error Paths - Address Related
 		{
 			desc: "invalid: missing address",
-			// inputAddress:     "explicitly missing",
-			inputConfig: defaultConfig,
+			// inputAddress explicitly omitted
+			appConfig: defaultConfig,
 
 			expectedErr: types.ErrAppInvalidAddress,
 		},
 		{
 			desc: "invalid: invalid address",
 
-			inputAddress: "invalid",
-			inputConfig:  defaultConfig,
+			appAddr:   "invalid",
+			appConfig: defaultConfig,
 
 			expectedErr: types.ErrAppInvalidAddress,
 		},
@@ -87,8 +87,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: missing stake",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: # explicitly missing
 				service_ids:
 				  - svc1
@@ -101,8 +101,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: invalid stake denom",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 1000invalid
 				service_ids:
 				  - svc1
@@ -115,8 +115,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: stake amount (zero)",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 0upokt
 				service_ids:
 				  - svc1
@@ -129,8 +129,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: stake amount (negative)",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: -1000upokt
 				service_ids:
 				  - svc1
@@ -145,8 +145,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: services (empty string)",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 1000upokt
 				`,
 
@@ -155,8 +155,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: single invalid service contains spaces",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 1000upokt
 				service_ids:
 				  - svc1 svc1_part2 svc1_part3
@@ -167,8 +167,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: one of two services is invalid because it contains spaces",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 1000upokt
 				service_ids:
 				  - svc1 svc1_part2
@@ -180,8 +180,8 @@ func TestCLI_StakeApplication(t *testing.T) {
 		{
 			desc: "invalid: service ID is too long (8 chars is the max)",
 
-			inputAddress: appAccount.Address.String(),
-			inputConfig: `
+			appAddr: appAccount.Address.String(),
+			appConfig: `
 				stake_amount: 1000upokt
 				service_ids:
 				  - svc1,
@@ -202,13 +202,13 @@ func TestCLI_StakeApplication(t *testing.T) {
 			require.NoError(t, net.WaitForNextBlock())
 
 			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(test.inputConfig)).Name()
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(test.appConfig)).Name()
 			t.Cleanup(func() { os.Remove(configPath) })
 
 			// Prepare the arguments for the CLI command
 			args := []string{
 				fmt.Sprintf("--config=%s", configPath),
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.inputAddress),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.appAddr),
 			}
 			args = append(args, commonArgs...)
 

@@ -97,12 +97,12 @@ func TestListApplication(t *testing.T) {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationResponse
+			var resp types.QueryAllApplicationsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Application), step)
+			require.LessOrEqual(t, len(resp.Applications), step)
 			require.Subset(t,
 				nullify.Fill(apps),
-				nullify.Fill(resp.Application),
+				nullify.Fill(resp.Applications),
 			)
 		}
 	})
@@ -113,12 +113,12 @@ func TestListApplication(t *testing.T) {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllApplicationResponse
+			var resp types.QueryAllApplicationsResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
-			require.LessOrEqual(t, len(resp.Application), step)
+			require.LessOrEqual(t, len(resp.Applications), step)
 			require.Subset(t,
 				nullify.Fill(apps),
-				nullify.Fill(resp.Application),
+				nullify.Fill(resp.Applications),
 			)
 			next = resp.Pagination.NextKey
 		}
@@ -127,13 +127,13 @@ func TestListApplication(t *testing.T) {
 		args := request(nil, 0, uint64(len(apps)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllApplicationResponse
+		var resp types.QueryAllApplicationsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
 		require.Equal(t, len(apps), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(apps),
-			nullify.Fill(resp.Application),
+			nullify.Fill(resp.Applications),
 		)
 	})
 }
