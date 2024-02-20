@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -23,7 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
