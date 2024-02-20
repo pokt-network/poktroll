@@ -1,16 +1,17 @@
 syntax = "proto3";
-
 package poktroll.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "poktroll/application/params.proto";
-import "poktroll/application/application.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/application/types";
+import "poktroll/application/params.proto";
+import "poktroll/application/application.proto";
+
 
 // Query defines the gRPC querier service.
 service Query {
@@ -26,7 +27,7 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/application/application/{address}";
 
   }
-  rpc ApplicationAll (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
+  rpc AllApplications (QueryAllApplicationRequest) returns (QueryAllApplicationResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/application/application";
 
   }
@@ -54,7 +55,7 @@ message QueryAllApplicationRequest {
 }
 
 message QueryAllApplicationResponse {
-  repeated Application                            application = 1 [(gogoproto.nullable) = false];
-           cosmos.base.query.v1beta1.PageResponse pagination  = 2;
+  repeated Application application = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination  = 2;
 }
 
