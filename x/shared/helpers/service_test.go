@@ -252,10 +252,10 @@ func TestIsValidEndpointUrl(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			got := IsValidEndpointUrl(tt.input)
-			require.Equal(t, tt.expected, got)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			got := IsValidEndpointUrl(test.input)
+			require.Equal(t, test.expected, got)
 		})
 	}
 }
