@@ -14,7 +14,10 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func (k Keeper) AllSuppliers(ctx context.Context, req *types.QueryAllSuppliersRequest) (*types.QueryAllSuppliersResponse, error) {
+func (k Keeper) AllSuppliers(
+	ctx context.Context,
+	req *types.QueryAllSuppliersRequest,
+) (*types.QueryAllSuppliersResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -24,15 +27,19 @@ func (k Keeper) AllSuppliers(ctx context.Context, req *types.QueryAllSuppliersRe
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	supplierStore := prefix.NewStore(store, types.KeyPrefix(types.SupplierKeyPrefix))
 
-	pageRes, err := query.Paginate(supplierStore, req.Pagination, func(key []byte, value []byte) error {
-		var supplier sharedtypes.Supplier
-		if err := k.cdc.Unmarshal(value, &supplier); err != nil {
-			return err
-		}
+	pageRes, err := query.Paginate(
+		supplierStore,
+		req.Pagination,
+		func(key []byte, value []byte) error {
+			var supplier sharedtypes.Supplier
+			if err := k.cdc.Unmarshal(value, &supplier); err != nil {
+				return err
+			}
 
-		suppliers = append(suppliers, supplier)
-		return nil
-	})
+			suppliers = append(suppliers, supplier)
+			return nil
+		},
+	)
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -41,17 +48,17 @@ func (k Keeper) AllSuppliers(ctx context.Context, req *types.QueryAllSuppliersRe
 	return &types.QueryAllSuppliersResponse{Supplier: suppliers, Pagination: pageRes}, nil
 }
 
-func (k Keeper) Supplier(ctx context.Context, req *types.QueryGetSupplierRequest) (*types.QueryGetSupplierResponse, error) {
+func (k Keeper) Supplier(
+	ctx context.Context,
+	req *types.QueryGetSupplierRequest,
+) (*types.QueryGetSupplierResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	supplier, found := k.GetSupplier(
-		ctx,
-		req.Address,
-	)
+	supplier, found := k.GetSupplier(ctx, req.Address)
 	if !found {
-		// TODO_TECHDEBT(#181): conform to logging conventions once established
+		// TODO_TECHDEBT(#384): conform to logging conventions once established
 		msg := fmt.Sprintf("supplier with address %q", req.GetAddress())
 		return nil, status.Error(codes.NotFound, msg)
 	}

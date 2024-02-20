@@ -27,7 +27,7 @@ func CmdStakeSupplier() *cobra.Command {
 will stake the tokens and associate them with the supplier specified by the 'from' address.
 
 Example:
-$ poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE)`,
+$ poktrolld tx supplier stake-supplier --config stake_config.yaml --keyring-backend test --from $(APP) --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, _ []string) (err error) {

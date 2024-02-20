@@ -48,12 +48,12 @@ func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
-		valid    bool
+		isValid  bool
 	}{
 		{
 			desc:     "default is valid",
 			genState: types.DefaultGenesis(),
-			valid:    true,
+			isValid:  true,
 		},
 		{
 			desc: "valid genesis state",
@@ -73,7 +73,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
-			valid: true,
+			isValid: true,
 		},
 		{
 			desc: "invalid - zero supplier stake",
@@ -91,7 +91,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - negative supplier stake",
@@ -109,7 +109,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - wrong stake denom",
@@ -127,7 +127,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - missing denom",
@@ -145,7 +145,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to duplicated supplier address",
@@ -163,7 +163,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to nil supplier stake",
@@ -181,7 +181,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to missing supplier stake",
@@ -194,12 +194,12 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						// Explicitly missing stake
+						// Stake explicitly omitted
 						Services: serviceList2,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - missing services list",
@@ -213,11 +213,11 @@ func TestGenesisState_Validate(t *testing.T) {
 					{
 						Address: addr2,
 						Stake:   &stake2,
-						// Services: intentionally omitted
+						// Services explicitly omitted
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - empty services list",
@@ -235,7 +235,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - invalid URL",
@@ -266,7 +266,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - invalid RPC Type",
@@ -297,14 +297,14 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.genState.Validate()
-			if tc.valid {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.genState.Validate()
+			if test.isValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
