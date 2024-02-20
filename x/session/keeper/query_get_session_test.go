@@ -53,12 +53,12 @@ func TestSession_GetSession_Success(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
-				ApplicationAddress: tt.appAddr,
+				ApplicationAddress: test.appAddr,
 				Service: &sharedtypes.Service{
-					Id: tt.serviceId,
+					Id: test.serviceId,
 				},
 				BlockHeight: 1,
 			}
@@ -67,9 +67,9 @@ func TestSession_GetSession_Success(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, response)
 
-			require.Equal(t, tt.expectedSessionId, response.Session.SessionId)
-			require.Equal(t, tt.expectedSessionNumber, response.Session.SessionNumber)
-			require.Len(t, response.Session.Suppliers, tt.expectedNumSuppliers)
+			require.Equal(t, test.expectedSessionId, response.Session.SessionId)
+			require.Equal(t, test.expectedSessionNumber, response.Session.SessionNumber)
+			require.Len(t, response.Session.Suppliers, test.expectedNumSuppliers)
 		})
 	}
 }
@@ -147,19 +147,19 @@ func TestSession_GetSession_Failure(t *testing.T) {
 
 	expectedRes := (*types.QueryGetSessionResponse)(nil)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			req := &types.QueryGetSessionRequest{
-				ApplicationAddress: tt.appAddr,
+				ApplicationAddress: test.appAddr,
 				Service: &sharedtypes.Service{
-					Id: tt.serviceId,
+					Id: test.serviceId,
 				},
-				BlockHeight: tt.blockHeight,
+				BlockHeight: test.blockHeight,
 			}
 
 			res, err := keeper.GetSession(ctx, req)
 			require.Error(t, err)
-			require.Contains(t, err.Error(), tt.expectedErrContains)
+			require.Contains(t, err.Error(), test.expectedErrContains)
 			require.Equal(t, expectedRes, res)
 		})
 	}

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/log"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	"cosmossdk.io/store/prefix"
@@ -42,7 +42,7 @@ var (
 	TestApp1Address = "pokt1mdccn4u38eyjdxkk4h0jaddw4n3c72u82m5m9e" // Generated via sample.AccAddress()
 	TestApp1        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},
@@ -59,7 +59,7 @@ var (
 	TestApp2Address = "pokt133amv5suh75zwkxxcq896azvmmwszg99grvk9f" // Generated via sample.AccAddress()
 	TestApp2        = apptypes.Application{
 		Address: TestApp1Address,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId2},
@@ -77,7 +77,7 @@ var (
 	TestSupplierAddress = sample.AccAddress()
 	TestSupplier        = sharedtypes.Supplier{
 		Address: TestSupplierAddress,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: TestServiceId1},

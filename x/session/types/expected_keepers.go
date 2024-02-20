@@ -1,6 +1,6 @@
-package types
-
 //go:generate mockgen -destination ../../../testutil/session/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
+
+package types
 
 import (
 	"context"
@@ -28,10 +28,4 @@ type ApplicationKeeper interface {
 
 type SupplierKeeper interface {
 	GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Supplier)
-}
-
-// ParamSubspace defines the expected Subspace interface for parameters.
-type ParamSubspace interface {
-	Get(context.Context, []byte, interface{})
-	Set(context.Context, []byte, interface{})
 }

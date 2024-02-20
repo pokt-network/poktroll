@@ -73,11 +73,11 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.sh.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.sh.ValidateBasic()
+			if test.err != nil {
+				require.ErrorIs(t, err, test.err)
 			} else {
 				require.NoError(t, err)
 			}

@@ -118,21 +118,21 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, tt.blockHeight)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			sessionHydrator := keeper.NewSessionHydrator(appAddr, serviceId, test.blockHeight)
 			session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
-			if tt.errExpected != nil {
-				require.ErrorIs(t, tt.errExpected, err)
+			if test.errExpected != nil {
+				require.ErrorIs(t, test.errExpected, err)
 				return
 			}
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedNumBlocksPerSession, session.NumBlocksPerSession)
-			require.Equal(t, tt.expectedSessionNumber, session.SessionNumber)
-			require.Equal(t, tt.expectedSessionStartBlock, session.Header.SessionStartBlockHeight)
-			require.Equal(t, tt.expectedSessionEndBlock, session.Header.SessionEndBlockHeight)
+			require.Equal(t, test.expectedNumBlocksPerSession, session.NumBlocksPerSession)
+			require.Equal(t, test.expectedSessionNumber, session.SessionNumber)
+			require.Equal(t, test.expectedSessionStartBlock, session.Header.SessionStartBlockHeight)
+			require.Equal(t, test.expectedSessionEndBlock, session.Header.SessionEndBlockHeight)
 		})
 	}
 }
@@ -207,19 +207,19 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			sessionHydrator1 := keeper.NewSessionHydrator(tt.appAddr1, tt.serviceId1, tt.blockHeight1)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			sessionHydrator1 := keeper.NewSessionHydrator(test.appAddr1, test.serviceId1, test.blockHeight1)
 			session1, err := sessionKeeper.HydrateSession(ctx, sessionHydrator1)
 			require.NoError(t, err)
 
-			sessionHydrator2 := keeper.NewSessionHydrator(tt.appAddr2, tt.serviceId2, tt.blockHeight2)
+			sessionHydrator2 := keeper.NewSessionHydrator(test.appAddr2, test.serviceId2, test.blockHeight2)
 			session2, err := sessionKeeper.HydrateSession(ctx, sessionHydrator2)
 			require.NoError(t, err)
 
 			require.NotEqual(t, session1.Header.SessionId, session2.Header.SessionId)
-			require.Equal(t, tt.expectedSessionId1, session1.Header.SessionId)
-			require.Equal(t, tt.expectedSessionId2, session2.Header.SessionId)
+			require.Equal(t, test.expectedSessionId1, session1.Header.SessionId)
+			require.Equal(t, test.expectedSessionId2, session2.Header.SessionId)
 		})
 	}
 }
@@ -280,11 +280,11 @@ func TestSession_HydrateSession_Application(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			sessionHydrator := keeper.NewSessionHydrator(test.appAddr, test.serviceId, blockHeight)
 			_, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
-			if tt.expectedErr != nil {
+			if test.expectedErr != nil {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -343,17 +343,17 @@ func TestSession_HydrateSession_Suppliers(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 	ctx = ctx.WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {})
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {})
 
-		sessionHydrator := keeper.NewSessionHydrator(tt.appAddr, tt.serviceId, blockHeight)
+		sessionHydrator := keeper.NewSessionHydrator(test.appAddr, test.serviceId, blockHeight)
 		session, err := sessionKeeper.HydrateSession(ctx, sessionHydrator)
 
-		if tt.expectedErr != nil {
-			require.ErrorContains(t, err, tt.expectedErr.Error())
+		if test.expectedErr != nil {
+			require.ErrorContains(t, err, test.expectedErr.Error())
 			continue
 		}
 		require.NoError(t, err)
-		require.Len(t, session.Suppliers, tt.numExpectedSuppliers)
+		require.Len(t, session.Suppliers, test.numExpectedSuppliers)
 	}
 }
