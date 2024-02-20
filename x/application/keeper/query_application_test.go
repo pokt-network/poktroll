@@ -85,7 +85,7 @@ func TestApplicationQueryPaginated(t *testing.T) {
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ApplicationAll(ctx, request(nil, uint64(i), uint64(step), false))
+			resp, err := keeper.AllApplications(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
@@ -98,7 +98,7 @@ func TestApplicationQueryPaginated(t *testing.T) {
 		step := 2
 		var next []byte
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ApplicationAll(ctx, request(next, 0, uint64(step), false))
+			resp, err := keeper.AllApplications(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
@@ -109,7 +109,7 @@ func TestApplicationQueryPaginated(t *testing.T) {
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		resp, err := keeper.ApplicationAll(ctx, request(nil, 0, 0, true))
+		resp, err := keeper.AllApplications(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
 		require.Equal(t, len(msgs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
@@ -118,7 +118,7 @@ func TestApplicationQueryPaginated(t *testing.T) {
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
-		_, err := keeper.ApplicationAll(ctx, nil)
+		_, err := keeper.AllApplications(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
 }

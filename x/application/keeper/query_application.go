@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (k Keeper) ApplicationAll(ctx context.Context, req *types.QueryAllApplicationRequest) (*types.QueryAllApplicationResponse, error) {
+func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicationRequest) (*types.QueryAllApplicationResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}

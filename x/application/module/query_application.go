@@ -33,7 +33,7 @@ $ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTRO
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.ApplicationAll(cmd.Context(), params)
+			res, err := queryClient.AllApplications(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

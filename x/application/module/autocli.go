@@ -22,7 +22,7 @@ Example:
 $ poktrolld q application params --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 				},
 				{
-					RpcMethod: "ApplicationAll",
+					RpcMethod: "AllApplications",
 					Use:       "list-application",
 					Short:     "List all application",
 					Long: `List all the applications that staked in the network.
