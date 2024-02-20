@@ -8,7 +8,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func CmdListSupplier() *cobra.Command {
+func CmdListSuppliers() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list-supplier",
 		Short: "list all supplier",
