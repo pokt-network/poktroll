@@ -11,10 +11,10 @@ import (
 
 func TestGetParams(t *testing.T) {
 	k, ctx, _, _ := testkeeper.TokenomicsKeeper(t)
+	// TODO_INVESTIGATE(#394): Params tests don't assert initial state.
 	params := types.DefaultParams()
 
-	k.SetParams(ctx, params)
-
+	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
 	require.EqualValues(t, params.ComputeUnitsToTokensMultiplier, k.ComputeUnitsToTokensMultiplier(ctx))
 }

@@ -13,17 +13,15 @@ import (
 
 func TestMsgUpdateParams(t *testing.T) {
 	tokenomicsKeeper, srv, ctx := setupMsgServer(t)
-	params := types.DefaultParams()
-	require.NoError(t, tokenomicsKeeper.SetParams(ctx, params))
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, types.DefaultParams()))
 
 	tests := []struct {
 		desc string
 
 		req *types.MsgUpdateParams
 
-		expectErr     bool
-		expectedPanic bool
-		expErrMsg     string
+		shouldError    bool
+		expectedErrMsg string
 	}{
 		{
 			desc: "invalid authority address",
@@ -35,9 +33,8 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: false,
-			expErrMsg:     "invalid authority",
+			shouldError:    true,
+			expectedErrMsg: "invalid authority",
 		},
 		{
 			desc: "incorrect authority address",
@@ -49,9 +46,8 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: false,
-			expErrMsg:     "the provided authority address does not match the on-chain governance address",
+			shouldError:    true,
+			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
 		},
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",
@@ -64,9 +60,8 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: true,
-			expErrMsg:     "invalid compute to tokens multiplier",
+			shouldError:    true,
+			expectedErrMsg: "invalid ComputeUnitsToTokensMultiplier",
 		},
 		{
 			desc: "successful param update",
@@ -79,26 +74,16 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectedPanic: false,
-			expectErr:     false,
+			shouldError: false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			if tt.expectedPanic {
-				defer func() {
-					if r := recover(); r != nil {
-						_, err := srv.UpdateParams(ctx, tt.req)
-						require.Error(t, err)
-					}
-				}()
-				return
-			}
-			_, err := srv.UpdateParams(ctx, tt.req)
-			if tt.expectErr {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			_, err := srv.UpdateParams(ctx, test.req)
+			if test.shouldError {
 				require.Error(t, err)
-				require.ErrorContains(t, err, tt.expErrMsg)
+				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
 				require.Nil(t, err)
 			}
@@ -113,11 +98,15 @@ func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
 	// Set the default params
 	tokenomicsKeeper.SetParams(ctx, types.DefaultParams())
 
-	// Verify the default value for ComputeUnitsToTokensMultiplier
 	getParamsReq := &types.QueryParamsRequest{}
+
+	// Verify the default value for ComputeUnitsToTokensMultiplier
 	getParamsRes, err := tokenomicsKeeper.Params(ctx, getParamsReq)
-	require.Nil(t, err)
-	require.Equal(t, uint64(42), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
+	require.NoError(t, err)
+	require.Equal(t,
+		types.DefaultComputeUnitsToTokensMultiplier,
+		getParamsRes.Params.GetComputeUnitsToTokensMultiplier(),
+	)
 
 	// Update the value for ComputeUnitsToTokensMultiplier
 	updateParamsReq := &types.MsgUpdateParams{
@@ -127,10 +116,10 @@ func TestUpdateParams_ComputeUnitsToTokensMultiplier(t *testing.T) {
 		},
 	}
 	_, err = srv.UpdateParams(ctx, updateParamsReq)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	// Verify that ComputeUnitsToTokensMultiplier was updated
 	getParamsRes, err = tokenomicsKeeper.Params(ctx, getParamsReq)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, uint64(69), getParamsRes.Params.GetComputeUnitsToTokensMultiplier())
 }

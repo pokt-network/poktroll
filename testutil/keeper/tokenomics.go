@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -32,59 +33,69 @@ import (
 // mature to be explicit about the number of expected tests.
 
 func TokenomicsKeeper(t testing.TB) (
-	k keeper.Keeper, s sdk.Context,
-	appAddr, supplierAddr string,
+	k keeper.Keeper,
+	ttx context.Context,
+	appAddr string,
+	supplierAddr string,
 ) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
-	// Initialize the in-memory database
+	// Initialize the in-memory database.
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
 	stateStore.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
 	require.NoError(t, stateStore.LoadLatestVersion())
 
-	// Initialize the codec and other necessary components
+	// Initialize the codec and other necessary components.
 	registry := codectypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
-	ctrl := gomock.NewController(t)
 
-	// The on-chain governance address
+	// The on-chain governance address.
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
-	// Prepare the test application
+	// Prepare the test application.
 	application := apptypes.Application{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
 
-	// Prepare the test supplier
+	// Prepare the test supplier.
 	supplier := sharedtypes.Supplier{
 		Address: sample.AccAddress(),
 		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100000)},
 	}
 
-	// Mock the application keeper
+	ctrl := gomock.NewController(t)
+
+	// Mock the application keeper.
 	mockApplicationKeeper := mocks.NewMockApplicationKeeper(ctrl)
+
+	// Get test application if the address matches.
 	mockApplicationKeeper.EXPECT().
 		GetApplication(gomock.Any(), gomock.Eq(application.Address)).
 		Return(application, true).
 		AnyTimes()
+
+	// Get zero-value application if the address does not match.
 	mockApplicationKeeper.EXPECT().
 		GetApplication(gomock.Any(), gomock.Not(application.Address)).
 		Return(apptypes.Application{}, false).
 		AnyTimes()
+
+	// Mock SetApplication.
 	mockApplicationKeeper.EXPECT().
 		SetApplication(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	// Mock the supplier keeper
+	// Get test supplier if the address matches.
 	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
 	mockSupplierKeeper.EXPECT().
 		GetSupplier(gomock.Any(), supplier.Address).
 		Return(supplier, true).
 		AnyTimes()
 
-	// Mock the bank keeper
+	// Mock the bank keeper.
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
 		MintCoins(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -120,7 +131,7 @@ func TokenomicsKeeper(t testing.TB) (
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	tokenomicsKeeper.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, tokenomicsKeeper.SetParams(ctx, types.DefaultParams()))
 
 	return tokenomicsKeeper, ctx, application.Address, supplier.Address
 }
