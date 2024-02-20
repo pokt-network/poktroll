@@ -437,6 +437,9 @@ type Params struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The amount of uPOKT required to add a new service.
+	// This will be deducted from the signer's account balance,
+	// and transferred to the pocket network foundation.
 	AddServiceFee uint64 `protobuf:"varint,1,opt,name=add_service_fee,json=addServiceFee,proto3" json:"add_service_fee,omitempty"`
 }
 

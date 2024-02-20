@@ -1664,25 +1664,25 @@ func (x *fastReflection_QueryGetServiceResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_QueryAllServiceRequest            protoreflect.MessageDescriptor
-	fd_QueryAllServiceRequest_pagination protoreflect.FieldDescriptor
+	md_QueryAllServicesRequest            protoreflect.MessageDescriptor
+	fd_QueryAllServicesRequest_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_service_query_proto_init()
-	md_QueryAllServiceRequest = File_poktroll_service_query_proto.Messages().ByName("QueryAllServiceRequest")
-	fd_QueryAllServiceRequest_pagination = md_QueryAllServiceRequest.Fields().ByName("pagination")
+	md_QueryAllServicesRequest = File_poktroll_service_query_proto.Messages().ByName("QueryAllServicesRequest")
+	fd_QueryAllServicesRequest_pagination = md_QueryAllServicesRequest.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllServiceRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllServicesRequest)(nil)
 
-type fastReflection_QueryAllServiceRequest QueryAllServiceRequest
+type fastReflection_QueryAllServicesRequest QueryAllServicesRequest
 
-func (x *QueryAllServiceRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllServiceRequest)(x)
+func (x *QueryAllServicesRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllServicesRequest)(x)
 }
 
-func (x *QueryAllServiceRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllServicesRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_service_query_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1694,43 +1694,43 @@ func (x *QueryAllServiceRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllServiceRequest_messageType fastReflection_QueryAllServiceRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllServiceRequest_messageType{}
+var _fastReflection_QueryAllServicesRequest_messageType fastReflection_QueryAllServicesRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllServicesRequest_messageType{}
 
-type fastReflection_QueryAllServiceRequest_messageType struct{}
+type fastReflection_QueryAllServicesRequest_messageType struct{}
 
-func (x fastReflection_QueryAllServiceRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllServiceRequest)(nil)
+func (x fastReflection_QueryAllServicesRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllServicesRequest)(nil)
 }
-func (x fastReflection_QueryAllServiceRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllServiceRequest)
+func (x fastReflection_QueryAllServicesRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllServicesRequest)
 }
-func (x fastReflection_QueryAllServiceRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllServiceRequest
+func (x fastReflection_QueryAllServicesRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllServicesRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllServiceRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllServiceRequest
+func (x *fastReflection_QueryAllServicesRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllServicesRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllServiceRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllServiceRequest_messageType
+func (x *fastReflection_QueryAllServicesRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllServicesRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllServiceRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryAllServiceRequest)
+func (x *fastReflection_QueryAllServicesRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryAllServicesRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllServiceRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllServiceRequest)(x)
+func (x *fastReflection_QueryAllServicesRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllServicesRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1738,10 +1738,10 @@ func (x *fastReflection_QueryAllServiceRequest) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllServiceRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryAllServicesRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllServiceRequest_pagination, value) {
+		if !f(fd_QueryAllServicesRequest_pagination, value) {
 			return
 		}
 	}
@@ -1758,15 +1758,15 @@ func (x *fastReflection_QueryAllServiceRequest) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllServiceRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllServicesRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1776,15 +1776,15 @@ func (x *fastReflection_QueryAllServiceRequest) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllServicesRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1794,16 +1794,16 @@ func (x *fastReflection_QueryAllServiceRequest) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllServiceRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1817,15 +1817,15 @@ func (x *fastReflection_QueryAllServiceRequest) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllServicesRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageRequest)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1839,44 +1839,44 @@ func (x *fastReflection_QueryAllServiceRequest) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageRequest)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllServiceRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceRequest.pagination":
+	case "poktroll.service.QueryAllServicesRequest.pagination":
 		m := new(v1beta1.PageRequest)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllServiceRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllServicesRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.service.QueryAllServiceRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.service.QueryAllServicesRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1884,7 +1884,7 @@ func (x *fastReflection_QueryAllServiceRequest) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllServiceRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllServicesRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1895,7 +1895,7 @@ func (x *fastReflection_QueryAllServiceRequest) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllServicesRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1907,7 +1907,7 @@ func (x *fastReflection_QueryAllServiceRequest) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllServiceRequest) IsValid() bool {
+func (x *fastReflection_QueryAllServicesRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -1917,9 +1917,9 @@ func (x *fastReflection_QueryAllServiceRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllServiceRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllServicesRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllServiceRequest)
+		x := input.Message.Interface().(*QueryAllServicesRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1945,7 +1945,7 @@ func (x *fastReflection_QueryAllServiceRequest) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllServiceRequest)
+		x := input.Message.Interface().(*QueryAllServicesRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1989,7 +1989,7 @@ func (x *fastReflection_QueryAllServiceRequest) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllServiceRequest)
+		x := input.Message.Interface().(*QueryAllServicesRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2021,10 +2021,10 @@ func (x *fastReflection_QueryAllServiceRequest) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServiceRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServicesRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServiceRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServicesRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2098,79 +2098,79 @@ func (x *fastReflection_QueryAllServiceRequest) ProtoMethods() *protoiface.Metho
 	}
 }
 
-var _ protoreflect.List = (*_QueryAllServiceResponse_1_list)(nil)
+var _ protoreflect.List = (*_QueryAllServicesResponse_1_list)(nil)
 
-type _QueryAllServiceResponse_1_list struct {
+type _QueryAllServicesResponse_1_list struct {
 	list *[]*shared.Service
 }
 
-func (x *_QueryAllServiceResponse_1_list) Len() int {
+func (x *_QueryAllServicesResponse_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_QueryAllServiceResponse_1_list) Get(i int) protoreflect.Value {
+func (x *_QueryAllServicesResponse_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_QueryAllServiceResponse_1_list) Set(i int, value protoreflect.Value) {
+func (x *_QueryAllServicesResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*shared.Service)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_QueryAllServiceResponse_1_list) Append(value protoreflect.Value) {
+func (x *_QueryAllServicesResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*shared.Service)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_QueryAllServiceResponse_1_list) AppendMutable() protoreflect.Value {
+func (x *_QueryAllServicesResponse_1_list) AppendMutable() protoreflect.Value {
 	v := new(shared.Service)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllServiceResponse_1_list) Truncate(n int) {
+func (x *_QueryAllServicesResponse_1_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_QueryAllServiceResponse_1_list) NewElement() protoreflect.Value {
+func (x *_QueryAllServicesResponse_1_list) NewElement() protoreflect.Value {
 	v := new(shared.Service)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllServiceResponse_1_list) IsValid() bool {
+func (x *_QueryAllServicesResponse_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_QueryAllServiceResponse            protoreflect.MessageDescriptor
-	fd_QueryAllServiceResponse_service    protoreflect.FieldDescriptor
-	fd_QueryAllServiceResponse_pagination protoreflect.FieldDescriptor
+	md_QueryAllServicesResponse            protoreflect.MessageDescriptor
+	fd_QueryAllServicesResponse_service    protoreflect.FieldDescriptor
+	fd_QueryAllServicesResponse_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_service_query_proto_init()
-	md_QueryAllServiceResponse = File_poktroll_service_query_proto.Messages().ByName("QueryAllServiceResponse")
-	fd_QueryAllServiceResponse_service = md_QueryAllServiceResponse.Fields().ByName("service")
-	fd_QueryAllServiceResponse_pagination = md_QueryAllServiceResponse.Fields().ByName("pagination")
+	md_QueryAllServicesResponse = File_poktroll_service_query_proto.Messages().ByName("QueryAllServicesResponse")
+	fd_QueryAllServicesResponse_service = md_QueryAllServicesResponse.Fields().ByName("service")
+	fd_QueryAllServicesResponse_pagination = md_QueryAllServicesResponse.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllServiceResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllServicesResponse)(nil)
 
-type fastReflection_QueryAllServiceResponse QueryAllServiceResponse
+type fastReflection_QueryAllServicesResponse QueryAllServicesResponse
 
-func (x *QueryAllServiceResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllServiceResponse)(x)
+func (x *QueryAllServicesResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllServicesResponse)(x)
 }
 
-func (x *QueryAllServiceResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllServicesResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_service_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2182,43 +2182,43 @@ func (x *QueryAllServiceResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllServiceResponse_messageType fastReflection_QueryAllServiceResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllServiceResponse_messageType{}
+var _fastReflection_QueryAllServicesResponse_messageType fastReflection_QueryAllServicesResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllServicesResponse_messageType{}
 
-type fastReflection_QueryAllServiceResponse_messageType struct{}
+type fastReflection_QueryAllServicesResponse_messageType struct{}
 
-func (x fastReflection_QueryAllServiceResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllServiceResponse)(nil)
+func (x fastReflection_QueryAllServicesResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllServicesResponse)(nil)
 }
-func (x fastReflection_QueryAllServiceResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllServiceResponse)
+func (x fastReflection_QueryAllServicesResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllServicesResponse)
 }
-func (x fastReflection_QueryAllServiceResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllServiceResponse
+func (x fastReflection_QueryAllServicesResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllServicesResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllServiceResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllServiceResponse
+func (x *fastReflection_QueryAllServicesResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllServicesResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllServiceResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllServiceResponse_messageType
+func (x *fastReflection_QueryAllServicesResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllServicesResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllServiceResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryAllServiceResponse)
+func (x *fastReflection_QueryAllServicesResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryAllServicesResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllServiceResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllServiceResponse)(x)
+func (x *fastReflection_QueryAllServicesResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllServicesResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2226,16 +2226,16 @@ func (x *fastReflection_QueryAllServiceResponse) Interface() protoreflect.ProtoM
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllServiceResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryAllServicesResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if len(x.Service) != 0 {
-		value := protoreflect.ValueOfList(&_QueryAllServiceResponse_1_list{list: &x.Service})
-		if !f(fd_QueryAllServiceResponse_service, value) {
+		value := protoreflect.ValueOfList(&_QueryAllServicesResponse_1_list{list: &x.Service})
+		if !f(fd_QueryAllServicesResponse_service, value) {
 			return
 		}
 	}
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllServiceResponse_pagination, value) {
+		if !f(fd_QueryAllServicesResponse_pagination, value) {
 			return
 		}
 	}
@@ -2252,17 +2252,17 @@ func (x *fastReflection_QueryAllServiceResponse) Range(f func(protoreflect.Field
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllServiceResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllServicesResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		return len(x.Service) != 0
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2272,17 +2272,17 @@ func (x *fastReflection_QueryAllServiceResponse) Has(fd protoreflect.FieldDescri
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllServicesResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		x.Service = nil
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2292,22 +2292,22 @@ func (x *fastReflection_QueryAllServiceResponse) Clear(fd protoreflect.FieldDesc
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllServiceResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		if len(x.Service) == 0 {
-			return protoreflect.ValueOfList(&_QueryAllServiceResponse_1_list{})
+			return protoreflect.ValueOfList(&_QueryAllServicesResponse_1_list{})
 		}
-		listValue := &_QueryAllServiceResponse_1_list{list: &x.Service}
+		listValue := &_QueryAllServicesResponse_1_list{list: &x.Service}
 		return protoreflect.ValueOfList(listValue)
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2321,19 +2321,19 @@ func (x *fastReflection_QueryAllServiceResponse) Get(descriptor protoreflect.Fie
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllServicesResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		lv := value.List()
-		clv := lv.(*_QueryAllServiceResponse_1_list)
+		clv := lv.(*_QueryAllServicesResponse_1_list)
 		x.Service = *clv.list
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageResponse)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2347,53 +2347,53 @@ func (x *fastReflection_QueryAllServiceResponse) Set(fd protoreflect.FieldDescri
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		if x.Service == nil {
 			x.Service = []*shared.Service{}
 		}
-		value := &_QueryAllServiceResponse_1_list{list: &x.Service}
+		value := &_QueryAllServicesResponse_1_list{list: &x.Service}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageResponse)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllServiceResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllServicesResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.service.QueryAllServiceResponse.service":
+	case "poktroll.service.QueryAllServicesResponse.service":
 		list := []*shared.Service{}
-		return protoreflect.ValueOfList(&_QueryAllServiceResponse_1_list{list: &list})
-	case "poktroll.service.QueryAllServiceResponse.pagination":
+		return protoreflect.ValueOfList(&_QueryAllServicesResponse_1_list{list: &list})
+	case "poktroll.service.QueryAllServicesResponse.pagination":
 		m := new(v1beta1.PageResponse)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServiceResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.service.QueryAllServicesResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.service.QueryAllServiceResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.service.QueryAllServicesResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllServiceResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllServicesResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.service.QueryAllServiceResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.service.QueryAllServicesResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2401,7 +2401,7 @@ func (x *fastReflection_QueryAllServiceResponse) WhichOneof(d protoreflect.Oneof
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllServiceResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllServicesResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2412,7 +2412,7 @@ func (x *fastReflection_QueryAllServiceResponse) GetUnknown() protoreflect.RawFi
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllServiceResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllServicesResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2424,7 +2424,7 @@ func (x *fastReflection_QueryAllServiceResponse) SetUnknown(fields protoreflect.
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllServiceResponse) IsValid() bool {
+func (x *fastReflection_QueryAllServicesResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2434,9 +2434,9 @@ func (x *fastReflection_QueryAllServiceResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllServiceResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllServicesResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllServiceResponse)
+		x := input.Message.Interface().(*QueryAllServicesResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2468,7 +2468,7 @@ func (x *fastReflection_QueryAllServiceResponse) ProtoMethods() *protoiface.Meth
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllServiceResponse)
+		x := input.Message.Interface().(*QueryAllServicesResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2528,7 +2528,7 @@ func (x *fastReflection_QueryAllServiceResponse) ProtoMethods() *protoiface.Meth
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllServiceResponse)
+		x := input.Message.Interface().(*QueryAllServicesResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2560,10 +2560,10 @@ func (x *fastReflection_QueryAllServiceResponse) ProtoMethods() *protoiface.Meth
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServiceResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServicesResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServiceResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllServicesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2818,7 +2818,7 @@ func (x *QueryGetServiceResponse) GetService() *shared.Service {
 	return nil
 }
 
-type QueryAllServiceRequest struct {
+type QueryAllServicesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2826,8 +2826,8 @@ type QueryAllServiceRequest struct {
 	Pagination *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryAllServiceRequest) Reset() {
-	*x = QueryAllServiceRequest{}
+func (x *QueryAllServicesRequest) Reset() {
+	*x = QueryAllServicesRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_service_query_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2835,25 +2835,25 @@ func (x *QueryAllServiceRequest) Reset() {
 	}
 }
 
-func (x *QueryAllServiceRequest) String() string {
+func (x *QueryAllServicesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllServiceRequest) ProtoMessage() {}
+func (*QueryAllServicesRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryAllServiceRequest.ProtoReflect.Descriptor instead.
-func (*QueryAllServiceRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllServicesRequest.ProtoReflect.Descriptor instead.
+func (*QueryAllServicesRequest) Descriptor() ([]byte, []int) {
 	return file_poktroll_service_query_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *QueryAllServiceRequest) GetPagination() *v1beta1.PageRequest {
+func (x *QueryAllServicesRequest) GetPagination() *v1beta1.PageRequest {
 	if x != nil {
 		return x.Pagination
 	}
 	return nil
 }
 
-type QueryAllServiceResponse struct {
+type QueryAllServicesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2862,8 +2862,8 @@ type QueryAllServiceResponse struct {
 	Pagination *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryAllServiceResponse) Reset() {
-	*x = QueryAllServiceResponse{}
+func (x *QueryAllServicesResponse) Reset() {
+	*x = QueryAllServicesResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_service_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2871,25 +2871,25 @@ func (x *QueryAllServiceResponse) Reset() {
 	}
 }
 
-func (x *QueryAllServiceResponse) String() string {
+func (x *QueryAllServicesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllServiceResponse) ProtoMessage() {}
+func (*QueryAllServicesResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryAllServiceResponse.ProtoReflect.Descriptor instead.
-func (*QueryAllServiceResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllServicesResponse.ProtoReflect.Descriptor instead.
+func (*QueryAllServicesResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_service_query_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryAllServiceResponse) GetService() []*shared.Service {
+func (x *QueryAllServicesResponse) GetService() []*shared.Service {
 	if x != nil {
 		return x.Service
 	}
 	return nil
 }
 
-func (x *QueryAllServiceResponse) GetPagination() *v1beta1.PageResponse {
+func (x *QueryAllServicesResponse) GetPagination() *v1beta1.PageResponse {
 	if x != nil {
 		return x.Pagination
 	}
@@ -2928,61 +2928,62 @@ var file_poktroll_service_query_proto_rawDesc = []byte{
 	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
 	0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
 	0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x22, 0x60, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70, 0x61,
-	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26,
+	0x22, 0x61, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70,
+	0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75,
+	0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x22, 0x9d, 0x01, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x38, 0x0a, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61,
+	0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f,
+	0x00, 0x52, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61,
+	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27,
 	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65,
 	0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x22, 0x9c, 0x01, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x53,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x38,
-	0x0a, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32,
-	0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68, 0x61, 0x72, 0x65,
-	0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52,
-	0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69,
-	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x32, 0xbb, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x84, 0x01, 0x0a, 0x06,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50,
-	0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25, 0x2f, 0x70, 0x6f,
-	0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x12, 0x96, 0x01, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x28,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
-	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0x32, 0xbe, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x84, 0x01,
+	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
 	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x36, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x30, 0x12, 0x2e, 0x2f, 0x70, 0x6f,
-	0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x73, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x2f, 0x7b, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x7d, 0x12, 0x91, 0x01, 0x0a, 0x0a,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x6c, 0x6c, 0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b,
+	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x70, 0x61,
+	0x72, 0x61, 0x6d, 0x73, 0x12, 0x96, 0x01, 0x0a, 0x07, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70, 0x6f, 0x6b,
 	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
-	0x2e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e,
-	0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x42,
-	0xa6, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50,
-	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
-	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0xa2, 0x02, 0x03, 0x50, 0x53, 0x58, 0xaa,
-	0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x5c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61,
-	0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a,
-	0x3a, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x36, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x30, 0x12, 0x2e, 0x2f,
+	0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x73, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x7b, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x7d, 0x12, 0x94, 0x01,
+	0x0a, 0x0b, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x12, 0x29, 0x2e,
+	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x41, 0x6c, 0x6c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x70,
+	0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2f, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x42, 0xa6, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x42, 0x0a, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0xa2, 0x02,
+	0x03, 0x50, 0x53, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5c, 0x47, 0x50,
+	0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2999,29 +3000,29 @@ func file_poktroll_service_query_proto_rawDescGZIP() []byte {
 
 var file_poktroll_service_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_poktroll_service_query_proto_goTypes = []interface{}{
-	(*QueryParamsRequest)(nil),      // 0: poktroll.service.QueryParamsRequest
-	(*QueryParamsResponse)(nil),     // 1: poktroll.service.QueryParamsResponse
-	(*QueryGetServiceRequest)(nil),  // 2: poktroll.service.QueryGetServiceRequest
-	(*QueryGetServiceResponse)(nil), // 3: poktroll.service.QueryGetServiceResponse
-	(*QueryAllServiceRequest)(nil),  // 4: poktroll.service.QueryAllServiceRequest
-	(*QueryAllServiceResponse)(nil), // 5: poktroll.service.QueryAllServiceResponse
-	(*Params)(nil),                  // 6: poktroll.service.Params
-	(*shared.Service)(nil),          // 7: poktroll.shared.Service
-	(*v1beta1.PageRequest)(nil),     // 8: cosmos.base.query.v1beta1.PageRequest
-	(*v1beta1.PageResponse)(nil),    // 9: cosmos.base.query.v1beta1.PageResponse
+	(*QueryParamsRequest)(nil),       // 0: poktroll.service.QueryParamsRequest
+	(*QueryParamsResponse)(nil),      // 1: poktroll.service.QueryParamsResponse
+	(*QueryGetServiceRequest)(nil),   // 2: poktroll.service.QueryGetServiceRequest
+	(*QueryGetServiceResponse)(nil),  // 3: poktroll.service.QueryGetServiceResponse
+	(*QueryAllServicesRequest)(nil),  // 4: poktroll.service.QueryAllServicesRequest
+	(*QueryAllServicesResponse)(nil), // 5: poktroll.service.QueryAllServicesResponse
+	(*Params)(nil),                   // 6: poktroll.service.Params
+	(*shared.Service)(nil),           // 7: poktroll.shared.Service
+	(*v1beta1.PageRequest)(nil),      // 8: cosmos.base.query.v1beta1.PageRequest
+	(*v1beta1.PageResponse)(nil),     // 9: cosmos.base.query.v1beta1.PageResponse
 }
 var file_poktroll_service_query_proto_depIdxs = []int32{
 	6, // 0: poktroll.service.QueryParamsResponse.params:type_name -> poktroll.service.Params
 	7, // 1: poktroll.service.QueryGetServiceResponse.service:type_name -> poktroll.shared.Service
-	8, // 2: poktroll.service.QueryAllServiceRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	7, // 3: poktroll.service.QueryAllServiceResponse.service:type_name -> poktroll.shared.Service
-	9, // 4: poktroll.service.QueryAllServiceResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	8, // 2: poktroll.service.QueryAllServicesRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	7, // 3: poktroll.service.QueryAllServicesResponse.service:type_name -> poktroll.shared.Service
+	9, // 4: poktroll.service.QueryAllServicesResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	0, // 5: poktroll.service.Query.Params:input_type -> poktroll.service.QueryParamsRequest
 	2, // 6: poktroll.service.Query.Service:input_type -> poktroll.service.QueryGetServiceRequest
-	4, // 7: poktroll.service.Query.ServiceAll:input_type -> poktroll.service.QueryAllServiceRequest
+	4, // 7: poktroll.service.Query.AllServices:input_type -> poktroll.service.QueryAllServicesRequest
 	1, // 8: poktroll.service.Query.Params:output_type -> poktroll.service.QueryParamsResponse
 	3, // 9: poktroll.service.Query.Service:output_type -> poktroll.service.QueryGetServiceResponse
-	5, // 10: poktroll.service.Query.ServiceAll:output_type -> poktroll.service.QueryAllServiceResponse
+	5, // 10: poktroll.service.Query.AllServices:output_type -> poktroll.service.QueryAllServicesResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -3085,7 +3086,7 @@ func file_poktroll_service_query_proto_init() {
 			}
 		}
 		file_poktroll_service_query_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllServiceRequest); i {
+			switch v := v.(*QueryAllServicesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3097,7 +3098,7 @@ func file_poktroll_service_query_proto_init() {
 			}
 		}
 		file_poktroll_service_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllServiceResponse); i {
+			switch v := v.(*QueryAllServicesResponse); i {
 			case 0:
 				return &v.state
 			case 1:

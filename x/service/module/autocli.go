@@ -17,7 +17,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 		//				Short:     "Shows the parameters of the module",
 		//			},
 		//			{
-		//				RpcMethod: "ServiceAll",
+		//				RpcMethod: "AllServices",
 		//				Use:       "list-service",
 		//				Short:     "List all service",
 		//			},
