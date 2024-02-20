@@ -15,6 +15,4 @@ var (
 	ParamsKey = []byte("p_application")
 )
 
-func KeyPrefix(p string) []byte {
-	return []byte(p)
-}
+func KeyPrefix(p string) []byte { return []byte(p) }

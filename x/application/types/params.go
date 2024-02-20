@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -62,7 +61,7 @@ func validateMaxDelegatedGateways(v interface{}) error {
 	// Hard-coding a value of 1 because we never expect this to change.
 	// If an application choses to delegate, at least one is required.
 	if maxDelegatedGateways < 1 {
-		return sdkerrors.Wrapf(ErrAppInvalidMaxDelegatedGateways, "MaxDelegatedGateways param < 1: got %d", maxDelegatedGateways)
+		return ErrAppInvalidMaxDelegatedGateways.Wrapf("MaxDelegatedGateways param < 1: got %d", maxDelegatedGateways)
 	}
 
 	return nil

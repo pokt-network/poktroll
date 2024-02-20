@@ -10,9 +10,7 @@ const (
 )
 
 // ApplicationKey returns the store key to retrieve a Application from the index fields
-func ApplicationKey(
-	address string,
-) []byte {
+func ApplicationKey(address string) []byte {
 	var key []byte
 
 	addressBytes := []byte(address)

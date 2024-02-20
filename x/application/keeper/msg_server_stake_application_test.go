@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -28,7 +28,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -51,7 +51,7 @@ func TestMsgServer_StakeApplication_SuccessfulCreateAndUpdate(t *testing.T) {
 	// Prepare an updated application with a higher stake and another service
 	updateStakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(200)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(200)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -82,7 +82,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	// Prepare the application stake message
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -97,7 +97,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	// Prepare the application stake message without any services
 	updateStakeMsg := &types.MsgStakeApplication{
 		Address:  appAddr,
-		Stake:    &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{},
 	}
 
@@ -115,7 +115,7 @@ func TestMsgServer_StakeApplication_FailRestakingDueToInvalidServices(t *testing
 	// Prepare the application stake message with an invalid service ID
 	updateStakeMsg = &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1 INVALID ! & *"},
@@ -143,7 +143,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	addr := sample.AccAddress()
 	stakeMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -160,7 +160,7 @@ func TestMsgServer_StakeApplication_FailLoweringStake(t *testing.T) {
 	// Prepare an updated application with a lower stake
 	updateMsg := &types.MsgStakeApplication{
 		Address: addr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(50)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(50)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},

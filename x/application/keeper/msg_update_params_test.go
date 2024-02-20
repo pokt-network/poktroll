@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/x/application/types"
@@ -13,14 +12,13 @@ func TestMsgUpdateParams(t *testing.T) {
 	k, ms, ctx := setupMsgServer(t)
 	params := types.DefaultParams()
 	require.NoError(t, k.SetParams(ctx, params))
-	wctx := sdk.UnwrapSDKContext(ctx)
 
 	// default params
-	testCases := []struct {
-		name      string
-		input     *types.MsgUpdateParams
-		expErr    bool
-		expErrMsg string
+	tests := []struct {
+		name           string
+		input          *types.MsgUpdateParams
+		shouldError    bool
+		expectedErrMsg string
 	}{
 		{
 			name: "invalid authority",
@@ -28,8 +26,8 @@ func TestMsgUpdateParams(t *testing.T) {
 				Authority: "invalid",
 				Params:    params,
 			},
-			expErr:    true,
-			expErrMsg: "invalid authority",
+			shouldError:    true,
+			expectedErrMsg: "invalid authority",
 		},
 		{
 			name: "send enabled param",
@@ -37,7 +35,7 @@ func TestMsgUpdateParams(t *testing.T) {
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
-			expErr: false,
+			shouldError: false,
 		},
 		{
 			name: "all good",
@@ -45,17 +43,17 @@ func TestMsgUpdateParams(t *testing.T) {
 				Authority: k.GetAuthority(),
 				Params:    params,
 			},
-			expErr: false,
+			shouldError: false,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := ms.UpdateParams(wctx, tc.input)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := ms.UpdateParams(ctx, test.input)
 
-			if tc.expErr {
+			if test.shouldError {
 				require.Error(t, err)
-				require.Contains(t, err.Error(), tc.expErrMsg)
+				require.Contains(t, err.Error(), test.expectedErrMsg)
 			} else {
 				require.NoError(t, err)
 			}

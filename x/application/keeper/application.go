@@ -48,9 +48,7 @@ func (k Keeper) RemoveApplication(
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
-	store.Delete(types.ApplicationKey(
-		appAddr,
-	))
+	store.Delete(types.ApplicationKey(appAddr))
 }
 
 // GetAllApplication returns all application

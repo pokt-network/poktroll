@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -30,7 +30,7 @@ func TestMsgServer_DelegateToGateway_SuccessfullyDelegate(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -106,7 +106,7 @@ func TestMsgServer_DelegateToGateway_FailDuplicate(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -172,7 +172,7 @@ func TestMsgServer_DelegateToGateway_FailGatewayNotStaked(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},
@@ -210,7 +210,7 @@ func TestMsgServer_DelegateToGateway_FailMaxReached(t *testing.T) {
 	// Prepare the application
 	stakeMsg := &types.MsgStakeApplication{
 		Address: appAddr,
-		Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: "svc1"},

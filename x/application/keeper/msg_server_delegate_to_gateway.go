@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/application/types"
@@ -25,28 +24,28 @@ func (k msgServer) DelegateToGateway(goCtx context.Context, msg *types.MsgDelega
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotFound, "application not found with address: %s", msg.AppAddress)
+		return nil, types.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the gateway is staked
 	if _, found := k.gatewayKeeper.GetGateway(ctx, msg.GatewayAddress); !found {
 		logger.Info(fmt.Sprintf("Gateway not found with address [%s]", msg.GatewayAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppGatewayNotFound, "gateway not found with address: %s", msg.GatewayAddress)
+		return nil, types.ErrAppGatewayNotFound.Wrapf("gateway not found with address: %s", msg.GatewayAddress)
 	}
 
 	// Ensure the application is not already delegated to the maximum number of gateways
 	maxDelegatedParam := k.GetParams(ctx).MaxDelegatedGateways
 	if uint64(len(app.DelegateeGatewayAddresses)) >= maxDelegatedParam {
 		logger.Info(fmt.Sprintf("Application already delegated to maximum number of gateways: %d", maxDelegatedParam))
-		return nil, sdkerrors.Wrapf(types.ErrAppMaxDelegatedGateways, "application already delegated to %d gateways", maxDelegatedParam)
+		return nil, types.ErrAppMaxDelegatedGateways.Wrapf("application already delegated to %d gateways", maxDelegatedParam)
 	}
 
 	// Check if the application is already delegated to the gateway
 	for _, gatewayAddr := range app.DelegateeGatewayAddresses {
 		if gatewayAddr == msg.GatewayAddress {
 			logger.Info(fmt.Sprintf("Application already delegated to gateway with address [%s]", msg.GatewayAddress))
-			return nil, sdkerrors.Wrapf(types.ErrAppAlreadyDelegated, "application already delegated to gateway with address: %s", msg.GatewayAddress)
+			return nil, types.ErrAppAlreadyDelegated.Wrapf("application already delegated to gateway with address: %s", msg.GatewayAddress)
 		}
 	}
 

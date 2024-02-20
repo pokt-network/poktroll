@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -24,7 +23,7 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	app, found := k.GetApplication(ctx, msg.AppAddress)
 	if !found {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotFound, "application not found with address: %s", msg.AppAddress)
+		return nil, types.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
@@ -37,7 +36,7 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	}
 	if foundIdx == -1 {
 		logger.Info(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GatewayAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotDelegated, "application not delegated to gateway with address: %s", msg.GatewayAddress)
+		return nil, types.ErrAppNotDelegated.Wrapf("application not delegated to gateway with address: %s", msg.GatewayAddress)
 	}
 
 	// Remove the gateway from the application's delegatee gateway public keys

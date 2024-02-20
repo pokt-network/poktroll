@@ -18,7 +18,7 @@ import (
 )
 
 func TestShowApplication(t *testing.T) {
-	net, objs := networkWithApplicationObjects(t, 2)
+	net, apps := networkWithApplicationObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -28,43 +28,43 @@ func TestShowApplication(t *testing.T) {
 		desc      string
 		idAddress string
 
-		args []string
-		err  error
-		obj  types.Application
+		args        []string
+		expectedErr error
+		app         types.Application
 	}{
 		{
 			desc:      "found",
-			idAddress: objs[0].Address,
+			idAddress: apps[0].Address,
 
 			args: common,
-			obj:  objs[0],
+			app:  apps[0],
 		},
 		{
 			desc:      "not found",
 			idAddress: strconv.Itoa(100000),
 
-			args: common,
-			err:  status.Error(codes.NotFound, "not found"),
+			args:        common,
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
-				tc.idAddress,
+				test.idAddress,
 			}
-			args = append(args, tc.args...)
+			args = append(args, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdShowApplication(), args)
-			if tc.err != nil {
-				stat, ok := status.FromError(tc.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.ErrorIs(t, stat.Err(), tc.err)
+				require.ErrorIs(t, stat.Err(), test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				var resp types.QueryGetApplicationResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Application)
 				require.Equal(t,
-					nullify.Fill(&tc.obj),
+					nullify.Fill(&test.app),
 					nullify.Fill(&resp.Application),
 				)
 			}
@@ -73,7 +73,7 @@ func TestShowApplication(t *testing.T) {
 }
 
 func TestListApplication(t *testing.T) {
-	net, objs := networkWithApplicationObjects(t, 5)
+	net, apps := networkWithApplicationObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
@@ -93,7 +93,7 @@ func TestListApplication(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(apps); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 			require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestListApplication(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(apps),
 				nullify.Fill(resp.Application),
 			)
 		}
@@ -109,7 +109,7 @@ func TestListApplication(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(apps); i += step {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 			require.NoError(t, err)
@@ -117,22 +117,22 @@ func TestListApplication(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Application), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(apps),
 				nullify.Fill(resp.Application),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(objs)), true)
+		args := request(nil, 0, uint64(len(apps)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, application.CmdListApplication(), args)
 		require.NoError(t, err)
 		var resp types.QueryAllApplicationResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
-		require.Equal(t, len(objs), int(resp.Pagination.Total))
+		require.Equal(t, len(apps), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(objs),
+			nullify.Fill(apps),
 			nullify.Fill(resp.Application),
 		)
 	})

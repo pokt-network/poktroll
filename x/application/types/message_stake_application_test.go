@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -45,7 +45,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - valid stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
@@ -54,7 +54,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - zero stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(0)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
@@ -64,7 +64,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - negative stake",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(-100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
@@ -74,7 +74,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - invalid stake denom",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
@@ -84,7 +84,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid address - invalid stake missing denom",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 				},
@@ -97,7 +97,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "valid service configs - multiple services",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "svc1"}},
 					{Service: &sharedtypes.Service{Id: "svc2"}},
@@ -108,7 +108,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "invalid service configs - not present",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				// Services: omitted
 			},
 			err: ErrAppInvalidServiceConfigs,
@@ -117,7 +117,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "invalid service configs - empty",
 			msg: MsgStakeApplication{
 				Address:  sample.AccAddress(),
-				Stake:    &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:    &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{},
 			},
 			err: ErrAppInvalidServiceConfigs,
@@ -126,7 +126,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "invalid service configs - invalid service ID that's too long",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "123456790"}},
 				},
@@ -137,7 +137,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "invalid service configs - invalid service Name that's too long",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{
 						Id:   "123",
@@ -151,7 +151,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 			name: "invalid service configs - invalid service ID that contains invalid characters",
 			msg: MsgStakeApplication{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{Service: &sharedtypes.Service{Id: "12 45 !"}},
 				},
@@ -160,11 +160,11 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.err != nil {
+				require.ErrorIs(t, err, test.err)
 				return
 			}
 			require.NoError(t, err)

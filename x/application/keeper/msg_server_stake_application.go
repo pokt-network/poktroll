@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
@@ -78,22 +77,22 @@ func (k msgServer) updateApplication(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != app.Address {
-		return sdkerrors.Wrapf(types.ErrAppUnauthorized, "msg Address (%s) != application address (%s)", msg.Address, app.Address)
+		return types.ErrAppUnauthorized.Wrapf("msg Address (%s) != application address (%s)", msg.Address, app.Address)
 	}
 
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount cannot be nil")
+		return types.ErrAppInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*app.Stake) {
-		return sdkerrors.Wrapf(types.ErrAppInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
+		return types.ErrAppInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, app.Stake)
 	}
 	app.Stake = msg.Stake
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return sdkerrors.Wrapf(types.ErrAppInvalidServiceConfigs, "must have at least one service")
+		return types.ErrAppInvalidServiceConfigs.Wrapf("must have at least one service")
 	}
 	app.ServiceConfigs = msg.Services
 

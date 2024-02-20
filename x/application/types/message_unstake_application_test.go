@@ -33,11 +33,11 @@ func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
 			err: ErrAppInvalidAddress,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.err != nil {
+				require.ErrorIs(t, err, test.err)
 				return
 			}
 			require.NoError(t, err)
