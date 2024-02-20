@@ -1,7 +1,6 @@
 package types
 
 import (
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -24,7 +23,7 @@ func (msg *MsgUpdateParams) ValidateBasic() error {
 	// Validate the address
 	_, err := sdk.AccAddressFromBech32(msg.Authority)
 	if err != nil {
-		return sdkerrors.Wrapf(ErrTokenomicsAuthorityAddressInvalid, "invalid authority address %s; (%v)", msg.Authority, err)
+		return ErrTokenomicsAuthorityAddressInvalid.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
 	// Validate the params
@@ -38,7 +37,7 @@ func (msg *MsgUpdateParams) ValidateBasic() error {
 func (params *Params) ValidateBasic() error {
 	// Validate the ComputeUnitsToTokensMultiplier
 	if params.ComputeUnitsToTokensMultiplier == 0 {
-		return sdkerrors.Wrapf(ErrTokenomicsParamsInvalid, "invalid ComputeUnitsToTokensMultiplier; (%v)", params.ComputeUnitsToTokensMultiplier)
+		return ErrTokenomicsParamsInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier; (%v)", params.ComputeUnitsToTokensMultiplier)
 	}
 	return nil
 }

@@ -64,7 +64,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
 
 	// Define test cases
-	testCases := []struct {
+	tests := []struct {
 		desc        string
 		root        []byte // smst.MerkleRoot
 		errExpected bool
@@ -112,8 +112,8 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	}
 
 	// Iterate over each test case
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Use defer-recover to catch any panic
 			defer func() {
 				if r := recover(); r != nil {
@@ -123,7 +123,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 			// Setup claim by copying the baseClaim and updating the root
 			claim := baseClaim(appAddr, supplierAddr, 0)
-			claim.RootHash = smt.MerkleRoot(tc.root[:])
+			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
 			err := func() (err error) {
@@ -136,7 +136,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 			}()
 
 			// Assert the error
-			if tc.errExpected {
+			if test.errExpected {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
 
 	// Define test cases
-	testCases := []struct {
+	tests := []struct {
 		desc        string
 		claim       *prooftypes.Claim
 		errExpected bool
@@ -213,8 +213,8 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	}
 
 	// Iterate over each test case
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Use defer-recover to catch any panic
 			defer func() {
 				if r := recover(); r != nil {
@@ -229,13 +229,13 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(ctx, tc.claim)
+				return keeper.SettleSessionAccounting(ctx, test.claim)
 			}()
 
 			// Assert the error
-			if tc.errExpected {
+			if test.errExpected {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tc.expectErr)
+				require.ErrorIs(t, err, test.expectErr)
 			} else {
 				require.NoError(t, err)
 			}

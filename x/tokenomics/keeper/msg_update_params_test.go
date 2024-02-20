@@ -21,9 +21,9 @@ func TestMsgUpdateParams(t *testing.T) {
 
 		req *types.MsgUpdateParams
 
-		expectErr     bool
-		expectedPanic bool
-		expErrMsg     string
+		expectErr      bool
+		expectedPanic  bool
+		expectedErrMsg string
 	}{
 		{
 			desc: "invalid authority address",
@@ -35,9 +35,9 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: false,
-			expErrMsg:     "invalid authority",
+			expectErr:      true,
+			expectedPanic:  false,
+			expectedErrMsg: "invalid authority",
 		},
 		{
 			desc: "incorrect authority address",
@@ -49,9 +49,9 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: false,
-			expErrMsg:     "the provided authority address does not match the on-chain governance address",
+			expectErr:      true,
+			expectedPanic:  false,
+			expectedErrMsg: "the provided authority address does not match the on-chain governance address",
 		},
 		{
 			desc: "invalid ComputeUnitsToTokensMultiplier",
@@ -64,9 +64,9 @@ func TestMsgUpdateParams(t *testing.T) {
 				},
 			},
 
-			expectErr:     true,
-			expectedPanic: true,
-			expErrMsg:     "invalid compute to tokens multiplier",
+			expectErr:      true,
+			expectedPanic:  true,
+			expectedErrMsg: "invalid compute to tokens multiplier",
 		},
 		{
 			desc: "successful param update",
@@ -84,21 +84,21 @@ func TestMsgUpdateParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			if tt.expectedPanic {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			if test.expectedPanic {
 				defer func() {
 					if r := recover(); r != nil {
-						_, err := srv.UpdateParams(ctx, tt.req)
+						_, err := srv.UpdateParams(ctx, test.req)
 						require.Error(t, err)
 					}
 				}()
 				return
 			}
-			_, err := srv.UpdateParams(ctx, tt.req)
-			if tt.expectErr {
+			_, err := srv.UpdateParams(ctx, test.req)
+			if test.expectErr {
 				require.Error(t, err)
-				require.ErrorContains(t, err, tt.expErrMsg)
+				require.ErrorContains(t, err, test.expectedErrMsg)
 			} else {
 				require.Nil(t, err)
 			}
