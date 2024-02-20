@@ -1,8 +1,6 @@
 package types
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
