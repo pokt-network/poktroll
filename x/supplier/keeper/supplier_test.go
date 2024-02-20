@@ -27,7 +27,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNSupplier(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Supplier {
+func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Supplier {
 	suppliers := make([]sharedtypes.Supplier, n)
 	for i := range suppliers {
 		supplier := &suppliers[i]
@@ -53,7 +53,7 @@ func createNSupplier(keeper keeper.Keeper, ctx context.Context, n int) []sharedt
 
 func TestSupplierGet(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	for _, supplier := range suppliers {
 		supplierFound, isSupplierFound := keeper.GetSupplier(ctx,
 			supplier.Address,
@@ -68,11 +68,9 @@ func TestSupplierGet(t *testing.T) {
 
 func TestSupplierRemove(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	for _, supplier := range suppliers {
-		keeper.RemoveSupplier(ctx,
-			supplier.Address,
-		)
+		keeper.RemoveSupplier(ctx, supplier.Address)
 		_, isSupplierFound := keeper.GetSupplier(ctx,
 			supplier.Address,
 		)
@@ -82,10 +80,10 @@ func TestSupplierRemove(t *testing.T) {
 
 func TestSupplierGetAll(t *testing.T) {
 	keeper, ctx := keepertest.SupplierKeeper(t)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(suppliers),
-		nullify.Fill(keeper.GetAllSupplier(ctx)),
+		nullify.Fill(keeper.GetAllSuppliers(ctx)),
 	)
 }
 

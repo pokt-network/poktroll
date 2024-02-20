@@ -1,15 +1,18 @@
 package config
 
-import sdkerrors "cosmossdk.io/errors"
+import (
+	sdkerrors "cosmossdk.io/errors"
+
+	"github.com/pokt-network/poktroll/x/supplier/types"
+)
 
 var (
-	codespace                              = "supplierconfig"
-	ErrSupplierConfigUnmarshalYAML         = sdkerrors.Register(codespace, 1, "config reader cannot unmarshal yaml content")
-	ErrSupplierConfigInvalidServiceId      = sdkerrors.Register(codespace, 2, "invalid serviceId in supplier config")
-	ErrSupplierConfigNoEndpoints           = sdkerrors.Register(codespace, 3, "no endpoints defined for serviceId in supplier config")
-	ErrSupplierConfigInvalidEndpointConfig = sdkerrors.Register(codespace, 4, "invalid endpoint config in supplier config")
-	ErrSupplierConfigInvalidRPCType        = sdkerrors.Register(codespace, 5, "invalid rpc type in supplier config")
-	ErrSupplierConfigInvalidURL            = sdkerrors.Register(codespace, 6, "invalid endpoint url in supplier config")
-	ErrSupplierConfigEmptyContent          = sdkerrors.Register(codespace, 7, "empty supplier config content")
-	ErrSupplierConfigInvalidStake          = sdkerrors.Register(codespace, 8, "invalid stake amount in supplier config")
+	ErrSupplierConfigUnmarshalYAML         = sdkerrors.Register(types.ModuleName, 2100, "config reader cannot unmarshal yaml content")
+	ErrSupplierConfigInvalidServiceId      = sdkerrors.Register(types.ModuleName, 2101, "invalid serviceId in supplier config")
+	ErrSupplierConfigNoEndpoints           = sdkerrors.Register(types.ModuleName, 2102, "no endpoints defined for serviceId in supplier config")
+	ErrSupplierConfigInvalidEndpointConfig = sdkerrors.Register(types.ModuleName, 2103, "invalid endpoint config in supplier config")
+	ErrSupplierConfigInvalidRPCType        = sdkerrors.Register(types.ModuleName, 2104, "invalid rpc type in supplier config")
+	ErrSupplierConfigInvalidURL            = sdkerrors.Register(types.ModuleName, 2105, "invalid endpoint url in supplier config")
+	ErrSupplierConfigEmptyContent          = sdkerrors.Register(types.ModuleName, 2106, "empty supplier config content")
+	ErrSupplierConfigInvalidStake          = sdkerrors.Register(types.ModuleName, 2107, "invalid stake amount in supplier config")
 )

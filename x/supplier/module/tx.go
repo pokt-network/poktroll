@@ -2,7 +2,6 @@ package supplier
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
@@ -10,16 +9,8 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-var (
-	DefaultRelativePacketTimeoutTimestamp = uint64((time.Duration(10) * time.Minute).Nanoseconds())
-)
-
-const (
-	flagPacketTimeoutTimestamp = "packet-timeout-timestamp"
-	listSeparator              = ","
-)
-
 // GetTxCmd returns the transaction commands for this module
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
