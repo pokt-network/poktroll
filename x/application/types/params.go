@@ -6,9 +6,9 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 var (
+	_ paramtypes.ParamSet = (*Params)(nil)
+
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
 	// TODO: Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
@@ -20,9 +20,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(
-	maxDelegatedGateways uint64,
-) Params {
+func NewParams(maxDelegatedGateways uint64) Params {
 	return Params{
 		MaxDelegatedGateways: maxDelegatedGateways,
 	}

@@ -19,7 +19,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 
 		inputConfig string
 
-		expectedError  *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 		expectedConfig *config.ApplicationStakeConfig
 	}{
 		// Valid Configs
@@ -33,7 +33,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.ApplicationStakeConfig{
 				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*sharedtypes.ApplicationServiceConfig{
@@ -52,7 +52,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 
 			inputConfig: ``,
 
-			expectedError: config.ErrApplicationConfigEmptyContent,
+			expectedErr: config.ErrApplicationConfigEmptyContent,
 		},
 		{
 			desc: "invalid: no service ids",
@@ -62,7 +62,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				service_ids: # explicitly omitting service ids
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidServiceId,
+			expectedErr: config.ErrApplicationConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid: invalid serviceId",
@@ -73,7 +73,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - sv c1
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidServiceId,
+			expectedErr: config.ErrApplicationConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid: no stake amount",
@@ -85,7 +85,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 		{
 			desc: "invalid: non-positive stake amount",
@@ -97,7 +97,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 		{
 			desc: "invalid: unsupported stake denom",
@@ -109,7 +109,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 	}
 
@@ -118,10 +118,10 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfig)
 			appServiceConfig, err := config.ParseApplicationConfigs([]byte(normalizedConfig))
 
-			if test.expectedError != nil {
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, test.expectedError)
-				require.Contains(t, err.Error(), test.expectedError.Error())
+				require.ErrorIs(t, err, test.expectedErr)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
 				require.Nil(t, appServiceConfig)
 				return
 			}
