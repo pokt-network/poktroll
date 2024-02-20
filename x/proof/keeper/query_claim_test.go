@@ -91,7 +91,7 @@ func TestClaimQuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetClaimRequest{
-				// SessionId:       Intentionally Omitted
+				// SessionId explicitly omitted
 				SupplierAddress: claims[0].GetSupplierAddress(),
 			},
 
@@ -107,7 +107,7 @@ func TestClaimQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SupplierAddress",
 			request: &types.QueryGetClaimRequest{
 				SessionId: claims[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress: Intentionally Omitted,
+				// SupplierAddress explicitly omitted
 			},
 
 			expectedErr: status.Error(

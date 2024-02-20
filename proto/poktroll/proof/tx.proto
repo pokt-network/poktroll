@@ -19,8 +19,8 @@ service Msg {
   // UpdateParams defines a (governance) operation for updating the module
   // parameters. The authority defaults to the x/gov module account.
   rpc UpdateParams (MsgUpdateParams) returns (MsgUpdateParamsResponse);
-  rpc CreateClaim  (MsgCreateClaim ) returns (MsgCreateClaimResponse );
-  rpc SubmitProof  (MsgSubmitProof ) returns (MsgSubmitProofResponse );
+  rpc CreateClaim  (MsgCreateClaim) returns (MsgCreateClaimResponse);
+  rpc SubmitProof  (MsgSubmitProof) returns (MsgSubmitProofResponse);
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
@@ -45,8 +45,9 @@ message MsgUpdateParamsResponse {}
 
 message MsgCreateClaim {
   option (cosmos.msg.v1.signer) = "supplier_address";
+
   string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  poktroll.session.SessionHeader session_header   = 2;
+  poktroll.session.SessionHeader session_header = 2;
 
   // root returned from smt.SMST#Root()
   bytes root_hash = 3;
@@ -58,7 +59,8 @@ message MsgSubmitProof {
   option (cosmos.msg.v1.signer) = "supplier_address";
 
   string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
-  poktroll.session.SessionHeader session_header   = 2;
+  poktroll.session.SessionHeader session_header = 2;
+
   // serialized version of *smt.SparseMerkleClosestProof
   bytes proof = 3;
 }

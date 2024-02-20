@@ -18,8 +18,7 @@ func NewMsgSubmitProof(supplierAddress string, sessionHeader *sessiontypes.Sessi
 }
 
 func (msg *MsgSubmitProof) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress())
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.GetSupplierAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"supplier address %q, error: %s",
 			msg.GetSupplierAddress(),
@@ -27,8 +26,7 @@ func (msg *MsgSubmitProof) ValidateBasic() error {
 		)
 	}
 
-	_, err = sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress())
-	if err != nil {
+	if _, err := sdk.AccAddressFromBech32(msg.GetSessionHeader().GetApplicationAddress()); err != nil {
 		return sdkerrors.ErrInvalidAddress.Wrapf(
 			"application address: %q, error: %s",
 			msg.GetSessionHeader().GetApplicationAddress(),

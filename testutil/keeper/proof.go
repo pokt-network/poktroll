@@ -46,10 +46,10 @@ func ProofKeeper(
 	ctrl := gomock.NewController(t)
 	mockSessionKeeper := mocks.NewMockSessionKeeper(ctrl)
 	mockSessionKeeper.EXPECT().
-		GetSession(gomock.AssignableToTypeOf(sdk.Context{}), gomock.Any()).
+		GetSession(gomock.Any(), gomock.Any()).
 		DoAndReturn(
 			func(
-				ctx sdk.Context,
+				ctx context.Context,
 				req *sessiontypes.QueryGetSessionRequest,
 			) (*sessiontypes.QueryGetSessionResponse, error) {
 				session, ok := sessionByAppAddr[req.GetApplicationAddress()]

@@ -18,7 +18,9 @@ func InitGenesis(ctx context.Context, k keeper.Keeper, genState types.GenesisSta
 		k.UpsertProof(ctx, proof)
 	}
 	// this line is used by starport scaffolding # genesis/module/init
-	k.SetParams(ctx, genState.Params)
+	if err := k.SetParams(ctx, genState.Params); err != nil {
+		panic(err)
+	}
 }
 
 // ExportGenesis returns the module's exported genesis.

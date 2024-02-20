@@ -12,12 +12,12 @@ const TypeMsgCreateClaim = "create_claim"
 var _ sdk.Msg = (*MsgCreateClaim)(nil)
 
 func NewMsgCreateClaim(
-	supplierAddress string,
+	supplierAddr string,
 	sessionHeader *sessiontypes.SessionHeader,
 	rootHash []byte,
 ) *MsgCreateClaim {
 	return &MsgCreateClaim{
-		SupplierAddress: supplierAddress,
+		SupplierAddress: supplierAddr,
 		SessionHeader:   sessionHeader,
 		RootHash:        rootHash,
 	}

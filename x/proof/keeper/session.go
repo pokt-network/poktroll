@@ -55,10 +55,10 @@ func (k msgServer) queryAndValidateSessionHeader(
 	// pair exists for the given service ID or not, respectively.
 
 	// Ensure the given supplier is in the onChainSession supplier list.
-	if found := foundSupplier(
+	if isSupplerFound := foundSupplier(
 		sessionRes.GetSession().GetSuppliers(),
 		supplierAddr,
-	); !found {
+	); !isSupplerFound {
 		return nil, types.ErrProofNotFound.Wrapf(
 			"supplier address %q not found in session ID %q",
 			supplierAddr,

@@ -11,12 +11,12 @@ import (
 // GetParams get all parameters as types.Params
 func (k Keeper) GetParams(ctx context.Context) (params types.Params) {
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	bz := store.Get(types.ParamsKey)
-	if bz == nil {
+	paramsBz := store.Get(types.ParamsKey)
+	if paramsBz == nil {
 		return params
 	}
 
-	k.cdc.MustUnmarshal(bz, &params)
+	k.cdc.MustUnmarshal(paramsBz, &params)
 	return params
 }
 

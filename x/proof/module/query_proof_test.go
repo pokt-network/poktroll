@@ -97,6 +97,7 @@ package proof_test
 // 		}
 // 		return args
 // 	}
+//
 // 	t.Run("ByOffset", func(t *testing.T) {
 // 		step := 2
 // 		for i := 0; i < len(proofs); i += step {
@@ -112,6 +113,7 @@ package proof_test
 //             )
 // 		}
 // 	})
+//
 // 	t.Run("ByKey", func(t *testing.T) {
 // 		step := 2
 // 		var next []byte
@@ -129,6 +131,9 @@ package proof_test
 // 			next = resp.Pagination.NextKey
 // 		}
 // 	})
+//
+//  TODO_BLOCKER: add "BySupplierAddress", "BySession", "ByHeight" tests.
+//
 // 	t.Run("Total", func(t *testing.T) {
 // 		args := request(nil, 0, uint64(len(proofs)), true)
 // 		out, err := clitestutil.ExecTestCLICmd(ctx, cli.CmdListProof(), args)

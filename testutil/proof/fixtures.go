@@ -45,7 +45,7 @@ func NewSessionFixturesWithPairings(
 	// Iterate over the app and supplier address pairs (two indices at a time),
 	// and create a session fixture for each app address.
 	for _, appSupplierPair := range appSupplierPairs {
-		application := newApplication(t, appSupplierPair.AppAddr, service)
+		app := newApplication(t, appSupplierPair.AppAddr, service)
 		supplier := newSupplier(t, appSupplierPair.SupplierAddr, service)
 
 		if session, ok := sessionFixturesByAppAddr[appSupplierPair.AppAddr]; ok {
@@ -64,7 +64,7 @@ func NewSessionFixturesWithPairings(
 			SessionId:           testSessionId,
 			SessionNumber:       testSessionNumber,
 			NumBlocksPerSession: testBlocksPerSession,
-			Application:         application,
+			Application:         app,
 			Suppliers: []*sharedtypes.Supplier{
 				newSupplier(t, appSupplierPair.SupplierAddr, service),
 			},
@@ -75,7 +75,7 @@ func NewSessionFixturesWithPairings(
 }
 
 // newSuppliers configures a supplier for the services provided and nil endpoints.
-func newSupplier(t *testing.T, addr string, services ...*sharedtypes.Service) *sharedtypes.Supplier {
+func newSupplier(t *testing.T, supplierAddr string, services ...*sharedtypes.Service) *sharedtypes.Supplier {
 	t.Helper()
 
 	serviceConfigs := make([]*sharedtypes.SupplierServiceConfig, len(services))
@@ -87,14 +87,14 @@ func newSupplier(t *testing.T, addr string, services ...*sharedtypes.Service) *s
 	}
 
 	return &sharedtypes.Supplier{
-		Address:  addr,
+		Address:  supplierAddr,
 		Stake:    &sdktypes.Coin{},
 		Services: serviceConfigs,
 	}
 }
 
 // newApplication configures an application for the services provided.
-func newApplication(t *testing.T, addr string, services ...*sharedtypes.Service) *apptypes.Application {
+func newApplication(t *testing.T, appAddr string, services ...*sharedtypes.Service) *apptypes.Application {
 	t.Helper()
 
 	serviceConfigs := make([]*sharedtypes.ApplicationServiceConfig, len(services))
@@ -105,7 +105,7 @@ func newApplication(t *testing.T, addr string, services ...*sharedtypes.Service)
 	}
 
 	return &apptypes.Application{
-		Address:                   addr,
+		Address:                   appAddr,
 		Stake:                     &sdktypes.Coin{},
 		ServiceConfigs:            serviceConfigs,
 		DelegateeGatewayAddresses: nil,

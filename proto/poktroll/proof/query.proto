@@ -47,7 +47,6 @@ message QueryParamsRequest {}
 
 // QueryParamsResponse is response type for the Query/Params RPC method.
 message QueryParamsResponse {
-
   // params holds all the parameters of this module.
   Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
 }
@@ -87,6 +86,7 @@ message QueryGetProofResponse {
 
 message QueryAllProofsRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
+
   oneof filter {
     string supplier_address = 2;
     string session_id = 3;

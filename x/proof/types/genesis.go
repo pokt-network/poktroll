@@ -41,14 +41,14 @@ func (gs GenesisState) Validate() error {
 	proofPrimaryKeyMap := make(map[string]struct{})
 
 	for _, proof := range gs.ProofList {
-		primaryKey := string(ProofPrimaryKey(
+		proofPrimaryKey := string(ProofPrimaryKey(
 			proof.GetSessionHeader().GetSessionId(),
 			proof.GetSupplierAddress(),
 		))
-		if _, ok := proofPrimaryKeyMap[primaryKey]; ok {
+		if _, ok := proofPrimaryKeyMap[proofPrimaryKey]; ok {
 			return fmt.Errorf("duplicated primaryKey for proof")
 		}
-		proofPrimaryKeyMap[primaryKey] = struct{}{}
+		proofPrimaryKeyMap[proofPrimaryKey] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

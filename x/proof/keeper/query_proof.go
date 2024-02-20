@@ -53,13 +53,14 @@ func (k Keeper) AllProofs(ctx context.Context, req *types.QueryAllProofsRequest)
 	var proofs []types.Proof
 	pageRes, err := query.Paginate(proofStore, req.Pagination, func(key []byte, value []byte) error {
 		if isCustomIndex {
-			// We retrieve the primaryKey, and need to query the actual proof before decoding it.
-			proof, proofFound := k.getProofByPrimaryKey(ctx, value)
-			if proofFound {
-				proofs = append(proofs, proof)
+			// If a custom index is used, the value is a primaryKey.
+			// Then we retrieve the proof using the given primaryKey.
+			foundProof, isProofFound := k.getProofByPrimaryKey(ctx, value)
+			if isProofFound {
+				proofs = append(proofs, foundProof)
 			}
 		} else {
-			// The value is an encoded proof.
+			// The value is the encoded proof.
 			var proof types.Proof
 			if err := k.cdc.Unmarshal(value, &proof); err != nil {
 				return err
@@ -88,11 +89,11 @@ func (k Keeper) Proof(ctx context.Context, req *types.QueryGetProofRequest) (*ty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	val, found := k.GetProof(ctx, req.GetSessionId(), req.GetSupplierAddress())
-	if !found {
+	foundProof, isProofFound := k.GetProof(ctx, req.GetSessionId(), req.GetSupplierAddress())
+	if !isProofFound {
 		err := types.ErrProofProofNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	return &types.QueryGetProofResponse{Proof: val}, nil
+	return &types.QueryGetProofResponse{Proof: foundProof}, nil
 }

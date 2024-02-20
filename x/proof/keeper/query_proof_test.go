@@ -79,7 +79,7 @@ func TestProofQuerySingle(t *testing.T) {
 		{
 			desc: "InvalidRequest - Missing SessionId",
 			request: &types.QueryGetProofRequest{
-				// SessionId:       Intentionally Omitted
+				// SessionId explicitly omitted
 				SupplierAddress: proofs[0].GetSupplierAddress(),
 			},
 			expectedErr: status.Error(
@@ -94,7 +94,7 @@ func TestProofQuerySingle(t *testing.T) {
 			desc: "InvalidRequest - Missing SupplierAddress",
 			request: &types.QueryGetProofRequest{
 				SessionId: proofs[0].GetSessionHeader().GetSessionId(),
-				// SupplierAddress: Intentionally Omitted,
+				// SupplierAddress explicitly omitted
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
@@ -108,9 +108,7 @@ func TestProofQuerySingle(t *testing.T) {
 			request: nil,
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidQueryRequest.Wrap(
-					"request cannot be nil",
-				).Error(),
+				types.ErrProofInvalidQueryRequest.Wrap("request cannot be nil").Error(),
 			),
 		},
 	}
@@ -148,6 +146,7 @@ func TestProofQueryPaginated(t *testing.T) {
 			},
 		}
 	}
+
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(proofs); i += step {
@@ -160,6 +159,7 @@ func TestProofQueryPaginated(t *testing.T) {
 			)
 		}
 	})
+
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
