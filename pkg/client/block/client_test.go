@@ -92,8 +92,8 @@ func TestBlockClient(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			actualBlockCh := make(chan client.Block, 10)
 
 			// Run test functions asynchronously because they can block, leading
@@ -102,7 +102,7 @@ func TestBlockClient(t *testing.T) {
 			go func(fn func() client.Block) {
 				actualBlockCh <- fn()
 				close(actualBlockCh)
-			}(tt.fn)
+			}(test.fn)
 
 			select {
 			case actualBlock := <-actualBlockCh:

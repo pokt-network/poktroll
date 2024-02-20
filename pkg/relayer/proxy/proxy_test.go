@@ -529,13 +529,13 @@ func TestRelayerProxy_Relays(t *testing.T) {
 	}
 
 	ctx := context.TODO()
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(ctx)
-			test := testproxy.NewRelayerProxyTestBehavior(ctx, t, tt.relayerProxyBehavior...)
+			testBehavior := testproxy.NewRelayerProxyTestBehavior(ctx, t, test.relayerProxyBehavior...)
 
 			rp, err := proxy.NewRelayerProxy(
-				test.Deps,
+				testBehavior.Deps,
 				proxy.WithSigningKeyName(supplierKeyName),
 				proxy.WithProxiedServicesEndpoints(proxiedServices),
 			)
@@ -545,9 +545,9 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			// Block so relayerProxy has sufficient time to start
 			time.Sleep(100 * time.Millisecond)
 
-			errCode, errMsg := tt.inputScenario(t, test)
-			require.Equal(t, tt.expectedErrCode, errCode)
-			require.True(t, strings.HasPrefix(errMsg, tt.expectedErrMsg))
+			errCode, errMsg := test.inputScenario(t, testBehavior)
+			require.Equal(t, test.expectedErrCode, errCode)
+			require.True(t, strings.HasPrefix(errMsg, test.expectedErrMsg))
 
 			cancel()
 		})

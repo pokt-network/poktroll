@@ -74,8 +74,8 @@ func TestDelegationClient(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			actualRedelegationCh := make(chan client.Redelegation, 10)
 
 			// Run test functions asynchronously because they can block, leading
@@ -84,7 +84,7 @@ func TestDelegationClient(t *testing.T) {
 			go func(fn func() client.Redelegation) {
 				actualRedelegationCh <- fn()
 				close(actualRedelegationCh)
-			}(tt.fn)
+			}(test.fn)
 
 			select {
 			case actualRedelegation := <-actualRedelegationCh:

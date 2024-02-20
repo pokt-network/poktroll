@@ -1139,17 +1139,17 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 		// than one proxy type.
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfigYAML)
 			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
-				require.ErrorIs(t, err, tt.expectedError)
+			if test.expectedError != nil {
+				require.ErrorIs(t, err, test.expectedError)
 				require.Nil(t, config)
-				stat, ok := status.FromError(tt.expectedError)
+				stat, ok := status.FromError(test.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedError.Error())
+				require.Contains(t, stat.Message(), test.expectedError.Error())
 				require.Nil(t, config)
 				return
 			}
@@ -1158,35 +1158,35 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.Equal(
 				t,
-				tt.expectedConfig.SigningKeyName,
+				test.expectedConfig.SigningKeyName,
 				config.SigningKeyName,
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.SmtStorePath,
+				test.expectedConfig.SmtStorePath,
 				config.SmtStorePath,
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.QueryNodeGRPCUrl.String(),
+				test.expectedConfig.PocketNode.QueryNodeGRPCUrl.String(),
 				config.PocketNode.QueryNodeGRPCUrl.String(),
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.QueryNodeRPCUrl.String(),
+				test.expectedConfig.PocketNode.QueryNodeRPCUrl.String(),
 				config.PocketNode.QueryNodeRPCUrl.String(),
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.TxNodeRPCUrl.String(),
+				test.expectedConfig.PocketNode.TxNodeRPCUrl.String(),
 				config.PocketNode.TxNodeRPCUrl.String(),
 			)
 
-			for proxyName, proxy := range tt.expectedConfig.Proxies {
+			for proxyName, proxy := range test.expectedConfig.Proxies {
 				require.Equal(
 					t,
 					proxy.ProxyName,

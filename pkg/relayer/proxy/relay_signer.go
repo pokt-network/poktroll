@@ -1,8 +1,6 @@
 package proxy
 
 import (
-	sdkerrors "cosmossdk.io/errors"
-
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -19,13 +17,13 @@ func (rp *relayerProxy) SignRelayResponse(relayResponse *types.RelayResponse) er
 	// extract and hash the relay response's signable bytes
 	signableBz, err := relayResponse.GetSignableBytesHash()
 	if err != nil {
-		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayResponse, "error getting signable bytes: %v", err)
+		return ErrRelayerProxyInvalidRelayResponse.Wrapf("error getting signable bytes: %v", err)
 	}
 
 	// sign the relay response
 	responseSig, err := signer.Sign(signableBz)
 	if err != nil {
-		return sdkerrors.Wrapf(ErrRelayerProxyInvalidRelayResponse, "error signing relay response: %v", err)
+		return ErrRelayerProxyInvalidRelayResponse.Wrapf("error signing relay response: %v", err)
 	}
 
 	// set the relay response's signature

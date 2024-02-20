@@ -149,28 +149,28 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfigYAML)
 			config, err := config.ParseAppGateServerConfigs([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
-				require.ErrorIs(t, err, tt.expectedError)
+			if test.expectedError != nil {
+				require.ErrorIs(t, err, test.expectedError)
 				require.Nil(t, config)
-				stat, ok := status.FromError(tt.expectedError)
+				stat, ok := status.FromError(test.expectedError)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedError.Error())
+				require.Contains(t, stat.Message(), test.expectedError.Error())
 				require.Nil(t, config)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.SelfSigning, config.SelfSigning)
-			require.Equal(t, tt.expectedConfig.SigningKey, config.SigningKey)
-			require.Equal(t, tt.expectedConfig.ListeningEndpoint.String(), config.ListeningEndpoint.String())
-			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
-			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
+			require.Equal(t, test.expectedConfig.SelfSigning, config.SelfSigning)
+			require.Equal(t, test.expectedConfig.SigningKey, config.SigningKey)
+			require.Equal(t, test.expectedConfig.ListeningEndpoint.String(), config.ListeningEndpoint.String())
+			require.Equal(t, test.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
+			require.Equal(t, test.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
 		})
 	}
 }
