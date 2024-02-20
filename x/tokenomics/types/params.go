@@ -6,9 +6,9 @@ import (
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 var (
+	_ paramtypes.ParamSet = (*Params)(nil)
+
 	KeyComputeUnitsToTokensMultiplier = []byte("ComputeUnitsToTokensMultiplier")
 	// TODO: Determine the default value
 	DefaultComputeUnitsToTokensMultiplier uint64 = 42
@@ -20,9 +20,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(
-	computeUnitsToTokensMultiplier uint64,
-) Params {
+func NewParams(computeUnitsToTokensMultiplier uint64) Params {
 	return Params{
 		ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
 	}
