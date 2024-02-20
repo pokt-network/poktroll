@@ -1,8 +1,6 @@
 package types
 
-import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
+import sdk "github.com/cosmos/cosmos-sdk/types"
 
 // TODO_TECHDEBT: Make sure this is used everywhere we validate components
 // of the session header.
