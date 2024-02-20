@@ -10,6 +10,7 @@ import (
 )
 
 // GetQueryCmd returns the cli query commands for this module
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group supplier queries under a subcommand
 	cmd := &cobra.Command{
@@ -21,7 +22,7 @@ func (am AppModule) GetQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(CmdQueryParams())
-	cmd.AddCommand(CmdListSupplier())
+	cmd.AddCommand(CmdListSuppliers())
 	cmd.AddCommand(CmdShowSupplier())
 	// this line is used by starport scaffolding # 1
 
