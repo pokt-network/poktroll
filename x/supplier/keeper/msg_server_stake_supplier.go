@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -79,23 +78,23 @@ func (k msgServer) updateSupplier(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != supplier.Address {
-		return sdkerrors.Wrapf(types.ErrSupplierUnauthorized, "msg Address (%s) != supplier address (%s)", msg.Address, supplier.Address)
+		return types.ErrSupplierUnauthorized.Wrapf("msg Address (%s) != supplier address (%s)", msg.Address, supplier.Address)
 	}
 
 	// Validate that the stake is not being lowered
 	if msg.Stake == nil {
-		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount cannot be nil")
+		return types.ErrSupplierInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*supplier.Stake) {
 
-		return sdkerrors.Wrapf(types.ErrSupplierInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
+		return types.ErrSupplierInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, supplier.Stake)
 	}
 	supplier.Stake = msg.Stake
 
 	// Validate that the service configs maintain at least one service.
 	// Additional validation is done in `msg.ValidateBasic` above.
 	if len(msg.Services) == 0 {
-		return sdkerrors.Wrapf(types.ErrSupplierInvalidServiceConfig, "must have at least one service")
+		return types.ErrSupplierInvalidServiceConfig.Wrapf("must have at least one service")
 	}
 	supplier.Services = msg.Services
 

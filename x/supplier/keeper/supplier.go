@@ -49,9 +49,7 @@ func (k Keeper) RemoveSupplier(
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyPrefix))
-	store.Delete(types.SupplierKey(
-		address,
-	))
+	store.Delete(types.SupplierKey(address))
 }
 
 // GetAllSupplier returns all supplier

@@ -17,7 +17,6 @@ import (
 func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	k, ctx := keepertest.SupplierKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// Generate an address for the supplier
 	addr := sample.AccAddress()
@@ -47,7 +46,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Stake the supplier
-	_, err := srv.StakeSupplier(wctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
@@ -81,7 +80,7 @@ func TestMsgServer_StakeSupplier_SuccessfulCreateAndUpdate(t *testing.T) {
 	}
 
 	// Update the staked supplier
-	_, err = srv.StakeSupplier(wctx, updateMsg)
+	_, err = srv.StakeSupplier(ctx, updateMsg)
 	require.NoError(t, err)
 	supplierFound, isSupplierFound = k.GetSupplier(ctx, addr)
 	require.True(t, isSupplierFound)

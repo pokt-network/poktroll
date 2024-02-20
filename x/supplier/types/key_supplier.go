@@ -10,9 +10,7 @@ const (
 )
 
 // SupplierKey returns the store key to retrieve a Supplier from the index fields
-func SupplierKey(
-	index string,
-) []byte {
+func SupplierKey(index string) []byte {
 	var key []byte
 
 	indexBytes := []byte(index)

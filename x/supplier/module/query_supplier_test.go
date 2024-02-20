@@ -30,43 +30,43 @@ func TestShowSupplier(t *testing.T) {
 		desc      string
 		idAddress string
 
-		args []string
-		err  error
-		obj  sharedtypes.Supplier
+		args        []string
+		expectedErr error
+		supplier    sharedtypes.Supplier
 	}{
 		{
 			desc:      "supplier found",
 			idAddress: suppliers[0].Address,
 
-			args: common,
-			obj:  suppliers[0],
+			args:     common,
+			supplier: suppliers[0],
 		},
 		{
 			desc:      "supplier not found",
 			idAddress: strconv.Itoa(100000),
 
-			args: common,
-			err:  status.Error(codes.NotFound, "not found"),
+			args:        common,
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
-				tc.idAddress,
+				test.idAddress,
 			}
-			args = append(args, tc.args...)
+			args = append(args, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdShowSupplier(), args)
-			if tc.err != nil {
-				stat, ok := status.FromError(tc.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.ErrorIs(t, stat.Err(), tc.err)
+				require.ErrorIs(t, stat.Err(), test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				var resp types.QueryGetSupplierResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Supplier)
 				require.Equal(t,
-					nullify.Fill(&tc.obj),
+					nullify.Fill(&test.supplier),
 					nullify.Fill(&resp.Supplier),
 				)
 			}
