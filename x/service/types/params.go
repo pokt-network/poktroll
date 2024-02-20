@@ -12,9 +12,9 @@ import (
 // TODO_BLOCKER: Revisit default param values for service fee
 const DefaultAddServiceFee = 1000000000 // 1000 POKT
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 var (
+	_ paramtypes.ParamSet = (*Params)(nil)
+
 	KeyAddServiceFee = []byte("AddServiceFee")
 )
 
@@ -24,9 +24,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(
-	addServiceFee uint64,
-) Params {
+func NewParams(addServiceFee uint64) Params {
 	return Params{
 		AddServiceFee: addServiceFee,
 	}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -14,8 +15,6 @@ import (
 	"github.com/pokt-network/poktroll/x/service/keeper"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 // Prevent strconv unused error
@@ -25,7 +24,7 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNService(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Service {
+func createNServices(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Service {
 	services := make([]sharedtypes.Service, n)
 	for i := range services {
 		services[i].Id = strconv.Itoa(i)
@@ -43,11 +42,9 @@ func TestServiceModuleAddress(t *testing.T) {
 
 func TestServiceGet(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNService(keeper, ctx, 10)
+	services := createNServices(keeper, ctx, 10)
 	for _, service := range services {
-		foundService, found := keeper.GetService(ctx,
-			service.Id,
-		)
+		foundService, found := keeper.GetService(ctx, service.Id)
 		require.True(t, found)
 		require.Equal(t,
 			nullify.Fill(&service),
@@ -57,21 +54,17 @@ func TestServiceGet(t *testing.T) {
 }
 func TestServiceRemove(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNService(keeper, ctx, 10)
+	services := createNServices(keeper, ctx, 10)
 	for _, service := range services {
-		keeper.RemoveService(ctx,
-			service.Id,
-		)
-		_, found := keeper.GetService(ctx,
-			service.Id,
-		)
+		keeper.RemoveService(ctx, service.Id)
+		_, found := keeper.GetService(ctx, service.Id)
 		require.False(t, found)
 	}
 }
 
 func TestServiceGetAll(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	services := createNService(keeper, ctx, 10)
+	services := createNServices(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(services),
 		nullify.Fill(keeper.GetAllService(ctx)),

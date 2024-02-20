@@ -1,16 +1,19 @@
 syntax = "proto3";
 package poktroll.service;
 
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 // Params defines the parameters for the module.
 message Params {
   option (amino.name) = "poktroll/x/service/Params";
   option (gogoproto.equal) = true;
 
-  
+  // The amount of uPOKT required to add a new service.
+  // This will be deducted from the signer's account balance,
+  // and transferred to the pocket network foundation.
   uint64 add_service_fee = 1 [(gogoproto.moretags) = "yaml:\"add_service_fee\""];
 }

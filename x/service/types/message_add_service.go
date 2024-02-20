@@ -21,9 +21,7 @@ func NewMsgAddService(address, serviceId, serviceName string) *MsgAddService {
 // ValidateBasic performs basic validation of the message and its fields
 func (msg *MsgAddService) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return ErrServiceInvalidAddress.Wrapf(
-			"invalid supplier address %s; (%v)", msg.Address, err,
-		)
+		return ErrServiceInvalidAddress.Wrapf("invalid supplier address %s; (%v)", msg.Address, err)
 	}
 	// TODO_TECHDEBT: Add a validate basic function to the `Service` object
 	if msg.Service.Id == "" {
