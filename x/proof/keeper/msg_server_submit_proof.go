@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/proof/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
@@ -93,12 +92,12 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 	// values are guaranteed to match.
 	claim, found := k.GetClaim(ctx, sessionId, proof.GetSupplierAddress())
 	if !found {
-		return suppliertypes.ErrSupplierClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
+		return types.ErrProofClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
 	}
 
 	// Ensure session start heights match.
 	if claim.GetSessionHeader().GetSessionStartBlockHeight() != proof.GetSessionHeader().GetSessionStartBlockHeight() {
-		return suppliertypes.ErrSupplierInvalidSessionStartHeight.Wrapf(
+		return types.ErrProofInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claim.GetSessionHeader().GetSessionStartBlockHeight(),
 			proof.GetSessionHeader().GetSessionStartBlockHeight(),
@@ -107,7 +106,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure session end heights match.
 	if claim.GetSessionHeader().GetSessionEndBlockHeight() != proof.GetSessionHeader().GetSessionEndBlockHeight() {
-		return suppliertypes.ErrSupplierInvalidSessionEndHeight.Wrapf(
+		return types.ErrProofInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claim.GetSessionHeader().GetSessionEndBlockHeight(),
 			proof.GetSessionHeader().GetSessionEndBlockHeight(),
@@ -116,7 +115,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure application addresses match.
 	if claim.GetSessionHeader().GetApplicationAddress() != proof.GetSessionHeader().GetApplicationAddress() {
-		return suppliertypes.ErrSupplierInvalidAddress.Wrapf(
+		return types.ErrProofInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claim.GetSessionHeader().GetApplicationAddress(),
 			proof.GetSessionHeader().GetApplicationAddress(),
@@ -125,7 +124,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure service IDs match.
 	if claim.GetSessionHeader().GetService().GetId() != proof.GetSessionHeader().GetService().GetId() {
-		return suppliertypes.ErrSupplierInvalidService.Wrapf(
+		return types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claim.GetSessionHeader().GetService().GetId(),
 			proof.GetSessionHeader().GetService().GetId(),

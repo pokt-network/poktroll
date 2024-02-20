@@ -114,19 +114,19 @@ func TestProofQuerySingle(t *testing.T) {
 			),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			response, err := keeper.Proof(ctx, tc.request)
-			if tc.expectedErr != nil {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			response, err := keeper.Proof(ctx, test.request)
+			if test.expectedErr != nil {
 				actualStatus, ok := status.FromError(err)
 				require.True(t, ok)
 
-				require.ErrorIs(t, actualStatus.Err(), tc.expectedErr)
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorIs(t, actualStatus.Err(), test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
-					nullify.Fill(tc.response),
+					nullify.Fill(test.response),
 					nullify.Fill(response),
 				)
 			}

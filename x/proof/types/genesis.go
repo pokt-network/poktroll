@@ -4,9 +4,6 @@ import (
 	"fmt"
 )
 
-// DefaultIndex is the default global index
-const DefaultIndex uint64 = 1
-
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
@@ -21,7 +18,7 @@ func DefaultGenesis() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in claim
-	claimIndexMap := make(map[string]struct{})
+	claimPrimaryKeyMap := make(map[string]struct{})
 
 	// Ensure claims are unique with respect to a given session ID and supplier address.
 	for _, claim := range gs.ClaimList {
@@ -37,23 +34,23 @@ func (gs GenesisState) Validate() error {
 
 		sessionId := claim.GetSessionHeader().GetSessionId()
 		primaryKey := string(ClaimPrimaryKey(sessionId, claim.SupplierAddress))
-		if _, ok := claimIndexMap[primaryKey]; ok {
+		if _, ok := claimPrimaryKeyMap[primaryKey]; ok {
 			return fmt.Errorf("duplicated supplierAddr for claim")
 		}
-		claimIndexMap[primaryKey] = struct{}{}
+		claimPrimaryKeyMap[primaryKey] = struct{}{}
 	}
 	// Check for duplicated index in proof
-	proofIndexMap := make(map[string]struct{})
+	proofPrimaryKeyMap := make(map[string]struct{})
 
 	for _, proof := range gs.ProofList {
 		primaryKey := string(ProofPrimaryKey(
 			proof.GetSessionHeader().GetSessionId(),
 			proof.GetSupplierAddress(),
 		))
-		if _, ok := proofIndexMap[primaryKey]; ok {
+		if _, ok := proofPrimaryKeyMap[primaryKey]; ok {
 			return fmt.Errorf("duplicated primaryKey for proof")
 		}
-		proofIndexMap[primaryKey] = struct{}{}
+		proofPrimaryKeyMap[primaryKey] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

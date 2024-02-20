@@ -3,9 +3,9 @@ package keeper
 import (
 	"context"
 
+	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // queryAndValidateSessionHeader ensures that a session with the sessionID of the given session
@@ -41,7 +41,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 
 	// Ensure that the given session header's session ID matches the on-chain onChainSession ID.
 	if sessionHeader.GetSessionId() != onChainSession.GetSessionId() {
-		return nil, suppliertypes.ErrSupplierInvalidSessionId.Wrapf(
+		return nil, types.ErrProofInvalidSessionId.Wrapf(
 			"session ID does not match on-chain session ID; expected %q, got %q",
 			onChainSession.GetSessionId(),
 			sessionHeader.GetSessionId(),
@@ -59,7 +59,7 @@ func (k msgServer) queryAndValidateSessionHeader(
 		sessionRes.GetSession().GetSuppliers(),
 		supplierAddr,
 	); !found {
-		return nil, suppliertypes.ErrSupplierNotFound.Wrapf(
+		return nil, types.ErrProofNotFound.Wrapf(
 			"supplier address %q not found in session ID %q",
 			supplierAddr,
 			sessionHeader.GetSessionId(),

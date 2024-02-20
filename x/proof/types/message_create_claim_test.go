@@ -96,11 +96,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			err: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.err != nil {
+				require.ErrorIs(t, err, test.err)
 			} else {
 				require.NoError(t, err)
 			}

@@ -99,25 +99,25 @@ func TestClaim_Show(t *testing.T) {
 			),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
-				tc.sessionId,
-				tc.supplierAddr,
+				test.sessionId,
+				test.supplierAddr,
 			}
-			args = append(args, tc.args...)
+			args = append(args, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, proof.CmdShowClaim(), args)
-			if tc.expectedErr != nil {
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				var resp types.QueryGetClaimResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Claim)
 
-				require.Equal(t, tc.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
-				require.Equal(t, tc.claim.GetRootHash(), resp.Claim.GetRootHash())
-				require.Equal(t, tc.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
+				require.Equal(t, test.claim.GetSupplierAddress(), resp.Claim.GetSupplierAddress())
+				require.Equal(t, test.claim.GetRootHash(), resp.Claim.GetRootHash())
+				require.Equal(t, test.claim.GetSessionHeader(), resp.Claim.GetSessionHeader())
 			}
 		})
 	}

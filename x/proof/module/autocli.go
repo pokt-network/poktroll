@@ -10,35 +10,35 @@ import (
 func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 	return &autocliv1.ModuleOptions{
 		Query: &autocliv1.ServiceCommandDescriptor{
-			Service: modulev1.Query_ServiceDesc.ServiceName,
+			Service:           modulev1.Query_ServiceDesc.ServiceName,
 			RpcCommandOptions: []*autocliv1.RpcCommandOptions{
-				{
-					RpcMethod: "Params",
-					Use:       "params",
-					Short:     "Shows the parameters of the module",
-				},
-				{
-					RpcMethod: "AllClaims",
-					Use:       "list-claim",
-					Short:     "List all claim",
-				},
-				{
-					RpcMethod:      "Claim",
-					Use:            "show-claim [id]",
-					Short:          "Shows a claim",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				},
-				{
-					RpcMethod: "AllProofs",
-					Use:       "list-proof",
-					Short:     "List all proof",
-				},
-				{
-					RpcMethod:      "Proof",
-					Use:            "show-proof [id]",
-					Short:          "Shows a proof",
-					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
-				},
+				//				{
+				//					RpcMethod: "Params",
+				//					Use:       "params",
+				//					Short:     "Shows the parameters of the module",
+				//				},
+				//				{
+				//					RpcMethod: "AllClaims",
+				//					Use:       "list-claim",
+				//					Short:     "List all claim",
+				//				},
+				//				{
+				//					RpcMethod:      "Claim",
+				//					Use:            "show-claim [id]",
+				//					Short:          "Shows a claim",
+				//					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				//				},
+				//				{
+				//					RpcMethod: "AllProofs",
+				//					Use:       "list-proof",
+				//					Short:     "List all proof",
+				//				},
+				//				{
+				//					RpcMethod:      "Proof",
+				//					Use:            "show-proof [id]",
+				//					Short:          "Shows a proof",
+				//					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
+				//				},
 				// this line is used by ignite scaffolding # autocli/query
 			},
 		},

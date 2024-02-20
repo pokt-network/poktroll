@@ -96,10 +96,10 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			createClaimRes, err := srv.CreateClaim(sdkCtx, tt.claimMsgFn(t))
-			require.ErrorContains(t, err, tt.expectedErr.Error())
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			createClaimRes, err := srv.CreateClaim(sdkCtx, test.claimMsgFn(t))
+			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, createClaimRes)
 		})
 	}
