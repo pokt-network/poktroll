@@ -73,59 +73,59 @@ func TestIsValidService(t *testing.T) {
 				Id:   test.serviceId,
 				Name: test.serviceName,
 			}
-			result := IsValidService(service)
-			require.Equal(t, test.expectedIsValid, result)
+			isValid := IsValidService(service)
+			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}
 }
 
 func TestIsValidServiceName(t *testing.T) {
 	tests := []struct {
-		desc     string
-		input    string
-		expected bool
+		desc            string
+		serviceName     string
+		expectedIsValid bool
 	}{
 		{
-			desc:     "Valid with hyphen and number",
-			input:    "ValidName-1",
-			expected: true,
+			desc:            "Valid with hyphen and number",
+			serviceName:     "ValidName-1",
+			expectedIsValid: true,
 		},
 		{
-			desc:     "Valid with space and underscore",
-			input:    "Valid Name_1",
-			expected: true,
+			desc:            "Valid with space and underscore",
+			serviceName:     "Valid Name_1",
+			expectedIsValid: true,
 		},
 		{
-			desc:     "Valid name with spaces",
-			input:    "valid name with spaces",
-			expected: true,
+			desc:            "Valid name with spaces",
+			serviceName:     "valid name with spaces",
+			expectedIsValid: true,
 		},
 		{
-			desc:     "Invalid character '@'",
-			input:    "invalid@name",
-			expected: false,
+			desc:            "Invalid character '@'",
+			serviceName:     "invalid@name",
+			expectedIsValid: false,
 		},
 		{
-			desc:     "Invalid character '.'",
-			input:    "Valid.Name",
-			expected: false,
+			desc:            "Invalid character '.'",
+			serviceName:     "Valid.Name",
+			expectedIsValid: false,
 		},
 		{
-			desc:     "Empty string",
-			input:    "",
-			expected: true,
+			desc:            "Empty string",
+			serviceName:     "",
+			expectedIsValid: true,
 		},
 		{
-			desc:     "Exceeds maximum length",
-			input:    "validnamebuttoolongvalidnamebuttoolongvalidnamebuttoolong",
-			expected: false,
+			desc:            "Exceeds maximum length",
+			serviceName:     "validnamebuttoolongvalidnamebuttoolongvalidnamebuttoolong",
+			expectedIsValid: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			result := IsValidServiceName(test.input)
-			require.Equal(t, test.expected, result)
+			isValid := IsValidServiceName(test.serviceName)
+			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}
 }
@@ -134,69 +134,69 @@ func TestIsValidServiceId(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		input    string
-		expected bool
+		serviceId       string
+		expectedIsValid bool
 	}{
 		{
 			desc: "Valid alphanumeric with hyphen",
 
-			input:    "Hello-1",
-			expected: true,
+			serviceId:       "Hello-1",
+			expectedIsValid: true,
 		},
 		{
 			desc: "Valid alphanumeric with underscore",
 
-			input:    "Hello_2",
-			expected: true,
+			serviceId:       "Hello_2",
+			expectedIsValid: true,
 		},
 		{
 			desc: "Exceeds maximum length",
 
-			input:    "hello-world",
-			expected: false, // exceeds maxServiceIdLength
+			serviceId:       "hello-world",
+			expectedIsValid: false, // exceeds maxServiceIdLength
 		},
 		{
 			desc: "Contains invalid character '@'",
 
-			input:    "Hello@",
-			expected: false, // contains invalid character '@'
+			serviceId:       "Hello@",
+			expectedIsValid: false, // contains invalid character '@'
 		},
 		{
 			desc: "All uppercase",
 
-			input:    "HELLO",
-			expected: true,
+			serviceId:       "HELLO",
+			expectedIsValid: true,
 		},
 		{
 			desc: "Maximum length boundary",
 
-			input:    "12345678",
-			expected: true, // exactly maxServiceIdLength
+			serviceId:       "12345678",
+			expectedIsValid: true, // exactly maxServiceIdLength
 		},
 		{
 			desc: "Above maximum length boundary",
 
-			input:    "123456789",
-			expected: false, // exceeds maxServiceIdLength
+			serviceId:       "123456789",
+			expectedIsValid: false, // exceeds maxServiceIdLength
 		},
 		{
 			desc: "Contains invalid character '.'",
 
-			input:    "Hello.World",
-			expected: false, // contains invalid character '.'
+			serviceId:       "Hello.World",
+			expectedIsValid: false, // contains invalid character '.'
 		},
 		{
 			desc: "Empty string",
 
-			input:    "",
-			expected: false, // empty string
+			serviceId:       "",
+			expectedIsValid: false, // empty string
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			result := IsValidServiceId(test.input)
-			require.Equal(t, test.expected, result)
+			isValid := IsValidServiceId(test.serviceId)
+			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}
 }
@@ -205,57 +205,57 @@ func TestIsValidEndpointUrl(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		input    string
-		expected bool
+		endpointURL     string
+		expectedIsValid bool
 	}{
 		{
 			desc: "valid http URL",
 
-			input:    "http://example.com",
-			expected: true,
+			endpointURL:     "http://example.com",
+			expectedIsValid: true,
 		},
 		{
 			desc: "valid https URL",
 
-			input:    "https://example.com/path?query=value#fragment",
-			expected: true,
+			endpointURL:     "https://example.com/path?query=value#fragment",
+			expectedIsValid: true,
 		},
 		{
 			desc: "valid localhost URL with scheme",
 
-			input:    "https://localhost:8081",
-			expected: true,
+			endpointURL:     "https://localhost:8081",
+			expectedIsValid: true,
 		},
 		{
 			desc: "valid loopback URL with scheme",
 
-			input:    "http://127.0.0.1:8081",
-			expected: true,
+			endpointURL:     "http://127.0.0.1:8081",
+			expectedIsValid: true,
 		},
 		{
 			desc: "invalid scheme",
 
-			input:    "ftp://example.com",
-			expected: false,
+			endpointURL:     "ftp://example.com",
+			expectedIsValid: false,
 		},
 		{
 			desc: "missing scheme",
 
-			input:    "example.com",
-			expected: false,
+			endpointURL:     "example.com",
+			expectedIsValid: false,
 		},
 		{
 			desc: "invalid URL",
 
-			input:    "not-a-valid-url",
-			expected: false,
+			endpointURL:     "not-a-valid-url",
+			expectedIsValid: false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			got := IsValidEndpointUrl(test.input)
-			require.Equal(t, test.expected, got)
+			isValid := IsValidEndpointUrl(test.endpointURL)
+			require.Equal(t, test.expectedIsValid, isValid)
 		})
 	}
 }

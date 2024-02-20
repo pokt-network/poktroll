@@ -34,7 +34,8 @@ var (
 	mapMu           = sync.RWMutex{}
 )
 
-func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
