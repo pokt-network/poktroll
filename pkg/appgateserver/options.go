@@ -1,8 +1,6 @@
 package appgateserver
 
-import (
-	"net/url"
-)
+import "net/url"
 
 // WithSigningInformation sets the signing information for the appgate server.
 func WithSigningInformation(signingInfo *SigningInformation) appGateServerOption {

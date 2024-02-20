@@ -165,8 +165,8 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 		// },
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			var (
 				ctrl = gomock.NewController(t)
 				ctx  = context.Background()
@@ -192,11 +192,11 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 			)
 
 			// Construct a signing key option using the test signing key name.
-			signingKeyOpt := tx.WithSigningKeyName(tt.signingKeyName)
+			signingKeyOpt := tx.WithSigningKeyName(test.signingKeyName)
 
 			// Attempt to create the transactions client.
 			txClient, err := tx.NewTxClient(ctx, txClientDeps, signingKeyOpt)
-			require.ErrorIs(t, err, tt.expectedErr)
+			require.ErrorIs(t, err, test.expectedErr)
 			require.Nil(t, txClient)
 		})
 	}

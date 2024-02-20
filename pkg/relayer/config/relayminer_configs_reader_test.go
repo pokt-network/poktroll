@@ -18,7 +18,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 		inputConfigYAML string
 
-		expectedError  *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 		expectedConfig *config.RelayMinerConfig
 	}{
 		// Valid Configs
@@ -52,7 +52,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
@@ -127,7 +127,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
@@ -204,7 +204,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			        - second-proxy
 			  `,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
@@ -278,7 +278,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
@@ -337,7 +337,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.RelayMinerConfig{
 				PocketNode: &config.RelayMinerPocketNodeConfig{
 					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
@@ -395,7 +395,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
+			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
 			desc: "invalid: missing tx node grpc url",
@@ -422,7 +422,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
+			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
 			desc: "invalid: invalid query node grpc url",
@@ -449,7 +449,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
+			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
 			desc: "invalid: invalid query node rpc url",
@@ -476,7 +476,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
+			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
 			desc: "invalid: missing query node grpc url",
@@ -503,7 +503,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidNodeUrl,
+			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
 		},
 		{
 			desc: "invalid: missing signing key name",
@@ -530,7 +530,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSigningKeyName,
+			expectedErr: config.ErrRelayMinerConfigInvalidSigningKeyName,
 		},
 		{
 			desc: "invalid: missing smt store path",
@@ -557,7 +557,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSmtStorePath,
+			expectedErr: config.ErrRelayMinerConfigInvalidSmtStorePath,
 		},
 		{
 			desc: "invalid: missing proxies section",
@@ -581,7 +581,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: empty proxies section",
@@ -605,7 +605,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: omitted proxy name",
@@ -632,7 +632,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: empty proxy name",
@@ -659,7 +659,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: missing http proxy host",
@@ -686,7 +686,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: empty http proxy host",
@@ -713,7 +713,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: missing proxy type",
@@ -740,7 +740,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: empty proxy type",
@@ -767,7 +767,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: unsupported proxy type",
@@ -794,7 +794,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: missing supplier name",
@@ -821,7 +821,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty supplier name",
@@ -848,7 +848,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: unsupported supplier type",
@@ -875,7 +875,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: missing supplier type",
@@ -902,7 +902,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty supplier type",
@@ -929,7 +929,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: bad supplier service config url",
@@ -956,7 +956,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty supplier service config url",
@@ -983,7 +983,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: missing supplier service config url",
@@ -1010,7 +1010,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: bad supplier host",
@@ -1037,7 +1037,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: blank supplier host",
@@ -1064,7 +1064,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty supplier proxy references",
@@ -1091,7 +1091,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - bad-proxy-name
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidSupplier,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty supplier proxy references",
@@ -1126,30 +1126,30 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				      - http-example
 				`,
 
-			expectedError: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
 			desc: "invalid: empty RelayMiner config file",
 
 			inputConfigYAML: ``,
 
-			expectedError: config.ErrRelayMinerConfigEmpty,
+			expectedErr: config.ErrRelayMinerConfigEmpty,
 		},
 		// TODO_NB: Test for supplier and proxy types mismatch once we have more
 		// than one proxy type.
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfigYAML)
 			config, err := config.ParseRelayMinerConfigs([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
-				require.ErrorIs(t, err, tt.expectedError)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				require.Nil(t, config)
-				stat, ok := status.FromError(tt.expectedError)
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedError.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				require.Nil(t, config)
 				return
 			}
@@ -1158,35 +1158,35 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			require.Equal(
 				t,
-				tt.expectedConfig.SigningKeyName,
+				test.expectedConfig.SigningKeyName,
 				config.SigningKeyName,
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.SmtStorePath,
+				test.expectedConfig.SmtStorePath,
 				config.SmtStorePath,
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.QueryNodeGRPCUrl.String(),
+				test.expectedConfig.PocketNode.QueryNodeGRPCUrl.String(),
 				config.PocketNode.QueryNodeGRPCUrl.String(),
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.QueryNodeRPCUrl.String(),
+				test.expectedConfig.PocketNode.QueryNodeRPCUrl.String(),
 				config.PocketNode.QueryNodeRPCUrl.String(),
 			)
 
 			require.Equal(
 				t,
-				tt.expectedConfig.PocketNode.TxNodeRPCUrl.String(),
+				test.expectedConfig.PocketNode.TxNodeRPCUrl.String(),
 				config.PocketNode.TxNodeRPCUrl.String(),
 			)
 
-			for proxyName, proxy := range tt.expectedConfig.Proxies {
+			for proxyName, proxy := range test.expectedConfig.Proxies {
 				require.Equal(
 					t,
 					proxy.ProxyName,

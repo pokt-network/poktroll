@@ -18,7 +18,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 
 		inputConfigYAML string
 
-		expectedError  *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 		expectedConfig *config.AppGateServerConfig
 	}{
 		// Valid Configs
@@ -33,7 +33,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.AppGateServerConfig{
 				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
@@ -52,7 +52,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.AppGateServerConfig{
 				QueryNodeRPCUrl:   &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
 				QueryNodeGRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
@@ -67,7 +67,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 
 			inputConfigYAML: ``,
 
-			expectedError: config.ErrAppGateConfigEmpty,
+			expectedErr: config.ErrAppGateConfigEmpty,
 		},
 		{
 			desc: "invalid: no signing key",
@@ -80,7 +80,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigEmptySigningKey,
+			expectedErr: config.ErrAppGateConfigEmptySigningKey,
 		},
 		{
 			desc: "invalid: invalid listening endpoint",
@@ -93,7 +93,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: l&ocalhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidListeningEndpoint,
+			expectedErr: config.ErrAppGateConfigInvalidListeningEndpoint,
 		},
 		{
 			desc: "invalid: invalid query node grpc url",
@@ -106,7 +106,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
+			expectedErr: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: missing query node grpc url",
@@ -119,7 +119,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
+			expectedErr: config.ErrAppGateConfigInvalidQueryNodeGRPCUrl,
 		},
 		{
 			desc: "invalid: invalid query node rpc url",
@@ -132,7 +132,7 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
+			expectedErr: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
 		},
 		{
 			desc: "invalid: missing query node rpc url",
@@ -145,32 +145,32 @@ func Test_ParseAppGateConfigs(t *testing.T) {
 				listening_endpoint: http://localhost:42069
 				`,
 
-			expectedError: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
+			expectedErr: config.ErrAppGateConfigInvalidQueryNodeRPCUrl,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfigYAML)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfigYAML)
 			config, err := config.ParseAppGateServerConfigs([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
-				require.ErrorIs(t, err, tt.expectedError)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				require.Nil(t, config)
-				stat, ok := status.FromError(tt.expectedError)
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedError.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				require.Nil(t, config)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.SelfSigning, config.SelfSigning)
-			require.Equal(t, tt.expectedConfig.SigningKey, config.SigningKey)
-			require.Equal(t, tt.expectedConfig.ListeningEndpoint.String(), config.ListeningEndpoint.String())
-			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
-			require.Equal(t, tt.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
+			require.Equal(t, test.expectedConfig.SelfSigning, config.SelfSigning)
+			require.Equal(t, test.expectedConfig.SigningKey, config.SigningKey)
+			require.Equal(t, test.expectedConfig.ListeningEndpoint.String(), config.ListeningEndpoint.String())
+			require.Equal(t, test.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
+			require.Equal(t, test.expectedConfig.QueryNodeGRPCUrl.String(), config.QueryNodeGRPCUrl.String())
 		})
 	}
 }

@@ -1,8 +1,6 @@
 package supplier
 
-import (
-	"github.com/pokt-network/poktroll/pkg/client"
-)
+import "github.com/pokt-network/poktroll/pkg/client"
 
 // WithSigningKeyName sets the name of the key which the supplier client should
 // retrieve from the keyring to use for authoring and signing CreateClaim and

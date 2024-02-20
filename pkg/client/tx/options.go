@@ -1,8 +1,6 @@
 package tx
 
-import (
-	"github.com/pokt-network/poktroll/pkg/client"
-)
+import "github.com/pokt-network/poktroll/pkg/client"
 
 // WithCommitTimeoutBlocks sets the timeout duration in terms of number of blocks
 // for the client to wait for broadcast transactions to be committed before

@@ -118,12 +118,12 @@ func TestOnError(t *testing.T) {
 	}
 
 	// Verify the error messages logged during the retries.
-	expectedErrorLine := "ERROR: retrying TestOnError after error: test error"
+	expectedErrLine := "ERROR: retrying TestOnError after error: test error"
 	trimmedLogOutput := strings.Trim(logOutput.String(), "\n")
 	logOutputLines := strings.Split(trimmedLogOutput, "\n")
 	require.Lenf(t, logOutputLines, expectedRetryLimit, "unexpected number of log lines")
 	for _, line := range logOutputLines {
-		require.Contains(t, line, expectedErrorLine, "log line does not contain the expected prefix")
+		require.Contains(t, line, expectedErrLine, "log line does not contain the expected prefix")
 	}
 }
 
@@ -213,11 +213,11 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 
 	// Verify the logged error messages
 	var (
-		logOutputLines   = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
-		errorLines       = logOutputLines[:len(logOutputLines)-1]
-		warnLine         = logOutputLines[len(logOutputLines)-1]
-		expectedWarnMsg  = "WARN: error channel for TestOnError_ExitsWhenErrChCloses closed, will no longer retry on error"
-		expectedErrorMsg = "ERROR: retrying TestOnError_ExitsWhenErrChCloses after error: test error"
+		logOutputLines  = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
+		errorLines      = logOutputLines[:len(logOutputLines)-1]
+		warnLine        = logOutputLines[len(logOutputLines)-1]
+		expectedWarnMsg = "WARN: error channel for TestOnError_ExitsWhenErrChCloses closed, will no longer retry on error"
+		expectedErrMsg  = "ERROR: retrying TestOnError_ExitsWhenErrChCloses after error: test error"
 	)
 
 	require.Lenf(
@@ -227,7 +227,7 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 		expectedRetryLimit, len(logOutputLines),
 	)
 	for _, line := range errorLines {
-		require.Contains(t, line, expectedErrorMsg)
+		require.Contains(t, line, expectedErrMsg)
 	}
 	require.Contains(t, warnLine, expectedWarnMsg)
 }

@@ -1,8 +1,6 @@
 package events
 
-import (
-	sdkerrors "cosmossdk.io/errors"
-)
+import sdkerrors "cosmossdk.io/errors"
 
 var (
 	codespace = "events"
