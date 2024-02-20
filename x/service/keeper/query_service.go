@@ -6,12 +6,11 @@ import (
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/types/query"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // AllServices queries all services.
@@ -48,10 +47,7 @@ func (k Keeper) Service(ctx context.Context, req *types.QueryGetServiceRequest) 
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	service, found := k.GetService(
-		ctx,
-		req.Index,
-	)
+	service, found := k.GetService(ctx, req.Id)
 	if !found {
 		return nil, status.Error(codes.NotFound, "not found")
 	}

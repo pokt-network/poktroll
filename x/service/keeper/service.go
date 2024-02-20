@@ -16,9 +16,7 @@ func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	serviceBz := k.cdc.MustMarshal(&service)
-	store.Set(types.ServiceKey(
-		service.Id,
-	), serviceBz)
+	store.Set(types.ServiceKey(service.Id), serviceBz)
 }
 
 // GetService returns a service from its index
@@ -29,9 +27,7 @@ func (k Keeper) GetService(
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 
-	serviceBz := store.Get(types.ServiceKey(
-		serviceId,
-	))
+	serviceBz := store.Get(types.ServiceKey(serviceId))
 	if serviceBz == nil {
 		return service, false
 	}

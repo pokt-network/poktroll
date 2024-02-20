@@ -74,7 +74,7 @@ func TestCLI_AddService(t *testing.T) {
 		desc            string
 		supplierAddress string
 		service         sharedtypes.Service
-		err             *sdkerrors.Error
+		expectedErr     *sdkerrors.Error
 	}{
 		{
 			desc:            "valid - add new service",
@@ -85,25 +85,25 @@ func TestCLI_AddService(t *testing.T) {
 			desc:            "invalid - missing service id",
 			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
-			err:             types.ErrServiceMissingID,
+			expectedErr:     types.ErrServiceMissingID,
 		},
 		{
 			desc:            "invalid - missing service name",
 			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
-			err:             types.ErrServiceMissingName,
+			expectedErr:     types.ErrServiceMissingName,
 		},
 		{
 			desc:            "invalid - invalid supplier address",
 			supplierAddress: "invalid address",
 			service:         svc1,
-			err:             types.ErrServiceInvalidAddress,
+			expectedErr:     types.ErrServiceInvalidAddress,
 		},
 		{
 			desc:            "invalid - service already staked",
 			supplierAddress: account.Address.String(),
 			service:         svc2,
-			err:             types.ErrServiceAlreadyExists,
+			expectedErr:     types.ErrServiceAlreadyExists,
 		},
 	}
 
@@ -125,10 +125,10 @@ func TestCLI_AddService(t *testing.T) {
 			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
 
 			// Validate the error if one is expected
-			if test.err != nil {
-				stat, ok := status.FromError(test.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), test.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

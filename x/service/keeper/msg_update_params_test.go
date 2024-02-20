@@ -15,13 +15,13 @@ func TestMsgUpdateParams(t *testing.T) {
 
 	// default params
 	tests := []struct {
-		name           string
+		desc           string
 		input          *types.MsgUpdateParams
 		shouldError    bool
 		expectedErrMsg string
 	}{
 		{
-			name: "invalid authority",
+			desc: "invalid authority",
 			input: &types.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
@@ -30,7 +30,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			name: "send enabled param",
+			desc: "send enabled param",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
@@ -38,7 +38,7 @@ func TestMsgUpdateParams(t *testing.T) {
 			shouldError: false,
 		},
 		{
-			name: "all good",
+			desc: "all good",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,
@@ -48,7 +48,7 @@ func TestMsgUpdateParams(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.desc, func(t *testing.T) {
 			_, err := ms.UpdateParams(ctx, test.input)
 
 			if test.shouldError {

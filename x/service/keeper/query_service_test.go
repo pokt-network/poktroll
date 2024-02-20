@@ -19,44 +19,44 @@ var _ = strconv.IntSize
 
 func TestServiceQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	msgs := createNService(keeper, ctx, 2)
+	msgs := createNServices(keeper, ctx, 2)
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetServiceRequest
-		response *types.QueryGetServiceResponse
-		err      error
+		desc        string
+		request     *types.QueryGetServiceRequest
+		response    *types.QueryGetServiceResponse
+		expectedErr error
 	}{
 		{
 			desc: "First",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[0].Id,
+				Id: msgs[0].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[1].Id,
+				Id: msgs[1].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetServiceRequest{
-				Index: strconv.Itoa(100000),
+				Id: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc:        "InvalidRequest",
+			expectedErr: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			response, err := keeper.Service(ctx, test.request)
-			if test.err != nil {
-				require.ErrorIs(t, err, test.err)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
@@ -70,7 +70,7 @@ func TestServiceQuerySingle(t *testing.T) {
 
 func TestServiceQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	msgs := createNService(keeper, ctx, 5)
+	msgs := createNServices(keeper, ctx, 5)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllServicesRequest {
 		return &types.QueryAllServicesRequest{

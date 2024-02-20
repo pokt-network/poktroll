@@ -3,10 +3,10 @@ package types_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
@@ -22,18 +22,18 @@ func TestGenesisState_Validate(t *testing.T) {
 
 	svc3 := &sharedtypes.Service{
 		Id:   "svcId3",
-		Name: "svcName1",
+		Name: svc1.Name,
 	}
 
 	tests := []struct {
-		desc          string
-		genState      *types.GenesisState
-		expectedError error
+		desc        string
+		genState    *types.GenesisState
+		expectedErr error
 	}{
 		{
-			desc:          "default is valid",
-			genState:      types.DefaultGenesis(),
-			expectedError: nil,
+			desc:        "default is valid",
+			genState:    types.DefaultGenesis(),
+			expectedErr: nil,
 		},
 		{
 			desc: "valid genesis state",
@@ -44,7 +44,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
-			expectedError: nil,
+			expectedErr: nil,
 		},
 		{
 			desc: "invalid - duplicate service ID",
@@ -54,7 +54,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					*svc1, *svc1,
 				},
 			},
-			expectedError: types.ErrServiceDuplicateIndex,
+			expectedErr: types.ErrServiceDuplicateIndex,
 		},
 		{
 			desc: "invalid - duplicate service name",
@@ -64,7 +64,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					*svc1, *svc3,
 				},
 			},
-			expectedError: types.ErrServiceDuplicateIndex,
+			expectedErr: types.ErrServiceDuplicateIndex,
 		},
 		{
 			desc: "invalid - invalid add service fee parameter (below minimum)",
@@ -76,7 +76,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					*svc1, *svc2,
 				},
 			},
-			expectedError: types.ErrServiceInvalidServiceFee,
+			expectedErr: types.ErrServiceInvalidServiceFee,
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
@@ -84,10 +84,10 @@ func TestGenesisState_Validate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			err := test.genState.Validate()
-			if test.expectedError == nil {
+			if test.expectedErr == nil {
 				require.NoError(t, err)
 			} else {
-				require.ErrorIs(t, err, test.expectedError)
+				require.ErrorIs(t, err, test.expectedErr)
 			}
 		})
 	}
