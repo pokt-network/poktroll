@@ -19,48 +19,48 @@ var _ = strconv.IntSize
 
 func TestServiceQuerySingle(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	msgs := createNService(keeper, ctx, 2)
+	msgs := createNServices(keeper, ctx, 2)
 	tests := []struct {
-		desc     string
-		request  *types.QueryGetServiceRequest
-		response *types.QueryGetServiceResponse
-		err      error
+		desc        string
+		request     *types.QueryGetServiceRequest
+		response    *types.QueryGetServiceResponse
+		expectedErr error
 	}{
 		{
 			desc: "First",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[0].Id,
+				Id: msgs[0].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[0]},
 		},
 		{
 			desc: "Second",
 			request: &types.QueryGetServiceRequest{
-				Index: msgs[1].Id,
+				Id: msgs[1].Id,
 			},
 			response: &types.QueryGetServiceResponse{Service: msgs[1]},
 		},
 		{
 			desc: "KeyNotFound",
 			request: &types.QueryGetServiceRequest{
-				Index: strconv.Itoa(100000),
+				Id: strconv.Itoa(100000),
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 		{
-			desc: "InvalidRequest",
-			err:  status.Error(codes.InvalidArgument, "invalid request"),
+			desc:        "InvalidRequest",
+			expectedErr: status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			response, err := keeper.Service(ctx, tc.request)
-			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			response, err := keeper.Service(ctx, test.request)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
-					nullify.Fill(tc.response),
+					nullify.Fill(test.response),
 					nullify.Fill(response),
 				)
 			}
@@ -70,10 +70,10 @@ func TestServiceQuerySingle(t *testing.T) {
 
 func TestServiceQueryPaginated(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
-	msgs := createNService(keeper, ctx, 5)
+	msgs := createNServices(keeper, ctx, 5)
 
-	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllServiceRequest {
-		return &types.QueryAllServiceRequest{
+	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllServicesRequest {
+		return &types.QueryAllServicesRequest{
 			Pagination: &query.PageRequest{
 				Key:        next,
 				Offset:     offset,
@@ -85,7 +85,7 @@ func TestServiceQueryPaginated(t *testing.T) {
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ServiceAll(ctx, request(nil, uint64(i), uint64(step), false))
+			resp, err := keeper.AllServices(ctx, request(nil, uint64(i), uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Service), step)
 			require.Subset(t,
@@ -98,7 +98,7 @@ func TestServiceQueryPaginated(t *testing.T) {
 		step := 2
 		var next []byte
 		for i := 0; i < len(msgs); i += step {
-			resp, err := keeper.ServiceAll(ctx, request(next, 0, uint64(step), false))
+			resp, err := keeper.AllServices(ctx, request(next, 0, uint64(step), false))
 			require.NoError(t, err)
 			require.LessOrEqual(t, len(resp.Service), step)
 			require.Subset(t,
@@ -109,7 +109,7 @@ func TestServiceQueryPaginated(t *testing.T) {
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		resp, err := keeper.ServiceAll(ctx, request(nil, 0, 0, true))
+		resp, err := keeper.AllServices(ctx, request(nil, 0, 0, true))
 		require.NoError(t, err)
 		require.Equal(t, len(msgs), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
@@ -118,7 +118,7 @@ func TestServiceQueryPaginated(t *testing.T) {
 		)
 	})
 	t.Run("InvalidRequest", func(t *testing.T) {
-		_, err := keeper.ServiceAll(ctx, nil)
+		_, err := keeper.AllServices(ctx, nil)
 		require.ErrorIs(t, err, status.Error(codes.InvalidArgument, "invalid request"))
 	})
 }

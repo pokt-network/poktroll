@@ -1,15 +1,15 @@
 syntax = "proto3";
-
 package poktroll.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
+
 import "poktroll/service/params.proto";
 import "poktroll/shared/service.proto";
-
-option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -22,10 +22,10 @@ service Query {
 
   // Queries a list of Service items.
   rpc Service    (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/service/{index}";
+    option (google.api.http).get = "/pokt-network/poktroll/service/service/{id}";
 
   }
-  rpc ServiceAll (QueryAllServiceRequest) returns (QueryAllServiceResponse) {
+  rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/service/service";
 
   }
@@ -41,18 +41,19 @@ message QueryParamsResponse {
 }
 
 message QueryGetServiceRequest {
-  string index = 1;
+  // TODO: We could support getting services by name.
+  string id = 1;
 }
 
 message QueryGetServiceResponse {
   poktroll.shared.Service service = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllServiceRequest {
+message QueryAllServicesRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
 
-message QueryAllServiceResponse {
+message QueryAllServicesResponse {
   repeated poktroll.shared.Service service = 1 [(gogoproto.nullable) = false];
   cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
