@@ -251,7 +251,7 @@ flowchart
         end
     end
 
-    subgraph AG[Application Gateway]
+    subgraph GA[Gateway Application]
         subgraph AGRing[Ring Signature]
             G3["Gateway 3<br>(Application 3)"]
             G3 <--> G3
@@ -259,12 +259,12 @@ flowchart
     end
 
     C --->|Relay| SA
-    C -->|Relay| AG
     C -->|Relay| DA
+    C -->|Relay| GA
 
-    AG --->|Signature| S
-    DA --->|Signature| S
     SA --->|Signature| S
+    DA --->|Signature| S
+    GA --->|Signature| S
 
     S-->|Validate Signature| S
 ```
