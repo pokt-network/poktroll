@@ -22,14 +22,14 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNGateway(keeper keeper.Keeper, ctx context.Context, n int) []types.Gateway {
-	items := make([]types.Gateway, n)
-	for i := range items {
-		items[i].Address = strconv.Itoa(i)
+func createNGateways(keeper keeper.Keeper, ctx context.Context, n int) []types.Gateway {
+	gateway := make([]types.Gateway, n)
+	for i := range gateway {
+		gateway[i].Address = strconv.Itoa(i)
 
-		keeper.SetGateway(ctx, items[i])
+		keeper.SetGateway(ctx, gateway[i])
 	}
-	return items
+	return gateway
 }
 
 func TestGatewayModuleAddress(t *testing.T) {
@@ -39,37 +39,37 @@ func TestGatewayModuleAddress(t *testing.T) {
 
 func TestGatewayGet(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
-	for _, item := range items {
-		rst, found := keeper.GetGateway(ctx,
-			item.Address,
+	gateways := createNGateways(keeper, ctx, 10)
+	for _, gateway := range gateways {
+		foundGateway, found := keeper.GetGateway(ctx,
+			gateway.Address,
 		)
 		require.True(t, found)
 		require.Equal(t,
-			nullify.Fill(&item),
-			nullify.Fill(&rst),
+			nullify.Fill(&gateway),
+			nullify.Fill(&foundGateway),
 		)
 	}
 }
 func TestGatewayRemove(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
-	for _, item := range items {
+	gateways := createNGateways(keeper, ctx, 10)
+	for _, gateway := range gateways {
 		keeper.RemoveGateway(ctx,
-			item.Address,
+			gateway.Address,
 		)
 		_, found := keeper.GetGateway(ctx,
-			item.Address,
+			gateway.Address,
 		)
 		require.False(t, found)
 	}
 }
 
-func TestGatewayGetAll(t *testing.T) {
+func TestGatewaysGetAll(t *testing.T) {
 	keeper, ctx := keepertest.GatewayKeeper(t)
-	items := createNGateway(keeper, ctx, 10)
+	gateways := createNGateways(keeper, ctx, 10)
 	require.ElementsMatch(t,
-		nullify.Fill(items),
-		nullify.Fill(keeper.GetAllGateway(ctx)),
+		nullify.Fill(gateways),
+		nullify.Fill(keeper.GetAllGateways(ctx)),
 	)
 }

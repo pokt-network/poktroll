@@ -13,7 +13,7 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func (k Keeper) GatewayAll(ctx context.Context, req *types.QueryAllGatewayRequest) (*types.QueryAllGatewayResponse, error) {
+func (k Keeper) AllGateways(ctx context.Context, req *types.QueryAllGatewaysRequest) (*types.QueryAllGatewaysResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
@@ -37,7 +37,7 @@ func (k Keeper) GatewayAll(ctx context.Context, req *types.QueryAllGatewayReques
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllGatewayResponse{Gateway: gateways, Pagination: pageRes}, nil
+	return &types.QueryAllGatewaysResponse{Gateway: gateways, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) (*types.QueryGetGatewayResponse, error) {
@@ -45,12 +45,12 @@ func (k Keeper) Gateway(ctx context.Context, req *types.QueryGetGatewayRequest) 
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetGateway(
+	gateway, found := k.GetGateway(
 		ctx,
 		req.Address,
 	)
 	if !found {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("gateway not found: address %s", req.Address))
 	}
-	return &types.QueryGetGatewayResponse{Gateway: val}, nil
+	return &types.QueryGetGatewayResponse{Gateway: gateway}, nil
 }

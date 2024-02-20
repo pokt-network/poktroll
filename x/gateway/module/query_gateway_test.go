@@ -100,7 +100,7 @@ func TestListGateway(t *testing.T) {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewayResponse
+			var resp types.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
@@ -116,7 +116,7 @@ func TestListGateway(t *testing.T) {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 			require.NoError(t, err)
-			var resp types.QueryAllGatewayResponse
+			var resp types.QueryAllGatewaysResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateway), step)
 			require.Subset(t,
@@ -130,7 +130,7 @@ func TestListGateway(t *testing.T) {
 		args := request(nil, 0, uint64(len(objs)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 		require.NoError(t, err)
-		var resp types.QueryAllGatewayResponse
+		var resp types.QueryAllGatewaysResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
 		require.Equal(t, len(objs), int(resp.Pagination.Total))

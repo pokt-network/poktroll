@@ -29,11 +29,11 @@ $ poktrolld q gateway list-gateway --node $(POCKET_NODE) --home=$(POKTROLLD_HOME
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllGatewayRequest{
+			params := &types.QueryAllGatewaysRequest{
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.GatewayAll(cmd.Context(), params)
+			res, err := queryClient.AllGateways(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

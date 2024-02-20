@@ -14,30 +14,29 @@ import (
 func (k Keeper) SetGateway(ctx context.Context, gateway types.Gateway) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
-	b := k.cdc.MustMarshal(&gateway)
+	gatewayBz := k.cdc.MustMarshal(&gateway)
 	store.Set(types.GatewayKey(
 		gateway.Address,
-	), b)
+	), gatewayBz)
 }
 
 // GetGateway returns a gateway from its index
 func (k Keeper) GetGateway(
 	ctx context.Context,
 	address string,
-
-) (val types.Gateway, found bool) {
+) (gateway types.Gateway, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 
-	b := store.Get(types.GatewayKey(
+	gatewayBz := store.Get(types.GatewayKey(
 		address,
 	))
-	if b == nil {
-		return val, false
+	if gatewayBz == nil {
+		return gateway, false
 	}
 
-	k.cdc.MustUnmarshal(b, &val)
-	return val, true
+	k.cdc.MustUnmarshal(gatewayBz, &gateway)
+	return gateway, true
 }
 
 // RemoveGateway removes a gateway from the store
@@ -53,8 +52,8 @@ func (k Keeper) RemoveGateway(
 	))
 }
 
-// GetAllGateway returns all gateway
-func (k Keeper) GetAllGateway(ctx context.Context) (list []types.Gateway) {
+// GetAllGateways returns all gateway
+func (k Keeper) GetAllGateways(ctx context.Context) (gateways []types.Gateway) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -62,9 +61,9 @@ func (k Keeper) GetAllGateway(ctx context.Context) (list []types.Gateway) {
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var val types.Gateway
-		k.cdc.MustUnmarshal(iterator.Value(), &val)
-		list = append(list, val)
+		var gateway types.Gateway
+		k.cdc.MustUnmarshal(iterator.Value(), &gateway)
+		gateways = append(gateways, gateway)
 	}
 
 	return

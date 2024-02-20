@@ -18,7 +18,7 @@ func (am AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Short:     "Shows the parameters of the module",
 				},
 				{
-					RpcMethod: "GatewayAll",
+					RpcMethod: "AllGateways",
 					Use:       "list-gateway",
 					Short:     "List all gateway",
 				},

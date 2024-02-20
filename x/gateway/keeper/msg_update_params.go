@@ -18,6 +18,7 @@ func (k msgServer) UpdateParams(
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
+	// NOTE(#322): Omitted parameters will be set to their zero value.
 	if err := k.SetParams(ctx, req.Params); err != nil {
 		return nil, err
 	}
