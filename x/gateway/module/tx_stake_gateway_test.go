@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
@@ -30,6 +30,9 @@ func TestCLI_StakeGateway(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	gatewayAccount := accounts[0]
 
+	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, gatewayAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -37,14 +40,14 @@ func TestCLI_StakeGateway(t *testing.T) {
 	commonArgs := []string{
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 
 	tests := []struct {
-		desc          string
-		address       string
-		inputConfig   string
-		expectedError *sdkerrors.Error
+		desc        string
+		address     string
+		inputConfig string
+		expectedErr *sdkerrors.Error
 	}{
 		{
 			desc:    "stake gateway: invalid address",
@@ -52,7 +55,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidAddress,
+			expectedErr: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc: "stake gateway: missing address",
@@ -60,7 +63,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidAddress,
+			expectedErr: types.ErrGatewayInvalidAddress,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (zero)",
@@ -68,7 +71,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 0upokt
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedErr: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake amount (negative)",
@@ -76,7 +79,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: -1000upokt
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedErr: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake denom",
@@ -84,7 +87,7 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000invalid
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedErr: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: invalid stake missing denom",
@@ -92,13 +95,13 @@ func TestCLI_StakeGateway(t *testing.T) {
 			inputConfig: `
 			  stake_amount: 1000
 				`,
-			expectedError: types.ErrGatewayInvalidStake,
+			expectedErr: types.ErrGatewayInvalidStake,
 		},
 		{
-			desc:          "stake gateway: invalid stake missing stake",
-			address:       gatewayAccount.Address.String(),
-			inputConfig:   ``,
-			expectedError: types.ErrGatewayInvalidStake,
+			desc:        "stake gateway: invalid stake missing stake",
+			address:     gatewayAccount.Address.String(),
+			inputConfig: ``,
+			expectedErr: types.ErrGatewayInvalidStake,
 		},
 		{
 			desc:    "stake gateway: valid",
@@ -109,32 +112,29 @@ func TestCLI_StakeGateway(t *testing.T) {
 		},
 	}
 
-	// Initialize the Gateway Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, gatewayAccount.Address)
-
 	// Run the tests
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
 			// write the stake config to a file
-			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(tt.inputConfig)).Name()
+			configPath := testutil.WriteToNewTempFile(t, yaml.NormalizeYAMLIndentation(test.inputConfig)).Name()
 			t.Cleanup(func() { os.Remove(configPath) })
 
 			// Prepare the arguments for the CLI command
 			args := []string{
 				fmt.Sprintf("--config=%s", configPath),
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.address),
 			}
 			args = append(args, commonArgs...)
 
 			// Execute the command
 			outStake, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdStakeGateway(), args)
-			if tt.expectedError != nil {
-				stat, ok := status.FromError(tt.expectedError)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.expectedError.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

@@ -1,6 +1,6 @@
-package types
-
 //go:generate mockgen -destination ../../../testutil/gateway/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper
+
+package types
 
 import (
 	"context"
@@ -28,10 +28,4 @@ type BankKeeper interface {
 		recipientAddr sdk.AccAddress,
 		amt sdk.Coins,
 	) error
-}
-
-// ParamSubspace defines the expected Subspace interface for parameters.
-type ParamSubspace interface {
-	Get(context.Context, []byte, interface{})
-	Set(context.Context, []byte, interface{})
 }

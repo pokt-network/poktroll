@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -27,7 +27,7 @@ func Test_ParseGatewayStakeConfig(t *testing.T) {
 				`,
 			expectedError: nil,
 			expectedConfig: &config.GatewayStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", sdkmath.NewInt(1000)),
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
 			},
 		},
 		// Invalid Configs
@@ -59,23 +59,23 @@ func Test_ParseGatewayStakeConfig(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfig)
 			supplierServiceConfig, err := config.ParseGatewayConfig([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
+			if test.expectedError != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tt.expectedError)
-				require.Contains(t, err.Error(), tt.expectedError.Error())
+				require.ErrorIs(t, err, test.expectedError)
+				require.Contains(t, err.Error(), test.expectedError.Error())
 				require.Nil(t, supplierServiceConfig)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.StakeAmount, supplierServiceConfig.StakeAmount)
-			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
+			require.Equal(t, test.expectedConfig.StakeAmount, supplierServiceConfig.StakeAmount)
+			require.Equal(t, test.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
 		})
 	}
 }

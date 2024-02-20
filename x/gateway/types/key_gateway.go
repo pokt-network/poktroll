@@ -10,9 +10,7 @@ const (
 )
 
 // GatewayKey returns the store key to retrieve a Gateway from the index fields
-func GatewayKey(
-	address string,
-) []byte {
+func GatewayKey(address string) []byte {
 	var key []byte
 
 	addressBytes := []byte(address)

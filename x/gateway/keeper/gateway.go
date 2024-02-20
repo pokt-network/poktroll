@@ -47,9 +47,7 @@ func (k Keeper) RemoveGateway(
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.GatewayKeyPrefix))
-	store.Delete(types.GatewayKey(
-		address,
-	))
+	store.Delete(types.GatewayKey(address))
 }
 
 // GetAllGateways returns all gateway

@@ -1,12 +1,8 @@
 package types
 
 import (
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
-
-// DefaultIndex is the default global index
-const DefaultIndex uint64 = 1
 
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
@@ -20,31 +16,31 @@ func DefaultGenesis() *GenesisState {
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
 func (gs GenesisState) Validate() error {
-	gatewayIndexMap := make(map[string]struct{})
+	gatewayAddrMap := make(map[string]struct{})
 
 	for _, gateway := range gs.GatewayList {
-		// Check for duplicated index in gateway
-		index := string(GatewayKey(gateway.Address))
-		if _, ok := gatewayIndexMap[index]; ok {
-			return sdkerrors.Wrap(ErrGatewayInvalidAddress, "duplicated index for gateway")
+		// Check for duplicated address in gateway
+		address := string(GatewayKey(gateway.Address))
+		if _, ok := gatewayAddrMap[address]; ok {
+			return ErrGatewayInvalidAddress.Wrap("duplicated index for gateway")
 		}
-		gatewayIndexMap[index] = struct{}{}
+		gatewayAddrMap[address] = struct{}{}
 		// Validate the stake of each gateway
 		if gateway.Stake == nil {
-			return sdkerrors.Wrap(ErrGatewayInvalidStake, "nil stake amount for gateway")
+			return ErrGatewayInvalidStake.Wrap("nil stake amount for gateway")
 		}
 		stake, err := sdk.ParseCoinNormalized(gateway.Stake.String())
 		if !stake.IsValid() {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway %v; (%v)", gateway.Stake, stake.Validate())
+			return ErrGatewayInvalidStake.Wrapf("invalid stake amount for gateway %v; (%v)", gateway.Stake, stake.Validate())
 		}
 		if err != nil {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "cannot parse stake amount for gateway %v; (%v)", gateway.Stake, err)
+			return ErrGatewayInvalidStake.Wrapf("cannot parse stake amount for gateway %v; (%v)", gateway.Stake, err)
 		}
 		if stake.IsZero() || stake.IsNegative() {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount for gateway: %v <= 0", gateway.Stake)
+			return ErrGatewayInvalidStake.Wrapf("invalid stake amount for gateway: %v <= 0", gateway.Stake)
 		}
 		if stake.Denom != "upokt" {
-			return sdkerrors.Wrapf(ErrGatewayInvalidStake, "invalid stake amount denom for gateway %v", gateway.Stake)
+			return ErrGatewayInvalidStake.Wrapf("invalid stake amount denom for gateway %v", gateway.Stake)
 		}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate

@@ -21,7 +21,7 @@ import (
 var _ = strconv.IntSize
 
 func TestShowGateway(t *testing.T) {
-	net, objs := networkWithGatewayObjects(t, 2)
+	net, gateways := networkWithGatewayObjects(t, 2)
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
@@ -31,43 +31,43 @@ func TestShowGateway(t *testing.T) {
 		desc      string
 		idAddress string
 
-		args []string
-		err  error
-		obj  types.Gateway
+		args        []string
+		expectedErr error
+		gateway     types.Gateway
 	}{
 		{
 			desc:      "found",
-			idAddress: objs[0].Address,
+			idAddress: gateways[0].Address,
 
-			args: common,
-			obj:  objs[0],
+			args:    common,
+			gateway: gateways[0],
 		},
 		{
 			desc:      "not found",
 			idAddress: strconv.Itoa(100000),
 
-			args: common,
-			err:  status.Error(codes.NotFound, "not found"),
+			args:        common,
+			expectedErr: status.Error(codes.NotFound, "not found"),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			args := []string{
-				tc.idAddress,
+				test.idAddress,
 			}
-			args = append(args, tc.args...)
+			args = append(args, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdShowGateway(), args)
-			if tc.err != nil {
-				stat, ok := status.FromError(tc.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.ErrorIs(t, stat.Err(), tc.err)
+				require.ErrorIs(t, stat.Err(), test.expectedErr)
 			} else {
 				require.NoError(t, err)
 				var resp types.QueryGetGatewayResponse
 				require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 				require.NotNil(t, resp.Gateway)
 				require.Equal(t,
-					nullify.Fill(&tc.obj),
+					nullify.Fill(&test.gateway),
 					nullify.Fill(&resp.Gateway),
 				)
 			}
@@ -76,7 +76,7 @@ func TestShowGateway(t *testing.T) {
 }
 
 func TestListGateway(t *testing.T) {
-	net, objs := networkWithGatewayObjects(t, 5)
+	net, gateways := networkWithGatewayObjects(t, 5)
 
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
@@ -96,7 +96,7 @@ func TestListGateway(t *testing.T) {
 	}
 	t.Run("ByOffset", func(t *testing.T) {
 		step := 2
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(gateways); i += step {
 			args := request(nil, uint64(i), uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 			require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestListGateway(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(gateways),
 				nullify.Fill(resp.Gateways),
 			)
 		}
@@ -112,7 +112,7 @@ func TestListGateway(t *testing.T) {
 	t.Run("ByKey", func(t *testing.T) {
 		step := 2
 		var next []byte
-		for i := 0; i < len(objs); i += step {
+		for i := 0; i < len(gateways); i += step {
 			args := request(next, 0, uint64(step), false)
 			out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 			require.NoError(t, err)
@@ -120,22 +120,22 @@ func TestListGateway(t *testing.T) {
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 			require.LessOrEqual(t, len(resp.Gateways), step)
 			require.Subset(t,
-				nullify.Fill(objs),
+				nullify.Fill(gateways),
 				nullify.Fill(resp.Gateways),
 			)
 			next = resp.Pagination.NextKey
 		}
 	})
 	t.Run("Total", func(t *testing.T) {
-		args := request(nil, 0, uint64(len(objs)), true)
+		args := request(nil, 0, uint64(len(gateways)), true)
 		out, err := clitestutil.ExecTestCLICmd(ctx, gateway.CmdListGateway(), args)
 		require.NoError(t, err)
 		var resp types.QueryAllGatewaysResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 		require.NoError(t, err)
-		require.Equal(t, len(objs), int(resp.Pagination.Total))
+		require.Equal(t, len(gateways), int(resp.Pagination.Total))
 		require.ElementsMatch(t,
-			nullify.Fill(objs),
+			nullify.Fill(gateways),
 			nullify.Fill(resp.Gateways),
 		)
 	})
