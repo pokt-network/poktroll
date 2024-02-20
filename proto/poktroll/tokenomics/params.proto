@@ -1,10 +1,10 @@
 syntax = "proto3";
 package poktroll.tokenomics;
 
+option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
+
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
-
-option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
 // TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 // Params defines the parameters for the tokenomics module.

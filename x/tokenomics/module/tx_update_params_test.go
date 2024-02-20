@@ -46,15 +46,15 @@ func TestCLI_UpdateParams(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			args := append(common, tc.args...)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			args := append(common, test.args...)
 			out, err := clitestutil.ExecTestCLICmd(ctx, tokenomics.CmdUpdateParams(), args)
-			if tc.expectedErr != nil {
-				_, ok := status.FromError(tc.expectedErr)
+			if test.expectedErr != nil {
+				_, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.ErrorIs(t, err, tc.expectedErr)
-				require.Contains(t, err.Error(), tc.expectedExtraErrMsg)
+				require.ErrorIs(t, err, test.expectedErr)
+				require.Contains(t, err.Error(), test.expectedExtraErrMsg)
 			} else {
 				require.NoError(t, err)
 				var resp sdk.TxResponse

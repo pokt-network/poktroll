@@ -11,6 +11,7 @@ import (
 )
 
 // GetQueryCmd returns the cli query commands for this module
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
 func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group tokenomics queries under a subcommand
 	cmd := &cobra.Command{

@@ -29,7 +29,11 @@ type (
 		bankKeeper        types.BankKeeper
 		accountKeeper     types.AccountKeeper
 		applicationKeeper types.ApplicationKeeper
-		supplierKeeper    types.SupplierKeeper
+
+		// TODO_DISCUSS: The supplier keeper is not used in the tokenomics module,
+		// the bank keeper is the one that is used to handle the supplier rewards.
+		// Make sure to remove it from the expected keepers if removed from here.
+		supplierKeeper types.SupplierKeeper
 	}
 )
 
