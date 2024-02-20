@@ -56,7 +56,7 @@ func (aq *appQuerier) GetApplication(
 // GetAllApplications returns all staked applications
 func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	req := apptypes.QueryAllApplicationRequest{}
-	res, err := aq.applicationQuerier.ApplicationAll(ctx, &req)
+	res, err := aq.applicationQuerier.AllApplications(ctx, &req)
 	if err != nil {
 		return []apptypes.Application{}, err
 	}
