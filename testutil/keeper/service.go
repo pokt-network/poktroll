@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -69,11 +68,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 				defer mapMu.Unlock()
 				coins := mapAccAddrCoins[senderAddr.String()]
 				if coins.AmountOf("upokt").GT(amt.AmountOf("upokt")) {
-					var ok bool
-					mapAccAddrCoins[senderAddr.String()], ok = coins.SafeSub(amt...)
-					if !ok {
-						return fmt.Errorf("insufficient funds for address %s", senderAddr.String())
-					}
+					mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
 					return nil
 				}
 				return types.ErrServiceNotEnoughFunds
