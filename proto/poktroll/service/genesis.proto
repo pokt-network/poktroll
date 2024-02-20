@@ -5,6 +5,7 @@ option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
+
 import "poktroll/service/params.proto";
 import "poktroll/shared/service.proto";
 

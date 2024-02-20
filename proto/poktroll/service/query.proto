@@ -22,7 +22,7 @@ service Query {
 
   // Queries a list of Service items.
   rpc Service    (QueryGetServiceRequest) returns (QueryGetServiceResponse) {
-    option (google.api.http).get = "/pokt-network/poktroll/service/service/{index}";
+    option (google.api.http).get = "/pokt-network/poktroll/service/service/{id}";
 
   }
   rpc AllServices (QueryAllServicesRequest) returns (QueryAllServicesResponse) {
@@ -41,7 +41,8 @@ message QueryParamsResponse {
 }
 
 message QueryGetServiceRequest {
-  string index = 1;
+  // TODO: We could support getting services by name.
+  string id = 1;
 }
 
 message QueryGetServiceResponse {

@@ -23,7 +23,7 @@ service Msg {
 }
 // MsgUpdateParams is the Msg/UpdateParams request type.
 message MsgUpdateParams {
-  option (cosmos.msg.v1.signer) =                          "authority";
+  option (cosmos.msg.v1.signer) = "authority";
   option           (amino.name) = "poktroll/x/service/MsgUpdateParams";
 
   // authority is the address that controls the module (defaults to x/gov unless overwritten).
