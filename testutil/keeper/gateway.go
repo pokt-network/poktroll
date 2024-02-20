@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -23,7 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func GatewayKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
