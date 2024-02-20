@@ -82,7 +82,7 @@ func TestCLI_GetSession(t *testing.T) {
 
 			appAddress: appSvc0.Address,
 			serviceId:  "svc0",
-			// blockHeight: intentionally omitted,
+			// blockHeight explicitly omitted,
 
 			expectedErr:          nil,
 			expectedNumSuppliers: 1,
@@ -129,7 +129,7 @@ func TestCLI_GetSession(t *testing.T) {
 		},
 		{
 			desc: "invalid - missing appAddress",
-			// appAddress: intentionally omitted
+			// appAddress explicitly omitted
 			serviceId:   "svc0",
 			blockHeight: 0,
 
@@ -148,7 +148,7 @@ func TestCLI_GetSession(t *testing.T) {
 		{
 			desc:       "invalid - missing service ID",
 			appAddress: appSvc0.Address, // dynamically getting address from applications
-			// serviceId:   intentionally omitted
+			// serviceId explicitly omitted
 			blockHeight: 0,
 
 			expectedErr: sessiontypes.ErrSessionInvalidService,

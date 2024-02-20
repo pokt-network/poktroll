@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/binary"
-	fmt "fmt"
+	"fmt"
 )
 
 var _ binary.ByteOrder
