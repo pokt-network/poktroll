@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -25,7 +26,10 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-func ProofKeeper(t testing.TB, sessionByAppAddr proof.SessionsByAppAddress) (keeper.Keeper, sdk.Context) {
+func ProofKeeper(
+	t testing.TB,
+	sessionByAppAddr proof.SessionsByAppAddress,
+) (keeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
