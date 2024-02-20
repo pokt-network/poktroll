@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -32,7 +33,8 @@ var (
 	mapMu           = sync.RWMutex{}
 )
 
-func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func ServiceKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -48,28 +50,30 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
 		SpendableCoins(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-			mapMu.RLock()
-			defer mapMu.RUnlock()
-			if coins, ok := mapAccAddrCoins[addr.String()]; ok {
-				return coins
-			}
-			return sdk.Coins{}
-		}).
-		AnyTimes()
+		DoAndReturn(
+			func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
+				mapMu.RLock()
+				defer mapMu.RUnlock()
+				if coins, ok := mapAccAddrCoins[addr.String()]; ok {
+					return coins
+				}
+				return sdk.Coins{}
+			},
+		).AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).
-		DoAndReturn(func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
-			mapMu.Lock()
-			defer mapMu.Unlock()
-			coins := mapAccAddrCoins[senderAddr.String()]
-			if coins.AmountOf("upokt").GT(amt.AmountOf("upokt")) {
-				mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
-				return nil
-			}
-			return types.ErrServiceNotEnoughFunds
-		}).
-		AnyTimes()
+		DoAndReturn(
+			func(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+				mapMu.Lock()
+				defer mapMu.Unlock()
+				coins := mapAccAddrCoins[senderAddr.String()]
+				if coins.AmountOf("upokt").GT(amt.AmountOf("upokt")) {
+					mapAccAddrCoins[senderAddr.String()] = coins.Sub(amt...)
+					return nil
+				}
+				return types.ErrServiceNotEnoughFunds
+			},
+		).AnyTimes()
 
 	k := keeper.NewKeeper(
 		cdc,
@@ -82,7 +86,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	k.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	return k, ctx
 }

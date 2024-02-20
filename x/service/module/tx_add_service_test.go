@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
@@ -39,7 +39,7 @@ func TestCLI_AddService(t *testing.T) {
 		fmt.Sprintf(
 			"--%s=%s",
 			flags.FlagFees,
-			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String(),
+			sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String(),
 		),
 	}
 
@@ -74,7 +74,7 @@ func TestCLI_AddService(t *testing.T) {
 		desc            string
 		supplierAddress string
 		service         sharedtypes.Service
-		err             *sdkerrors.Error
+		expectedErr     *sdkerrors.Error
 	}{
 		{
 			desc:            "valid - add new service",
@@ -85,39 +85,39 @@ func TestCLI_AddService(t *testing.T) {
 			desc:            "invalid - missing service id",
 			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Name: "service name"}, // ID intentionally omitted
-			err:             types.ErrServiceMissingID,
+			expectedErr:     types.ErrServiceMissingID,
 		},
 		{
 			desc:            "invalid - missing service name",
 			supplierAddress: account.Address.String(),
 			service:         sharedtypes.Service{Id: "svc1"}, // Name intentionally omitted
-			err:             types.ErrServiceMissingName,
+			expectedErr:     types.ErrServiceMissingName,
 		},
 		{
 			desc:            "invalid - invalid supplier address",
 			supplierAddress: "invalid address",
 			service:         svc1,
-			err:             types.ErrServiceInvalidAddress,
+			expectedErr:     types.ErrServiceInvalidAddress,
 		},
 		{
 			desc:            "invalid - service already staked",
 			supplierAddress: account.Address.String(),
 			service:         svc2,
-			err:             types.ErrServiceAlreadyExists,
+			expectedErr:     types.ErrServiceAlreadyExists,
 		},
 	}
 
 	// Run the tests
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				tt.service.Id,
-				tt.service.Name,
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.supplierAddress),
+				test.service.Id,
+				test.service.Name,
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.supplierAddress),
 			}
 			args = append(args, commonArgs...)
 
@@ -125,10 +125,10 @@ func TestCLI_AddService(t *testing.T) {
 			addServiceOutput, err := clitestutil.ExecTestCLICmd(ctx, service.CmdAddService(), args)
 
 			// Validate the error if one is expected
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

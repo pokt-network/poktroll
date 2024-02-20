@@ -10,12 +10,10 @@ import (
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// AddService handles MsgAddService and adds a service to the network storing
-// it in the service keeper's store using the provided ID from the message.
-// If the transaction's signer does not have enough funds (upokt) to cover the
-// AddServiceFee service module's governance parameter, it will not be able to
-// add the service. If it does, the fee will be deducted and debited to the
-// service module's account, then the service will be added on-chain.
+// AddService adds a service to the network.
+// The operation checks if the signer has enough funds (upokt) to pay the AddServiceFee.
+// If funds are insufficient, the service won't be added. Otherwise, the fee is transferred from
+// the signer to the service module's account, afterwards the service will be present on-chain.
 func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,

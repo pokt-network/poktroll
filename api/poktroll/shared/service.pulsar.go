@@ -503,7 +503,7 @@ func (x *fastReflection_Service) ProtoMethods() *protoiface.Methods {
 // source: poktroll/shared/service.proto
 
 // NOTE that the `shared` package is not a Cosmos module,
-// but rather a manually created package to resolve circular dependencies.
+// but rather a manually created package to resolve circular type dependencies.
 
 const (
 	// Verify that this generated code is sufficiently up-to-date.
@@ -520,7 +520,7 @@ type Service struct {
 
 	// For example, what if we want to request a session for a certain service but with some additional configs that identify it?
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // Unique identifier for the service
-	// TODO_TECHDEBT: Name is currently unused but acts as a reminder than an optional onchain representation of the service is necessary
+	// TODO_TECHDEBT: Name is currently unused but acts as a reminder that an optional onchain representation of the service is necessary
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // (Optional) Semantic human readable name for the service
 }
 
