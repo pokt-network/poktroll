@@ -4,9 +4,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// DefaultIndex is the default global index
-const DefaultIndex uint64 = 1
-
 // DefaultGenesis returns the default genesis state
 func DefaultGenesis() *GenesisState {
 	return &GenesisState{
@@ -20,19 +17,19 @@ func DefaultGenesis() *GenesisState {
 // failure.
 func (gs GenesisState) Validate() error {
 	// Check for duplicated index in services
-	serviceIDIndexMap := make(map[string]struct{})
-	serviceNameIndexMap := make(map[string]struct{})
+	serviceIDMap := make(map[string]struct{})
+	serviceNameMap := make(map[string]struct{})
 	for _, service := range gs.ServiceList {
-		idIndex := string(ServiceKey(service.Id))
-		if _, ok := serviceIDIndexMap[idIndex]; ok {
+		serviceID := string(ServiceKey(service.Id))
+		if _, ok := serviceIDMap[serviceID]; ok {
 			return ErrServiceDuplicateIndex.Wrapf("duplicated ID for service: %v", service)
 		}
-		serviceIDIndexMap[idIndex] = struct{}{}
-		nameIndex := string(ServiceKey(service.Name))
-		if _, ok := serviceNameIndexMap[nameIndex]; ok {
+		serviceIDMap[serviceID] = struct{}{}
+		serviceName := string(ServiceKey(service.Name))
+		if _, ok := serviceNameMap[serviceName]; ok {
 			return ErrServiceDuplicateIndex.Wrapf("duplicated name for service: %v", service)
 		}
-		serviceNameIndexMap[nameIndex] = struct{}{}
+		serviceNameMap[serviceName] = struct{}{}
 	}
 	// this line is used by starport scaffolding # genesis/types/validate
 

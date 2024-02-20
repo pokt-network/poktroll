@@ -52,15 +52,15 @@ func TestServiceQuerySingle(t *testing.T) {
 			err:  status.Error(codes.InvalidArgument, "invalid request"),
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			response, err := keeper.Service(ctx, tc.request)
-			if tc.err != nil {
-				require.ErrorIs(t, err, tc.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			response, err := keeper.Service(ctx, test.request)
+			if test.err != nil {
+				require.ErrorIs(t, err, test.err)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t,
-					nullify.Fill(tc.response),
+					nullify.Fill(test.response),
 					nullify.Fill(response),
 				)
 			}

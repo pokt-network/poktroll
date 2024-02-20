@@ -47,9 +47,7 @@ func (k Keeper) RemoveService(
 ) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
-	store.Delete(types.ServiceKey(
-		serviceId,
-	))
+	store.Delete(types.ServiceKey(serviceId))
 }
 
 // GetAllService returns all service

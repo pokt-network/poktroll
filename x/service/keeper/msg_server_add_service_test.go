@@ -175,23 +175,23 @@ func TestMsgServer_AddService(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			tt.setup(t)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			test.setup(t)
 			_, err := srv.AddService(ctx, &types.MsgAddService{
-				Address: tt.address,
-				Service: tt.service,
+				Address: test.address,
+				Service: test.service,
 			})
-			if tt.expectedError != nil {
+			if test.expectedError != nil {
 				// Using ErrorAs as wrapping the error sometimes gives errors with ErrorIs
-				require.ErrorAs(t, err, &tt.expectedError)
+				require.ErrorAs(t, err, &test.expectedError)
 				return
 			}
 			require.NoError(t, err)
 			// Validate the service was added
-			serviceFound, found := k.GetService(ctx, tt.service.Id)
+			serviceFound, found := k.GetService(ctx, test.service.Id)
 			require.True(t, found)
-			require.Equal(t, tt.service, serviceFound)
+			require.Equal(t, test.service, serviceFound)
 		})
 	}
 }

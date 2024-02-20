@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"sync"
 	"testing"
 
@@ -48,7 +49,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
 		SpendableCoins(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+		DoAndReturn(func(ctx context.Context, addr sdk.AccAddress) sdk.Coins {
 			mapMu.RLock()
 			defer mapMu.RUnlock()
 			if coins, ok := mapAccAddrCoins[addr.String()]; ok {
@@ -59,7 +60,7 @@ func ServiceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 		AnyTimes()
 	mockBankKeeper.EXPECT().
 		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), types.ModuleName, gomock.Any()).
-		DoAndReturn(func(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
+		DoAndReturn(func(ctx context.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error {
 			mapMu.Lock()
 			defer mapMu.Unlock()
 			coins := mapAccAddrCoins[senderAddr.String()]
