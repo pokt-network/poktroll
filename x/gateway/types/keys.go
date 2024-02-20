@@ -11,8 +11,6 @@ const (
 	MemStoreKey = "mem_gateway"
 )
 
-var (
-	ParamsKey = []byte("p_gateway")
-)
+var ParamsKey = []byte("p_gateway")
 
 func KeyPrefix(p string) []byte { return []byte(p) }
