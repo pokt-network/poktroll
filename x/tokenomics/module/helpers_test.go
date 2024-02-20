@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 	"github.com/stretchr/testify/require"
@@ -13,11 +12,6 @@ import (
 
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
-
-// init initializes the SDK configuration.
-func init() {
-	cmd.InitSDKConfig()
-}
 
 // networkWithDefaultConfig is a helper function to create a network for testing
 // with a default tokenomics genesis state.
