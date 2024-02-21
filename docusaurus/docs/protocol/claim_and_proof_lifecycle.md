@@ -99,11 +99,6 @@ as `Applications` make RPC requests (`relays`) to the `Supplier`.
 After a session ends, the Claim & Proof Lifecycle can be decomposed, at a high-level,
 into the following steps.
 
-![pako_eNqNVGFr2zAQ_SuHPowUvJCkiZuGMVi7bgxWKHVZYeTLxT7XIrJkJHlbVvrfd7KS1tm8MX8I8ende3pPZz2K3BQkVsLLmpTUtNbAj5deEdwY5yEj56TRcGONKeELKlmg50IEHlavdOHgzca-hREDvcmNOomI8KzglnJTN60nyK6zO2AuD6_AtTWMDgutlt4dNX1QrasAdQHOG7tv9QaUyVFBId02oi8toadLhbLe7yF](https://github.com/pokt-network/poktroll/assets/1892194/7f75ed32-4873-4418-a2b1-ec50659fe34e)
-
-_TODO(@Olshansk): Figure out if we can replace the image above with the mermaid diagram
-below once we have an answer to [this comment](https://github.com/facebook/docusaurus/issues/9032#issuecomment-1953239016)._
-
 ```mermaid
 timeline
     title Post Session Proof Validation
