@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -23,7 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func GatewayKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func GatewayKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -51,7 +53,7 @@ func GatewayKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	k.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	return k, ctx
 }

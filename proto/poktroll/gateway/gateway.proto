@@ -2,8 +2,8 @@ syntax = "proto3";
 package poktroll.gateway;
 
 option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+
 import "cosmos_proto/cosmos.proto";
-import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
 message Gateway {
