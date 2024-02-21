@@ -6,15 +6,15 @@ var _ binary.ByteOrder
 
 const (
 	// GatewayKeyPrefix is the prefix to retrieve all Gateways
-	GatewayKeyPrefix = "Gateway/value/"
+	GatewayKeyPrefix = "Gateway/address/"
 )
 
 // GatewayKey returns the store key to retrieve a Gateway from the index fields
-func GatewayKey(address string) []byte {
+func GatewayKey(gatewayAddr string) []byte {
 	var key []byte
 
-	addressBytes := []byte(address)
-	key = append(key, addressBytes...)
+	gatewayAddrBz := []byte(gatewayAddr)
+	key = append(key, gatewayAddrBz...)
 	key = append(key, []byte("/")...)
 
 	return key
