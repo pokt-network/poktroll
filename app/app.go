@@ -53,6 +53,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
+	servicemodulekeeper "github.com/pokt-network/poktroll/x/service/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -117,6 +118,7 @@ type App struct {
 	ScopedICAControllerKeeper capabilitykeeper.ScopedKeeper
 	ScopedICAHostKeeper       capabilitykeeper.ScopedKeeper
 
+	ServiceKeeper servicemodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -176,6 +178,7 @@ func New(
 		appBuilder *runtime.AppBuilder
 
 		// merge the AppConfig and other configuration in one config
+		// TODO_BLOCKER(@Olshansk): Revisit the advanced configuration and understand if/where it fits in Shannon
 		appConfig = depinject.Configs(
 			AppConfig(),
 			depinject.Supply(
@@ -254,6 +257,7 @@ func New(
 		&app.GroupKeeper,
 		&app.ConsensusParamsKeeper,
 		&app.CircuitBreakerKeeper,
+		&app.ServiceKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
