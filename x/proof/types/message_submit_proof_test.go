@@ -89,12 +89,12 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.expectedErr != nil {
-				require.ErrorIs(t, err, tt.expectedErr)
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
+				require.ErrorContains(t, err, test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

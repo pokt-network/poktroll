@@ -26,10 +26,10 @@ func CmdListProof() *cobra.Command {
 The proofs can be optionally filtered by one of --session-end-height --session-id or --supplier-address flags
 
 Example:
-$ poktrolld q proof list-proofs --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --session-id <session_id> --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --session-end-height <session_end_height> --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)
-$ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(POCKET_NODE) --home=$(POKTROLLD_HOME)`,
+$ poktrolld q proof list-proofs --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q proof list-proofs --session-id <session_id> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q proof list-proofs --session-end-height <session_end_height> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)
+$ poktrolld q proof list-proofs --supplier-address <supplier_address> --node $(POCKET_NODE) --home $(POKTROLLD_HOME)`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pageReq, err := client.ReadPageRequest(cmd.Flags())

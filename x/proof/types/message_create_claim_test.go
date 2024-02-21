@@ -14,8 +14,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 	tests := []struct {
 		desc string
 
-		msg MsgCreateClaim
-		err error
+		msg         MsgCreateClaim
+		expectedErr error
 	}{
 		{
 			desc: "invalid address",
@@ -23,7 +23,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
 			},
-			err: ErrProofInvalidAddress,
+			expectedErr: ErrProofInvalidAddress,
 		},
 		{
 			desc: "valid address but invalid session start height",
@@ -34,7 +34,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionStartBlockHeight: -1, // Invalid start height
 				},
 			},
-			err: ErrProofInvalidSessionStartHeight,
+			expectedErr: ErrProofInvalidSessionStartHeight,
 		},
 		{
 			desc: "valid address and session start height but invalid session ID",
@@ -46,7 +46,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					SessionId:               "", // Invalid session ID
 				},
 			},
-			err: ErrProofInvalidSessionId,
+			expectedErr: ErrProofInvalidSessionId,
 		},
 		{
 			desc: "valid address, session start height, session ID but invalid service",
@@ -61,7 +61,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 					}, // Should trigger error
 				},
 			},
-			err: ErrProofInvalidService,
+			expectedErr: ErrProofInvalidService,
 		},
 		{
 			desc: "valid address, session start height, session ID, service but invalid root hash",
@@ -77,7 +77,7 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				},
 				RootHash: []byte(""), // Invalid root hash
 			},
-			err: ErrProofInvalidClaimRootHash,
+			expectedErr: ErrProofInvalidClaimRootHash,
 		},
 		{
 			desc: "all valid inputs",
@@ -93,14 +93,14 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 				},
 				RootHash: []byte("valid_root_hash"), // Assuming this is valid
 			},
-			err: nil,
+			expectedErr: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 			}

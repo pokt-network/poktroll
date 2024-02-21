@@ -18,13 +18,15 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
-	//claimStore := prefix.NewStore(store, types.KeyPrefix(types.ClaimKeyPrefix))
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
 	// isCustomIndex is used to determined if we'll be using the store that points
 	// to the actual Claim values, or a secondary index that points to the primary keys.
-	var isCustomIndex bool
-	var keyPrefix []byte
+	var (
+		isCustomIndex bool
+		keyPrefix     []byte
+	)
+
 	switch filter := req.Filter.(type) {
 	case *types.QueryAllClaimsRequest_SupplierAddress:
 		isCustomIndex = true
@@ -35,7 +37,6 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 		isCustomIndex = true
 		heightBz := make([]byte, 8)
 		binary.BigEndian.PutUint64(heightBz, filter.SessionEndHeight)
-
 		keyPrefix = types.KeyPrefix(types.ClaimSessionEndHeightPrefix)
 		keyPrefix = append(keyPrefix, heightBz...)
 
@@ -48,18 +49,20 @@ func (k Keeper) AllClaims(ctx context.Context, req *types.QueryAllClaimsRequest)
 		isCustomIndex = false
 		keyPrefix = types.KeyPrefix(types.ClaimPrimaryKeyPrefix)
 	}
-	claimStore := prefix.NewStore(store, keyPrefix)
+
+	claimStore := prefix.NewStore(storeAdapter, keyPrefix)
 
 	var claims []types.Claim
 	pageRes, err := query.Paginate(claimStore, req.Pagination, func(key []byte, value []byte) error {
 		if isCustomIndex {
-			// We retrieve the primaryKey, and need to query the actual Claim before decoding it.
-			claim, claimFound := k.getClaimByPrimaryKey(ctx, value)
-			if claimFound {
-				claims = append(claims, claim)
+			// If a custom index is used, the value is a primaryKey.
+			// Then we retrieve the claim using the given primaryKey.
+			foundClaim, isClaimFound := k.getClaimByPrimaryKey(ctx, value)
+			if isClaimFound {
+				claims = append(claims, foundClaim)
 			}
 		} else {
-			// The value is an encoded Claim.
+			// The value is the encoded claim.
 			var claim types.Claim
 			if err := k.cdc.Unmarshal(value, &claim); err != nil {
 				return err
@@ -87,15 +90,15 @@ func (k Keeper) Claim(ctx context.Context, req *types.QueryGetClaimRequest) (*ty
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	val, found := k.GetClaim(
+	foundClaim, isClaimFound := k.GetClaim(
 		ctx,
 		req.SessionId,
 		req.SupplierAddress,
 	)
-	if !found {
+	if !isClaimFound {
 		err := types.ErrProofClaimNotFound.Wrapf("session ID %q and supplier %q", req.SessionId, req.SupplierAddress)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
-	return &types.QueryGetClaimResponse{Claim: val}, nil
+	return &types.QueryGetClaimResponse{Claim: foundClaim}, nil
 }

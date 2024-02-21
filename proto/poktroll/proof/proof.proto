@@ -4,6 +4,7 @@ package poktroll.proof;
 option go_package = "github.com/pokt-network/poktroll/x/proof/types";
 
 import "cosmos_proto/cosmos.proto";
+
 import "poktroll/session/session.proto";
 
 message Proof {
