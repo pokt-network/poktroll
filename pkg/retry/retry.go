@@ -58,7 +58,7 @@ func OnError(
 				return nil
 			}
 
-			if retryCount >= retryLimit {
+			if retryLimit > 0 && retryCount >= retryLimit {
 				return err
 			}
 
