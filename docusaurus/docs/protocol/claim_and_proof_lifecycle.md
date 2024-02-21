@@ -104,7 +104,7 @@ into the following steps.
 _TODO(@Olshansk): Figure out if we can replace the image above with the mermaid diagram
 below once we have an answer to [this comment](https://github.com/facebook/docusaurus/issues/9032#issuecomment-1953239016)._
 
-```Mermaid
+```mermaid
 timeline
     title Post Session Proof Validation
     Session Ends <br> (Protocol)
