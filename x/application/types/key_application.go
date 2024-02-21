@@ -6,17 +6,15 @@ var _ binary.ByteOrder
 
 const (
 	// ApplicationKeyPrefix is the prefix to retrieve all Application
-	ApplicationKeyPrefix = "Application/value/"
+	ApplicationKeyPrefix = "Application/address/"
 )
 
 // ApplicationKey returns the store key to retrieve a Application from the index fields
-func ApplicationKey(
-	address string,
-) []byte {
+func ApplicationKey(appAddr string) []byte {
 	var key []byte
 
-	addressBytes := []byte(address)
-	key = append(key, addressBytes...)
+	appAddrBz := []byte(appAddr)
+	key = append(key, appAddrBz...)
 	key = append(key, []byte("/")...)
 
 	return key

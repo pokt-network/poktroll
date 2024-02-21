@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
+func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
 	logger := k.Logger().With("method", "UndelegateFromGateway")
 	logger.Info(fmt.Sprintf("About to undelegate application from gateway with msg: %v", msg))
 
@@ -21,36 +18,39 @@ func (k msgServer) UndelegateFromGateway(goCtx context.Context, msg *types.MsgUn
 	}
 
 	// Retrieve the application from the store
-	app, found := k.GetApplication(ctx, msg.AppAddress)
-	if !found {
+	foundApp, isAppFound := k.GetApplication(ctx, msg.AppAddress)
+	if !isAppFound {
 		logger.Info(fmt.Sprintf("Application not found with address [%s]", msg.AppAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotFound, "application not found with address: %s", msg.AppAddress)
+		return nil, types.ErrAppNotFound.Wrapf("application not found with address: %s", msg.AppAddress)
 	}
 	logger.Info(fmt.Sprintf("Application found with address [%s]", msg.AppAddress))
 
 	// Check if the application is already delegated to the gateway
 	foundIdx := -1
-	for i, gatewayAddr := range app.DelegateeGatewayAddresses {
+	for i, gatewayAddr := range foundApp.DelegateeGatewayAddresses {
 		if gatewayAddr == msg.GatewayAddress {
 			foundIdx = i
 		}
 	}
 	if foundIdx == -1 {
 		logger.Info(fmt.Sprintf("Application not delegated to gateway with address [%s]", msg.GatewayAddress))
-		return nil, sdkerrors.Wrapf(types.ErrAppNotDelegated, "application not delegated to gateway with address: %s", msg.GatewayAddress)
+		return nil, types.ErrAppNotDelegated.Wrapf("application not delegated to gateway with address: %s", msg.GatewayAddress)
 	}
 
 	// Remove the gateway from the application's delegatee gateway public keys
-	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses[:foundIdx], app.DelegateeGatewayAddresses[foundIdx+1:]...)
+	foundApp.DelegateeGatewayAddresses = append(foundApp.DelegateeGatewayAddresses[:foundIdx], foundApp.DelegateeGatewayAddresses[foundIdx+1:]...)
 
 	// Update the application store with the new delegation
-	k.SetApplication(ctx, app)
-	logger.Info(fmt.Sprintf("Successfully undelegated application from gateway for app: %+v", app))
+	k.SetApplication(ctx, foundApp)
+	logger.Info(fmt.Sprintf("Successfully undelegated application from gateway for app: %+v", foundApp))
 
 	// Emit the application redelegation event
 	event := msg.NewRedelegationEvent()
 	logger.Info(fmt.Sprintf("Emitting application redelegation event %v", event))
-	if err := ctx.EventManager().EmitTypedEvent(event); err != nil {
+
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+
+	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
 		return nil, err
 	}

@@ -29,11 +29,11 @@ $ poktrolld q application list-application --node $(POCKET_NODE) --home $(POKTRO
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			params := &types.QueryAllApplicationRequest{
+			params := &types.QueryAllApplicationsRequest{
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.ApplicationAll(cmd.Context(), params)
+			res, err := queryClient.AllApplications(cmd.Context(), params)
 			if err != nil {
 				return err
 			}

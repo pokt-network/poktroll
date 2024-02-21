@@ -1,10 +1,11 @@
 package keeper
 
 import (
+	"context"
 	"testing"
 
 	"cosmossdk.io/log"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
@@ -31,7 +32,8 @@ import (
 // WARNING: Using this map may cause issues if running multiple tests in parallel
 var stakedGatewayMap = make(map[string]struct{})
 
-func ApplicationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func ApplicationKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
@@ -53,11 +55,11 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 
 	mockGatewayKeeper := mocks.NewMockGatewayKeeper(ctrl)
 	mockGatewayKeeper.EXPECT().GetGateway(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ sdk.Context, addr string) (gatewaytypes.Gateway, bool) {
+		func(_ context.Context, addr string) (gatewaytypes.Gateway, bool) {
 			if _, ok := stakedGatewayMap[addr]; !ok {
 				return gatewaytypes.Gateway{}, false
 			}
-			stake := sdk.NewCoin("upokt", sdkmath.NewInt(10000))
+			stake := sdk.NewCoin("upokt", math.NewInt(10000))
 			return gatewaytypes.Gateway{
 				Address: addr,
 				Stake:   &stake,
@@ -78,7 +80,7 @@ func ApplicationKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	k.SetParams(ctx, types.DefaultParams())
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
 	return k, ctx
 }

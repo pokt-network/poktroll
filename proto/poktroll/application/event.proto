@@ -2,6 +2,7 @@ syntax = "proto3";
 package poktroll.application;
 
 option go_package = "github.com/pokt-network/poktroll/x/application/types";
+
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
@@ -9,6 +10,7 @@ import "gogoproto/gogo.proto";
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
 message EventRedelegation {
-  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "app_address"]; // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding
-  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.jsontag) = "gateway_address"]; // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
+  // TODO: Check if this tag is relevant for events: (gogoproto.jsontag) = "app_address"
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
 }
