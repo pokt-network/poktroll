@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -19,7 +19,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 
 		inputConfig string
 
-		expectedError  *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 		expectedConfig *config.ApplicationStakeConfig
 	}{
 		// Valid Configs
@@ -33,9 +33,9 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.ApplicationStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", sdkmath.NewInt(1000)),
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
 				Services: []*sharedtypes.ApplicationServiceConfig{
 					{
 						Service: &sharedtypes.Service{Id: "svc1"},
@@ -52,7 +52,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 
 			inputConfig: ``,
 
-			expectedError: config.ErrApplicationConfigEmptyContent,
+			expectedErr: config.ErrApplicationConfigEmptyContent,
 		},
 		{
 			desc: "invalid: no service ids",
@@ -62,7 +62,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				service_ids: # explicitly omitting service ids
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidServiceId,
+			expectedErr: config.ErrApplicationConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid: invalid serviceId",
@@ -73,7 +73,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - sv c1
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidServiceId,
+			expectedErr: config.ErrApplicationConfigInvalidServiceId,
 		},
 		{
 			desc: "invalid: no stake amount",
@@ -85,7 +85,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 		{
 			desc: "invalid: non-positive stake amount",
@@ -97,7 +97,7 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 		{
 			desc: "invalid: unsupported stake denom",
@@ -109,31 +109,31 @@ func Test_ParseApplicationConfigs(t *testing.T) {
 				  - svc2
 				`,
 
-			expectedError: config.ErrApplicationConfigInvalidStake,
+			expectedErr: config.ErrApplicationConfigInvalidStake,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfig)
 			appServiceConfig, err := config.ParseApplicationConfigs([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tt.expectedError)
-				require.Contains(t, err.Error(), tt.expectedError.Error())
+				require.ErrorIs(t, err, test.expectedErr)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
 				require.Nil(t, appServiceConfig)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.StakeAmount.Amount, appServiceConfig.StakeAmount.Amount)
-			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, appServiceConfig.StakeAmount.Denom)
+			require.Equal(t, test.expectedConfig.StakeAmount.Amount, appServiceConfig.StakeAmount.Amount)
+			require.Equal(t, test.expectedConfig.StakeAmount.Denom, appServiceConfig.StakeAmount.Denom)
 
-			t.Logf("serviceIds: %v", tt.expectedConfig.Services)
-			require.Equal(t, len(tt.expectedConfig.Services), len(appServiceConfig.Services))
-			for i, expected := range tt.expectedConfig.Services {
+			t.Logf("serviceIds: %v", test.expectedConfig.Services)
+			require.Equal(t, len(test.expectedConfig.Services), len(appServiceConfig.Services))
+			for i, expected := range test.expectedConfig.Services {
 				require.Equal(t, expected.Service.Id, appServiceConfig.Services[i].Service.Id)
 			}
 		})

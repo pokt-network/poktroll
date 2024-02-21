@@ -9,47 +9,47 @@ import (
 
 func TestMsgDelegateToGateway_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgDelegateToGateway
-		err  error
+		desc        string
+		msg         MsgDelegateToGateway
+		expectedErr error
 	}{
 		{
-			name: "invalid app address - no gateway address",
+			desc: "invalid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: "invalid_address",
-				// GatewayAddress: intentionally omitted,
+				// GatewayAddress explicitly omitted,
 			},
-			err: ErrAppInvalidAddress,
+			expectedErr: ErrAppInvalidAddress,
 		},
 		{
-			name: "valid app address - no gateway address",
+			desc: "valid app address - no gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress: sample.AccAddress(),
-				// GatewayAddress: intentionally omitted,
+				// GatewayAddress explicitly omitted,
 			},
-			err: ErrAppInvalidGatewayAddress,
+			expectedErr: ErrAppInvalidGatewayAddress,
 		},
 		{
-			name: "valid app address - invalid gateway address",
+			desc: "valid app address - invalid gateway address",
 			msg: MsgDelegateToGateway{
 				AppAddress:     sample.AccAddress(),
 				GatewayAddress: "invalid_address",
 			},
-			err: ErrAppInvalidGatewayAddress,
+			expectedErr: ErrAppInvalidGatewayAddress,
 		},
 		{
-			name: "valid address",
+			desc: "valid address",
 			msg: MsgDelegateToGateway{
 				AppAddress:     sample.AccAddress(),
 				GatewayAddress: sample.AccAddress(),
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)

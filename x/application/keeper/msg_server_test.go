@@ -12,11 +12,15 @@ import (
 )
 
 func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
+	t.Helper()
+
 	k, ctx := keepertest.ApplicationKeeper(t)
 	return k, keeper.NewMsgServerImpl(k), ctx
 }
 
 func TestMsgServer(t *testing.T) {
+	t.Helper()
+
 	k, ms, ctx := setupMsgServer(t)
 	require.NotNil(t, ms)
 	require.NotNil(t, ctx)

@@ -3,13 +3,12 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 var (
+	_ paramtypes.ParamSet = (*Params)(nil)
+
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
 	// TODO: Determine the default value
 	DefaultMaxDelegatedGateways uint64 = 7
@@ -21,9 +20,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(
-	maxDelegatedGateways uint64,
-) Params {
+func NewParams(maxDelegatedGateways uint64) Params {
 	return Params{
 		MaxDelegatedGateways: maxDelegatedGateways,
 	}
@@ -31,9 +28,7 @@ func NewParams(
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams(
-		DefaultMaxDelegatedGateways,
-	)
+	return NewParams(DefaultMaxDelegatedGateways)
 }
 
 // ParamSetPairs get the params.ParamSet
@@ -62,7 +57,7 @@ func validateMaxDelegatedGateways(v interface{}) error {
 	// Hard-coding a value of 1 because we never expect this to change.
 	// If an application choses to delegate, at least one is required.
 	if maxDelegatedGateways < 1 {
-		return sdkerrors.Wrapf(ErrAppInvalidMaxDelegatedGateways, "MaxDelegatedGateways param < 1: got %d", maxDelegatedGateways)
+		return ErrAppInvalidMaxDelegatedGateways.Wrapf("MaxDelegatedGateways param < 1: got %d", maxDelegatedGateways)
 	}
 
 	return nil

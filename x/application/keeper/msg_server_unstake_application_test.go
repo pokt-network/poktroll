@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -19,16 +19,16 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
-	addr := sample.AccAddress()
+	appAddr := sample.AccAddress()
 
 	// Verify that the app does not exist yet
-	_, isAppFound := k.GetApplication(ctx, addr)
+	_, isAppFound := k.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 
 	// Prepare the application
-	initialStake := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeApplication{
-		Address: addr,
+		Address: appAddr,
 		Stake:   &initialStake,
 		Services: []*sharedtypes.ApplicationServiceConfig{
 			{
@@ -42,19 +42,19 @@ func TestMsgServer_UnstakeApplication_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the application exists
-	appFound, isAppFound := k.GetApplication(ctx, addr)
+	appFound, isAppFound := k.GetApplication(ctx, appAddr)
 	require.True(t, isAppFound)
-	require.Equal(t, addr, appFound.Address)
+	require.Equal(t, appAddr, appFound.Address)
 	require.Equal(t, initialStake.Amount, appFound.Stake.Amount)
 	require.Len(t, appFound.ServiceConfigs, 1)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
+	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
 	_, err = srv.UnstakeApplication(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the app can no longer be found after unstaking
-	_, isAppFound = k.GetApplication(ctx, addr)
+	_, isAppFound = k.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 }
 
@@ -63,18 +63,18 @@ func TestMsgServer_UnstakeApplication_FailIfNotStaked(t *testing.T) {
 	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the application
-	addr := sample.AccAddress()
+	appAddr := sample.AccAddress()
 
 	// Verify that the app does not exist yet
-	_, isAppFound := k.GetApplication(ctx, addr)
+	_, isAppFound := k.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 
 	// Unstake the application
-	unstakeMsg := &types.MsgUnstakeApplication{Address: addr}
+	unstakeMsg := &types.MsgUnstakeApplication{Address: appAddr}
 	_, err := srv.UnstakeApplication(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrAppNotFound)
 
-	_, isAppFound = k.GetApplication(ctx, addr)
+	_, isAppFound = k.GetApplication(ctx, appAddr)
 	require.False(t, isAppFound)
 }
