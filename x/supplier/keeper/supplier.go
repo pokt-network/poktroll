@@ -24,15 +24,12 @@ func (k Keeper) SetSupplier(ctx context.Context, supplier sharedtypes.Supplier) 
 // GetSupplier returns a supplier from its index
 func (k Keeper) GetSupplier(
 	ctx context.Context,
-	address string,
-
+	supplierAddr string,
 ) (supplier sharedtypes.Supplier, found bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyPrefix))
 
-	supplierBz := store.Get(types.SupplierKey(
-		address,
-	))
+	supplierBz := store.Get(types.SupplierKey(supplierAddr))
 	if supplierBz == nil {
 		return supplier, false
 	}
@@ -42,20 +39,14 @@ func (k Keeper) GetSupplier(
 }
 
 // RemoveSupplier removes a supplier from the store
-func (k Keeper) RemoveSupplier(
-	ctx context.Context,
-	address string,
-
-) {
+func (k Keeper) RemoveSupplier(ctx context.Context, address string) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyPrefix))
-	store.Delete(types.SupplierKey(
-		address,
-	))
+	store.Delete(types.SupplierKey(address))
 }
 
-// GetAllSupplier returns all supplier
-func (k Keeper) GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Supplier) {
+// GetAllSuppliers returns all supplier
+func (k Keeper) GetAllSuppliers(ctx context.Context) (suppliers []sharedtypes.Supplier) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.SupplierKeyPrefix))
 	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
@@ -70,3 +61,6 @@ func (k Keeper) GetAllSupplier(ctx context.Context) (suppliers []sharedtypes.Sup
 
 	return
 }
+
+// TODO_OPTIMIZE: Index suppliers by service so we can easily query k.GetAllSuppliers(ctx, Service)
+// func (k Keeper) GetAllSuppliers(ctx, sdkContext, serviceId string) (suppliers []sharedtypes.Supplier) {}

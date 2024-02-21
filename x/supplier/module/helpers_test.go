@@ -18,7 +18,6 @@ var _ = strconv.IntSize
 // It returns the network and a slice of the created supplier objects.
 func networkWithSupplierObjects(t *testing.T, n int) (*network.Network, []sharedtypes.Supplier) {
 	t.Helper()
-
 	cfg := network.DefaultConfig()
 	supplierGenesisState := network.DefaultSupplierModuleGenesisState(t, n)
 	buf, err := cfg.Codec.MarshalJSON(supplierGenesisState)

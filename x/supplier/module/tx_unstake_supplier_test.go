@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
@@ -28,6 +28,9 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	supplierAccount := accounts[0]
 
+	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, supplierAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -35,13 +38,13 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 	commonArgs := []string{
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		err     *sdkerrors.Error
+		desc        string
+		address     string
+		expectedErr *sdkerrors.Error
 	}{
 		{
 			desc:    "unstake supplier: valid",
@@ -50,27 +53,24 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 		{
 			desc: "unstake supplier: missing address",
 			// address: supplierAccount.Address.String(),
-			err: types.ErrSupplierInvalidAddress,
+			expectedErr: types.ErrSupplierInvalidAddress,
 		},
 		{
-			desc:    "unstake supplier: invalid address",
-			address: "invalid",
-			err:     types.ErrSupplierInvalidAddress,
+			desc:        "unstake supplier: invalid address",
+			address:     "invalid",
+			expectedErr: types.ErrSupplierInvalidAddress,
 		},
 	}
 
-	// Initialize the Supplier Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, supplierAccount.Address)
-
 	// Run the tests
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.address),
 			}
 			args = append(args, commonArgs...)
 
@@ -78,15 +78,16 @@ func TestCLI_UnstakeSupplier(t *testing.T) {
 			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, supplier.CmdUnstakeSupplier(), args)
 
 			// Validate the error if one is expected
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)
 
-			// Check the response
+			// Check the response, this test only asserts CLI command success and not
+			// the actual supplier module state.
 			var resp sdk.TxResponse
 			require.NoError(t, net.Config.Codec.UnmarshalJSON(outUnstake.Bytes(), &resp))
 			require.NotNil(t, resp)
