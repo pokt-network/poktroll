@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +25,7 @@ func TestMsgServer_UnstakeGateway_Success(t *testing.T) {
 	require.False(t, isGatewayFound)
 
 	// Prepare the gateway
-	initialStake := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,

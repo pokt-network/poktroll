@@ -3,7 +3,7 @@ package keeper_test
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -25,7 +25,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.False(t, isGatewayFound)
 
 	// Prepare the gateway
-	initialStake := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
@@ -42,7 +42,7 @@ func TestMsgServer_StakeGateway_SuccessfulCreateAndUpdate(t *testing.T) {
 	require.Equal(t, initialStake.Amount, foundGateway.Stake.Amount)
 
 	// Prepare an updated gateway with a higher stake
-	updatedStake := sdk.NewCoin("upokt", sdkmath.NewInt(200))
+	updatedStake := sdk.NewCoin("upokt", math.NewInt(200))
 	updateMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,
@@ -62,7 +62,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 
 	// Prepare the gateway
 	addr := sample.AccAddress()
-	initialStake := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &initialStake,
@@ -75,7 +75,7 @@ func TestMsgServer_StakeGateway_FailLoweringStake(t *testing.T) {
 	require.True(t, isGatewayFound)
 
 	// Prepare an updated gateway with a lower stake
-	updatedStake := sdk.NewCoin("upokt", sdkmath.NewInt(50))
+	updatedStake := sdk.NewCoin("upokt", math.NewInt(50))
 	updateMsg := &types.MsgStakeGateway{
 		Address: addr,
 		Stake:   &updatedStake,

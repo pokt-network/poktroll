@@ -3,170 +3,37 @@ package gateway_test
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
-
+	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
+	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	gateway "github.com/pokt-network/poktroll/x/gateway/module"
 	"github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGenesisState_Validate(t *testing.T) {
-	addr1 := sample.AccAddress()
-	stake1 := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+func TestGenesis(t *testing.T) {
+	genesisState := types.GenesisState{
+		Params: types.DefaultParams(),
 
-	addr2 := sample.AccAddress()
-	stake2 := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+		GatewayList: []types.Gateway{
+			{
+				Address: sample.AccAddress(),
+			},
+			{
+				Address: sample.AccAddress(),
+			},
+		},
+		// this line is used by starport scaffolding # genesis/test/state
+	}
 
-	tests := []struct {
-		desc     string
-		genState *types.GenesisState
-		valid    bool
-	}{
-		{
-			desc:     "default is valid",
-			genState: types.DefaultGenesis(),
-			valid:    true,
-		},
-		{
-			desc: "valid genesis state",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   &stake2,
-					},
-				},
-				// this line is used by starport scaffolding # types/genesis/validField
-			},
-			valid: true,
-		},
-		{
-			desc: "invalid - duplicated gateway address",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr1,
-						Stake:   &stake2,
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - nil gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   nil,
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - missing gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						// Stake:   stake2,
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - zero gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(0)},
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - negative gateway stake",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(-100)},
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - wrong stake denom",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdkmath.NewInt(100)},
-					},
-				},
-			},
-			valid: false,
-		},
-		{
-			desc: "invalid - missing denom",
-			genState: &types.GenesisState{
-				GatewayList: []types.Gateway{
-					{
-						Address: addr1,
-						Stake:   &stake1,
-					},
-					{
-						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "", Amount: sdkmath.NewInt(100)},
-					},
-				},
-			},
-			valid: false,
-		},
-		// this line is used by starport scaffolding # types/genesis/testcase
-	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.genState.Validate()
-			if tc.valid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
+	k, ctx := keepertest.GatewayKeeper(t)
+	gateway.InitGenesis(ctx, k, genesisState)
+	got := gateway.ExportGenesis(ctx, k)
+	require.NotNil(t, got)
+
+	nullify.Fill(&genesisState)
+	nullify.Fill(got)
+
+	require.ElementsMatch(t, genesisState.GatewayList, got.GatewayList)
+	// this line is used by starport scaffolding # genesis/test/assert
 }

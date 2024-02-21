@@ -3,7 +3,7 @@ package types
 import (
 	"testing"
 
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -11,56 +11,56 @@ import (
 )
 
 func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
-	coins := sdk.NewCoin("upokt", sdkmath.NewInt(100))
+	coins := sdk.NewCoin("upokt", math.NewInt(100))
 	tests := []struct {
-		name string
-		msg  MsgStakeGateway
-		err  error
+		desc        string
+		msg         MsgStakeGateway
+		expectedErr error
 	}{
 		{
-			name: "invalid address - no stake",
+			desc: "invalid address - no stake",
 			msg: MsgStakeGateway{
 				Address: "invalid_address",
 				// Stake explicitly nil
 			},
-			err: ErrGatewayInvalidAddress,
+			expectedErr: ErrGatewayInvalidAddress,
 		}, {
-			name: "valid address - nil stake",
+			desc: "valid address - nil stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
 				// Stake explicitly nil
 			},
-			err: ErrGatewayInvalidStake,
+			expectedErr: ErrGatewayInvalidStake,
 		}, {
-			name: "valid address - zero stake",
+			desc: "valid address - zero stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(0)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 			},
-			err: ErrGatewayInvalidStake,
+			expectedErr: ErrGatewayInvalidStake,
 		}, {
-			name: "valid address - negative stake",
+			desc: "valid address - negative stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "upokt", Amount: sdkmath.NewInt(-100)},
+				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 			},
-			err: ErrGatewayInvalidStake,
+			expectedErr: ErrGatewayInvalidStake,
 		}, {
-			name: "valid address - invalid stake denom",
+			desc: "valid address - invalid stake denom",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "invalid", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 			},
-			err: ErrGatewayInvalidStake,
+			expectedErr: ErrGatewayInvalidStake,
 		}, {
-			name: "valid address - invalid stake missing denom",
+			desc: "valid address - invalid stake missing denom",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
-				Stake:   &sdk.Coin{Denom: "", Amount: sdkmath.NewInt(100)},
+				Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 			},
-			err: ErrGatewayInvalidStake,
+			expectedErr: ErrGatewayInvalidStake,
 		}, {
-			name: "valid address - valid stake",
+			desc: "valid address - valid stake",
 			msg: MsgStakeGateway{
 				Address: sample.AccAddress(),
 				Stake:   &coins,
@@ -68,11 +68,11 @@ func TestMsgStakeGateway_ValidateBasic(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)
