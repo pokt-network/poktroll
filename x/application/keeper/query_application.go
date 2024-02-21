@@ -11,12 +11,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (k Keeper) ApplicationAll(ctx context.Context, req *types.QueryAllApplicationRequest) (*types.QueryAllApplicationResponse, error) {
+func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicationsRequest) (*types.QueryAllApplicationsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	var applications []types.Application
+	var apps []types.Application
 
 	store := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	applicationStore := prefix.NewStore(store, types.KeyPrefix(types.ApplicationKeyPrefix))
@@ -27,7 +27,7 @@ func (k Keeper) ApplicationAll(ctx context.Context, req *types.QueryAllApplicati
 			return err
 		}
 
-		applications = append(applications, application)
+		apps = append(apps, application)
 		return nil
 	})
 
@@ -35,7 +35,7 @@ func (k Keeper) ApplicationAll(ctx context.Context, req *types.QueryAllApplicati
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &types.QueryAllApplicationResponse{Application: applications, Pagination: pageRes}, nil
+	return &types.QueryAllApplicationsResponse{Applications: apps, Pagination: pageRes}, nil
 }
 
 func (k Keeper) Application(ctx context.Context, req *types.QueryGetApplicationRequest) (*types.QueryGetApplicationResponse, error) {
@@ -43,13 +43,10 @@ func (k Keeper) Application(ctx context.Context, req *types.QueryGetApplicationR
 		return nil, status.Error(codes.InvalidArgument, "invalid request")
 	}
 
-	val, found := k.GetApplication(
-		ctx,
-		req.Address,
-	)
+	app, found := k.GetApplication(ctx, req.Address)
 	if !found {
 		return nil, status.Error(codes.NotFound, "application not found")
 	}
 
-	return &types.QueryGetApplicationResponse{Application: val}, nil
+	return &types.QueryGetApplicationResponse{Application: app}, nil
 }
