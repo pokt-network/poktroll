@@ -12,72 +12,72 @@ import (
 
 func TestSessionHeader_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		desc string
-		sh   types.SessionHeader
-		err  error
+		desc          string
+		sessionHeader types.SessionHeader
+		expectedErr   error
 	}{
 		{
 			desc: "invalid - invalid application address",
-			sh: types.SessionHeader{
+			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      "invalid_address",
 				SessionId:               "valid_session_id",
 				Service:                 &sharedtypes.Service{},
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
-			err: types.ErrSessionInvalidAppAddress,
+			expectedErr: types.ErrSessionInvalidAppAddress,
 		},
 		{
 			desc: "invalid - empty session id",
-			sh: types.SessionHeader{
+			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "",
 				Service:                 &sharedtypes.Service{},
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
-			err: types.ErrSessionInvalidSessionId,
+			expectedErr: types.ErrSessionInvalidSessionId,
 		},
 		{
 			desc: "invalid - nil service",
-			sh: types.SessionHeader{
+			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
 				Service:                 nil,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
-			err: types.ErrSessionInvalidService,
+			expectedErr: types.ErrSessionInvalidService,
 		},
 		{
 			desc: "invalid - start block height greater than end block height",
-			sh: types.SessionHeader{
+			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
 				Service:                 &sharedtypes.Service{},
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   99,
 			},
-			err: types.ErrSessionInvalidBlockHeight,
+			expectedErr: types.ErrSessionInvalidBlockHeight,
 		},
 		{
 			desc: "valid",
-			sh: types.SessionHeader{
+			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
 				Service:                 &sharedtypes.Service{},
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
-			err: nil,
+			expectedErr: nil,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			err := tt.sh.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.sessionHeader.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 			} else {
 				require.NoError(t, err)
 			}
