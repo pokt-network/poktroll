@@ -6,18 +6,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 // Dummy variable to avoid unused import error.
 var _ = strconv.IntSize
-
-// init initializes the SDK configuration.
-func init() {
-	cmd.InitSDKConfig()
-}
 
 // networkWithGatewayObjects creates a network with a populated gateway state of n gateway objects
 func networkWithGatewayObjects(t *testing.T, n int) (*network.Network, []types.Gateway) {

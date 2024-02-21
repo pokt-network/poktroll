@@ -1665,25 +1665,25 @@ func (x *fastReflection_QueryGetGatewayResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_QueryAllGatewayRequest            protoreflect.MessageDescriptor
-	fd_QueryAllGatewayRequest_pagination protoreflect.FieldDescriptor
+	md_QueryAllGatewaysRequest            protoreflect.MessageDescriptor
+	fd_QueryAllGatewaysRequest_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_query_proto_init()
-	md_QueryAllGatewayRequest = File_poktroll_gateway_query_proto.Messages().ByName("QueryAllGatewayRequest")
-	fd_QueryAllGatewayRequest_pagination = md_QueryAllGatewayRequest.Fields().ByName("pagination")
+	md_QueryAllGatewaysRequest = File_poktroll_gateway_query_proto.Messages().ByName("QueryAllGatewaysRequest")
+	fd_QueryAllGatewaysRequest_pagination = md_QueryAllGatewaysRequest.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllGatewayRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllGatewaysRequest)(nil)
 
-type fastReflection_QueryAllGatewayRequest QueryAllGatewayRequest
+type fastReflection_QueryAllGatewaysRequest QueryAllGatewaysRequest
 
-func (x *QueryAllGatewayRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllGatewayRequest)(x)
+func (x *QueryAllGatewaysRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllGatewaysRequest)(x)
 }
 
-func (x *QueryAllGatewayRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllGatewaysRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_gateway_query_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1695,43 +1695,43 @@ func (x *QueryAllGatewayRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllGatewayRequest_messageType fastReflection_QueryAllGatewayRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllGatewayRequest_messageType{}
+var _fastReflection_QueryAllGatewaysRequest_messageType fastReflection_QueryAllGatewaysRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllGatewaysRequest_messageType{}
 
-type fastReflection_QueryAllGatewayRequest_messageType struct{}
+type fastReflection_QueryAllGatewaysRequest_messageType struct{}
 
-func (x fastReflection_QueryAllGatewayRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllGatewayRequest)(nil)
+func (x fastReflection_QueryAllGatewaysRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllGatewaysRequest)(nil)
 }
-func (x fastReflection_QueryAllGatewayRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllGatewayRequest)
+func (x fastReflection_QueryAllGatewaysRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllGatewaysRequest)
 }
-func (x fastReflection_QueryAllGatewayRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllGatewayRequest
+func (x fastReflection_QueryAllGatewaysRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllGatewaysRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllGatewayRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllGatewayRequest
+func (x *fastReflection_QueryAllGatewaysRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllGatewaysRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllGatewayRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllGatewayRequest_messageType
+func (x *fastReflection_QueryAllGatewaysRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllGatewaysRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllGatewayRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryAllGatewayRequest)
+func (x *fastReflection_QueryAllGatewaysRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryAllGatewaysRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllGatewayRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllGatewayRequest)(x)
+func (x *fastReflection_QueryAllGatewaysRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllGatewaysRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1739,10 +1739,10 @@ func (x *fastReflection_QueryAllGatewayRequest) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllGatewayRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryAllGatewaysRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllGatewayRequest_pagination, value) {
+		if !f(fd_QueryAllGatewaysRequest_pagination, value) {
 			return
 		}
 	}
@@ -1759,15 +1759,15 @@ func (x *fastReflection_QueryAllGatewayRequest) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllGatewayRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllGatewaysRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1777,15 +1777,15 @@ func (x *fastReflection_QueryAllGatewayRequest) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllGatewaysRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1795,16 +1795,16 @@ func (x *fastReflection_QueryAllGatewayRequest) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllGatewayRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1818,15 +1818,15 @@ func (x *fastReflection_QueryAllGatewayRequest) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllGatewaysRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageRequest)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1840,44 +1840,44 @@ func (x *fastReflection_QueryAllGatewayRequest) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageRequest)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllGatewayRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayRequest.pagination":
+	case "poktroll.gateway.QueryAllGatewaysRequest.pagination":
 		m := new(v1beta1.PageRequest)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllGatewayRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllGatewaysRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.QueryAllGatewayRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.QueryAllGatewaysRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1885,7 +1885,7 @@ func (x *fastReflection_QueryAllGatewayRequest) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllGatewayRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllGatewaysRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1896,7 +1896,7 @@ func (x *fastReflection_QueryAllGatewayRequest) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllGatewaysRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1908,7 +1908,7 @@ func (x *fastReflection_QueryAllGatewayRequest) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllGatewayRequest) IsValid() bool {
+func (x *fastReflection_QueryAllGatewaysRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -1918,9 +1918,9 @@ func (x *fastReflection_QueryAllGatewayRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllGatewayRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllGatewaysRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllGatewayRequest)
+		x := input.Message.Interface().(*QueryAllGatewaysRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1946,7 +1946,7 @@ func (x *fastReflection_QueryAllGatewayRequest) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllGatewayRequest)
+		x := input.Message.Interface().(*QueryAllGatewaysRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1990,7 +1990,7 @@ func (x *fastReflection_QueryAllGatewayRequest) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllGatewayRequest)
+		x := input.Message.Interface().(*QueryAllGatewaysRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2022,10 +2022,10 @@ func (x *fastReflection_QueryAllGatewayRequest) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewayRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewaysRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewayRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewaysRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -2099,79 +2099,79 @@ func (x *fastReflection_QueryAllGatewayRequest) ProtoMethods() *protoiface.Metho
 	}
 }
 
-var _ protoreflect.List = (*_QueryAllGatewayResponse_1_list)(nil)
+var _ protoreflect.List = (*_QueryAllGatewaysResponse_1_list)(nil)
 
-type _QueryAllGatewayResponse_1_list struct {
+type _QueryAllGatewaysResponse_1_list struct {
 	list *[]*Gateway
 }
 
-func (x *_QueryAllGatewayResponse_1_list) Len() int {
+func (x *_QueryAllGatewaysResponse_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_QueryAllGatewayResponse_1_list) Get(i int) protoreflect.Value {
+func (x *_QueryAllGatewaysResponse_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_QueryAllGatewayResponse_1_list) Set(i int, value protoreflect.Value) {
+func (x *_QueryAllGatewaysResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Gateway)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_QueryAllGatewayResponse_1_list) Append(value protoreflect.Value) {
+func (x *_QueryAllGatewaysResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
 	concreteValue := valueUnwrapped.Interface().(*Gateway)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_QueryAllGatewayResponse_1_list) AppendMutable() protoreflect.Value {
+func (x *_QueryAllGatewaysResponse_1_list) AppendMutable() protoreflect.Value {
 	v := new(Gateway)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllGatewayResponse_1_list) Truncate(n int) {
+func (x *_QueryAllGatewaysResponse_1_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_QueryAllGatewayResponse_1_list) NewElement() protoreflect.Value {
+func (x *_QueryAllGatewaysResponse_1_list) NewElement() protoreflect.Value {
 	v := new(Gateway)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryAllGatewayResponse_1_list) IsValid() bool {
+func (x *_QueryAllGatewaysResponse_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_QueryAllGatewayResponse            protoreflect.MessageDescriptor
-	fd_QueryAllGatewayResponse_gateway    protoreflect.FieldDescriptor
-	fd_QueryAllGatewayResponse_pagination protoreflect.FieldDescriptor
+	md_QueryAllGatewaysResponse            protoreflect.MessageDescriptor
+	fd_QueryAllGatewaysResponse_gateways   protoreflect.FieldDescriptor
+	fd_QueryAllGatewaysResponse_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_gateway_query_proto_init()
-	md_QueryAllGatewayResponse = File_poktroll_gateway_query_proto.Messages().ByName("QueryAllGatewayResponse")
-	fd_QueryAllGatewayResponse_gateway = md_QueryAllGatewayResponse.Fields().ByName("gateway")
-	fd_QueryAllGatewayResponse_pagination = md_QueryAllGatewayResponse.Fields().ByName("pagination")
+	md_QueryAllGatewaysResponse = File_poktroll_gateway_query_proto.Messages().ByName("QueryAllGatewaysResponse")
+	fd_QueryAllGatewaysResponse_gateways = md_QueryAllGatewaysResponse.Fields().ByName("gateways")
+	fd_QueryAllGatewaysResponse_pagination = md_QueryAllGatewaysResponse.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryAllGatewayResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryAllGatewaysResponse)(nil)
 
-type fastReflection_QueryAllGatewayResponse QueryAllGatewayResponse
+type fastReflection_QueryAllGatewaysResponse QueryAllGatewaysResponse
 
-func (x *QueryAllGatewayResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryAllGatewayResponse)(x)
+func (x *QueryAllGatewaysResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryAllGatewaysResponse)(x)
 }
 
-func (x *QueryAllGatewayResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryAllGatewaysResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_gateway_query_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2183,43 +2183,43 @@ func (x *QueryAllGatewayResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryAllGatewayResponse_messageType fastReflection_QueryAllGatewayResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryAllGatewayResponse_messageType{}
+var _fastReflection_QueryAllGatewaysResponse_messageType fastReflection_QueryAllGatewaysResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryAllGatewaysResponse_messageType{}
 
-type fastReflection_QueryAllGatewayResponse_messageType struct{}
+type fastReflection_QueryAllGatewaysResponse_messageType struct{}
 
-func (x fastReflection_QueryAllGatewayResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryAllGatewayResponse)(nil)
+func (x fastReflection_QueryAllGatewaysResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryAllGatewaysResponse)(nil)
 }
-func (x fastReflection_QueryAllGatewayResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryAllGatewayResponse)
+func (x fastReflection_QueryAllGatewaysResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryAllGatewaysResponse)
 }
-func (x fastReflection_QueryAllGatewayResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllGatewayResponse
+func (x fastReflection_QueryAllGatewaysResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllGatewaysResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryAllGatewayResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryAllGatewayResponse
+func (x *fastReflection_QueryAllGatewaysResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryAllGatewaysResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryAllGatewayResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryAllGatewayResponse_messageType
+func (x *fastReflection_QueryAllGatewaysResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryAllGatewaysResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryAllGatewayResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryAllGatewayResponse)
+func (x *fastReflection_QueryAllGatewaysResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryAllGatewaysResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryAllGatewayResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryAllGatewayResponse)(x)
+func (x *fastReflection_QueryAllGatewaysResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryAllGatewaysResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -2227,16 +2227,16 @@ func (x *fastReflection_QueryAllGatewayResponse) Interface() protoreflect.ProtoM
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryAllGatewayResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.Gateway) != 0 {
-		value := protoreflect.ValueOfList(&_QueryAllGatewayResponse_1_list{list: &x.Gateway})
-		if !f(fd_QueryAllGatewayResponse_gateway, value) {
+func (x *fastReflection_QueryAllGatewaysResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.Gateways) != 0 {
+		value := protoreflect.ValueOfList(&_QueryAllGatewaysResponse_1_list{list: &x.Gateways})
+		if !f(fd_QueryAllGatewaysResponse_gateways, value) {
 			return
 		}
 	}
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryAllGatewayResponse_pagination, value) {
+		if !f(fd_QueryAllGatewaysResponse_pagination, value) {
 			return
 		}
 	}
@@ -2253,17 +2253,17 @@ func (x *fastReflection_QueryAllGatewayResponse) Range(f func(protoreflect.Field
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryAllGatewayResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryAllGatewaysResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
-		return len(x.Gateway) != 0
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
+		return len(x.Gateways) != 0
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2273,17 +2273,17 @@ func (x *fastReflection_QueryAllGatewayResponse) Has(fd protoreflect.FieldDescri
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryAllGatewaysResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
-		x.Gateway = nil
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
+		x.Gateways = nil
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2293,22 +2293,22 @@ func (x *fastReflection_QueryAllGatewayResponse) Clear(fd protoreflect.FieldDesc
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryAllGatewayResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
-		if len(x.Gateway) == 0 {
-			return protoreflect.ValueOfList(&_QueryAllGatewayResponse_1_list{})
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
+		if len(x.Gateways) == 0 {
+			return protoreflect.ValueOfList(&_QueryAllGatewaysResponse_1_list{})
 		}
-		listValue := &_QueryAllGatewayResponse_1_list{list: &x.Gateway}
+		listValue := &_QueryAllGatewaysResponse_1_list{list: &x.Gateways}
 		return protoreflect.ValueOfList(listValue)
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -2322,19 +2322,19 @@ func (x *fastReflection_QueryAllGatewayResponse) Get(descriptor protoreflect.Fie
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryAllGatewaysResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
 		lv := value.List()
-		clv := lv.(*_QueryAllGatewayResponse_1_list)
-		x.Gateway = *clv.list
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+		clv := lv.(*_QueryAllGatewaysResponse_1_list)
+		x.Gateways = *clv.list
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageResponse)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -2348,53 +2348,53 @@ func (x *fastReflection_QueryAllGatewayResponse) Set(fd protoreflect.FieldDescri
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
-		if x.Gateway == nil {
-			x.Gateway = []*Gateway{}
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
+		if x.Gateways == nil {
+			x.Gateways = []*Gateway{}
 		}
-		value := &_QueryAllGatewayResponse_1_list{list: &x.Gateway}
+		value := &_QueryAllGatewaysResponse_1_list{list: &x.Gateways}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageResponse)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryAllGatewayResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryAllGatewaysResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.gateway.QueryAllGatewayResponse.gateway":
+	case "poktroll.gateway.QueryAllGatewaysResponse.gateways":
 		list := []*Gateway{}
-		return protoreflect.ValueOfList(&_QueryAllGatewayResponse_1_list{list: &list})
-	case "poktroll.gateway.QueryAllGatewayResponse.pagination":
+		return protoreflect.ValueOfList(&_QueryAllGatewaysResponse_1_list{list: &list})
+	case "poktroll.gateway.QueryAllGatewaysResponse.pagination":
 		m := new(v1beta1.PageResponse)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewayResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.gateway.QueryAllGatewaysResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewayResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.gateway.QueryAllGatewaysResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryAllGatewayResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryAllGatewaysResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.QueryAllGatewayResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.gateway.QueryAllGatewaysResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -2402,7 +2402,7 @@ func (x *fastReflection_QueryAllGatewayResponse) WhichOneof(d protoreflect.Oneof
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryAllGatewayResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryAllGatewaysResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -2413,7 +2413,7 @@ func (x *fastReflection_QueryAllGatewayResponse) GetUnknown() protoreflect.RawFi
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryAllGatewayResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryAllGatewaysResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -2425,7 +2425,7 @@ func (x *fastReflection_QueryAllGatewayResponse) SetUnknown(fields protoreflect.
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryAllGatewayResponse) IsValid() bool {
+func (x *fastReflection_QueryAllGatewaysResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -2435,9 +2435,9 @@ func (x *fastReflection_QueryAllGatewayResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryAllGatewaysResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryAllGatewayResponse)
+		x := input.Message.Interface().(*QueryAllGatewaysResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2449,8 +2449,8 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 		var n int
 		var l int
 		_ = l
-		if len(x.Gateway) > 0 {
-			for _, e := range x.Gateway {
+		if len(x.Gateways) > 0 {
+			for _, e := range x.Gateways {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -2469,7 +2469,7 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllGatewayResponse)
+		x := input.Message.Interface().(*QueryAllGatewaysResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2502,9 +2502,9 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.Gateway) > 0 {
-			for iNdEx := len(x.Gateway) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.Gateway[iNdEx])
+		if len(x.Gateways) > 0 {
+			for iNdEx := len(x.Gateways) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.Gateways[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2529,7 +2529,7 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryAllGatewayResponse)
+		x := input.Message.Interface().(*QueryAllGatewaysResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -2561,15 +2561,15 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewayResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewaysResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewayResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryAllGatewaysResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateway", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Gateways", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -2596,8 +2596,8 @@ func (x *fastReflection_QueryAllGatewayResponse) ProtoMethods() *protoiface.Meth
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.Gateway = append(x.Gateway, &Gateway{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateway[len(x.Gateway)-1]); err != nil {
+				x.Gateways = append(x.Gateways, &Gateway{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Gateways[len(x.Gateways)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2819,7 +2819,7 @@ func (x *QueryGetGatewayResponse) GetGateway() *Gateway {
 	return nil
 }
 
-type QueryAllGatewayRequest struct {
+type QueryAllGatewaysRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2827,8 +2827,8 @@ type QueryAllGatewayRequest struct {
 	Pagination *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryAllGatewayRequest) Reset() {
-	*x = QueryAllGatewayRequest{}
+func (x *QueryAllGatewaysRequest) Reset() {
+	*x = QueryAllGatewaysRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_gateway_query_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2836,35 +2836,35 @@ func (x *QueryAllGatewayRequest) Reset() {
 	}
 }
 
-func (x *QueryAllGatewayRequest) String() string {
+func (x *QueryAllGatewaysRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllGatewayRequest) ProtoMessage() {}
+func (*QueryAllGatewaysRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryAllGatewayRequest.ProtoReflect.Descriptor instead.
-func (*QueryAllGatewayRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllGatewaysRequest.ProtoReflect.Descriptor instead.
+func (*QueryAllGatewaysRequest) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_query_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *QueryAllGatewayRequest) GetPagination() *v1beta1.PageRequest {
+func (x *QueryAllGatewaysRequest) GetPagination() *v1beta1.PageRequest {
 	if x != nil {
 		return x.Pagination
 	}
 	return nil
 }
 
-type QueryAllGatewayResponse struct {
+type QueryAllGatewaysResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Gateway    []*Gateway            `protobuf:"bytes,1,rep,name=gateway,proto3" json:"gateway,omitempty"`
+	Gateways   []*Gateway            `protobuf:"bytes,1,rep,name=gateways,proto3" json:"gateways,omitempty"`
 	Pagination *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryAllGatewayResponse) Reset() {
-	*x = QueryAllGatewayResponse{}
+func (x *QueryAllGatewaysResponse) Reset() {
+	*x = QueryAllGatewaysResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_gateway_query_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2872,25 +2872,25 @@ func (x *QueryAllGatewayResponse) Reset() {
 	}
 }
 
-func (x *QueryAllGatewayResponse) String() string {
+func (x *QueryAllGatewaysResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryAllGatewayResponse) ProtoMessage() {}
+func (*QueryAllGatewaysResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryAllGatewayResponse.ProtoReflect.Descriptor instead.
-func (*QueryAllGatewayResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryAllGatewaysResponse.ProtoReflect.Descriptor instead.
+func (*QueryAllGatewaysResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_gateway_query_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QueryAllGatewayResponse) GetGateway() []*Gateway {
+func (x *QueryAllGatewaysResponse) GetGateways() []*Gateway {
 	if x != nil {
-		return x.Gateway
+		return x.Gateways
 	}
 	return nil
 }
 
-func (x *QueryAllGatewayResponse) GetPagination() *v1beta1.PageResponse {
+func (x *QueryAllGatewaysResponse) GetPagination() *v1beta1.PageResponse {
 	if x != nil {
 		return x.Pagination
 	}
@@ -2911,13 +2911,13 @@ var file_poktroll_gateway_query_proto_rawDesc = []byte{
 	0x2f, 0x61, 0x6e, 0x6e, 0x6f, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x1a, 0x2a, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f,
 	0x71, 0x75, 0x65, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2f, 0x70, 0x61,
-	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d,
+	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e,
+	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65,
+	0x74, 0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1d,
 	0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
 	0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x70,
 	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f,
-	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1e, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x62, 0x61, 0x73, 0x65, 0x2f, 0x76, 0x31, 0x62, 0x65, 0x74,
-	0x61, 0x31, 0x2f, 0x63, 0x6f, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x14, 0x0a,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x14, 0x0a,
 	0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75,
 	0x65, 0x73, 0x74, 0x22, 0x52, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
 	0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x06, 0x70, 0x61,
@@ -2933,62 +2933,62 @@ var file_poktroll_gateway_query_proto_rawDesc = []byte{
 	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
 	0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77,
 	0x61, 0x79, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x22, 0x60, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x47, 0x61, 0x74,
-	0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70,
-	0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75,
-	0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x22, 0x9d, 0x01, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c,
-	0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x39, 0x0a, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x04, 0xc8, 0xde, 0x1f,
-	0x00, 0x52, 0x07, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61,
-	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27,
-	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65,
-	0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x32, 0xbd, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x84, 0x01,
-	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25,
+	0x79, 0x22, 0x61, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x47, 0x61, 0x74,
+	0x65, 0x77, 0x61, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a,
+	0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x26, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71,
+	0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x22, 0xa0, 0x01, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c,
+	0x6c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x3b, 0x0a, 0x08, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x18, 0x01, 0x20,
+	0x03, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x04,
+	0xc8, 0xde, 0x1f, 0x00, 0x52, 0x08, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x12, 0x47,
+	0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65,
+	0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50,
+	0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67,
+	0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x32, 0xc0, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x12, 0x84, 0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x24, 0x2e, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x25, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61,
+	0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x27, 0x12, 0x25, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
+	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x98, 0x01, 0x0a, 0x07, 0x47, 0x61, 0x74,
+	0x65, 0x77, 0x61, 0x79, 0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74,
+	0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2d, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x27, 0x12, 0x25, 0x2f,
-	0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x70, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x12, 0x98, 0x01, 0x0a, 0x07, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
-	0x12, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x47, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x38, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x32, 0x12, 0x30, 0x2f,
-	0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x67, 0x61,
-	0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x7b, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x7d, 0x12,
-	0x91, 0x01, 0x0a, 0x0a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x6c, 0x6c, 0x12, 0x28,
+	0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x47, 0x65, 0x74, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x38, 0x82, 0xd3, 0xe4, 0x93, 0x02,
+	0x32, 0x12, 0x30, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
+	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
+	0x79, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x7b, 0x61, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x7d, 0x12, 0x94, 0x01, 0x0a, 0x0b, 0x41, 0x6c, 0x6c, 0x47, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x73, 0x12, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x47,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2a,
 	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61,
 	0x79, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x41, 0x6c, 0x6c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61,
-	0x79, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x41, 0x6c, 0x6c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x2e, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x28, 0x12, 0x26, 0x2f, 0x70, 0x6f,
-	0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x2f, 0x67, 0x61, 0x74, 0x65,
-	0x77, 0x61, 0x79, 0x42, 0xa6, 0x01, 0x0a, 0x14, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0x0a, 0x51, 0x75,
-	0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03,
-	0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47,
-	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42,
-	0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72,
-	0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x79, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2e, 0x82, 0xd3, 0xe4, 0x93,
+	0x02, 0x28, 0x12, 0x26, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x2d, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
+	0x6b, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x2f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x42, 0xa6, 0x01, 0x0a, 0x14, 0x63,
+	0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x67, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50,
+	0x01, 0x5a, 0x21, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f,
+	0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x67, 0x61, 0x74,
+	0x65, 0x77, 0x61, 0x79, 0xa2, 0x02, 0x03, 0x50, 0x47, 0x58, 0xaa, 0x02, 0x10, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0xca, 0x02, 0x10,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79,
+	0xe2, 0x02, 0x1c, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x47, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea,
+	0x02, 0x11, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x47, 0x61, 0x74, 0x65,
+	0x77, 0x61, 0x79, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3005,29 +3005,29 @@ func file_poktroll_gateway_query_proto_rawDescGZIP() []byte {
 
 var file_poktroll_gateway_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_poktroll_gateway_query_proto_goTypes = []interface{}{
-	(*QueryParamsRequest)(nil),      // 0: poktroll.gateway.QueryParamsRequest
-	(*QueryParamsResponse)(nil),     // 1: poktroll.gateway.QueryParamsResponse
-	(*QueryGetGatewayRequest)(nil),  // 2: poktroll.gateway.QueryGetGatewayRequest
-	(*QueryGetGatewayResponse)(nil), // 3: poktroll.gateway.QueryGetGatewayResponse
-	(*QueryAllGatewayRequest)(nil),  // 4: poktroll.gateway.QueryAllGatewayRequest
-	(*QueryAllGatewayResponse)(nil), // 5: poktroll.gateway.QueryAllGatewayResponse
-	(*Params)(nil),                  // 6: poktroll.gateway.Params
-	(*Gateway)(nil),                 // 7: poktroll.gateway.Gateway
-	(*v1beta1.PageRequest)(nil),     // 8: cosmos.base.query.v1beta1.PageRequest
-	(*v1beta1.PageResponse)(nil),    // 9: cosmos.base.query.v1beta1.PageResponse
+	(*QueryParamsRequest)(nil),       // 0: poktroll.gateway.QueryParamsRequest
+	(*QueryParamsResponse)(nil),      // 1: poktroll.gateway.QueryParamsResponse
+	(*QueryGetGatewayRequest)(nil),   // 2: poktroll.gateway.QueryGetGatewayRequest
+	(*QueryGetGatewayResponse)(nil),  // 3: poktroll.gateway.QueryGetGatewayResponse
+	(*QueryAllGatewaysRequest)(nil),  // 4: poktroll.gateway.QueryAllGatewaysRequest
+	(*QueryAllGatewaysResponse)(nil), // 5: poktroll.gateway.QueryAllGatewaysResponse
+	(*Params)(nil),                   // 6: poktroll.gateway.Params
+	(*Gateway)(nil),                  // 7: poktroll.gateway.Gateway
+	(*v1beta1.PageRequest)(nil),      // 8: cosmos.base.query.v1beta1.PageRequest
+	(*v1beta1.PageResponse)(nil),     // 9: cosmos.base.query.v1beta1.PageResponse
 }
 var file_poktroll_gateway_query_proto_depIdxs = []int32{
 	6, // 0: poktroll.gateway.QueryParamsResponse.params:type_name -> poktroll.gateway.Params
 	7, // 1: poktroll.gateway.QueryGetGatewayResponse.gateway:type_name -> poktroll.gateway.Gateway
-	8, // 2: poktroll.gateway.QueryAllGatewayRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	7, // 3: poktroll.gateway.QueryAllGatewayResponse.gateway:type_name -> poktroll.gateway.Gateway
-	9, // 4: poktroll.gateway.QueryAllGatewayResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	8, // 2: poktroll.gateway.QueryAllGatewaysRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	7, // 3: poktroll.gateway.QueryAllGatewaysResponse.gateways:type_name -> poktroll.gateway.Gateway
+	9, // 4: poktroll.gateway.QueryAllGatewaysResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
 	0, // 5: poktroll.gateway.Query.Params:input_type -> poktroll.gateway.QueryParamsRequest
 	2, // 6: poktroll.gateway.Query.Gateway:input_type -> poktroll.gateway.QueryGetGatewayRequest
-	4, // 7: poktroll.gateway.Query.GatewayAll:input_type -> poktroll.gateway.QueryAllGatewayRequest
+	4, // 7: poktroll.gateway.Query.AllGateways:input_type -> poktroll.gateway.QueryAllGatewaysRequest
 	1, // 8: poktroll.gateway.Query.Params:output_type -> poktroll.gateway.QueryParamsResponse
 	3, // 9: poktroll.gateway.Query.Gateway:output_type -> poktroll.gateway.QueryGetGatewayResponse
-	5, // 10: poktroll.gateway.Query.GatewayAll:output_type -> poktroll.gateway.QueryAllGatewayResponse
+	5, // 10: poktroll.gateway.Query.AllGateways:output_type -> poktroll.gateway.QueryAllGatewaysResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name
@@ -3092,7 +3092,7 @@ func file_poktroll_gateway_query_proto_init() {
 			}
 		}
 		file_poktroll_gateway_query_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllGatewayRequest); i {
+			switch v := v.(*QueryAllGatewaysRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3104,7 +3104,7 @@ func file_poktroll_gateway_query_proto_init() {
 			}
 		}
 		file_poktroll_gateway_query_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryAllGatewayResponse); i {
+			switch v := v.(*QueryAllGatewaysResponse); i {
 			case 0:
 				return &v.state
 			case 1:

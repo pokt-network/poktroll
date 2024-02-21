@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +15,7 @@ import (
 func Test_ParseGatewayStakeConfig(t *testing.T) {
 	tests := []struct {
 		desc           string
-		expectedError  *sdkerrors.Error
+		expectedErr    *sdkerrors.Error
 		expectedConfig *config.GatewayStakeConfig
 		inputConfig    string
 	}{
@@ -25,57 +25,57 @@ func Test_ParseGatewayStakeConfig(t *testing.T) {
 			inputConfig: `
 				stake_amount: 1000upokt
 				`,
-			expectedError: nil,
+			expectedErr: nil,
 			expectedConfig: &config.GatewayStakeConfig{
-				StakeAmount: sdk.NewCoin("upokt", sdkmath.NewInt(1000)),
+				StakeAmount: sdk.NewCoin("upokt", math.NewInt(1000)),
 			},
 		},
 		// Invalid Configs
 		{
-			desc:          "services_test: invalid service config with empty content",
-			expectedError: config.ErrGatewayConfigEmptyContent,
-			inputConfig:   ``,
+			desc:        "services_test: invalid service config with empty content",
+			expectedErr: config.ErrGatewayConfigEmptyContent,
+			inputConfig: ``,
 		},
 		{
 			desc: "invalid stake denom",
 			inputConfig: `
 				stake_amount: 1000invalid
 				`,
-			expectedError: config.ErrGatewayConfigInvalidStake,
+			expectedErr: config.ErrGatewayConfigInvalidStake,
 		},
 		{
 			desc: "negative stake amount",
 			inputConfig: `
 				stake_amount: -1000upokt
 				`,
-			expectedError: config.ErrGatewayConfigInvalidStake,
+			expectedErr: config.ErrGatewayConfigInvalidStake,
 		},
 		{
 			desc: "zero stake amount",
 			inputConfig: `
 				stake_amount: 0upokt
 				`,
-			expectedError: config.ErrGatewayConfigInvalidStake,
+			expectedErr: config.ErrGatewayConfigInvalidStake,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
-			normalizedConfig := yaml.NormalizeYAMLIndentation(tt.inputConfig)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			normalizedConfig := yaml.NormalizeYAMLIndentation(test.inputConfig)
 			supplierServiceConfig, err := config.ParseGatewayConfig([]byte(normalizedConfig))
 
-			if tt.expectedError != nil {
+			if test.expectedErr != nil {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tt.expectedError)
-				require.Contains(t, err.Error(), tt.expectedError.Error())
+				require.ErrorIs(t, err, test.expectedErr)
+				require.Contains(t, err.Error(), test.expectedErr.Error())
 				require.Nil(t, supplierServiceConfig)
 				return
 			}
 
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expectedConfig.StakeAmount, supplierServiceConfig.StakeAmount)
-			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
+			require.Equal(t, test.expectedConfig.StakeAmount, supplierServiceConfig.StakeAmount)
+			require.Equal(t, test.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
 		})
 	}
 }

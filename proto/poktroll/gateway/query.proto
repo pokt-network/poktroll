@@ -1,17 +1,17 @@
 syntax = "proto3";
-
 package poktroll.gateway;
+
+option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
 
 import "amino/amino.proto";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 import "cosmos/base/query/v1beta1/pagination.proto";
-import "poktroll/gateway/params.proto";
-import "poktroll/gateway/gateway.proto";
 import "cosmos/base/v1beta1/coin.proto";
 
-option go_package = "github.com/pokt-network/poktroll/x/gateway/types";
+import "poktroll/gateway/params.proto";
+import "poktroll/gateway/gateway.proto";
 
 // Query defines the gRPC querier service.
 service Query {
@@ -27,7 +27,7 @@ service Query {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway/{address}";
 
   }
-  rpc GatewayAll (QueryAllGatewayRequest) returns (QueryAllGatewayResponse) {
+  rpc AllGateways (QueryAllGatewaysRequest) returns (QueryAllGatewaysResponse) {
     option (google.api.http).get = "/pokt-network/poktroll/gateway/gateway";
 
   }
@@ -50,12 +50,12 @@ message QueryGetGatewayResponse {
   Gateway gateway = 1 [(gogoproto.nullable) = false];
 }
 
-message QueryAllGatewayRequest {
+message QueryAllGatewaysRequest {
   cosmos.base.query.v1beta1.PageRequest pagination = 1;
 }
 
-message QueryAllGatewayResponse {
-  repeated Gateway                                gateway    = 1 [(gogoproto.nullable) = false];
-           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+message QueryAllGatewaysResponse {
+  repeated Gateway gateways = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
 }
 

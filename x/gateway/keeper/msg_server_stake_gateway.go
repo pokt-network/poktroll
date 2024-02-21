@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/gateway/types"
@@ -37,12 +36,16 @@ func (k msgServer) StakeGateway(
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
 			return nil, err
 		}
-		coinsToDelegate = (*msg.Stake).Sub(currGatewayStake)
+		coinsToDelegate, err = (*msg.Stake).SafeSub(currGatewayStake)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
+		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
 		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
 		return nil, err
 	}
@@ -50,6 +53,7 @@ func (k msgServer) StakeGateway(
 	// Send the coins from the gateway to the staked gateway pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
+		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
 		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err))
 		return nil, err
 	}
@@ -78,13 +82,13 @@ func (k msgServer) updateGateway(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return sdkerrors.Wrapf(types.ErrGatewayUnauthorized, "msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
+		return types.ErrGatewayUnauthorized.Wrapf("msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
 	}
 	if msg.Stake == nil {
-		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount cannot be nil")
+		return types.ErrGatewayInvalidStake.Wrapf("stake amount cannot be nil")
 	}
 	if msg.Stake.IsLTE(*gateway.Stake) {
-		return sdkerrors.Wrapf(types.ErrGatewayInvalidStake, "stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
+		return types.ErrGatewayInvalidStake.Wrapf("stake amount %v must be higher than previous stake amount %v", msg.Stake, gateway.Stake)
 	}
 	gateway.Stake = msg.Stake
 	return nil
