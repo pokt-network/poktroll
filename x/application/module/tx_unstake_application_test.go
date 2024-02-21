@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
@@ -28,6 +28,9 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	accounts := testutil.CreateKeyringAccounts(t, kr, 1)
 	appAccount := accounts[0]
 
+	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
+	network.InitAccount(t, net, appAccount.Address)
+
 	// Update the context with the new keyring
 	ctx = ctx.WithKeyring(kr)
 
@@ -35,42 +38,39 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 	commonArgs := []string{
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
-		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, sdkmath.NewInt(10))).String()),
+		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(net.Config.BondDenom, math.NewInt(10))).String()),
 	}
 
 	tests := []struct {
-		desc    string
-		address string
-		err     *sdkerrors.Error
+		desc        string
+		appAddr     string
+		expectedErr *sdkerrors.Error
 	}{
 		{
 			desc:    "unstake application: valid",
-			address: appAccount.Address.String(),
+			appAddr: appAccount.Address.String(),
 		},
 		{
 			desc: "unstake application: missing address",
-			// address:     "explicitly missing",
-			err: types.ErrAppInvalidAddress,
+			// address explicitly omitted
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 		{
-			desc:    "unstake application: invalid address",
-			address: "invalid",
-			err:     types.ErrAppInvalidAddress,
+			desc:        "unstake application: invalid address",
+			appAddr:     "invalid",
+			expectedErr: types.ErrAppInvalidAddress,
 		},
 	}
 
-	// Initialize the App Account by sending it some funds from the validator account that is part of genesis
-	network.InitAccount(t, net, appAccount.Address)
-
 	// Run the tests
-	for _, tt := range tests {
-		t.Run(tt.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Wait for a new block to be committed
 			require.NoError(t, net.WaitForNextBlock())
 
 			// Prepare the arguments for the CLI command
 			args := []string{
-				fmt.Sprintf("--%s=%s", flags.FlagFrom, tt.address),
+				fmt.Sprintf("--%s=%s", flags.FlagFrom, test.appAddr),
 			}
 			args = append(args, commonArgs...)
 
@@ -78,10 +78,10 @@ func TestCLI_UnstakeApplication(t *testing.T) {
 			outUnstake, err := clitestutil.ExecTestCLICmd(ctx, application.CmdUnstakeApplication(), args)
 
 			// Validate the error if one is expected
-			if tt.err != nil {
-				stat, ok := status.FromError(tt.err)
+			if test.expectedErr != nil {
+				stat, ok := status.FromError(test.expectedErr)
 				require.True(t, ok)
-				require.Contains(t, stat.Message(), tt.err.Error())
+				require.Contains(t, stat.Message(), test.expectedErr.Error())
 				return
 			}
 			require.NoError(t, err)

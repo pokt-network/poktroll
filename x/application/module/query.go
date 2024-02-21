@@ -11,7 +11,8 @@ import (
 )
 
 // GetQueryCmd returns the cli query commands for this module
-func (am AppModule) GetQueryCmd(queryRoute string) *cobra.Command {
+// TODO_TECHDEBT(#370): remove if custom query commands are consolidated into AutoCLI.
+func (am AppModule) GetQueryCmd() *cobra.Command {
 	// Group application queries under a subcommand
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,

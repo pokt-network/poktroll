@@ -1,6 +1,6 @@
-package types
-
 //go:generate mockgen -destination ../../../testutil/application/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,GatewayKeeper
+
+package types
 
 import (
 	"context"
@@ -25,10 +25,4 @@ type BankKeeper interface {
 // GatewayKeeper defines the expected interface needed to retrieve gateway information.
 type GatewayKeeper interface {
 	GetGateway(ctx context.Context, addr string) (gatewaytypes.Gateway, bool)
-}
-
-// ParamSubspace defines the expected Subspace interface for parameters.
-type ParamSubspace interface {
-	Get(context.Context, []byte, interface{})
-	Set(context.Context, []byte, interface{})
 }

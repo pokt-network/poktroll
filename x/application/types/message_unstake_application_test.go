@@ -10,34 +10,34 @@ import (
 
 func TestMsgUnstakeApplication_ValidateBasic(t *testing.T) {
 	tests := []struct {
-		name string
-		msg  MsgUnstakeApplication
-		err  error
+		desc        string
+		msg         MsgUnstakeApplication
+		expectedErr error
 	}{
 		{
-			name: "valid",
+			desc: "valid",
 			msg: MsgUnstakeApplication{
 				Address: sample.AccAddress(),
 			},
 		},
 		{
-			name: "invalid - missing address",
-			msg:  MsgUnstakeApplication{},
-			err:  ErrAppInvalidAddress,
+			desc:        "invalid - missing address",
+			msg:         MsgUnstakeApplication{},
+			expectedErr: ErrAppInvalidAddress,
 		},
 		{
-			name: "invalid - invalid address",
+			desc: "invalid - invalid address",
 			msg: MsgUnstakeApplication{
 				Address: "invalid_address",
 			},
-			err: ErrAppInvalidAddress,
+			expectedErr: ErrAppInvalidAddress,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.msg.ValidateBasic()
-			if tt.err != nil {
-				require.ErrorIs(t, err, tt.err)
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.msg.ValidateBasic()
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				return
 			}
 			require.NoError(t, err)
