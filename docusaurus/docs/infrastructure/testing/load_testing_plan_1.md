@@ -1,9 +1,16 @@
 ---
 sidebar_position: 2
-title: Load Testing - Plan
+title: Load Testing - Plan #1
 ---
 
 # Load Test #1 - Plan <!-- omit in toc -->
+
+:::warning
+
+TODO(@Olshansk, @okdas, @red-0ne, @RawthiL): Please reference the [forum post](https://forum.pokt.network/t/block-sizes-claims-and-proofs-in-the-multi-gateway-era/5060/9) for
+an understanding of how it affects the load test plan in practice.
+
+:::
 
 _This document outlines the first load test for the Shannon upgrade. IT **IS NOT** intended to be an exhaustive evaluation of the entire system's performance. **IT IS** intended to give visibility into the business logic of the platform, and create a baseline for future load tests._
 
