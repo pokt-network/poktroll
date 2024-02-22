@@ -135,45 +135,75 @@ func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int
 	if int64(bal) < amount {
 		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
 	}
-	s.scenarioState[accName] = bal // save the balance for later
+	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
 func (s *suite) AnAccountExistsFor(accName string) {
 	bal := s.getAccBalance(accName)
-	s.scenarioState[accName] = bal // save the balance for later
+	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
-	prev, ok := s.scenarioState[accName]
+func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName string, expectedStakeChange int64, condition string) {
+	// Get previous stake
+	prev, ok := s.scenarioState[accStakeKey(actorType, accName)]
+	if !ok {
+		s.Fatalf("no previous stake found for %s", accName)
+	}
+	prevStake, ok := prev.(int64)
+	if !ok {
+		s.Fatalf("previous stake for %s is not an int", accName)
+	}
+
+	// Get current stake
+	ok, currStake := s.getStakedAmount(actorType, accName)
+	if !ok {
+		s.Fatalf("no current stake found for %s", accName)
+	}
+
+	// Validate the change in stake
+	s.validateAmountChange(prevStake, int64(currStake), expectedStakeChange, accName, condition)
+}
+
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
+	// Get previous balance
+	prev, ok := s.scenarioState[accBalanceKey(accName)]
 	if !ok {
 		s.Fatalf("no previous balance found for %s", accName)
 	}
-
-	currBalance := s.getAccBalance(accName)
-	prevBalance, ok := prev.(int)
+	prevBalance, ok := prev.(int64)
 	if !ok {
 		s.Fatalf("previous balance for %s is not an int", accName)
 	}
-	deltaBalance := int64(math.Abs(float64(currBalance - prevBalance)))
 
+	// Get current balance
+	currBalance := s.getAccBalance(accName)
+
+	// Validate the change in stake
+	s.validateAmountChange(prevBalance, int64(currBalance), expectedStakeChange, accName, condition)
+}
+
+func (s *suite) validateAmountChange(prevAmount, currAmount, expectedAmountChange int64, accName, condition string) {
+	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
+	// Verify if balance is more or less than before
 	switch condition {
 	case "more":
-		if currBalance <= prevBalance {
-			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, currBalance, prevBalance)
+		if currAmount <= prevAmount {
+			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, currAmount, prevAmount)
 		}
-		if deltaBalance != amount {
-			s.Fatalf("account %s balance expected to increase by %d, but only increased by %d", accName, amount, deltaBalance)
+		if deltaAmount != expectedAmountChange {
+			s.Fatalf("account %s balance expected to increase by %d, but only increased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	case "less":
-		if currBalance >= prevBalance {
-			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, currBalance, prevBalance)
+		if currAmount >= prevAmount {
+			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, currAmount, prevAmount)
 		}
-		if deltaBalance != amount {
-			s.Fatalf("account %s balance expected to decrease by %d, but only decreased by %d", accName, amount, deltaBalance)
+		if deltaAmount != expectedAmountChange {
+			s.Fatalf("account %s balance expected to decrease by %d, but only decreased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	default:
 		s.Fatalf("unknown condition %s", condition)
 	}
+
 }
 
 func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
@@ -241,6 +271,14 @@ func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	}
 }
 
+func (s *suite) TheAccountForIsStaked(actorType, accName string) {
+	found, stakeAmount := s.getStakedAmount(actorType, accName)
+	if !found {
+		s.Fatalf("account %s should be staked", accName)
+	}
+	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
+}
+
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if !found {
@@ -249,6 +287,7 @@ func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount
 	if int64(stakeAmount) != amount {
 		s.Fatalf("account %s stake amount is not %d", accName, amount)
 	}
+	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
@@ -432,4 +471,12 @@ func (s *suite) getAccBalance(accName string) int {
 // used to create the primary composite key on-chain to uniquely distinguish relays.
 func relayReferenceKey(appName, supplierName string) string {
 	return fmt.Sprintf("%s/%s", appName, supplierName)
+}
+
+func accBalanceKey(accName string) string {
+	return fmt.Sprintf("balance/%s", accName)
+}
+
+func accStakeKey(actorType, accName string) string {
+	return fmt.Sprintf("stake/%s/%s", actorType, accName)
 }

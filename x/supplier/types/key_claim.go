@@ -28,6 +28,13 @@ func ClaimPrimaryKey(sessionId, supplierAddr string) []byte {
 // ClaimSupplierAddressKey returns the key used to iterate through claims given a supplier Address.
 func ClaimSupplierAddressKey(supplierAddr string, primaryKey []byte) []byte {
 	return KeyComposite([]byte(supplierAddr), primaryKey)
+	//claim/address/1 -> key1
+	//claim/address/2 -> key2
+	//claim/address/3 -> key3
+	//claim/address/4 -> key4
+	//claim/address/5 -> key5
+	//claim/address/{addr}/* -> key*
+	//claim/height/{height}* -> key*
 }
 
 // ClaimSupplierEndSessionHeightKey returns the key used to iterate through claims given a session end height.
