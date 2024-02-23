@@ -7,6 +7,32 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+# Detect operating system
+OS := $(shell uname -s)
+
+# Set default commands, will potentially be overridden on macOS
+SED := sed
+GREP := grep
+
+# macOS-specific adjustments
+ifeq ($(OS),Darwin)
+    # Check for gsed and ggrep, suggest installation with Homebrew if not found
+    FOUND_GSED := $(shell command -v gsed)
+    FOUND_GGREP := $(shell command -v ggrep)
+    ifeq ($(FOUND_GSED),)
+        $(warning GNU sed (gsed) is not installed. Please install it using Homebrew by running: brew install gnu-sed)
+        SED := gsed # Assuming the user will install it, setting the variable in advance
+    else
+        SED := gsed
+    endif
+    ifeq ($(FOUND_GGREP),)
+        $(warning GNU grep (ggrep) is not installed. Please install it using Homebrew by running: brew install grep)
+        GREP := ggrep # Assuming the user will install it, setting the variable in advance
+    else
+        GREP := ggrep
+    endif
+endif
+
 ####################
 ### Dependencies ###
 ####################
@@ -167,10 +193,10 @@ proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
-			ggrep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
-				echo "Modifying file: $$file"; \
-				gsed -i'' -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
-				gsed -i 's,'$$module'\.,,g' "$$file"; \
+			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+					echo "Modifying file: $$file"; \
+					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
 
@@ -181,10 +207,10 @@ proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 # TODO_IN_THIS_PR: Can we consolidate this with `proto_clean` and use proper make targets instead of $(MAKE)?
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
-	@find ./ -name "*.go" | xargs --no-run-if-empty gsed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	find ./ -name "*.pulsar.go*" | xargs --no-run-if-empty rm
+	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty gsed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 # TODO_IN_THIS_PR: Unclear where/when we shold be calling `proto_clean_pulsar`
 .PHONY: proto_regen
