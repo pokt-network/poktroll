@@ -7,6 +7,34 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+# Detect operating system
+OS := $(shell uname -s)
+
+# Set default commands, will potentially be overridden on macOS
+SED := sed
+GREP := grep
+
+# macOS-specific adjustments
+ifeq ($(OS),Darwin)
+    # Check for gsed and ggrep, install with Homebrew if not found
+    FOUND_GSED := $(shell command -v gsed)
+    FOUND_GGREP := $(shell command -v ggrep)
+    ifeq ($(FOUND_GSED),)
+        $(warning Installing GNU sed with Homebrew...)
+        $(shell brew install gnu-sed)
+        SED := gsed
+    else
+        SED := gsed
+    endif
+    ifeq ($(FOUND_GGREP),)
+        $(warning Installing GNU grep with Homebrew...)
+        $(shell brew install grep)
+        GREP := ggrep
+    else
+        GREP := ggrep
+    endif
+endif
+
 ####################
 ### Dependencies ###
 ####################
@@ -150,19 +178,19 @@ proto_fix_self_import: ## TODO: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
-			grep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
-					sed -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
-					sed -i 's,'$$module'\.,,g' "$$file"; \
+					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
 
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO: explain...
-	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
 #######################
 ### Docker  Helpers ###
