@@ -195,6 +195,11 @@ proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
+
+.PHONY: proto_clean
+proto_clean: ## Delete existing .pb.go or .pb.gw.go files
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+
 .PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
@@ -207,8 +212,9 @@ proto_fix_self_import: ## TODO: explain
 			done; \
 	done
 
+# TODO_IN_THIS_PR: Can we consolidate this with `proto_clean` and use proper make targets instead of $(MAKE)?
 .PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO: explain...
+proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
 	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
