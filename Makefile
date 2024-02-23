@@ -86,6 +86,15 @@ check_go_version:
 		exit 1; \
 	fi
 
+.PHONY: check_ignite_version
+# Internal helper target - check ignite version
+check_ignite_version:
+	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
+	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
+		echo "Error: Version $$version is less than v28. Exiting with error." ; \
+		exit 1 ; \
+	fi
+
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
@@ -105,7 +114,6 @@ check_gh:
 		exit 1; \
 	fi; \
 	}
-
 
 .PHONY: check_docker
 # Internal helper target - check if docker is installed
@@ -147,6 +155,15 @@ check_jq:
 	fi; \
 	}
 
+.PHONY: check_yq
+# Internal helper target - check if `yq` is installed
+check_yq:
+	{ \
+	if ( ! ( command -v yq >/dev/null )); then \
+		echo "Seems like you don't have `yq` installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
 
 .PHONY: check_node
 # Internal helper target - check if node is installed
@@ -167,12 +184,17 @@ warn_destructive: ## Print WARNING to the user
 ### Proto  Helpers ####
 #######################
 
-.PHONY: proto_regen
-proto_regen: ## Delete existing protobuf artifacts and regenerate them
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+.PHONY: proto_ignite_gen
+proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
-	$(MAKE) proto_fix_self_import
 
+# TODO_IN_THIS_PR: Understand why Olshansky needs to run `gco api/poktroll/application/genesis.pulsar.go api/poktroll/application/query.pulsar.go api/poktroll/session/query.pulsar.go`
+# TODO_IN_THIS_PR: Filter for `*.go` files
+.PHONY: proto_fix_self_import
+proto_fix_self_import: ## TODO_IN_THIS_PR: explain
+	@for dir in $(wildcard ./api/poktroll/*/); do \
+			module=$$(basename $$dir); \
+			echo "Processing module $$module"; \
 .PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
@@ -192,6 +214,11 @@ proto_clean_pulsar: ## TODO: explain...
 	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
+
+# TODO_IN_THIS_PR: Unclear where/when we shold be calling `proto_clean_pulsar`
+.PHONY: proto_regen
+proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
+
 #######################
 ### Docker  Helpers ###
 #######################
@@ -208,9 +235,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: ## Starts localnet
-	make proto_regen
-	make localnet_regenesis
+localnet_up: proto_regen localnet_regenesis## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
@@ -218,7 +243,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 # TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
 # intends to make this parameterizable in the future.
@@ -314,8 +339,9 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
-go_develop: proto_regen go_mockgen ## Generate protos and mocks
+go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
+## TODO_IN_THIS_PR: Make this work again
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
@@ -610,7 +636,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@printf "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
+	@printf "!!!!!!!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED !!!!!!!!!\n"\
 	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############
