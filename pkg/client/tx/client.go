@@ -367,6 +367,7 @@ func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 		tClient.txsMutex.Lock()
 
 		// Check for a corresponding error channel in the map.
+		// TODO_IN_THIS_PR: This panic is caused when we run the following command: `make acc_initialize_pubkeys`
 		txErrCh, ok := tClient.txErrorChans[txHashHex]
 		if !ok {
 			panic("Received tx event without an associated error channel.")
