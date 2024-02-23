@@ -87,7 +87,6 @@ check_gh:
 	fi; \
 	}
 
-
 .PHONY: check_docker
 # Internal helper target - check if docker is installed
 check_docker:
@@ -128,6 +127,15 @@ check_jq:
 	fi; \
 	}
 
+.PHONY: check_yq
+# Internal helper target - check if `yq` is installed
+check_yq:
+	{ \
+	if ( ! ( command -v yq >/dev/null )); then \
+		echo "Seems like you don't have `yq` installed. Make sure you install it before continuing"; \
+		exit 1; \
+	fi; \
+	}
 
 .PHONY: check_node
 # Internal helper target - check if node is installed
@@ -170,6 +178,7 @@ proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
+# TODO_IN_THIS_PR: Can we consolidate this with `proto_clean` and use proper make targets instead of $(MAKE)?
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
 	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i'' -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
@@ -197,9 +206,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: ## Starts localnet
-	make proto_regen
-	make localnet_regenesis
+localnet_up: proto_regen localnet_regenesis## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
@@ -207,7 +214,7 @@ localnet_down: ## Delete resources created by localnet
 	tilt down
 
 .PHONY: localnet_regenesis
-localnet_regenesis: acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
+localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 # TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
 # intends to make this parameterizable in the future.
@@ -600,7 +607,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@printf "!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED!!!\n"\
+	@printf "!!!!!!!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED !!!!!!!!!\n"\
 	"\t\tmake acc_initialize_pubkeys\n"
 
 ##############

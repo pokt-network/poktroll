@@ -85,7 +85,7 @@ If you need to modify Kubernetes resources in your local setup, follow these ste
 Clone the helm charts locally:
 
 ```bash
-cd .. && git@github.com:pokt-network/helm-charts.git
+cd .. && git clone git@github.com:pokt-network/helm-charts.git
 cd -
 ```
 
