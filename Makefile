@@ -58,6 +58,15 @@ check_go_version:
 		exit 1; \
 	fi
 
+.PHONY: check_ignite_version
+# Internal helper target - check ignite version
+check_ignite_version:
+	@version=$$(ignite version 2>/dev/null | grep 'Ignite CLI version:' | awk '{print $$4}') ; \
+	if [ "$$(printf "v28\n$$version" | sort -V | head -n1)" != "v28" ]; then \
+		echo "Error: Version $$version is less than v28. Exiting with error." ; \
+		exit 1 ; \
+	fi
+
 .PHONY: check_act
 # Internal helper target - check if `act` is installed
 check_act:
@@ -139,30 +148,38 @@ warn_destructive: ## Print WARNING to the user
 ### Proto  Helpers ####
 #######################
 
-.PHONY: proto_regen
-proto_regen: ## Delete existing protobuf artifacts and regenerate them
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+.PHONY: proto_ignite_gen
+proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
-	$(MAKE) proto_fix_self_import
 
+# TODO_IN_THIS_PR: Understand why Olshansky needs to run `gco api/poktroll/application/genesis.pulsar.go api/poktroll/application/query.pulsar.go api/poktroll/session/query.pulsar.go`
+# TODO_IN_THIS_PR: Filter for `*.go` files
 .PHONY: proto_fix_self_import
-proto_fix_self_import: ## TODO: explain
+proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
-			grep -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
-					echo "Modifying file: $$file"; \
-					sed -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
-					sed -i 's,'$$module'\.,,g' "$$file"; \
+			grep -lER '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+				echo "Modifying file: $$file"; \
+				sed -i'' -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
+				sed -i'' -E 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
 
+.PHONY: proto_clean
+proto_clean: ## Delete existing .pb.go or .pb.gw.go files
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+
 .PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO: explain...
-	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
-	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
+proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
+	@find ./ -name "*.go" | xargs --no-run-if-empty sed -i'' -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
+	find ./ -name "*.pulsar.go*" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
-	find ./ -name "*.go" | xargs --no-run-if-empty sed -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+	find ./ -name "*.go" | xargs --no-run-if-empty sed -i'' -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
+
+# TODO_IN_THIS_PR: Unclear where/when we shold be calling `proto_clean_pulsar`
+.PHONY: proto_regen
+proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
 
 #######################
 ### Docker  Helpers ###
@@ -286,8 +303,9 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 	go generate ./testutil/testkeyring/keyring.go
 
 .PHONY: go_develop
-go_develop: proto_regen go_mockgen ## Generate protos and mocks
+go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
+## TODO_IN_THIS_PR: Make this work again
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
