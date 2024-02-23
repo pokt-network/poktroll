@@ -47,7 +47,7 @@ spec:
               name: configs-volume
       restartPolicy: Never
       volumes:
-        - configMap:
+        - secret:
             defaultMode: 420
             name: keys-${IMAGE_TAG}
           name: keys-volume
