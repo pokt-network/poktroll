@@ -188,20 +188,12 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-# TODO_IN_THIS_PR: Understand why Olshansky needs to run `gco api/poktroll/application/genesis.pulsar.go api/poktroll/application/query.pulsar.go api/poktroll/session/query.pulsar.go`
-# TODO_IN_THIS_PR: Filter for `*.go` files
-.PHONY: proto_fix_self_import
-proto_fix_self_import: ## TODO_IN_THIS_PR: explain
-	@for dir in $(wildcard ./api/poktroll/*/); do \
-			module=$$(basename $$dir); \
-			echo "Processing module $$module"; \
-
 .PHONY: proto_clean
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
 .PHONY: proto_fix_self_import
-proto_fix_self_import: ## TODO: explain
+proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
