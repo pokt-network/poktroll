@@ -187,7 +187,7 @@ proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
 .PHONY: proto_fix_self_import
-proto_fix_self_import: ## TODO_IN_THIS_PR: explain
+proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Processing module $$module"; \
@@ -202,15 +202,14 @@ proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
 	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
 
-# TODO_IN_THIS_PR: Can we consolidate this with `proto_clean` and use proper make targets instead of $(MAKE)?
+## TODO_TECHDEBT(@bryanchriswhite): Investigate if / how this can be integrated with `proto_regen`
 .PHONY: proto_clean_pulsar
-proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
+proto_clean_pulsar: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,(^[[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),///\1,'
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
 
-# TODO_IN_THIS_PR: Unclear where/when we shold be calling `proto_clean_pulsar`
 .PHONY: proto_regen
 proto_regen: proto_clean proto_ignite_gen proto_fix_self_import ## Regenerate protobuf artifacts
 
@@ -336,7 +335,6 @@ go_testgen_accounts: ## Generate test accounts for usage in test environments
 .PHONY: go_develop
 go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and mocks
 
-## TODO_IN_THIS_PR: Make this work again
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
