@@ -16,20 +16,18 @@ GREP := grep
 
 # macOS-specific adjustments
 ifeq ($(OS),Darwin)
-    # Check for gsed and ggrep, install with Homebrew if not found
+    # Check for gsed and ggrep, suggest installation with Homebrew if not found
     FOUND_GSED := $(shell command -v gsed)
     FOUND_GGREP := $(shell command -v ggrep)
     ifeq ($(FOUND_GSED),)
-        $(warning Installing GNU sed with Homebrew...)
-        $(shell brew install gnu-sed)
-        SED := gsed
+        $(warning GNU sed (gsed) is not installed. Please install it using Homebrew by running: brew install gnu-sed)
+        SED := gsed # Assuming the user will install it, setting the variable in advance
     else
         SED := gsed
     endif
     ifeq ($(FOUND_GGREP),)
-        $(warning Installing GNU grep with Homebrew...)
-        $(shell brew install grep)
-        GREP := ggrep
+        $(warning GNU grep (ggrep) is not installed. Please install it using Homebrew by running: brew install grep)
+        GREP := ggrep # Assuming the user will install it, setting the variable in advance
     else
         GREP := ggrep
     endif
