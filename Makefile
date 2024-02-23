@@ -186,8 +186,6 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-# TODO_IN_THIS_PR: Understand why Olshansky needs to run `gco api/poktroll/application/genesis.pulsar.go api/poktroll/application/query.pulsar.go api/poktroll/session/query.pulsar.go`
-# TODO_IN_THIS_PR: Filter for `*.go` files
 .PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
@@ -616,7 +614,8 @@ acc_balance_total_supply: ## Query the total supply of the network
 # transaction for its public key to be populated in the account keeper. As such,
 # the solution is to send funds from every account in genesis to some address
 # (PNF was selected ambigously) to make sure their public keys are populated.
-
+# TODO_TECHDEBT: One of the accounts involved in this command always errors
+# so we need to understand why and fix it.
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))

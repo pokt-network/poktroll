@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/network"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 // Dummy variable to avoid unused import error.
