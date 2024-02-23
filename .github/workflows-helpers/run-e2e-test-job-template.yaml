@@ -29,9 +29,9 @@ spec:
                   key: auth_token
                   name: celestia-secret
             - name: POCKET_NODE
-              value: tcp://${NAMESPACE}-sequencer:36657
+              value: tcp://${NAMESPACE}-validator-poktrolld:36657
             - name: SEQUENCER_RPC_ENDPOINT
-              value: ${NAMESPACE}-sequencer:36657
+              value: ${NAMESPACE}-validator-poktrolld:36657
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
