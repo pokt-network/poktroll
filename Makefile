@@ -188,10 +188,8 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-.PHONY: proto_clean
-proto_clean: ## Delete existing .pb.go or .pb.gw.go files
-	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
-
+# TODO_IN_THIS_PR: Understand why Olshansky needs to run `gco api/poktroll/application/genesis.pulsar.go api/poktroll/application/query.pulsar.go api/poktroll/session/query.pulsar.go`
+# TODO_IN_THIS_PR: Filter for `*.go` files
 .PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 	@for dir in $(wildcard ./api/poktroll/*/); do \
@@ -204,6 +202,10 @@ proto_fix_self_import: ## TODO_IN_THIS_PR: explain
 			done; \
 	done
 
+.PHONY: proto_clean
+proto_clean: ## Delete existing .pb.go or .pb.gw.go files
+	find . \( -name "*.pb.go" -o -name "*.pb.gw.go" \) | xargs --no-run-if-empty rm
+
 # TODO_IN_THIS_PR: Can we consolidate this with `proto_clean` and use proper make targets instead of $(MAKE)?
 .PHONY: proto_clean_pulsar
 proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
@@ -211,7 +213,6 @@ proto_clean_pulsar: ## TODO_IN_THIS_PR: explain...
 	find ./ -name "*.pulsar.go" | xargs --no-run-if-empty rm
 	$(MAKE) proto_regen
 	find ./ -name "*.go" | xargs --no-run-if-empty $(SED) -i -E 's,^///([[:space:]_[:alnum:]]+"github.com/pokt-network/poktroll/api.+"),\1,'
-
 
 # TODO_IN_THIS_PR: Unclear where/when we shold be calling `proto_clean_pulsar`
 .PHONY: proto_regen
