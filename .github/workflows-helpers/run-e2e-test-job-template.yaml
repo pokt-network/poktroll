@@ -49,7 +49,7 @@ spec:
       volumes:
         - secret:
             defaultMode: 420
-            name: keys-${IMAGE_TAG}
+            secretName: keys-${IMAGE_TAG}
           name: keys-volume
         - configMap:
             defaultMode: 420
