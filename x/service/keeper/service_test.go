@@ -1,15 +1,15 @@
 package keeper_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/service/keeper"
@@ -24,10 +24,10 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNServices(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Service {
+func createNServices(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Service {
 	services := make([]sharedtypes.Service, n)
 	for i := range services {
-		services[i].Id = fmt.Sprintf("svcId%d", i)
+		services[i].Id = strconv.Itoa(i)
 		services[i].Name = fmt.Sprintf("svcName%d", i)
 
 		keeper.SetService(ctx, services[i])
@@ -44,27 +44,20 @@ func TestServiceGet(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	services := createNServices(keeper, ctx, 10)
 	for _, service := range services {
-		service, found := keeper.GetService(ctx,
-			service.Id,
-		)
+		foundService, found := keeper.GetService(ctx, service.Id)
 		require.True(t, found)
 		require.Equal(t,
 			nullify.Fill(&service),
-			nullify.Fill(&service),
+			nullify.Fill(&foundService),
 		)
 	}
 }
-
 func TestServiceRemove(t *testing.T) {
 	keeper, ctx := keepertest.ServiceKeeper(t)
 	services := createNServices(keeper, ctx, 10)
 	for _, service := range services {
-		keeper.RemoveService(ctx,
-			service.Id,
-		)
-		_, found := keeper.GetService(ctx,
-			service.Id,
-		)
+		keeper.RemoveService(ctx, service.Id)
+		_, found := keeper.GetService(ctx, service.Id)
 		require.False(t, found)
 	}
 }
@@ -74,6 +67,6 @@ func TestServiceGetAll(t *testing.T) {
 	services := createNServices(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(services),
-		nullify.Fill(keeper.GetAllServices(ctx)),
+		nullify.Fill(keeper.GetAllService(ctx)),
 	)
 }

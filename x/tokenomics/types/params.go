@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
-	"gopkg.in/yaml.v2"
 )
 
-var _ paramtypes.ParamSet = (*Params)(nil)
-
 var (
+	_ paramtypes.ParamSet = (*Params)(nil)
+
 	KeyComputeUnitsToTokensMultiplier = []byte("ComputeUnitsToTokensMultiplier")
 	// TODO: Determine the default value
 	DefaultComputeUnitsToTokensMultiplier uint64 = 42
@@ -21,9 +20,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams(
-	computeUnitsToTokensMultiplier uint64,
-) Params {
+func NewParams(computeUnitsToTokensMultiplier uint64) Params {
 	return Params{
 		ComputeUnitsToTokensMultiplier: computeUnitsToTokensMultiplier,
 	}
@@ -39,7 +36,11 @@ func DefaultParams() Params {
 // ParamSetPairs get the params.ParamSet
 func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 	return paramtypes.ParamSetPairs{
-		paramtypes.NewParamSetPair(KeyComputeUnitsToTokensMultiplier, &p.ComputeUnitsToTokensMultiplier, validateComputeUnitsToTokensMultiplier),
+		paramtypes.NewParamSetPair(
+			KeyComputeUnitsToTokensMultiplier,
+			&p.ComputeUnitsToTokensMultiplier,
+			validateComputeUnitsToTokensMultiplier,
+		),
 	}
 }
 
@@ -52,13 +53,8 @@ func (p Params) Validate() error {
 	return nil
 }
 
-// String implements the Stringer interface.
-func (p Params) String() string {
-	out, _ := yaml.Marshal(p)
-	return string(out)
-}
-
 // validateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier param
+// NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func validateComputeUnitsToTokensMultiplier(v interface{}) error {
 	computeUnitsToTokensMultiplier, ok := v.(uint64)
 	if !ok {

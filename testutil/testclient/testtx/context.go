@@ -108,7 +108,7 @@ func NewOneTimeErrTxTimeoutTxContext(
 			return &cometrpctypes.ResultTx{
 				Hash:   txHash,
 				Height: 1,
-				TxResult: abci.ResponseDeliverTx{
+				TxResult: abci.ExecTxResult{
 					Code:      1,
 					Log:       *expectedErrMsg,
 					Codespace: "test_codespace",

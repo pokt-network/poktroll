@@ -1,15 +1,17 @@
 package keeper_test
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/pokt-network/poktroll/cmd/pocketd/cmd"
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/testutil/sample"
@@ -25,12 +27,12 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
-func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtypes.Supplier {
+func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Supplier {
 	suppliers := make([]sharedtypes.Supplier, n)
 	for i := range suppliers {
 		supplier := &suppliers[i]
 		supplier.Address = sample.AccAddress()
-		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(int64(i))}
+		supplier.Stake = &sdk.Coin{Denom: "upokt", Amount: math.NewInt(int64(i))}
 		supplier.Services = []*sharedtypes.SupplierServiceConfig{
 			{
 				Service: &sharedtypes.Service{Id: fmt.Sprintf("svc%d", i)},
@@ -50,8 +52,8 @@ func createNSupplier(keeper *keeper.Keeper, ctx sdk.Context, n int) []sharedtype
 }
 
 func TestSupplierGet(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t, nil)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	for _, supplier := range suppliers {
 		supplierFound, isSupplierFound := keeper.GetSupplier(ctx,
 			supplier.Address,
@@ -63,13 +65,12 @@ func TestSupplierGet(t *testing.T) {
 		)
 	}
 }
+
 func TestSupplierRemove(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t, nil)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	for _, supplier := range suppliers {
-		keeper.RemoveSupplier(ctx,
-			supplier.Address,
-		)
+		keeper.RemoveSupplier(ctx, supplier.Address)
 		_, isSupplierFound := keeper.GetSupplier(ctx,
 			supplier.Address,
 		)
@@ -78,11 +79,11 @@ func TestSupplierRemove(t *testing.T) {
 }
 
 func TestSupplierGetAll(t *testing.T) {
-	keeper, ctx := keepertest.SupplierKeeper(t, nil)
-	suppliers := createNSupplier(keeper, ctx, 10)
+	keeper, ctx := keepertest.SupplierKeeper(t)
+	suppliers := createNSuppliers(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(suppliers),
-		nullify.Fill(keeper.GetAllSupplier(ctx)),
+		nullify.Fill(keeper.GetAllSuppliers(ctx)),
 	)
 }
 

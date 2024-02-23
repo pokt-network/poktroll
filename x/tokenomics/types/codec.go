@@ -1,31 +1,17 @@
 package types
 
 import (
-	// this line is used by starport scaffolding # 1
-
-	"github.com/cosmos/cosmos-sdk/codec"
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
+	// this line is used by starport scaffolding # 1
 )
 
-func RegisterCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterConcrete(Params{}, "tokenomics/Params", nil)
-	cdc.RegisterConcrete(&MsgUpdateParams{}, "tokenomics/UpdateParams", nil)
-	// this line is used by starport scaffolding # 2
-}
-
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
+	// this line is used by starport scaffolding # 3
+
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgUpdateParams{},
 	)
-
-	// this line is used by starport scaffolding # 3
-
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 }
-
-var (
-	Amino     = codec.NewLegacyAmino()
-	ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
-)

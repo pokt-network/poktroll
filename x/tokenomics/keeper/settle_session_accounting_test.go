@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -39,10 +38,9 @@ func TestSettleSessionAccounting_AppStakeTooLow(t *testing.T) {
 
 func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 	keeper, ctx, _, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// The base claim whose root will be customized for testing purposes
-	claim := suppliertypes.Claim{
+	claim := prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: sample.AccAddress(), // Random address
@@ -57,17 +55,16 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 		RootHash: smstRootWithSum(42),
 	}
 
-	err := keeper.SettleSessionAccounting(wctx, &claim)
+	err := keeper.SettleSessionAccounting(ctx, &claim)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrTokenomicsApplicationNotFound)
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// Define test cases
-	testCases := []struct {
+	tests := []struct {
 		desc        string
 		root        []byte // smst.MerkleRoot
 		errExpected bool
@@ -115,8 +112,8 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 	}
 
 	// Iterate over each test case
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Use defer-recover to catch any panic
 			defer func() {
 				if r := recover(); r != nil {
@@ -126,7 +123,7 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 			// Setup claim by copying the baseClaim and updating the root
 			claim := baseClaim(appAddr, supplierAddr, 0)
-			claim.RootHash = smt.MerkleRoot(tc.root[:])
+			claim.RootHash = smt.MerkleRoot(test.root[:])
 
 			// Execute test function
 			err := func() (err error) {
@@ -135,11 +132,11 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(wctx, &claim)
+				return keeper.SettleSessionAccounting(ctx, &claim)
 			}()
 
 			// Assert the error
-			if tc.errExpected {
+			if test.errExpected {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -150,19 +147,18 @@ func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
 
 func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	keeper, ctx, appAddr, supplierAddr := testkeeper.TokenomicsKeeper(t)
-	wctx := sdk.WrapSDKContext(ctx)
 
 	// Define test cases
-	testCases := []struct {
+	tests := []struct {
 		desc        string
-		claim       *suppliertypes.Claim
+		claim       *prooftypes.Claim
 		errExpected bool
 		expectErr   error
 	}{
 
 		{
 			desc: "Valid Claim",
-			claim: func() *suppliertypes.Claim {
+			claim: func() *prooftypes.Claim {
 				claim := baseClaim(appAddr, supplierAddr, 42)
 				return &claim
 			}(),
@@ -176,7 +172,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		},
 		{
 			desc: "Claim with nil session header",
-			claim: func() *suppliertypes.Claim {
+			claim: func() *prooftypes.Claim {
 				claim := baseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader = nil
 				return &claim
@@ -186,7 +182,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		},
 		{
 			desc: "Claim with invalid session id",
-			claim: func() *suppliertypes.Claim {
+			claim: func() *prooftypes.Claim {
 				claim := baseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.SessionId = ""
 				return &claim
@@ -196,7 +192,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		},
 		{
 			desc: "Claim with invalid application address",
-			claim: func() *suppliertypes.Claim {
+			claim: func() *prooftypes.Claim {
 				claim := baseClaim(appAddr, supplierAddr, 42)
 				claim.SessionHeader.ApplicationAddress = "invalid address"
 				return &claim
@@ -206,7 +202,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 		},
 		{
 			desc: "Claim with invalid supplier address",
-			claim: func() *suppliertypes.Claim {
+			claim: func() *prooftypes.Claim {
 				claim := baseClaim(appAddr, supplierAddr, 42)
 				claim.SupplierAddress = "invalid address"
 				return &claim
@@ -217,8 +213,8 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	}
 
 	// Iterate over each test case
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
 			// Use defer-recover to catch any panic
 			defer func() {
 				if r := recover(); r != nil {
@@ -233,13 +229,13 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 						err = fmt.Errorf("panic occurred: %v", r)
 					}
 				}()
-				return keeper.SettleSessionAccounting(wctx, tc.claim)
+				return keeper.SettleSessionAccounting(ctx, test.claim)
 			}()
 
 			// Assert the error
-			if tc.errExpected {
+			if test.errExpected {
 				require.Error(t, err)
-				require.ErrorIs(t, err, tc.expectErr)
+				require.ErrorIs(t, err, test.expectErr)
 			} else {
 				require.NoError(t, err)
 			}
@@ -247,8 +243,8 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 	}
 }
 
-func baseClaim(appAddr, supplierAddr string, sum uint64) suppliertypes.Claim {
-	return suppliertypes.Claim{
+func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
+	return prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress: appAddr,

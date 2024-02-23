@@ -127,20 +127,20 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			var ctx = context.Background()
 
 			replayObsvbl, publishCh :=
-				channel.NewReplayObservable[int](ctx, tt.replayBufferSize)
+				channel.NewReplayObservable[int](ctx, test.replayBufferSize)
 
 			for _, value := range values {
 				publishCh <- value
 				time.Sleep(time.Millisecond)
 			}
 
-			actualValues := replayObsvbl.Last(ctx, tt.lastN)
-			require.ElementsMatch(t, tt.expectedValues, actualValues)
+			actualValues := replayObsvbl.Last(ctx, test.lastN)
+			require.ElementsMatch(t, test.expectedValues, actualValues)
 		})
 	}
 }

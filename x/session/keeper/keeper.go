@@ -1,74 +1,87 @@
 package keeper
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/core/store"
+	"cosmossdk.io/log"
+	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 type (
 	Keeper struct {
-		cdc        codec.BinaryCodec
-		storeKey   storetypes.StoreKey
-		memKey     storetypes.StoreKey
-		paramstore paramtypes.Subspace
+		cdc          codec.BinaryCodec
+		storeService store.KVStoreService
+		logger       log.Logger
 
-		appKeeper      types.ApplicationKeeper
-		supplierKeeper types.SupplierKeeper
+		// the address capable of executing a MsgUpdateParams message. Typically, this
+		// should be the x/gov module account.
+		authority string
+
+		accountKeeper     types.AccountKeeper
+		bankKeeper        types.BankKeeper
+		applicationKeeper types.ApplicationKeeper
+		supplierKeeper    types.SupplierKeeper
 	}
 )
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	storeKey,
-	memKey storetypes.StoreKey,
-	ps paramtypes.Subspace,
+	storeService store.KVStoreService,
+	logger log.Logger,
+	authority string,
 
-	appKeeper types.ApplicationKeeper,
+	accountKeeper types.AccountKeeper,
+	bankKeeper types.BankKeeper,
+	applicationKeeper types.ApplicationKeeper,
 	supplierKeeper types.SupplierKeeper,
-
-) *Keeper {
-	// set KeyTable if it has not already been set
-	if !ps.HasKeyTable() {
-		ps = ps.WithKeyTable(types.ParamKeyTable())
+) Keeper {
+	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
+		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
-	return &Keeper{
-		cdc:        cdc,
-		storeKey:   storeKey,
-		memKey:     memKey,
-		paramstore: ps,
+	return Keeper{
+		cdc:          cdc,
+		storeService: storeService,
+		authority:    authority,
+		logger:       logger,
 
-		appKeeper:      appKeeper,
-		supplierKeeper: supplierKeeper,
+		accountKeeper:     accountKeeper,
+		bankKeeper:        bankKeeper,
+		applicationKeeper: applicationKeeper,
+		supplierKeeper:    supplierKeeper,
 	}
 }
 
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+// GetAuthority returns the module's authority.
+func (k Keeper) GetAuthority() string {
+	return k.authority
 }
 
-// BeginBlocker is called at the beginning of every block.
+// Logger returns a module-specific logger.
+func (k Keeper) Logger() log.Logger {
+	return k.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+// StoreBlockHash is called at the end of every block.
 // It fetches the block hash from the committed block ans saves its hash
 // in the store.
-func (k Keeper) BeginBlocker(ctx sdk.Context) {
-	// ctx.BlockHeader().LastBlockId.Hash is the hash of the last block committed
-	hash := ctx.BlockHeader().LastBlockId.Hash
-	// ctx.BlockHeader().Height is the height of the last committed block.
-	height := ctx.BlockHeader().Height
-	// Block height 1 is the first committed block which uses `genesis.json` as its parent.
-	// See the explanation here for more details: https://github.com/pokt-network/poktroll/issues/377#issuecomment-1936607294
-	// Fallback to an empty byte slice during the genesis block.
-	if height == 1 {
-		hash = []byte{}
-	}
+func (k Keeper) StoreBlockHash(goCtx context.Context) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	store := ctx.KVStore(k.storeKey)
-	store.Set(GetBlockHashKey(height), hash)
+	// ctx.HeaderHash() is the hash of the block being validated.
+	hash := ctx.HeaderHash()
+
+	// ctx.BlocHeight() is the height of the block being validated.
+	height := ctx.BlockHeight()
+
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(goCtx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
+	store.Set(types.BlockHashKey(height), hash)
 }

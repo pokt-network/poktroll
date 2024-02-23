@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"context"
 	"crypto"
 	"encoding/binary"
 	"encoding/hex"
@@ -8,9 +9,9 @@ import (
 	"math/rand"
 
 	sdkerrors "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -44,7 +45,7 @@ type sessionHydrator struct {
 	blockHeight int64
 
 	// A redundant helper that maintains a hex decoded copy of `session.Id` used for session hydration
-	sessionIdBz []byte
+	sessionIDBz []byte
 }
 
 func NewSessionHydrator(
@@ -60,32 +61,32 @@ func NewSessionHydrator(
 		sessionHeader: sessionHeader,
 		session:       &types.Session{},
 		blockHeight:   blockHeight,
-		sessionIdBz:   make([]byte, 0),
+		sessionIDBz:   make([]byte, 0),
 	}
 }
 
 // GetSession implements of the exposed `UtilityModule.GetSession` function
-// TECHDEBT(#519): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
-func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Session, error) {
-	logger := k.Logger(ctx).With("method", "hydrateSession")
+// TECHDEBT(#519,#348): Add custom error types depending on the type of issue that occurred and assert on them in the unit tests.
+func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types.Session, error) {
+	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session metadata: %v", err)
+		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate the session metadata: %v", err)
 	}
 	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate the session ID: %v", err)
+		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate the session ID: %v", err)
 	}
 	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate application for session: %v", err)
+		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate application for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
-		return nil, sdkerrors.Wrapf(types.ErrSessionHydration, "failed to hydrate suppliers for session: %v", err)
+		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate suppliers for session: %v", err)
 	}
 	logger.Debug("Finished hydrating session suppliers: %+v")
 
@@ -96,14 +97,15 @@ func (k Keeper) HydrateSession(ctx sdk.Context, sh *sessionHydrator) (*types.Ses
 }
 
 // hydrateSessionMetadata hydrates metadata related to the session such as the height at which the session started, its number, the number of blocks per session, etc..
-func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator) error {
 	// TODO_TECHDEBT: Add a test if `blockHeight` is ahead of the current chain or what this node is aware of
 
-	if sh.blockHeight > ctx.BlockHeight() {
+	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
+	if sh.blockHeight > lastCommittedBlockHeight {
 		return sdkerrors.Wrapf(
 			types.ErrSessionHydration,
 			"block height %d is ahead of the last committed block height %d",
-			sh.blockHeight, ctx.BlockHeight(),
+			sh.blockHeight, lastCommittedBlockHeight,
 		)
 	}
 
@@ -116,17 +118,17 @@ func (k Keeper) hydrateSessionMetadata(ctx sdk.Context, sh *sessionHydrator) err
 }
 
 // hydrateSessionID use both session and on-chain data to determine a unique session ID
-func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
+func (k Keeper) hydrateSessionID(ctx context.Context, sh *sessionHydrator) error {
 	prevHashBz := k.GetBlockHash(ctx, sh.sessionHeader.SessionStartBlockHeight)
 
-	// TODO_TECHDEBT: In the future, we will need to valid that the Service is a valid service depending on whether
+	// TODO_TECHDEBT: In the future, we will need to validate that the Service is a valid service depending on whether
 	// or not its permissioned or permissionless
 
 	if !sharedhelpers.IsValidService(sh.sessionHeader.Service) {
-		return sdkerrors.Wrapf(types.ErrSessionHydration, "invalid service: %v", sh.sessionHeader.Service)
+		return types.ErrSessionHydration.Wrapf("invalid service: %v", sh.sessionHeader.Service)
 	}
 
-	sh.sessionHeader.SessionId, sh.sessionIdBz = GetSessionId(
+	sh.sessionHeader.SessionId, sh.sessionIDBz = GetSessionId(
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 		prevHashBz,
@@ -137,32 +139,41 @@ func (k Keeper) hydrateSessionID(ctx sdk.Context, sh *sessionHydrator) error {
 }
 
 // hydrateSessionApplication hydrates the full Application actor based on the address provided
-func (k Keeper) hydrateSessionApplication(ctx sdk.Context, sh *sessionHydrator) error {
-	app, appIsFound := k.appKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
+func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrator) error {
+	foundApp, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
-		return sdkerrors.Wrapf(types.ErrSessionAppNotFound, "could not find app with address: %s at height %d", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.SessionStartBlockHeight)
+		return types.ErrSessionAppNotFound.Wrapf(
+			"could not find app with address: %s at height %d",
+			sh.sessionHeader.ApplicationAddress,
+			sh.sessionHeader.SessionStartBlockHeight,
+		)
 	}
 
-	for _, appServiceConfig := range app.ServiceConfigs {
+	for _, appServiceConfig := range foundApp.ServiceConfigs {
 		if appServiceConfig.Service.Id == sh.sessionHeader.Service.Id {
-			sh.session.Application = &app
+			sh.session.Application = &foundApp
 			return nil
 		}
 	}
 
-	return sdkerrors.Wrapf(types.ErrSessionAppNotStakedForService, "application %s not staked for service %s", sh.sessionHeader.ApplicationAddress, sh.sessionHeader.Service.Id)
+	return types.ErrSessionAppNotStakedForService.Wrapf(
+		"application %s not staked for service %s",
+		sh.sessionHeader.ApplicationAddress,
+		sh.sessionHeader.Service.Id,
+	)
 }
 
-// hydrateSessionSuppliers finds the suppliers that are staked at the session height and populates the session with them
-func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) error {
-	logger := k.Logger(ctx).With("method", "hydrateSessionSuppliers")
+// hydrateSessionSuppliers finds the suppliers that are staked at the session
+// height and populates the session with them.
+func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator) error {
+	logger := k.Logger().With("method", "hydrateSessionSuppliers")
 
 	// TODO_TECHDEBT(@Olshansk, @bryanchriswhite): Need to retrieve the suppliers at SessionStartBlockHeight,
 	// NOT THE CURRENT ONE which is what's provided by the context. For now, for simplicity,
 	// only retrieving the suppliers at the current block height which could create a discrepancy
 	// if new suppliers were staked mid session.
 	// TODO(@bryanchriswhite): Investigate if `BlockClient` + `ReplayObservable` where `N = SessionLength` could be used here.`
-	suppliers := k.supplierKeeper.GetAllSupplier(ctx)
+	suppliers := k.supplierKeeper.GetAllSuppliers(ctx)
 
 	candidateSuppliers := make([]*sharedtypes.Supplier, 0)
 	for _, s := range suppliers {
@@ -180,15 +191,23 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 	}
 
 	if len(candidateSuppliers) == 0 {
-		logger.Error(fmt.Sprintf("[ERROR] no suppliers found for session"))
-		return sdkerrors.Wrapf(types.ErrSessionSuppliersNotFound, "could not find suppliers for service %s at height %d", sh.sessionHeader.Service, sh.sessionHeader.SessionStartBlockHeight)
+		logger.Error("[ERROR] no suppliers found for session")
+		return types.ErrSessionSuppliersNotFound.Wrapf(
+			"could not find suppliers for service %s at height %d",
+			sh.sessionHeader.Service,
+			sh.sessionHeader.SessionStartBlockHeight,
+		)
 	}
 
 	if len(candidateSuppliers) < NumSupplierPerSession {
-		logger.Info(fmt.Sprintf("[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)", len(candidateSuppliers), NumSupplierPerSession))
+		logger.Info(fmt.Sprintf(
+			"[WARN] number of available suppliers (%d) is less than the number of suppliers per session (%d)",
+			len(candidateSuppliers),
+			NumSupplierPerSession,
+		))
 		sh.session.Suppliers = candidateSuppliers
 	} else {
-		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIdBz)
+		sh.session.Suppliers = pseudoRandomSelection(candidateSuppliers, NumSupplierPerSession, sh.sessionIDBz)
 	}
 
 	return nil
@@ -197,10 +216,10 @@ func (k Keeper) hydrateSessionSuppliers(ctx sdk.Context, sh *sessionHydrator) er
 // TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
 // for it to be language agnostic, a general purpose algorithm MUST be used.
 // pseudoRandomSelection returns a random subset of the candidates.
-func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIdBz []byte) []*sharedtypes.Supplier {
+func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIDBz []byte) []*sharedtypes.Supplier {
 	// Take the first 8 bytes of sessionId to use as the seed
 	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
-	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIdBz)[:8]))
+	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
 
 	// Retrieve the indices for the candidates
 	actors := make([]*sharedtypes.Supplier, 0)
@@ -236,9 +255,9 @@ func uniqueRandomIndices(seed, maxIndex, numIndices int64) map[int64]struct{} {
 	return indicesMap
 }
 
-func concatWithDelimiter(delimiter string, b ...[]byte) (result []byte) {
-	for _, bz := range b {
-		result = append(result, bz...)
+func concatWithDelimiter(delimiter string, bz ...[]byte) (result []byte) {
+	for _, b := range bz {
+		result = append(result, b...)
 		result = append(result, []byte(delimiter)...)
 	}
 	return result

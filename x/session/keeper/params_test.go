@@ -13,7 +13,6 @@ func TestGetParams(t *testing.T) {
 	k, ctx := testkeeper.SessionKeeper(t)
 	params := types.DefaultParams()
 
-	k.SetParams(ctx, params)
-
+	require.NoError(t, k.SetParams(ctx, params))
 	require.EqualValues(t, params, k.GetParams(ctx))
 }

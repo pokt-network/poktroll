@@ -1,8 +1,6 @@
 package sdk
 
-import (
-	sdkerrors "cosmossdk.io/errors"
-)
+import sdkerrors "cosmossdk.io/errors"
 
 // TODO_TECHDEBT: Do a source code wise find-replace using regex pattern match
 // of `sdkerrors\.Wrapf\(([a-zA-Z]+), ` with `$1.Wrapf(`

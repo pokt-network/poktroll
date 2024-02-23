@@ -3,6 +3,7 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -14,21 +15,20 @@ import (
 )
 
 func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the supplier
-	addr := sample.AccAddress()
+	supplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, addr)
+	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Prepare the supplier
-	initialStake := sdk.NewCoin("upokt", sdk.NewInt(100))
+	initialStake := sdk.NewCoin("upokt", math.NewInt(100))
 	stakeMsg := &types.MsgStakeSupplier{
-		Address: addr,
+		Address: supplierAddr,
 		Stake:   &initialStake,
 		Services: []*sharedtypes.SupplierServiceConfig{
 			{
@@ -47,44 +47,43 @@ func TestMsgServer_UnstakeSupplier_Success(t *testing.T) {
 	}
 
 	// Stake the supplier
-	_, err := srv.StakeSupplier(wctx, stakeMsg)
+	_, err := srv.StakeSupplier(ctx, stakeMsg)
 	require.NoError(t, err)
 
 	// Verify that the supplier exists
-	foundSupplier, isSupplierFound := k.GetSupplier(ctx, addr)
+	foundSupplier, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.True(t, isSupplierFound)
-	require.Equal(t, addr, foundSupplier.Address)
+	require.Equal(t, supplierAddr, foundSupplier.Address)
 	require.Equal(t, initialStake.Amount, foundSupplier.Stake.Amount)
 	require.Len(t, foundSupplier.Services, 1)
 
 	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}
-	_, err = srv.UnstakeSupplier(wctx, unstakeMsg)
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err = srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.NoError(t, err)
 
 	// Make sure the supplier can no longer be found after unstaking
-	_, isSupplierFound = k.GetSupplier(ctx, addr)
+	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 }
 
 func TestMsgServer_UnstakeSupplier_FailIfNotStaked(t *testing.T) {
-	k, ctx := keepertest.SupplierKeeper(t, nil)
-	srv := keeper.NewMsgServerImpl(*k)
-	wctx := sdk.WrapSDKContext(ctx)
+	k, ctx := keepertest.SupplierKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
 
 	// Generate an address for the supplier
-	addr := sample.AccAddress()
+	supplierAddr := sample.AccAddress()
 
 	// Verify that the supplier does not exist yet
-	_, isSupplierFound := k.GetSupplier(ctx, addr)
+	_, isSupplierFound := k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 
 	// Unstake the supplier
-	unstakeMsg := &types.MsgUnstakeSupplier{Address: addr}
-	_, err := srv.UnstakeSupplier(wctx, unstakeMsg)
+	unstakeMsg := &types.MsgUnstakeSupplier{Address: supplierAddr}
+	_, err := srv.UnstakeSupplier(ctx, unstakeMsg)
 	require.Error(t, err)
 	require.ErrorIs(t, err, types.ErrSupplierNotFound)
 
-	_, isSupplierFound = k.GetSupplier(ctx, addr)
+	_, isSupplierFound = k.GetSupplier(ctx, supplierAddr)
 	require.False(t, isSupplierFound)
 }

@@ -1,6 +1,9 @@
 package signer
 
-import "github.com/cosmos/cosmos-sdk/crypto/keyring"
+import (
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
+)
 
 var _ Signer = (*SimpleSigner)(nil)
 
@@ -18,6 +21,6 @@ func NewSimpleSigner(keyring keyring.Keyring, keyName string) *SimpleSigner {
 
 // Sign signs the given message using the SimpleSigner's keyring and keyName
 func (s *SimpleSigner) Sign(msg [32]byte) (signature []byte, err error) {
-	sig, _, err := s.keyring.Sign(s.keyName, msg[:])
+	sig, _, err := s.keyring.Sign(s.keyName, msg[:], signingtypes.SignMode_SIGN_MODE_DIRECT)
 	return sig, err
 }

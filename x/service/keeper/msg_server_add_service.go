@@ -4,24 +4,23 @@ import (
 	"context"
 	"fmt"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
-// AddService handles MsgAddService and adds a service to the network storing
-// it in the service keeper's store using the provided ID from the message.
-// If the transaction's signer does not have enough funds (upokt) to cover the
-// AddServiceFee service module's governance parameter, it will not be able to
-// add the service. If it does, the fee will be deducted and debited to the
-// service module's account, then the service will be added on-chain.
+// AddService adds a service to the network.
+// The operation checks if the signer has enough funds (upokt) to pay the AddServiceFee.
+// If funds are insufficient, the service won't be added. Otherwise, the fee is transferred from
+// the signer to the service module's account, afterwards the service will be present on-chain.
 func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,
 ) (*types.MsgAddServiceResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	logger := k.Logger(ctx).With("method", "AddService")
+	logger := k.Logger().With("method", "AddService")
 	logger.Info(fmt.Sprintf("About to add a new service with msg: %v", msg))
 
 	// Validate the message.
@@ -58,7 +57,7 @@ func (k msgServer) AddService(
 
 	// Check the balance of upokt is enough to cover the AddServiceFee.
 	accBalance := accCoins.AmountOf("upokt")
-	addServiceFee := sdk.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
+	addServiceFee := math.NewIntFromUint64(k.GetParams(ctx).AddServiceFee)
 	if accBalance.LTE(addServiceFee) {
 		logger.Error(fmt.Sprintf("%s doesn't have enough funds to add service: %v", msg.Address, err))
 		return nil, types.ErrServiceNotEnoughFunds.Wrapf(

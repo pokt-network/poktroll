@@ -19,13 +19,13 @@ func SimulateMsgStakeSupplier(
 	return func(r *rand.Rand, app *baseapp.BaseApp, ctx sdk.Context, accs []simtypes.Account, chainID string,
 	) (simtypes.OperationMsg, []simtypes.FutureOperation, error) {
 		simAccount, _ := simtypes.RandomAcc(r, accs)
-		stakeMsg := &types.MsgStakeSupplier{
+		msg := &types.MsgStakeSupplier{
 			Address: simAccount.Address.String(),
 			// TODO: Update all stake message fields
 		}
 
 		// TODO: Handling the StakeSupplier simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, stakeMsg.Type(), "StakeSupplier simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "StakeSupplier simulation not implemented"), nil, nil
 	}
 }

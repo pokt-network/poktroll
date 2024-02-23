@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/depinject"
+	sdklog "cosmossdk.io/log"
 	tmcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
@@ -22,6 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -38,6 +41,7 @@ var (
 
 	flagFeaturesPath string
 	keyRingFlag      = "--keyring-backend=test"
+	chainIdFlag      = "--chain-id=poktroll"
 	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
 )
 
@@ -62,23 +66,30 @@ func TestMain(m *testing.M) {
 type suite struct {
 	gocuke.TestingT
 	// TODO_TECHDEBT: rename to `poktrolld`.
-	pocketd             *pocketdBin
-	scenarioState       map[string]any // temporary state for each scenario
-	cdc                 codec.Codec
-	supplierQueryClient suppliertypes.QueryClient
+	pocketd          *pocketdBin
+	scenarioState    map[string]any // temporary state for each scenario
+	cdc              codec.Codec
+	proofQueryClient prooftypes.QueryClient
 }
 
 func (s *suite) Before() {
 	s.pocketd = new(pocketdBin)
 	s.scenarioState = make(map[string]any)
-	s.cdc = app.MakeEncodingConfig().Marshaler
+	deps := depinject.Configs(
+		app.AppConfig(),
+		depinject.Supply(
+			sdklog.NewTestLogger(s),
+		),
+	)
+	err := depinject.Inject(deps, &s.cdc)
+	require.NoError(s, err)
 	s.buildAddrMap()
 	s.buildAppMap()
 	s.buildSupplierMap()
 
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
-	s.supplierQueryClient = suppliertypes.NewQueryClient(clientCtx)
+	s.proofQueryClient = prooftypes.NewQueryClient(clientCtx)
 }
 
 // TestFeatures runs the e2e tests specified in any .features files in this directory
@@ -120,6 +131,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		accNameToAddrMap[accName2],
 		fmt.Sprintf("%dupokt", amount),
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -188,6 +200,7 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 		"--from",
 		accName,
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -212,6 +225,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 		"--from",
 		accName,
 		keyRingFlag,
+		chainIdFlag,
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -364,10 +378,10 @@ func (s *suite) buildAppMap() {
 		s.Fatalf("error getting application list: %s", err)
 	}
 	s.pocketd.result = res
-	var resp apptypes.QueryAllApplicationResponse
+	var resp apptypes.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
-	for _, app := range resp.Application {
+	for _, app := range resp.Applications {
 		accNameToAppMap[accAddrToNameMap[app.Address]] = app
 	}
 }
@@ -385,7 +399,7 @@ func (s *suite) buildSupplierMap() {
 		s.Fatalf("error getting supplier list: %s", err)
 	}
 	s.pocketd.result = res
-	var resp suppliertypes.QueryAllSupplierResponse
+	var resp suppliertypes.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
 	for _, supplier := range resp.Supplier {

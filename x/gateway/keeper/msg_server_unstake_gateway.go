@@ -17,7 +17,7 @@ func (k msgServer) UnstakeGateway(
 ) (*types.MsgUnstakeGatewayResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	logger := k.Logger(ctx).With("method", "UnstakeGateway")
+	logger := k.Logger().With("method", "UnstakeGateway")
 	logger.Info(fmt.Sprintf("About to unstake gateway with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {

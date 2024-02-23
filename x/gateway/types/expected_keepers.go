@@ -1,20 +1,31 @@
-package types
-
 //go:generate mockgen -destination ../../../testutil/gateway/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper
 
+package types
+
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-// AccountKeeper defines the expected account keeper used for simulations (noalias)
+// AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) types.AccountI
+	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI // only used for simulation
 	// Methods imported from account should be defined here
 }
 
-// BankKeeper defines the expected interface needed to retrieve account balances.
+// BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
-	DelegateCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
-	UndelegateCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	DelegateCoinsFromAccountToModule(
+		ctx context.Context,
+		senderAddr sdk.AccAddress,
+		recipientModule string,
+		amt sdk.Coins,
+	) error
+	UndelegateCoinsFromModuleToAccount(
+		ctx context.Context,
+		senderModule string,
+		recipientAddr sdk.AccAddress,
+		amt sdk.Coins,
+	) error
 }

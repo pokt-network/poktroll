@@ -1,0 +1,20 @@
+syntax = "proto3";
+package poktroll.service;
+
+option go_package = "github.com/pokt-network/poktroll/x/service/types";
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+import "poktroll/service/params.proto";
+import "poktroll/shared/service.proto";
+
+
+// GenesisState defines the service module's genesis state.
+message GenesisState {
+
+  // params defines all the parameters of the module.
+  Params  params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated poktroll.shared.Service service_list = 2 [(gogoproto.nullable) = false] ;
+}
+

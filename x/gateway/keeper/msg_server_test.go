@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
@@ -12,13 +11,18 @@ import (
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
-func setupMsgServer(t testing.TB) (types.MsgServer, context.Context) {
+func setupMsgServer(t testing.TB) (keeper.Keeper, types.MsgServer, context.Context) {
+	t.Helper()
+
 	k, ctx := keepertest.GatewayKeeper(t)
-	return keeper.NewMsgServerImpl(*k), sdk.WrapSDKContext(ctx)
+	return k, keeper.NewMsgServerImpl(k), ctx
 }
 
 func TestMsgServer(t *testing.T) {
-	ms, ctx := setupMsgServer(t)
+	t.Helper()
+
+	k, ms, ctx := setupMsgServer(t)
 	require.NotNil(t, ms)
 	require.NotNil(t, ctx)
+	require.NotEmpty(t, k)
 }

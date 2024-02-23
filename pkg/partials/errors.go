@@ -1,8 +1,6 @@
 package partials
 
-import (
-	sdkerrors "cosmossdk.io/errors"
-)
+import sdkerrors "cosmossdk.io/errors"
 
 var (
 	codespace                           = "partial"

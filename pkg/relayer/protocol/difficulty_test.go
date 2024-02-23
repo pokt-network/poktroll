@@ -40,11 +40,11 @@ func TestCountDifficultyBits(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("difficulty_%d_zero_bits", tt.difficulty), func(t *testing.T) {
-			actualDifficulty, err := protocol.CountDifficultyBits(tt.bz)
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("difficulty_%d_zero_bits", test.difficulty), func(t *testing.T) {
+			actualDifficulty, err := protocol.CountDifficultyBits(test.bz)
 			require.NoError(t, err)
-			require.Equal(t, tt.difficulty, actualDifficulty)
+			require.Equal(t, test.difficulty, actualDifficulty)
 		})
 	}
 }

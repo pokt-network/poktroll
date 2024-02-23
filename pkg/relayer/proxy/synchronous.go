@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sdkerrors "cosmossdk.io/errors"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
@@ -18,6 +19,11 @@ import (
 )
 
 var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
+
+func init() {
+	reg := codectypes.NewInterfaceRegistry()
+	types.RegisterInterfaces(reg)
+}
 
 // synchronousRPCServer is the struct that holds the state of the synchronous
 // RPC server. It is used to listen for and respond to relay requests where
@@ -274,8 +280,7 @@ func (sync *synchronousRPCServer) sendRelayResponse(
 	relayResponse *types.RelayResponse,
 	writer http.ResponseWriter,
 ) error {
-	cdc := types.ModuleCdc
-	relayResponseBz, err := cdc.Marshal(relayResponse)
+	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
 		return err
 	}

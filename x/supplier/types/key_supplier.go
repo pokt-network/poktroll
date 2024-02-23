@@ -6,17 +6,15 @@ var _ binary.ByteOrder
 
 const (
 	// SupplierKeyPrefix is the prefix to retrieve all Supplier
-	SupplierKeyPrefix = "Supplier/value/"
+	SupplierKeyPrefix = "Supplier/address/"
 )
 
 // SupplierKey returns the store key to retrieve a Supplier from the index fields
-func SupplierKey(
-	address string,
-) []byte {
+func SupplierKey(supplierAddr string) []byte {
 	var key []byte
 
-	addressBytes := []byte(address)
-	key = append(key, addressBytes...)
+	supplierAddrBz := []byte(supplierAddr)
+	key = append(key, supplierAddrBz...)
 	key = append(key, []byte("/")...)
 
 	return key

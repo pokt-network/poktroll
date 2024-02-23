@@ -1,6 +1,6 @@
 version: 1
 build:
-  main: cmd/pocketd
+  main: cmd/poktrolld
 accounts:
   - name: faucet
     mnemonic: "baby advance work soap slow exclude blur humble lucky rough teach wide chuckle captain rack laundry butter main very cannon donate armor dress follow"
@@ -88,7 +88,7 @@ genesis:
             denom: upokt
     application:
       params:
-        maxDelegatedGateways: 7
+        max_delegated_gateways: "7"
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
@@ -115,4 +115,4 @@ genesis:
             denom: upokt
     service:
       params:
-        addServiceFee: 1000000000
+        add_service_fee: "1000000000"

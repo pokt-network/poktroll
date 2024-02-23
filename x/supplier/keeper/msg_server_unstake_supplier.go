@@ -11,12 +11,10 @@ import (
 
 // TODO(#73): Determine if an application needs an unbonding period after unstaking.
 func (k msgServer) UnstakeSupplier(
-	goCtx context.Context,
+	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,
 ) (*types.MsgUnstakeSupplierResponse, error) {
-	ctx := sdk.UnwrapSDKContext(goCtx)
-
-	logger := k.Logger(ctx).With("method", "UnstakeSupplier")
+	logger := k.Logger().With("method", "UnstakeSupplier")
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 
 	if err := msg.ValidateBasic(); err != nil {
@@ -49,4 +47,5 @@ func (k msgServer) UnstakeSupplier(
 	k.RemoveSupplier(ctx, supplierAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 	return &types.MsgUnstakeSupplierResponse{}, nil
+
 }

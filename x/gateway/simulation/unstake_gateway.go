@@ -25,6 +25,6 @@ func SimulateMsgUnstakeGateway(
 
 		// TODO: Handling the UnstakeGateway simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, msg.Type(), "UnstakeGateway simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeGateway simulation not implemented"), nil, nil
 	}
 }

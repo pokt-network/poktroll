@@ -2,14 +2,17 @@ package tx_test
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
@@ -93,7 +96,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -106,13 +109,23 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
-	txResultBz, err := json.Marshal(abci.TxResult{Tx: expectedTx})
+	txResult := abci.TxResult{Tx: expectedTx}
+	txEvent := &comettypes.EventDataTx{TxResult: txResult}
+
+	txResultBz, err := json.Marshal(txEvent)
+	require.NoError(t, err)
+
+	rpcResult := &rpctypes.RPCResponse{
+		Result: txResultBz,
+	}
+
+	rpcResultBz, err := json.Marshal(rpcResult)
 	require.NoError(t, err)
 
 	// Publish the transaction event bytes to the events query client so that the transaction client
 	// registers the transactions as committed (i.e. removes it from the timeout pool).
 	txResultsBzPublishChMu.Lock()
-	txResultsBzPublishCh <- either.Success[[]byte](txResultBz)
+	txResultsBzPublishCh <- either.Success[[]byte](rpcResultBz)
 	txResultsBzPublishChMu.Unlock()
 
 	// Assert that the error channel was closed without receiving.
@@ -127,7 +140,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 func TestTxClient_NewTxClient_Error(t *testing.T) {
 	// Construct an empty in-memory keyring.
-	memKeyring := cosmoskeyring.NewInMemory(testclient.EncodingConfig.Marshaler)
+	memKeyring := cosmoskeyring.NewInMemory(testclient.Marshaler)
 
 	tests := []struct {
 		name           string
@@ -152,8 +165,8 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 		// },
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			var (
 				ctrl = gomock.NewController(t)
 				ctx  = context.Background()
@@ -179,11 +192,11 @@ func TestTxClient_NewTxClient_Error(t *testing.T) {
 			)
 
 			// Construct a signing key option using the test signing key name.
-			signingKeyOpt := tx.WithSigningKeyName(tt.signingKeyName)
+			signingKeyOpt := tx.WithSigningKeyName(test.signingKeyName)
 
 			// Attempt to create the transactions client.
 			txClient, err := tx.NewTxClient(ctx, txClientDeps, signingKeyOpt)
-			require.ErrorIs(t, err, tt.expectedErr)
+			require.ErrorIs(t, err, test.expectedErr)
 			require.Nil(t, txClient)
 		})
 	}
@@ -310,7 +323,7 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,
@@ -378,7 +391,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,

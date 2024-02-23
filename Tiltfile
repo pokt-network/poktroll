@@ -72,7 +72,7 @@ k8s_yaml(
 # Hot reload protobuf changes
 local_resource(
     "hot-reload: generate protobufs",
-    "ignite generate proto-go -y",
+    "make proto_regen",
     deps=["proto"],
     labels=["hot-reloading"],
 )
@@ -97,7 +97,7 @@ local_resource(
 docker_build_with_restart(
     "poktrolld",
     ".",
-    dockerfile_contents="""FROM golang:1.20.8
+    dockerfile_contents="""FROM golang:1.21.6
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/poktrolld /usr/local/bin/poktrolld

@@ -1,0 +1,13 @@
+syntax = "proto3";
+package poktroll.session;
+
+option go_package = "github.com/pokt-network/poktroll/x/session/types";
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+
+// Params defines the parameters for the module.
+message Params {
+  option (amino.name) = "poktroll/x/session/Params";
+  option (gogoproto.equal) = true;
+}

@@ -26,7 +26,7 @@ func (sdk *poktrollSDK) GetApplications(ctx context.Context, options GetApplicat
 		return applications, nil
 	}
 
-	// TODO_CONSIDERATION: Look into updating the on-chain `QueryAllApplicationRequest` for filtering
+	// TODO_CONSIDERATION: Look into updating the on-chain `QueryAllApplicationsRequest` for filtering
 	// options to avoid needing to do it on the client side.
 	for _, app := range applications {
 		for _, delegatedGatewayAddress := range app.DelegateeGatewayAddresses {

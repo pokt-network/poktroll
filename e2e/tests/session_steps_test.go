@@ -4,21 +4,21 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"cosmossdk.io/depinject"
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
-	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 const (
@@ -44,14 +44,14 @@ const (
 )
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
-	s.waitForMessageAction("/pocket.supplier.MsgCreateClaim")
+	s.waitForMessageAction("/poktroll.proof.MsgCreateClaim")
 }
 
 func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
-	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{
-		Filter: &suppliertypes.QueryAllClaimsRequest_SupplierAddress{
+	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{
+		Filter: &prooftypes.QueryAllClaimsRequest_SupplierAddress{
 			SupplierAddress: accNameToAddrMap[supplierName],
 		},
 	})
@@ -59,13 +59,13 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.NotNil(s, allClaimsRes)
 
 	// Assert that the number of claims has increased by one.
-	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]suppliertypes.Claim)
+	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
 	require.True(s, ok, "preExistingClaimsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted
-	require.Greater(s, len(allClaimsRes.Claim), len(preExistingClaims), "number of claims must have increased")
+	require.Greater(s, len(allClaimsRes.Claims), len(preExistingClaims), "number of claims must have increased")
 
 	// TODO_IMPROVE: assert that the root hash of the claim contains the correct
 	// SMST sum. The sum can be retrieved by parsing the last 8 bytes as a
@@ -75,7 +75,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
 	// them into the scenarioState key(s).
 
-	claim := allClaimsRes.Claim[0]
+	claim := allClaimsRes.Claims[0]
 	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
 }
 
@@ -87,32 +87,38 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 
 	// Query for any existing claims so that we can compare against them in
 	// future assertions about changes in on-chain claims.
-	allClaimsRes, err := s.supplierQueryClient.AllClaims(ctx, &suppliertypes.QueryAllClaimsRequest{})
+	allClaimsRes, err := s.proofQueryClient.AllClaims(ctx, &prooftypes.QueryAllClaimsRequest{})
 	require.NoError(s, err)
-	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claim
+	s.scenarioState[preExistingClaimsKey] = allClaimsRes.Claims
 
 	// Query for any existing proofs so that we can compare against them in
 	// future assertions about changes in on-chain proofs.
-	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{})
+	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{})
 	require.NoError(s, err)
-	s.scenarioState[preExistingProofsKey] = allProofsRes.Proof
+	s.scenarioState[preExistingProofsKey] = allProofsRes.Proofs
 
 	// Construct an events query client to listen for tx events from the supplier.
 	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
 
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+	eventsReplayClient, err := events.NewEventsReplayClient[*comettypes.EventDataTx](
 		ctx,
 		deps,
 		msgSenderQuery,
-		func(eventBz []byte) (*abci.TxResult, error) {
-			if strings.Contains(string(eventBz), "jsonrpc") {
+		func(eventBz []byte) (*comettypes.EventDataTx, error) {
+			// Try to deserialize the provided bytes into an RPCResponse.
+			rpcResult := &rpctypes.RPCResponse{}
+			if err := json.Unmarshal(eventBz, rpcResult); err != nil {
+				return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
+			}
+
+			if string(rpcResult.Result) == "{}" {
 				return nil, nil
 			}
 
-			// Unmarshal event data into an ABCI TxResult object.
-			txResult := &abci.TxResult{}
-			err = json.Unmarshal(eventBz, txResult)
+			// Unmarshal event data into an comettype EventDataTx object.
+			txResult := &comettypes.EventDataTx{}
+			err = json.Unmarshal(rpcResult.Result, txResult)
 			require.NoError(s, err)
 
 			return txResult, nil
@@ -132,15 +138,15 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 }
 
 func (s *suite) AfterTheSupplierSubmitsAProofForTheSessionForServiceForApplication(a string, b string) {
-	s.waitForMessageAction("/pocket.supplier.MsgSubmitProof")
+	s.waitForMessageAction("/poktroll.proof.MsgSubmitProof")
 }
 
 func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersistedOnchain(supplierName, serviceId, appName string) {
 	ctx := context.Background()
 
 	// Retrieve all on-chain proofs for supplierName
-	allProofsRes, err := s.supplierQueryClient.AllProofs(ctx, &suppliertypes.QueryAllProofsRequest{
-		Filter: &suppliertypes.QueryAllProofsRequest_SupplierAddress{
+	allProofsRes, err := s.proofQueryClient.AllProofs(ctx, &prooftypes.QueryAllProofsRequest{
+		Filter: &prooftypes.QueryAllProofsRequest_SupplierAddress{
 			SupplierAddress: accNameToAddrMap[supplierName],
 		},
 	})
@@ -148,13 +154,13 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	require.NotNil(s, allProofsRes)
 
 	// Assert that the number of proofs has increased by one.
-	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]suppliertypes.Proof)
+	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
 	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
-	require.Greater(s, len(allProofsRes.Proof), len(preExistingProofs), "number of proofs must have increased")
+	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
 
 	// TODO_UPNEXT(@bryanchriswhite): assert that the root hash of the proof contains the correct
 	// SMST sum. The sum can be retrieved via the `GetSum` function exposed
@@ -163,7 +169,7 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	// TODO_IMPROVE: add assertions about serviceId and appName and/or incorporate
 	// them into the scenarioState key(s).
 
-	proof := allProofsRes.Proof[0]
+	proof := allProofsRes.Proofs[0]
 	require.Equal(s, accNameToAddrMap[supplierName], proof.SupplierAddress)
 }
 
@@ -190,14 +196,14 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*abci.TxResult])
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*comettypes.EventDataTx])
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*abci.TxResult](
+	channel.ForEach[*comettypes.EventDataTx](
 		ctx, eventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txEvent *abci.TxResult) {
+		func(_ context.Context, txEvent *comettypes.EventDataTx) {
 			if txEvent == nil {
 				return
 			}

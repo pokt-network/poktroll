@@ -1,38 +1,33 @@
 package keeper
 
 import (
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"context"
+
+	"cosmossdk.io/store/prefix"
+	storetypes "cosmossdk.io/store/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// SetService set a specific service in the store from its index.
-func (k Keeper) SetService(ctx sdk.Context, service sharedtypes.Service) {
-	store := prefix.NewStore(
-		ctx.KVStore(k.storeKey),
-		types.KeyPrefix(types.ServiceKeyPrefix),
-	)
+// SetService set a specific service in the store from its index
+func (k Keeper) SetService(ctx context.Context, service sharedtypes.Service) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 	serviceBz := k.cdc.MustMarshal(&service)
-	store.Set(types.ServiceKey(
-		service.Id,
-	), serviceBz)
+	store.Set(types.ServiceKey(service.Id), serviceBz)
 }
 
-// GetService returns a service from the store by its index.
+// GetService returns a service from its index
 func (k Keeper) GetService(
-	ctx sdk.Context,
-	serviceID string,
+	ctx context.Context,
+	serviceId string,
 ) (service sharedtypes.Service, found bool) {
-	store := prefix.NewStore(
-		ctx.KVStore(k.storeKey),
-		types.KeyPrefix(types.ServiceKeyPrefix),
-	)
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
 
-	serviceBz := store.Get(types.ServiceKey(
-		serviceID,
-	))
+	serviceBz := store.Get(types.ServiceKey(serviceId))
 	if serviceBz == nil {
 		return service, false
 	}
@@ -41,34 +36,28 @@ func (k Keeper) GetService(
 	return service, true
 }
 
-// RemoveService removes a service from the store.
+// RemoveService removes a service from the store
 func (k Keeper) RemoveService(
-	ctx sdk.Context,
-	serviceID string,
+	ctx context.Context,
+	serviceId string,
 ) {
-	store := prefix.NewStore(
-		ctx.KVStore(k.storeKey),
-		types.KeyPrefix(types.ServiceKeyPrefix),
-	)
-	store.Delete(types.ServiceKey(
-		serviceID,
-	))
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
+	store.Delete(types.ServiceKey(serviceId))
 }
 
-// GetAllServices returns all services from the store.
-func (k Keeper) GetAllServices(ctx sdk.Context) (list []sharedtypes.Service) {
-	store := prefix.NewStore(
-		ctx.KVStore(k.storeKey),
-		types.KeyPrefix(types.ServiceKeyPrefix),
-	)
-	iterator := sdk.KVStorePrefixIterator(store, []byte{})
+// GetAllService returns all service
+func (k Keeper) GetAllService(ctx context.Context) (services []sharedtypes.Service) {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ServiceKeyPrefix))
+	iterator := storetypes.KVStorePrefixIterator(store, []byte{})
 
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		service := sharedtypes.Service{}
+		var service sharedtypes.Service
 		k.cdc.MustUnmarshal(iterator.Value(), &service)
-		list = append(list, service)
+		services = append(services, service)
 	}
 
 	return

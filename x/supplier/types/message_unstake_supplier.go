@@ -1,9 +1,6 @@
 package types
 
-import (
-	sdkerrors "cosmossdk.io/errors"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-)
+import sdk "github.com/cosmos/cosmos-sdk/types"
 
 const TypeMsgUnstakeSupplier = "unstake_supplier"
 
@@ -15,31 +12,9 @@ func NewMsgUnstakeSupplier(address string) *MsgUnstakeSupplier {
 	}
 }
 
-func (msg *MsgUnstakeSupplier) Route() string {
-	return RouterKey
-}
-
-func (msg *MsgUnstakeSupplier) Type() string {
-	return TypeMsgUnstakeSupplier
-}
-
-func (msg *MsgUnstakeSupplier) GetSigners() []sdk.AccAddress {
-	address, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		panic(err)
-	}
-	return []sdk.AccAddress{address}
-}
-
-func (msg *MsgUnstakeSupplier) GetSignBytes() []byte {
-	bz := ModuleCdc.MustMarshalJSON(msg)
-	return sdk.MustSortJSON(bz)
-}
-
 func (msg *MsgUnstakeSupplier) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Address)
-	if err != nil {
-		return sdkerrors.Wrapf(ErrSupplierInvalidAddress, "invalid address address (%s)", err)
+	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
+		return ErrSupplierInvalidAddress.Wrapf("invalid address address (%s)", err)
 	}
 	return nil
 }

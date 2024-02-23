@@ -25,6 +25,6 @@ func SimulateMsgStakeGateway(
 
 		// TODO: Handling the StakeGateway simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, stakeMsg.Type(), "StakeGateway simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(stakeMsg), "StakeGateway simulation not implemented"), nil, nil
 	}
 }

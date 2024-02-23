@@ -29,8 +29,8 @@ func TestMap_Word_BytesToPalindrome(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			var (
 				wordCounter int32
 				ctx, cancel = context.WithCancel(context.Background())
@@ -45,7 +45,7 @@ func TestMap_Word_BytesToPalindrome(t *testing.T) {
 			palindromeObserver := palindromeObservable.Subscribe(ctx)
 
 			// publish a word in bytes
-			bzPublishCh <- tt.wordBz
+			bzPublishCh <- test.wordBz
 
 			// concurrently consume the palindrome observer's channel
 			go func() {
@@ -53,13 +53,13 @@ func TestMap_Word_BytesToPalindrome(t *testing.T) {
 					atomic.AddInt32(&wordCounter, 1)
 
 					// word.forwards should always match the original word
-					require.Equal(t, string(tt.wordBz), word.forwards)
+					require.Equal(t, string(test.wordBz), word.forwards)
 
-					if tt.isValid {
-						require.Equal(t, string(tt.wordBz), word.backwards)
+					if test.isValid {
+						require.Equal(t, string(test.wordBz), word.backwards)
 						require.Truef(t, word.IsValid(), "palindrome should be valid")
 					} else {
-						require.NotEmptyf(t, string(tt.wordBz), word.backwards)
+						require.NotEmptyf(t, string(test.wordBz), word.backwards)
 						require.Falsef(t, word.IsValid(), "palindrome should be invalid")
 					}
 				}

@@ -6,9 +6,16 @@ import (
 	"io"
 	"net/http"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+
 	"github.com/pokt-network/poktroll/pkg/signer"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
+
+func init() {
+	reg := codectypes.NewInterfaceRegistry()
+	types.RegisterInterfaces(reg)
+}
 
 // SendRelay sends a relay request to the given supplier's endpoint.
 // It signs the request, relays it to the supplier and verifies the response signature.
@@ -54,8 +61,7 @@ func (sdk *poktrollSDK) SendRelay(
 	relayRequest.Meta.Signature = requestSig
 
 	// Marshal the relay request to bytes and create a reader to be used as an HTTP request body.
-	cdc := types.ModuleCdc
-	relayRequestBz, err := cdc.Marshal(relayRequest)
+	relayRequestBz, err := relayRequest.Marshal()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error marshaling relay request: %s", err)
 	}

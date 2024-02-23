@@ -3,19 +3,20 @@ package types_test
 import (
 	"testing"
 
-	"github.com/pokt-network/poktroll/testutil/sample"
-	"github.com/pokt-network/poktroll/x/gateway/types"
-
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/pokt-network/poktroll/testutil/sample"
+	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
-	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 
 	addr2 := sample.AccAddress()
-	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 
 	tests := []struct {
 		desc     string
@@ -102,7 +103,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 					},
 				},
 			},
@@ -118,7 +119,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 					},
 				},
 			},
@@ -134,7 +135,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						Stake:   &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 					},
 				},
 			},
@@ -150,7 +151,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						Stake:   &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						Stake:   &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 					},
 				},
 			},
@@ -158,10 +159,10 @@ func TestGenesisState_Validate(t *testing.T) {
 		},
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.genState.Validate()
-			if tc.valid {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.genState.Validate()
+			if test.valid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

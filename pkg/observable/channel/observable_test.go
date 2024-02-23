@@ -92,17 +92,17 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 		// },
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.setupFn != nil {
-				tt.setupFn(tt)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.setupFn != nil {
+				test.setupFn(test)
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			t.Cleanup(cancel)
 
 			obsvbl, publishCh := channel.NewObservable[int](
-				channel.WithPublisher(tt.publishCh),
+				channel.WithPublisher(test.publishCh),
 			)
 			require.NotNil(t, obsvbl)
 			require.NotNil(t, publishCh)
@@ -121,7 +121,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				onNext := func(outputIndex int, output int) error {
 					// obsvr channel should receive notified input
 					if !assert.Equalf(
-						t, tt.expectedOutputs[outputIndex],
+						t, test.expectedOutputs[outputIndex],
 						output,
 						"obsvr Idx: %d", obsvrIdx,
 					) {
@@ -133,7 +133,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 				// onDone is called when the observer channel closes
 				onDone := func(outputs []int) error {
 					if !assert.ElementsMatch(
-						t, tt.expectedOutputs, outputs,
+						t, test.expectedOutputs, outputs,
 						"obsvr addr: %p", obsvr,
 					) {
 						return testerrors.ErrAsync
@@ -148,7 +148,7 @@ func TestChannelObservable_NotifyObservers(t *testing.T) {
 
 			// notify with test input
 			publish := delayedPublishFactory(publishCh, publishDelay)
-			for _, input := range tt.inputs {
+			for _, input := range test.inputs {
 				// simulating IO delay in sequential message publishing
 				publish(input)
 			}
@@ -234,9 +234,9 @@ func TestChannelObservable_UnsubscribeObservers(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			observer := tt.lifecycleFn()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			observer := test.lifecycleFn()
 
 			select {
 			case value, ok := <-observer.Ch():

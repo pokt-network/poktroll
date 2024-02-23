@@ -205,6 +205,15 @@ func NewSupplyTxClientContextFn(
 			return nil, err
 		}
 
+		tmpChainID, err := cmd.Flags().GetString(cosmosflags.FlagChainID)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := cmd.Flags().Set(cosmosflags.FlagChainID, tmpChainID); err != nil {
+			return nil, err
+		}
+
 		// NB: Currently, the implementations of GetClientTxContext() and
 		// GetClientQueryContext() are identical, allowing for their interchangeable
 		// use in both querying and transaction operations. However, in order to support
@@ -228,6 +237,10 @@ func NewSupplyTxClientContextFn(
 		// Restore the flag's original value in order for other components
 		// to use the flag as expected.
 		if err := cmd.Flags().Set(cosmosflags.FlagNode, tmpNode); err != nil {
+			return nil, err
+		}
+
+		if err := cmd.Flags().Set(cosmosflags.FlagChainID, tmpChainID); err != nil {
 			return nil, err
 		}
 

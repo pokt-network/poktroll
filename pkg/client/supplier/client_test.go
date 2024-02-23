@@ -60,13 +60,13 @@ func TestNewSupplierClient(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			signingKeyOpt := supplier.WithSigningKeyName(tt.signingKeyName)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			signingKeyOpt := supplier.WithSigningKeyName(test.signingKeyName)
 
 			supplierClient, err := supplier.NewSupplierClient(deps, signingKeyOpt)
-			if tt.expectedErr != nil {
-				require.ErrorIs(t, err, tt.expectedErr)
+			if test.expectedErr != nil {
+				require.ErrorIs(t, err, test.expectedErr)
 				require.Nil(t, supplierClient)
 			} else {
 				require.NoError(t, err)

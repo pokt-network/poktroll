@@ -1,18 +1,17 @@
 package keeper
 
 import (
-	"fmt"
+	"context"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/store/prefix"
+	"github.com/cosmos/cosmos-sdk/runtime"
+
+	"github.com/pokt-network/poktroll/x/session/types"
 )
 
 // GetBlockHash returns the hash of the block at the given height.
-func (k Keeper) GetBlockHash(ctx sdk.Context, height int64) []byte {
-	store := ctx.KVStore(k.storeKey)
-	return store.Get(GetBlockHashKey(height))
-}
-
-// GetBlockHashKey returns the key used to store the block hash for a given height.
-func GetBlockHashKey(height int64) []byte {
-	return []byte(fmt.Sprintf("Blockhash:%d", height))
+func (k Keeper) GetBlockHash(ctx context.Context, height int64) []byte {
+	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
+	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.BlockHashKeyPrefix))
+	return store.Get(types.BlockHashKey(height))
 }

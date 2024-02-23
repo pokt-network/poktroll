@@ -3,6 +3,7 @@ package types_test
 import (
 	"testing"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -13,13 +14,13 @@ import (
 
 func TestGenesisState_Validate(t *testing.T) {
 	addr1 := sample.AccAddress()
-	stake1 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	stake1 := sdk.NewCoin("upokt", math.NewInt(100))
 	svc1AppConfig := &sharedtypes.ApplicationServiceConfig{
 		Service: &sharedtypes.Service{Id: "svc1"},
 	}
 
 	addr2 := sample.AccAddress()
-	stake2 := sdk.NewCoin("upokt", sdk.NewInt(100))
+	stake2 := sdk.NewCoin("upokt", math.NewInt(100))
 	svc2AppConfig := &sharedtypes.ApplicationServiceConfig{
 		Service: &sharedtypes.Service{Id: "svc2"},
 	}
@@ -31,12 +32,12 @@ func TestGenesisState_Validate(t *testing.T) {
 	tests := []struct {
 		desc     string
 		genState *types.GenesisState
-		valid    bool
+		isValid  bool
 	}{
 		{
 			desc:     "default is valid",
 			genState: types.DefaultGenesis(),
-			valid:    true,
+			isValid:  true,
 		},
 		{
 			desc: "valid genesis state",
@@ -60,7 +61,7 @@ func TestGenesisState_Validate(t *testing.T) {
 				},
 				// this line is used by starport scaffolding # types/genesis/validField
 			},
-			valid: true,
+			isValid: true,
 		},
 		{
 			desc: "invalid - zero app stake",
@@ -77,13 +78,13 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address:                   addr2,
-						Stake:                     &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(0)},
+						Stake:                     &sdk.Coin{Denom: "upokt", Amount: math.NewInt(0)},
 						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - negative application stake",
@@ -100,13 +101,13 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address:                   addr2,
-						Stake:                     &sdk.Coin{Denom: "upokt", Amount: sdk.NewInt(-100)},
+						Stake:                     &sdk.Coin{Denom: "upokt", Amount: math.NewInt(-100)},
 						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - wrong stake denom",
@@ -123,13 +124,13 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address:                   addr2,
-						Stake:                     &sdk.Coin{Denom: "invalid", Amount: sdk.NewInt(100)},
+						Stake:                     &sdk.Coin{Denom: "invalid", Amount: math.NewInt(100)},
 						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - missing denom",
@@ -146,13 +147,13 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address:                   addr2,
-						Stake:                     &sdk.Coin{Denom: "", Amount: sdk.NewInt(100)},
+						Stake:                     &sdk.Coin{Denom: "", Amount: math.NewInt(100)},
 						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to duplicated app address",
@@ -175,7 +176,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to nil app stake",
@@ -198,7 +199,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to missing app stake",
@@ -215,13 +216,13 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 					{
 						Address: addr2,
-						// Explicitly missing stake
+						// Stake explicitly omitted
 						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to invalid delegatee pub key",
@@ -244,7 +245,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - due to invalid delegatee pub keys",
@@ -267,7 +268,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - service config not present",
@@ -279,12 +280,12 @@ func TestGenesisState_Validate(t *testing.T) {
 					{
 						Address: addr1,
 						Stake:   &stake1,
-						// ServiceConfigs: omitted
+						// ServiceConfigs explicitly omitted
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - empty service config",
@@ -301,7 +302,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - service ID too long",
@@ -320,7 +321,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - service name too long",
@@ -342,7 +343,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - service ID with invalid characters",
@@ -361,7 +362,7 @@ func TestGenesisState_Validate(t *testing.T) {
 					},
 				},
 			},
-			valid: false,
+			isValid: false,
 		},
 		{
 			desc: "invalid - MaxDelegatedGateways less than 1",
@@ -370,15 +371,35 @@ func TestGenesisState_Validate(t *testing.T) {
 					MaxDelegatedGateways: 0,
 				},
 			},
-			valid: false,
+			isValid: false,
+		},
+		{
+			desc: "duplicated application",
+			genState: &types.GenesisState{
+				ApplicationList: []types.Application{
+					{
+						Address:                   addr1,
+						Stake:                     &stake1,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc1AppConfig},
+						DelegateeGatewayAddresses: []string{gatewayAddr1, gatewayAddr2},
+					},
+					{
+						Address:                   addr1,
+						Stake:                     &stake2,
+						ServiceConfigs:            []*sharedtypes.ApplicationServiceConfig{svc2AppConfig},
+						DelegateeGatewayAddresses: []string{gatewayAddr2, gatewayAddr1},
+					},
+				},
+			},
+			isValid: false,
 		},
 
 		// this line is used by starport scaffolding # types/genesis/testcase
 	}
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			err := tc.genState.Validate()
-			if tc.valid {
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			err := test.genState.Validate()
+			if test.isValid {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)

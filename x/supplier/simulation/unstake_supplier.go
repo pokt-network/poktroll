@@ -25,6 +25,6 @@ func SimulateMsgUnstakeSupplier(
 
 		// TODO: Handling the UnstakeSupplier simulation
 
-		return simtypes.NoOpMsg(types.ModuleName, msg.Type(), "UnstakeSupplier simulation not implemented"), nil, nil
+		return simtypes.NoOpMsg(types.ModuleName, sdk.MsgTypeURL(msg), "UnstakeSupplier simulation not implemented"), nil, nil
 	}
 }

@@ -2,11 +2,13 @@ package block_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	"github.com/cometbft/cometbft/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +18,7 @@ import (
 )
 
 const (
-	testTimeoutDuration = 100 * time.Millisecond
+	testTimeoutDuration = 100000 * time.Millisecond
 
 	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
 	committedBlocksQuery = "tm.event='NewBlock'"
@@ -26,15 +28,15 @@ func TestBlockClient(t *testing.T) {
 	var (
 		expectedHeight     = int64(1)
 		expectedHash       = []byte("test_hash")
-		expectedBlockEvent = &testBlockEvent{
-			Block: comettypes.Block{
+		expectedBlockEvent = &types.EventDataNewBlock{
+			Block: &types.Block{
 				Header: comettypes.Header{
 					Height: 1,
 					Time:   time.Now(),
-					LastBlockID: comettypes.BlockID{
-						Hash: expectedHash,
-					},
 				},
+			},
+			BlockID: comettypes.BlockID{
+				Hash: expectedHash,
 			},
 		}
 		ctx = context.Background()
@@ -43,10 +45,17 @@ func TestBlockClient(t *testing.T) {
 	expectedEventBz, err := json.Marshal(expectedBlockEvent)
 	require.NoError(t, err)
 
+	expectedRPCResponse := &rpctypes.RPCResponse{
+		Result: expectedEventBz,
+	}
+
+	expectedRPCResponseBz, err := json.Marshal(expectedRPCResponse)
+	require.NoError(t, err)
+
 	eventsQueryClient := testeventsquery.NewAnyTimesEventsBytesEventsQueryClient(
 		ctx, t,
 		committedBlocksQuery,
-		expectedEventBz,
+		expectedRPCResponseBz,
 	)
 
 	deps := depinject.Supply(eventsQueryClient)
@@ -83,8 +92,8 @@ func TestBlockClient(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			actualBlockCh := make(chan client.Block, 10)
 
 			// Run test functions asynchronously because they can block, leading
@@ -93,7 +102,7 @@ func TestBlockClient(t *testing.T) {
 			go func(fn func() client.Block) {
 				actualBlockCh <- fn()
 				close(actualBlockCh)
-			}(tt.fn)
+			}(test.fn)
 
 			select {
 			case actualBlock := <-actualBlockCh:
@@ -106,25 +115,4 @@ func TestBlockClient(t *testing.T) {
 	}
 
 	blockClient.Close()
-}
-
-/*
-TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
-
-type from pkg/client/block/block.go. We seem to have some conflicting preferences
-which result in the need for this duplication until a preferred direction is
-identified:
-
-  - We should prefer tests being in their own pkgs (e.g. block_test)
-  - this would resolve if this test were in the block package instead.
-  - We should prefer to not export types which don't require exporting for API
-    consumption.
-  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
-  - We could use the //go:build test constraint on a new file which exports it
-    for testing purposes.
-  - This would imply that we also add -tags=test to all applicable tooling
-    and add a test which fails if the tag is absent.
-*/
-type testBlockEvent struct {
-	Block comettypes.Block `json:"block"`
 }
