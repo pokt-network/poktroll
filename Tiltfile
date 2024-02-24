@@ -1,5 +1,6 @@
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
+load('ext://configmap', 'configmap_create')
 
 # A list of directories where changes trigger a hot-reload of the sequencer
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
@@ -34,40 +35,12 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
 
-
-# Import files into Kubernetes ConfigMap
-def read_files_from_directory(directory):
-    files = listdir(directory)
-    config_map_data = {}
-    for filepath in files:
-        content = str(read_file(filepath)).strip()
-        filename = os.path.basename(filepath)
-        config_map_data[filename] = content
-    return config_map_data
-
-
-def generate_config_map_yaml(name, data):
-    config_map_object = {
-        "apiVersion": "v1",
-        "kind": "ConfigMap",
-        "metadata": {"name": name},
-        "data": data,
-    }
-    return encode_yaml(config_map_object)
-
-
 # Import keyring/keybase files into Kubernetes ConfigMap
-k8s_yaml(
-    generate_config_map_yaml(
-        "poktrolld-keys", read_files_from_directory("localnet/poktrolld/keyring-test/")
-    )
-)  # poktrolld/keys
+configmap_create("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
 # Import configuration files into Kubernetes ConfigMap
-k8s_yaml(
-    generate_config_map_yaml(
-        "poktrolld-configs", read_files_from_directory("localnet/poktrolld/config/")
-    )
-)  # poktrolld/configs
+configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
+# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart. Use: load('ext://secret', 'secret_create_generic')
+# secret_create_generic("poktrolld-validator-keys", from_file=["localnet/poktrolld/config/node_key.json", "localnet/poktrolld/config/priv_validator_key.json"])
 
 # Hot reload protobuf changes
 local_resource(
@@ -110,7 +83,7 @@ WORKDIR /
 
 # Run celestia and anvil nodes
 k8s_yaml(
-    ["localnet/kubernetes/celestia-rollkit.yaml", "localnet/kubernetes/anvil.yaml", "localnet/kubernetes/sequencer-volume.yaml"]
+    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/sequencer-volume.yaml"]
 )
 
 # Run pocket-specific nodes (sequencer, relayminers, etc...)
@@ -148,16 +121,9 @@ helm_resource(
     image_keys=[("image.repository", "image.tag")],
 )
 
-# Configure tilt resources (tilt labels and port forwards) for all of the nodes above
-k8s_resource(
-    "celestia-rollkit",
-    labels=["blockchains"],
-    port_forwards=["26657", "26658", "26659"],
-)
 k8s_resource(
     "sequencer",
     labels=["blockchains"],
-    resource_deps=["celestia-rollkit"],
     port_forwards=["36657", "36658", "40004"],
 )
 k8s_resource(

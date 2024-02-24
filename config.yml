@@ -67,6 +67,11 @@ validators:
     bonded: 900000000upokt
     config:
       moniker: "sequencer1"
+      consensus:
+        timeout_commit: "5s"
+        timeout_propose: "5s"
+    client:
+      chain-id: poktroll
 
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
