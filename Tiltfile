@@ -87,17 +87,17 @@ k8s_yaml(
 )
 
 # Run pocket-specific nodes (sequencer, relayminers, etc...)
-helm_resource(
-    "sequencer",
-    chart_prefix + "poktroll-sequencer",
-    flags=[
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--values=./localnet/kubernetes/values-sequencer.yaml",
-        "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["sequencer"]["cleanupBeforeEachStart"]),
-        ],
-    image_deps=["poktrolld"],
-    image_keys=[("image.repository", "image.tag")],
-)
+# helm_resource(
+#     "sequencer",
+#     chart_prefix + "poktroll-sequencer",
+#     flags=[
+#         "--values=./localnet/kubernetes/values-common.yaml",
+#         "--values=./localnet/kubernetes/values-sequencer.yaml",
+#         "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["sequencer"]["cleanupBeforeEachStart"]),
+#         ],
+#     image_deps=["poktrolld"],
+#     image_keys=[("image.repository", "image.tag")],
+# )
 helm_resource(
     "relayminers",
     chart_prefix + "relayminer",
@@ -109,23 +109,24 @@ helm_resource(
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
-helm_resource(
-    "appgateservers",
-    chart_prefix + "appgate-server",
-    flags=[
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--values=./localnet/kubernetes/values-appgateserver.yaml",
-        "--set=replicaCount=" + str(localnet_config["appgateservers"]["count"]),
-    ],
-    image_deps=["poktrolld"],
-    image_keys=[("image.repository", "image.tag")],
-)
+if (localnet_config["appgateservers"]["count"] > 0):
+    helm_resource(
+        "appgateservers",
+        chart_prefix + "appgate-server",
+        flags=[
+            "--values=./localnet/kubernetes/values-common.yaml",
+            "--values=./localnet/kubernetes/values-appgateserver.yaml",
+            "--set=replicaCount=" + str(localnet_config["appgateservers"]["count"]),
+        ],
+        image_deps=["poktrolld"],
+        image_keys=[("image.repository", "image.tag")],
+    )
 
-k8s_resource(
-    "sequencer",
-    labels=["blockchains"],
-    port_forwards=["36657", "36658", "40004"],
-)
+# k8s_resource(
+#     "sequencer",
+#     labels=["blockchains"],
+#     port_forwards=["36657", "36658", "40004"],
+# )
 k8s_resource(
     "relayminers",
     labels=["blockchains"],
@@ -137,15 +138,16 @@ k8s_resource(
         "9094:9090"
     ],
 )
-k8s_resource(
-    "appgateservers",
-    labels=["blockchains"],
-    resource_deps=["sequencer"],
-    port_forwards=[
-        "42069",
-        "40006",
-        # Run `curl localhost:9093` to see the current snapshot of appgateserver metrics.
-        "9093:9090"
-    ],
-)
+if (localnet_config["appgateservers"]["count"] > 0):
+    k8s_resource(
+        "appgateservers",
+        labels=["blockchains"],
+        resource_deps=["sequencer"],
+        port_forwards=[
+            "42069",
+            "40006",
+            # Run `curl localhost:9093` to see the current snapshot of appgateserver metrics.
+            "9093:9090"
+        ],
+    )
 k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
