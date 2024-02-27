@@ -152,7 +152,7 @@ helm_resource(
 k8s_resource(
     "celestia-rollkit",
     labels=["blockchains"],
-    port_forwards=["26657", "26658", "26659"],
+    port_forwards=["26657", "26658", "26659", "26650"],
 )
 k8s_resource(
     "sequencer",

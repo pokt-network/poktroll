@@ -254,7 +254,7 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	echo "Regenerating genesis file with new validator..." ;\
 	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
 	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/config/* $(POKTROLLD_HOME)/config/ ;\
 
 .PHONY: send_relay
 send_relay:
