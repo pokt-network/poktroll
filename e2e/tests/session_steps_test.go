@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/cometbft/cometbft/libs/json"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -101,28 +101,11 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
 
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	eventsReplayClient, err := events.NewEventsReplayClient[*comettypes.EventDataTx](
+	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
 		ctx,
 		deps,
 		msgSenderQuery,
-		func(eventBz []byte) (*comettypes.EventDataTx, error) {
-			// Try to deserialize the provided bytes into an RPCResponse.
-			rpcResult := &rpctypes.RPCResponse{}
-			if err := json.Unmarshal(eventBz, rpcResult); err != nil {
-				return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
-			}
-
-			if string(rpcResult.Result) == "{}" {
-				return nil, nil
-			}
-
-			// Unmarshal event data into an comettype EventDataTx object.
-			txResult := &comettypes.EventDataTx{}
-			err = json.Unmarshal(rpcResult.Result, txResult)
-			require.NoError(s, err)
-
-			return txResult, nil
-		},
+		tx.UnmarshalTxResult,
 		testEventsReplayClientBufferSize,
 	)
 	require.NoError(s, err)

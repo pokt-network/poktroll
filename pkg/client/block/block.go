@@ -14,12 +14,18 @@ import (
 // interface by loosely wrapping cometbft's block type, into which messages are
 // deserialized.
 type cometBlockEvent struct {
-	types.EventDataNewBlock
+	Data struct {
+		Value struct {
+			//types.EventDataNewBlock
+			Block   *types.Block  `json:"block"`
+			BlockID types.BlockID `json:"block_id"`
+		} `json:"value"`
+	} `json:"data"`
 }
 
 // Height returns the block's height.
 func (blockEvent *cometBlockEvent) Height() int64 {
-	return blockEvent.Block.Height
+	return blockEvent.Data.Value.Block.Height
 }
 
 // Hash returns the binary representation of the block's hash as a byte slice.
@@ -28,7 +34,7 @@ func (blockEvent *cometBlockEvent) Hash() []byte {
 	// previous block's hash, not the hash of the block being fetched
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#blockid
 	// see: https://docs.cometbft.com/v0.37/spec/core/data_structures#header -> LastBlockID
-	return blockEvent.BlockID.Hash
+	return blockEvent.Data.Value.BlockID.Hash
 }
 
 // newCometBlockEvent is a function that attempts to deserialize the given bytes
@@ -40,7 +46,7 @@ func newCometBlockEvent(blockMsgBz []byte) (client.Block, error) {
 		return nil, err
 	}
 
-	var eventDataNewBlock types.EventDataNewBlock
+	var eventDataNewBlock cometBlockEvent
 
 	// If rpcResponse.Result fails unmarshaling into types.EventDataNewBlock,
 	// then it does not match the expected format
@@ -49,5 +55,10 @@ func newCometBlockEvent(blockMsgBz []byte) (client.Block, error) {
 			Wrapf("with block data: %s", string(blockMsgBz))
 	}
 
-	return &cometBlockEvent{eventDataNewBlock}, nil
+	if eventDataNewBlock.Data.Value.Block == nil {
+		return nil, events.ErrEventsUnmarshalEvent.
+			Wrapf("with block data: %s", string(blockMsgBz))
+	}
+
+	return &eventDataNewBlock, nil
 }
