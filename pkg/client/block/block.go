@@ -17,6 +17,9 @@ type cometBlockEvent struct {
 	Data struct {
 		Value struct {
 			//types.EventDataNewBlock
+
+			// Block and BlockID are nested to match comet-bft's unique serialization,
+			// diverging from the rollkit's approach seen in other implementations.
 			Block   *types.Block  `json:"block"`
 			BlockID types.BlockID `json:"block_id"`
 		} `json:"value"`

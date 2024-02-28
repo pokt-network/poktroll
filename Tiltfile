@@ -2,13 +2,13 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load('ext://configmap', 'configmap_create')
 
-# A list of directories where changes trigger a hot-reload of the sequencer
+# A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
-    "sequencer": {"cleanupBeforeEachStart": True},
+    "validator": {"cleanupBeforeEachStart": True},
     "relayminers": {"count": 1},
     "gateways": {"count": 1},
     "appgateservers": {"count": 1},
@@ -83,21 +83,21 @@ WORKDIR /
 
 # Run celestia and anvil nodes
 k8s_yaml(
-    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/sequencer-volume.yaml"]
+    ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"]
 )
 
-# Run pocket-specific nodes (sequencer, relayminers, etc...)
-# helm_resource(
-#     "sequencer",
-#     chart_prefix + "poktroll-sequencer",
-#     flags=[
-#         "--values=./localnet/kubernetes/values-common.yaml",
-#         "--values=./localnet/kubernetes/values-sequencer.yaml",
-#         "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["sequencer"]["cleanupBeforeEachStart"]),
-#         ],
-#     image_deps=["poktrolld"],
-#     image_keys=[("image.repository", "image.tag")],
-# )
+# Run pocket-specific nodes (validator, relayminers, etc...)
+helm_resource(
+    "validator",
+    chart_prefix + "poktroll-sequencer",
+    flags=[
+        "--values=./localnet/kubernetes/values-common.yaml",
+        "--values=./localnet/kubernetes/values-validator.yaml",
+        "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
+        ],
+    image_deps=["poktrolld"],
+    image_keys=[("image.repository", "image.tag")],
+)
 helm_resource(
     "relayminers",
     chart_prefix + "relayminer",
@@ -122,15 +122,15 @@ if (localnet_config["appgateservers"]["count"] > 0):
         image_keys=[("image.repository", "image.tag")],
     )
 
-# k8s_resource(
-#     "sequencer",
-#     labels=["blockchains"],
-#     port_forwards=["36657", "36658", "40004"],
-# )
+k8s_resource(
+    "validator",
+    labels=["blockchains"],
+    port_forwards=["36657", "36658", "40004"],
+)
 k8s_resource(
     "relayminers",
     labels=["blockchains"],
-    resource_deps=["sequencer"],
+    resource_deps=["validator"],
     port_forwards=[
         "8545",
         "40005",
@@ -142,7 +142,7 @@ if (localnet_config["appgateservers"]["count"] > 0):
     k8s_resource(
         "appgateservers",
         labels=["blockchains"],
-        resource_deps=["sequencer"],
+        resource_deps=["validator"],
         port_forwards=[
             "42069",
             "40006",
