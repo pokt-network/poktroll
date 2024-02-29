@@ -10,7 +10,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
-	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -179,21 +178,21 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*comettypes.EventDataTx])
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*testTxEvent])
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*comettypes.EventDataTx](
+	channel.ForEach[*testTxEvent](
 		ctx, eventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txEvent *comettypes.EventDataTx) {
+		func(_ context.Context, txEvent *testTxEvent) {
 			if txEvent == nil {
 				return
 			}
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range txEvent.Result.Events {
+			for _, event := range txEvent.Data.Value.TxResult.Result.Events {
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
 						if attribute.Value == action {
@@ -212,4 +211,31 @@ func (s *suite) waitForMessageAction(action string) {
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
+}
+
+/*
+TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
+
+type from pkg/client/block/block.go. We seem to have some conflicting preferences
+which result in the need for this duplication until a preferred direction is
+identified:
+
+  - We should prefer tests being in their own pkgs (e.g. block_test)
+  - this would resolve if this test were in the block package instead.
+  - We should prefer to not export types which don't require exporting for API
+    consumption.
+  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
+  - We could use the //go:build test constraint on a new file which exports it
+    for testing purposes.
+  - This would imply that we also add -tags=test to all applicable tooling
+    and add a test which fails if the tag is absent.
+*/
+type testTxEvent struct {
+	Data struct {
+		Value struct {
+			// TxResult is nested to accommodate comet-bft's serialization format,
+			// ensuring correct deserialization of transaction results.
+			TxResult abci.TxResult
+		} `json:"value"`
+	} `json:"data"`
 }
