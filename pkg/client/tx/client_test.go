@@ -12,7 +12,6 @@ import (
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
-	comettypes "github.com/cometbft/cometbft/types"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
@@ -110,7 +109,20 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
 	txResult := abci.TxResult{Tx: expectedTx}
-	txEvent := &comettypes.EventDataTx{TxResult: txResult}
+
+	txEvent := &testTxEvent{
+		Data: struct {
+			Value struct {
+				TxResult abci.TxResult
+			} `json:"value"`
+		}{
+			Value: struct {
+				TxResult abci.TxResult
+			}{
+				TxResult: txResult,
+			},
+		},
+	}
 
 	txResultBz, err := json.Marshal(txEvent)
 	require.NoError(t, err)
@@ -433,4 +445,29 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
+}
+
+/*
+TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
+type from pkg/client/block/block.go. We seem to have some conflicting preferences
+which result in the need for this duplication until a preferred direction is
+identified:
+  - We should prefer tests being in their own pkgs (e.g. block_test)
+  - this would resolve if this test were in the block package instead.
+  - We should prefer to not export types which don't require exporting for API
+    consumption.
+  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
+  - We could use the //go:build test constraint on a new file which exports it
+    for testing purposes.
+  - This would imply that we also add -tags=test to all applicable tooling
+    and add a test which fails if the tag is absent.
+*/
+type testTxEvent struct {
+	Data struct {
+		Value struct {
+			// TxResult is nested to accommodate comet-bft's serialization format,
+			// ensuring correct deserialization of transaction results.
+			TxResult abci.TxResult
+		} `json:"value"`
+	} `json:"data"`
 }
