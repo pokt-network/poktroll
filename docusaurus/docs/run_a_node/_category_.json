@@ -1,0 +1,8 @@
+{
+  "label": "Run a Node",
+  "position": 10,
+  "link": {
+    "type": "generated-index",
+    "description": "Guides and documentation on how to run Pocket Network software"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "label": "Internal infrastructure",
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "description": "Documentation for internal Pocket network team infrastructure: LocalNet, DevNet and TestNets."
+  }
+}
