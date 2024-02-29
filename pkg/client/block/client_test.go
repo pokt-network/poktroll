@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	testTimeoutDuration = 100000 * time.Millisecond
+	testTimeoutDuration = 100 * time.Millisecond
 
 	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
 	committedBlocksQuery = "tm.event='NewBlock'"
@@ -26,17 +26,30 @@ const (
 
 func TestBlockClient(t *testing.T) {
 	var (
-		expectedHeight     = int64(1)
-		expectedHash       = []byte("test_hash")
-		expectedBlockEvent = &types.EventDataNewBlock{
-			Block: &types.Block{
-				Header: comettypes.Header{
-					Height: 1,
-					Time:   time.Now(),
+		expectedHeight = int64(1)
+		expectedHash   = []byte("test_hash")
+
+		expectedBlockEvent = &testBlockEvent{
+			Data: struct {
+				Value struct {
+					Block   *types.Block  `json:"block"`
+					BlockID types.BlockID `json:"block_id"`
+				} `json:"value"`
+			}{
+				Value: struct {
+					Block   *types.Block  `json:"block"`
+					BlockID types.BlockID `json:"block_id"`
+				}{
+					Block: &types.Block{
+						Header: comettypes.Header{
+							Height: 1,
+							Time:   time.Now(),
+						},
+					},
+					BlockID: types.BlockID{
+						Hash: expectedHash,
+					},
 				},
-			},
-			BlockID: comettypes.BlockID{
-				Hash: expectedHash,
 			},
 		}
 		ctx = context.Background()
@@ -115,4 +128,33 @@ func TestBlockClient(t *testing.T) {
 	}
 
 	blockClient.Close()
+}
+
+/*
+TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
+
+type from pkg/client/block/block.go. We seem to have some conflicting preferences
+which result in the need for this duplication until a preferred direction is
+identified:
+
+  - We should prefer tests being in their own pkgs (e.g. block_test)
+  - this would resolve if this test were in the block package instead.
+  - We should prefer to not export types which don't require exporting for API
+    consumption.
+  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
+  - We could use the //go:build test constraint on a new file which exports it
+    for testing purposes.
+  - This would imply that we also add -tags=test to all applicable tooling
+    and add a test which fails if the tag is absent.
+*/
+type testBlockEvent struct {
+	// Block comettypes.Block `json:"block"`
+	Data struct {
+		Value struct {
+			// Block and BlockID are nested to match comet-bft's unique serialization,
+			// diverging from the rollkit's approach seen in other implementations.
+			Block   *types.Block  `json:"block"`
+			BlockID types.BlockID `json:"block_id"`
+		} `json:"value"`
+	} `json:"data"`
 }
