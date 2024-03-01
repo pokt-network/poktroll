@@ -59,7 +59,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 
 	// Assert that the number of claims has increased by one.
 	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
-	require.True(s, ok, "preExistingClaimsKey not found in scenarioState")
+	require.True(s, ok, "preExistingClaimsKey not found in scenarioStatee")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
@@ -178,21 +178,20 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*testTxEvent])
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*abci.TxResult])
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
-
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*testTxEvent](
+	channel.ForEach[*abci.TxResult](
 		ctx, eventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txEvent *testTxEvent) {
-			if txEvent == nil {
+		func(_ context.Context, txResult *abci.TxResult) {
+			if txResult == nil {
 				return
 			}
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range txEvent.Data.Value.TxResult.Result.Events {
+			for _, event := range txResult.Result.Events {
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
 						if attribute.Value == action {
