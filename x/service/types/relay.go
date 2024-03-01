@@ -15,7 +15,12 @@ func (req RelayRequest) getSignableBytes() ([]byte, error) {
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.
 func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
+	signature := req.Meta.Signature
 	requestBz, err := req.getSignableBytes()
+
+	// Set the signature back to its original value
+	req.Meta.Signature = signature
+
 	if err != nil {
 		return [32]byte{}, err
 	}
@@ -38,7 +43,12 @@ func (res RelayResponse) getSignableBytes() ([]byte, error) {
 // Hashing the marshaled response message guarantees that the signable bytes are
 // always of a constant and expected length.
 func (res *RelayResponse) GetSignableBytesHash() ([32]byte, error) {
+	signature := res.Meta.SupplierSignature
 	responseBz, err := res.getSignableBytes()
+
+	// Set the signature back to its original value
+	res.Meta.SupplierSignature = signature
+
 	if err != nil {
 		return [32]byte{}, err
 	}

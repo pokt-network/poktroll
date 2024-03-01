@@ -177,9 +177,10 @@ type ModuleInputs struct {
 	Config       *modulev1.Module
 	Logger       log.Logger
 
-	AccountKeeper types.AccountKeeper
-	BankKeeper    types.BankKeeper
-	SessionKeeper types.SessionKeeper
+	AccountKeeper     types.AccountKeeper
+	BankKeeper        types.BankKeeper
+	SessionKeeper     types.SessionKeeper
+	ApplicationKeeper types.ApplicationKeeper
 }
 
 type ModuleOutputs struct {
@@ -201,6 +202,8 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.Logger,
 		authority.String(),
 		in.SessionKeeper,
+		in.ApplicationKeeper,
+		in.AccountKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
