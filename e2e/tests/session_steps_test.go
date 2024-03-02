@@ -213,9 +213,8 @@ func (s *suite) waitForMessageAction(action string) {
 }
 
 /*
-TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
-
-type from pkg/client/block/block.go. We seem to have some conflicting preferences
+TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported tx event
+type from pkg/client/tx/client.go. We seem to have some conflicting preferences
 which result in the need for this duplication until a preferred direction is
 identified:
 
