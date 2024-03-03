@@ -365,34 +365,6 @@ func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
 
 		tClient.txsMutex.Lock()
-
-		// Check for a corresponding error channel in the map.
-		// TODO_TECHDEBT(@bryanchriswhite): This panic is caused when we run the following command: `make acc_initialize_pubkeys`
-		// Need to understand why and resolve it.
-		txErrCh, ok := tClient.txErrorChans[txHashHex]
-		if !ok {
-			panic("Received tx event without an associated error channel.")
-		}
-
-		// TODO_INVESTIGATE: it seems like it may not be possible for the
-		// txResult to represent an error. Cosmos' #BroadcastTxSync() is being
-		// called internally, which will return an error if the transaction
-		// is not accepted by the mempool.
-		//
-		// It's unclear if a cosmos chain is capable of returning an async
-		// error for a transaction at this point; even when substituting
-		// #BroadcastTxAsync(), the error is returned synchronously:
-		//
-		// > error in json rpc client, with http response metadata: (Status:
-		// > 200 OK, Protocol HTTP/1.1). RPC error -32000 - tx added to local
-		// > mempool but failed to gossip: validation failed
-		//
-		// Potential parse and send transaction error on txErrCh here.
-
-		// Close and remove from txErrChans
-		close(txErrCh)
-		delete(tClient.txErrorChans, txHashHex)
-
 		// Remove from the txTimeoutPool.
 		for timeoutHeight, txErrorChans := range tClient.txTimeoutPool {
 			// Handled transaction isn't in this timeout height.
@@ -404,6 +376,36 @@ func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 			if len(txErrorChans) == 0 {
 				delete(tClient.txTimeoutPool, timeoutHeight)
 			}
+
+			// Check for a corresponding error channel in the map.
+			// Only close and remove from tClient.txErrorChans if it has been initiated
+			// by tClient.
+			// Transactions that are initiated externally will not have an associated
+			// error channel in tClient.txErrorChans and would trigger a panic if not
+			// handled inside this loop.
+			txErrCh, ok := tClient.txErrorChans[txHashHex]
+			if !ok {
+				panic("Received tx event without an associated error channel.")
+			}
+
+			// TODO_INVESTIGATE: it seems like it may not be possible for the
+			// txResult to represent an error. Cosmos' #BroadcastTxSync() is being
+			// called internally, which will return an error if the transaction
+			// is not accepted by the mempool.
+			//
+			// It's unclear if a cosmos chain is capable of returning an async
+			// error for a transaction at this point; even when substituting
+			// #BroadcastTxAsync(), the error is returned synchronously:
+			//
+			// > error in json rpc client, with http response metadata: (Status:
+			// > 200 OK, Protocol HTTP/1.1). RPC error -32000 - tx added to local
+			// > mempool but failed to gossip: validation failed
+			//
+			// Potential parse and send transaction error on txErrCh here.
+
+			// Close and remove from txErrChans
+			close(txErrCh)
+			delete(tClient.txErrorChans, txHashHex)
 		}
 
 		tClient.txsMutex.Unlock()
