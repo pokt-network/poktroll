@@ -68,18 +68,26 @@ func WithPublisher[V any](publishCh chan V) option[V] {
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (obs *channelObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// caller can cancel context or close the publish channel to unsubscribe active observers
+	ctx, cancel := context.WithCancel(ctx)
+	removeAndCancel := func(toRemove observable.Observer[V]) {
+		obs.observerManager.remove(toRemove)
+		cancel()
+	}
+
 	// Create a new observer and add it to the list of observers to be notified
 	// when publishCh receives a new value.
-	observer := NewObserver[V](ctx, obs.observerManager.remove)
+	observer := NewObserver[V](ctx, removeAndCancel)
 	obs.observerManager.add(observer)
 
-	// caller can rely on context cancelation or call UnsubscribeAll() to unsubscribe
-	// active observers
-	if ctx != nil {
-		// asynchronously wait for the context to be done and then unsubscribe
-		// this observer.
-		go obs.observerManager.goUnsubscribeOnDone(ctx, observer)
-	}
+	// asynchronously wait for the context to be done and then unsubscribe
+	// this observer.
+	go obs.observerManager.goUnsubscribeOnDone(ctx, observer)
+
 	return observer
 }
 

@@ -111,7 +111,18 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 	ro.replayBufferMu.RLock()
 	defer ro.replayBufferMu.RUnlock()
 
-	observer := NewObserver[V](ctx, ro.observerManager.remove)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// caller can cancel context or close the publish channel to unsubscribe active observers
+	ctx, cancel := context.WithCancel(ctx)
+	removeAndCancel := func(toRemove observable.Observer[V]) {
+		ro.observerManager.remove(toRemove)
+		cancel()
+	}
+
+	observer := NewObserver[V](ctx, removeAndCancel)
 
 	// Replay all buffered replayBuffer to the observer channel buffer before
 	// any new values have an opportunity to send on observerCh (i.e. appending
@@ -125,13 +136,9 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 
 	ro.observerManager.add(observer)
 
-	// caller can rely on context cancellation or call UnsubscribeAll() to unsubscribe
-	// active observers
-	if ctx != nil {
-		// asynchronously wait for the context to be done and then unsubscribe
-		// this observer.
-		go ro.observerManager.goUnsubscribeOnDone(ctx, observer)
-	}
+	// asynchronously wait for the context to be done and then unsubscribe
+	// this observer.
+	go ro.observerManager.goUnsubscribeOnDone(ctx, observer)
 
 	return observer
 }
