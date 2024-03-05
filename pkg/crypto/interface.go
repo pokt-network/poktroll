@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/noot/ring-go"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // RingCache is used to store rings used for signing and verifying relay requests.
@@ -33,4 +34,8 @@ type RingClient interface {
 	// GetRingForAddress returns the ring for the given application address if
 	// it exists.
 	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
+
+	// VerifyRelayRequestSignature verifies the relay request signature against the
+	// ring for the application address in the relay request.
+	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
 }

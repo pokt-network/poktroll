@@ -5,9 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/noot/ring-go"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -108,8 +106,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Verify the relay request's signature.
-	appAddress := msg.GetSessionHeader().GetApplicationAddress()
-	if err := k.verifyRelayRequestSignature(ctx, relay.GetReq(), appAddress); err != nil {
+	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relay.GetReq()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -317,59 +314,6 @@ func validateRelaySessionHeaders(
 			respSessHeader.GetSessionId(),
 			msgSessHeader.GetSessionId(),
 		)
-	}
-
-	return nil
-}
-
-// verifyRelayRequestSignature verifies the signature on the relay request.
-// TODO_TECHDEBT: Factor out the relay request signature verification into a shared
-// function that can be used by both the proof and relayer packages.
-func (k msgServer) verifyRelayRequestSignature(
-	ctx context.Context,
-	relayRequest *servicetypes.RelayRequest,
-	appAddress string,
-) error {
-	// Deserialize the ring signature from the relay request.
-	signature := relayRequest.GetMeta().GetSignature()
-	ringSig := new(ring.RingSig)
-	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
-		return types.ErrProofInvalidRelayRequest.Wrapf(
-			"error deserializing ring signature: %v",
-			err,
-		)
-	}
-
-	// Get the ring for the application address.
-	appRing, err := k.GetRingForAddress(ctx, appAddress)
-	if err != nil {
-		return types.ErrProofInvalidRelayRequest.Wrapf(
-			"error getting ring for application address %s: %v",
-			appAddress,
-			err,
-		)
-	}
-
-	// Ensure the ring signature matches the ring for the application address.
-	if !ringSig.Ring().Equals(appRing) {
-		return types.ErrProofInvalidRelayRequest.Wrapf(
-			"ring signature does not match ring for application address %s",
-			appAddress,
-		)
-	}
-
-	// Get and hash the signable bytes of the relay request
-	requestSignableBz, err := relayRequest.GetSignableBytesHash()
-	if err != nil {
-		return types.ErrProofInvalidRelayRequest.Wrapf(
-			"error getting signable bytes: %v",
-			err,
-		)
-	}
-
-	// Verify the relay request's signature
-	if valid := ringSig.Verify(requestSignableBz); !valid {
-		return types.ErrProofInvalidRelayRequest.Wrap("invalid ring signature")
 	}
 
 	return nil

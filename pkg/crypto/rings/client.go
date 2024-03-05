@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"cosmossdk.io/depinject"
+	sdkerrors "cosmossdk.io/errors"
+	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/noot/ring-go"
@@ -12,6 +14,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
@@ -67,6 +70,84 @@ func (rc *ringClient) GetRingForAddress(
 		Str("app_address", appAddress).
 		Msg("updating ring ringsByAddr for app")
 	return newRingFromPoints(points)
+}
+
+// VerifyRelayRequestSignature verifies the relay request signature against the
+// ring for the application address in the relay request.
+func (rc *ringClient) VerifyRelayRequestSignature(
+	ctx context.Context,
+	relayRequest *types.RelayRequest,
+) error {
+	rc.logger.Debug().
+		Fields(map[string]any{
+			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
+			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
+			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+		}).
+		Msg("verifying relay request signature")
+
+	// Extract the relay request's ring signature
+	if relayRequest.Meta == nil {
+		return ErrRingClientEmptyRelayRequestSignature.Wrapf(
+			"request payload: %s", relayRequest.Payload,
+		)
+	}
+
+	signature := relayRequest.Meta.Signature
+	if signature == nil {
+		return sdkerrors.Wrapf(
+			ErrRingClientInvalidRelayRequest,
+			"missing signature from relay request: %v", relayRequest,
+		)
+	}
+
+	ringSig := new(ring.RingSig)
+	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
+		return sdkerrors.Wrapf(
+			ErrRingClientInvalidRelayRequestSignature,
+			"error deserializing ring signature: %v", err,
+		)
+	}
+
+	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
+		return sdkerrors.Wrap(
+			ErrRingClientInvalidRelayRequest,
+			"missing application address from relay request",
+		)
+	}
+
+	// Get the ring for the application address of the relay request
+	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	appRing, err := rc.GetRingForAddress(ctx, appAddress)
+	if err != nil {
+		return sdkerrors.Wrapf(
+			ErrRingClientInvalidRelayRequest,
+			"error getting ring for application address %s: %v", appAddress, err,
+		)
+	}
+
+	// Verify the ring signature against the ring
+	if !ringSig.Ring().Equals(appRing) {
+		return sdkerrors.Wrapf(
+			ErrRingClientInvalidRelayRequestSignature,
+			"ring signature does not match ring for application address %s", appAddress,
+		)
+	}
+
+	// Get and hash the signable bytes of the relay request
+	requestSignableBz, err := relayRequest.GetSignableBytesHash()
+	if err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf("error getting signable bytes: %v", err)
+	}
+
+	// Verify the relay request's signature
+	if valid := ringSig.Verify(requestSignableBz); !valid {
+		return sdkerrors.Wrapf(
+			ErrRingClientInvalidRelayRequestSignature,
+			"invalid ring signature",
+		)
+	}
+	return nil
 }
 
 // getDelegatedPubKeysForAddress returns the ring used to sign a message for

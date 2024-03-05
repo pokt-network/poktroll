@@ -11,6 +11,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var _ crypto.RingCache = (*ringCache)(nil)
@@ -162,4 +163,13 @@ func (rc *ringCache) GetRingForAddress(
 
 	// Return the ring.
 	return ring, nil
+}
+
+// VerifyRelayRequestSignature verifies the relay request signature against the
+// ring for the application address in the relay request.
+func (rc *ringCache) VerifyRelayRequestSignature(
+	ctx context.Context,
+	relayRequest *types.RelayRequest,
+) error {
+	return rc.ringClient.VerifyRelayRequestSignature(ctx, relayRequest)
 }
