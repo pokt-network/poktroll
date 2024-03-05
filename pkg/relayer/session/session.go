@@ -225,8 +225,10 @@ func (rp *relayerSessionsManager) validateConfig() error {
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	subscription := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
-	defer subscription.Unsubscribe()
 
 	for block := range subscription.Ch() {
 		if block.Height() >= height {

@@ -82,6 +82,8 @@ func ToReplayObservable[V any](
 // If n is greater than the replay buffer size, the entire replay buffer is returned.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	logger := polylog.Ctx(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// Use a temporary observer to accumulate replay values.
 	// Subscribe will always start with the replay buffer, so we can safely
@@ -89,7 +91,6 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	// notification has been accumulated). This also eliminates the need for
 	// locking and/or copying the replay buffer.
 	tempObserver := ro.Subscribe(ctx)
-	defer tempObserver.Unsubscribe()
 
 	// If n is greater than the replay buffer size, return the entire replay buffer.
 	if n > ro.replayBufferSize {

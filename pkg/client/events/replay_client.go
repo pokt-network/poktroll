@@ -161,6 +161,9 @@ func (rClient *replayClient[T]) goRemapEventsSequence(ctx context.Context, publi
 // corresponding events query subscription.
 // It blocks until at least one event has been received.
 func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	return rClient.EventsSequence(ctx).Last(ctx, n)
 }
 

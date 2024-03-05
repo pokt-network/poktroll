@@ -28,6 +28,9 @@ func Map[S, D any](
 		func(dstNotification D) {
 			dstProducer <- dstNotification
 		},
+		func() {
+			close(dstProducer)
+		},
 	)
 
 	return dstObservable
@@ -52,6 +55,9 @@ func MapExpand[S, D any](
 			for _, dstNotification := range dstNotifications {
 				dstPublishCh <- dstNotification
 			}
+		},
+		func() {
+			close(dstPublishCh)
 		},
 	)
 
@@ -79,6 +85,9 @@ func MapReplay[S, D any](
 		transformFn,
 		func(dstNotification D) {
 			dstProducer <- dstNotification
+		},
+		func() {
+			close(dstProducer)
 		},
 	)
 
@@ -112,6 +121,7 @@ func goMapTransformNotification[S, D any](
 	srcObserver observable.Observer[S],
 	transformFn MapFn[S, D],
 	publishFn func(dstNotifications D),
+	doneFn func(),
 ) {
 	for srcNotification := range srcObserver.Ch() {
 		dstNotifications, skip := transformFn(ctx, srcNotification)
@@ -121,7 +131,7 @@ func goMapTransformNotification[S, D any](
 
 		publishFn(dstNotifications)
 	}
-
+	doneFn()
 }
 
 // zeroValue is a generic helper which returns the zero value of the given type.
