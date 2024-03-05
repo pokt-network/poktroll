@@ -45,7 +45,3 @@ type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, app apptypes.Application)
 }
-
-type SupplierKeeper interface {
-	GetSupplier(ctx context.Context, suppAddr string) (supplier sharedtypes.Supplier, found bool)
-}

@@ -27,7 +27,7 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 	// is being proposed.
 	blockHeight := req.BlockHeight
 
-	k.Logger().Info("Getting session for height: %d", blockHeight)
+	k.Logger(ctx).Info(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)

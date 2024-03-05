@@ -12,8 +12,12 @@ import (
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
 	// TODO_BLOCKER: Prevent Proof upserts after the tokenomics module has processes the respective session.
 	// TODO_BLOCKER: Validate the signature on the Proof message corresponds to the supplier before Upserting.
+	// TODO_BLOCKER: A potential issue with doing proof validation inside `SubmitProof` is that we will not
+	// be storing false proofs on-chain (e.g. for slashing purposes). This could be considered a feature (e.g. less state bloat
+	// against sybil attacks) or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs). Revisit
+	// this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 	logger := k.Logger().With("method", "SubmitProof")
-	logger.Debug("submitting proof")
+	logger.Info("About to start submitting proof")
 
 	/*
 		TODO_INCOMPLETE: Handling the message
@@ -43,22 +47,32 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
 
-	if err := msg.ValidateBasic(); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
+	// Decomposing a few variables for easier access
+	sessionHeader := msg.GetSessionHeader()
+	supplierAddr := msg.GetSupplierAddress()
+
+	// Helpers for logging the same metadata throughout this function calls
+	logger = logger.With(
+		"session_id", sessionHeader.GetSessionId(),
+		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
+		"supplier", supplierAddr)
+
+	logger.Info("validated the submitProof message ")
 
 	if _, err := k.queryAndValidateSessionHeader(
 		ctx,
-		msg.GetSessionHeader(),
-		msg.GetSupplierAddress(),
+		sessionHeader,
+		supplierAddr,
 	); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	logger.Info("queried and validated the session header")
+
 	// Construct and insert proof after all validation.
 	proof := types.Proof{
-		SupplierAddress:    msg.GetSupplierAddress(),
-		SessionHeader:      msg.GetSessionHeader(),
+		SupplierAddress:    supplierAddr,
+		SessionHeader:      sessionHeader,
 		ClosestMerkleProof: msg.Proof,
 	}
 
@@ -66,11 +80,20 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
+	logger.Info("queried and validated the claim")
+
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
-	k.Keeper.UpsertProof(ctx, proof)
+	k.UpsertProof(ctx, proof)
 
-	// TODO_UPNEXT(@Olshansk, #359): Call `tokenomics.SettleSessionAccounting()` here
+	logger.Info("upserted the proof")
+	logger.Info(string(ctx.TxBytes()))
+
+	// TODO_BLOCKER: Revisit (per the comment above) as to whether this should be in `EndBlocker` or here.
+	if err := k.tokenomicsKeeper.SettleSessionAccounting(ctx, claim); err != nil {
+		return nil, err
+	}
+	logger.Info("settled session accounting")
 
 	logger.
 		With(

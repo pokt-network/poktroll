@@ -31,9 +31,13 @@ const (
 // against a proof BEFORE calling this function.
 //
 // TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
-func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.Claim) error {
+func (k Keeper) SettleSessionAccounting(
+	ctx context.Context,
+	claim *prooftypes.Claim,
+) error {
 	// Parse the context
 	logger := k.Logger().With("method", "SettleSessionAccounting")
+	logger.Info(ctx.ChainID(), string(ctx.TxBytes()))
 
 	if claim == nil {
 		logger.Error("received a nil claim")
@@ -65,13 +69,7 @@ func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.C
 		return types.ErrTokenomicsApplicationAddressInvalid
 	}
 
-	// Retrieve the application
-	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !found {
-		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
-		return types.ErrTokenomicsApplicationNotFound
-	}
-
+	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 
 	// TODO_DISCUSS: This check should be the responsibility of the SMST package
@@ -80,9 +78,33 @@ func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.C
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
 		return types.ErrTokenomicsRootHashInvalid
 	}
-
-	// Retrieve the sum of the root as a proxy into the amount of work done
 	claimComputeUnits := root.Sum()
+
+	// Helpers for logging the same metadata throughout this function calls
+	logger = logger.With(
+		"compute_units", claimComputeUnits,
+		"session_id", sessionHeader.GetSessionId(),
+		"supplier", supplierAddress,
+		"application", applicationAddress,
+	)
+
+	logger.Info("About to start session settlement accounting")
+
+	// Retrieve the application
+	logger.Info(fmt.Sprintf("appKeeper pointer: %p; ctx pointer: %p", &k.appKeeper, &ctx))
+	if k.appKeeper == nil {
+		logger.Error("appKeeper is nil")
+		return types.ErrTokenomicsApplicationNotFound
+	}
+	if applicationAddress == nil {
+		logger.Error("applicationAddress is nil")
+		return types.ErrTokenomicsApplicationAddressInvalid
+	}
+	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
+	if !found {
+		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
+		return types.ErrTokenomicsApplicationNotFound
+	}
 
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
