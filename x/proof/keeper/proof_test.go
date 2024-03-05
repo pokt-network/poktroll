@@ -49,7 +49,7 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 }
 
 func TestProofGet(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t, nil)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 10)
 
 	for _, proof := range proofs {
@@ -66,7 +66,7 @@ func TestProofGet(t *testing.T) {
 	}
 }
 func TestProofRemove(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t, nil)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 10)
 	for _, proof := range proofs {
 		sessionId := proof.GetSessionHeader().GetSessionId()
@@ -77,7 +77,7 @@ func TestProofRemove(t *testing.T) {
 }
 
 func TestProofGetAll(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t, nil)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	proofs := createNProofs(keeper, ctx, 10)
 	require.ElementsMatch(t,
 		nullify.Fill(proofs),
