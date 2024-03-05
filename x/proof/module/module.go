@@ -196,7 +196,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 	if in.Config.Authority != "" {
 		authority = authtypes.NewModuleAddressOrBech32Address(in.Config.Authority)
 	}
-	k := keeper.NewKeeper(
+	k, err := keeper.NewKeeper(
 		in.Cdc,
 		in.StoreService,
 		in.Logger,
@@ -205,6 +205,10 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.ApplicationKeeper,
 		in.AccountKeeper,
 	)
+	if err != nil {
+		panic(err)
+	}
+
 	m := NewAppModule(
 		in.Cdc,
 		k,

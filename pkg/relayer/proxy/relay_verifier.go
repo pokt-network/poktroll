@@ -3,10 +3,6 @@ package proxy
 import (
 	"context"
 
-	sdkerrors "cosmossdk.io/errors"
-	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ring "github.com/noot/ring-go"
-
 	sessiontypes "github.com/pokt-network/poktroll/pkg/relayer/session"
 	"github.com/pokt-network/poktroll/x/service/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -18,81 +14,21 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	relayRequest *types.RelayRequest,
 	service *sharedtypes.Service,
 ) error {
-	rp.logger.Debug().
-		Fields(map[string]any{
-			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
-			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
-			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
-		}).
-		Msg("verifying relay request signature")
-
-	// extract the relay request's ring signature
-	if relayRequest.Meta == nil {
-		return ErrRelayerProxyEmptyRelayRequestSignature.Wrapf(
-			"request payload: %s", relayRequest.Payload,
-		)
-	}
-	signature := relayRequest.Meta.Signature
-	if signature == nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
-			"missing signature from relay request: %v", relayRequest,
-		)
+	if err := rp.ringCache.VerifyRelayRequestSignature(ctx, relayRequest); err != nil {
+		return err
 	}
 
-	ringSig := new(ring.RingSig)
-	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
-			"error deserializing ring signature: %v", err,
-		)
-	}
-
-	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
-		return sdkerrors.Wrap(
-			ErrRelayerProxyInvalidRelayRequest,
-			"missing application address from relay request",
-		)
-	}
-
-	// get the ring for the application address of the relay request
-	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
-	appRing, err := rp.ringCache.GetRingForAddress(ctx, appAddress)
-	if err != nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
-			"error getting ring for application address %s: %v", appAddress, err,
-		)
-	}
-
-	// verify the ring signature against the ring
-	if !ringSig.Ring().Equals(appRing) {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
-			"ring signature does not match ring for application address %s", appAddress,
-		)
-	}
-
-	// get and hash the signable bytes of the relay request
-	requestSignableBz, err := relayRequest.GetSignableBytesHash()
-	if err != nil {
-		return ErrRelayerProxyInvalidRelayRequest.Wrapf("error getting signable bytes: %v", err)
-	}
-
-	// verify the relay request's signature
-	if valid := ringSig.Verify(requestSignableBz); !valid {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
-			"invalid ring signature",
-		)
-	}
+	// Application address is used to verify the relayRequest signature, it is
+	// guaranteed to be present in the relayRequest since the signature has already
+	// been verified.
+	appAddress := relayRequest.GetMeta().GetSessionHeader().GetApplicationAddress()
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	rp.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
-			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
-			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+			"session_id":          relayRequest.GetMeta().GetSessionHeader().GetSessionId(),
+			"application_address": relayRequest.GetMeta().GetSessionHeader().GetApplicationAddress(),
+			"service_id":          relayRequest.GetMeta().GetSessionHeader().GetService().GetId(),
 		}).
 		Msg("verifying relay request session")
 
@@ -119,7 +55,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// we can reduce the session validity check to checking if the retrieved session's sessionId
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
-	if session.SessionId != relayRequest.Meta.SessionHeader.SessionId {
+	if session.SessionId != relayRequest.GetMeta().GetSessionHeader().GetSessionId() {
 		return ErrRelayerProxyInvalidSession.Wrapf(
 			"session mismatch, expecting: %+v, got: %+v",
 			session.Header,
