@@ -74,7 +74,7 @@ func ProofKeeper(
 			},
 		).AnyTimes()
 
-	k := keeper.NewKeeper(
+	k, err := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -83,6 +83,7 @@ func ProofKeeper(
 		nil,
 		nil,
 	)
+	require.NoError(t, err)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 

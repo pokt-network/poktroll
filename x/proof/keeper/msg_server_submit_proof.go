@@ -6,10 +6,8 @@ import (
 	"crypto/sha256"
 
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	ring "github.com/noot/ring-go"
+	"github.com/noot/ring-go"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -343,7 +341,7 @@ func (k msgServer) verifyRelayRequestSignature(
 	}
 
 	// Get the ring for the application address.
-	appRing, err := k.getRingForAppAddress(ctx, appAddress)
+	appRing, err := k.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return types.ErrProofInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v",
@@ -375,82 +373,6 @@ func (k msgServer) verifyRelayRequestSignature(
 	}
 
 	return nil
-}
-
-// getRingForAppAddress returns the RingSinger used to sign relays. It does so by fetching
-// the latest information from the application module and creating the correct ring.
-// This method also caches the ring's public keys for future use.
-func (k msgServer) getRingForAppAddress(
-	ctx context.Context,
-	appAddress string,
-) (*ring.Ring, error) {
-	foundApp, appFound := k.applicationKeeper.GetApplication(ctx, appAddress)
-	if !appFound {
-		return nil, types.ErrProofInvalidRelayRequest.Wrapf(
-			"application not found for address %s",
-			appAddress,
-		)
-	}
-
-	// Create a slice of addresses for the ring.
-	ringAddresses := make([]string, 0)
-	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	if len(foundApp.DelegateeGatewayAddresses) == 0 {
-		// add app address twice to make the ring size of mininmum 2
-		// TODO_HACK: We are adding the appAddress twice because a ring
-		// signature requires AT LEAST two pubKeys. When the Application has
-		// not delegated to any gateways, we add the application's own address
-		// twice. This is a HACK and should be investigated as to what is the
-		// best approach to take in this situation.
-		ringAddresses = append(ringAddresses, appAddress)
-	} else {
-		// add the delegatee gateway addresses
-		ringAddresses = append(ringAddresses, foundApp.DelegateeGatewayAddresses...)
-	}
-
-	// Get the points on the secp256k1 curve for the addresses.
-	points, err := k.addressesToPoints(ctx, ringAddresses)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a new ring from points on the secp256k1 curve
-	return ring.NewFixedKeyRingFromPublicKeys(ring_secp256k1.NewCurve(), points)
-}
-
-// addressesToPoints converts a slice of addresses to a slice of points on the
-// secp256k1 curve, by querying the account module for the public key for each
-// address and converting them to the corresponding points on the secp256k1 curve
-func (k msgServer) addressesToPoints(
-	ctx context.Context,
-	addresses []string,
-) ([]ringtypes.Point, error) {
-	curve := ring_secp256k1.NewCurve()
-	points := make([]ringtypes.Point, len(addresses))
-
-	for i, addr := range addresses {
-		// Retrieve the account from the auth module
-		accAddr, err := cosmostypes.AccAddressFromBech32(addr)
-		if err != nil {
-			return nil, err
-		}
-
-		account := k.accountKeeper.GetAccount(ctx, accAddr)
-
-		key := account.GetPubKey()
-		// Check if the key is a secp256k1 public key
-		if _, ok := key.(*secp256k1.PubKey); !ok {
-			return nil, types.ErrProofNotSecp256k1Curve.Wrapf("got %T", key)
-		}
-		// Convert the public key to the point on the secp256k1 curve
-		point, err := curve.DecodeToPoint(key.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		// Insert the point into the slice of points
-		points[i] = point
-	}
-	return points, nil
 }
 
 // verifyRelayResponseSignature verifies the signature on the relay response.
