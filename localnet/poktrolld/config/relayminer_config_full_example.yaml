@@ -20,11 +20,11 @@ pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
   # If unspecified, defaults to `tx_node_rpc_url`.
-  query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+  query_node_rpc_url: tcp://poktroll-validator1:36657
   # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
-  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
+  query_node_grpc_url: tcp://poktroll-validator1:36658
   # Pocket node URL that exposes the TendermintRPC service.
-  tx_node_rpc_url: tcp://sequencer-poktroll-sequencer:36658
+  tx_node_rpc_url: tcp://poktroll-validator1:36658
 
 # Proxies are endpoints that expose different suppliers to the internet.
 proxies:

@@ -2,7 +2,7 @@
 
 SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
@@ -281,15 +281,15 @@ test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
-	go test -v -race -tags test ./...
+	go test -count=1 -v -race -tags test ./...
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests showing detailed output only on failures
-	go test -race -tags test ./...
+	go test -count=1 -race -tags test ./...
 
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
-	go test -v -race -tags test,integration ./...
+	go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)

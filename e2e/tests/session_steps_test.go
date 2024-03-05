@@ -59,9 +59,9 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 
 	// Assert that the number of claims has increased by one.
 	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
-	require.True(s, ok, "preExistingClaimsKey not found in scenarioStatee")
+	require.True(s, ok, "preExistingClaimsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted
 	require.Greater(s, len(allClaimsRes.Claims), len(preExistingClaims), "number of claims must have increased")
@@ -139,7 +139,7 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
 	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
 	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
 	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
@@ -210,30 +210,4 @@ func (s *suite) waitForMessageAction(action string) {
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
-}
-
-/*
-TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported tx event
-type from pkg/client/tx/client.go. We seem to have some conflicting preferences
-which result in the need for this duplication until a preferred direction is
-identified:
-
-  - We should prefer tests being in their own pkgs (e.g. block_test)
-  - this would resolve if this test were in the block package instead.
-  - We should prefer to not export types which don't require exporting for API
-    consumption.
-  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
-  - We could use the //go:build test constraint on a new file which exports it
-    for testing purposes.
-  - This would imply that we also add -tags=test to all applicable tooling
-    and add a test which fails if the tag is absent.
-*/
-type testTxEvent struct {
-	Data struct {
-		Value struct {
-			// TxResult is nested to accommodate comet-bft's serialization format,
-			// ensuring correct deserialization of transaction results.
-			TxResult abci.TxResult
-		} `json:"value"`
-	} `json:"data"`
 }

@@ -1,6 +1,6 @@
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
-load('ext://configmap', 'configmap_create')
+load("ext://configmap", "configmap_create")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
@@ -36,11 +36,23 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     chart_prefix = helm_chart_local_repo + "/charts/"
 
 # Import keyring/keybase files into Kubernetes ConfigMap
-configmap_create("poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
+configmap_create(
+    "poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/")
+)
 # Import configuration files into Kubernetes ConfigMap
-configmap_create("poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True)
-# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart. Use: load('ext://secret', 'secret_create_generic')
-# secret_create_generic("poktrolld-validator-keys", from_file=["localnet/poktrolld/config/node_key.json", "localnet/poktrolld/config/priv_validator_key.json"])
+configmap_create(
+    "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
+)
+# TODO(@okdas): Import validator keys when we switch to `poktrolld` helm chart
+# by uncommenting the following lines:
+# load("ext://secret", "secret_create_generic")
+# secret_create_generic(
+#     "poktrolld-validator-keys",
+#     from_file=[
+#         "localnet/poktrolld/config/node_key.json",
+#         "localnet/poktrolld/config/priv_validator_key.json",
+#     ],
+# )
 
 # Hot reload protobuf changes
 local_resource(
@@ -81,7 +93,7 @@ WORKDIR /
     live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
 )
 
-# Run celestia and anvil nodes
+# Run data nodes & validators
 k8s_yaml(
     ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"]
 )
@@ -89,12 +101,13 @@ k8s_yaml(
 # Run pocket-specific nodes (validator, relayminers, etc...)
 helm_resource(
     "validator",
-    chart_prefix + "poktroll-sequencer",
+    chart_prefix + "poktroll-validator",
     flags=[
         "--values=./localnet/kubernetes/values-common.yaml",
         "--values=./localnet/kubernetes/values-validator.yaml",
-        "--set=persistence.cleanupBeforeEachStart=" + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
-        ],
+        "--set=persistence.cleanupBeforeEachStart="
+        + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
+    ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
@@ -109,7 +122,7 @@ helm_resource(
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
-if (localnet_config["appgateservers"]["count"] > 0):
+if localnet_config["appgateservers"]["count"] > 0:
     helm_resource(
         "appgateservers",
         chart_prefix + "appgate-server",
@@ -124,30 +137,30 @@ if (localnet_config["appgateservers"]["count"] > 0):
 
 k8s_resource(
     "validator",
-    labels=["blockchains"],
+    labels=["pocket_network"],
     port_forwards=["36657", "36658", "40004"],
 )
 k8s_resource(
     "relayminers",
-    labels=["blockchains"],
+    labels=["supplier_nodes"],
     resource_deps=["validator"],
     port_forwards=[
         "8545",
         "40005",
         # Run `curl localhost:9094` to see the current snapshot of relayminer metrics.
-        "9094:9090"
+        "9094:9090",
     ],
 )
-if (localnet_config["appgateservers"]["count"] > 0):
+if localnet_config["appgateservers"]["count"] > 0:
     k8s_resource(
         "appgateservers",
-        labels=["blockchains"],
+        labels=["supplier_nodes"],
         resource_deps=["validator"],
         port_forwards=[
             "42069",
             "40006",
             # Run `curl localhost:9093` to see the current snapshot of appgateserver metrics.
-            "9093:9090"
+            "9093:9090",
         ],
     )
-k8s_resource("anvil", labels=["blockchains"], port_forwards=["8547"])
+k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])

@@ -30,16 +30,8 @@ func TestBlockClient(t *testing.T) {
 		expectedHash   = []byte("test_hash")
 
 		expectedBlockEvent = &testBlockEvent{
-			Data: struct {
-				Value struct {
-					Block   *types.Block  `json:"block"`
-					BlockID types.BlockID `json:"block_id"`
-				} `json:"value"`
-			}{
-				Value: struct {
-					Block   *types.Block  `json:"block"`
-					BlockID types.BlockID `json:"block_id"`
-				}{
+			Data: testBlockEventDataStruct{
+				Value: testBlockEventValueStruct{
 					Block: &types.Block{
 						Header: comettypes.Header{
 							Height: 1,
@@ -130,31 +122,20 @@ func TestBlockClient(t *testing.T) {
 	blockClient.Close()
 }
 
-/*
-TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
-
-type from pkg/client/block/block.go. We seem to have some conflicting preferences
-which result in the need for this duplication until a preferred direction is
-identified:
-
-  - We should prefer tests being in their own pkgs (e.g. block_test)
-  - this would resolve if this test were in the block package instead.
-  - We should prefer to not export types which don't require exporting for API
-    consumption.
-  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
-  - We could use the //go:build test constraint on a new file which exports it
-    for testing purposes.
-  - This would imply that we also add -tags=test to all applicable tooling
-    and add a test which fails if the tag is absent.
-*/
+// TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
+// This duplicates the unexported `cometBlockEvent` from `pkg/client/block/block.go`.
+// We need to answer the following questions to avoid this:
+//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
+//   - Should we prefer export types which are not required for API consumption?
+//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
+//   - Should we enforce all tests to use `-tags=test`?
 type testBlockEvent struct {
-	// Block comettypes.Block `json:"block"`
-	Data struct {
-		Value struct {
-			// Block and BlockID are nested to match comet-bft's unique serialization,
-			// diverging from the rollkit's approach seen in other implementations.
-			Block   *types.Block  `json:"block"`
-			BlockID types.BlockID `json:"block_id"`
-		} `json:"value"`
-	} `json:"data"`
+	Data testBlockEventDataStruct `json:"data"`
+}
+type testBlockEventDataStruct struct {
+	Value testBlockEventValueStruct `json:"value"`
+}
+type testBlockEventValueStruct struct {
+	Block   *types.Block  `json:"block"`
+	BlockID types.BlockID `json:"block_id"`
 }

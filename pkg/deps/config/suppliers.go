@@ -140,8 +140,9 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		// GetClientQueryContext() are identical, allowing for their interchangeable
 		// use in both querying and transaction operations. However, in order to support
 		// independent configuration of client contexts for distinct querying and
-		// transacting purposes. E.g.: transactions are dispatched to the sequencer
-		// while queries are handled by a trusted full-node.
+		// transacting purposes.
+		// For example, txs could be dispatched to a validator while queries
+		// could be handled by a full-node.
 		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
 		if err != nil {
 			return nil, err
@@ -218,8 +219,9 @@ func NewSupplyTxClientContextFn(
 		// GetClientQueryContext() are identical, allowing for their interchangeable
 		// use in both querying and transaction operations. However, in order to support
 		// independent configuration of client contexts for distinct querying and
-		// transacting purposes. E.g.: transactions are dispatched to the sequencer
-		// while queries are handled by a trusted full-node.
+		// transacting purposes.
+		// For example, txs could be dispatched to a validator while queries
+		// could be handled by a full-node
 		txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
 		if err != nil {
 			return nil, err

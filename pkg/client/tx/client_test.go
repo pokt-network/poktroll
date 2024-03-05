@@ -108,23 +108,15 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
-	txResult := abci.TxResult{Tx: expectedTx}
-
-	txEvent := &testTxEvent{
-		Data: struct {
-			Value struct {
-				TxResult abci.TxResult
-			} `json:"value"`
-		}{
-			Value: struct {
-				TxResult abci.TxResult
-			}{
-				TxResult: txResult,
+	txResultEvent := &testTxEvent{
+		Data: testTxEventDataStruct{
+			Value: testTxEventValueStruct{
+				TxResult: abci.TxResult{Tx: expectedTx},
 			},
 		},
 	}
 
-	txResultBz, err := json.Marshal(txEvent)
+	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
 
 	rpcResult := &rpctypes.RPCResponse{
@@ -447,27 +439,19 @@ func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
 }
 
-/*
-TODO_TECHDEBT/TODO_CONSIDERATION(#XXX): this duplicates the unexported block event
-type from pkg/client/block/block.go. We seem to have some conflicting preferences
-which result in the need for this duplication until a preferred direction is
-identified:
-  - We should prefer tests being in their own pkgs (e.g. block_test)
-  - this would resolve if this test were in the block package instead.
-  - We should prefer to not export types which don't require exporting for API
-    consumption.
-  - This test is the only external (to the block pkg) dependency of cometBlockEvent.
-  - We could use the //go:build test constraint on a new file which exports it
-    for testing purposes.
-  - This would imply that we also add -tags=test to all applicable tooling
-    and add a test which fails if the tag is absent.
-*/
+// TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
+// This duplicates the unexported `cometTxEvent` from `pkg/client/tx/client.go`.
+// We need to answer the following questions to avoid this:
+//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
+//   - Should we prefer export types which are not required for API consumption?
+//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
+//   - Should we enforce all tests to use `-tags=test`?
 type testTxEvent struct {
-	Data struct {
-		Value struct {
-			// TxResult is nested to accommodate comet-bft's serialization format,
-			// ensuring correct deserialization of transaction results.
-			TxResult abci.TxResult
-		} `json:"value"`
-	} `json:"data"`
+	Data testTxEventDataStruct `json:"data"`
+}
+type testTxEventDataStruct struct {
+	Value testTxEventValueStruct `json:"value"`
+}
+type testTxEventValueStruct struct {
+	TxResult abci.TxResult
 }
