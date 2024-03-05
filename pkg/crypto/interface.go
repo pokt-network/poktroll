@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/noot/ring-go"
+
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
