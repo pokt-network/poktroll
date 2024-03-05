@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"cosmossdk.io/depinject"
-	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -95,23 +94,20 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	signature := relayRequest.Meta.Signature
 	if signature == nil {
-		return sdkerrors.Wrapf(
-			ErrRingClientInvalidRelayRequest,
+		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"missing signature from relay request: %v", relayRequest,
 		)
 	}
 
 	ringSig := new(ring.RingSig)
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
-		return sdkerrors.Wrapf(
-			ErrRingClientInvalidRelayRequestSignature,
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %v", err,
 		)
 	}
 
 	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
-		return sdkerrors.Wrap(
-			ErrRingClientInvalidRelayRequest,
+		return ErrRingClientInvalidRelayRequest.Wrap(
 			"missing application address from relay request",
 		)
 	}
@@ -120,16 +116,14 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
 	appRing, err := rc.GetRingForAddress(ctx, appAddress)
 	if err != nil {
-		return sdkerrors.Wrapf(
-			ErrRingClientInvalidRelayRequest,
+		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
 		)
 	}
 
 	// Verify the ring signature against the ring
 	if !ringSig.Ring().Equals(appRing) {
-		return sdkerrors.Wrapf(
-			ErrRingClientInvalidRelayRequestSignature,
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"ring signature does not match ring for application address %s", appAddress,
 		)
 	}
@@ -142,10 +136,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	// Verify the relay request's signature
 	if valid := ringSig.Verify(requestSignableBz); !valid {
-		return sdkerrors.Wrapf(
-			ErrRingClientInvalidRelayRequestSignature,
-			"invalid ring signature",
-		)
+		return ErrRingClientInvalidRelayRequestSignature.Wrapf("invalid ring signature")
 	}
 	return nil
 }
