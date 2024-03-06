@@ -62,6 +62,10 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
 
+	// Ensure that all validation and verification checks are successful on the
+	// MsgSubmitProof message before constructing the proof and inserting it into
+	// the store.
+
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
