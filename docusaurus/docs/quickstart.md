@@ -48,8 +48,7 @@ You might already have these installed if you've followed the [localnet instruct
 
 ## Launch LocalNet
 
-This section will help you deploy a Celestia cluster, Pocket LocalNet in a k8s
-cluster on your machine.
+This section will help you deploy a Pocket LocalNet in a k8s cluster on your machine.
 
 ### Clone the repository
 
@@ -137,12 +136,12 @@ pagination:
 ```
 
 But if you look in our genesis file (found at `localnet/poktrolld/config/genesis.json`)
-you'll find that our sequencer has a lot of POKT, so we can use some of that.
+you'll find that our validator has a lot of POKT, so we can use some of that.
 
 ```bash
 poktrolld --home=./localnet/poktrolld \
   tx bank send \
-  sequencer1 $SHANNON_ADDRESS 420000000000069upokt \
+  validator1 $SHANNON_ADDRESS 420000000000069upokt \
   --node tcp://127.0.0.1:36657
 ```
 
@@ -260,7 +259,7 @@ curl -X POST -H "Content-Type: application/json" \
 
 There are three primary tools you'll use to develop and interact with the network:
 
-1. `poktrolld` - the Pocket Rollup Node
+1. `poktrolld` - the Pocket Node CLI
 2. `make` - a collection of helpers to make your life easier
 3. `ignite` - a tool to manage the local k8s cluster
 

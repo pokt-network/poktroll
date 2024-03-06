@@ -2,7 +2,7 @@
 
 SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
-POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket rollup node (full node and sequencer in the localnet context)
+POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
@@ -229,7 +229,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: proto_regen localnet_regenesis## Starts localnet
+localnet_up: proto_regen localnet_regenesis ## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
@@ -239,22 +239,12 @@ localnet_down: ## Delete resources created by localnet
 .PHONY: localnet_regenesis
 localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
-# TODO_TECHDEBT: Currently the stake => power calculation is constant; however, cosmos-sdk
-# intends to make this parameterizable in the future.
 	@echo "Initializing chain..."
 	@set -e ;\
 	ignite chain init --skip-proto ;\
 	mkdir -p $(POKTROLLD_HOME)/config/ ;\
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp ${HOME}/.poktroll/config/*_key.json $(POKTROLLD_HOME)/config/ ;\
-	ADDRESS=$$(jq -r '.address' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
-	PUB_KEY=$$(jq -r '.pub_key' $(POKTROLLD_HOME)/config/priv_validator_key.json) ;\
-	POWER=$$(yq -r ".validators[0].bonded" ./config.yml | sed 's,000000upokt,,') ;\
-	NAME=$$(yq -r ".validators[0].name" ./config.yml) ;\
-	echo "Regenerating genesis file with new validator..." ;\
-	jq --argjson pubKey "$$PUB_KEY" '.consensus["validators"]=[{"address": "'$$ADDRESS'", "pub_key": $$pubKey, "power": "'$$POWER'", "name": "'$$NAME'"}]' ${HOME}/.poktroll/config/genesis.json > temp.json ;\
-	mv temp.json ${HOME}/.poktroll/config/genesis.json ;\
-	cp ${HOME}/.poktroll/config/genesis.json $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/config/ $(POKTROLLD_HOME)/config/ ;\
 
 .PHONY: send_relay
 send_relay:
@@ -291,15 +281,15 @@ test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
-	go test -v -race -tags test ./...
+	go test -count=1 -v -race -tags test ./...
 
 .PHONY: go_test
 go_test: check_go_version ## Run all go tests showing detailed output only on failures
-	go test -race -tags test ./...
+	go test -count=1 -race -tags test ./...
 
 .PHONY: go_test_integration
 go_test_integration: check_go_version ## Run all go tests, including integration
-	go test -v -race -tags test,integration ./...
+	go test -count=1 -v -race -tags test,integration ./...
 
 .PHONY: itest
 itest: check_go_version ## Run tests iteratively (see usage for more)

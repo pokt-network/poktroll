@@ -16,6 +16,8 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 
 - _All Poktroll `loadtest` issues on GitHub can be found [here](https://github.com/pokt-network/poktroll/issues?q=label%3Aloadtest+sort%3Aupdated-desc)._
 
+## Table of Contents <!-- omit in toc -->
+
 - [Goals](#goals)
 - [Non-Goals](#non-goals)
 - [Load Profiles](#load-profiles)
@@ -25,7 +27,7 @@ _This document outlines the first load test for the Shannon upgrade. IT **IS NOT
 - [Measurements](#measurements)
   - [What to measure?](#what-to-measure)
     - [1. Chain State Size](#1-chain-state-size)
-    - [2. Sequencer (Validator, etc…)](#2-sequencer-validator-etc)
+    - [2. Validators](#2-validators)
     - [3. AppGate Server (Application, Gateway, etc…)](#3-appgate-server-application-gateway-etc)
     - [4. RelayMiner (Supplier, SMT, etc..)](#4-relayminer-supplier-smt-etc)
   - [Out-of-scope](#out-of-scope)
@@ -110,7 +112,7 @@ pie showData
     "Misc" : 10
 ```
 
-#### 2. Sequencer (Validator, etc…)
+#### 2. Validators
 
 `What`: Multiple `line charts` to capture `Disk` (size & iops), `RAM`, `CPU` , `Network` usage (ingress/egress)
 
@@ -119,14 +121,14 @@ pie showData
 - `Proof Validation` - `RAM` & `CPU` could be a potential bottleneck
 - `Block generation` - `RAM` & `CPU` could be a bottleneck in preparing new blocks
 - `Block Publishing` - `Tx` aggregation (ingress) and `Block` publishing (egress) could be more expensive than expected w.r.t network usage
-- `Rollup State` - `Disk` could be a limiting factor depending on how quickly state grows
+- `Data Availability State` - `Disk` could be a limiting factor depending on how quickly state grows
 
-|                  | RAM  | CPU  | Network | Disk |
-| ---------------- | ---- | ---- | ------- | ---- |
-| Proof Validation |   ❓ |   ❓ |         |      |
-| Block Generation |   ❓ |   ❓ |         |      |
-| Block Publishing |      |      |   ❓    |      |
-| Rollup State     |      |      |         |   ❓ |
+|                         | RAM  | CPU  | Network | Disk |
+| ----------------------- | ---- | ---- | ------- | ---- |
+| Proof Validation        |   ❓ |   ❓ |         |      |
+| Block Generation        |   ❓ |   ❓ |         |      |
+| Block Publishing        |      |      |   ❓    |      |
+| Data Availability State |      |      |         |   ❓ |
 
 #### 3. AppGate Server (Application, Gateway, etc…)
 
@@ -177,7 +179,7 @@ The exact details of the implementation are out-of-scope and will be developed a
 Legend:
 
 - 🔵 Pocket Specific Actors
-- 🟣 Celestia dependencies
+- 🟣 Pocket Network dependencies
 - 🟠 New tooling that needs to be build
 - `--` Asynchronous request
 - `-` Synchronous request
@@ -199,8 +201,8 @@ flowchart TB
     end
 
     subgraph Network
-        C(("Celestia Network"))
-        P("Pocket Sequencer")
+        DA(("DA Network"))
+        P("Pocket Validator")
 
         subgraph G["Gateways"]
             AG1["AppGate Server 1"]
@@ -242,8 +244,7 @@ flowchart TB
     class G blueColor
     class P blueColor
 
-    class C purpleColor
-
+    class DA purpleColor
 ```
 
 ## Tool Requirements

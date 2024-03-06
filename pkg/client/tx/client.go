@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	comettypes "github.com/cometbft/cometbft/types"
@@ -42,6 +43,22 @@ const (
 // In order to simplify the logic of the TxClient
 var _ client.TxClient = (*txClient)(nil)
 
+// cometTxEvent is used to deserialize incoming transaction event messages
+// from the respective events query subscription. This structure is adapted
+// to handle CometBFT's unique serialization format, which diverges from
+// conventional approaches seen in implementations like rollkit's. The design
+// ensures accurate parsing and compatibility with CometBFT's serialization
+// of transaction results.
+type cometTxEvent struct {
+	Data struct {
+		// TxResult is nested to accommodate CometBFT's serialization format,
+		// ensuring correct deserialization of transaction results.
+		Value struct {
+			TxResult abci.TxResult
+		} `json:"value"`
+	} `json:"data"`
+}
+
 // txClient orchestrates building, signing, broadcasting, and querying of
 // transactions. It maintains a single events query subscription to its own
 // transactions (via the EventsQueryClient) in order to receive notifications
@@ -69,7 +86,7 @@ type txClient struct {
 	// eventsReplayClient is the client used to subscribe to transactions events from this
 	// sender. It is used to receive notifications about transactions events corresponding
 	// to transactions which it has constructed, signed, and broadcast.
-	eventsReplayClient client.EventsReplayClient[*comettypes.EventDataTx]
+	eventsReplayClient client.EventsReplayClient[*abci.TxResult]
 	// blockClient is the client used to query for the latest block height.
 	// It is used to implement timout logic for transactions which weren't committed.
 	blockClient client.BlockClient
@@ -144,11 +161,11 @@ func NewTxClient(
 	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, txClient.signingAddr)
 
 	// Initialize and events replay client.
-	txClient.eventsReplayClient, err = events.NewEventsReplayClient[*comettypes.EventDataTx](
+	txClient.eventsReplayClient, err = events.NewEventsReplayClient[*abci.TxResult](
 		ctx,
 		deps,
 		eventQuery,
-		unmarshalTxResult,
+		UnmarshalTxResult,
 		defaultTxReplayLimit,
 	)
 	if err != nil {
@@ -483,30 +500,30 @@ func (txClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex strin
 	return ErrTxTimeout.Wrapf("with hash %s: %s", txHashHex, txResponse.TxResult.Log)
 }
 
-// unmarshalTxResult attempts to deserialize a slice of bytes into a TxResult
+// UnmarshalTxResult attempts to deserialize a slice of bytes into a TxResult
 // It checks if the given bytes correspond to a valid transaction event.
 // If the resulting TxResult has empty transaction bytes, it assumes that
 // the message was not a transaction results and returns an error.
-func unmarshalTxResult(txResultBz []byte) (*comettypes.EventDataTx, error) {
-	rpcResult := new(rpctypes.RPCResponse)
+func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
+	var rpcReponse rpctypes.RPCResponse
 
 	// Try to deserialize the provided bytes into an RPCResponse.
-	if err := json.Unmarshal(txResultBz, rpcResult); err != nil {
+	if err := json.Unmarshal(txResultBz, &rpcReponse); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
-	txResult := new(comettypes.EventDataTx)
+	var txResult cometTxEvent
 
 	// Try to deserialize the provided bytes into a TxResult.
-	if err := json.Unmarshal(rpcResult.Result, txResult); err != nil {
+	if err := json.Unmarshal(rpcReponse.Result, &txResult); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
 	// Check if the TxResult has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
-	if bytes.Equal(txResult.Tx, []byte{}) {
+	if bytes.Equal(txResult.Data.Value.TxResult.Tx, []byte{}) {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an comettypes.EventDataTx event")
 	}
 
-	return txResult, nil
+	return &txResult.Data.Value.TxResult, nil
 }
