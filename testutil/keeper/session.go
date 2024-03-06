@@ -165,9 +165,10 @@ func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	// in-place hardcoded values.
 	// Store block hashes to be used in tests
 	blockHash := map[int64]string{
-		0: "",
-		5: "261594ddc3c8afc5b4c63f59ee58e89d3a115bcd164c83fd79349de0b1ffd21d",
-		9: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9",
+		0: "",                                                                 // no session at block height 0
+		1: "1b1051b7bf236fea13efa65b6be678514fa5b6ea0ae9a7a4b68d45f95e4f18e0", // 1st session
+		5: "261594ddc3c8afc5b4c63f59ee58e89d3a115bcd164c83fd79349de0b1ffd21d", // 2nd session
+		9: "251665c7cf286a30fbd98acd983c63e9a34efc16496511373405e24eb02a8fb9", // 3rd session
 	}
 
 	storeAdapter := runtime.KVStoreAdapter(runtime.NewKVStoreService(storeKey).OpenKVStore(ctx))
