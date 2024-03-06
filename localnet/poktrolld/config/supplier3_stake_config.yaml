@@ -2,9 +2,5 @@ stake_amount: 1000upokt
 services:
   - service_id: anvil
     endpoints:
-      - url: http://anvil.supplier3:8545
-        rpc_type: json_rpc
-  - service_id: svc1
-    endpoints:
-      - url: http://localhost:8083
+      - url: http://relayminer3:8545
         rpc_type: json_rpc
