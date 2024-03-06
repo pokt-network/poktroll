@@ -66,11 +66,7 @@ func NewKeeper(
 		panic(err)
 	}
 
-	pubKeyClientDeps := depinject.Supply(
-		accountQuerier,
-	)
-
-	pubKeyClient, err := pubkeyclient.NewPubKeyClient(pubKeyClientDeps)
+	pubKeyClient, err := pubkeyclient.NewPubKeyClient(depinject.Supply(accountQuerier))
 	if err != nil {
 		panic(err)
 	}
