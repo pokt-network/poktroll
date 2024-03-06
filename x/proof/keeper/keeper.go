@@ -45,8 +45,7 @@ func NewKeeper(
 	sessionKeeper types.SessionKeeper,
 	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
-	opts ...KeeperOption,
-) (Keeper, error) {
+) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
@@ -64,19 +63,19 @@ func NewKeeper(
 
 	ringClient, err := rings.NewRingClient(ringClientDeps)
 	if err != nil {
-		return Keeper{}, err
+		panic(err)
 	}
 
 	pubKeyClientDeps := depinject.Supply(
 		accountQuerier,
 	)
 
-	pubKeyClient, err := pubkeyclient.NewPubKeyClientWithCache(pubKeyClientDeps)
+	pubKeyClient, err := pubkeyclient.NewPubKeyClient(pubKeyClientDeps)
 	if err != nil {
-		return Keeper{}, err
+		panic(err)
 	}
 
-	k := Keeper{
+	return Keeper{
 		cdc:          cdc,
 		storeService: storeService,
 		authority:    authority,
@@ -88,12 +87,6 @@ func NewKeeper(
 		ringClient:        ringClient,
 		pubKeyClient:      pubKeyClient,
 	}
-
-	for _, opt := range opts {
-		opt(&k)
-	}
-
-	return k, nil
 }
 
 // GetAuthority returns the module's authority.

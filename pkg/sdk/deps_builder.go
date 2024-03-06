@@ -63,7 +63,7 @@ func (sdk *poktrollSDK) buildDeps(
 
 	// Create and supply the pubKey Client
 	pubKeyClientDeps := depinject.Supply(accountQuerier)
-	pubKeyClient, err := pubkeyclient.NewPubKeyClientWithCache(pubKeyClientDeps)
+	pubKeyClient, err := pubkeyclient.NewPubKeyClient(pubKeyClientDeps)
 	if err != nil {
 		return nil, err
 	}

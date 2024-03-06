@@ -384,7 +384,7 @@ func NewSupplyPubKeyClientFn() SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Create the pubKey client.
-		pubKeyClient, err := pubkeyclient.NewPubKeyClientWithCache(deps)
+		pubKeyClient, err := pubkeyclient.NewPubKeyClient(deps)
 		if err != nil {
 			return nil, err
 		}

@@ -42,16 +42,11 @@ type RingClient interface {
 	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
 }
 
-// PubKeyClient is used to get the public key of an address and verify a signatures
-// against given an address.
-// On-chain and off-chain implementations should take care of retrieving the public
-// key from the account module and verifying the signature.
+// PubKeyClient is used to get the public key given an address.
+// On-chain and off-chain implementations should take care of retrieving the
+// address' account and returning its public key.
 type PubKeyClient interface {
 	// GetPubKeyFromAddress returns the public key of the given account address if
 	// it exists.
 	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
-
-	// VerifySignature verifies a signature against the signable bytes and the public
-	// key of the given address.
-	VerifySignature(ctx context.Context, address string, signature []byte, signableBz []byte) error
 }

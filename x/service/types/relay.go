@@ -1,6 +1,10 @@
 package types
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+)
 
 // getSignableBytes returns the bytes resulting from marshaling the relay request
 // A value receiver is used to avoid overwriting any pre-existing signature
@@ -31,6 +35,22 @@ func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 	// return the marshaled request hash to guarantee that the signable bytes are
 	// always of a constant and expected length
 	return sha256.Sum256(requestBz), nil
+}
+
+func (req *RelayRequest) ValidateBasic() error {
+	if req.GetMeta() == nil {
+		return ErrServiceInvalidRelayRequest.Wrap("missing meta")
+	}
+
+	if err := req.GetMeta().GetSessionHeader().ValidateBasic(); err != nil {
+		return ErrServiceInvalidRelayRequest.Wrapf("invalid session header: %s", err)
+	}
+
+	if len(req.GetMeta().GetSignature()) == 0 {
+		return ErrServiceInvalidRelayRequest.Wrap("missing signature")
+	}
+
+	return nil
 }
 
 // getSignableBytes returns the bytes resulting from marshaling the relay response
@@ -68,6 +88,32 @@ func (res *RelayResponse) ValidateBasic() error {
 	// TODO_FUTURE: if a client gets a response with an invalid/incomplete
 	// SessionHeader, consider sending an on-chain challenge, lowering their
 	// QoS, or other future work.
+
+	if res.GetMeta() == nil {
+		return ErrServiceInvalidRelayResponse.Wrap("missing meta")
+	}
+
+	if err := res.GetMeta().GetSessionHeader().ValidateBasic(); err != nil {
+		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %s", err)
+	}
+
+	if len(res.GetMeta().GetSupplierSignature()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrap("missing supplier signature")
+	}
+
+	return nil
+}
+
+func (res *RelayResponse) VerifySignature(supplierPubKey cryptotypes.PubKey) error {
+	// Get the signable bytes hash of the response.
+	signableBz, err := res.GetSignableBytesHash()
+	if err != nil {
+		return err
+	}
+
+	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().GetSupplierSignature()); !ok {
+		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
+	}
 
 	return nil
 }

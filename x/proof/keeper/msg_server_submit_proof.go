@@ -97,6 +97,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
+	if err := relay.GetReq().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	if err := relay.GetRes().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	// Verify that the relay request session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relay.GetReq().Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -107,14 +115,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	// Verify the relay response's signature.
-	signature := relay.GetRes().GetMeta().GetSupplierSignature()
-	signableBz, err := relay.GetRes().GetSignableBytesHash()
+	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	if err := k.pubKeyClient.VerifySignature(ctx, msg.GetSupplierAddress(), signature, signableBz[:]); err != nil {
+	// Verify the relay response's signature.
+	if err := relay.GetRes().VerifySignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 

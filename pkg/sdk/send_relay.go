@@ -101,13 +101,14 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay response: %s", err)
 	}
 
-	if relayResponse.GetMeta() == nil {
-		return nil, ErrSDKHandleRelay.Wrap("relay response meta is nil")
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return nil, ErrSDKHandleRelay.Wrapf("%s", err)
 	}
 
-	signableBz, err = relayResponse.GetSignableBytesHash()
+	// Get the supplier's public key.
+	supplierPubKey, err := sdk.getPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("error getting signable bytes: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %s", err)
 	}
 
 	sdk.logger.Debug().
@@ -123,12 +124,7 @@ func (sdk *poktrollSDK) SendRelay(
 	// as in some relayer early failures, it may not be signed by the supplier.
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
-	if err := sdk.pubKeyClient.VerifySignature(
-		ctx,
-		supplierEndpoint.SupplierAddress,
-		relayResponse.GetMeta().GetSupplierSignature(),
-		signableBz[:],
-	); err != nil {
+	if err := relayResponse.VerifySignature(supplierPubKey); err != nil {
 		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
 	}
 
