@@ -9,9 +9,9 @@ import (
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -32,6 +32,7 @@ type (
 		applicationKeeper types.ApplicationKeeper
 		accountKeeper     types.AccountKeeper
 		ringClient        crypto.RingClient
+		pubKeyClient      crypto.PubKeyClient
 	}
 )
 
@@ -66,6 +67,15 @@ func NewKeeper(
 		return Keeper{}, err
 	}
 
+	pubKeyClientDeps := depinject.Supply(
+		accountQuerier,
+	)
+
+	pubKeyClient, err := pubkeyclient.NewPubKeyClientWithCache(pubKeyClientDeps)
+	if err != nil {
+		return Keeper{}, err
+	}
+
 	k := Keeper{
 		cdc:          cdc,
 		storeService: storeService,
@@ -76,6 +86,7 @@ func NewKeeper(
 		applicationKeeper: applicationKeeper,
 		accountKeeper:     accountKeeper,
 		ringClient:        ringClient,
+		pubKeyClient:      pubKeyClient,
 	}
 
 	for _, opt := range opts {
@@ -93,9 +104,4 @@ func (k Keeper) GetAuthority() string {
 // Logger returns a module-specific logger.
 func (k Keeper) Logger() log.Logger {
 	return k.logger.With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-// GetRingForAddress returns a ring for the given application address
-func (k Keeper) GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error) {
-	return k.ringClient.GetRingForAddress(ctx, appAddress)
 }

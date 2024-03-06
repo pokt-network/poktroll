@@ -4,6 +4,7 @@ package crypto
 import (
 	"context"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
@@ -39,4 +40,18 @@ type RingClient interface {
 	// VerifyRelayRequestSignature verifies the relay request signature against the
 	// ring for the application address in the relay request.
 	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
+}
+
+// PubKeyClient is used to get the public key of an address and verify a signatures
+// against given an address.
+// On-chain and off-chain implementations should take care of retrieving the public
+// key from the account module and verifying the signature.
+type PubKeyClient interface {
+	// GetPubKeyFromAddress returns the public key of the given account address if
+	// it exists.
+	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
+
+	// VerifySignature verifies a signature against the signable bytes and the public
+	// key of the given address.
+	VerifySignature(ctx context.Context, address string, signature []byte, signableBz []byte) error
 }
