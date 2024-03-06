@@ -17,7 +17,7 @@ services available on Pocket Network as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of an `Application` can be found at [application.proto](./../../../proto/pocket/application/application.proto).
+The on-chain representation of an `Application` can be found at [application.proto](./../../../proto/poktroll/application/application.proto).
 
 ## Configuration
 
