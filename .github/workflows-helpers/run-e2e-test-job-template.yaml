@@ -23,21 +23,14 @@ spec:
               make acc_initialize_pubkeys && \
               go test -v ./e2e/tests/... -tags=e2e
           env:
-            - name: AUTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  key: auth_token
-                  name: celestia-secret
             - name: POCKET_NODE
-              value: tcp://${NAMESPACE}-sequencer:36657
-            - name: SEQUENCER_RPC_ENDPOINT
-              value: ${NAMESPACE}-sequencer:36657
+              value: tcp://${NAMESPACE}-validator-poktrolld:36657
+            - name: VALIDATOR_RPC_ENDPOINT
+              value: ${NAMESPACE}-validator-poktrolld:36657
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
               value: /root/.pocket
-            - name: CELESTIA_HOSTNAME
-              value: celestia-rollkit
             - name: APPGATE_SERVER_URL
               value: http://${NAMESPACE}-appgate-server:80
           volumeMounts:
@@ -47,9 +40,9 @@ spec:
               name: configs-volume
       restartPolicy: Never
       volumes:
-        - configMap:
+        - secret:
             defaultMode: 420
-            name: keys-${IMAGE_TAG}
+            secretName: keys-${IMAGE_TAG}
           name: keys-volume
         - configMap:
             defaultMode: 420

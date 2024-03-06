@@ -1,10 +1,10 @@
 # TODO_TECHDEBT(@okdas): also check readiness of appgate and relayminer to avoid false negatives due to race-conditions
 
 # Check if the pod with the matching image SHA and purpose is ready
-echo "Checking for ready sequencer pod with image SHA ${IMAGE_TAG}..."
+echo "Checking for ready validator pod with image SHA ${IMAGE_TAG}..."
 while :; do
     # Get all pods with the matching purpose
-    PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=sequencer -o json)
+    PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=validator -o json)
 
     # Check if any pods are running and have the correct image SHA
     READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
@@ -13,17 +13,17 @@ while :; do
         echo "Ready pod found: ${READY_POD}"
         break
     else
-        echo "Sequencer with with an image ${IMAGE_TAG} is not ready yet. Will retry in 10 seconds..."
+        echo "Validator with with an image ${IMAGE_TAG} is not ready yet. Will retry in 10 seconds..."
         sleep 10
     fi
 done
 
-# Check we can reach the sequencer endpoint
-HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-sequencer:36657)
+# Check we can reach the validator endpoint
+HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-validator-poktrolld:36657)
 if [[ "${HTTP_STATUS}" -eq 200 ]]; then
-    echo "HTTP request to devnet-issue-198-sequencer returned 200 OK."
+    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 returned 200 OK."
 else
-    echo "HTTP request to devnet-issue-198-sequencer did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
+    echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 did not return 200 OK. Status code: ${HTTP_STATUS}. Retrying in 10 seconds..."
     sleep 10
 fi
 

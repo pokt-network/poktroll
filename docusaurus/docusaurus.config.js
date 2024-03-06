@@ -79,7 +79,7 @@ const config = {
             title: "Documentation",
             items: [
               {
-                label: "Poktroll rollup",
+                label: "Poktroll",
                 to: "/",
               },
               {

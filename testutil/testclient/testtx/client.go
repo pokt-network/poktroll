@@ -23,8 +23,7 @@ type signAndBroadcastFn func(context.Context, cosmostypes.Msg) either.AsyncError
 // TODO_CONSIDERATION: functions like these (NewLocalnetXXX) could probably accept
 // and return depinject.Config arguments to support shared dependencies.
 
-// NewLocalnetClient creates and returns a new client for use with the localnet
-// sequencer.
+// NewLocalnetClient creates and returns a new client for use with the LocalNet validator.
 func NewLocalnetClient(t *testing.T, opts ...client.TxClientOption) client.TxClient {
 	t.Helper()
 
