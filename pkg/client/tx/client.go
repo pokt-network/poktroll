@@ -118,7 +118,7 @@ func NewTxClient(
 	deps depinject.Config,
 	opts ...client.TxClientOption,
 ) (_ client.TxClient, err error) {
-	tClient := &txClient{
+	txClient := &txClient{
 		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
 		txErrorChans:              make(txErrorChansByHash),
 		txTimeoutPool:             make(txTimeoutPool),
@@ -126,25 +126,25 @@ func NewTxClient(
 
 	if err = depinject.Inject(
 		deps,
-		&tClient.txCtx,
-		&tClient.blockClient,
+		&txClient.txCtx,
+		&txClient.blockClient,
 	); err != nil {
 		return nil, err
 	}
 
 	for _, opt := range opts {
-		opt(tClient)
+		opt(txClient)
 	}
 
-	if err := tClient.validateConfigAndSetDefaults(); err != nil {
+	if err := txClient.validateConfigAndSetDefaults(); err != nil {
 		return nil, err
 	}
 
 	// Form a query based on the client's signing address.
-	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, tClient.signingAddr)
+	eventQuery := fmt.Sprintf(txWithSenderAddrQueryFmt, txClient.signingAddr)
 
 	// Initialize and events replay client.
-	tClient.eventsReplayClient, err = events.NewEventsReplayClient[*comettypes.EventDataTx](
+	txClient.eventsReplayClient, err = events.NewEventsReplayClient[*comettypes.EventDataTx](
 		ctx,
 		deps,
 		eventQuery,
@@ -158,13 +158,13 @@ func NewTxClient(
 	// Start an events query subscription for transactions originating from this
 	// client's signing address.
 	// TODO_CONSIDERATION: move this into a #Start() method
-	go tClient.goSubscribeToOwnTxs(ctx)
+	go txClient.goSubscribeToOwnTxs(ctx)
 
 	// Launch a separate goroutine to handle transaction timeouts.
 	// TODO_CONSIDERATION: move this into a #Start() method
-	go tClient.goTimeoutPendingTransactions(ctx)
+	go txClient.goTimeoutPendingTransactions(ctx)
 
-	return tClient, nil
+	return txClient, nil
 }
 
 // SignAndBroadcast signs a set of Cosmos SDK messages, constructs a transaction,
@@ -186,7 +186,7 @@ func NewTxClient(
 // the synchronous error. If the function completes successfully, it returns an
 // either.AsyncError populated with the error channel which will receive if the
 // transaction results in an asynchronous error or times out.
-func (tClient *txClient) SignAndBroadcast(
+func (txClient *txClient) SignAndBroadcast(
 	ctx context.Context,
 	msgs ...cosmostypes.Msg,
 ) either.AsyncError {
@@ -205,23 +205,23 @@ func (tClient *txClient) SignAndBroadcast(
 	}
 
 	// Construct the transactions using cosmos' transactions builder.
-	txBuilder := tClient.txCtx.NewTxBuilder()
+	txBuilder := txClient.txCtx.NewTxBuilder()
 	if err := txBuilder.SetMsgs(msgs...); err != nil {
 		// return synchronous error
 		return either.SyncErr(err)
 	}
 
 	// Calculate timeout height
-	timeoutHeight := tClient.blockClient.LastNBlocks(ctx, 1)[0].
-		Height() + tClient.commitTimeoutHeightOffset
+	timeoutHeight := txClient.blockClient.LastNBlocks(ctx, 1)[0].
+		Height() + txClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable
 	txBuilder.SetGasLimit(200000)
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions
-	err := tClient.txCtx.SignTx(
-		tClient.signingKeyName,
+	err := txClient.txCtx.SignTx(
+		txClient.signingKeyName,
 		txBuilder,
 		false, false,
 	)
@@ -236,12 +236,12 @@ func (tClient *txClient) SignAndBroadcast(
 	}
 
 	// serialize transactions
-	txBz, err := tClient.txCtx.EncodeTx(txBuilder)
+	txBz, err := txClient.txCtx.EncodeTx(txBuilder)
 	if err != nil {
 		return either.SyncErr(err)
 	}
 
-	txResponse, err := tClient.txCtx.BroadcastTx(txBz)
+	txResponse, err := txClient.txCtx.BroadcastTx(txBz)
 	if err != nil {
 		return either.SyncErr(err)
 	}
@@ -250,7 +250,7 @@ func (tClient *txClient) SignAndBroadcast(
 		return either.SyncErr(ErrCheckTx.Wrapf(txResponse.RawLog))
 	}
 
-	return tClient.addPendingTransactions(normalizeTxHashHex(txResponse.TxHash), timeoutHeight)
+	return txClient.addPendingTransactions(normalizeTxHashHex(txResponse.TxHash), timeoutHeight)
 }
 
 // validateConfigAndSetDefaults ensures that the necessary configurations for the
@@ -268,19 +268,19 @@ func (tClient *txClient) SignAndBroadcast(
 // - ErrNoSuchSigningKey if the signing key is not found in the keyring.
 // - ErrSigningKeyAddr if there's an issue retrieving the address for the signing key.
 // - nil if validation is successful and defaults are set appropriately.
-func (tClient *txClient) validateConfigAndSetDefaults() error {
+func (txClient *txClient) validateConfigAndSetDefaults() error {
 	signingAddr, err := keyring.KeyNameToAddr(
-		tClient.signingKeyName,
-		tClient.txCtx.GetKeyring(),
+		txClient.signingKeyName,
+		txClient.txCtx.GetKeyring(),
 	)
 	if err != nil {
 		return err
 	}
 
-	tClient.signingAddr = signingAddr
+	txClient.signingAddr = signingAddr
 
-	if tClient.commitTimeoutHeightOffset <= 0 {
-		tClient.commitTimeoutHeightOffset = DefaultCommitTimeoutHeightOffset
+	if txClient.commitTimeoutHeightOffset <= 0 {
+		txClient.commitTimeoutHeightOffset = DefaultCommitTimeoutHeightOffset
 	}
 	return nil
 }
@@ -306,18 +306,18 @@ func (tClient *txClient) validateConfigAndSetDefaults() error {
 // Returns:
 //   - An either.AsyncError populated with the error notification channel for the
 //     provided transaction hash.
-func (tClient *txClient) addPendingTransactions(
+func (txClient *txClient) addPendingTransactions(
 	txHash string,
 	timeoutHeight int64,
 ) either.AsyncError {
-	tClient.txsMutex.Lock()
-	defer tClient.txsMutex.Unlock()
+	txClient.txsMutex.Lock()
+	defer txClient.txsMutex.Unlock()
 
 	// Initialize txTimeoutPool map if necessary.
-	txsByHash, ok := tClient.txTimeoutPool[timeoutHeight]
+	txsByHash, ok := txClient.txTimeoutPool[timeoutHeight]
 	if !ok {
 		txsByHash = make(map[string]chan error)
-		tClient.txTimeoutPool[timeoutHeight] = txsByHash
+		txClient.txTimeoutPool[timeoutHeight] = txsByHash
 	}
 
 	// Initialize txErrorChans map in txTimeoutPool map if necessary.
@@ -330,10 +330,10 @@ func (tClient *txClient) addPendingTransactions(
 	}
 
 	// Initialize txErrorChans map if necessary.
-	if _, ok := tClient.txErrorChans[txHash]; !ok {
+	if _, ok := txClient.txErrorChans[txHash]; !ok {
 		// NB: both maps hold a reference to the same channel so that we can check
 		// if the channel has already been closed when timing out.
-		tClient.txErrorChans[txHash] = errCh
+		txClient.txErrorChans[txHash] = errCh
 	}
 
 	return either.AsyncErr(errCh)
@@ -357,45 +357,37 @@ func (tClient *txClient) addPendingTransactions(
 //
 // Parameters:
 // - ctx: Context for managing the function's lifecycle and child operations.
-func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
-	txResultsObs := tClient.eventsReplayClient.EventsSequence(ctx)
+func (txClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
+	txResultsObs := txClient.eventsReplayClient.EventsSequence(ctx)
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
 		// Convert transaction hash into its normalized hex form.
 		txHashHex := txHashBytesToNormalizedHex(comettypes.Tx(txResult.Tx).Hash())
 
-		tClient.txsMutex.Lock()
+		txClient.txsMutex.Lock()
 		// Remove from the txTimeoutPool.
-		for timeoutHeight, txErrorChans := range tClient.txTimeoutPool {
-			// Handled transaction isn't in this timeout height.
+		for timeoutHeight, txErrorChans := range txClient.txTimeoutPool {
+			// Handled transaction isn't in this timeout height or is an external transaction.
 			if _, ok := txErrorChans[txHashHex]; !ok {
 				continue
 			}
 
 			delete(txErrorChans, txHashHex)
 			if len(txErrorChans) == 0 {
-				delete(tClient.txTimeoutPool, timeoutHeight)
+				delete(txClient.txTimeoutPool, timeoutHeight)
 			}
 
-			// Check for a corresponding error channel in the map.
-			// Only close and remove from tClient.txErrorChans if it has been initiated
-			// by tClient.
 			// Transactions that are initiated externally will not have an associated
-			// error channel in tClient.txErrorChans and would trigger a panic if not
-			// handled inside this loop.
-			txErrCh, ok := tClient.txErrorChans[txHashHex]
+			// error channel in txClient.txErrorChans and are already skipped by
+			// the "continue" statement above.
+			txErrCh, ok := txClient.txErrorChans[txHashHex]
 			if !ok {
 				panic("Received tx event without an associated error channel.")
 			}
 
-			// TODO_INVESTIGATE: it seems like it may not be possible for the
-			// txResult to represent an error. Cosmos' #BroadcastTxSync() is being
-			// called internally, which will return an error if the transaction
-			// is not accepted by the mempool.
-			//
-			// It's unclear if a cosmos chain is capable of returning an async
-			// error for a transaction at this point; even when substituting
-			// #BroadcastTxAsync(), the error is returned synchronously:
+			// TODO_INVESTIGATE: It seems that txResult does not represent transactions
+			// that are not accepted by the mempool and #BroadcastTxAsync() synchronously
+			// returns the following error:
 			//
 			// > error in json rpc client, with http response metadata: (Status:
 			// > 200 OK, Protocol HTTP/1.1). RPC error -32000 - tx added to local
@@ -405,10 +397,10 @@ func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 
 			// Close and remove from txErrChans
 			close(txErrCh)
-			delete(tClient.txErrorChans, txHashHex)
+			delete(txClient.txErrorChans, txHashHex)
 		}
 
-		tClient.txsMutex.Unlock()
+		txClient.txsMutex.Unlock()
 	}
 }
 
@@ -419,9 +411,9 @@ func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
 // query subscription logic. If not, a timeout error is generated and sent on the
 // transaction's error channel. Finally, the error channel is closed and removed
 // from the txTimeoutPool.
-func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
+func (txClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 	// Subscribe to a sequence of committed blocks.
-	blockCh := tClient.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
+	blockCh := txClient.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
 
 	// Iterate over each incoming block.
 	for block := range blockCh {
@@ -432,13 +424,13 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 		default:
 		}
 
-		tClient.txsMutex.Lock()
+		txClient.txsMutex.Lock()
 
 		// Retrieve transactions associated with the current block's height.
-		txsByHash, ok := tClient.txTimeoutPool[block.Height()]
+		txsByHash, ok := txClient.txTimeoutPool[block.Height()]
 		if !ok {
 			// If no transactions are found for the current block height, continue.
-			tClient.txsMutex.Unlock()
+			txClient.txsMutex.Unlock()
 			continue
 		}
 
@@ -453,20 +445,20 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 				}
 				// Remove the processed transaction.
 				delete(txsByHash, txHash)
-				tClient.txsMutex.Unlock()
+				txClient.txsMutex.Unlock()
 				continue
 			default:
 			}
 
 			// Transaction was not processed by its subscription: handle timeout.
-			txErrCh <- tClient.getTxTimeoutError(ctx, txHash) // Send a timeout error.
-			close(txErrCh)                                    // Close the error channel.
-			delete(txsByHash, txHash)                         // Remove the transaction.
+			txErrCh <- txClient.getTxTimeoutError(ctx, txHash) // Send a timeout error.
+			close(txErrCh)                                     // Close the error channel.
+			delete(txsByHash, txHash)                          // Remove the transaction.
 		}
 
 		// Clean up the txTimeoutPool for the current block height.
-		delete(tClient.txTimeoutPool, block.Height())
-		tClient.txsMutex.Unlock()
+		delete(txClient.txTimeoutPool, block.Height())
+		txClient.txsMutex.Unlock()
 	}
 }
 
@@ -474,7 +466,7 @@ func (tClient *txClient) goTimeoutPendingTransactions(ctx context.Context) {
 // The function decodes the provided hexadecimal hash into bytes and queries the
 // transaction using the byte hash. If any error occurs during this process,
 // appropriate wrapped errors are returned for easier debugging.
-func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string) error {
+func (txClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string) error {
 	// Decode the provided hex hash into bytes.
 	txHash, err := hex.DecodeString(txHashHex)
 	if err != nil {
@@ -482,7 +474,7 @@ func (tClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex string
 	}
 
 	// Query the transaction using the decoded byte hash.
-	txResponse, err := tClient.txCtx.QueryTx(ctx, txHash, false)
+	txResponse, err := txClient.txCtx.QueryTx(ctx, txHash, false)
 	if err != nil {
 		return ErrQueryTx.Wrapf("with hash: %s: %s", txHashHex, err)
 	}
