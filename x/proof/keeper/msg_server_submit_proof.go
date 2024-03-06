@@ -94,8 +94,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
-	// Verify the relay request and response session headers match the proof session header.
-	if err := validateRelaySessionHeaders(relay, msg.GetSessionHeader()); err != nil {
+	// Verify that the relay request session header matches the proof session header.
+	if err := compareSessionHeaders(msg.GetSessionHeader(), relay.GetReq().Meta.GetSessionHeader()); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	// Verify that the relay response session header matches the proof session header.
+	if err := compareSessionHeaders(msg.GetSessionHeader(), relay.GetRes().Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -214,105 +219,48 @@ func (k msgServer) queryAndValidateClaimForProof(
 	return &foundClaim, nil
 }
 
-// validateRelaySessionHeaders ensures that the relay request and response session headers
-// match the proof session header.
-func validateRelaySessionHeaders(
-	relay *servicetypes.Relay,
-	msgSessHeader *sessiontypes.SessionHeader,
+// compareSessionHeaders compares a session header against an expected session header.
+func compareSessionHeaders(
+	expectedSessionHeader *sessiontypes.SessionHeader,
+	sessionHeader *sessiontypes.SessionHeader,
 ) error {
-	reqSessHeader := relay.GetReq().GetMeta().GetSessionHeader()
-	respSessHeader := relay.GetRes().GetMeta().GetSessionHeader()
-
-	// Ensure the relay request and response application addresses match
-	// the proof application address.
-
-	if reqSessHeader.GetApplicationAddress() != msgSessHeader.GetApplicationAddress() {
+	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay request application address %s does not match proof application address %s",
-			reqSessHeader.GetApplicationAddress(),
-			msgSessHeader.GetApplicationAddress(),
+			"sessionHeaders application addresses mismatch expect: %s, got: %s",
+			expectedSessionHeader.GetApplicationAddress(),
+			sessionHeader.GetApplicationAddress(),
 		)
 	}
 
-	if respSessHeader.GetApplicationAddress() != msgSessHeader.GetApplicationAddress() {
+	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay response application address %s does not match proof application address %s",
-			reqSessHeader.GetApplicationAddress(),
-			msgSessHeader.GetApplicationAddress(),
+			"sessionHeaders service IDs mismatch expect: %s, got: %s",
+			expectedSessionHeader.GetService().GetId(),
+			sessionHeader.GetService().GetId(),
 		)
 	}
 
-	// Ensure the relay request and response service IDs match the proof service ID.
-
-	if reqSessHeader.GetService().GetId() != msgSessHeader.GetService().GetId() {
+	if sessionHeader.GetSessionStartBlockHeight() != expectedSessionHeader.GetSessionStartBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay request service ID %s does not match proof service ID %s",
-			reqSessHeader.GetService().GetId(),
-			msgSessHeader.GetService().GetId(),
+			"sessionHeaders session start heights mismatch expect: %d, got: %d",
+			expectedSessionHeader.GetSessionStartBlockHeight(),
+			sessionHeader.GetSessionStartBlockHeight(),
 		)
 	}
 
-	if respSessHeader.GetService().GetId() != msgSessHeader.GetService().GetId() {
+	if sessionHeader.GetSessionEndBlockHeight() != expectedSessionHeader.GetSessionEndBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay response service ID %s does not match proof service ID %s",
-			respSessHeader.GetService().GetId(),
-			msgSessHeader.GetService().GetId(),
+			"sessionHeaders session end heights mismatch expect: %d, got: %d",
+			expectedSessionHeader.GetSessionEndBlockHeight(),
+			sessionHeader.GetSessionEndBlockHeight(),
 		)
 	}
 
-	// Ensure the relay request and response session start block heights
-	// match the proof session start block height.
-
-	if reqSessHeader.GetSessionStartBlockHeight() != msgSessHeader.GetSessionStartBlockHeight() {
+	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay request session start height %d does not match proof session start height %d",
-			reqSessHeader.GetSessionStartBlockHeight(),
-			msgSessHeader.GetSessionStartBlockHeight(),
-		)
-	}
-
-	if respSessHeader.GetSessionStartBlockHeight() != msgSessHeader.GetSessionStartBlockHeight() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"relay response session start height %d does not match proof session start height %d",
-			respSessHeader.GetSessionStartBlockHeight(),
-			msgSessHeader.GetSessionStartBlockHeight(),
-		)
-	}
-
-	// Ensure the relay request and response session end block heights
-	// match the proof session end block height.
-
-	if reqSessHeader.GetSessionEndBlockHeight() != msgSessHeader.GetSessionEndBlockHeight() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"relay request session end height %d does not match proof session end height %d",
-			reqSessHeader.GetSessionEndBlockHeight(),
-			msgSessHeader.GetSessionEndBlockHeight(),
-		)
-	}
-
-	if respSessHeader.GetSessionEndBlockHeight() != msgSessHeader.GetSessionEndBlockHeight() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"relay response session end height %d does not match proof session end height %d",
-			respSessHeader.GetSessionEndBlockHeight(),
-			msgSessHeader.GetSessionEndBlockHeight(),
-		)
-	}
-
-	// Ensure the relay request and response session IDs match the proof session ID.
-
-	if reqSessHeader.GetSessionId() != msgSessHeader.GetSessionId() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"relay request session ID %s does not match proof session ID %s",
-			reqSessHeader.GetSessionId(),
-			msgSessHeader.GetSessionId(),
-		)
-	}
-
-	if respSessHeader.GetSessionId() != msgSessHeader.GetSessionId() {
-		return types.ErrProofInvalidRelay.Wrapf(
-			"relay response session ID %s does not match proof session ID %s",
-			respSessHeader.GetSessionId(),
-			msgSessHeader.GetSessionId(),
+			"sessionHeaders session IDs mismatch expect: %s, got: %s",
+			expectedSessionHeader.GetSessionId(),
+			sessionHeader.GetSessionId(),
 		)
 	}
 
