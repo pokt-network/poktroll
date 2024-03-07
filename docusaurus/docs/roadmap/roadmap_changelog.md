@@ -49,7 +49,7 @@ A few changes were made, but the important pieces are the focus of each of the n
 - `Iteration 6 (Deploy TestNet #1)`
 
   - `Why`: Deploy the first TestNet to fill unknown gaps in our knowledge and provide feedback to the Rollkit team on things we will need in the future
-  - Deploy the first iteration of Shannon to Celestia's Mocha TestNet
+  - Deploy the first iteration of Shannon to TestNet
   - Identify missing gaps in our knowledge of TestNet deployment, missing infrastructure needs, and de-risk timelines
   - Invite a node runner from the community to start running a Supplier in TestNet
   - Continue some on-chain feature development

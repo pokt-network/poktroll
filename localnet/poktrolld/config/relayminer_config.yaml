@@ -1,9 +1,9 @@
 signing_key_name: supplier1
 smt_store_path: smt_stores
 pocket_node:
-  query_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
-  query_node_grpc_url: tcp://sequencer-poktroll-sequencer:36658
-  tx_node_rpc_url: tcp://sequencer-poktroll-sequencer:36657
+  query_node_rpc_url: tcp://poktroll-validator:36657
+  query_node_grpc_url: tcp://poktroll-validator:36658
+  tx_node_rpc_url: tcp://poktroll-validator:36657
 proxies:
   - proxy_name: http-proxy
     type: http
@@ -20,4 +20,3 @@ suppliers:
 metrics:
   enabled: true
   addr: :9090
-  
