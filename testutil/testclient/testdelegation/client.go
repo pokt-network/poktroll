@@ -18,7 +18,7 @@ import (
 )
 
 // NewLocalnetClient creates and returns a new DelegationClient that's configured for
-// use with the localnet sequencer.
+// use with the LocalNet validator.
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.DelegationClient {
 	t.Helper()
 

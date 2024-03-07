@@ -17,7 +17,7 @@ on behalf of an [Application](./application.md).
 
 ## Schema
 
-The on-chain representation of a `Gateway` can be found at [gateway.proto](./../../../proto/pocket/gateway/gateway.proto).
+The on-chain representation of a `Gateway` can be found at [gateway.proto](./../../../proto/poktroll/gateway/gateway.proto).
 
 ## Configuration
 

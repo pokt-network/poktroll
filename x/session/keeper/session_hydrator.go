@@ -17,10 +17,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_TECHDEBT(#377): The business logic in this file assume that genesis has
-// a block height of 0. Revisit it and adjust, where/if necessary, accounting for the
-// fact that it's 1.
-
 var SHA3HashLen = crypto.SHA3_256.Size()
 
 // TODO_BLOCKER(#21): Make these configurable governance param
@@ -270,18 +266,37 @@ func sha3Hash(bz []byte) []byte {
 }
 
 // GetSessionStartBlockHeight returns the block height at which the session starts
+// Returns 0 if the block height is not a consensus produced block.
+// Example: If NumBlocksPerSession == 4, sessions start at blocks 1, 5, 9, etc.
 func GetSessionStartBlockHeight(blockHeight int64) int64 {
-	return blockHeight - (blockHeight % NumBlocksPerSession)
+	if blockHeight <= 0 {
+		return 0
+	}
+
+	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
 }
 
 // GetSessionEndBlockHeight returns the block height at which the session ends
+// Returns 0 if the block height is not a consensus produced block.
+// Example: If NumBlocksPerSession == 4, sessions end at blocks 4, 8, 11, etc.
 func GetSessionEndBlockHeight(blockHeight int64) int64 {
+	if blockHeight <= 0 {
+		return 0
+	}
+
 	return GetSessionStartBlockHeight(blockHeight) + NumBlocksPerSession - 1
 }
 
-// GetSessionNumber returns the session number given the block height
+// GetSessionNumber returns the session number given the block height.
+// Returns session number 0 if the block height is not a consensus produced block.
+// Returns session number 1 for block 1 to block NumBlocksPerSession - 1 (inclusive).
+// i.e. If NubBlocksPerSession == 4, session == 1 for [1, 4], session == 2 for [5, 8], etc.
 func GetSessionNumber(blockHeight int64) int64 {
-	return blockHeight / NumBlocksPerSession
+	if blockHeight <= 0 {
+		return 0
+	}
+
+	return ((blockHeight - 1) / NumBlocksPerSession) + 1
 }
 
 // GetSessionId returns the string and bytes representation of the sessionId

@@ -18,7 +18,7 @@ import (
 )
 
 // NewLocalnetClient creates and returns a new supplier client that connects to
-// the localnet sequencer.
+// the LocalNet validator.
 func NewLocalnetClient(
 	t *testing.T,
 	signingKeyName string,

@@ -52,8 +52,8 @@ func init() {
 		panic(err)
 	}
 
-	// If SEQUENCER_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
-	if endpoint := os.Getenv("SEQUENCER_RPC_ENDPOINT"); endpoint != "" {
+	// If VALIDATOR_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
+	if endpoint := os.Getenv("VALIDATOR_RPC_ENDPOINT"); endpoint != "" {
 		CometLocalTCPURL = fmt.Sprintf("tcp://%s", endpoint)
 		CometLocalWebsocketURL = fmt.Sprintf("ws://%s/websocket", endpoint)
 	}
