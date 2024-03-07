@@ -225,6 +225,11 @@ func (rp *relayerSessionsManager) validateConfig() error {
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
+	// Create a cancellable child context for managing the CommittedBlocksSequence lifecycle.
+	// Since the subscription is no longer needed after the block it is looking for
+	// is reached, cancelling the child context at the end of the function will stop
+	// the subscriptions and close the publish channel associated with the
+	// CommittedBlocksSequence observable which is not exposing it.
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
