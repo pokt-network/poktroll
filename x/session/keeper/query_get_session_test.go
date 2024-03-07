@@ -25,8 +25,6 @@ func TestSession_GetSession_Success(t *testing.T) {
 	keeper, ctx := keepertest.SessionKeeper(t)
 	ctx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(100) // provide a sufficiently large block height to avoid errors
 
-	// TODO_TECHDEBT(#377): These test assume that the genesis block has a height of 0,
-	// rewrite them in terms of height = 1 genesis.
 	tests := []struct {
 		desc string
 
@@ -46,8 +44,8 @@ func TestSession_GetSession_Success(t *testing.T) {
 			blockHeight: 1,
 
 			// Intentionally only checking a subset of the session metadata returned
-			expectedSessionId:     "6f2e0b6cba5a8cb93506ed4045143c4268945ebfb730b2c98fc7e3dc40132926",
-			expectedSessionNumber: 0,
+			expectedSessionId:     "335ca69ea6365eed04d5be2f5553b239bd2e3226b08c394169059ae40dfa1599",
+			expectedSessionNumber: 1,
 			expectedNumSuppliers:  1,
 		},
 	}
