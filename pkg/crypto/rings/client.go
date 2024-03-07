@@ -6,12 +6,12 @@ import (
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -26,9 +26,8 @@ type ringClient struct {
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
 
-	// accountQuerier is the querier for the account module, and is used to get
-	// the public keys of the application and its delegated gateways.
-	accountQuerier client.AccountQueryClient
+	// pubKeyClient
+	pubKeyClient crypto.PubKeyClient
 }
 
 // NewRingClient returns a new ring client constructed from the given dependencies.
@@ -38,14 +37,17 @@ type ringClient struct {
 // - polylog.Logger
 // - client.ApplicationQueryClient
 // - client.AccountQueryClient
-func NewRingClient(deps depinject.Config) (crypto.RingClient, error) {
+func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
+	rc.pubKeyClient, err = pubkeyclient.NewPubKeyClient(deps)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := depinject.Inject(
 		deps,
 		&rc.logger,
 		&rc.applicationQuerier,
-		&rc.accountQuerier,
 	); err != nil {
 		return nil, err
 	}
@@ -60,7 +62,7 @@ func (rc *ringClient) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
 ) (*ring.Ring, error) {
-	points, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
+	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +70,14 @@ func (rc *ringClient) GetRingForAddress(
 	rc.logger.Debug().
 		Str("app_address", appAddress).
 		Msg("updating ring ringsByAddr for app")
+
+	// Get the points on the secp256k1 curve for the public keys in the ring.
+	points, err := pointsFromPublicKeys(pubKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the ring the constructed from the public key points on the secp256k1 curve.
 	return newRingFromPoints(points)
 }
 
@@ -148,7 +158,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 func (rc *ringClient) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
-) ([]ringtypes.Point, error) {
+) ([]cryptotypes.PubKey, error) {
 	// Get the application's on chain state.
 	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
 	if err != nil {
@@ -171,35 +181,27 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 		ringAddresses = append(ringAddresses, app.DelegateeGatewayAddresses...)
 	}
 
-	// Get the points on the secp256k1 curve for the addresses.
-	points, err := rc.addressesToPoints(ctx, ringAddresses)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the public key points on the secp256k1 curve.
-	return points, nil
-}
-
-// addressesToPoints converts a slice of addresses to a slice of points on the
-// secp256k1 curve, by querying the account module for the public key for each
-// address and converting them to the corresponding points on the secp256k1 curve
-func (rc *ringClient) addressesToPoints(
-	ctx context.Context,
-	addresses []string,
-) ([]ringtypes.Point, error) {
-	publicKeys := make([]cryptotypes.PubKey, len(addresses))
 	rc.logger.Debug().
 		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)` instead of formatting here.
-		Str("addresses", fmt.Sprintf("%v", addresses)).
+		Str("addresses", fmt.Sprintf("%v", ringAddresses)).
 		Msg("converting addresses to points")
+
+	return rc.addressesToPubKeys(ctx, ringAddresses)
+}
+
+// addressesToPubKeys uses the public key client to query the account module for
+// the public key corresponding to each address given.
+func (rc *ringClient) addressesToPubKeys(
+	ctx context.Context,
+	addresses []string,
+) ([]cryptotypes.PubKey, error) {
+	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
-		acc, err := rc.accountQuerier.GetAccount(ctx, addr)
+		acc, err := rc.pubKeyClient.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err
 		}
-		publicKeys[i] = acc.GetPubKey()
+		pubKeys[i] = acc
 	}
-
-	return pointsFromPublicKeys(publicKeys...)
+	return pubKeys, nil
 }
