@@ -37,7 +37,6 @@ queries from and which services it forwards requests to._
   - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
 - [Full config example](#full-config-example)
 - [Supported proxy types](#supported-proxy-types)
-
 # Usage
 
 The `RelayMiner` start command accepts a `--config` flag that points to a configuration

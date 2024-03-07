@@ -17,7 +17,7 @@ import (
 )
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
-// use with the localnet sequencer.
+// use with the LocalNet validator.
 func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 

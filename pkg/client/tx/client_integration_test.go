@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
@@ -53,7 +54,7 @@ func TestTxClient_SignAndBroadcast_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
-	appStake := types.NewCoin("upokt", types.NewInt(1000000))
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
 	appStakeMsg := &apptypes.MsgStakeApplication{
 		Address:  signingKeyAddr.String(),
 		Stake:    &appStake,

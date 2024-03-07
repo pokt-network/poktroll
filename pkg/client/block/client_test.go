@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	testTimeoutDuration = 100000 * time.Millisecond
+	testTimeoutDuration = 100 * time.Millisecond
 
 	// duplicates pkg/client/block/client.go's committedBlocksQuery for testing purposes
 	committedBlocksQuery = "tm.event='NewBlock'"
@@ -26,17 +26,22 @@ const (
 
 func TestBlockClient(t *testing.T) {
 	var (
-		expectedHeight     = int64(1)
-		expectedHash       = []byte("test_hash")
-		expectedBlockEvent = &types.EventDataNewBlock{
-			Block: &types.Block{
-				Header: comettypes.Header{
-					Height: 1,
-					Time:   time.Now(),
+		expectedHeight = int64(1)
+		expectedHash   = []byte("test_hash")
+
+		expectedBlockEvent = &testBlockEvent{
+			Data: testBlockEventDataStruct{
+				Value: testBlockEventValueStruct{
+					Block: &types.Block{
+						Header: comettypes.Header{
+							Height: 1,
+							Time:   time.Now(),
+						},
+					},
+					BlockID: types.BlockID{
+						Hash: expectedHash,
+					},
 				},
-			},
-			BlockID: comettypes.BlockID{
-				Hash: expectedHash,
 			},
 		}
 		ctx = context.Background()
@@ -115,4 +120,22 @@ func TestBlockClient(t *testing.T) {
 	}
 
 	blockClient.Close()
+}
+
+// TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
+// This duplicates the unexported `cometBlockEvent` from `pkg/client/block/block.go`.
+// We need to answer the following questions to avoid this:
+//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
+//   - Should we prefer export types which are not required for API consumption?
+//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
+//   - Should we enforce all tests to use `-tags=test`?
+type testBlockEvent struct {
+	Data testBlockEventDataStruct `json:"data"`
+}
+type testBlockEventDataStruct struct {
+	Value testBlockEventValueStruct `json:"value"`
+}
+type testBlockEventValueStruct struct {
+	Block   *types.Block  `json:"block"`
+	BlockID types.BlockID `json:"block_id"`
 }

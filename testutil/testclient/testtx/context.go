@@ -25,7 +25,7 @@ import (
 )
 
 // NewLocalnetContext creates and returns a new transaction context configured
-// for use with the localnet sequencer.
+// for use with the LocalNet validator.
 func NewLocalnetContext(t *testing.T) client.TxContext {
 	t.Helper()
 

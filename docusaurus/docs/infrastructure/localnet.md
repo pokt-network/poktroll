@@ -14,7 +14,7 @@ title: LocalNet
 ## Background <!-- omit in toc -->
 
 This document walks you through launching a LocalNet that brings up a k8s cluster
-with a Data Availability network, a sequencer, Pocket actors and everything else
+with a Data Availability network, a validator, Pocket actors and everything else
 needed to send an end-to-end relay.
 
 - [Run Poktroll locally](#run-poktroll-locally)
