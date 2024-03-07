@@ -7,14 +7,14 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-var (
-	_ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
-)
+var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 
 type AppKeeperQueryClient struct {
 	keeper ApplicationKeeper
 }
 
+// NewAppKeeperQueryClient returns a new ApplicationQueryClient that is backed
+// by an ApplicationKeeper instance.
 func NewAppKeeperQueryClient(appKeeper ApplicationKeeper) client.ApplicationQueryClient {
 	return &AppKeeperQueryClient{keeper: appKeeper}
 }

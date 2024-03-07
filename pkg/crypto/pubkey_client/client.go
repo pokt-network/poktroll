@@ -16,7 +16,7 @@ var _ crypto.PubKeyClient = (*pubKeyClient)(nil)
 // querier to get the public key of an address.
 type pubKeyClient struct {
 	// accountQuerier is the querier for the account module, it is used to get
-	// the account of an address.
+	// the public key corresponding to an address.
 	accountQuerier client.AccountQueryClient
 }
 

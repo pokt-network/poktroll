@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: relayDifficultyBits should be a governance-based parameter
-	relayDifficultyBits = 0
+	// TODO_TECHDEBT: relayMinDifficultyBits should be a governance-based parameter
+	relayMinDifficultyBits = 0
 
 	// sumSize is the size of the sum of the relay request and response
 	// in bytes. This is used to extract the relay request and response
@@ -241,7 +241,7 @@ func compareSessionHeaders(
 ) error {
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders application addresses mismatch expect: %s, got: %s",
+			"sessionHeaders application addresses mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetApplicationAddress(),
 			sessionHeader.GetApplicationAddress(),
 		)
@@ -249,7 +249,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service IDs mismatch expect: %s, got: %s",
+			"sessionHeaders service IDs mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
 		)
@@ -273,7 +273,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session IDs mismatch expect: %s, got: %s",
+			"sessionHeaders session IDs mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
@@ -318,11 +318,11 @@ func validateMiningDifficulty(relayBz []byte) error {
 		)
 	}
 
-	if difficultyBits < relayDifficultyBits {
+	if difficultyBits < relayMinDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the required difficulty %d",
 			difficultyBits,
-			relayDifficultyBits,
+			relayMinDifficultyBits,
 		)
 	}
 
@@ -335,6 +335,20 @@ func (k msgServer) validateClosestPath(
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
 ) error {
+	// The RelayMiner has to wait until the createClaimWindowStartHeight and the
+	// submitProofWindowStartHeight are open to respectively create the claim and
+	// submit the proof.
+	// These windows are calculated as SessionEndBlockHeight + GracePeriodBlockCount.
+	// see: relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
+	// The RelayMiner hast to wait this long to ensure that late relays are accepted
+	// and included in the SessionNumber=N tree.
+	// (i.e. relays initiated by Applications/Gateways in SessionNumber=N but
+	// arriving to the RelayMiner in SessionNumber=N + 1)
+	// Otherwise, the RelayMiner would not be able to include the late relays in
+	// the SessionNumber N claim and the proof.
+	// Since smt.ProveClosest is in terms of submitProofWindowStartHeight, this
+	// block's hash needs to be used for validation too.
+	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
 	blockHeight := sessionHeader.GetSessionEndBlockHeight() + sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, blockHeight)
 

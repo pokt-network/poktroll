@@ -66,11 +66,6 @@ func (rc *ringClient) GetRingForAddress(
 	if err != nil {
 		return nil, err
 	}
-	// Cache the ring's points for future use
-	rc.logger.Debug().
-		Str("app_address", appAddress).
-		Msg("updating ring ringsByAddr for app")
-
 	// Get the points on the secp256k1 curve for the public keys in the ring.
 	points, err := pointsFromPublicKeys(pubKeys...)
 	if err != nil {
@@ -87,43 +82,45 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
 ) error {
+	if relayRequest.GetMeta() == nil {
+		return ErrRingClientInvalidRelayRequest.Wrap("missing meta from relay request")
+	}
+
+	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
+	if err := sessionHeader.ValidateBasic(); err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf("invalid session header: %q", err)
+	}
+
 	rc.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
-			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
-			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+			"session_id":          sessionHeader.GetSessionId(),
+			"application_address": sessionHeader.GetApplicationAddress(),
+			"service_id":          sessionHeader.GetService().GetId(),
 		}).
 		Msg("verifying relay request signature")
 
 	// Extract the relay request's ring signature
-	if relayRequest.Meta == nil {
-		return ErrRingClientEmptyRelayRequestSignature.Wrapf(
-			"request payload: %s", relayRequest.Payload,
-		)
+	if relayRequest.GetMeta().GetSignature() == nil {
+		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
-
-	signature := relayRequest.Meta.Signature
-	if signature == nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf(
-			"missing signature from relay request: %v", relayRequest,
-		)
-	}
+	signature := relayRequest.GetMeta().GetSignature()
 
 	ringSig := new(ring.RingSig)
+
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"error deserializing ring signature: %v", err,
+			"error deserializing ring signature: %s", err,
 		)
 	}
 
-	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
+	if sessionHeader.GetApplicationAddress() == "" {
 		return ErrRingClientInvalidRelayRequest.Wrap(
 			"missing application address from relay request",
 		)
 	}
 
 	// Get the ring for the application address of the relay request
-	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	appAddress := sessionHeader.GetApplicationAddress()
 	appRing, err := rc.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(

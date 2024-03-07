@@ -15,6 +15,8 @@ type AccountKeeperQueryClient struct {
 	keeper AccountKeeper
 }
 
+// NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
+// by an AccountKeeper instance.
 func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQueryClient {
 	return &AccountKeeperQueryClient{keeper: accountKeeper}
 }
