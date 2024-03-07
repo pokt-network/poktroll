@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -98,6 +97,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
+	if err := relay.GetReq().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	if err := relay.GetRes().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	// Verify that the relay request session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relay.GetReq().Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -108,9 +115,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
+	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	// Verify the relay response's signature.
-	supplierAddress := msg.GetSupplierAddress()
-	if err := k.verifyRelayResponseSignature(ctx, relay.GetRes(), supplierAddress); err != nil {
+	if err := relay.GetRes().VerifySignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -266,47 +277,6 @@ func compareSessionHeaders(
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
-	}
-
-	return nil
-}
-
-// verifyRelayResponseSignature verifies the signature on the relay response.
-// TODO_TECHDEBT: Factor out the relay response signature verification into a shared
-// function that can be used by both the proof and the SDK packages.
-func (k msgServer) verifyRelayResponseSignature(
-	ctx context.Context,
-	relayResponse *servicetypes.RelayResponse,
-	supplierAddress string,
-) error {
-	// Get the account from the auth module
-	accAddr, err := cosmostypes.AccAddressFromBech32(supplierAddress)
-	if err != nil {
-		return err
-	}
-
-	supplierAccount := k.accountKeeper.GetAccount(ctx, accAddr)
-
-	// Get the public key from the account
-	pubKey := supplierAccount.GetPubKey()
-	if pubKey == nil {
-		return types.ErrProofInvalidRelayResponse.Wrapf(
-			"no public key found for supplier address %s",
-			supplierAddress,
-		)
-	}
-
-	supplierSignature := relayResponse.Meta.SupplierSignature
-
-	// Get the relay response signable bytes and hash them.
-	responseSignableBz, err := relayResponse.GetSignableBytesHash()
-	if err != nil {
-		return err
-	}
-
-	// Verify the relay response's signature
-	if valid := pubKey.VerifySignature(responseSignableBz[:], supplierSignature); !valid {
-		return types.ErrProofInvalidRelayResponse.Wrap("invalid relay response signature")
 	}
 
 	return nil
