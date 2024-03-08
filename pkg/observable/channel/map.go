@@ -110,7 +110,7 @@ func ForEach[V any](
 
 // goMapTransformNotification transforms, optionally skips, and publishes
 // notifications via the given publishFn.
-func goMapTransformNotification[S, D any, P any](
+func goMapTransformNotification[S, D, P any](
 	ctx context.Context,
 	srcObserver observable.Observer[S],
 	transformFn MapFn[S, D],
