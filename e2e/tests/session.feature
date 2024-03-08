@@ -9,7 +9,7 @@ Feature: Session Namespace
     # The timeout for when a claim can be submitted on-chain depends on `createClaimWindowStartHeight`, which
     # is a function of `SessionGracePeriod`. The higher this value, the higher this timeout needs to be. Since
     # this test is not dependant on the grace period, setting it to 0 and having a lower grace period will simplify it.
-    And the user should wait for "7" seconds
+    And the user should wait for the "proof" "CreateClaim" Message to be submited
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
     # TODO_IMPROVE: And an event should be emitted...
     And after the supplier submits a proof for the session for service "svc1" for application "app1"
