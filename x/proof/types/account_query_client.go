@@ -26,6 +26,7 @@ func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQuer
 	return &AccountKeeperQueryClient{keeper: accountKeeper}
 }
 
+// GetAccount returns the account associated with the provided address.
 func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 	ctx context.Context,
 	addr string,

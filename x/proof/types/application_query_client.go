@@ -33,6 +33,7 @@ func (appQueryClient *AppKeeperQueryClient) GetApplication(
 	return app, nil
 }
 
+// GetAllApplications returns all the applications in the application store.
 func (appQueryClient *AppKeeperQueryClient) GetAllApplications(ctx context.Context) ([]apptypes.Application, error) {
 	return appQueryClient.keeper.GetAllApplications(ctx), nil
 }
