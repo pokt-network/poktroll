@@ -375,6 +375,13 @@ func (tClient *txClient) addPendingTransactions(
 // Parameters:
 // - ctx: Context for managing the function's lifecycle and child operations.
 func (tClient *txClient) goSubscribeToOwnTxs(ctx context.Context) {
+	// Create a cancellable child context for managing the EventsSequence lifecycle.
+	// Cancelling it when listening for submitted transactions is no longer needed
+	// will ensure that the EventsSequence, its subscriptions and underlying channels
+	// are effectively closed.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	txResultsObs := tClient.eventsReplayClient.EventsSequence(ctx)
 	txResultsCh := txResultsObs.Subscribe(ctx).Ch()
 	for txResult := range txResultsCh {
