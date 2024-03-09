@@ -21,8 +21,6 @@ const (
 	smstRootSize = 40
 )
 
-// atomic.if this function is not atomic.
-
 // SettleSessionAccounting is responsible for all of the post-session accounting
 // necessary to burn, mint or transfer tokens depending on the amount of work
 // done. The amount of "work done" complete is dictated by `sum` of `root`.
@@ -35,9 +33,7 @@ func (k Keeper) SettleSessionAccounting(
 	ctx context.Context,
 	claim *prooftypes.Claim,
 ) error {
-	// Parse the context
 	logger := k.Logger().With("method", "SettleSessionAccounting")
-	logger.Info(ctx.ChainID(), string(ctx.TxBytes()))
 
 	if claim == nil {
 		logger.Error("received a nil claim")
@@ -60,12 +56,12 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Decompose the claim into its constituent parts for readability
 	supplierAddr, err := sdk.AccAddressFromBech32(claim.GetSupplierAddress())
-	if err != nil {
+	if err != nil || supplierAddr == nil {
 		return types.ErrTokenomicsSupplierAddressInvalid
 	}
 
 	applicationAddress, err := sdk.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
-	if err != nil {
+	if err != nil || applicationAddress == nil {
 		return types.ErrTokenomicsApplicationAddressInvalid
 	}
 
@@ -74,7 +70,7 @@ func (k Keeper) SettleSessionAccounting(
 
 	// TODO_DISCUSS: This check should be the responsibility of the SMST package
 	// since it's used to get compute units from the root hash.
-	if len(root) != smstRootSize {
+	if root == nil || len(root) != smstRootSize {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
 		return types.ErrTokenomicsRootHashInvalid
 	}
@@ -84,22 +80,13 @@ func (k Keeper) SettleSessionAccounting(
 	logger = logger.With(
 		"compute_units", claimComputeUnits,
 		"session_id", sessionHeader.GetSessionId(),
-		"supplier", supplierAddress,
+		"supplier", supplierAddr,
 		"application", applicationAddress,
 	)
 
 	logger.Info("About to start session settlement accounting")
 
 	// Retrieve the application
-	logger.Info(fmt.Sprintf("appKeeper pointer: %p; ctx pointer: %p", &k.appKeeper, &ctx))
-	if k.appKeeper == nil {
-		logger.Error("appKeeper is nil")
-		return types.ErrTokenomicsApplicationNotFound
-	}
-	if applicationAddress == nil {
-		logger.Error("applicationAddress is nil")
-		return types.ErrTokenomicsApplicationAddressInvalid
-	}
 	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !found {
 		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))

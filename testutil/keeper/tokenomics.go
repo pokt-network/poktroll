@@ -12,7 +12,7 @@ import (
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	comettypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -29,11 +29,8 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TODO_TECHDEBT: Replace `AnyTimes` w/ `Times/MinTimes/MaxTimes` as the tests
-// mature to be explicit about the number of expected tests.
-
 func TokenomicsKeeper(t testing.TB) (
-	k keeper.Keeper,
+	tokenomicsKeeper keeper.Keeper,
 	ttx context.Context,
 	appAddr string,
 	supplierAddr string,
@@ -48,7 +45,7 @@ func TokenomicsKeeper(t testing.TB) (
 	require.NoError(t, stateStore.LoadLatestVersion())
 
 	// Initialize the codec and other necessary components.
-	registry := codectypes.NewInterfaceRegistry()
+	registry := comettypes.NewInterfaceRegistry()
 	cdc := codec.NewProtoCodec(registry)
 
 	// The on-chain governance address.
@@ -88,13 +85,6 @@ func TokenomicsKeeper(t testing.TB) (
 		SetApplication(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	// Get test supplier if the address matches.
-	mockSupplierKeeper := mocks.NewMockSupplierKeeper(ctrl)
-	mockSupplierKeeper.EXPECT().
-		GetSupplier(gomock.Any(), supplier.Address).
-		Return(supplier, true).
-		AnyTimes()
-
 	// Mock the bank keeper.
 	mockBankKeeper := mocks.NewMockBankKeeper(ctrl)
 	mockBankKeeper.EXPECT().
@@ -117,7 +107,11 @@ func TokenomicsKeeper(t testing.TB) (
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-	tokenomicsKeeper := keeper.NewKeeper(
+	// Mock the proof keeper
+	mockProofKeeper := mocks.NewMockProofKeeper(ctrl)
+	mockProofKeeper.EXPECT().GetAllClaims(gomock.Any()).AnyTimes()
+
+	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -125,13 +119,13 @@ func TokenomicsKeeper(t testing.TB) (
 		mockBankKeeper,
 		mockAccountKeeper,
 		mockApplicationKeeper,
-		mockSupplierKeeper,
+		mockProofKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, tokenomicsKeeper.SetParams(ctx, types.DefaultParams()))
+	require.NoError(t, k.SetParams(ctx, types.DefaultParams()))
 
-	return tokenomicsKeeper, ctx, application.Address, supplier.Address
+	return k, ctx, application.Address, supplier.Address
 }

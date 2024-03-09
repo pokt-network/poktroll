@@ -18,8 +18,6 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	// this line is used by starport scaffolding # 1
-
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -152,6 +150,13 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 func (am AppModule) EndBlock(_ context.Context) error {
+	// Retrieve all the claims incoming
+
+	// TODO_BLOCKER: Revisit (per the comment above) as to whether this should be in `EndBlocker` or here.
+	// if err := SettleSessionAccounting(ctx, claim); err != nil {
+	// 	return nil, err
+	// }
+	// logger.Info("settled session accounting")
 	return nil
 }
 
@@ -180,7 +185,7 @@ type ModuleInputs struct {
 	AccountKeeper     types.AccountKeeper
 	BankKeeper        types.BankKeeper
 	ApplicationKeeper types.ApplicationKeeper
-	SupplierKeeper    types.SupplierKeeper
+	ProofKeeper       types.ProofKeeper
 }
 
 type ModuleOutputs struct {
@@ -204,7 +209,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,
-		in.SupplierKeeper,
+		in.ProofKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,

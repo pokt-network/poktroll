@@ -21,8 +21,7 @@ type (
 		// should be the x/gov module account.
 		authority string
 
-		sessionKeeper    types.SessionKeeper
-		tokenomicsKeeper types.TokenomicsKeeper
+		sessionKeeper types.SessionKeeper
 	}
 )
 

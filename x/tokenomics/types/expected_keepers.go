@@ -1,4 +1,4 @@
-//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,SupplierKeeper
+//go:generate mockgen -destination ../../../testutil/tokenomics/mocks/expected_keepers_mock.go -package mocks . AccountKeeper,BankKeeper,ApplicationKeeper,ProofKeeper
 
 package types
 
@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
+	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 )
 
 // AccountKeeper defines the expected interface for the Account module.
@@ -43,4 +44,8 @@ type BankKeeper interface {
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, appAddr string) (app apptypes.Application, found bool)
 	SetApplication(ctx context.Context, app apptypes.Application)
+}
+
+type ProofKeeper interface {
+	GetAllClaims(ctx context.Context) (claims []prooftypes.Claim)
 }
