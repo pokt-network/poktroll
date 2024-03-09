@@ -132,7 +132,7 @@ for x in range(localnet_config["relayminers"]["count"]):
         resource_deps=["validator"],
         port_forwards=[
             str(8084+actor_number)+":8545", # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
-            str(40044+actor_number)+":40005", # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40045, etc.
+            str(40044+actor_number)+":40005", # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069+actor_number)+":9090", # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
         ],
