@@ -28,6 +28,7 @@ func Map[S, D any](
 		func(dstNotification D) {
 			dstProducer <- dstNotification
 		},
+		dstProducer,
 	)
 
 	return dstObservable
@@ -53,6 +54,7 @@ func MapExpand[S, D any](
 				dstPublishCh <- dstNotification
 			}
 		},
+		dstPublishCh,
 	)
 
 	return dstObservable
@@ -80,6 +82,7 @@ func MapReplay[S, D any](
 		func(dstNotification D) {
 			dstProducer <- dstNotification
 		},
+		dstProducer,
 	)
 
 	return dstObservable
@@ -107,11 +110,16 @@ func ForEach[V any](
 
 // goMapTransformNotification transforms, optionally skips, and publishes
 // notifications via the given publishFn.
-func goMapTransformNotification[S, D any](
+func goMapTransformNotification[S, D, P any](
 	ctx context.Context,
 	srcObserver observable.Observer[S],
 	transformFn MapFn[S, D],
 	publishFn func(dstNotifications D),
+	// dstProducerCh is created by the caller of goMapTransformNotification
+	// which does not have knowledge as of when srcObserver.Ch() is closed.
+	// It is passed to the goMapTransformNotification to close it when the
+	// function is done.
+	dstProducerCh chan<- P,
 ) {
 	for srcNotification := range srcObserver.Ch() {
 		dstNotifications, skip := transformFn(ctx, srcNotification)
@@ -121,7 +129,7 @@ func goMapTransformNotification[S, D any](
 
 		publishFn(dstNotifications)
 	}
-
+	close(dstProducerCh)
 }
 
 // zeroValue is a generic helper which returns the zero value of the given type.

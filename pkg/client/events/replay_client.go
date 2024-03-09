@@ -145,21 +145,10 @@ func (rClient *replayClient[T]) EventsSequence(ctx context.Context) observable.R
 // goRemapEventsSequence publishes events observed by the most recent cached
 // events type replay observable to the given publishCh
 func (rClient *replayClient[T]) goRemapEventsSequence(ctx context.Context, publishCh chan<- T) {
-	var prevEventTypeObs observable.ReplayObservable[T]
 	channel.ForEach[observable.ReplayObservable[T]](
 		ctx,
 		rClient.replayObsCache,
 		func(ctx context.Context, eventTypeObs observable.ReplayObservable[T]) {
-			if prevEventTypeObs != nil {
-				// Just in case the assumption that all transport errors are
-				// persistent (i.e. they occur once and do not repeat) does not
-				// hold, unsubscribe from the previous event type observable in
-				// order to prevent unexpected and/or duplicate notifications
-				// on the observable returned by this function.
-				prevEventTypeObs.UnsubscribeAll()
-			} else {
-				prevEventTypeObs = eventTypeObs
-			}
 			eventObserver := eventTypeObs.Subscribe(ctx)
 			for event := range eventObserver.Ch() {
 				publishCh <- event
@@ -172,6 +161,9 @@ func (rClient *replayClient[T]) goRemapEventsSequence(ctx context.Context, publi
 // corresponding events query subscription.
 // It blocks until at least one event has been received.
 func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	return rClient.EventsSequence(ctx).Last(ctx, n)
 }
 
@@ -180,6 +172,7 @@ func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
 func (rClient *replayClient[T]) Close() {
 	// Closing eventsClient will cascade unsubscribe and close downstream observers.
 	rClient.eventsClient.Close()
+	close(rClient.replayObsCachePublishCh)
 }
 
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,
