@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha256"
 
-	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,8 +17,8 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: relayDifficultyBits should be a governance-based parameter
-	relayDifficultyBits = 0
+	// TODO_TECHDEBT: relayMinDifficultyBits should be a governance-based parameter
+	relayMinDifficultyBits = 0
 
 	// sumSize is the size of the sum of the relay request and response
 	// in bytes. This is used to extract the relay request and response
@@ -98,6 +97,14 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
+	if err := relay.GetReq().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
+	if err := relay.GetRes().ValidateBasic(); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	// Verify that the relay request session header matches the proof session header.
 	if err := compareSessionHeaders(msg.GetSessionHeader(), relay.GetReq().Meta.GetSessionHeader()); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -108,9 +115,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
+	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
+
 	// Verify the relay response's signature.
-	supplierAddress := msg.GetSupplierAddress()
-	if err := k.verifyRelayResponseSignature(ctx, relay.GetRes(), supplierAddress); err != nil {
+	if err := relay.GetRes().VerifySignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -230,7 +241,7 @@ func compareSessionHeaders(
 ) error {
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders application addresses mismatch expect: %s, got: %s",
+			"sessionHeaders application addresses mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetApplicationAddress(),
 			sessionHeader.GetApplicationAddress(),
 		)
@@ -238,7 +249,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service IDs mismatch expect: %s, got: %s",
+			"sessionHeaders service IDs mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
 		)
@@ -262,51 +273,10 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session IDs mismatch expect: %s, got: %s",
+			"sessionHeaders session IDs mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
-	}
-
-	return nil
-}
-
-// verifyRelayResponseSignature verifies the signature on the relay response.
-// TODO_TECHDEBT: Factor out the relay response signature verification into a shared
-// function that can be used by both the proof and the SDK packages.
-func (k msgServer) verifyRelayResponseSignature(
-	ctx context.Context,
-	relayResponse *servicetypes.RelayResponse,
-	supplierAddress string,
-) error {
-	// Get the account from the auth module
-	accAddr, err := cosmostypes.AccAddressFromBech32(supplierAddress)
-	if err != nil {
-		return err
-	}
-
-	supplierAccount := k.accountKeeper.GetAccount(ctx, accAddr)
-
-	// Get the public key from the account
-	pubKey := supplierAccount.GetPubKey()
-	if pubKey == nil {
-		return types.ErrProofInvalidRelayResponse.Wrapf(
-			"no public key found for supplier address %s",
-			supplierAddress,
-		)
-	}
-
-	supplierSignature := relayResponse.Meta.SupplierSignature
-
-	// Get the relay response signable bytes and hash them.
-	responseSignableBz, err := relayResponse.GetSignableBytesHash()
-	if err != nil {
-		return err
-	}
-
-	// Verify the relay response's signature
-	if valid := pubKey.VerifySignature(responseSignableBz[:], supplierSignature); !valid {
-		return types.ErrProofInvalidRelayResponse.Wrap("invalid relay response signature")
 	}
 
 	return nil
@@ -348,11 +318,11 @@ func validateMiningDifficulty(relayBz []byte) error {
 		)
 	}
 
-	if difficultyBits < relayDifficultyBits {
+	if difficultyBits < relayMinDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the required difficulty %d",
 			difficultyBits,
-			relayDifficultyBits,
+			relayMinDifficultyBits,
 		)
 	}
 
@@ -365,6 +335,20 @@ func (k msgServer) validateClosestPath(
 	proof *smt.SparseMerkleClosestProof,
 	sessionHeader *sessiontypes.SessionHeader,
 ) error {
+	// The RelayMiner has to wait until the createClaimWindowStartHeight and the
+	// submitProofWindowStartHeight are open to respectively create the claim and
+	// submit the proof.
+	// These windows are calculated as SessionEndBlockHeight + GracePeriodBlockCount.
+	// see: relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
+	// The RelayMiner hast to wait this long to ensure that late relays are accepted
+	// and included in the SessionNumber=N tree.
+	// (i.e. relays initiated by Applications/Gateways in SessionNumber=N but
+	// arriving to the RelayMiner in SessionNumber=N + 1)
+	// Otherwise, the RelayMiner would not be able to include the late relays in
+	// the SessionNumber N claim and the proof.
+	// Since smt.ProveClosest is in terms of submitProofWindowStartHeight, this
+	// block's hash needs to be used for validation too.
+	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
 	blockHeight := sessionHeader.GetSessionEndBlockHeight() + sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, blockHeight)
 

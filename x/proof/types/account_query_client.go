@@ -15,10 +15,18 @@ type AccountKeeperQueryClient struct {
 	keeper AccountKeeper
 }
 
+// NewAccountKeeperQueryClient returns a new AccountQueryClient that is backed
+// by an AccountKeeper instance.
+// It is used by the PubKeyClient to get the public key that corresponds to the
+// provided address.
+// This implementation is a thin wrapper around the AccountKeeper and does
+// not rely on the QueryClient contrariwise to the off-chain implementation.
+// It should be injected into the PubKeyClient when initialized from within the a keeper.
 func NewAccountKeeperQueryClient(accountKeeper AccountKeeper) client.AccountQueryClient {
 	return &AccountKeeperQueryClient{keeper: accountKeeper}
 }
 
+// GetAccount returns the account associated with the provided address.
 func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 	ctx context.Context,
 	addr string,

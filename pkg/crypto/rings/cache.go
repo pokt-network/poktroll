@@ -29,6 +29,8 @@ type ringCache struct {
 	// invalidate ringsByAddr entries for rings that have been updated on chain.
 	delegationClient client.DelegationClient
 
+	// ringClient is used to retrieve the rings that are cached and verify relay
+	// request signatures against the rings.
 	ringClient crypto.RingClient
 }
 

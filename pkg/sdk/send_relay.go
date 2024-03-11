@@ -101,13 +101,30 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay response: %s", err)
 	}
 
+	if err := relayResponse.ValidateBasic(); err != nil {
+		return nil, ErrSDKHandleRelay.Wrapf("%s", err)
+	}
+
+	// Get the supplier's public key.
+	supplierPubKey, err := sdk.getPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
+	if err != nil {
+		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %s", err)
+	}
+
+	sdk.logger.Debug().
+		Str("supplier", supplierEndpoint.SupplierAddress).
+		Str("application", relayResponse.GetMeta().GetSessionHeader().GetApplicationAddress()).
+		Str("service", relayResponse.GetMeta().GetSessionHeader().GetService().GetId()).
+		Int64("end_height", relayResponse.GetMeta().GetSessionHeader().GetSessionEndBlockHeight()).
+		Msg("About to verify relay response signature.")
+
 	// Verify the response signature. We use the supplier address that we got from
 	// the getRelayerUrl function since this is the address we are expecting to sign the response.
 	// TODO_TECHDEBT: if the RelayResponse is an internal error response, we should not verify the signature
 	// as in some relayer early failures, it may not be signed by the supplier.
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
-	if err := sdk.verifyResponse(ctx, supplierEndpoint.SupplierAddress, relayResponse); err != nil {
+	if err := relayResponse.VerifySignature(supplierPubKey); err != nil {
 		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
 	}
 

@@ -6,18 +6,23 @@ import (
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
-	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
+	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
 
+// ringClient is an implementation of the RingClient interface that uses the
+// client.ApplicationQueryClient to get applications delegation information and
+// needed to construct the ring for signing relay requests.
+// It also uses the pubkeyclient.PubKeyClient to get the public keys for the
+// addresses in the ring.
 type ringClient struct {
 	// logger is the logger for the ring cache.
 	logger polylog.Logger
@@ -26,9 +31,8 @@ type ringClient struct {
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
 
-	// accountQuerier is the querier for the account module, and is used to get
-	// the public keys of the application and its delegated gateways.
-	accountQuerier client.AccountQueryClient
+	// pubKeyClient
+	pubKeyClient crypto.PubKeyClient
 }
 
 // NewRingClient returns a new ring client constructed from the given dependencies.
@@ -38,14 +42,17 @@ type ringClient struct {
 // - polylog.Logger
 // - client.ApplicationQueryClient
 // - client.AccountQueryClient
-func NewRingClient(deps depinject.Config) (crypto.RingClient, error) {
+func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
+	rc.pubKeyClient, err = pubkeyclient.NewPubKeyClient(deps)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := depinject.Inject(
 		deps,
 		&rc.logger,
 		&rc.applicationQuerier,
-		&rc.accountQuerier,
 	); err != nil {
 		return nil, err
 	}
@@ -60,14 +67,17 @@ func (rc *ringClient) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
 ) (*ring.Ring, error) {
-	points, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
+	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
 	if err != nil {
 		return nil, err
 	}
-	// Cache the ring's points for future use
-	rc.logger.Debug().
-		Str("app_address", appAddress).
-		Msg("updating ring ringsByAddr for app")
+	// Get the points on the secp256k1 curve for the public keys in the ring.
+	points, err := pointsFromPublicKeys(pubKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the ring the constructed from the public key points on the secp256k1 curve.
 	return newRingFromPoints(points)
 }
 
@@ -77,43 +87,45 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
 ) error {
+	if relayRequest.GetMeta() == nil {
+		return ErrRingClientInvalidRelayRequest.Wrap("missing meta from relay request")
+	}
+
+	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
+	if err := sessionHeader.ValidateBasic(); err != nil {
+		return ErrRingClientInvalidRelayRequest.Wrapf("invalid session header: %q", err)
+	}
+
 	rc.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          relayRequest.Meta.SessionHeader.SessionId,
-			"application_address": relayRequest.Meta.SessionHeader.ApplicationAddress,
-			"service_id":          relayRequest.Meta.SessionHeader.Service.Id,
+			"session_id":          sessionHeader.GetSessionId(),
+			"application_address": sessionHeader.GetApplicationAddress(),
+			"service_id":          sessionHeader.GetService().GetId(),
 		}).
 		Msg("verifying relay request signature")
 
 	// Extract the relay request's ring signature
-	if relayRequest.Meta == nil {
-		return ErrRingClientEmptyRelayRequestSignature.Wrapf(
-			"request payload: %s", relayRequest.Payload,
-		)
+	if relayRequest.GetMeta().GetSignature() == nil {
+		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
-
-	signature := relayRequest.Meta.Signature
-	if signature == nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf(
-			"missing signature from relay request: %v", relayRequest,
-		)
-	}
+	signature := relayRequest.GetMeta().GetSignature()
 
 	ringSig := new(ring.RingSig)
+
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
-			"error deserializing ring signature: %v", err,
+			"error deserializing ring signature: %s", err,
 		)
 	}
 
-	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
+	if sessionHeader.GetApplicationAddress() == "" {
 		return ErrRingClientInvalidRelayRequest.Wrap(
 			"missing application address from relay request",
 		)
 	}
 
 	// Get the ring for the application address of the relay request
-	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
+	appAddress := sessionHeader.GetApplicationAddress()
 	appRing, err := rc.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
@@ -148,7 +160,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 func (rc *ringClient) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
-) ([]ringtypes.Point, error) {
+) ([]cryptotypes.PubKey, error) {
 	// Get the application's on chain state.
 	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
 	if err != nil {
@@ -171,35 +183,27 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 		ringAddresses = append(ringAddresses, app.DelegateeGatewayAddresses...)
 	}
 
-	// Get the points on the secp256k1 curve for the addresses.
-	points, err := rc.addressesToPoints(ctx, ringAddresses)
-	if err != nil {
-		return nil, err
-	}
-
-	// Return the public key points on the secp256k1 curve.
-	return points, nil
-}
-
-// addressesToPoints converts a slice of addresses to a slice of points on the
-// secp256k1 curve, by querying the account module for the public key for each
-// address and converting them to the corresponding points on the secp256k1 curve
-func (rc *ringClient) addressesToPoints(
-	ctx context.Context,
-	addresses []string,
-) ([]ringtypes.Point, error) {
-	publicKeys := make([]cryptotypes.PubKey, len(addresses))
 	rc.logger.Debug().
 		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)` instead of formatting here.
-		Str("addresses", fmt.Sprintf("%v", addresses)).
+		Str("addresses", fmt.Sprintf("%v", ringAddresses)).
 		Msg("converting addresses to points")
+
+	return rc.addressesToPubKeys(ctx, ringAddresses)
+}
+
+// addressesToPubKeys uses the public key client to query the account module for
+// the public key corresponding to each address given.
+func (rc *ringClient) addressesToPubKeys(
+	ctx context.Context,
+	addresses []string,
+) ([]cryptotypes.PubKey, error) {
+	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
-		acc, err := rc.accountQuerier.GetAccount(ctx, addr)
+		acc, err := rc.pubKeyClient.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err
 		}
-		publicKeys[i] = acc.GetPubKey()
+		pubKeys[i] = acc
 	}
-
-	return pointsFromPublicKeys(publicKeys...)
+	return pubKeys, nil
 }

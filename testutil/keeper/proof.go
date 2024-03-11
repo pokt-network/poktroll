@@ -79,7 +79,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	mockAppKeeper := mocks.NewMockApplicationKeeper(ctrl)
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 
-	k, err := keeper.NewKeeper(
+	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
 		log.NewNopLogger(),
@@ -88,7 +88,6 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 		mockAppKeeper,
 		mockAccountKeeper,
 	)
-	require.NoError(t, err)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
