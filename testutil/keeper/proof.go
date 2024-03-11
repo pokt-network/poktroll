@@ -186,7 +186,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModule
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
 	// Construct a real proof keeper so that claims & proofs can be created.
-	proofKeeper, err := keeper.NewKeeper(
+	proofKeeper := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[types.StoreKey]),
 		log.NewNopLogger(),
@@ -195,7 +195,6 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModule
 		appKeeper,
 		accountKeeper,
 	)
-	require.NoError(t, err)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
 	keepers := ProofModuleKeepers{
