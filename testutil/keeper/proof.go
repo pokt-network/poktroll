@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/testutil/integration"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,14 +39,31 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-type ProofKeeperWithDeps struct {
-	ProofKeeper       *keeper.Keeper
-	SessionKeeper     prooftypes.SessionKeeper
-	SupplierKeeper    prooftypes.SupplierKeeper
-	ApplicationKeeper prooftypes.ApplicationKeeper
+// ProofModuleKeepers is an aggregation of the proof keeper all its dependency
+// keepers,and the codec that they share. Each keeper is embedded such that the
+// ProofModuleKeepers implements all the interfaces of the keepers.
+// To call a method which is common to multiple keepers (e.g. `#SetParams()`),
+// the field corresponding to the desired keeper on which to call the method
+// MUST be specified (e.g. `keepers.AccountKeeper#SetParams()`).
+type ProofModuleKeepers struct {
+	*keeper.Keeper
+	prooftypes.SessionKeeper
+	prooftypes.SupplierKeeper
+	prooftypes.ApplicationKeeper
+	prooftypes.AccountKeeper
+
+	Codec *codec.ProtoCodec
 }
 
+// ProofKeepersOpt is a function which receives and potentailly modifies the context
+// and proof keepers during construction of the aggregation.
+type ProofKeepersOpt func(context.Context, *ProofModuleKeepers) context.Context
+
+// ProofKeeper is a helper function to create a proof keeper and a context. It uses
+// mocked dependencies only.
 func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+	t.Helper()
+
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 	db := dbm.NewMemDB()
 	stateStore := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
@@ -77,7 +95,12 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	return k, ctx
 }
 
-func NewProofKeeperWithDeps(t testing.TB) (ProofKeeperWithDeps, context.Context) {
+// NewProofModuleKeepers is a helper function to create a proof keeper and a context. It uses
+// real dependencies for all keepers except the bank keeper, which is mocked as it's not used
+// directly by the proof keeper or its dependencies.
+//
+// TODO_CONSIDERATION: can we remove the bank keeper as a dependency of the proof keeper?
+func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModuleKeepers, ctx context.Context) {
 	t.Helper()
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
@@ -87,19 +110,19 @@ func NewProofKeeperWithDeps(t testing.TB) (ProofKeeperWithDeps, context.Context)
 		suppliertypes.StoreKey,
 		apptypes.StoreKey,
 		gatewaytypes.StoreKey,
+		authtypes.StoreKey,
 	)
 
 	// Construct a multistore & mount store keys for each keeper that will interact with the state store.
 	stateStore := integration.CreateMultiStore(keys, log.NewNopLogger())
 
 	logger := log.NewTestLogger(t)
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
-
-	// Set block height to 1 so there is a valid session on-chain.
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	ctx = sdkCtx.WithBlockHeight(1)
+	ctx = sdk.NewContext(stateStore, cmtproto.Header{}, false, logger)
 
 	registry := codectypes.NewInterfaceRegistry()
+	authtypes.RegisterInterfaces(registry)
+	cryptocodec.RegisterInterfaces(registry)
+
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
 
@@ -163,6 +186,7 @@ func NewProofKeeperWithDeps(t testing.TB) (ProofKeeperWithDeps, context.Context)
 	)
 	require.NoError(t, sessionKeeper.SetParams(ctx, sessiontypes.DefaultParams()))
 
+	// Construct a real proof keeper so that claims & proofs can be created.
 	proofKeeper, err := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[types.StoreKey]),
@@ -175,12 +199,44 @@ func NewProofKeeperWithDeps(t testing.TB) (ProofKeeperWithDeps, context.Context)
 	require.NoError(t, err)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
-	keeperWithDeps := ProofKeeperWithDeps{
-		ProofKeeper:       &proofKeeper,
+	keepers := ProofModuleKeepers{
+		Keeper:            &proofKeeper,
 		SessionKeeper:     &sessionKeeper,
 		SupplierKeeper:    &supplierKeeper,
 		ApplicationKeeper: &appKeeper,
+		AccountKeeper:     &accountKeeper,
+
+		Codec: cdc,
 	}
 
-	return keeperWithDeps, ctx
+	// Apply any options to update the keepers or context prior to returning them.
+	for _, opt := range opts {
+		ctx = opt(ctx, &keepers)
+	}
+
+	return keepers, ctx
+}
+
+// WithBlockHash sets the initial block hash for the context and returns the updated context.
+func WithBlockHash(hash []byte) ProofKeepersOpt {
+	return func(ctx context.Context, _ *ProofModuleKeepers) context.Context {
+		return SetBlockHash(ctx, hash)
+	}
+}
+
+// SetBlockHash updates the block hash for the given context and returns the updated context.
+func SetBlockHash(ctx context.Context, hash []byte) context.Context {
+	return sdk.UnwrapSDKContext(ctx).WithHeaderHash(hash)
+}
+
+// WithBlockHeight sets the initial block height for the context and returns the updated context.
+func WithBlockHeight(height int64) ProofKeepersOpt {
+	return func(ctx context.Context, _ *ProofModuleKeepers) context.Context {
+		return SetBlockHeight(ctx, height)
+	}
+}
+
+// SetBlockHeight updates the block height for the given context and returns the updated context.
+func SetBlockHeight(ctx context.Context, height int64) context.Context {
+	return sdk.UnwrapSDKContext(ctx).WithBlockHeight(height)
 }
