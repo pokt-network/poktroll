@@ -37,7 +37,7 @@ Select one or more:
 - [ ] **Unit Tests**: `make go_develop_and_test`
 - [ ] **LocalNet E2E Tests**: `make test_e2e`
 - [ ] **DevNet E2E Tests**: Add the `devnet-test-e2e` label to the PR. **THIS IS VERY EXPENSIVE**, so only do it after all the reviews are complete.
-- [ ] **make docusaurus_start
+- [ ] **Documentation changes**: `make docusaurus_start`
 
 ## Sanity Checklist
 
