@@ -17,9 +17,6 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: relayMinDifficultyBits should be a governance-based parameter
-	relayMinDifficultyBits = 0
-
 	// sumSize is the size of the sum of the relay request and response
 	// in bytes. This is used to extract the relay request and response
 	// from the closest merkle proof.
@@ -136,7 +133,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Verify the relay's difficulty.
-	if err := validateMiningDifficulty(relayBz); err != nil {
+	params := k.GetParams(ctx)
+	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -305,7 +303,7 @@ func verifyClosestProof(
 // difficulty.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared function
 // that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte) error {
+func validateMiningDifficulty(relayBz []byte, minDifficultyBits uint64) error {
 	hasher := sha256.New()
 	hasher.Write(relayBz)
 	realyHash := hasher.Sum(nil)
@@ -318,11 +316,11 @@ func validateMiningDifficulty(relayBz []byte) error {
 		)
 	}
 
-	if difficultyBits < relayMinDifficultyBits {
+	if uint64(difficultyBits) < minDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay difficulty %d is less than the required difficulty %d",
+			"relay difficulty %d is less than the minimum difficulty %d",
 			difficultyBits,
-			relayMinDifficultyBits,
+			minDifficultyBits,
 		)
 	}
 
