@@ -77,9 +77,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
 	if err := sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
-		return nil, types.ErrProofInvalidProof.Wrapf(
-			"failed to unmarshal closest merkle proof: %s",
-			err,
+		return nil, status.Error(codes.InvalidArgument,
+			types.ErrProofInvalidProof.Wrapf(
+				"failed to unmarshal closest merkle proof: %s",
+				err,
+			).Error(),
 		)
 	}
 
@@ -88,9 +90,12 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	relayBz := closestValueHash[:len(closestValueHash)-sumSize]
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
-		return nil, types.ErrProofInvalidRelay.Wrapf(
-			"failed to unmarshal relay: %s",
-			err,
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrProofInvalidRelay.Wrapf(
+				"failed to unmarshal relay: %s",
+				err,
+			).Error(),
 		)
 	}
 
@@ -239,7 +244,7 @@ func compareSessionHeaders(
 ) error {
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders application addresses mismatch expect: %q, got: %q",
+			"session headers application addresses mismatch; expect: %q, got: %q",
 			expectedSessionHeader.GetApplicationAddress(),
 			sessionHeader.GetApplicationAddress(),
 		)
@@ -247,7 +252,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service IDs mismatch expect: %q, got: %q",
+			"session headers service IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
 		)
@@ -255,7 +260,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetSessionStartBlockHeight() != expectedSessionHeader.GetSessionStartBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session start heights mismatch expect: %d, got: %d",
+			"session headers session start heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionStartBlockHeight(),
 			sessionHeader.GetSessionStartBlockHeight(),
 		)
@@ -263,7 +268,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetSessionEndBlockHeight() != expectedSessionHeader.GetSessionEndBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session end heights mismatch expect: %d, got: %d",
+			"session headers session end heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionEndBlockHeight(),
 			sessionHeader.GetSessionEndBlockHeight(),
 		)
@@ -271,7 +276,7 @@ func compareSessionHeaders(
 
 	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session IDs mismatch expect: %q, got: %q",
+			"session headers session IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
