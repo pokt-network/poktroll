@@ -191,7 +191,7 @@ A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `o
 If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
 transaction will be rejected.
 
-You can find the definition for the [SubmitProof Transaction here](../../../proto/poktroll/supplier/tx.proto).
+You can find the definition for the [SubmitProof Transaction here](../../../proto/poktroll/proof/tx.proto).
 
 ### SubmitProof Validation
 

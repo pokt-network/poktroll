@@ -12,13 +12,12 @@ sidebar_position: 6
 ## Overview
 
 An `AppGate Server` is responsible for relaying requests between a client dApp
-(e.g., mobile app, web app, etc.) and the [Suppliers](./supplier.md) on Pocket
+(e.g. mobile app, web app, etc...) and the [Supplier](./supplier.md)s on Pocket
 Network, handling all intermediary business logic.
 
 A [Gateway](./gateway.md) operator or a sovereign [Application](./application.md)
 interested in accessing Pocket Network directly would need to run an
-`AppGate Server` or custom software that implements the same functionality.
-[POKTRollSDK](../packages/sdk.md) could be leveraged or referenced to build such software.
+`AppGate Server` or custom software that implements the same functionality.[POKTRollSDK](../packages/sdk.md) could be leverage or referenced to build such software.
 
 ## Configuration
 
