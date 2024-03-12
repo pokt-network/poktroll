@@ -242,9 +242,8 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@echo "Initializing chain..."
 	@set -e ;\
 	ignite chain init --skip-proto ;\
-	mkdir -p $(POKTROLLD_HOME)/config/ ;\
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp -r ${HOME}/.poktroll/config/ $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/config/ $(POKTROLLD_HOME)/ ;\
 
 .PHONY: send_relay
 send_relay:
