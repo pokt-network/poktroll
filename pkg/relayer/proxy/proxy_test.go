@@ -419,7 +419,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithMissingSessionHeaderApplicationAddress,
 
 			expectedErrCode: -32000,
-			expectedErrMsg:  "missing application address from relay request",
+			expectedErrMsg:  "invalid session header: invalid application address",
 		},
 		{
 			desc: "Non staked application address",
