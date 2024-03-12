@@ -35,6 +35,7 @@ import (
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	supplierkeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -99,7 +100,7 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 // directly by the proof keeper or its dependencies.
 //
 // TODO_CONSIDERATION: can we remove the bank keeper as a dependency of the proof keeper?
-func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModuleKeepers, ctx context.Context) {
+func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModuleKeepers, ctx context.Context) {
 	t.Helper()
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
@@ -197,7 +198,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModule
 	)
 	require.NoError(t, proofKeeper.SetParams(ctx, types.DefaultParams()))
 
-	keepers := ProofModuleKeepers{
+	keepers := &ProofModuleKeepers{
 		Keeper:            &proofKeeper,
 		SessionKeeper:     &sessionKeeper,
 		SupplierKeeper:    &supplierKeeper,
@@ -209,10 +210,54 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModule
 
 	// Apply any options to update the keepers or context prior to returning them.
 	for _, opt := range opts {
-		ctx = opt(ctx, &keepers)
+		ctx = opt(ctx, keepers)
 	}
 
 	return keepers, ctx
+}
+
+func (keepers *ProofModuleKeepers) AddSessionActors(
+	ctx context.Context,
+	t *testing.T,
+	supplierAddr string,
+	appAddr string,
+	service *sharedtypes.Service,
+) {
+	t.Helper()
+
+	keepers.SetSupplier(ctx, sharedtypes.Supplier{
+		Address: supplierAddr,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{Service: service},
+		},
+	})
+
+	keepers.SetApplication(ctx, apptypes.Application{
+		Address: appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{Service: service},
+		},
+	})
+}
+
+func (keepers *ProofModuleKeepers) GetSessionHeader(
+	ctx context.Context,
+	t *testing.T,
+	appAddr string,
+	service *sharedtypes.Service,
+	blockHeight int64,
+) *sessiontypes.SessionHeader {
+	sessionRes, err := keepers.GetSession(
+		ctx,
+		&sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			Service:            service,
+			BlockHeight:        blockHeight,
+		},
+	)
+	require.NoError(t, err)
+
+	return sessionRes.GetSession().GetHeader()
 }
 
 // WithBlockHash sets the initial block hash for the context and returns the updated context.
