@@ -27,6 +27,8 @@ func TestBlockClient_LastNBlocks(t *testing.T) {
 
 	block := blockClient.LastNBlocks(ctx, 1)
 	require.NotEmpty(t, block)
+	require.NotZero(t, block[0].Height())
+	require.NotZero(t, block[0].Hash())
 }
 
 func TestBlockClient_BlocksObservable(t *testing.T) {

@@ -12,9 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/x/session/types"
 )
 
-// TODO_TECHDEBT(#377): All the tests in this file assume genesis has a block
-// height of 0. Rewrite them in terms of height = 1 genesis.
-
 func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	sessionKeeper, ctx := keepertest.SessionKeeper(t)
 
@@ -30,14 +27,14 @@ func TestSession_HydrateSession_Success_BaseCase(t *testing.T) {
 	require.Equal(t, keepertest.TestApp1Address, sessionHeader.ApplicationAddress)
 	require.Equal(t, keepertest.TestServiceId1, sessionHeader.Service.Id)
 	require.Equal(t, "", sessionHeader.Service.Name)
-	require.Equal(t, int64(8), sessionHeader.SessionStartBlockHeight)
-	require.Equal(t, int64(11), sessionHeader.SessionEndBlockHeight)
-	require.Equal(t, "f621ad93e2d9ebf2e967eb16b8ea2bc470baa1d4e13a82f348f34c6fc93eae7f", sessionHeader.SessionId)
+	require.Equal(t, int64(9), sessionHeader.SessionStartBlockHeight)
+	require.Equal(t, int64(12), sessionHeader.SessionEndBlockHeight)
+	require.Equal(t, "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22", sessionHeader.SessionId)
 
 	// Check the session
 	require.Equal(t, int64(4), session.NumBlocksPerSession)
-	require.Equal(t, "f621ad93e2d9ebf2e967eb16b8ea2bc470baa1d4e13a82f348f34c6fc93eae7f", session.SessionId)
-	require.Equal(t, int64(2), session.SessionNumber)
+	require.Equal(t, "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22", session.SessionId)
+	require.Equal(t, int64(3), session.SessionNumber)
 
 	// Check the application
 	app := session.Application
@@ -73,7 +70,7 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			expectedNumBlocksPerSession: 4,
 			expectedSessionNumber:       0,
 			expectedSessionStartBlock:   0,
-			expectedSessionEndBlock:     3,
+			expectedSessionEndBlock:     0,
 			expectedErr:                 nil,
 		},
 		{
@@ -81,29 +78,29 @@ func TestSession_HydrateSession_Metadata(t *testing.T) {
 			blockHeight: 1,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       0,
-			expectedSessionStartBlock:   0,
-			expectedSessionEndBlock:     3,
+			expectedSessionNumber:       1,
+			expectedSessionStartBlock:   1,
+			expectedSessionEndBlock:     4,
 			expectedErr:                 nil,
 		},
 		{
 			desc:        "blockHeight = sessionHeight",
-			blockHeight: 4,
+			blockHeight: 5,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       1,
-			expectedSessionStartBlock:   4,
-			expectedSessionEndBlock:     7,
+			expectedSessionNumber:       2,
+			expectedSessionStartBlock:   5,
+			expectedSessionEndBlock:     8,
 			expectedErr:                 nil,
 		},
 		{
 			desc:        "blockHeight != sessionHeight",
-			blockHeight: 5,
+			blockHeight: 6,
 
 			expectedNumBlocksPerSession: 4,
-			expectedSessionNumber:       1,
-			expectedSessionStartBlock:   4,
-			expectedSessionEndBlock:     7,
+			expectedSessionNumber:       2,
+			expectedSessionStartBlock:   5,
+			expectedSessionEndBlock:     8,
 			expectedErr:                 nil,
 		},
 		{
@@ -159,8 +156,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 		{
 			desc: "(app1, svc1): sessionId at first session block != sessionId at next session block",
 
-			blockHeight1: 4,
-			blockHeight2: 8,
+			blockHeight1: 5,
+			blockHeight2: 9,
 
 			appAddr1: keepertest.TestApp1Address, // app1
 			appAddr2: keepertest.TestApp1Address, // app1
@@ -168,14 +165,14 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1, // svc1
 			serviceId2: keepertest.TestServiceId1, // svc1
 
-			expectedSessionId1: "8d7919d1addb175425ed99bc897aee7fecd6a184e46a0ce4119b610db9242db5",
-			expectedSessionId2: "f621ad93e2d9ebf2e967eb16b8ea2bc470baa1d4e13a82f348f34c6fc93eae7f",
+			expectedSessionId1: "c8a3d0135e2d0ed3a2d579adcd3b91708e59adf558b7c8bd474473de669cb18a",
+			expectedSessionId2: "20650c94d0bcc4b855654b5533bf880345ae96933c5fa7424ce59c698d208e22",
 		},
 		{
 			desc: "app1: sessionId for svc1 != sessionId for svc12",
 
-			blockHeight1: 4,
-			blockHeight2: 4,
+			blockHeight1: 5,
+			blockHeight2: 5,
 
 			appAddr1: keepertest.TestApp1Address, // app1
 			appAddr2: keepertest.TestApp1Address, // app1
@@ -183,14 +180,14 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId1,  // svc1
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "8d7919d1addb175425ed99bc897aee7fecd6a184e46a0ce4119b610db9242db5",
-			expectedSessionId2: "40d02827f0f3f717caf844cd4cfbe1ebc2f3ada7d4e5974ed6ec795b9a715e07",
+			expectedSessionId1: "c8a3d0135e2d0ed3a2d579adcd3b91708e59adf558b7c8bd474473de669cb18a",
+			expectedSessionId2: "bf37fcbc62fe728f356384e9a765584f1c9d761566b2d46c0f77297675d966c6",
 		},
 		{
 			desc: "svc12: sessionId for app1 != sessionId for app2",
 
-			blockHeight1: 4,
-			blockHeight2: 4,
+			blockHeight1: 5,
+			blockHeight2: 5,
 
 			appAddr1: keepertest.TestApp1Address, // app1
 			appAddr2: keepertest.TestApp2Address, // app2
@@ -198,8 +195,8 @@ func TestSession_HydrateSession_SessionId(t *testing.T) {
 			serviceId1: keepertest.TestServiceId12, // svc12
 			serviceId2: keepertest.TestServiceId12, // svc12
 
-			expectedSessionId1: "40d02827f0f3f717caf844cd4cfbe1ebc2f3ada7d4e5974ed6ec795b9a715e07",
-			expectedSessionId2: "5c338ae8bf5138b7ca9a0ca124942984734531fb30f1670da772ef3e635939f6",
+			expectedSessionId1: "bf37fcbc62fe728f356384e9a765584f1c9d761566b2d46c0f77297675d966c6",
+			expectedSessionId2: "8806550a46a16fcb6bc0a4bd0803081a2478d25868057bcf86204c8aaefb28ac",
 		},
 	}
 

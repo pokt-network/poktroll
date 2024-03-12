@@ -29,7 +29,7 @@ slug: /
 
 # poktroll <!-- omit in toc -->
 
-**poktroll** is a rollup built using [Rollkit](https://rollkit.dev/), [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
+**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
 
 This R&D effort is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE Inc.](https://grove.city/). We have documented our research journey [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
 

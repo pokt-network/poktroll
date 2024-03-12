@@ -9,13 +9,12 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	"github.com/cometbft/cometbft/libs/json"
-	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
-	comettypes "github.com/cometbft/cometbft/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
@@ -43,6 +42,11 @@ const (
 	preExistingProofsKey = "preExistingProofsKey"
 )
 
+// TODO_TECHDEBT: Evaluate if/where/how this function should be reused in other tests
+func (s *suite) TheUserShouldWaitForTheMessageToBeSubmited(module, message string) {
+	s.waitForMessageAction(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+}
+
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
 	s.waitForMessageAction("/poktroll.proof.MsgCreateClaim")
 }
@@ -62,7 +66,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
 	require.True(s, ok, "preExistingClaimsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted
 	require.Greater(s, len(allClaimsRes.Claims), len(preExistingClaims), "number of claims must have increased")
@@ -101,28 +105,11 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	msgSenderQuery := fmt.Sprintf(txSenderEventSubscriptionQueryFmt, accNameToAddrMap[supplierName])
 
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	eventsReplayClient, err := events.NewEventsReplayClient[*comettypes.EventDataTx](
+	eventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
 		ctx,
 		deps,
 		msgSenderQuery,
-		func(eventBz []byte) (*comettypes.EventDataTx, error) {
-			// Try to deserialize the provided bytes into an RPCResponse.
-			rpcResult := &rpctypes.RPCResponse{}
-			if err := json.Unmarshal(eventBz, rpcResult); err != nil {
-				return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
-			}
-
-			if string(rpcResult.Result) == "{}" {
-				return nil, nil
-			}
-
-			// Unmarshal event data into an comettype EventDataTx object.
-			txResult := &comettypes.EventDataTx{}
-			err = json.Unmarshal(rpcResult.Result, txResult)
-			require.NoError(s, err)
-
-			return txResult, nil
-		},
+		tx.UnmarshalTxResult,
 		testEventsReplayClientBufferSize,
 	)
 	require.NoError(s, err)
@@ -157,7 +144,7 @@ func (s *suite) TheProofSubmittedBySupplierForServiceForApplicationShouldBePersi
 	preExistingProofs, ok := s.scenarioState[preExistingProofsKey].([]prooftypes.Proof)
 	require.True(s, ok, "preExistingProofsKey not found in scenarioState")
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
-	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet sequencer, along with the small number
+	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
 	// of blocks per session, multiple proofs may be created throughout the duration of the test. Until
 	// these values are appropriately adjusted, we assert on an increase in proofs rather than +1.
 	require.Greater(s, len(allProofsRes.Proofs), len(preExistingProofs), "number of proofs must have increased")
@@ -196,21 +183,20 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForMessageAction(action string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*comettypes.EventDataTx])
+	eventsReplayClient, ok := s.scenarioState[eventsReplayClientKey].(client.EventsReplayClient[*abci.TxResult])
 	require.True(s, ok, "eventsReplayClientKey not found in scenarioState")
 	require.NotNil(s, eventsReplayClient)
-
 	// For each observed event, **asynchronously** check if it contains the given action.
-	channel.ForEach[*comettypes.EventDataTx](
+	channel.ForEach[*abci.TxResult](
 		ctx, eventsReplayClient.EventsSequence(ctx),
-		func(_ context.Context, txEvent *comettypes.EventDataTx) {
-			if txEvent == nil {
+		func(_ context.Context, txResult *abci.TxResult) {
+			if txResult == nil {
 				return
 			}
 
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
-			for _, event := range txEvent.Result.Events {
+			for _, event := range txResult.Result.Events {
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
 						if attribute.Value == action {

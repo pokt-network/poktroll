@@ -20,7 +20,7 @@ import (
 )
 
 // NewLocalnetClient creates and returns a new events query client that's configured
-// for use with the localnet sequencer. Any options provided are applied to the client.
+// for use with the LocalNet validator. Any options provided are applied to the client.
 func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
