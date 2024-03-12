@@ -9,7 +9,7 @@ import (
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	ring "github.com/noot/ring-go"
+	"github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
@@ -194,8 +194,7 @@ func (rc *ringCache) getRingForAppAddress(
 	return newRingFromPoints(points)
 }
 
-// newRingFromPoints creates a new ring from a list of points (where each point
-// represents a single public key) on the secp256k1 curve.
+// newRingFromPoints creates a new ring from points on the secp256k1 curve
 func newRingFromPoints(points []ringtypes.Point) (*ring.Ring, error) {
 	return ring.NewFixedKeyRingFromPublicKeys(ring_secp256k1.NewCurve(), points)
 }
@@ -252,12 +251,10 @@ func (rc *ringCache) addressesToPoints(
 ) ([]ringtypes.Point, error) {
 	curve := ring_secp256k1.NewCurve()
 	points := make([]ringtypes.Point, len(addresses))
-
 	rc.logger.Debug().
 		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)` instead of formatting here.
 		Str("addresses", fmt.Sprintf("%v", addresses)).
 		Msg("converting addresses to points")
-
 	for i, addr := range addresses {
 		// Retrieve the account from the auth module
 		acc, err := rc.accountQuerier.GetAccount(ctx, addr)
