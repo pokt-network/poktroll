@@ -10,23 +10,14 @@
 ## Summary
 
 <!-- README: DELETE THIS COMMENT BLOCK after
-      - Provide a quick summary of the changes yourself
-      - Let reviewpad summarize your PR under AI summary
-      - You can leave a `/reviewpad summarize` comment at any time to trigger it manually.
+      - Providing a quick summary of the changes yourself
 -->
-
-### Human Summary
-
-<!-- README: delete this section if your PR is very large --> 
-### AI Summary
-
-reviewpad:summary
 
 ## Issue
 
 <!-- README: DELETE THIS COMMENT BLOCK after:
      - Explain the reasoning for the PR in 1-2 sentences. Adding a screenshot is fair game.
-     - If applicable: specifying the ticket number below if there is a relevant issue. Keep the `-` so the full issue is referenced.
+     - If applicable: specify the ticket number below if there is a relevant issue; _keep the `-` so the full issue is referenced._
 -->
 
 - #{ISSUE_NUMBER}
@@ -43,12 +34,15 @@ Select one or more:
 
 ## Testing
 
-- [ ] **Run all unit tests**: `make go_develop_and_test`
-- [ ] **Run E2E tests locally**: `make test_e2e`
-- [ ] **Run E2E tests on DevNet**: Add the `devnet-test-e2e` label to the PR. This is VERY expensive, only do it after all the reviews are complete.
+- [ ] **Unit Tests**: `make go_develop_and_test`
+- [ ] **LocalNet E2E Tests**: `make test_e2e`
+- [ ] **DevNet E2E Tests**: Add the `devnet-test-e2e` label to the PR. **THIS IS VERY EXPENSIVE**, so only do it after all the reviews are complete.
+- [ ] **make docusaurus_start
 
 ## Sanity Checklist
 
 - [ ] I have tested my changes using the available tooling
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, updated documentation and left TODOs throughout the codebase
+- [ ] I have commented my code
+- [ ] I have performed a self-review of my own code; both comments & source code
+- [ ] I create and referenced any new tickets, if applicable
+- [ ] I have left TODOs throughout the codebase, if applicable
