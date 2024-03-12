@@ -46,6 +46,7 @@ type SupplierClient interface {
 	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
 	// for the same session. The proof is validated on-chain as part of the pocket
 	// protocol.
+	// TODO_IMPROVE(@h5law): Use a SparseCompactClosestProof here instead.
 	SubmitProof(
 		ctx context.Context,
 		sessionHeader sessiontypes.SessionHeader,

@@ -18,6 +18,13 @@ func MustCountDifficultyBits(bz []byte) int {
 
 // CountDifficultyBits returns the number of leading zero bits in the given byte
 // slice. It returns an error if the byte slice is all zero bits.
+// TODO_IMPROVE(@h5law): Remove the forloop logic and replace with a simplified
+// single method that accounts for the fact that paths are **always** 32 bytes.
+//
+//	if (lenBz) != 32 {
+//	    return 0, ErrDifficulty.Wrapf("invalid byte length; got %d, want 32")
+//	}
+//	return bits.LeadingZeros64(binary.LittleEndian.Uint64(bz)), nil
 func CountDifficultyBits(bz []byte) (int, error) {
 	bzLen := len(bz)
 

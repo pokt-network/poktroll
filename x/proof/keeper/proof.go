@@ -15,6 +15,7 @@ import (
 func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	logger := k.Logger().With("method", "UpsertProof")
 
+	// TODO_IMPROVE(@h5law): Use the Marshal function of the SparseCompactClosestProof here.
 	proofBz := k.cdc.MustMarshal(&proof)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
@@ -23,7 +24,9 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	logger.Info(fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey))
+	logger.Info(
+		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey),
+	)
 
 	// Update the address index: supplierAddress -> [ProofPrimaryKey]
 	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierAddressPrefix))
@@ -55,7 +58,14 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 	primaryKey := types.ProofPrimaryKey(sessionId, supplierAddr)
 	foundProof, isProofFound := k.getProofByPrimaryKey(ctx, primaryKey)
 	if !isProofFound {
-		logger.Error(fmt.Sprintf("trying to delete non-existent proof with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
+		logger.Error(
+			fmt.Sprintf(
+				"trying to delete non-existent proof with primary key %s for supplier %s and session %s",
+				primaryKey,
+				supplierAddr,
+				sessionId,
+			),
+		)
 		return
 	}
 
@@ -72,7 +82,14 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 	supplierAddrStore.Delete(supplierAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
-	logger.Info(fmt.Sprintf("deleted proof with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
+	logger.Info(
+		fmt.Sprintf(
+			"deleted proof with primary key %s for supplier %s and session %s",
+			primaryKey,
+			supplierAddr,
+			sessionId,
+		),
+	)
 }
 
 // GetAllProofs returns all proof
