@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	sdkerrors "cosmossdk.io/errors"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -177,8 +176,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	if relayRequest.Meta == nil {
-		err = sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
+		err = ErrRelayerProxyInvalidRelayRequest.Wrapf(
 			"missing meta from relay request: %v", relayRequest,
 		)
 		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
