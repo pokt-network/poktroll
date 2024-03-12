@@ -3,7 +3,6 @@ package proxy
 import (
 	"context"
 
-	sdkerrors "cosmossdk.io/errors"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
 	ring "github.com/noot/ring-go"
 
@@ -34,23 +33,20 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	}
 	signature := relayRequest.Meta.Signature
 	if signature == nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
+		return ErrRelayerProxyInvalidRelayRequest.Wrapf(
 			"missing signature from relay request: %v", relayRequest,
 		)
 	}
 
 	ringSig := new(ring.RingSig)
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
+		return ErrRelayerProxyInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %v", err,
 		)
 	}
 
 	if relayRequest.Meta.SessionHeader.ApplicationAddress == "" {
-		return sdkerrors.Wrap(
-			ErrRelayerProxyInvalidRelayRequest,
+		return ErrRelayerProxyInvalidRelayRequest.Wrap(
 			"missing application address from relay request",
 		)
 	}
@@ -59,16 +55,14 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	appAddress := relayRequest.Meta.SessionHeader.ApplicationAddress
 	appRing, err := rp.ringCache.GetRingForAddress(ctx, appAddress)
 	if err != nil {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
+		return ErrRelayerProxyInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
 		)
 	}
 
 	// verify the ring signature against the ring
 	if !ringSig.Ring().Equals(appRing) {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
+		return ErrRelayerProxyInvalidRelayRequestSignature.Wrapf(
 			"ring signature does not match ring for application address %s", appAddress,
 		)
 	}
@@ -81,8 +75,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// verify the relay request's signature
 	if valid := ringSig.Verify(requestSignableBz); !valid {
-		return sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequestSignature,
+		return ErrRelayerProxyInvalidRelayRequestSignature.Wrapf(
 			"invalid ring signature",
 		)
 	}
@@ -107,7 +100,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		service.Id,
 		sessionBlockHeight,
 	)
-
 	if err != nil {
 		return err
 	}
