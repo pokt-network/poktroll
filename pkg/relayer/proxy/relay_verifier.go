@@ -48,7 +48,6 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		service.Id,
 		sessionBlockHeight,
 	)
-
 	if err != nil {
 		return err
 	}

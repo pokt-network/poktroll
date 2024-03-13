@@ -10,7 +10,6 @@ localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "validator": {"cleanupBeforeEachStart": True},
     "relayminers": {"count": 1},
-    "gateways": {"count": 1},
     "appgateservers": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -98,7 +97,7 @@ k8s_yaml(
     ["localnet/kubernetes/anvil.yaml", "localnet/kubernetes/validator-volume.yaml"]
 )
 
-# Run pocket-specific nodes (validator, relayminers, etc...)
+# Provision validator
 helm_resource(
     "validator",
     chart_prefix + "poktroll-validator",
@@ -111,28 +110,59 @@ helm_resource(
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
 )
-helm_resource(
-    "relayminers",
-    chart_prefix + "relayminer",
-    flags=[
-        "--values=./localnet/kubernetes/values-common.yaml",
-        "--values=./localnet/kubernetes/values-relayminer.yaml",
-        "--set=replicaCount=" + str(localnet_config["relayminers"]["count"]),
-    ],
-    image_deps=["poktrolld"],
-    image_keys=[("image.repository", "image.tag")],
-)
-if localnet_config["appgateservers"]["count"] > 0:
+
+# Provision RelayMiners
+actor_number = 0
+for x in range(localnet_config["relayminers"]["count"]):
+    actor_number = actor_number + 1
     helm_resource(
-        "appgateservers",
+        "relayminer" + str(actor_number),
+        chart_prefix + "relayminer",
+        flags=[
+            "--values=./localnet/kubernetes/values-common.yaml",
+            "--values=./localnet/kubernetes/values-relayminer-common.yaml",
+            "--values=./localnet/kubernetes/values-relayminer-"+str(actor_number)+".yaml",
+        ],
+        image_deps=["poktrolld"],
+        image_keys=[("image.repository", "image.tag")],
+    )
+    k8s_resource(
+        "relayminer"  + str(actor_number),
+        labels=["supplier_nodes"],
+        resource_deps=["validator"],
+        port_forwards=[
+            str(8084+actor_number)+":8545", # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
+            str(40044+actor_number)+":40005", # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
+            # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
+            str(9069+actor_number)+":9090", # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
+        ],
+    )
+
+# Provision AppGate Servers
+actor_number = 0
+for x in range(localnet_config["appgateservers"]["count"]):
+    actor_number = actor_number + 1
+    helm_resource(
+        "appgateserver" + str(actor_number),
         chart_prefix + "appgate-server",
         flags=[
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-appgateserver.yaml",
-            "--set=replicaCount=" + str(localnet_config["appgateservers"]["count"]),
+            "--set=config.signing_key=app" + str(actor_number),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
+    )
+    k8s_resource(
+        "appgateserver" + str(actor_number),
+        labels=["supplier_nodes"],
+        resource_deps=["validator"],
+        port_forwards=[
+            str(42068+actor_number)+":42069", # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
+            str(40054+actor_number)+":40006", # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
+            # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
+            str(9079+actor_number)+":9090", # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
+        ],
     )
 
 k8s_resource(
@@ -140,27 +170,5 @@ k8s_resource(
     labels=["pocket_network"],
     port_forwards=["36657", "36658", "40004"],
 )
-k8s_resource(
-    "relayminers",
-    labels=["supplier_nodes"],
-    resource_deps=["validator"],
-    port_forwards=[
-        "8545",
-        "40005",
-        # Run `curl localhost:9094` to see the current snapshot of relayminer metrics.
-        "9094:9090",
-    ],
-)
-if localnet_config["appgateservers"]["count"] > 0:
-    k8s_resource(
-        "appgateservers",
-        labels=["supplier_nodes"],
-        resource_deps=["validator"],
-        port_forwards=[
-            "42069",
-            "40006",
-            # Run `curl localhost:9093` to see the current snapshot of appgateserver metrics.
-            "9093:9090",
-        ],
-    )
+
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])

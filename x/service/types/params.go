@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 
-	sdkerrors "cosmossdk.io/errors"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
@@ -48,8 +47,7 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 func (p Params) Validate() error {
 	// TODO(@h5law): Look into better validation
 	if p.AddServiceFee < DefaultAddServiceFee {
-		return sdkerrors.Wrapf(
-			ErrServiceInvalidServiceFee,
+		return ErrServiceInvalidServiceFee.Wrapf(
 			"AddServiceFee param %d uPOKT: got %d",
 			DefaultAddServiceFee,
 			p.AddServiceFee,
