@@ -8,10 +8,9 @@ import (
 	"fmt"
 	"math/rand"
 
-	sdkerrors "cosmossdk.io/errors"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "golang.org/x/crypto/sha3"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/poktroll/x/session/types"
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -98,8 +97,7 @@ func (k Keeper) hydrateSessionMetadata(ctx context.Context, sh *sessionHydrator)
 
 	lastCommittedBlockHeight := sdk.UnwrapSDKContext(ctx).BlockHeight()
 	if sh.blockHeight > lastCommittedBlockHeight {
-		return sdkerrors.Wrapf(
-			types.ErrSessionHydration,
+		return types.ErrSessionHydration.Wrapf(
 			"block height %d is ahead of the last committed block height %d",
 			sh.blockHeight, lastCommittedBlockHeight,
 		)
@@ -212,7 +210,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 // TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
 // for it to be language agnostic, a general purpose algorithm MUST be used.
 // pseudoRandomSelection returns a random subset of the candidates.
-func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIDBz []byte) []*sharedtypes.Supplier {
+func pseudoRandomSelection(
+	candidates []*sharedtypes.Supplier,
+	numTarget int,
+	sessionIDBz []byte,
+) []*sharedtypes.Supplier {
 	// Take the first 8 bytes of sessionId to use as the seed
 	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
 	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))
