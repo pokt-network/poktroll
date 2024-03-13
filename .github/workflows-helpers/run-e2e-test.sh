@@ -8,9 +8,10 @@ while :; do
 
     # Check if any pods are running and have the correct image SHA
     READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
-    
+
     # Check for non-running pods with incorrect image SHA to delete
-    INCORRECT_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase != \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
+    NON_RUNNING_PODS=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
+    INCORRECT_POD=$(echo $NON_RUNNING_PODS | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
 
     if [[ -n "${READY_POD}" ]]; then
         echo "Ready pod found: ${READY_POD}"
@@ -19,10 +20,10 @@ while :; do
         echo "Non-ready pod with incorrect image found: ${INCORRECT_POD}. Deleting..."
         kubectl delete pod -n ${NAMESPACE} ${INCORRECT_POD}
         echo "Pod deleted. StatefulSet will recreate the pod."
-        # You may want to wait a bit here before the next iteration
+        # Wait for a short duration to allow the StatefulSet to recreate the pod before checking again
         sleep 10
     else
-        echo "Validator with image ${IMAGE_TAG} is not ready yet and no incorrect pods found. Will retry in 10 seconds..."
+        echo "Validator with image ${IMAGE_TAG} is not ready yet and no incorrect pods found. Will retry checking for ready or incorrect pods in 10 seconds..."
         sleep 10
     fi
 done
@@ -52,6 +53,7 @@ while :; do
 done
 
 echo "Pod is running. Monitoring logs and status..."
+
 # Stream the pod logs in the background
 kubectl logs -f ${POD_NAME} -n ${NAMESPACE} &
 
