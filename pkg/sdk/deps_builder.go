@@ -55,13 +55,13 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(grpcClient))
 
-	// Create and supply the account querier to the pubKey Client
+	// Create the account querier and add it to the pubKey client required dependencies.
 	accountQuerier, err := query.NewAccountQuerier(deps)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and supply the pubKey Client
+	// Create the pubKey client and add it to the required dependencies
 	pubKeyClientDeps := depinject.Supply(accountQuerier)
 	pubKeyClient, err := pubkeyclient.NewPubKeyClient(pubKeyClientDeps)
 	if err != nil {

@@ -30,7 +30,7 @@ type RingCache interface {
 }
 
 // RingClient is used to construct rings by querying the application module for
-// the addresses of the gateways the application is delegated to, and converting
+// the addresses of the gateways the application delegated to, and converting
 // them into their corresponding public key points on the secp256k1 curve.
 type RingClient interface {
 	// GetRingForAddress returns the ring for the given application address if

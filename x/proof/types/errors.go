@@ -22,7 +22,5 @@ var (
 	ErrProofInvalidRelayRequest       = sdkerrors.Register(ModuleName, 1113, "invalid relay request")
 	ErrProofInvalidRelayResponse      = sdkerrors.Register(ModuleName, 1114, "invalid relay response")
 	ErrProofNotSecp256k1Curve         = sdkerrors.Register(ModuleName, 1115, "not secp256k1 curve")
-	//ErrProofUnauthorized = sdkerrors.Register(ModuleName, 1116, "unauthorized supplier signer")
-	//ErrProofInvalidServiceConfig      = sdkerrors.Register(ModuleName, 1117, "invalid service config")
-	//ErrProofInvalidClosestMerkleProof = sdkerrors.Register(ModuleName, 1118, "invalid closest merkle proof")
+	ErrProofApplicationNotFound       = sdkerrors.Register(ModuleName, 1116, "application not found")
 )

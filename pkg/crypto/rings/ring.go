@@ -8,13 +8,13 @@ import (
 	"github.com/noot/ring-go"
 )
 
-// newRingFromPoints creates a new ring from points on the secp256k1 curve
+// newRingFromPoints creates a new ring from points (i.e. public keys) on the secp256k1 curve
 func newRingFromPoints(points []ringtypes.Point) (*ring.Ring, error) {
 	return ring.NewFixedKeyRingFromPublicKeys(ring_secp256k1.NewCurve(), points)
 }
 
 // pointsFromPublicKeys returns the secp256k1 points for the given public keys.
-// It returns an errof if any of the keys is not a secp256k1 key.
+// It returns an error if any of the keys is not on the secp256k1 curve.
 func pointsFromPublicKeys(
 	publicKeys ...cryptotypes.PubKey,
 ) (points []ringtypes.Point, err error) {

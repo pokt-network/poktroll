@@ -9,16 +9,16 @@ import (
 
 var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 
+// AppKeeperQueryClient is a thin wrapper around the ApplicationKeeper and does
+// not rely on the QueryClient contrariwise to the off-chain implementation.
 type AppKeeperQueryClient struct {
 	keeper ApplicationKeeper
 }
 
 // NewAppKeeperQueryClient returns a new ApplicationQueryClient that is backed
 // by an ApplicationKeeper instance.
-// It is used by the RingClient to get the applications that are delegated to
-// by a given application.
-// This implementation is a thin wrapper around the ApplicationKeeper and does
-// not rely on the QueryClient contrariwise to the off-chain implementation.
+// It is used by the RingClient to get the gateway address that an application
+// has delegated its signing power to.
 // It should be injected into the RingClient when initialized from within the a keeper.
 func NewAppKeeperQueryClient(appKeeper ApplicationKeeper) client.ApplicationQueryClient {
 	return &AppKeeperQueryClient{keeper: appKeeper}
@@ -29,8 +29,12 @@ func (appQueryClient *AppKeeperQueryClient) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (apptypes.Application, error) {
-	app, _ := appQueryClient.keeper.GetApplication(ctx, appAddr)
-	return app, nil
+	foundApp, appFound := appQueryClient.keeper.GetApplication(ctx, appAddr)
+	if !appFound {
+		return apptypes.Application{}, ErrProofApplicationNotFound
+	}
+
+	return foundApp, nil
 }
 
 // GetAllApplications returns all the applications in the application store.

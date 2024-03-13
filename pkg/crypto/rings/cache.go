@@ -69,8 +69,8 @@ func NewRingCache(deps depinject.Config) (_ crypto.RingCache, err error) {
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
 	rc.logger.Info().Msg("starting ring ringsByAddr")
-	// Listen for redelegation events and invalidate the cache if contains a ring
-	// corresponding to the redelegation event's address .
+	// Listen for redelegation events and invalidate the cache if it contains an
+	// address corresponding to the redelegation event's.
 	go func() {
 		select {
 		case <-ctx.Done():
@@ -82,7 +82,7 @@ func (rc *ringCache) Start(ctx context.Context) {
 }
 
 // goInvalidateCache listens for redelegation events and invalidates the
-// cache if ring corresponding to the app address in the redelegation event
+// cache if the ring corresponding to the app address in the redelegation event
 // exists in the cache.
 // This function is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
@@ -154,10 +154,10 @@ func (rc *ringCache) GetRingForAddress(
 		// Add the address points to the cache.
 		rc.ringsByAddr[appAddress] = ring
 	} else {
-		// If the ring is in the cache, create it from the points.
+		// Use the ring if it is present in the cache.
 		rc.logger.Debug().
 			Str("app_address", appAddress).
-			Msg("ring ringsByAddr hit; creating from points")
+			Msg("ring ringsByAddr hit; using cached ring")
 	}
 	if err != nil {
 		return nil, err

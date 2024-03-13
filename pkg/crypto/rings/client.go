@@ -19,10 +19,8 @@ import (
 var _ crypto.RingClient = (*ringClient)(nil)
 
 // ringClient is an implementation of the RingClient interface that uses the
-// client.ApplicationQueryClient to get applications delegation information and
+// client.ApplicationQueryClient to get application's delegation information
 // needed to construct the ring for signing relay requests.
-// It also uses the pubkeyclient.PubKeyClient to get the public keys for the
-// addresses in the ring.
 type ringClient struct {
 	// logger is the logger for the ring cache.
 	logger polylog.Logger
@@ -31,7 +29,7 @@ type ringClient struct {
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
 
-	// pubKeyClient
+	// pubKeyClient is used to get the public keys given an address.
 	pubKeyClient crypto.PubKeyClient
 }
 
@@ -104,27 +102,20 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		}).
 		Msg("verifying relay request signature")
 
-	// Extract the relay request's ring signature
+	// Extract the relay request's ring signature.
 	if relayRequest.GetMeta().GetSignature() == nil {
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 	signature := relayRequest.GetMeta().GetSignature()
 
 	ringSig := new(ring.RingSig)
-
 	if err := ringSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"error deserializing ring signature: %s", err,
 		)
 	}
 
-	if sessionHeader.GetApplicationAddress() == "" {
-		return ErrRingClientInvalidRelayRequest.Wrap(
-			"missing application address from relay request",
-		)
-	}
-
-	// Get the ring for the application address of the relay request
+	// Get the ring for the application address of the relay request.
 	appAddress := sessionHeader.GetApplicationAddress()
 	appRing, err := rc.GetRingForAddress(ctx, appAddress)
 	if err != nil {
@@ -133,30 +124,28 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		)
 	}
 
-	// Verify the ring signature against the ring
+	// Verify the ring signature against the app ring.
 	if !ringSig.Ring().Equals(appRing) {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"ring signature does not match ring for application address %s", appAddress,
 		)
 	}
 
-	// Get and hash the signable bytes of the relay request
+	// Get and hash the signable bytes of the relay request.
 	requestSignableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf("error getting signable bytes: %v", err)
 	}
 
-	// Verify the relay request's signature
+	// Verify the relay request's signature.
 	if valid := ringSig.Verify(requestSignableBz); !valid {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf("invalid ring signature")
 	}
 	return nil
 }
 
-// getDelegatedPubKeysForAddress returns the ring used to sign a message for
-// the given application address, by querying the application module for it's
-// delegated pubkeys and converting them to points on the secp256k1 curve in
-// order to create the ring.
+// getDelegatedPubKeysForAddress returns the public keys used to sign a
+// relay request for the given application address.
 func (rc *ringClient) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,

@@ -17,7 +17,9 @@ import (
 )
 
 const (
-	// TODO_TECHDEBT: relayMinDifficultyBits should be a governance-based parameter
+	// relayMinDifficultyBits is the minimum difficulty that a relay must have to be
+	// volume / reward applicable.
+	// TODO_BLOCKER: relayMinDifficultyBits should be a governance-based parameter
 	relayMinDifficultyBits = 0
 
 	// sumSize is the size of the sum of the relay request and response
@@ -28,9 +30,18 @@ const (
 	sumSize = 8
 )
 
+// SMT specification used for the proof verification.
+var spec *smt.TrieSpec
+
+func init() {
+	// Use a no prehash spec that returns a nil value hasher for the proof
+	// verification to avoid hashing the value twice.
+	spec = smt.NoPrehashSpec(sha256.New(), true)
+}
+
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
 	// TODO_BLOCKER: Prevent Proof upserts after the tokenomics module has processes the respective session.
-	logger := k.Logger().With("method", "SubmitProof")
+	logger := k.Logger().With("TECHDEBTmethod", "SubmitProof")
 	logger.Debug("submitting proof")
 
 	/*
@@ -67,6 +78,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
+	if err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	if _, err := k.queryAndValidateSessionHeader(
@@ -115,13 +131,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
-	if err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
-	}
-
 	// Verify the relay response's signature.
-	if err := relay.GetRes().VerifySignature(supplierPubKey); err != nil {
+	if err := relay.GetRes().VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
@@ -174,8 +185,9 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
-// queryAndValidateClaimForProof ensures that  a claim corresponding to the given proof's
-// session exists & has a matching supplier address and session header.
+// queryAndValidateClaimForProof ensures that a claim corresponding to the given
+// proof's session exists & has a matching supplier address and session header,
+// it then returns the corresponding claim if the validation is successful.
 func (k msgServer) queryAndValidateClaimForProof(
 	ctx context.Context,
 	msg *types.MsgSubmitProof,
@@ -235,10 +247,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 }
 
 // compareSessionHeaders compares a session header against an expected session header.
-func compareSessionHeaders(
-	expectedSessionHeader *sessiontypes.SessionHeader,
-	sessionHeader *sessiontypes.SessionHeader,
-) error {
+func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.SessionHeader) error {
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"sessionHeaders application addresses mismatch expect: %q, got: %q",
@@ -252,6 +261,14 @@ func compareSessionHeaders(
 			"sessionHeaders service IDs mismatch expect: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
+		)
+	}
+
+	if sessionHeader.GetService().GetName() != expectedSessionHeader.GetService().GetName() {
+		return types.ErrProofInvalidRelay.Wrapf(
+			"sessionHeaders service names mismatch expect: %q, got: %q",
+			expectedSessionHeader.GetService().GetName(),
+			sessionHeader.GetService().GetName(),
 		)
 	}
 
@@ -287,8 +304,6 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	expectedRootHash []byte,
 ) error {
-	spec := smt.NoPrehashSpec(sha256.New(), true)
-
 	valid, err := smt.VerifyClosestProof(proof, expectedRootHash, spec)
 	if err != nil {
 		return err
@@ -308,9 +323,9 @@ func verifyClosestProof(
 func validateMiningDifficulty(relayBz []byte) error {
 	hasher := sha256.New()
 	hasher.Write(relayBz)
-	realyHash := hasher.Sum(nil)
+	relayHash := hasher.Sum(nil)
 
-	difficultyBits, err := protocol.CountDifficultyBits(realyHash)
+	difficultyBits, err := protocol.CountDifficultyBits(relayHash)
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
@@ -318,6 +333,8 @@ func validateMiningDifficulty(relayBz []byte) error {
 		)
 	}
 
+	// TODO: Devise a test that tries to attack the network and ensure that there
+	// is sufficient telemetry.
 	if difficultyBits < relayMinDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the required difficulty %d",
@@ -337,20 +354,18 @@ func (k msgServer) validateClosestPath(
 ) error {
 	// The RelayMiner has to wait until the createClaimWindowStartHeight and the
 	// submitProofWindowStartHeight are open to respectively create the claim and
-	// submit the proof.
-	// These windows are calculated as SessionEndBlockHeight + GracePeriodBlockCount.
-	// see: relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
-	// The RelayMiner hast to wait this long to ensure that late relays are accepted
-	// and included in the SessionNumber=N tree.
-	// (i.e. relays initiated by Applications/Gateways in SessionNumber=N but
-	// arriving to the RelayMiner in SessionNumber=N + 1)
-	// Otherwise, the RelayMiner would not be able to include the late relays in
-	// the SessionNumber N claim and the proof.
-	// Since smt.ProveClosest is in terms of submitProofWindowStartHeight, this
-	// block's hash needs to be used for validation too.
+	// submit the proof respectively.
+	// These windows are calculated as (SessionEndBlockHeight + GracePeriodBlockCount).
+	// For reference, see relayerSessionsManager.waitForEarliest{CreateClaim,SubmitProof}Height().
+	// The RelayMiner has to wait this long to ensure that late relays (i.e.
+	// submitted during SessionNumber=(N+1) but created during SessionNumber=N) are
+	// still included as part of SessionNumber=N.
+	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
+	// this block's hash needs to be used for validation too.
 	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
-	blockHeight := sessionHeader.GetSessionEndBlockHeight() + sessionkeeper.GetSessionGracePeriodBlockCount()
-	blockHash := k.sessionKeeper.GetBlockHash(ctx, blockHeight)
+	sessionEndWithGracePeriodBlockHeight := sessionHeader.GetSessionEndBlockHeight() +
+		sessionkeeper.GetSessionGracePeriodBlockCount()
+	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndWithGracePeriodBlockHeight)
 
 	if !bytes.Equal(proof.Path, blockHash) {
 		return types.ErrProofInvalidProof.Wrapf(

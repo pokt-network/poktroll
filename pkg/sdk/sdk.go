@@ -61,12 +61,13 @@ type poktrollSDK struct {
 	// It is used to get the current block height to query for the current session.
 	blockClient client.BlockClient
 
-	// pubKeyClient the client used to get the public key given an account address.
-	// TODO_TECHDEBT: Add a size limit to the cache.
+	// pubKeyClient the client used to get the public key for a given account address.
+	// TODO_TECHDEBT: Add a size limit to the cache. Also consider clearing it every
+	// N sessions.
 	pubKeyClient crypto.PubKeyClient
 
 	// supplierPubKeyCache is a cache of the suppliers pubKeys that has been queried.
-	// TODO_TECHDEBT: Add a size limit to the cache.
+	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
 	supplierPubKeyCache map[string]cryptotypes.PubKey
 }
 
@@ -114,10 +115,9 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	return sdk, nil
 }
 
-// getPubKeyFromAddress returns the public key of the given address.
+// getPubKeyFromAddress returns the public key of a supplier given its address.
 // It uses the accountQuerier to get the account if it is not already in the cache.
-// If the account does not have a public key, it returns an error.
-func (sdk *poktrollSDK) getPubKeyFromAddress(
+func (sdk *poktrollSDK) getSupplierPubKeyFromAddress(
 	ctx context.Context,
 	address string,
 ) (cryptotypes.PubKey, error) {

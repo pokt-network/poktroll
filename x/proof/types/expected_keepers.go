@@ -21,12 +21,6 @@ type AccountKeeper interface {
 	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI
 }
 
-// BankKeeper defines the expected interface for the Bank module.
-type BankKeeper interface {
-	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
-	// Methods imported from bank should be defined here
-}
-
 // ApplicationKeeper defines the expected application keeper to retrieve applications
 type ApplicationKeeper interface {
 	GetApplication(ctx context.Context, address string) (app apptypes.Application, found bool)

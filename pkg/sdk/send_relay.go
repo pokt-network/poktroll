@@ -105,17 +105,21 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("%s", err)
 	}
 
+	// relayResponse.ValidateBasic also validates Meta and SessionHeader,
+	// we can safely use the session header.
+	sessionHeader := relayResponse.GetMeta().GetSessionHeader()
+
 	// Get the supplier's public key.
-	supplierPubKey, err := sdk.getPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
+	supplierPubKey, err := sdk.getSupplierPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %s", err)
 	}
 
 	sdk.logger.Debug().
 		Str("supplier", supplierEndpoint.SupplierAddress).
-		Str("application", relayResponse.GetMeta().GetSessionHeader().GetApplicationAddress()).
-		Str("service", relayResponse.GetMeta().GetSessionHeader().GetService().GetId()).
-		Int64("end_height", relayResponse.GetMeta().GetSessionHeader().GetSessionEndBlockHeight()).
+		Str("application", sessionHeader.GetApplicationAddress()).
+		Str("service", sessionHeader.GetService().GetId()).
+		Int64("end_height", sessionHeader.GetSessionEndBlockHeight()).
 		Msg("About to verify relay response signature.")
 
 	// Verify the response signature. We use the supplier address that we got from
@@ -124,7 +128,7 @@ func (sdk *poktrollSDK) SendRelay(
 	// as in some relayer early failures, it may not be signed by the supplier.
 	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
 	// failed responses.
-	if err := relayResponse.VerifySignature(supplierPubKey); err != nil {
+	if err := relayResponse.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
 	}
 

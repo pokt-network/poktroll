@@ -18,17 +18,19 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		return err
 	}
 
+	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
+
 	// Application address is used to verify the relayRequest signature, it is
 	// guaranteed to be present in the relayRequest since the signature has already
 	// been verified.
-	appAddress := relayRequest.GetMeta().GetSessionHeader().GetApplicationAddress()
+	appAddress := sessionHeader.GetApplicationAddress()
 
 	// Query for the current session to check if relayRequest sessionId matches the current session.
 	rp.logger.Debug().
 		Fields(map[string]any{
-			"session_id":          relayRequest.GetMeta().GetSessionHeader().GetSessionId(),
-			"application_address": relayRequest.GetMeta().GetSessionHeader().GetApplicationAddress(),
-			"service_id":          relayRequest.GetMeta().GetSessionHeader().GetService().GetId(),
+			"session_id":          sessionHeader.GetSessionId(),
+			"application_address": sessionHeader.GetApplicationAddress(),
+			"service_id":          sessionHeader.GetService().GetId(),
 		}).
 		Msg("verifying relay request session")
 
@@ -55,7 +57,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 	// we can reduce the session validity check to checking if the retrieved session's sessionId
 	// matches the relayRequest sessionId.
 	// TODO_INVESTIGATE: Revisit the assumptions above at some point in the future, but good enough for now.
-	if session.SessionId != relayRequest.GetMeta().GetSessionHeader().GetSessionId() {
+	if session.SessionId != sessionHeader.GetSessionId() {
 		return ErrRelayerProxyInvalidSession.Wrapf(
 			"session mismatch, expecting: %+v, got: %+v",
 			session.Header,

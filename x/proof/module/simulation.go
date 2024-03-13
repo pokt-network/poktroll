@@ -67,7 +67,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgCreateClaim,
-		proofsimulation.SimulateMsgCreateClaim(am.accountKeeper, am.bankKeeper, am.keeper),
+		proofsimulation.SimulateMsgCreateClaim(am.accountKeeper, am.keeper),
 	))
 
 	var weightMsgSubmitProof int
@@ -78,7 +78,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgSubmitProof,
-		proofsimulation.SimulateMsgSubmitProof(am.accountKeeper, am.bankKeeper, am.keeper),
+		proofsimulation.SimulateMsgSubmitProof(am.accountKeeper, am.keeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -93,7 +93,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgCreateClaim,
 			defaultWeightMsgCreateClaim,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				proofsimulation.SimulateMsgCreateClaim(am.accountKeeper, am.bankKeeper, am.keeper)
+				proofsimulation.SimulateMsgCreateClaim(am.accountKeeper, am.keeper)
 				return nil
 			},
 		),
@@ -101,7 +101,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgSubmitProof,
 			defaultWeightMsgSubmitProof,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				proofsimulation.SimulateMsgSubmitProof(am.accountKeeper, am.bankKeeper, am.keeper)
+				proofsimulation.SimulateMsgSubmitProof(am.accountKeeper, am.keeper)
 				return nil
 			},
 		),

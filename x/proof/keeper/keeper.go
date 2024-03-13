@@ -31,8 +31,9 @@ type (
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
 		accountKeeper     types.AccountKeeper
-		ringClient        crypto.RingClient
-		pubKeyClient      crypto.PubKeyClient
+
+		ringClient   crypto.RingClient
+		pubKeyClient crypto.PubKeyClient
 	}
 )
 

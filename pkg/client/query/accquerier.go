@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
+	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
 
@@ -44,7 +45,7 @@ func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error)
 func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
-) (accounttypes.AccountI, error) {
+) (types.AccountI, error) {
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := aq.accountQuerier.Account(ctx, req)
 	if err != nil {
