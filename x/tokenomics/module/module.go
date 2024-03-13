@@ -93,29 +93,32 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
+	tokenomicsKeeper keeper.Keeper
+	accountKeeper    types.AccountKeeper
+	bankKeeper       types.BankKeeper
+	proofKeeper      types.ProofKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	keeper keeper.Keeper,
+	tokenomicsKeeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
+	proofKeeper types.ProofKeeper,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic: NewAppModuleBasic(cdc),
-		keeper:         keeper,
-		accountKeeper:  accountKeeper,
-		bankKeeper:     bankKeeper,
+		AppModuleBasic:   NewAppModuleBasic(cdc),
+		tokenomicsKeeper: tokenomicsKeeper,
+		accountKeeper:    accountKeeper,
+		bankKeeper:       bankKeeper,
+		proofKeeper:      proofKeeper,
 	}
 }
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.tokenomicsKeeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.tokenomicsKeeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -127,12 +130,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.keeper, genState)
+	InitGenesis(ctx, am.tokenomicsKeeper, genState)
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.keeper)
+	genState := ExportGenesis(ctx, am.tokenomicsKeeper)
 	return cdc.MustMarshalJSON(genState)
 }
 
@@ -149,14 +152,32 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(_ context.Context) error {
-	// Retrieve all the claims incoming
+func (am AppModule) EndBlock(goCtx context.Context) error {
+	logger := am.tokenomicsKeeper.Logger().With("EndBlock", "TokenomicsModuleEndBlock")
 
-	// TODO_BLOCKER: Revisit (per the comment above) as to whether this should be in `EndBlocker` or here.
-	// if err := SettleSessionAccounting(ctx, claim); err != nil {
-	// 	return nil, err
-	// }
-	// logger.Info("settled session accounting")
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	blockHeight := ctx.BlockHeight()
+
+	// TODO_BLOCKER(@Olshansk): Optimize this by indexing claims appropriately
+	// and only retrieving the claims that need to be settled rather than all
+	// of them and iterating through them one by one.
+	claims := am.proofKeeper.GetAllClaims(goCtx)
+	numClaimsSettled := 0
+	for _, claim := range claims {
+		// TODO_IN_THIS_PR: Discuss with @red-0ne if we need to account for
+		// the grace period here
+		if claim.SessionHeader.SessionEndBlockHeight == blockHeight {
+			if err := am.tokenomicsKeeper.SettleSessionAccounting(ctx, &claim); err != nil {
+				logger.Error("error settling session accounting", "error", err, "claim", claim)
+				return err
+			}
+			numClaimsSettled++
+			logger.Info(fmt.Sprintf("settled claim %s at block height %d", claim.SessionHeader.SessionId, blockHeight))
+		}
+	}
+
+	logger.Info(fmt.Sprintf("settled %d claims at block height %d", numClaimsSettled, blockHeight))
+
 	return nil
 }
 
@@ -209,13 +230,13 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,
-		in.ProofKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
 		k,
 		in.AccountKeeper,
 		in.BankKeeper,
+		in.ProofKeeper,
 	)
 
 	return ModuleOutputs{TokenomicsKeeper: k, Module: m}

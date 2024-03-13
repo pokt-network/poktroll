@@ -176,7 +176,7 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	s.validateAmountChange(prevStake, int64(currStake), expectedStakeChange, accName, condition)
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
 	// Get previous balance
 	prev, ok := s.scenarioState[accBalanceKey(accName)]
 	if !ok {

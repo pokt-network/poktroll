@@ -47,5 +47,5 @@ type ApplicationKeeper interface {
 }
 
 type ProofKeeper interface {
-	GetAllClaims(ctx context.Context) (claims []prooftypes.Claim)
+	GetAllClaims(ctx context.Context) []prooftypes.Claim
 }

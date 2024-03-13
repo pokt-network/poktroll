@@ -149,12 +149,18 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(ctx context.Context) error {
-	// Store the block hash at the end of every block, so we can query the block hash
-	// to construct the SessionID.
+// TODO_IN_THIS_PR: How do we unit/integration test this?
+func (am AppModule) EndBlock(goCtx context.Context) error {
+	logger := am.keeper.Logger().With("EndBlock", "SessionModuleEndBlock")
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	blockHeight := ctx.BlockHeight()
+
+	// Store the block hash at the end of every block.
+	// This is necessary to correctly and pseudo-randomly construct a SessionID.
 	// EndBlock is preferred over BeginBlock to avoid wasting resources if the block
 	// does not get committed.
 	am.keeper.StoreBlockHash(ctx)
+	logger.Info(fmt.Sprintf("Stored block hash at height %d", blockHeight))
 	return nil
 }
 

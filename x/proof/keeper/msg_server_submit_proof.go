@@ -44,7 +44,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 		## Relay Mining validation
 		1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
-		2. verify(proof.ValueHash, expectedDiffictulty); governance based
+		2. verify(proof.ValueHash, expectedDifficulty); governance based
 		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
 
@@ -77,12 +77,12 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		ClosestMerkleProof: msg.Proof,
 	}
 
-	claim, err := k.queryAndValidateClaimForProof(ctx, &proof)
+	err := k.queryAndValidateClaimForProof(ctx, &proof)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
-	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %s", claim.SessionHeader.SessionId))
+	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %s", sessionHeader.SessionId))
 
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
@@ -90,27 +90,19 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	logger.Info("upserted the proof")
 
-	logger.
-		With(
-			"session_id", proof.GetSessionHeader().GetSessionId(),
-			"session_end_height", proof.GetSessionHeader().GetSessionEndBlockHeight(),
-			"supplier", proof.GetSupplierAddress(),
-		).
-		Debug("created proof")
-
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
 // queryAndValidateClaimForProof ensures that  a claim corresponding to the given proof's
 // session exists & has a matching supplier address and session header.
-func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *types.Proof) (*types.Claim, error) {
+func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *types.Proof) error {
 	sessionId := proof.GetSessionHeader().GetSessionId()
 	// NB: no need to assert the testSessionId or supplier address as it is retrieved
 	// by respective values of the given proof. I.e., if the claim exists, then these
 	// values are guaranteed to match.
 	foundClaim, found := k.GetClaim(ctx, sessionId, proof.GetSupplierAddress())
 	if !found {
-		return nil, types.ErrProofClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
+		return types.ErrProofClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
 	}
 
 	claimSessionHeader := foundClaim.GetSessionHeader()
@@ -118,7 +110,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure session start heights match.
 	if claimSessionHeader.GetSessionStartBlockHeight() != proofSessionHeader.GetSessionStartBlockHeight() {
-		return nil, types.ErrProofInvalidSessionStartHeight.Wrapf(
+		return types.ErrProofInvalidSessionStartHeight.Wrapf(
 			"claim session start height %d does not match proof session start height %d",
 			claimSessionHeader.GetSessionStartBlockHeight(),
 			proofSessionHeader.GetSessionStartBlockHeight(),
@@ -127,7 +119,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure session end heights match.
 	if claimSessionHeader.GetSessionEndBlockHeight() != proofSessionHeader.GetSessionEndBlockHeight() {
-		return nil, types.ErrProofInvalidSessionEndHeight.Wrapf(
+		return types.ErrProofInvalidSessionEndHeight.Wrapf(
 			"claim session end height %d does not match proof session end height %d",
 			claimSessionHeader.GetSessionEndBlockHeight(),
 			proofSessionHeader.GetSessionEndBlockHeight(),
@@ -136,7 +128,7 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure application addresses match.
 	if claimSessionHeader.GetApplicationAddress() != proofSessionHeader.GetApplicationAddress() {
-		return nil, types.ErrProofInvalidAddress.Wrapf(
+		return types.ErrProofInvalidAddress.Wrapf(
 			"claim application address %q does not match proof application address %q",
 			claimSessionHeader.GetApplicationAddress(),
 			proofSessionHeader.GetApplicationAddress(),
@@ -145,12 +137,12 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 
 	// Ensure service IDs match.
 	if claimSessionHeader.GetService().GetId() != proofSessionHeader.GetService().GetId() {
-		return nil, types.ErrProofInvalidService.Wrapf(
+		return types.ErrProofInvalidService.Wrapf(
 			"claim service ID %q does not match proof service ID %q",
 			claimSessionHeader.GetService().GetId(),
 			proofSessionHeader.GetService().GetId(),
 		)
 	}
 
-	return &foundClaim, nil
+	return nil
 }
