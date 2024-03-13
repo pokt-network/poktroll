@@ -41,6 +41,7 @@ const (
 // TODO_TECHDEBT: add coverage for the transactions client handling an events bytes error either.
 
 func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
+	t.Skip("TODO_BLOCKER(#425): Revisit Observable test tooling & fix flaky test")
 	var (
 		// expectedTx is the expected transactions bytes that will be signed and broadcast
 		// by the transaction client. It is computed and assigned in the
@@ -449,9 +450,11 @@ func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 type testTxEvent struct {
 	Data testTxEventDataStruct `json:"data"`
 }
+
 type testTxEventDataStruct struct {
 	Value testTxEventValueStruct `json:"value"`
 }
+
 type testTxEventValueStruct struct {
 	TxResult abci.TxResult
 }

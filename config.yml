@@ -111,7 +111,7 @@ genesis:
             - endpoints:
                 - configs: []
                   rpc_type: JSON_RPC
-                  url: http://relayminers:8545
+                  url: http://relayminer1:8545
               service:
                 id: anvil
                 name: ""

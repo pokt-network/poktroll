@@ -2,9 +2,8 @@ stake_amount: 1000upokt
 services:
   - service_id: anvil
     endpoints:
-      - url: http://anvil.supplier3:8545
-        rpc_type: json_rpc
-  - service_id: svc1
-    endpoints:
-      - url: http://localhost:8083
+      # The endpoint URL for the Anvil service is provided via the RelayMiner.
+      # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
+      # This setup allows for flexible and dynamic service provisioning within the network.
+      - url: http://relayminer3:8545
         rpc_type: json_rpc
