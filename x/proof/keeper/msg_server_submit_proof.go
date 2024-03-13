@@ -62,7 +62,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		ClosestMerkleProof: msg.Proof,
 	}
 
-	// TODO_IMPROVE(@h5law): Utilise smt.VerifyCompactClosestProof here.
+	// TODO_IMPROVE(@h5law #427): Utilise smt.VerifyCompactClosestProof here to
+	// reduce on-chain storage requirements for proofs.
 	if err := k.queryAndValidateClaimForProof(ctx, &proof); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
