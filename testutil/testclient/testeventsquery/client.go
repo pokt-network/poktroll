@@ -45,7 +45,8 @@ func NewOneTimeEventsQuery(
 	ctrl := gomock.NewController(t)
 
 	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
-	eventsQueryClient.EXPECT().EventsBytes(gomock.Eq(ctx), gomock.Eq(query)).
+	eventsQueryClient.EXPECT().
+		EventsBytes(gomock.Eq(ctx), gomock.Eq(query)).
 		DoAndReturn(func(
 			ctx context.Context,
 			query string,
@@ -54,7 +55,8 @@ func NewOneTimeEventsQuery(
 			eventsBzObservable, *publishCh = channel.NewObservable[either.Bytes]()
 			publishChMu.Unlock()
 			return eventsBzObservable, nil
-		}).Times(1)
+		}).
+		Times(1)
 	return eventsQueryClient
 }
 
@@ -106,7 +108,7 @@ func NewAnyTimesEventsBytesEventsQueryClient(
 		EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.Eq(expectedQuery)).
 		DoAndReturn(
 			func(ctx context.Context, query string) (client.EventsBytesObservable, error) {
-				bytesObsvbl, bytesPublishCh := channel.NewReplayObservable[either.Bytes](ctx, 1)
+				bytesObs, bytesPublishCh := channel.NewReplayObservable[either.Bytes](ctx, 1)
 
 				// Now that the observable is set up, publish the expected event bytes.
 				// Only need to send once because it's a ReplayObservable.
@@ -116,7 +118,7 @@ func NewAnyTimesEventsBytesEventsQueryClient(
 				// necessary but is done to mitigate test flakiness.
 				time.Sleep(10 * time.Millisecond)
 
-				return bytesObsvbl, nil
+				return bytesObs, nil
 			},
 		).
 		AnyTimes()

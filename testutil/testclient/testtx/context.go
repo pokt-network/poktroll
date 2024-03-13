@@ -24,6 +24,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient"
 )
 
+// TODO_IN_THIS_PR: Keep looking at the tests in this file.
+
 // NewLocalnetContext creates and returns a new transaction context configured
 // for use with the LocalNet validator.
 func NewLocalnetContext(t *testing.T) client.TxContext {
@@ -170,9 +172,9 @@ func NewOneTimeErrCheckTxTxContext(
 	return txCtxMock
 }
 
-// NewOneTimeTxTxContext creates a mock transaction context primed to respond with
-// a single successful transaction response.
-func NewOneTimeTxTxContext(
+// NewOneTimeBroadcastTxContext creates a mock transaction context configured to handle
+// exactly one successful BroadcastTx call.
+func NewOneTimeBroadcastTxContext(
 	t *testing.T,
 	keyring cosmoskeyring.Keyring,
 	signingKeyName string,
@@ -191,12 +193,13 @@ func NewOneTimeTxTxContext(
 		DoAndReturn(
 			func(txBytes []byte) (*cosmostypes.TxResponse, error) {
 				var expectedTxHash cometbytes.HexBytes = comettypes.Tx(txBytes).Hash()
+				// require.Equal(t, expectedTxHash.String(), expectedTx.String())
 				return &cosmostypes.TxResponse{
 					Height: 1,
 					TxHash: expectedTxHash.String(),
 				}, nil
-			},
-		).Times(1)
+			}).
+		Times(1)
 
 	return txCtxMock
 }
@@ -215,23 +218,27 @@ func NewBaseTxContext(
 	t.Helper()
 
 	txCtxMock, txCtx := NewAnyTimesTxTxContext(t, keyring)
-	txCtxMock.EXPECT().NewTxBuilder().
+	txCtxMock.EXPECT().
+		NewTxBuilder().
 		DoAndReturn(txCtx.NewTxBuilder).
 		AnyTimes()
-	txCtxMock.EXPECT().SignTx(
-		gomock.Eq(signingKeyName),
-		gomock.AssignableToTypeOf(txCtx.NewTxBuilder()),
-		gomock.Eq(false), gomock.Eq(false),
-	).DoAndReturn(txCtx.SignTx).AnyTimes()
-	txCtxMock.EXPECT().EncodeTx(gomock.Any()).
+	txCtxMock.EXPECT().
+		SignTx(
+			gomock.Eq(signingKeyName),
+			gomock.AssignableToTypeOf(txCtx.NewTxBuilder()),
+			gomock.Eq(false), gomock.Eq(false)).
+		DoAndReturn(txCtx.SignTx).
+		AnyTimes()
+	txCtxMock.EXPECT().
+		EncodeTx(gomock.Any()).
 		DoAndReturn(
 			func(txBuilder cosmosclient.TxBuilder) (_ []byte, err error) {
 				// intercept cosmosTxContext#EncodeTx to get the encoded tx cometbytes
 				*expectedTx, err = txCtx.EncodeTx(txBuilder)
 				require.NoError(t, err)
 				return expectedTx.Bytes(), nil
-			},
-		).AnyTimes()
+			}).
+		AnyTimes()
 
 	return txCtxMock
 }

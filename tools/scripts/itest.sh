@@ -31,7 +31,11 @@ itest() {
         echo "Iteration $i of $loop_limit..."
 
         # Running the go test in a subshell in the background
-        ( go test -count=$go_test_count -race "$@" $pkg_path; echo $?>/tmp/ttest_status; echo ""; ) &
+        (
+            go test -v -count=$go_test_count -race "$@" $pkg_path
+            echo $? >/tmp/ttest_status
+            echo ""
+        ) &
         local test_pid=$!
 
         # Wait for the background test to complete

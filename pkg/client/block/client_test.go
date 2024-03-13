@@ -17,6 +17,8 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
+// TODO_IN_THIS_PR: Keep looking at the tests in this file.
+
 const (
 	testTimeoutDuration = 100 * time.Millisecond
 
@@ -132,9 +134,11 @@ func TestBlockClient(t *testing.T) {
 type testBlockEvent struct {
 	Data testBlockEventDataStruct `json:"data"`
 }
+
 type testBlockEventDataStruct struct {
 	Value testBlockEventValueStruct `json:"value"`
 }
+
 type testBlockEventValueStruct struct {
 	Block   *types.Block  `json:"block"`
 	BlockID types.BlockID `json:"block_id"`
