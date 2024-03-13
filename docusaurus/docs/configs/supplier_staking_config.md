@@ -104,8 +104,10 @@ to the Pocket Network. Each `endpoint` object consists of an `url` and a `rpc_ty
 
 _`Required`_
 
-`url` is a string formatted URL that defines the endpoint that MUST be reachable by
-`Gateways` and `Applications` to send `RelayRequests` to.
+The `url` defines the endpoint for sending `RelayRequests` from the Pocket Network's `Gateways` and `Applications`. Typically, this endpoint is provided by a RelayMiner, which acts as a proxy. This setup means that the specified URL directs to the RelayMiner's endpoint, which in turn, routes the requests to the designated service node.
+
+- **Example**: `https://etherium-relayminer1.relayminers.com:443` demonstrates how a RelayMiner endpoint, typically offered by the RelayMiner, proxies requests to an Etherium backend data node.
+
 
 ##### `rpc_type`
 
