@@ -18,6 +18,9 @@ func (rp *relayerProxy) VerifyRelayRequest(
 		return err
 	}
 
+	// ringCache.VerifyRelayRequestSignature has already verified the relayRequest
+	// meta and session header fields with ValidateBasic, so we can safely assume
+	// that the session header is valid.
 	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
 
 	// Application address is used to verify the relayRequest signature, it is

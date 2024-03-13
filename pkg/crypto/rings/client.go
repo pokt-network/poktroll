@@ -29,7 +29,7 @@ type ringClient struct {
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
 
-	// pubKeyClient is used to get the public keys given an address.
+	// pubKeyClient is used to get the public keys for a given an account address.
 	pubKeyClient crypto.PubKeyClient
 }
 
