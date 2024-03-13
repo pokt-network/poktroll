@@ -11,6 +11,7 @@ This is a living document and will be updated as the ecosystem matures & grows.
 
 ## Table of Contents <!-- omit in toc -->
 
+- [The Code Review Pyramid](#the-code-review-pyramid)
 - [Code Quality](#code-quality)
 - [Code Reviews](#code-reviews)
   - [Code Review Guidelines](#code-review-guidelines)
@@ -31,6 +32,14 @@ This is a living document and will be updated as the ecosystem matures & grows.
   - [Changes Since Last Review](#changes-since-last-review)
   - [Merge with main - don't rebase and force push](#merge-with-main---dont-rebase-and-force-push)
 - [Resolving Comments](#resolving-comments)
+
+## The Code Review Pyramid
+
+![code_review_pyramid.png](./img/code_review_pyramid.png)
+
+The Pyramid above from [this blog](https://www.morling.dev/blog/the-code-review-pyramid/)
+sums up some of the best practices. The rest of this file captures the approach
+to code reviews within Pocket Network.
 
 ## Code Quality
 
