@@ -55,7 +55,7 @@ func TestDelegationClient_RedelegationsObservables(t *testing.T) {
 	delegationSub := delegationClient.RedelegationsSequence(ctx).Subscribe(ctx)
 
 	var (
-		delegationMu            = sync.Mutex{}        // mutext to protect delegationChangeCounter
+		delegationMu            = sync.Mutex{}        // mutex to protect delegationChangeCounter
 		delegationChangeCounter int                   // counter to keep track of the number of delegation changes
 		expectedChanges         = 4                   // expected number of delegation changes
 		errCh                   = make(chan error, 1) // channel to signal the test to stop

@@ -23,6 +23,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testerrors"
 )
 
+// TODO_IN_THIS_PR: Look into the tests in this file. The logic related to `dialerMock`
+// and connections is good but it is too complex and low-level to have users of
+// the observable package to understand.
+
 func TestEventsQueryClient_Subscribe_Succeeds(t *testing.T) {
 	var (
 		readObserverEventsTimeout = time.Second
@@ -152,8 +156,7 @@ func TestEventsQueryClient_Subscribe_Close(t *testing.T) {
 	)
 
 	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
-	connMock.EXPECT().Send(gomock.Any()).Return(nil).
-		Times(1)
+	connMock.EXPECT().Send(gomock.Any()).Return(nil).Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			delayFirstEvent.Do(func() { time.Sleep(firstEventDelay) })
@@ -247,8 +250,7 @@ func TestEventsQueryClient_Subscribe_ReceiveError(t *testing.T) {
 	t.Cleanup(cancel)
 
 	connMock, dialerMock := testeventsquery.NewOneTimeMockConnAndDialer(t)
-	connMock.EXPECT().Send(gomock.Any()).Return(nil).
-		Times(1)
+	connMock.EXPECT().Send(gomock.Any()).Return(nil).Times(1)
 	connMock.EXPECT().Receive().
 		DoAndReturn(func() (any, error) {
 			if readEventCounter >= handleEventLimit {

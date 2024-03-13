@@ -30,49 +30,60 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
+// TODO_IN_THIS_PR: Keep looking at the tests in this file.
+
 const (
-	testSigningKeyName = "test_signer"
-	// NB: testServiceIdPrefix must not be longer than 7 characters due to
-	// maxServiceIdLen.
+	// NB: testServiceIdPrefix is capped at 7 chars due to maxServiceIdLen.
 	testServiceIdPrefix = "testsvc"
-	txCommitTimeout     = 10 * time.Millisecond
+	testSigningKeyName  = "test_signer"
+	txCommitTimeout     = 100 * time.Millisecond
 )
 
 // TODO_TECHDEBT: add coverage for the transactions client handling an events bytes error either.
 
 func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	var (
-		// expectedTx is the expected transactions bytes that will be signed and broadcast
-		// by the transaction client. It is computed and assigned in the
-		// testtx.NewOneTimeTxTxContext helper function. The same reference needs
-		// to be used across the expectations that are set on the transactions context mock.
+		// expectedTx is the expected transactions bytes that will be signed and
+		// broadcast by the transaction client. It is computed and assigned in the
+		// testtx.NewOneTimeTxTxContext helper function.
+		// The same reference needs to be used across the expectations that are
+		// set on the transactions context mock.
 		expectedTx cometbytes.HexBytes
-		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh from concurrent access
-		// as it is expected to be updated in a mock method but is also sent on in the test.
+		// txResultsBzPublishChMu is a mutex that protects txResultsBzPublishCh
+		// from concurrent access as it is expected to be updated in a mock method
+		// but is also updated in the test.
 		txResultsBzPublishChMu = new(sync.Mutex)
 		// txResultsBzPublishCh is the channel that the mock events query client
-		// will use to publish the transactions event bytes. It is used near the end of
-		// the test to mock the network signaling that the transactions was committed.
+		// will use to publish the transactions event bytes. It is used near the
+		// end of the test to mock the network signaling that the transactions was
+		// committed.
 		txResultsBzPublishCh chan<- either.Bytes
 		blocksPublishCh      chan client.Block
 		ctx                  = context.Background()
 	)
 
+	// Construct an in-memory keyring with a single test key used for signing
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
+	signingKeyAddr, err := signingKey.GetAddress()
+	require.NoError(t, err)
 
-	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
+	// Prepare a tx event query client that listens for transactions signed by
+	// address associated with the signing key.
+	eventsQueryClientMock := testeventsquery.NewOneTimeTxEventsQueryClient(
 		ctx, t, signingKey, txResultsBzPublishChMu, &txResultsBzPublishCh,
 	)
 
-	txCtxMock := testtx.NewOneTimeTxTxContext(
+	// Construct a new mock transactions context that can handle exactly one
+	// successful broadcast of the expected transactions bytes.
+	txCtxMock := testtx.NewOneTimeBroadcastTxContext(
 		t, keyring,
 		testSigningKeyName,
 		&expectedTx,
 	)
 
 	// Construct a new mock block client because it is a required dependency.
-	// Since we're not exercising transactions timeouts in this test, we don't need to
-	// set any particular expectations on it, nor do we care about the contents
+	// Since we're not exercising transactions timeouts in this test, we don't
+	// need to set any particular expectations on it, nor do we care about the contents
 	// of the latest block.
 	blockClientMock := testblock.NewOneTimeCommittedBlocksSequenceBlockClient(
 		t, blocksPublishCh,
@@ -80,7 +91,7 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 
 	// Construct a new depinject config with the mocks we created above.
 	txClientDeps := depinject.Supply(
-		eventsQueryClient,
+		eventsQueryClientMock,
 		txCtxMock,
 		blockClientMock,
 	)
@@ -89,9 +100,6 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	txClient, err := tx.NewTxClient(
 		ctx, txClientDeps, tx.WithSigningKeyName(testSigningKeyName),
 	)
-	require.NoError(t, err)
-
-	signingKeyAddr, err := signingKey.GetAddress()
 	require.NoError(t, err)
 
 	// Construct a valid (arbitrary) message to sign, encode, and broadcast.
@@ -115,19 +123,18 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 			},
 		},
 	}
-
 	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
 
 	rpcResult := &rpctypes.RPCResponse{
 		Result: txResultBz,
 	}
-
 	rpcResultBz, err := json.Marshal(rpcResult)
 	require.NoError(t, err)
 
-	// Publish the transaction event bytes to the events query client so that the transaction client
-	// registers the transactions as committed (i.e. removes it from the timeout pool).
+	// Publish the transaction event bytes to the events query client so that
+	// the transaction client registers the transactions as committed
+	// (i.e. removes it from the timeout pool).
 	txResultsBzPublishChMu.Lock()
 	txResultsBzPublishCh <- either.Success[[]byte](rpcResultBz)
 	txResultsBzPublishChMu.Unlock()
@@ -449,9 +456,11 @@ func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 type testTxEvent struct {
 	Data testTxEventDataStruct `json:"data"`
 }
+
 type testTxEventDataStruct struct {
 	Value testTxEventValueStruct `json:"value"`
 }
+
 type testTxEventValueStruct struct {
 	TxResult abci.TxResult
 }

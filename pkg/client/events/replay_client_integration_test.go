@@ -17,6 +17,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
+// TODO_IN_THIS_PR: Look into the tests in this file. The logic related to `dialerMock`
+// and connections is good but it is too complex and low-level to have users of
+// the observable package to understand.
+
 // Create the generic event type and decoder for the replay client
 
 var _ messageEvent = (*tEvent)(nil)

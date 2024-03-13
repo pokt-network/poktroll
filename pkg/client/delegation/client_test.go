@@ -15,8 +15,10 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
+// TODO_IN_THIS_PR: Keep looking at the tests in this file.
+
 const (
-	testTimeoutDuration = 100 * time.Millisecond
+	testTimeoutDuration = 1 * time.Second
 
 	// duplicates pkg/client/delegation/client.go's delegationEventQuery for testing purposes.
 	delegationEventQuery = "tm.event='Tx' AND message.module='application'"
@@ -77,7 +79,6 @@ func TestDelegationClient(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			actualRedelegationCh := make(chan client.Redelegation, 10)
-
 			// Run test functions asynchronously because they can block, leading
 			// to an unresponsive test. If any of the methods under test hang,
 			// the test will time out in the select statement that follows.

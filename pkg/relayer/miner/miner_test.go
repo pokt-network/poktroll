@@ -21,6 +21,8 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
+// TODO_IN_THIS_PR: Keep looking at the tests in this file.
+
 const testDifficulty = 16
 
 // TestMiner_MinedRelays constructs an observable of mined relays, through which
