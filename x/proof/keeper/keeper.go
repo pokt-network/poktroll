@@ -1,20 +1,13 @@
 package keeper
 
 import (
-	"context"
 	"fmt"
 
 	"cosmossdk.io/core/store"
-	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/pokt-network/poktroll/pkg/client"
-	"github.com/pokt-network/poktroll/pkg/crypto"
-	"github.com/pokt-network/poktroll/pkg/crypto/rings"
-	"github.com/pokt-network/poktroll/pkg/polylog"
-	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -28,11 +21,9 @@ type (
 		// should be the x/gov module account.
 		authority string
 
-		sessionKeeper     types.SessionKeeper
+		accountKeeper     types.AccountKeeper
 		applicationKeeper types.ApplicationKeeper
-
-		ringClient     crypto.RingClient
-		accountQuerier client.AccountQueryClient
+		sessionKeeper     types.SessionKeeper
 	}
 )
 
@@ -42,31 +33,12 @@ func NewKeeper(
 	logger log.Logger,
 	authority string,
 
-	sessionKeeper types.SessionKeeper,
-	applicationKeeper types.ApplicationKeeper,
 	accountKeeper types.AccountKeeper,
+	applicationKeeper types.ApplicationKeeper,
+	sessionKeeper types.SessionKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
-	}
-
-	// TODO_TECHDEBT: Use cosmos-sdk based polylog implementation once available. Also remove polyzero import.
-	polylogger := polylog.Ctx(context.Background())
-	applicationQuerier := types.NewAppKeeperQueryClient(applicationKeeper)
-	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper)
-
-	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures
-	// for both on-chain and off-chain actors.
-	// As it takes care of getting the ring signature details (i.e. application
-	// and gateways pub keys) it uses an Application and Account querier interfaces
-	// that are compatible with the environment it's being used in.
-	// In this on-chain context, the Proof keeper supplies AppKeeperQueryClient and
-	// AccountKeeperQueryClient that are thin wrappers around the Application and
-	// Account keepers respectively, and satisfy the RingClient needs.
-	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier)
-	ringKeeperClient, err := rings.NewRingClient(ringKeeperClientDeps)
-	if err != nil {
-		panic(err)
 	}
 
 	return Keeper{
@@ -75,11 +47,9 @@ func NewKeeper(
 		authority:    authority,
 		logger:       logger,
 
-		sessionKeeper:     sessionKeeper,
+		accountKeeper:     accountKeeper,
 		applicationKeeper: applicationKeeper,
-
-		ringClient:     ringKeeperClient,
-		accountQuerier: accountQuerier,
+		sessionKeeper:     sessionKeeper,
 	}
 }
 

@@ -1,6 +1,7 @@
 package query
 
 import (
+	"container/ring"
 	"context"
 
 	"cosmossdk.io/depinject"
@@ -61,4 +62,14 @@ func (aq *appQuerier) GetAllApplications(ctx context.Context) ([]apptypes.Applic
 		return []apptypes.Application{}, err
 	}
 	return res.Applications, nil
+}
+
+// GetRingForAddress returns the ring for the application whose address is given,
+func (aq *appQuerier) GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error) {
+	req := apptypes.QueryGetApplicationRequest{Address: appAddress}
+	res, err := aq.applicationQuerier.GetAppRing(ctx, &req)
+	if err != nil {
+		return nil, apptypes.ErrAppNotFound.Wrapf("app address: %s [%v]", appAddress, err)
+	}
+	return *ring.Ring, nil
 }

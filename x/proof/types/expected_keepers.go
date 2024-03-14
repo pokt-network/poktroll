@@ -5,6 +5,7 @@ package types
 import (
 	"context"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -19,6 +20,7 @@ type SessionKeeper interface {
 // AccountKeeper defines the expected interface for the Account module.
 type AccountKeeper interface {
 	GetAccount(context.Context, sdk.AccAddress) sdk.AccountI
+	GetPubKey(context.Context, sdk.AccAddress) (cryptotypes.PubKey, error)
 }
 
 // ApplicationKeeper defines the expected application keeper to retrieve applications
