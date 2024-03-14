@@ -63,6 +63,11 @@ func NewKeeper(
 	// In this on-chain context, the Proof keeper supplies AppKeeperQueryClient and
 	// AccountKeeperQueryClient that are thin wrappers around the Application and
 	// Account keepers respectively, and satisfy the RingClient needs.
+	// TODO_CONSIDERATION: Make ring signature verification a stateless function
+	// and get rid of the RingClient and its dependencies by moving application
+	// ring retrieval to the application keeper and making it retrievable using
+	// the application query client for off-chain actors.
+	// Signature verification code will still be shared across off/on chain environments
 	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier)
 	ringKeeperClient, err := rings.NewRingClient(ringKeeperClientDeps)
 	if err != nil {
