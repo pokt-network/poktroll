@@ -233,7 +233,7 @@ func (txnClient *txClient) SignAndBroadcast(
 		Height() + txnClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable
-	txBuilder.SetGasLimit(1000000)
+	txBuilder.SetGasLimit(690000042)
 	txBuilder.SetTimeoutHeight(uint64(timeoutHeight))
 
 	// sign transactions
