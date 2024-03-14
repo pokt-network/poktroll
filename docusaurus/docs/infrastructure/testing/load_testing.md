@@ -26,7 +26,20 @@ We use [k6](https://k6.io/) for load testing. For detailed information about k6 
 ## Dependencies
 
 - [k6](https://grafana.com/docs/k6/latest/get-started/installation/)
+- [xk6-read plugin](https://github.com/acuenca-facephi/xk6-read) (must be built with k6s)
+- [xk6-file plugin](https://github.com/avitalique/xk6-file) (must be built with k6s)
 - (For local suite execution) [LocalNet](../localnet.md)
+
+Since we depend on k6s extensions, it is necessary to build k6 with these extensions.
+This is done via another tool called `xk6`, which can be invoked inside a docker container:
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "${PWD}:/xk6" grafana/xk6 build \
+  --with github.com/acuenca-facephi/xk6-read@v1.0.0-rc1 \
+  --with github.com/avitalique/xk6-file@v1.4.0
+```
+
+This will build a k6 binary with the necessary extensions and **output it into the current directory**.
 
 ## How to run tests
 
