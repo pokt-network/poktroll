@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  go-test:
+  release-artifacts:
     runs-on: ubuntu-latest
     steps:
       - name: install ignite
@@ -84,14 +84,15 @@ jobs:
 
       # TODO(@okdas): when we have proper releases, we can remove this and use binaries built by releases instead.
       # But for now, attach them to commits so we/community can access them
-      - name: Add binaries to commit
-        uses: actions/upload-artifact@v4
-        with:
-          name: poktrolld
-          path: release/*
+      # - name: Add binaries to commit
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: poktrolld
+      #     path: release/*
 
-      - name: Add release and publish binaries
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            release/*
+      # TODO(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
+      # - name: Add release and publish binaries
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: |
+      #       release/*
