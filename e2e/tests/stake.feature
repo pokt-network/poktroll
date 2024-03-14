@@ -8,10 +8,10 @@ Feature: Stake Namespaces
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        # TODO_IN_THIS_PR: Add a comment explaining 
-        And the user should wait for "5" seconds #
+        # TODO_IN_THIS_PR: Add a comment explaining the need for this sleep
+        And the user should wait for "5" seconds
         And the "gateway" for account "gateway1" is staked with "1000" uPOKT
-        And the "account" balance of "gateway1" should be "1000" uPOKT "less" than before
+        And the account balance of "gateway1" should be "1000" uPOKT "less" than before
 
     Scenario: User can unstake a Gateway
         Given the user has the pocketd binary installed
@@ -23,4 +23,4 @@ Feature: Stake Namespaces
         And the pocketd binary should exit without error
         And the user should wait for "5" seconds
         And the "gateway" for account "gateway1" is not staked
-        And the "account" balance of "gateway1" should be "1000" uPOKT "more" than before
+        And the account balance of "gateway1" should be "1000" uPOKT "more" than before

@@ -490,10 +490,14 @@ func relayReferenceKey(appName, supplierName string) string {
 	return fmt.Sprintf("%s/%s", appName, supplierName)
 }
 
+// accBalanceKey is a helper function to create a key to store the balance
+// for accName in the context of a scenario state.
 func accBalanceKey(accName string) string {
 	return fmt.Sprintf("balance/%s", accName)
 }
 
+// accStakeKey is a helper function to create a key to store the stake
+// for accName of type actorType in the context of a scenario state.
 func accStakeKey(actorType, accName string) string {
 	return fmt.Sprintf("stake/%s/%s", actorType, accName)
 }
