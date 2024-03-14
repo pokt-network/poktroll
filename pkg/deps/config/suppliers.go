@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/query"
 	querytypes "github.com/pokt-network/poktroll/pkg/client/query/types"
 	txtypes "github.com/pokt-network/poktroll/pkg/client/tx/types"
-	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/sdk"
@@ -375,23 +374,5 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 
 		// Supply the session querier to the provided deps
 		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
-	}
-}
-
-// NewSupplyPubKeyClientFn supplies a depinject config with a PubKeyClient.
-func NewSupplyPubKeyClientFn() SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		// Create the pubKey client.
-		pubKeyClient, err := pubkeyclient.NewPubKeyClient(deps)
-		if err != nil {
-			return nil, err
-		}
-
-		// Supply the pubKey client to the provided deps
-		return depinject.Configs(deps, depinject.Supply(pubKeyClient)), nil
 	}
 }

@@ -33,6 +33,7 @@ func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 	return sha256.Sum256(requestBz), nil
 }
 
+// TODO_TEST: Add tests for RelayRequest validation
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
 // and Signature fields.
 func (req *RelayRequest) ValidateBasic() error {
@@ -78,6 +79,7 @@ func (res *RelayResponse) GetSignableBytesHash() ([32]byte, error) {
 	return sha256.Sum256(responseBz), nil
 }
 
+// TODO_TEST: Add tests for RelayResponse validation
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
 // and SupplierSignature fields.
 func (res *RelayResponse) ValidateBasic() error {
@@ -90,7 +92,7 @@ func (res *RelayResponse) ValidateBasic() error {
 	}
 
 	if err := res.GetMeta().GetSessionHeader().ValidateBasic(); err != nil {
-		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %s", err)
+		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %v", err)
 	}
 
 	if len(res.GetMeta().GetSupplierSignature()) == 0 {

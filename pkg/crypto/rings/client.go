@@ -11,7 +11,6 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
-	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -29,8 +28,8 @@ type ringClient struct {
 	// used to get the addresses of the gateways an application is delegated to.
 	applicationQuerier client.ApplicationQueryClient
 
-	// pubKeyClient is used to get the public keys for a given an account address.
-	pubKeyClient crypto.PubKeyClient
+	// accountQuerier is used to fetch accounts for a given an account address.
+	accountQuerier client.AccountQueryClient
 }
 
 // NewRingClient returns a new ring client constructed from the given dependencies.
@@ -42,14 +41,11 @@ type ringClient struct {
 // - client.AccountQueryClient
 func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	rc := new(ringClient)
-	rc.pubKeyClient, err = pubkeyclient.NewPubKeyClient(deps)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := depinject.Inject(
 		deps,
 		&rc.logger,
+		&rc.accountQuerier,
 		&rc.applicationQuerier,
 	); err != nil {
 		return nil, err
@@ -91,7 +87,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
 	if err := sessionHeader.ValidateBasic(); err != nil {
-		return ErrRingClientInvalidRelayRequest.Wrapf("invalid session header: %q", err)
+		return ErrRingClientInvalidRelayRequest.Wrapf("invalid session header: %v", err)
 	}
 
 	rc.logger.Debug().
@@ -188,7 +184,7 @@ func (rc *ringClient) addressesToPubKeys(
 ) ([]cryptotypes.PubKey, error) {
 	pubKeys := make([]cryptotypes.PubKey, len(addresses))
 	for i, addr := range addresses {
-		acc, err := rc.pubKeyClient.GetPubKeyFromAddress(ctx, addr)
+		acc, err := rc.accountQuerier.GetPubKeyFromAddress(ctx, addr)
 		if err != nil {
 			return nil, err
 		}

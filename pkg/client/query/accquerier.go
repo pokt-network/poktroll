@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/types"
 	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	grpc "github.com/cosmos/gogoproto/grpc"
@@ -19,6 +20,10 @@ var _ client.AccountQueryClient = (*accQuerier)(nil)
 type accQuerier struct {
 	clientConn     grpc.ClientConn
 	accountQuerier accounttypes.QueryClient
+
+	// accountCache is a cache of accounts that have already been queried.
+	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
+	accountCache map[string]types.AccountI
 }
 
 // NewAccountQuerier returns a new instance of a client.AccountQueryClient by
@@ -27,7 +32,7 @@ type accQuerier struct {
 // Required dependencies:
 // - clientCtx
 func NewAccountQuerier(deps depinject.Config) (client.AccountQueryClient, error) {
-	aq := &accQuerier{}
+	aq := &accQuerier{accountCache: make(map[string]types.AccountI)}
 
 	if err := depinject.Inject(
 		deps,
@@ -46,14 +51,37 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
+	if foundAccount, accountFound := aq.accountCache[address]; accountFound {
+		return foundAccount, nil
+	}
+
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := aq.accountQuerier.Account(ctx, req)
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}
-	var acc accounttypes.AccountI
-	if err = queryCodec.UnpackAny(res.Account, &acc); err != nil {
+	var fetchedAccount types.AccountI
+	if err = queryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
 		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}
-	return acc, nil
+
+	aq.accountCache[address] = fetchedAccount
+	return fetchedAccount, nil
+}
+
+// GetPubKeyFromAddress returns the public key of the given address.
+// It uses the accountQuerier to get the account and then returns its public key.
+func (aq *accQuerier) GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error) {
+	acc, err := aq.GetAccount(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the account's public key is nil, then return an error.
+	pubKey := acc.GetPubKey()
+	if pubKey == nil {
+		return nil, ErrQueryPubKeyNotFound
+	}
+
+	return pubKey, nil
 }

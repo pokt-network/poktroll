@@ -110,9 +110,9 @@ func (sdk *poktrollSDK) SendRelay(
 	sessionHeader := relayResponse.GetMeta().GetSessionHeader()
 
 	// Get the supplier's public key.
-	supplierPubKey, err := sdk.getSupplierPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
+	supplierPubKey, err := sdk.accountQuerier.GetPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %v", err)
 	}
 
 	sdk.logger.Debug().

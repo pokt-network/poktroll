@@ -57,18 +57,13 @@ type poktrollSDK struct {
 	// It is used to query a specific application or all applications
 	applicationQuerier client.ApplicationQueryClient
 
+	// accountQuerier is the querier for the account module.
+	// It is used to query a specific account given an address.
+	accountQuerier client.AccountQueryClient
+
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
 	blockClient client.BlockClient
-
-	// pubKeyClient the client used to get the public key for a given account address.
-	// TODO_TECHDEBT: Add a size limit to the cache. Also consider clearing it every
-	// N sessions.
-	pubKeyClient crypto.PubKeyClient
-
-	// supplierPubKeyCache is a cache of the suppliers pubKeys that has been queried.
-	// TODO_TECHDEBT: Add a size limit to the cache and consider an LRU cache.
-	supplierPubKeyCache map[string]cryptotypes.PubKey
 }
 
 // NewPOKTRollSDK creates a new POKTRollSDK instance with the given configuration.
@@ -76,7 +71,6 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	sdk := &poktrollSDK{
 		config:                  config,
 		serviceSessionSuppliers: make(map[string]map[string]*SessionSuppliers),
-		supplierPubKeyCache:     make(map[string]cryptotypes.PubKey),
 	}
 
 	var err error
@@ -94,7 +88,7 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 		&sdk.logger,
 		&sdk.ringCache,
 		&sdk.sessionQuerier,
-		&sdk.pubKeyClient,
+		&sdk.accountQuerier,
 		&sdk.applicationQuerier,
 		&sdk.blockClient,
 	); err != nil {
@@ -113,23 +107,4 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	sdk.ringCache.Start(ctx)
 
 	return sdk, nil
-}
-
-// getPubKeyFromAddress returns the public key of a supplier given its address.
-// It uses the accountQuerier to get the account if it is not already in the cache.
-func (sdk *poktrollSDK) getSupplierPubKeyFromAddress(
-	ctx context.Context,
-	address string,
-) (cryptotypes.PubKey, error) {
-	if pubKey, ok := sdk.supplierPubKeyCache[address]; ok {
-		return pubKey, nil
-	}
-
-	pubKey, err := sdk.pubKeyClient.GetPubKeyFromAddress(ctx, address)
-	if err != nil {
-		return nil, err
-	}
-
-	sdk.supplierPubKeyCache[address] = pubKey
-	return pubKey, nil
 }

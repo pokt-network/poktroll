@@ -19,6 +19,7 @@ import (
 	comettypes "github.com/cometbft/cometbft/rpc/core/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
@@ -231,6 +232,9 @@ type SupplierClientOption func(SupplierClient)
 type AccountQueryClient interface {
 	// GetAccount queries the chain for the details of the account provided
 	GetAccount(ctx context.Context, address string) (cosmostypes.AccountI, error)
+
+	// GetPubKeyFromAddress returns the public key of the given address.
+	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
 }
 
 // ApplicationQueryClient defines an interface that enables the querying of the

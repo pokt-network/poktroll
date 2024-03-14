@@ -23,4 +23,5 @@ var (
 	ErrProofInvalidRelayResponse      = sdkerrors.Register(ModuleName, 1114, "invalid relay response")
 	ErrProofNotSecp256k1Curve         = sdkerrors.Register(ModuleName, 1115, "not secp256k1 curve")
 	ErrProofApplicationNotFound       = sdkerrors.Register(ModuleName, 1116, "application not found")
+	ErrProofPubKeyNotFound            = sdkerrors.Register(ModuleName, 1117, "public key not found")
 )

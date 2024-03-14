@@ -80,7 +80,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	supplierPubKey, err := k.pubKeyClient.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
+	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, msg.GetSupplierAddress())
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
