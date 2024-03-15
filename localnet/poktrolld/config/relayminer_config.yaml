@@ -16,7 +16,7 @@ suppliers:
     proxy_names:
       - http-proxy
     hosts:
-      - tcp://relayminers:8545
+      - http://relayminers:8545
 metrics:
   enabled: true
   addr: :9090
