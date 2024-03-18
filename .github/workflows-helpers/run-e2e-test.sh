@@ -17,7 +17,7 @@ while :; do
     PODS_JSON=$(kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json)
 
     # Log the raw output for debugging
-    echo "${PODS_JSON}"
+    # echo "${PODS_JSON}"
 
     # Validate JSON output
     if ! echo "${PODS_JSON}" | jq empty; then
@@ -32,6 +32,11 @@ while :; do
     NON_RUNNING_PODS=$(echo "${PODS_JSON}" | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
     INCORRECT_POD=$(echo "${NON_RUNNING_PODS}" | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
 
+    # Check the StatefulSet status
+    STATEFULSET_NAME="devnet-issue-424-validator-poktrolld"
+    STATEFULSET_STATUS=$(kubectl get statefulset ${STATEFULSET_NAME} -n ${NAMESPACE} -o jsonpath='{.status.replicas},{.status.readyReplicas},{.status.currentReplicas}')
+    echo "StatefulSet ${STATEFULSET_NAME} status: ${STATEFULSET_STATUS}"
+
     if [[ -n "${READY_POD}" ]]; then
         echo "Ready pod found: ${READY_POD}"
         break
@@ -42,7 +47,14 @@ while :; do
         # Wait for a short duration to allow the StatefulSet to recreate the pod before checking again
         sleep 10
     else
-        echo "Validator with image ${IMAGE_TAG} is not ready yet and no incorrect pods found. Will retry checking for ready or incorrect pods in 10 seconds..."
+        echo "Validator with image ${IMAGE_TAG} is not ready yet and no incorrect pods found."
+
+        # Provide more detailed error messages
+        echo "Retrieving pod status and events for troubleshooting..."
+        kubectl describe pods -n ${NAMESPACE} -l pokt.network/purpose=validator
+        kubectl get events -n ${NAMESPACE}
+
+        echo "Will retry checking for ready or incorrect pods in 10 seconds..."
         sleep 10
     fi
 done
