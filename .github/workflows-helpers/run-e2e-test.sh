@@ -1,17 +1,36 @@
+# Enhanced Script for Debugging and Error Handling
+
+# Log environment variables for debugging
+echo "Environment variables:"
+echo "NAMESPACE: ${NAMESPACE}"
+echo "IMAGE_TAG: ${IMAGE_TAG}"
+
 # TODO_TECHDEBT(@okdas): also check readiness of appgate and relayminer to avoid false negatives due to race-conditions
 
 # Check if the pod with the matching image SHA and purpose is ready or needs recreation
 echo "Checking for ready validator pod with image SHA ${IMAGE_TAG} or pods needing recreation..."
 while :; do
+    # Log the command
+    echo "Running kubectl command to get pods with matching purpose=validator:"
+
     # Get all pods with the matching purpose
-    PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=validator -o json)
+    PODS_JSON=$(kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json)
+
+    # Log the raw output for debugging
+    echo "${PODS_JSON}"
+
+    # Validate JSON output
+    if ! echo "${PODS_JSON}" | jq empty; then
+        echo "Error: kubectl command did not produce valid JSON."
+        exit 1
+    fi
 
     # Check if any pods are running and have the correct image SHA
-    READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
+    READY_POD=$(echo "${PODS_JSON}" | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
 
     # Check for non-running pods with incorrect image SHA to delete
-    NON_RUNNING_PODS=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
-    INCORRECT_POD=$(echo $NON_RUNNING_PODS | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
+    NON_RUNNING_PODS=$(echo "${PODS_JSON}" | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
+    INCORRECT_POD=$(echo "${NON_RUNNING_PODS}" | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
 
     if [[ -n "${READY_POD}" ]]; then
         echo "Ready pod found: ${READY_POD}"
@@ -29,6 +48,7 @@ while :; do
 done
 
 # Check we can reach the validator endpoint
+echo "Checking HTTP status for the validator endpoint..."
 HTTP_STATUS=$(curl -s -o /dev/null -w '%{http_code}' http://${NAMESPACE}-validator-poktrolld:36657)
 if [[ "${HTTP_STATUS}" -eq 200 ]]; then
     echo "HTTP request to ${NAMESPACE}-validator-poktrolld:36657 returned 200 OK."
@@ -38,17 +58,18 @@ else
 fi
 
 # Create a job to run the e2e tests
+echo "Creating a job to run the e2e tests..."
 envsubst <.github/workflows-helpers/run-e2e-test-job-template.yaml >job.yaml
 kubectl apply -f job.yaml
 
 # Wait for the pod to be created and be in a running state
-echo "Waiting for the pod to be in the running state..."
+echo "Waiting for the e2e test pod to be in the running state..."
 while :; do
     POD_NAME=$(kubectl get pods -n ${NAMESPACE} --selector=job-name=${JOB_NAME} -o jsonpath='{.items[*].metadata.name}')
     [[ -z "${POD_NAME}" ]] && echo "Waiting for pod to be scheduled..." && sleep 5 && continue
     POD_STATUS=$(kubectl get pod ${POD_NAME} -n ${NAMESPACE} -o jsonpath='{.status.phase}')
     [[ "${POD_STATUS}" == "Running" ]] && break
-    echo "Current pod status: ${POD_STATUS}"
+    echo "Current pod status: ${POD_STATUS}. Waiting for 'Running' status..."
     sleep 5
 done
 
