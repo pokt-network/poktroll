@@ -17,7 +17,7 @@ Ensure the following software is installed on your system:
 <!-- - TODO(@okdas): what's the correct amount to stake? -->
 - POKT tokens to stake your relayminer and allow it to submit transactions;
 
-### 1. Generate new key and fund the wallet
+### Generate new key and fund the wallet
 
 :::info
 
@@ -34,3 +34,17 @@ Your relayminer will need access to the keys to submit transactions on the netwo
 KEY_NAME="relayminer1" poktrolld --keyring-backend=test --home=./$KEY_NAME keys add $KEY_NAME
 ```
 
+### Docker compose
+
+
+
+### Stake
+
+TODO(@okdas): link to staking config
+
+```
+poktrolld --keyring-backend=test --home=/Users/dk/tmp/poktroll-validated-2/ --node=https://testnet-validated-validator-rpc.poktroll.com/ tx supplier stake-supplier --config=/Users/dk/pocket/poktroll/localnet/poktrolld/config/dimasupp.yaml --from=key-for-relayminer1 --chain-id=poktroll
+```
+
+
+### Run
