@@ -1,0 +1,7 @@
+config:
+  query_node_rpc_url: tcp://validator-poktroll-validator:36657
+  query_node_grpc_url: tcp://validator-poktroll-validator:36658
+  self_signing: false
+  metrics:
+    enabled: true
+    addr: :9090
