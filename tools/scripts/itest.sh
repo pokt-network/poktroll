@@ -8,6 +8,8 @@ itest() {
     if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
         echo "Usage (make):               make itest <go_test_count> <loop_limit> <package_path> -- [go test flags...]"
         echo "Usage (bash): ./tools/scripts/itest.sh <go_test_count> <loop_limit> <package_path> [go test flags...]"
+        echo "  <go_test_count>           Number of times to run 'go test' on each iteration"
+        echo "  <loop_limit>              Number of times total iterations to run"
         return 1
     fi
 
@@ -31,7 +33,11 @@ itest() {
         echo "Iteration $i of $loop_limit..."
 
         # Running the go test in a subshell in the background
-        ( go test -count=$go_test_count -race "$@" $pkg_path; echo $?>/tmp/ttest_status; echo ""; ) &
+        (
+            go test -count=$go_test_count -race "$@" $pkg_path
+            echo $? >/tmp/ttest_status
+            echo ""
+        ) &
         local test_pid=$!
 
         # Wait for the background test to complete
