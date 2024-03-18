@@ -1,7 +1,7 @@
 # TODO_TECHDEBT(@okdas): also check readiness of appgate and relayminer to avoid false negatives due to race-conditions
 
-# Check if the pod with the matching image SHA and purpose is ready
-echo "Checking for ready validator pod with image SHA ${IMAGE_TAG}..."
+# Check if the pod with the matching image SHA and purpose is ready or needs recreation
+echo "Checking for ready validator pod with image SHA ${IMAGE_TAG} or pods needing recreation..."
 while :; do
     # Get all pods with the matching purpose
     PODS_JSON=$(kubectl get pods -n ${NAMESPACE} -l pokt.network/purpose=validator -o json)
@@ -9,11 +9,21 @@ while :; do
     # Check if any pods are running and have the correct image SHA
     READY_POD=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
 
+    # Check for non-running pods with incorrect image SHA to delete
+    NON_RUNNING_PODS=$(echo $PODS_JSON | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
+    INCORRECT_POD=$(echo $NON_RUNNING_PODS | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
+
     if [[ -n "${READY_POD}" ]]; then
         echo "Ready pod found: ${READY_POD}"
         break
+    elif [[ -n "${INCORRECT_POD}" ]]; then
+        echo "Non-ready pod with incorrect image found: ${INCORRECT_POD}. Deleting..."
+        kubectl delete pod -n ${NAMESPACE} ${INCORRECT_POD}
+        echo "Pod deleted. StatefulSet will recreate the pod."
+        # Wait for a short duration to allow the StatefulSet to recreate the pod before checking again
+        sleep 10
     else
-        echo "Validator with with an image ${IMAGE_TAG} is not ready yet. Will retry in 10 seconds..."
+        echo "Validator with image ${IMAGE_TAG} is not ready yet and no incorrect pods found. Will retry checking for ready or incorrect pods in 10 seconds..."
         sleep 10
     fi
 done
@@ -43,6 +53,7 @@ while :; do
 done
 
 echo "Pod is running. Monitoring logs and status..."
+
 # Stream the pod logs in the background
 kubectl logs -f ${POD_NAME} -n ${NAMESPACE} &
 
