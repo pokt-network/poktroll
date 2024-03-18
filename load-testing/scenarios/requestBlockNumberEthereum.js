@@ -2,7 +2,7 @@
 import { check } from 'k6';
 import { sendJsonRPCRequest } from '../modules/sendJsonRPCRequest.js';
 
-export function requestBlockNumberEtheriumScenario(baseUrl) {
+export function requestBlockNumberEthereumScenario(baseUrl) {
     // Example method and parameters for the Ethereum JSON-RPC request
     const method = "eth_blockNumber";
     const params = [];
