@@ -88,6 +88,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 }
 
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
+	// TODO_IN_THIS_COMMIT: account the difference between initially staked actors in
+	// configured network and the target numbers initial actors.
+
 	// Stake initial gateway(s)
 
 	// Stake initial application(s)
@@ -175,15 +178,20 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 	// Concurrently monitor total relay progress.
 	go goMonitorProgress(s)
 
-	// Concurrently send relay batches, fail if the limit is exceeded.
+	// Concurrently send relay batches.
 	go goStartRelayBatchTicker(s, maxConcurrentBatchLimit, maxRelaysPerSec)
 
-	// Concurrently increment number of relays to send per second...
+	// Concurrently increment number of relays per second to send.
 	go goIncRelaysPerSec(s, relaysPerSecondInc, numBlocksInc, maxRelaysPerSec)
 
 	<-s.ctx.Done()
 }
 
+// goStartRelayBatchTicker starts a ticker that sends relay batches at a rate
+// determined by the number of relays per second. It also limits the number of
+// concurrent relay batches that can be sent. If the limit is exceeded, it will
+// error and fail the test.
+// It is intended to be run in a goroutine.
 func goStartRelayBatchTicker(s *relaysSuite, maxConcurrentBatchLimit uint, maxRelaysPerSec int64) {
 	// tickerCircuitBreaker is used to limit the concurrency of batches and error
 	// if the limit would be exceeded.
@@ -200,12 +208,6 @@ func goStartRelayBatchTicker(s *relaysSuite, maxConcurrentBatchLimit uint, maxRe
 
 	for range time.NewTicker(time.Second).C {
 		relaysPerSec := s.relaysPerSecond.Load()
-
-		// TODO_IN_THIS_COMMIT: comment explaining why
-		//select {
-		//case relaysPerSec = <-s.nextRelaysPerSec:
-		//default:
-		//}
 
 		clearLine(s)
 		logger.Debug().Msg("new tick")
@@ -231,7 +233,7 @@ func goStartRelayBatchTicker(s *relaysSuite, maxConcurrentBatchLimit uint, maxRe
 		// If batches start to accumulate, they will likely never recover.
 		require.Truef(s, ok, "batch limit exceeded: %d, reduce request runtime or increase request concurrency", maxConcurrentBatchLimit)
 
-		// TODO: cancel one batch after max relays per second is reached...
+		// Cancel the suite context one batch after max relays per second is reached.
 		if relaysPerSec == maxRelaysPerSec {
 			<-batchDoneCh
 			s.cancelCtx()
@@ -239,25 +241,18 @@ func goStartRelayBatchTicker(s *relaysSuite, maxConcurrentBatchLimit uint, maxRe
 	}
 }
 
+// goStartRelayBatchFn starts a relay batch at a rate determined by the number of
+// relays per second. It is intended to be run in a goroutine.
 func goStartRelayBatchFn(
 	s *relaysSuite,
 	batchLimiter *sync2.Limiter,
 	batchNumber *atomic.Uint64,
 	relaysPerSec int64,
-) (start func(), done <-chan struct{}) {
+) (start func(), doneCh <-chan struct{}) {
 	batchDoneCh := make(chan struct{})
 
 	return func() {
-
-		var (
-			//batchNumber     = new(atomic.Uint64)
-			//relaysPerSec = s.relaysPerSec.Load()
-			batchWaitGroup = sync.WaitGroup{}
-		)
-		// TODO: RESUME HERE!!!
-		// TODO: RESUME HERE!!!
-		// TODO: RESUME HERE!!!
-		// TODO_IN_THIS_COMMIT: calculate
+		batchWaitGroup := sync.WaitGroup{}
 		remainingRelays := s.totalExpectedRequests - s.relaysComplete.Load()
 		// Ensure the number of relays sent in this batch does not exceed the maximum.
 		// I.e. this is the last batch.
@@ -282,11 +277,9 @@ func goStartRelayBatchFn(
 				// Permute & distribute relays across all applications and gateways...
 
 				// Send relay...
-
 				// TODO: resume here!!!
 				// TODO: resume here!!!
 				// TODO: resume here!!!
-				//numRelays := s.relaysPerSec.Load()
 				time.Sleep(time.Millisecond * 250)
 
 				s.relaysComplete.Add(1)
@@ -312,6 +305,9 @@ func goStartRelayBatchFn(
 	}, batchDoneCh
 }
 
+// goIncRelaysPerSec increments the number of relays per second to send every
+// numBlocksInc blocks. It also ensures the number of relays per second to send
+// does not exceed the maximum. It is intended to be run in a goroutine.
 func goIncRelaysPerSec(
 	s *relaysSuite,
 	relaysPerSecondInc,
@@ -334,15 +330,15 @@ func goIncRelaysPerSec(
 				nextRelaysPerSec = maxRelaysPerSecond
 			}
 
-			// Set the number of relays to send per second...
-			// TODO_IN_THIS_COMMIT: comment explaining why send on nextRelaysPerSec before storing
-			//s.nextRelaysPerSec <- nextRelaysPerSec
+			// Update the number of relays per second to send
 			s.relaysPerSecond.Store(nextRelaysPerSec)
 		}
 
 	}
 }
 
+// goMonitorProgress monitors the progress of the relay requests by printing
+// a progress bar to the console. It is intended to be run in a goroutine.
 func goMonitorProgress(s *relaysSuite) {
 	s.Helper()
 
@@ -361,6 +357,7 @@ func goMonitorProgress(s *relaysSuite) {
 	}
 }
 
+// clearLine clears the current line in the console.
 func clearLine(t gocuke.TestingT) {
 	t.Helper()
 
@@ -368,6 +365,7 @@ func clearLine(t gocuke.TestingT) {
 	fmt.Print("\r")
 }
 
+// printProgressLine prints a progress bar to the console.
 func printProgressLine(t gocuke.TestingT, barWidth, completeCount, totalCount uint64) {
 	t.Helper()
 
@@ -393,6 +391,8 @@ func printProgressLine(t gocuke.TestingT, barWidth, completeCount, totalCount ui
 	)
 }
 
+// getTermWidth returns the width of the terminal. If the width cannot be
+// determined, it returns a default width.
 func getTermWidth(t gocuke.TestingT) int {
 	t.Helper()
 
@@ -404,6 +404,8 @@ func getTermWidth(t gocuke.TestingT) int {
 	return width
 }
 
+// computeTotalRequests calculates the total number of relay requests to be sent
+// by integrating the number of relays per second over time.
 func computeTotalRequests(initialRelaysPerSec, relaysPerSecInc, numBlocksInc, maxRelaysPerSec int64) uint64 {
 	var totalRequests uint64
 	for rps := initialRelaysPerSec; rps <= maxRelaysPerSec; rps += relaysPerSecInc {
