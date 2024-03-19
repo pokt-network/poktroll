@@ -242,9 +242,8 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@echo "Initializing chain..."
 	@set -e ;\
 	ignite chain init --skip-proto ;\
-	mkdir -p $(POKTROLLD_HOME)/config/ ;\
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp -r ${HOME}/.poktroll/config/ $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
 
 .PHONY: send_relay
 send_relay:
@@ -309,10 +308,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/service/types/
 	go generate ./x/proof/types/
 	go generate ./x/tokenomics/types/
-	go generate ./pkg/client/interface.go
-	go generate ./pkg/miner/interface.go
-	go generate ./pkg/relayer/interface.go
-	go generate ./pkg/crypto/rings/interface.go
+	find . -name interface.go | xargs -I {} go generate {}
 
 .PHONY: go_testgen_fixtures
 go_testgen_fixtures: ## Generate fixture data for unit tests
