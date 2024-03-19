@@ -3,12 +3,14 @@ package proxy
 import (
 	"context"
 	"net/url"
+	"time"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
+	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
@@ -26,10 +28,30 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		return err
 	}
 
-	// Get the supplier's advertised information from the blockchain
-	supplier, err := rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
-	if err != nil {
-		return err
+	var supplier sharedtypes.Supplier
+
+	// Wait for the supplier to be staked before building the relay servers.
+	for {
+		// Get the supplier's advertised information from the blockchain
+		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
+
+		// If the supplier is not found, wait for the supplier to be staked.
+		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
+			rp.logger.Info().Msgf(
+				"Waiting for the supplier with address %s to stake",
+				supplierAddress.String(),
+			)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		// If there is an error other than the supplier not being found, return the error
+		if err != nil {
+			return err
+		}
+
+		// If the supplier is found, break out of the wait loop.
+		break
 	}
 
 	// Check that the supplier's advertised services' endpoints are present in
