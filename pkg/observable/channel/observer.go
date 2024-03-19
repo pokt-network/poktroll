@@ -87,7 +87,7 @@ func (obsvr *channelObserver[V]) unsubscribe() {
 	defer obsvr.observerMu.Unlock()
 
 	if obsvr.isClosed {
-		// Get a context, eihter from the observer or from the background to get
+		// Get a context, either from the observer or from the background to get
 		// a reference to the logger.
 		ctx := obsvr.ctx
 		if ctx == nil {

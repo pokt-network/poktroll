@@ -107,3 +107,54 @@ func (obs *channelObservable[V]) goPublish() {
 	// Unsubscribe all observers as they can no longer receive notifications.
 	obs.observerManager.removeAll()
 }
+
+// Merge takes a slice of observables and merges them into a single observable
+// which publishes notifications from each of the observables supplied.
+// If the closeEarly flag is set to true, the merged observable will close
+// and unsubscribe from all observables when the first of them closes.
+func Merge[V any](
+	ctx context.Context,
+	obs []observable.Observable[V],
+	failFast bool,
+) observable.Observable[V] {
+	// Determine whether the merged observable should close as soon as one of
+	// the observables closes that it is merging of continue notifying observers.
+	failFastCh := make(chan *struct{})
+	mergedObs, mergedObsPubCh := NewObservable[V]()
+
+	// Start a goroutine to wait for the fast fail error channel to close and
+	// then call UnsubscribeAll() on the merged observable.
+	// NB: This only occurs if the closeEarly flag is set to true.
+	go func() {
+		select {
+		case <-failFastCh:
+			// Unsubscribe all observers
+			mergedObs.UnsubscribeAll()
+		}
+	}()
+
+	for _, o := range obs {
+		go goPublishNotifications[V](ctx, o, mergedObsPubCh, failFast, failFastCh)
+	}
+
+	return mergedObs
+}
+
+// goPublishNotifications re-publishes events from the given observable to
+// and sends them to the given publishCh.
+// This is intended to be run in a goroutine,
+func goPublishNotifications[V any](
+	ctx context.Context,
+	obs observable.Observable[V],
+	publishCh chan<- V,
+	failFast bool,
+	failFastCh chan *struct{},
+) {
+	obsCh := obs.Subscribe(ctx).Ch()
+	for event := range obsCh {
+		publishCh <- event
+	}
+	if failFast {
+		failFastCh <- nil
+	}
+}
