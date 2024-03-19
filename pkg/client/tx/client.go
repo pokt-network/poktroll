@@ -529,7 +529,7 @@ func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 	// Check if the TxResult has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
 	if bytes.Equal(txResult.Data.Value.TxResult.Tx, []byte{}) {
-		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an comettypes.EventDataTx event")
+		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult")
 	}
 
 	return &txResult.Data.Value.TxResult, nil
