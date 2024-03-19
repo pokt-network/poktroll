@@ -512,17 +512,17 @@ func (txnClient *txClient) getTxTimeoutError(ctx context.Context, txHashHex stri
 // If the resulting TxResult has empty transaction bytes, it assumes that
 // the message was not a transaction results and returns an error.
 func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
-	var rpcReponse rpctypes.RPCResponse
+	var rpcResponse rpctypes.RPCResponse
 
 	// Try to deserialize the provided bytes into an RPCResponse.
-	if err := json.Unmarshal(txResultBz, &rpcReponse); err != nil {
+	if err := json.Unmarshal(txResultBz, &rpcResponse); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
 	var txResult cometTxEvent
 
 	// Try to deserialize the provided bytes into a TxResult.
-	if err := json.Unmarshal(rpcReponse.Result, &txResult); err != nil {
+	if err := json.Unmarshal(rpcResponse.Result, &txResult); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 

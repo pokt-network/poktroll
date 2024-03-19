@@ -8,6 +8,7 @@ import (
 	"cosmossdk.io/depinject"
 	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -151,20 +152,27 @@ func NewRedelegationEventBytes(
 ) []byte {
 	t.Helper()
 	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/pocket.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"pocket.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
-	expectedTx := []byte(fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress))
 
 	txResultEvent := &testTxEvent{
 		Data: testTxEventDataStruct{
-			Value: testTxEventValueStruct{
-				TxResult: abci.TxResult{Tx: expectedTx},
-			},
+			Value: testTxEventValueStruct{},
 		},
 	}
+
+	err := json.Unmarshal(
+		[]byte(fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)),
+		&txResultEvent.Data.Value.TxResult,
+	)
+	require.NoError(t, err)
 
 	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
 
-	return []byte(txResultBz)
+	rpcResult := &rpctypes.RPCResponse{Result: txResultBz}
+	rpcResultBz, err := json.Marshal(rpcResult)
+	require.NoError(t, err)
+
+	return rpcResultBz
 }
 
 // TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
