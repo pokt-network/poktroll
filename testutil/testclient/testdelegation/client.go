@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -149,6 +151,35 @@ func NewRedelegationEventBytes(
 ) []byte {
 	t.Helper()
 	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/pocket.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"pocket.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
-	json := fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)
-	return []byte(json)
+	expectedTx := []byte(fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress))
+
+	txResultEvent := &testTxEvent{
+		Data: testTxEventDataStruct{
+			Value: testTxEventValueStruct{
+				TxResult: abci.TxResult{Tx: expectedTx},
+			},
+		},
+	}
+
+	txResultBz, err := json.Marshal(txResultEvent)
+	require.NoError(t, err)
+
+	return []byte(txResultBz)
+}
+
+// TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
+// This duplicates the unexported `cometTxEvent` from `pkg/client/tx/client.go`.
+// We need to answer the following questions to avoid this:
+//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
+//   - Should we prefer export types which are not required for API consumption?
+//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
+//   - Should we enforce all tests to use `-tags=test`?
+type testTxEvent struct {
+	Data testTxEventDataStruct `json:"data"`
+}
+type testTxEventDataStruct struct {
+	Value testTxEventValueStruct `json:"value"`
+}
+type testTxEventValueStruct struct {
+	TxResult abci.TxResult
 }
