@@ -2,10 +2,14 @@ package sdk
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"strings"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
 	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	block "github.com/pokt-network/poktroll/pkg/client/block"
@@ -23,7 +27,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
+	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
@@ -42,12 +46,28 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(blockClient))
 
+	urlString := HostToGRPCUrl(config.QueryNodeGRPCUrl)
+
+	var creds credentials.TransportCredentials
+	if strings.HasPrefix(urlString, "grpcs://") {
+		systemRoots, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+
+		creds = credentials.NewTLS(&tls.Config{
+			RootCAs: systemRoots,
+		})
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
 	// Create and supply the grpc client used by the queriers
 	// TODO_TECHDEBT: Configure the grpc client options from the config.
 	var grpcClient grpctypes.ClientConn
 	grpcClient, err = grpc.Dial(
 		config.QueryNodeGRPCUrl.Host,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(creds),
 	)
 	if err != nil {
 		return nil, err

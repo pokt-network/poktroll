@@ -2,6 +2,9 @@ package websocket
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
@@ -25,9 +28,21 @@ func (wsDialer *websocketDialer) DialContext(
 	ctx context.Context,
 	urlString string,
 ) (client.Connection, error) {
+
+	dialer := websocket.DefaultDialer
+
+	if strings.HasPrefix(urlString, "wss://") {
+		systemRoots, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+
+		dialer.TLSClientConfig = &tls.Config{RootCAs: systemRoots}
+	}
+
 	// TODO_IMPROVE: check http response status and potential err
 	// TODO_TECHDEBT: add test coverage and ensure support for a 3xx responses
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, urlString, nil)
+	conn, _, err := dialer.DialContext(ctx, urlString, nil)
 	if err != nil {
 		return nil, err
 	}

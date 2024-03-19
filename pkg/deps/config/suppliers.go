@@ -69,7 +69,7 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 		// Convert the host to a websocket URL
-		queryNodeWebsocketURL := sdk.HostToWebsocketURL(queryNodeRPCURL.Host)
+		queryNodeWebsocketURL := sdk.HostToWebsocketURL(queryNodeRPCURL)
 		eventsQueryClient := events.NewEventsQueryClient(queryNodeWebsocketURL)
 
 		return depinject.Configs(deps, depinject.Supply(eventsQueryClient)), nil
