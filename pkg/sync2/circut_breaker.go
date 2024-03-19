@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 )
 
+// TODO_DISCUSS_IN_THIS_COMMIT: alternative (shorter) names: `Breaker`, `Fuse`, ?
 type CircuitBreaker struct {
 	// TODO: add a noCopy field?
 
