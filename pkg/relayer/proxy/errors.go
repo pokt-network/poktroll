@@ -1,6 +1,8 @@
 package proxy
 
-import sdkerrors "cosmossdk.io/errors"
+import (
+	sdkerrors "cosmossdk.io/errors"
+)
 
 var (
 	codespace                                        = "relayer_proxy"

@@ -5,7 +5,7 @@ import (
 	ringtypes "github.com/athanorlabs/go-dleq/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/noot/ring-go"
+	ring "github.com/noot/ring-go"
 )
 
 // newRingFromPoints creates a new ring from points (i.e. public keys) on the secp256k1 curve

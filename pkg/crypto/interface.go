@@ -5,7 +5,7 @@ import (
 	"context"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/noot/ring-go"
+	ring "github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/x/service/types"
 )
@@ -37,8 +37,8 @@ type RingClient interface {
 	// it exists.
 	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
 
-	// VerifyRelayRequestSignature verifies the relay request signature against the
-	// ring for the application address in the relay request.
+	// VerifyRelayRequestSignature verifies the relay request signature against
+	// the ring for the application address in the relay request.
 	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
 }
 
@@ -46,7 +46,7 @@ type RingClient interface {
 // On-chain and off-chain implementations should take care of retrieving the
 // address' account and returning its public key.
 type PubKeyClient interface {
-	// GetPubKeyFromAddress returns the public key of the given account address if
-	// it exists.
+	// GetPubKeyFromAddress returns the public key of the given account address
+	// if it exists.
 	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
 }

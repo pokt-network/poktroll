@@ -1,6 +1,8 @@
 package rings
 
-import sdkerrors "cosmossdk.io/errors"
+import (
+	sdkerrors "cosmossdk.io/errors"
+)
 
 var (
 	codespace                                 = "rings"

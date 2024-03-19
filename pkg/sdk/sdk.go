@@ -58,7 +58,7 @@ type poktrollSDK struct {
 	applicationQuerier client.ApplicationQueryClient
 
 	// accountQuerier is the querier for the account module.
-	// It is used to query a specific account given an address.
+	// It retrieves on-chain accounts provided the address.
 	accountQuerier client.AccountQueryClient
 
 	// blockClient is the client for the block module.

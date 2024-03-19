@@ -11,8 +11,9 @@ import (
 
 var _ client.AccountQueryClient = (*AccountKeeperQueryClient)(nil)
 
-// AccountKeeperQueryClient is a thin wrapper around the AccountKeeper and does
-// not rely on the QueryClient contrariwise to the off-chain implementation.
+// AccountKeeperQueryClient is a thin wrapper around the AccountKeeper.
+// It does not rely on the QueryClient, and therefore does not make any
+// network requests as in the off-chain implementation.
 type AccountKeeperQueryClient struct {
 	keeper AccountKeeper
 }
@@ -36,8 +37,8 @@ func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 		return nil, err
 	}
 
-	// keeper.GetAccount panics if the account is not found. Recover from the panic
-	// and return an error instead if that's the case.
+	// keeper.GetAccount panics if the account is not found.
+	// Capture the panic and return an error if one occurs.
 	defer func() {
 		if r := recover(); r != nil {
 			err = ErrProofPubKeyNotFound
@@ -45,6 +46,7 @@ func (accountQueryClient *AccountKeeperQueryClient) GetAccount(
 		}
 	}()
 
+	// Retrieve an account from the account keeper.
 	account = accountQueryClient.keeper.GetAccount(ctx, addrBz)
 
 	return account, err

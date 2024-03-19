@@ -9,8 +9,9 @@ import (
 
 var _ client.ApplicationQueryClient = (*AppKeeperQueryClient)(nil)
 
-// AppKeeperQueryClient is a thin wrapper around the ApplicationKeeper and does
-// not rely on the QueryClient contrariwise to the off-chain implementation.
+// AppKeeperQueryClient is a thin wrapper around the AccountKeeper.
+// It does not rely on the QueryClient, and therefore does not make any
+// network requests as in the off-chain implementation.
 type AppKeeperQueryClient struct {
 	keeper ApplicationKeeper
 }

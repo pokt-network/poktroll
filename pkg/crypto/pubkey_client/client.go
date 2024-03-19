@@ -41,7 +41,8 @@ func NewPubKeyClient(deps depinject.Config) (crypto.PubKeyClient, error) {
 }
 
 // GetPubKeyFromAddress returns the public key of the given address.
-// It uses the accountQuerier to get the account and then returns its public key.
+// It retrieves the corresponding account by querying for it and returns
+// the associated public key.
 func (pc *pubKeyClient) GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error) {
 	acc, err := pc.accountQuerier.GetAccount(ctx, address)
 	if err != nil {
