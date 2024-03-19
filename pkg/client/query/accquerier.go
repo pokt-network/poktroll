@@ -51,7 +51,7 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
-	if foundAccount, accountFound := aq.accountCache[address]; accountFound {
+	if foundAccount, isAccountFound := aq.accountCache[address]; isAccountFound {
 		return foundAccount, nil
 	}
 

@@ -23,7 +23,7 @@ func (rp *relayerProxy) VerifyRelayRequest(
 
 	// Extract the session header for usage below.
 	// ringCache.VerifyRelayRequestSignature already verified the header's validaity.
-	sessionHeader := relayRequest.GetMeta().GetSessionHeader()
+	sessionHeader := relayRequest.GetMeta().SessionHeader
 
 	// Application address is used to verify the relayRequest signature.
 	// It is guaranteed to be present in the relayRequest since the signature

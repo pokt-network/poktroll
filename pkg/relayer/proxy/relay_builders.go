@@ -34,7 +34,7 @@ func (sync *synchronousRPCServer) newRelayResponse(
 	sessionHeader *sessiontypes.SessionHeader,
 ) (*types.RelayResponse, error) {
 	relayResponse := &types.RelayResponse{
-		Meta: &types.RelayResponseMetadata{SessionHeader: sessionHeader},
+		Meta: types.RelayResponseMetadata{SessionHeader: sessionHeader},
 	}
 
 	responseBz, err := io.ReadAll(response.Body)

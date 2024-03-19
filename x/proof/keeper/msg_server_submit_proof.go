@@ -23,7 +23,7 @@ const (
 	relayMinDifficultyBits = 0
 
 	// sumSize is the size of the sum of the relay request and response in bytes.
-	// This is needed to extract the relay request and response // from the closest
+	// This is needed to extract the relay request and response from the closest
 	// merkle proof.
 	// TODO_TECHDEBT(@h5law): Add a method on the smst to extract the value hash
 	// or export sumSize to be used instead of current local value
