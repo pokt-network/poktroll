@@ -62,6 +62,11 @@ func (rel *relayMiner) Start(ctx context.Context) error {
 	// This is a blocking call as it waits for the waitgroup in relayerProxy.Start()
 	// that starts all the relay servers to be done.
 	rel.logger.Info().Msg("starting relayer proxy")
+	// TODO_TECHDEBT: Listen for on-chain and local configuration changes, stop
+	// the relayerProxy if they do not match, then wait until they match again
+	// before starting the relayerProxy with the new config.
+	// Session manager should continue to run during this time, submitting
+	// any relays that were already mined in previous sessions.
 	if err := rel.relayerProxy.Start(ctx); err != nil {
 		return err
 	}
