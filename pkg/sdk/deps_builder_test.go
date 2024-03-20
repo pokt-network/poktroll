@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"net/url"
 	"testing"
 
@@ -12,13 +11,6 @@ import (
 )
 
 func TestGetTransportCreds(t *testing.T) {
-	systemRoots, err := x509.SystemCertPool()
-	require.NoError(t, err)
-
-	tlsCreds := credentials.NewTLS(&tls.Config{
-		RootCAs: systemRoots,
-	})
-
 	tests := []struct {
 		desc    string
 		hostUrl string
@@ -27,7 +19,7 @@ func TestGetTransportCreds(t *testing.T) {
 		{
 			desc:    "Test grpcs scheme",
 			hostUrl: "grpcs://poktroll.com",
-			want:    tlsCreds,
+			want:    credentials.NewTLS(&tls.Config{}),
 		},
 		{
 			desc:    "Test any non-grpcs scheme",
@@ -38,7 +30,8 @@ func TestGetTransportCreds(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			u, _ := url.Parse(tc.hostUrl)
+			u, err := url.Parse(tc.hostUrl)
+			require.Nil(t, err)
 
 			got, err := getTransportCreds(u)
 			require.Nil(t, err)

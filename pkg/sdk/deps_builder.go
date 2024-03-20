@@ -3,7 +3,6 @@ package sdk
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"net/url"
 	"strings"
 
@@ -28,7 +27,7 @@ func (sdk *poktrollSDK) buildDeps(
 	ctx context.Context,
 	config *POKTRollSDKConfig,
 ) (depinject.Config, error) {
-	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl)
+	pocketNodeWebsocketURL := RPCToWebsocketURL(config.QueryNodeUrl)
 
 	// Have a new depinject config
 	deps := depinject.Configs()
@@ -105,18 +104,11 @@ func (sdk *poktrollSDK) buildDeps(
 
 // getTransportCreds creates transport credentials based on the provided URL scheme
 func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
-	urlString := HostToGRPCUrl(url)
+	urlString := ConstructGRPCUrl(url)
 
 	if strings.HasPrefix(urlString, "grpcs://") {
-		systemRoots, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-
-		return credentials.NewTLS(&tls.Config{
-			RootCAs: systemRoots,
-		}), nil
+		return credentials.NewTLS(&tls.Config{}), nil
 	}
-	
+
 	return insecure.NewCredentials(), nil
 }

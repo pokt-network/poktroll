@@ -8,65 +8,92 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHostToWebsocketURL(t *testing.T) {
+func TestRPCToWebsocketURL(t *testing.T) {
 	tests := []struct {
 		desc    string
 		hostUrl string
 		want    string
 	}{
 		{
-			desc:    "Test HTTPS",
+			desc:    "https results in wss",
 			hostUrl: "https://poktroll.com",
 			want:    "wss://poktroll.com/websocket",
 		},
 		{
-			desc:    "Test HTTP",
+			desc:    "wss stays wss",
+			hostUrl: "wss://poktroll.com",
+			want:    "wss://poktroll.com/websocket",
+		},
+		{
+			desc:    "http results in ws",
 			hostUrl: "http://poktroll.com",
 			want:    "ws://poktroll.com/websocket",
+		},
+		{
+			desc:    "default is wss",
+			hostUrl: "other://poktroll.com/websocket",
+			want:    "wss://poktroll.com/websocket",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			u, _ := url.Parse(tc.hostUrl)
-			got := sdk.HostToWebsocketURL(u)
+			u, err := url.Parse(tc.hostUrl)
+			require.Nil(t, err)
+			got := sdk.RPCToWebsocketURL(u)
 			require.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestHostToGRPCUrl(t *testing.T) {
+func TestConstructGRPCUrl(t *testing.T) {
 	tests := []struct {
 		desc    string
 		hostUrl string
 		want    string
 	}{
 		{
-			desc:    "Test HTTPS",
+			desc:    "https results in grpcs",
 			hostUrl: "https://poktroll.com",
 			want:    "grpcs://poktroll.com",
 		},
 		{
-			desc:    "Test with port",
+			desc:    "https with port results in grpcs",
 			hostUrl: "https://poktroll.com:443",
 			want:    "grpcs://poktroll.com:443",
 		},
 		{
-			desc:    "Test gRPCs",
+			desc:    "grpcs stays grpcs",
 			hostUrl: "grpcs://poktroll.com",
 			want:    "grpcs://poktroll.com",
 		},
 		{
-			desc:    "Test HTTP",
+			desc:    "grpc stays grpc",
+			hostUrl: "grpc://poktroll.com",
+			want:    "grpc://poktroll.com",
+		},
+		{
+			desc:    "tcp stays tcp",
+			hostUrl: "tcp://poktroll.com",
+			want:    "tcp://poktroll.com",
+		},
+		{
+			desc:    "http results in grpc",
 			hostUrl: "http://poktroll.com",
 			want:    "grpc://poktroll.com",
+		},
+		{
+			desc:    "default is grpcs",
+			hostUrl: "other://poktroll.com",
+			want:    "grpcs://poktroll.com",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			u, _ := url.Parse(tc.hostUrl)
-			got := sdk.HostToGRPCUrl(u)
+			u, err := url.Parse(tc.hostUrl)
+			require.Nil(t, err)
+			got := sdk.ConstructGRPCUrl(u)
 			require.Equal(t, tc.want, got)
 		})
 	}
