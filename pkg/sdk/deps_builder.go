@@ -107,19 +107,16 @@ func (sdk *poktrollSDK) buildDeps(
 func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
 	urlString := HostToGRPCUrl(url)
 
-	var creds credentials.TransportCredentials
 	if strings.HasPrefix(urlString, "grpcs://") {
 		systemRoots, err := x509.SystemCertPool()
 		if err != nil {
 			return nil, err
 		}
 
-		creds = credentials.NewTLS(&tls.Config{
+		return credentials.NewTLS(&tls.Config{
 			RootCAs: systemRoots,
-		})
-	} else {
-		creds = insecure.NewCredentials()
+		}), nil
 	}
-
-	return creds, nil
+	
+	return insecure.NewCredentials(), nil
 }
