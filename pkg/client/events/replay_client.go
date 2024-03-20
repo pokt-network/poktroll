@@ -21,6 +21,7 @@ const (
 	// eventsBytesRetryLimit is the maximum number of times to attempt to
 	// re-establish the events query bytes subscription when the events bytes
 	// observable returns an error or closes.
+	// TODO to make this a customisable parameter in the appgateserver and relayminer config files.
 	eventsBytesRetryLimit        = 0
 	eventsBytesRetryResetTimeout = 10 * time.Second
 	// replayObsCacheBufferSize is the replay buffer size of the
