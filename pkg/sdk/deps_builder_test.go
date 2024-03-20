@@ -14,9 +14,7 @@ import (
 func TestGetTransportCreds(t *testing.T) {
 
 	systemRoots, err := x509.SystemCertPool()
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 
 	tlsCreds := credentials.NewTLS(&tls.Config{
 		RootCAs: systemRoots,
