@@ -53,7 +53,7 @@ type relaysSuite struct {
 	blockClient     client.BlockClient
 	blocksReplayObs client.BlockReplayObservable
 
-	shouldRelayBatchBlocksObs observable.Observable[int64]
+	shouldRelayBatchBlocksObs observable.Observable[*relayBatchNotif]
 
 	relaysSent     atomic.Uint64
 	relaysComplete atomic.Uint64
@@ -62,7 +62,7 @@ type relaysSuite struct {
 	gatewayCount        atomic.Int64
 	appCount            atomic.Int64
 	supplierCount       atomic.Int64
-	relaysPerSecond     atomic.Int64
+	relaysPerSec        atomic.Int64
 	nextRelaysPerSec    chan int64
 
 	totalExpectedRequests uint64
@@ -71,21 +71,22 @@ type relaysSuite struct {
 	onChainStateChangeCompleteCh chan struct{}
 }
 
-type incNotif struct {
-	prevValue int64
-	nextValue int64
-}
+//type incNotif struct {
+//	prevValue int64
+//	nextValue int64
+//}
 
 type blockUpdatesChainStateNotif struct {
 	//complete bool
 	//done chan struct{}
-	blockHeight int64
-	waitGroup   *sync.WaitGroup
+	//blockHeight int64
+	testHeight int64
+	waitGroup  *sync.WaitGroup
 }
 
 type relayBatchNotif struct {
 	relaysPerSec int64
-	blockHeight  int64
+	testHeight   int64
 }
 
 func TestLoadRelays(t *testing.T) {
@@ -143,70 +144,65 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	supplierBlocksPerInc := table.Cell(3, 2).Int64()
 	maxSuppliers := table.Cell(3, 3)
 
-	//blocksCh := s.blocksReplayObs.Subscribe(s.ctx).Ch()
-	//s.startingBlockHeight = s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
-	//logger.Debug().Int64("starting block height", s.startingBlockHeight).Send()
+	testHeight := new(atomic.Int64)
 
-	//var relayBatchPublishCh chan<- *relayBatchNotif
-	//s.relayBatchObs, relayBatchPublishCh = channel.NewObservable[*relayBatchNotif]()
-
-	//blocksSinceLastGatewayIncObs :=
+	//batchObs := channel.Map(s.ctx, s.blocksReplayObs,
+	//	func(ctx context.Context, block client.Block) (*atomic.Uint64, bool) {
+	//		// Increment the batch number every time a block is received.
+	//		testHeight.Add(1)
+	//
+	//		return testHeight, false
+	//	},
+	//)
 
 	shouldBlockUpdateChainStateObs := channel.Map(s.ctx, s.blocksReplayObs,
-		func(ctx context.Context, block client.Block) (*blockUpdatesChainStateNotif, bool) {
-			if block.Height()%gatewayBlocksPerInc != 0 &&
-				block.Height()%appBlocksPerInc != 0 &&
-				block.Height()%supplierBlocksPerInc != 0 {
-				//return nil, true
+		func(
+			ctx context.Context,
+			block client.Block,
+		) (notif *blockUpdatesChainStateNotif, skip bool) {
+			testHeight := testHeight.Load()
+			if testHeight != 0 &&
+				testHeight%gatewayBlocksPerInc != 0 &&
+				testHeight%appBlocksPerInc != 0 &&
+				testHeight%supplierBlocksPerInc != 0 {
 
 				// There are no new actors to stake in the given block.
 				// Return nil to indicate no state updates need to be made
-				// and to signal that a block has ticked.
+				// and don't skip in order to signal that a block has ticked.
 				return nil, false
 			}
 
-			return &blockUpdatesChainStateNotif{
-				blockHeight: block.Height(),
-				waitGroup:   &sync.WaitGroup{},
-			}, false
+			notif = &blockUpdatesChainStateNotif{
+				testHeight: testHeight,
+				waitGroup:  &sync.WaitGroup{},
+			}
+
+			return notif, false
 		},
 	)
 
 	blockUpdatesChainStateObs := channel.Map(s.ctx, shouldBlockUpdateChainStateObs,
 		func(ctx context.Context, notif *blockUpdatesChainStateNotif) (*blockUpdatesChainStateNotif, bool) {
 			// If the notification is nil there is no update to the chain state.
-			// Return nil to preserve notification frequency
+			// Return nil to indicate no state updates need to be made and don't
+			// skip in order to signal that a block has ticked.
 			if notif == nil {
 				return nil, false
 			}
-			//if notif.blockHeight%gatewayBlocksPerInc != 0 {
-			//	return
-			//}
 
-			gatewayCount := s.gatewayCount.Load()
-			gatewaysToStake := gatewayInc.Int64()
-			if gatewayCount+gatewaysToStake > maxGateways.Int64() {
-				gatewaysToStake = maxGateways.Int64() - gatewayCount
-			}
-
-			notif.waitGroup.Add(int(gatewaysToStake))
-
-			go func() {
-				// Stake gateways...
-				for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-					time.Sleep(250)
-
-					notif.waitGroup.Done()
-				}
-			}()
+			s.incrementGateways(notif, gatewayInc.Int64(), maxGateways.Int64())
+			s.incrementApps(notif, appInc.Int64(), maxApps.Int64())
+			s.incrementSuppliers(notif, supplierInc.Int64(), maxSuppliers.Int64())
 
 			return notif, false
 		},
 	)
 
 	isChainStateUpdating := new(atomic.Bool)
+
+	// TODO_IN_THIS_COMMIT: consider moving to #ALoadOfConcurrentRelayRequestsAreSent
 	s.shouldRelayBatchBlocksObs = channel.Map(s.ctx, blockUpdatesChainStateObs,
-		func(ctx context.Context, notif *blockUpdatesChainStateNotif) (int64, bool) {
+		func(ctx context.Context, notif *blockUpdatesChainStateNotif) (*relayBatchNotif, bool) {
 			// If there are chain state updates, wait for them to complete first.
 			if notif != nil {
 				alreadyUpdating := isChainStateUpdating.CompareAndSwap(false, true)
@@ -219,292 +215,53 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			}
 
 			// If the chain state is updating, skip the batch(es) that would
-			// otherwise be scheduled for this block.
+			// otherwise be scheduled for this block. I.e. do NOT increment
+			// the test height.
 			if isChainStateUpdating.Load() {
-				return 0, true
-			}
-
-			// TODO_IN_THIS_COMMIT: what if the block rate < the batch rate?
-			// Drive this map with a ticker instead?
-
-			return notif.blockHeight, false
-		},
-	)
-
-	//stakedGatewaysObs := channel.Map(s.ctx, incGatewaysObs,
-	//	func(ctx context.Context, notif *incNotif) (chan<- struct{}, bool) {
-	//		// TODO_IN_THIS_COMMIT: consider replacing w/ context.Context.
-	//		done := make(chan struct{})
-	//
-	//		// Stake the next gateway(s)...
-	//
-	//		return done, false
-	//	},
-	//)
-
-	// TODO: incAppsObs
-	// TODO: incSuppliersObs
-
-	incGatewaysCh := incGatewaysObs.Subscribe(s.ctx).Ch()
-	stakedGatewayCh := stakedGatewaysObs.Subscribe(s.ctx).Ch()
-	blockUpdatesChainStateObs := channel.Map(s.ctx, s.blocksReplayObs,
-		func(ctx context.Context, block client.Block) (*blockUpdatesChainStateNotif, bool) {
-
-			// Asynchronously wait for staked gateways to complete.
-			//go func() {
-			//	<-stakedGatewaysCh
-			//	close(done)
-			//}()
-
-			//return &blockUpdatesChainStateNotif{done: done}, false
-
-			var (
-				isGatewayInc bool
-				gatewayInc   = new(*incNotif)
-			)
-
-			select {
-			case gatewayInc <- incGatewaysCh:
-				//return &blockUpdatesChainStateNotif{complete: false}, false
-				isGatewayInc = true
-			//default:
-			case <-time.After(100 * time.Millisecond):
-			}
-
-			if !isGatewayInc {
 				return nil, true
 			}
 
-			if isGatewayInc {
-				//go func() {
-				<-stakedGatewayCh
-				//}()
-			}
+			// Increment test height for each block where no chain state
+			// updates are in progress.
+			testHeight.Add(1)
 
-			return &blockUpdatesChainStateNotif{
-				// TODO:
-				// gatewayCount: x,
-				// appCount: y,
-				// supplierCount: z,
+			return &relayBatchNotif{
+				testHeight: notif.testHeight,
 			}, false
-
-			//select {
-			//case <- stakedGatewaysCh:
-			//	//return &blockUpdatesChainStateNotif{complete: true}, false
-			//default:
-			//}
-			//
-			//return nil, true
 		},
 	)
-
-	//incGatewaysCh := incGatewaysObs.Subscribe(s.ctx).Ch()
-	//blockUpdatesChainStateObs := channel.Map(s.ctx, s.blocksReplayObs,
-	//	func(ctx context.Context, block client.Block) (*blockUpdatesChainStateNotif, bool) {
-	//		//var didIncrement bool
-	//
-	//		select {
-	//		case <-incGatewaysCh:
-	//			//return &blockUpdatesChainStateNotif{complete: false}, false
-	//			//didIncrement = true
-	//		default:
-	//		}
-	//
-	//		select {
-	//		case <- stakedGatewaysCh:
-	//			//return &blockUpdatesChainStateNotif{complete: true}, false
-	//		default:
-	//		}
-	//
-	//		return nil, true
-	//	},
-	//)
-
-	//go func() {
-	//	for block := range blocksCh {
-	//		var (
-	//			currentHeight               = block.Height()
-	//			changingOnChainState        atomic.Bool
-	//			onChainStateChangeWaitGroup sync.WaitGroup
-	//			gatewayCount                = s.gatewayCount.Load()
-	//			gatewaysToStake             int64
-	//			appCount                    = s.appCount.Load()
-	//			appsToStake                 int64
-	//			supplierCount               = s.supplierCount.Load()
-	//			suppliersToStake            int64
-	//		)
-	//
-	//		// Skip the starting block height.
-	//		if currentHeight <= s.startingBlockHeight {
-	//			continue
-	//		}
-	//
-	//		// Compute the number of gateways to stake add to the wait group.
-	//		// The wait group will be "done"d when staking is complete.
-	//		if currentHeight%gatewayBlocksPerInc == 0 {
-	//			// Concurrently stake gateways every increment blocks.
-	//			if gatewayCount < maxGateways.Int64() {
-	//				gatewaysToStake = maxGateways.Int64() - gatewayCount
-	//				if gatewaysToStake > gatewayInc.Int64() {
-	//					gatewaysToStake = gatewayInc.Int64()
-	//				}
-	//
-	//				onChainStateChangeWaitGroup.Add(1)
-	//			}
-	//		}
-	//
-	//		// Compute the number of applicaitons to stake add to the wait group.
-	//		// The wait group will be "done"d when staking is complete.
-	//		if currentHeight%appBlocksPerInc == 0 {
-	//			// Concurrently stake applications every increment blocks.
-	//			if appCount < maxApps.Int64() {
-	//				appsToStake = maxApps.Int64() - appCount
-	//				if appsToStake > appInc.Int64() {
-	//					appsToStake = appInc.Int64()
-	//				}
-	//
-	//				onChainStateChangeWaitGroup.Add(1)
-	//			}
-	//		}
-	//
-	//		// Compute the number of suppliers to stake add to the wait group.
-	//		// The wait group will be "done"d when staking is complete.
-	//		if currentHeight%supplierBlocksPerInc == 0 {
-	//			// Concurrently stake suppliers every increment blocks.
-	//			if supplierCount < maxSuppliers.Int64() {
-	//				suppliersToStake = maxSuppliers.Int64() - supplierCount
-	//				if suppliersToStake > supplierInc.Int64() {
-	//					suppliersToStake = supplierInc.Int64()
-	//				}
-	//
-	//				onChainStateChangeWaitGroup.Add(1)
-	//			}
-	//		}
-	//
-	//		if gatewaysToStake > 0 {
-	//			nextGatewayCount := gatewayCount + gatewaysToStake
-	//
-	//			clearLine(s)
-	//			logger.Info().Msgf(
-	//				"incrementing gateways (staking %d->%d)",
-	//				gatewayCount,
-	//				nextGatewayCount,
-	//			)
-	//
-	//			// Concurrently stake all new gateways.
-	//			for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-	//				go func(nextGatewayCount int64) {
-	//
-	//					// Stake new gateways...
-	//					// TODO: synchronize staking to start & complete in-between batches.
-	//					changingOnChainState.CompareAndSwap(false, true)
-	//					time.Sleep(2000)
-	//
-	//					// Update gateway count after staking is completed.
-	//					s.gatewayCount.Store(nextGatewayCount)
-	//
-	//					onChainStateChangeWaitGroup.Done()
-	//				}(nextGatewayCount)
-	//			}
-	//		}
-	//
-	//		if appsToStake > 0 {
-	//			nextAppCount := appCount + appsToStake
-	//
-	//			clearLine(s)
-	//			logger.Info().Msgf(
-	//				"incrementing applications (staking %d->%d)",
-	//				appCount,
-	//				nextAppCount,
-	//			)
-	//
-	//			// Concurrently stake and delegate all new applications.
-	//			for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
-	//				go func(nextApplicationCount int64) {
-	//
-	//					// Stake new applications...
-	//					// Re-delegate all applications...
-	//					// TODO: strategy for distributing app delegations across more than 7 gateways.
-	//					// TODO: synchronize staking to start & complete in-between batches.
-	//					changingOnChainState.CompareAndSwap(false, true)
-	//					time.Sleep(2000)
-	//
-	//					s.appCount.Store(nextApplicationCount)
-	//
-	//					onChainStateChangeWaitGroup.Done()
-	//				}(nextAppCount)
-	//			}
-	//		}
-	//
-	//		if suppliersToStake > 0 {
-	//			nextSupplierCount := supplierCount + suppliersToStake
-	//
-	//			clearLine(s)
-	//			logger.Info().Msgf(
-	//				"incrementing suppliers (staking %d->%d)",
-	//				supplierCount,
-	//				nextSupplierCount,
-	//			)
-	//
-	//			for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-	//				go func(nextSupplierCount int64) {
-	//
-	//					// Stake new suppliers...
-	//					// TODO: synchronize staking to start & complete in-between batches.
-	//					changingOnChainState.CompareAndSwap(false, true)
-	//					time.Sleep(2000)
-	//
-	//					s.supplierCount.Store(nextSupplierCount)
-	//
-	//					onChainStateChangeWaitGroup.Done()
-	//				}(nextSupplierCount)
-	//			}
-	//		}
-	//
-	//		// TODO_IN_THIS_COMMIT: something better than waiting...
-	//		time.Sleep(100 * time.Millisecond)
-	//
-	//		if changingOnChainState.Load() {
-	//			clearLine(s)
-	//			logger.Debug().Msg("on-chain state is changing...")
-	//			//s.onChainStateChangeStartCh <- struct{}{}
-	//
-	//			time.Sleep(2000)
-	//			//onChainStateChangeWaitGroup.Wait()
-	//			//
-	//			//s.onChainStateChangeCompleteCh <- struct{}{}
-	//			clearLine(s)
-	//			logger.Debug().Msg("on-chain state done changing")
-	//		}
-	//	}
-	//}()
 }
 
 func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(table gocuke.DataTable) {
 	// Set initial relays per second
 	initialRelaysPerSecond := table.Cell(1, 0).Int64()
-	s.relaysPerSecond.Store(initialRelaysPerSecond)
+	s.relaysPerSec.Store(initialRelaysPerSecond)
 
-	relaysPerSecondInc := table.Cell(1, 1).Int64()
+	relaysPerSecInc := table.Cell(1, 1).Int64()
 	numBlocksPerInc := table.Cell(1, 2).Int64()
 	maxRelaysPerSec := table.Cell(1, 3).Int64()
 
 	// Set the total number of relay requests to be sent.
 	// It may be read from concurrently running goroutines but remains
 	// constant for the duration of the test.
-	s.totalExpectedRequests = computeTotalRequests(initialRelaysPerSecond, relaysPerSecondInc, numBlocksPerInc, maxRelaysPerSec)
+	s.totalExpectedRequests = computeTotalRequests(initialRelaysPerSecond, relaysPerSecInc, numBlocksPerInc, maxRelaysPerSec)
 
+	// relayBatchObs maps from block heights at which a relay batch should be sent to
+	// the number of relays per second to send in that batch, incrementing the rps
+	// according to the step table.
 	relayBatchObs := channel.Map(s.ctx, s.shouldRelayBatchBlocksObs,
-		func(ctx context.Context, blockHeight int64) (*relayBatchNotif, bool) {
-			if blockHeight%numBlocksPerInc != 0 {
-				return nil, true
+		func(ctx context.Context, notif *relayBatchNotif) (*relayBatchNotif, bool) {
+			relaysPerSec := s.relaysPerSec.Load()
+
+			if notif.testHeight%numBlocksPerInc == 0 {
+				// Increment relaysPerSec.
+				relaysPerSec = s.relaysPerSec.Add(relaysPerSecInc)
 			}
 
-			relaysPerSec := s.relaysPerSecond.Add(relaysPerSecondInc)
-			return &relayBatchNotif{
-				relaysPerSec: relaysPerSec,
-				blockHeight:  blockHeight,
-			}, false
+			// Populate the number of relay requests to send in this batch.
+			notif.relaysPerSec = relaysPerSec
+
+			return notif, false
 		},
 	)
 
@@ -513,8 +270,6 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 	tickerCircuitBreaker := sync2.NewCircuitBreaker(maxConcurrentBatchLimit)
 	// batchLimiter limits request concurrency to match the maximum supported by hardware.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
-
-	batchNumber := new(atomic.Uint64)
 
 	channel.ForEach(s.ctx, relayBatchObs,
 		func(ctx context.Context, batch *relayBatchNotif) {
@@ -560,42 +315,115 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 			})
 
-			// TODO_IN_THIS_COMMIT: waiting and using the circuit breaker might
-			// be mutually exclusive options. If we wait, backpressure may cause
-			// batches to be sent later than expected. If we use the circuit breaker
-			// the test will fail when the limit is exceeded.
-			batchWaitGroup.Wait()
+			// Wait for the batch asynchronously to avoid creating backpressure in
+			// this observable such that the circuit breaker becomes ineffective.
+			go func() {
+				batchWaitGroup.Wait()
 
-			// TODO_IN_THIS_COMMIT: comment explaining why inc. batch number first.
-			nextBatchNumber := batchNumber.Add(1)
-
-			clearLine(s)
-			logger.Info().Msgf(
-				"batch %d complete (%d/%d)",
-				nextBatchNumber-1,
-				relaysPerSec,
-				relaysPerSec,
-			)
-			printProgressLine(s, progressBarWidth, s.relaysComplete.Load(), s.totalExpectedRequests)
+				clearLine(s)
+				logger.Info().Msgf(
+					"test height %d complete (%d/%d)",
+					batch.testHeight,
+					relaysPerSec,
+					relaysPerSec,
+				)
+				printProgressLine(s, progressBarWidth, s.relaysComplete.Load(), s.totalExpectedRequests)
+			}()
 		},
 	)
 
-	//relayBatchObs := channel.Map(s.ctx, s.blocksReplayObs,
-	//	func(ctx context.Context, block client.Block) (*relayBatchNotif, bool) {
-	//
-	//	},
-	//)
-
-	//// Concurrently monitor total relay progress.
-	//go s.goMonitorProgress()
-	//
-	//// Concurrently send relay batches.
-	//go s.goStartRelayBatchTicker(maxConcurrentBatchLimit, maxRelaysPerSec)
-	//
-	//// Concurrently increment number of relays per second to send.
-	//go goIncRelaysPerSec(s, relaysPerSecondInc, numBlocksPerInc, maxRelaysPerSec)
-
+	// Wait for the suite context to be done.
 	<-s.ctx.Done()
+}
+
+func (s *relaysSuite) incrementGateways(
+	notif *blockUpdatesChainStateNotif,
+	gatewayInc,
+	maxGateways int64,
+) {
+	gatewayCount := s.gatewayCount.Load()
+	gatewaysToStake := gatewayInc
+	if gatewayCount+gatewaysToStake > maxGateways {
+		gatewaysToStake = maxGateways - gatewayCount
+	}
+
+	notif.waitGroup.Add(int(gatewaysToStake))
+
+	go func() {
+		// Stake gateways...
+		clearLine(s)
+		logger.Info().Msgf(
+			"incrementing staked gateways (%d->%d)",
+			gatewayCount,
+			gatewayCount+gatewaysToStake,
+		)
+
+		for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
+			time.Sleep(250)
+
+			notif.waitGroup.Done()
+		}
+	}()
+}
+
+func (s *relaysSuite) incrementApps(
+	notif *blockUpdatesChainStateNotif,
+	appInc,
+	maxApps int64,
+) {
+	appCount := s.appCount.Load()
+	appsToStake := appInc
+	if appCount+appsToStake > maxApps {
+		appsToStake = maxApps - appCount
+	}
+
+	notif.waitGroup.Add(int(appsToStake))
+
+	go func() {
+		// Stake applications...
+		clearLine(s)
+		logger.Info().Msgf(
+			"incrementing staked applications (%d->%d)",
+			appCount,
+			appCount+appsToStake,
+		)
+
+		for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
+			time.Sleep(250)
+
+			notif.waitGroup.Done()
+		}
+	}()
+}
+
+func (s *relaysSuite) incrementSuppliers(
+	notif *blockUpdatesChainStateNotif,
+	supplierInc,
+	maxSuppliers int64,
+) {
+	supplierCount := s.supplierCount.Load()
+	suppliersToStake := supplierInc
+	if supplierCount+suppliersToStake > maxSuppliers {
+		suppliersToStake = maxSuppliers - supplierCount
+	}
+
+	notif.waitGroup.Add(int(suppliersToStake))
+
+	go func() {
+		// Stake suppliers...
+		clearLine(s)
+		logger.Info().Msgf(
+			"incrementing staked suppliers (%d->%d)",
+			supplierCount,
+			supplierCount+suppliersToStake,
+		)
+
+		for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
+			time.Sleep(250)
+
+			notif.waitGroup.Done()
+		}
+	}()
 }
 
 // goStartRelayBatchTicker starts a ticker that sends relay batches at a rate
@@ -645,7 +473,7 @@ func (s *relaysSuite) goStartRelayBatchTicker(maxConcurrentBatchLimit uint, maxR
 			default:
 			}
 
-			relaysPerSec := s.relaysPerSecond.Load()
+			relaysPerSec := s.relaysPerSec.Load()
 
 			//clearLine(s)
 			//logger.Debug().Msg("new tick")
@@ -761,13 +589,13 @@ func goIncRelaysPerSec(
 		// Every numBlocksInc, increment the number of relays to send per second.
 		if block.Height()%numBlocksInc == 0 {
 			// Ensure the number of relays to send per second does not exceed the maximum.
-			nextRelaysPerSec := s.relaysPerSecond.Load() + relaysPerSecondInc
+			nextRelaysPerSec := s.relaysPerSec.Load() + relaysPerSecondInc
 			if nextRelaysPerSec > maxRelaysPerSecond {
 				nextRelaysPerSec = maxRelaysPerSecond
 			}
 
 			// Update the number of relays per second to send
-			s.relaysPerSecond.Store(nextRelaysPerSec)
+			s.relaysPerSec.Store(nextRelaysPerSec)
 		}
 
 	}
@@ -787,7 +615,7 @@ func (s *relaysSuite) goMonitorProgress() {
 		}
 
 		relaysComplete := s.relaysComplete.Load()
-		//totalExpectedRequests := uint64(s.relaysPerSecond.Load()) * batchNumber.Load()
+		//totalExpectedRequests := uint64(s.relaysPerSec.Load()) * batchNumber.Load()
 
 		printProgressLine(s, progressBarWidth, relaysComplete, s.totalExpectedRequests)
 	}
