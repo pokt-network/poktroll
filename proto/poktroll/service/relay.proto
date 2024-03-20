@@ -3,6 +3,8 @@ package poktroll.service;
 
 option go_package = "github.com/pokt-network/poktroll/x/service/types";
 
+import "gogoproto/gogo.proto";
+
 import "poktroll/session/session.proto";
 
 // Relay contains both the RelayRequest (signed by the Application) and the RelayResponse (signed by the Supplier).
@@ -24,7 +26,7 @@ message RelayRequestMetadata {
 
 // RelayRequest holds the request details for a relay.
 message RelayRequest {
-  RelayRequestMetadata meta = 1;
+  RelayRequestMetadata meta = 1 [(gogoproto.nullable) = false];
   // payload is the serialized payload for the request.
   // The payload is passed directly to the service and as such can be any
   // format that the service supports: JSON-RPC, REST, gRPC, etc.
@@ -33,7 +35,7 @@ message RelayRequest {
 
 // RelayResponse contains the response details for a RelayRequest.
 message RelayResponse {
-  RelayResponseMetadata meta = 1;
+  RelayResponseMetadata meta = 1 [(gogoproto.nullable) = false];
   // payload is the serialized payload for the response.
   // The payload is passed directly from the service and as such can be any
   // format the the service responds with: JSON-RPC, REST, gRPC, etc.

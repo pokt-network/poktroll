@@ -21,13 +21,13 @@ func (sh *SessionHeader) ValidateBasic() error {
 	}
 
 	// Validate the service
-	if sh.Service == nil || !sharedhelpers.IsValidService(sessionHeader.Service){
+	if sh.Service == nil || !sharedhelpers.IsValidService(sh.Service) {
 		return ErrSessionInvalidService.Wrapf("invalid service: %s", sh.Service)
 	}
 
-	if sessionHeader.SessionStartBlockHeight < 0 {
-		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
-	}
+	// if sh.SessionStartBlockHeight < 0 {
+	// 	return ErrProofInvalidSessionStartHeight.Wrapf("%d", sh.SessionStartBlockHeight)
+	// }
 
 	// Check if session end height is greater than session start height
 	if sh.SessionEndBlockHeight <= sh.SessionStartBlockHeight {
@@ -37,11 +37,9 @@ func (sh *SessionHeader) ValidateBasic() error {
 	return nil
 }
 
-
-
-	if len(sessionHeader.SessionId) == 0 {
-		return ErrProofInvalidSessionId.Wrapf("%s", sessionHeader.SessionId)
-	}
-	if  {
-		return ErrProofInvalidService.Wrapf("%v", sessionHeader.Service)
-	}
+// if len(sessionHeader.SessionId) == 0 {
+// 	return ErrProofInvalidSessionId.Wrapf("%s", sessionHeader.SessionId)
+// }
+// if  {
+// 	return ErrProofInvalidService.Wrapf("%v", sessionHeader.Service)
+// }
