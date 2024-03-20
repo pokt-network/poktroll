@@ -107,10 +107,6 @@ func TokenomicsKeeper(t testing.TB) (
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)
 	mockAccountKeeper.EXPECT().GetAccount(gomock.Any(), gomock.Any()).AnyTimes()
 
-	// Mock the proof keeper
-	mockProofKeeper := mocks.NewMockProofKeeper(ctrl)
-	mockProofKeeper.EXPECT().GetAllClaims(gomock.Any()).AnyTimes()
-
 	k := keeper.NewKeeper(
 		cdc,
 		runtime.NewKVStoreService(storeKey),
@@ -119,7 +115,6 @@ func TokenomicsKeeper(t testing.TB) (
 		mockBankKeeper,
 		mockAccountKeeper,
 		mockApplicationKeeper,
-		mockProofKeeper,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())

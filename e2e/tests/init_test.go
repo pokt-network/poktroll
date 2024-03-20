@@ -157,11 +157,11 @@ func (s *suite) AnAccountExistsFor(accName string) {
 
 func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName string, expectedStakeChange int64, condition string) {
 	// Get previous stake
-	prev, ok := s.scenarioState[accStakeKey(actorType, accName)]
+	prevStakeStr, ok := s.scenarioState[accStakeKey(actorType, accName)]
 	if !ok {
 		s.Fatalf("no previous stake found for %s", accName)
 	}
-	prevStake, ok := prev.(int64)
+	prevStake, ok := prevStakeStr.(int64)
 	if !ok {
 		s.Fatalf("previous stake for %s is not an int", accName)
 	}
@@ -178,12 +178,11 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 
 func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
 	// Get previous balance
-	prev, ok := s.scenarioState[accBalanceKey(accName)]
+	prevBalanceStr, ok := s.scenarioState[accBalanceKey(accName)]
 	if !ok {
 		s.Fatalf("no previous balance found for %s", accName)
 	}
-
-	prevBalance, ok := prev.(int64)
+	prevBalance, ok := prevBalanceStr.(int64)
 	if !ok {
 		s.Fatalf("previous balance for %s is not an int", accName)
 	}

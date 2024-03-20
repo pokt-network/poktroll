@@ -84,8 +84,8 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info("About to start session settlement accounting")
 
 	// Retrieve the staked application record
-	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !found {
+	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
+	if !foundApplication {
 		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
 		return types.ErrTokenomicsApplicationNotFound
 	}

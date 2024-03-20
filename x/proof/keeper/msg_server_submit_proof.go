@@ -45,12 +45,13 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 // TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processes the respective session.
-// TODO_BLOCKER: Validate the signature on the Proof message corresponds to the supplier before Upserting.
+// TODO_IN_THIS_PR_DISCUSS: Do we need to validate if the signature on the Proof message corresponds to the supplier before upserting?
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
-	// TODO_BLOCKER: A potential issue with doing proof validation inside `SubmitProof` is that we will not
-	// be storing false proofs on-chain (e.g. for slashing purposes). This could be considered a feature (e.g. less state bloat
-	// against sybil attacks) or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs). Revisit
-	// this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
+	// TODO_IN_THIS_PR_DISCUSS: A potential issue with doing proof validation inside
+	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
+	// This could be considered a feature (e.g. less state bloat against sybil attacks)
+	// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
+	// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
 
@@ -117,13 +118,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 	logger.Info("queried and validated the session header")
 
-	// Construct and insert proof after all validation.
-	proof := types.Proof{
-		SupplierAddress:    supplierAddr,
-		SessionHeader:      sessionHeader,
-		ClosestMerkleProof: msg.Proof,
-	}
-
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
 	if err := sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
@@ -131,10 +125,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 			"failed to unmarshal closest merkle proof: %s",
 			err,
 		)
-	}
-
-	if err := k.queryAndValidateClaimForProof(ctx, &proof); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.

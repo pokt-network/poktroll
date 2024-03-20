@@ -8,6 +8,9 @@ import (
 
 // TODO_TECHDEBT: Make sure this is used everywhere we validate components
 // of the session header.
+// TODO_IN_THIS_PR: Search for all `SessionStartBlockHeight: 0,` and make sure
+// ValidateBasic is called on the session header fixing tests where necessary.
+// ValidateBasic does basic stateless validation of the session header data.
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {
@@ -15,8 +18,7 @@ func (sh *SessionHeader) ValidateBasic() error {
 	}
 
 	// Validate the session ID
-	// TODO_TECHDEBT: Introduce a `SessionId#ValidateBasic` method.
-	if sh.SessionId == "" {
+	if len(sh.SessionId) == 0 {
 		return ErrSessionInvalidSessionId.Wrapf("invalid session ID: %s", sh.SessionId)
 	}
 
@@ -25,9 +27,10 @@ func (sh *SessionHeader) ValidateBasic() error {
 		return ErrSessionInvalidService.Wrapf("invalid service: %s", sh.Service)
 	}
 
-	// if sh.SessionStartBlockHeight < 0 {
-	// 	return ErrProofInvalidSessionStartHeight.Wrapf("%d", sh.SessionStartBlockHeight)
-	// }
+	// Sessions can only start at height 1
+	if sh.SessionStartBlockHeight <= 0 {
+		return ErrSessionInvalidBlockHeight.Wrapf("sessions can only start at height 1 or greater")
+	}
 
 	// Check if session end height is greater than session start height
 	if sh.SessionEndBlockHeight <= sh.SessionStartBlockHeight {
@@ -36,10 +39,3 @@ func (sh *SessionHeader) ValidateBasic() error {
 
 	return nil
 }
-
-// if len(sessionHeader.SessionId) == 0 {
-// 	return ErrProofInvalidSessionId.Wrapf("%s", sessionHeader.SessionId)
-// }
-// if  {
-// 	return ErrProofInvalidService.Wrapf("%v", sessionHeader.Service)
-// }
