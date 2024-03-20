@@ -1,9 +1,11 @@
 name: Release artifacts
 
+# Currently disabled, but ready to implement a CI job to add binaries to GitHub releases.
 on:
-  push:
-    branches: ["main"]
-  pull_request:
+  {}
+  # push:
+  #   branches: ["main"]
+  # pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
