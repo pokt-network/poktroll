@@ -43,13 +43,13 @@ const (
 // In order to simplify the logic of the TxClient
 var _ client.TxClient = (*txClient)(nil)
 
-// cometTxEvent is used to deserialize incoming transaction event messages
+// CometTxEvent is used to deserialize incoming transaction event messages
 // from the respective events query subscription. This structure is adapted
 // to handle CometBFT's unique serialization format, which diverges from
 // conventional approaches seen in implementations like rollkit's. The design
 // ensures accurate parsing and compatibility with CometBFT's serialization
 // of transaction results.
-type cometTxEvent struct {
+type CometTxEvent struct {
 	Data struct {
 		// TxResult is nested to accommodate CometBFT's serialization format,
 		// ensuring correct deserialization of transaction results.
@@ -519,7 +519,7 @@ func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
-	var txResult cometTxEvent
+	var txResult CometTxEvent
 
 	// Try to deserialize the provided bytes into a TxResult.
 	if err := json.Unmarshal(rpcResponse.Result, &txResult); err != nil {
