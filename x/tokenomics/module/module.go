@@ -96,7 +96,6 @@ type AppModule struct {
 	tokenomicsKeeper keeper.Keeper
 	accountKeeper    types.AccountKeeper
 	bankKeeper       types.BankKeeper
-	proofKeeper      types.ProofKeeper
 }
 
 func NewAppModule(
@@ -104,14 +103,12 @@ func NewAppModule(
 	tokenomicsKeeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	proofKeeper types.ProofKeeper,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic:   NewAppModuleBasic(cdc),
 		tokenomicsKeeper: tokenomicsKeeper,
 		accountKeeper:    accountKeeper,
 		bankKeeper:       bankKeeper,
-		proofKeeper:      proofKeeper,
 	}
 }
 
@@ -154,32 +151,7 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 // The end block implementation is optional.
 // TODO_IN_THIS_PR: How do we unit/integration test this?
 func (am AppModule) EndBlock(goCtx context.Context) error {
-	// logger := am.tokenomicsKeeper.Logger().With("EndBlock", "TokenomicsModuleEndBlock")
-
-	// ctx := sdk.UnwrapSDKContext(goCtx)
-	// blockHeight := ctx.BlockHeight()
-
-	// // TODO_BLOCKER(@Olshansk): Optimize this by indexing claims appropriately
-	// // and only retrieving the claims that need to be settled rather than all
-	// // of them and iterating through them one by one.
-	// claims := am.proofKeeper.GetAllClaims(goCtx)
-	// numClaimsSettled := 0
-	// for _, claim := range claims {
-	// 	// TODO_IN_THIS_PR: Discuss with @red-0ne if we need to account for
-	// 	// the grace period here
-	// 	if claim.SessionHeader.SessionEndBlockHeight == blockHeight {
-	// 		if err := am.tokenomicsKeeper.SettleSessionAccounting(ctx, &claim); err != nil {
-	// 			logger.Error("error settling session accounting", "error", err, "claim", claim)
-	// 			return err
-	// 		}
-	// 		numClaimsSettled++
-	// 		logger.Info(fmt.Sprintf("settled claim %s at block height %d", claim.SessionHeader.SessionId, blockHeight))
-	// 	}
-	// }
-
-	// logger.Info(fmt.Sprintf("settled %d claims at block height %d", numClaimsSettled, blockHeight))
-
-	return nil
+	return am.tokenomicsKeeper.EndBlocker(goCtx)
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
@@ -231,13 +203,13 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,
+		in.ProofKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,
 		k,
 		in.AccountKeeper,
 		in.BankKeeper,
-		in.ProofKeeper,
 	)
 
 	return ModuleOutputs{TokenomicsKeeper: k, Module: m}

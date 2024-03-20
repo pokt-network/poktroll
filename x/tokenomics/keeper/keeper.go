@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 
+	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -11,26 +12,22 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// Keeper is the structure that implements the `KeeperI` interface.
+type Keeper struct {
+	environment appmodule.Environment
 
-// TODO_TECHDEBT(#240): See `x/nft/keeper.keeper.go` in the Cosmos SDK on how
-// we should refactor all our keepers. This keeper has started following a small
-// subset of those patterns.
-type (
-	Keeper struct {
-		cdc          codec.BinaryCodec
-		storeService store.KVStoreService
-		logger       log.Logger
+	cdc          codec.BinaryCodec
+	storeService store.KVStoreService
+	logger       log.Logger
 
-		// the address capable of executing a MsgUpdateParams message. Typically, this
-		// should be the x/gov module account.
-		authority string
+	// the address capable of executing a MsgUpdateParams message. Typically, this
+	// should be the x/gov module account.
+	authority string
 
-		bankKeeper        types.BankKeeper
-		accountKeeper     types.AccountKeeper
-		applicationKeeper types.ApplicationKeeper
-	}
-)
+	// keepers
+	bankKeeper        types.BankKeeper
+	accountKeeper     types.AccountKeeper
+	applicationKeeper types.ApplicationKeeper
+}
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
