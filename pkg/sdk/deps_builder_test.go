@@ -12,7 +12,6 @@ import (
 )
 
 func TestGetTransportCreds(t *testing.T) {
-
 	systemRoots, err := x509.SystemCertPool()
 	require.NoError(t, err)
 
