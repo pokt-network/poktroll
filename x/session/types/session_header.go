@@ -1,6 +1,10 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
+)
 
 // TODO_TECHDEBT: Make sure this is used everywhere we validate components
 // of the session header.
@@ -17,9 +21,12 @@ func (sh *SessionHeader) ValidateBasic() error {
 	}
 
 	// Validate the service
-	// TODO_TECHDEBT: Introduce a `Service#ValidateBasic` method.
-	if sh.Service == nil {
+	if sh.Service == nil || !sharedhelpers.IsValidService(sessionHeader.Service){
 		return ErrSessionInvalidService.Wrapf("invalid service: %s", sh.Service)
+	}
+
+	if sessionHeader.SessionStartBlockHeight < 0 {
+		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
 	}
 
 	// Check if session end height is greater than session start height
@@ -29,3 +36,12 @@ func (sh *SessionHeader) ValidateBasic() error {
 
 	return nil
 }
+
+
+
+	if len(sessionHeader.SessionId) == 0 {
+		return ErrProofInvalidSessionId.Wrapf("%s", sessionHeader.SessionId)
+	}
+	if  {
+		return ErrProofInvalidService.Wrapf("%v", sessionHeader.Service)
+	}

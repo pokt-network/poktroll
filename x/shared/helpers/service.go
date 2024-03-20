@@ -27,6 +27,7 @@ func init() {
 
 }
 
+// TODO_TECHDEBT: Introduce a `Service#ValidateBasic` method.
 // IsValidService checks if the provided ServiceId struct has valid fields
 func IsValidService(service *sharedtypes.Service) bool {
 	// Check if service Id and Name are valid using the provided helper functions

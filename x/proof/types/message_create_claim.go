@@ -30,8 +30,19 @@ func (msg *MsgCreateClaim) ValidateBasic() error {
 		return ErrProofInvalidAddress.Wrapf("%s", msg.GetSupplierAddress())
 	}
 
-	// Validate the session header
+	// Retrieve & validate the session header
 	sessionHeader := msg.SessionHeader
+	if sessionHeader == nil {
+		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
+		// logger.Error("received a nil session header")
+		// return ErrProofInvalid
+	}
+	if err := sessionHeader.ValidateBasic(); err != nil {
+		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
+		// logger.Error("received an invalid session header", "error", err)
+		// return types.ErrTokenomicsSessionHeaderInvalid
+	}
+
 	if sessionHeader.SessionStartBlockHeight < 0 {
 		return ErrProofInvalidSessionStartHeight.Wrapf("%d", sessionHeader.SessionStartBlockHeight)
 	}

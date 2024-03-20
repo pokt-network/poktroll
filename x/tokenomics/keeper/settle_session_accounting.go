@@ -41,14 +41,12 @@ func (k Keeper) SettleSessionAccounting(
 		return types.ErrTokenomicsClaimNil
 	}
 
-	// Make sure the session header is not nil
+	// Retrieve & validate the session header
 	sessionHeader := claim.GetSessionHeader()
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
 		return types.ErrTokenomicsSessionHeaderNil
 	}
-
-	// Validate the session header
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
 		return types.ErrTokenomicsSessionHeaderInvalid
