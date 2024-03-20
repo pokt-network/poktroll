@@ -1,50 +1,14 @@
----
-title: RelayMiner - Docker Compose
----
+**RelayMiner - Docker Compose**
 
-### What is a RelayMiner?
+- [What is a RelayMiner](#what-is-a-relayminer)
+- [Docker Compose Example Repository](#docker-compose-example-repository)
 
-RelayMiner is a type of node that node runners can deploy to provide service via Pocket Network. Read more in [RelayMiner documentation](../actors/relay_miner.md).
+### What is a RelayMiner
 
-### 0. Prerequisites
+A RelayMiner is a specialized node designed for individuals to offer services through the Pocket Network. For more information on this role, please refer to the [RelayMiner documentation](../actors/relay_miner.md). Unlike the Pocket Morse Mainnet client, which supports service provision on the current Pocket Network Mainnet and maintains a copy of the blockchain data, the RelayMiner operates without storing blockchain data. Instead, it relies on connections to Full Nodes for interacting with the blockchain. It is crucial to deploy a [Full Node](full_node.md) prior to setting up a RelayMiner, as this ensures the necessary infrastructure for blockchain communication is in place.
 
-Ensure the following software is installed on your system:
-- [git](https://github.com/git-guides/install-git);
-- [Docker](https://docs.docker.com/engine/install/);
-- [docker-compose](https://docs.docker.com/compose/install/#installation-scenarios);
-<!-- - TODO(@okdas): provide a link to binaries -->
-- poktrolld binary;
-<!-- - TODO(@okdas): what's the correct amount to stake? -->
-- POKT tokens to stake your relayminer and allow it to submit transactions;
+### Docker Compose Example Repository
 
-### Generate new key and fund the wallet
+To help you get started with deploying a RelayMiner, we have prepared an example using Docker Compose. This example is available in the [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example?tab=readme-ov-file#deploying-a-relay-miner) GitHub repository.
 
-:::info
-
-Some **content** with _Markdown_ `syntax`. Check [this `api`](#).
-
-In this example, we use "test" keyring to showcase how to run RelayMiner. It is not advisable to use this method in production.
-Please, consult with [this documentation page](https://docs.cosmos.network/v0.50/user/run-node/keyring) to
-understand what other options are available.
-
-:::
-
-Your relayminer will need access to the keys to submit transactions on the network.
-```
-KEY_NAME="relayminer1" poktrolld --keyring-backend=test --home=./$KEY_NAME keys add $KEY_NAME
-```
-
-### Docker compose
-
-
-
-### Stake
-
-TODO(@okdas): link to staking config
-
-```
-poktrolld --keyring-backend=test --home=/Users/dk/tmp/poktroll-validated-2/ --node=https://testnet-validated-validator-rpc.poktroll.com/ tx supplier stake-supplier --config=/Users/dk/pocket/poktroll/localnet/poktrolld/config/dimasupp.yaml --from=key-for-relayminer1 --chain-id=poktroll
-```
-
-
-### Run
+Please refer to the "Deploying a RelayMiner" section within the repository for detailed instructions and guidance on setting up your RelayMiner using the provided Docker Compose example.
