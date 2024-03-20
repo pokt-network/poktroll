@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net/url"
 	"strings"
 
 	"cosmossdk.io/depinject"
@@ -46,20 +47,9 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(blockClient))
 
-	urlString := HostToGRPCUrl(config.QueryNodeGRPCUrl)
-
-	var creds credentials.TransportCredentials
-	if strings.HasPrefix(urlString, "grpcs://") {
-		systemRoots, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-
-		creds = credentials.NewTLS(&tls.Config{
-			RootCAs: systemRoots,
-		})
-	} else {
-		creds = insecure.NewCredentials()
+	creds, err := getTransportCreds(config.QueryNodeGRPCUrl)
+	if err != nil {
+		return nil, err
 	}
 
 	// Create and supply the grpc client used by the queriers
@@ -111,4 +101,25 @@ func (sdk *poktrollSDK) buildDeps(
 	deps = depinject.Configs(deps, depinject.Supply(ringCache))
 
 	return deps, nil
+}
+
+// getTransportCreds creates transport credentials based on the provided URL scheme
+func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
+	urlString := HostToGRPCUrl(url)
+
+	var creds credentials.TransportCredentials
+	if strings.HasPrefix(urlString, "grpcs://") {
+		systemRoots, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+
+		creds = credentials.NewTLS(&tls.Config{
+			RootCAs: systemRoots,
+		})
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
+	return creds, nil
 }
