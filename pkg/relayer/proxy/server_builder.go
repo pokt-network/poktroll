@@ -13,6 +13,10 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// supplierStakeWaitTime is the time to wait for the supplier to be staked before
+// attempting to retrieve the supplier's advertised services.
+const supplierStakeWaitTime = 5
+
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
 // It populates the relayerProxy's `advertisedRelayServers` map of servers for each service, where each server
 // is responsible for listening for incoming relay requests and relaying them to the supported proxied service.
@@ -28,31 +32,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 		return err
 	}
 
-	var supplier sharedtypes.Supplier
-
-	// Wait for the supplier to be staked before building the relay servers.
-	for {
-		// Get the supplier's advertised information from the blockchain
-		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress.String())
-
-		// If the supplier is not found, wait for the supplier to be staked.
-		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
-			rp.logger.Info().Msgf(
-				"Waiting for the supplier with address %s to stake",
-				supplierAddress.String(),
-			)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
-		// If there is an error other than the supplier not being found, return the error
-		if err != nil {
-			return err
-		}
-
-		// If the supplier is found, break out of the wait loop.
-		break
-	}
+	// Prevent the RelayMiner from stopping by waiting until its associated supplier
+	// is staked and its advertised services are retrieved.
+	supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
 
 	// Check that the supplier's advertised services' endpoints are present in
 	// the proxy config and handled by a proxy host
@@ -128,4 +110,37 @@ func (rp *relayerProxy) initializeProxyServers(
 	}
 
 	return proxyServers, nil
+}
+
+// waitForSupplierToStake waits in a loop until it gets the on-chain supplier's
+// information back.
+func (rp *relayerProxy) waitForSupplierToStake(
+	ctx context.Context,
+	supplierAddress string,
+) (supplier sharedtypes.Supplier, err error) {
+	for {
+		// Get the supplier's advertised information from the blockchain
+		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
+
+		// If the supplier is not found, wait for the supplier to be staked.
+		if err != nil && suppliertypes.ErrSupplierNotFound.Is(err) {
+			rp.logger.Info().Msgf(
+				"Waiting %d seconds for the supplier with address %s to stake",
+				supplierStakeWaitTime,
+				supplierAddress,
+			)
+			time.Sleep(supplierStakeWaitTime * time.Second)
+			continue
+		}
+
+		// If there is an error other than the supplier not being found, return the error
+		if err != nil {
+			return sharedtypes.Supplier{}, err
+		}
+
+		// If the supplier is found, break out of the wait loop.
+		break
+	}
+
+	return supplier, nil
 }
