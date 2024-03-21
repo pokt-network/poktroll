@@ -242,9 +242,8 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@echo "Initializing chain..."
 	@set -e ;\
 	ignite chain init --skip-proto ;\
-	mkdir -p $(POKTROLLD_HOME)/config/ ;\
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp -r ${HOME}/.poktroll/config/ $(POKTROLLD_HOME)/config/ ;\
+	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
 
 .PHONY: send_relay
 send_relay:
@@ -309,10 +308,7 @@ go_mockgen: ## Use `mockgen` to generate mocks used for testing purposes of all 
 	go generate ./x/service/types/
 	go generate ./x/proof/types/
 	go generate ./x/tokenomics/types/
-	go generate ./pkg/client/interface.go
-	go generate ./pkg/miner/interface.go
-	go generate ./pkg/relayer/interface.go
-	go generate ./pkg/crypto/rings/interface.go
+	find . -name interface.go | xargs -I {} go generate {}
 
 .PHONY: go_testgen_fixtures
 go_testgen_fixtures: ## Generate fixture data for unit tests
@@ -620,8 +616,14 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@printf "!!!!!!!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED !!!!!!!!!\n"\
-	"\t\tmake acc_initialize_pubkeys\n"
+	@echo "+----------------------------------------------------------------------------------+"
+	@echo "|                                                                                  |"
+	@echo "|     IMPORTANT: Please run the following command once to initialize E2E tests     |"
+	@echo "|     after the network has started:                                               |"
+	@echo "|         make acc_initialize_pubkeys                                              |"
+	@echo "|                                                                                  |"
+	@echo "+----------------------------------------------------------------------------------+"
+
 
 ##############
 ### Claims ###

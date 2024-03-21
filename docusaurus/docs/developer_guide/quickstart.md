@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 title: Quickstart
 ---
 
@@ -43,7 +43,7 @@ Install the following dependencies:
 6. [Tilt](https://docs.tilt.dev/install.html) - k8s local development tool & environment manager
 
 :::note
-You might already have these installed if you've followed the [localnet instructions](./infrastructure/localnet.md).
+You might already have these installed if you've followed the [localnet instructions](../infrastructure/localnet.md).
 :::
 
 ## Launch LocalNet
