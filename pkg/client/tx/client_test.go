@@ -8,7 +8,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
-	abci "github.com/cometbft/cometbft/abci/types"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/libs/json"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
@@ -108,13 +107,8 @@ func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
 	require.NoError(t, err)
 
 	// Construct the expected transaction event bytes from the expected transaction bytes.
-	txResultEvent := &testTxEvent{
-		Data: testTxEventDataStruct{
-			Value: testTxEventValueStruct{
-				TxResult: abci.TxResult{Tx: expectedTx},
-			},
-		},
-	}
+	txResultEvent := &tx.CometTxEvent{}
+	txResultEvent.Data.Value.TxResult.Tx = expectedTx
 
 	txResultBz, err := json.Marshal(txResultEvent)
 	require.NoError(t, err)
@@ -437,21 +431,4 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 // TODO_TECHDEBT: add coverage for sending multiple messages simultaneously
 func TestTxClient_SignAndBroadcast_MultipleMsgs(t *testing.T) {
 	t.SkipNow()
-}
-
-// TODO_BLOCKER: Fix duplicate definitions of this type across tests & source code.
-// This duplicates the unexported `cometTxEvent` from `pkg/client/tx/client.go`.
-// We need to answer the following questions to avoid this:
-//   - Should tests be their own packages? (i.e. `package block` vs `package block_test`)
-//   - Should we prefer export types which are not required for API consumption?
-//   - Should we use `//go:build“ test constraint on new files using it for testing purposes?
-//   - Should we enforce all tests to use `-tags=test`?
-type testTxEvent struct {
-	Data testTxEventDataStruct `json:"data"`
-}
-type testTxEventDataStruct struct {
-	Value testTxEventValueStruct `json:"value"`
-}
-type testTxEventValueStruct struct {
-	TxResult abci.TxResult
 }
