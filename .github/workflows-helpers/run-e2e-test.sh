@@ -1,5 +1,3 @@
-# Enhanced Script for Debugging and Error Handling
-
 # Log environment variables for debugging
 echo "Environment variables:"
 echo "NAMESPACE: ${NAMESPACE}"
@@ -13,23 +11,17 @@ while :; do
     # Log the command
     echo "Running kubectl command to get pods with matching purpose=validator:"
 
-    # Get all pods with the matching purpose
-    PODS_JSON=$(kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json)
-
-    # Log the raw output for debugging
-    echo "${PODS_JSON}"
-
-    # Validate JSON output
-    if ! echo "${PODS_JSON}" | jq empty; then
+    # Directly pipe kubectl output to jq, eliminating the intermediate variable
+    if ! kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json | jq empty; then
         echo "Error: kubectl command did not produce valid JSON."
         exit 1
     fi
 
-    # Check if any pods are running and have the correct image SHA
-    READY_POD=$(echo "${PODS_JSON}" | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
+    # Use jq directly in command substitution to parse JSON and get ready pod name
+    READY_POD=$(kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json | jq -r ".items[] | select(.status.phase == \"Running\") | select(.spec.containers[].image | contains(\"${IMAGE_TAG}\")) | .metadata.name")
 
-    # Check for non-running pods with incorrect image SHA to delete
-    NON_RUNNING_PODS=$(echo "${PODS_JSON}" | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
+    # Use jq directly to find non-running pods that need to be deleted
+    NON_RUNNING_PODS=$(kubectl get pods -n "${NAMESPACE}" -l pokt.network/purpose=validator -o json | jq -r ".items[] | select(.status.phase != \"Running\") | .metadata.name")
     INCORRECT_POD=$(echo "${NON_RUNNING_PODS}" | jq -r "select(.spec.containers[].image | contains(\"${IMAGE_TAG}\") | not) | .metadata.name")
 
     if [[ -n "${READY_POD}" ]]; then
@@ -37,7 +29,7 @@ while :; do
         break
     elif [[ -n "${INCORRECT_POD}" ]]; then
         echo "Non-ready pod with incorrect image found: ${INCORRECT_POD}. Deleting..."
-        kubectl delete pod -n ${NAMESPACE} ${INCORRECT_POD}
+        kubectl delete pod -n "${NAMESPACE}" "${INCORRECT_POD}"
         echo "Pod deleted. StatefulSet will recreate the pod."
         # Wait for a short duration to allow the StatefulSet to recreate the pod before checking again
         sleep 10
@@ -92,7 +84,3 @@ while :; do
     fi
     sleep 5
 done
-
-# If the loop exits without failure, the job succeeded
-echo "Job completed successfully"
-kubectl delete job ${JOB_NAME} -n ${NAMESPACE}
