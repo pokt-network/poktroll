@@ -18,18 +18,35 @@ func (app *appGateServer) getRelayerUrl(
 	rpcType sharedtypes.RPCType,
 	supplierEndpoints []*sdk.SingleSupplierEndpoint,
 ) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
+	// Filter out the supplier endpoints that match the requested serviceId.
+	validSupplierEndpoints := make([]*sdk.SingleSupplierEndpoint, 0, len(supplierEndpoints))
+
 	for _, supplierEndpoint := range supplierEndpoints {
 		// Skip services that don't match the requested serviceId.
 		if supplierEndpoint.Header.Service.Id != serviceId {
 			continue
 		}
 
-		// Return the first endpoint url that matches the request's RpcType.
+		// Collect the endpoints that match the request's RpcType.
 		if supplierEndpoint.RpcType == rpcType {
-			return supplierEndpoint, nil
+			validSupplierEndpoints = append(validSupplierEndpoints, supplierEndpoint)
 		}
 	}
 
 	// Return an error if no relayer endpoints were found.
-	return nil, ErrAppGateNoRelayEndpoints
+	if len(validSupplierEndpoints) == 0 {
+		return nil, ErrAppGateNoRelayEndpoints
+	}
+
+	// Protect the endpointSelectionIndex update from concurrent relay requests.
+	app.endpointSelectionIndexMu.Lock()
+	defer app.endpointSelectionIndexMu.Unlock()
+
+	// Select the next endpoint in the list by rotating the index.
+	// This does not necessarily start from the first endpoint of a new session
+	// but will cycle through all valid endpoints of the same session if enough
+	// requests are made.
+	app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
+
+	return validSupplierEndpoints[app.endpointSelectionIndex], nil
 }
