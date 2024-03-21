@@ -14,7 +14,9 @@ import (
 )
 
 // supplierStakeWaitTime is the time to wait for the supplier to be staked before
-// attempting to retrieve the supplier's advertised services.
+// attempting to retrieve the supplier's on-chain record.
+// This is useful for testing and development purposes, where the supplier
+// may not be staked before the relay miner starts.
 const supplierStakeWaitTime = 5
 
 // BuildProvidedServices builds the advertised relay servers from the supplier's on-chain advertised services.
@@ -33,8 +35,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Prevent the RelayMiner from stopping by waiting until its associated supplier
-	// is staked and its advertised services are retrieved.
+	// is staked and its on-chain record retrieved.
 	supplier, err := rp.waitForSupplierToStake(ctx, supplierAddress.String())
+	if err != nil {
+		return err
+	}
 
 	// Check that the supplier's advertised services' endpoints are present in
 	// the proxy config and handled by a proxy host
@@ -114,12 +119,14 @@ func (rp *relayerProxy) initializeProxyServers(
 
 // waitForSupplierToStake waits in a loop until it gets the on-chain supplier's
 // information back.
+// This is useful for testing and development purposes, in production the supplier
+// is most likely staked before the relay miner starts.
 func (rp *relayerProxy) waitForSupplierToStake(
 	ctx context.Context,
 	supplierAddress string,
 ) (supplier sharedtypes.Supplier, err error) {
 	for {
-		// Get the supplier's advertised information from the blockchain
+		// Get the supplier's on-chain record
 		supplier, err = rp.supplierQuerier.GetSupplier(ctx, supplierAddress)
 
 		// If the supplier is not found, wait for the supplier to be staked.
