@@ -67,7 +67,7 @@ func NewRingCache(deps depinject.Config) (_ crypto.RingCache, err error) {
 
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
-	rc.logger.Info().Msg("starting ring ringsByAddr")
+	rc.logger.Info().Msg("starting ring cache")
 	// Stop the ringCache when the context is cancelled.
 	go func() {
 		select {
@@ -148,7 +148,7 @@ func (rc *ringCache) GetRingForAddress(
 	if ok {
 		rc.logger.Debug().
 			Str("app_address", appAddress).
-			Msg("ring ringsByAddr hit; using cached ring")
+			Msg("ring cache hit; using cached ring")
 
 		return ring, nil
 	}
@@ -156,7 +156,7 @@ func (rc *ringCache) GetRingForAddress(
 	// If the ring is not in the cache, get it from the ring client.
 	rc.logger.Debug().
 		Str("app_address", appAddress).
-		Msg("ring ringsByAddr miss; fetching from application module")
+		Msg("ring cache miss; fetching from application module")
 
 	ring, err = rc.ringClient.GetRingForAddress(ctx, appAddress)
 	if err != nil {

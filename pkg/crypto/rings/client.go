@@ -104,7 +104,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
-	// Convert the request signature to a ring signature.
+	// Deserialize the request signature bytes back into a ring signature.
 	relayRequestRingSig := new(ring.RingSig)
 	if err := relayRequestRingSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(

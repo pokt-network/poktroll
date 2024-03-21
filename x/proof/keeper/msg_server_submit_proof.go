@@ -21,13 +21,6 @@ const (
 	// to be reward (i.e. volume) applicable.
 	// TODO_BLOCKER: relayMinDifficultyBits should be a governance-based parameter
 	relayMinDifficultyBits = 0
-
-	// sumSize is the size of the sum of the relay request and response in bytes.
-	// This is needed to extract the relay request and response from the closest
-	// merkle proof.
-	// TODO_TECHDEBT(@h5law): Add a method on the smst to extract the value hash
-	// or export sumSize to be used instead of current local value
-	sumSize = 8
 )
 
 // SMT specification used for the proof verification.
@@ -108,8 +101,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	closestValueHash := sparseMerkleClosestProof.ClosestValueHash
-	relayBz := closestValueHash[:len(closestValueHash)-sumSize]
+	relayBz := sparseMerkleClosestProof.GetValueHash(spec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, types.ErrProofInvalidRelay.Wrapf(
@@ -152,6 +144,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger.Debug("successfully compared relay response session header")
 
 	// Verify the relay request's signature.
+	// TODO_TECHDEBT(@h5law): Fetch the correct ring for the session this relay is from.
 	if err := k.ringClient.VerifyRelayRequestSignature(ctx, relayReq); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -402,12 +395,16 @@ func (k msgServer) validateClosestPath(
 	// this block's hash needs to be used for validation too.
 	//
 	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
+	// TODO_BLOCKER: Update `blockHeight` to be the value of when the `ProofWindow`
+	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
 	// TODO_IN_THIS_PR: Finish off the conversation related to this check: https://github.com/pokt-network/poktroll/pull/406/files#r1520790083
 	// and #PUC afterwards.
+	// TODO_BLOCKER: The seed of the path should be `ConcatAndHash(blockHash, '.', sessionId)`
+	// to prevent all proofs needing to use the same path.
 	if !bytes.Equal(proof.Path, blockHash) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"proof path %x does not match block hash %x",

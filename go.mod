@@ -277,3 +277,4 @@ require (
 )
 
 // replace github.com/cosmos/cosmos-sdk => github.com/rollkit/cosmos-sdk v0.50.1-rollkit-v0.11.19-no-fraud-proofs
+replace github.com/pokt-network/smt => github.com/pokt-network/smt v0.9.3-0.20240321060129-e3dbbbd9f97d
