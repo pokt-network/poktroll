@@ -15,7 +15,7 @@ Feature: Loading gateway server with relays
       | supplier    | 1         | 2              | 2          |
     When a load of concurrent relay requests are sent per second as follows:
       | initial relays per sec | relays per sec inc | blocks per inc | max relays per sec |
-      | 1                      | 5                  | 2              | 20                 |
+      | 1                      | 5                  | 2              | 200                |
 
 #    Examples:
 #      |  |  |

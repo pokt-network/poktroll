@@ -132,25 +132,27 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
-	gatewayInc := table.Cell(1, 1)
-	gatewayBlocksPerInc := table.Cell(1, 2).Int64()
-	maxGateways := table.Cell(1, 3)
+	gatewayInc := table.Cell(1, 1).Int64()
+	gatewayIncRate := table.Cell(1, 2).Int64()
+	maxGateways := table.Cell(1, 3).Int64()
 
-	appInc := table.Cell(2, 1)
-	appBlocksPerInc := table.Cell(2, 2).Int64()
-	maxApps := table.Cell(2, 3)
+	appInc := table.Cell(2, 1).Int64()
+	appIncRate := table.Cell(2, 2).Int64()
+	maxApps := table.Cell(2, 3).Int64()
 
-	supplierInc := table.Cell(3, 1)
-	supplierBlocksPerInc := table.Cell(3, 2).Int64()
-	maxSuppliers := table.Cell(3, 3)
+	supplierInc := table.Cell(3, 1).Int64()
+	supplierIncRate := table.Cell(3, 2).Int64()
+	maxSuppliers := table.Cell(3, 3).Int64()
 
 	// TODO_IN_THIS_COMMIT: consider moving initialization to #LocalnetIsRunning and
 	// making it a field of the suite.
 	testStep := new(atomic.Int64)
-	// Start at test height 1 ... TODO: explain why - modulus operator
+	// Start at test stap 1 ... TODO: explain why - modulus operator
 	testStep.Add(1)
 
 	batchNumber := new(atomic.Int64)
+	// Start at batch number -1 ... TODO: explain why - modulus operator
+	batchNumber.Add(-1)
 
 	//batchObs := channel.Map(s.ctx, s.blocksReplayObs,
 	//	func(ctx context.Context, block client.Block) (*atomic.Uint64, bool) {
@@ -175,58 +177,59 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			//	Int64("test_height", testStep).
 			//	Msg("new block")
 
-			isGatewayIncStartStep := testStep%(gatewayBlocksPerInc+2) == gatewayBlocksPerInc+1
-			isGatewayIncEndStep := testStep%(gatewayBlocksPerInc+2) == 0
-			isAppIncStartStep := testStep%(appBlocksPerInc+2) == appBlocksPerInc+1
-			isAppIncEndStep := testStep%(appBlocksPerInc+2) == 0
-			isSupplierIncStartStep := testStep%(supplierBlocksPerInc+2) == supplierBlocksPerInc+1
-			isSupplierIncEndStep := testStep%(supplierBlocksPerInc+2) == 0
+			isGatewayIncStartStep := testStep%(gatewayIncRate+2) == gatewayIncRate+1
+			isGatewayIncEndStep := testStep%(gatewayIncRate+2) == 0
+			isAppIncStartStep := testStep%(appIncRate+2) == appIncRate+1
+			isAppIncEndStep := testStep%(appIncRate+2) == 0
+			isSupplierIncStartStep := testStep%(supplierIncRate+2) == supplierIncRate+1
+			isSupplierIncEndStep := testStep%(supplierIncRate+2) == 0
 
-			isChainStateUpdateStep :=
-				isGatewayIncStartStep ||
-					isGatewayIncEndStep ||
-					isAppIncStartStep ||
-					isAppIncEndStep ||
-					isSupplierIncStartStep ||
-					isSupplierIncEndStep
-
-			// If the test step is zero or not a chain state update step, notify
+			// If the test step is not a chain state update step, notify
 			// downstream observables but without a wait group.
-			if testStep == 0 ||
-				//testStep%gatewayBlocksPerInc != 0 &&
-				//	testStep%appBlocksPerInc != 0 &&
-				//	testStep%supplierBlocksPerInc != 0 {
-				isChainStateUpdateStep {
+			if isGatewayIncStartStep ||
+				isAppIncStartStep ||
+				isSupplierIncStartStep {
 
 				clearLine(s)
 				logger.Debug().
 					Int64("block_height", block.Height()).
-					Int64("test_height", testStep).
-					Msg("no chain state updates")
+					Int64("testStep", testStep).
+					Msg("chain state updates required")
 
-				// There are no new actors to stake in the given block.
-				// Return nil to indicate no state updates need to be made
-				// and don't skip in order to signal that a block has ticked.
-				return &blockUpdatesChainStateNotif{
-					testStep: testStep,
-					// waitGroup explicitly set to nil to indicate no state updates
-				}, false
+				// This test step requires chain state updates, include a wait group
+				// for use by downstream observables.
+				notif = &blockUpdatesChainStateNotif{
+					testStep:  testStep,
+					waitGroup: &sync.WaitGroup{},
+				}
+
+				return notif, false
+			}
+
+			if isGatewayIncEndStep ||
+				isAppIncEndStep ||
+				isSupplierIncEndStep {
+				// TODO: is this correct?
+				//return nil, true
+				return nil, false
+				//return &blockUpdatesChainStateNotif{
+				//	testStep: testStep,
+				//}
 			}
 
 			clearLine(s)
 			logger.Debug().
 				Int64("block_height", block.Height()).
-				Int64("test_height", testStep).
-				Msg("chain state updates required")
+				Int64("testStep", testStep).
+				Msg("no chain state updates")
 
-			// This test step requires chain state updates, include a wait group
-			// for use by downstream observables.
-			notif = &blockUpdatesChainStateNotif{
-				testStep:  testStep,
-				waitGroup: &sync.WaitGroup{},
-			}
-
-			return notif, false
+			// There are no new actors to stake in the given block.
+			// Return nil to indicate no state updates need to be made
+			// and don't skip in order to signal that a block has ticked.
+			return &blockUpdatesChainStateNotif{
+				testStep: testStep,
+				// waitGroup explicitly set to nil to indicate no state updates
+			}, false
 		},
 	)
 
@@ -234,23 +237,33 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	blockUpdatesChainStateObs := channel.Map(s.ctx, shouldBlockUpdateChainStateObs,
 		func(ctx context.Context, notif *blockUpdatesChainStateNotif) (*blockUpdatesChainStateNotif, bool) {
+			if notif == nil {
+				testStep.Add(1)
+				return nil, true
+			}
+
 			// If the notification wait group is nil there is no update to the chain state.
 			if notif.waitGroup == nil {
 				// Increment the test step.
-				logger.Debug().Msg("incrementing test step only")
+				clearLine(s)
+				logger.Debug().
+					Int64("testStep", notif.testStep).
+					Msg("incrementing test step only")
 				testStep.Add(1)
 
 				return notif, false
 			}
 
 			clearLine(s)
-			logger.Debug().Msg("marking chain state as updating")
+			logger.Debug().
+				Int64("testStep", notif.testStep).
+				Msg("marking chain state as updating")
 			isNotAlreadyUpdating := isChainStateUpdating.CompareAndSwap(false, true)
 			require.Truef(s, isNotAlreadyUpdating, "chain state attempted to change while previous change was still in progress")
 
-			s.incrementGateways(notif, gatewayInc.Int64(), maxGateways.Int64())
-			s.incrementApps(notif, appInc.Int64(), maxApps.Int64())
-			s.incrementSuppliers(notif, supplierInc.Int64(), maxSuppliers.Int64())
+			s.incrementGateways(notif, gatewayIncRate, gatewayInc, maxGateways)
+			s.incrementApps(notif, appIncRate, appInc, maxApps)
+			s.incrementSuppliers(notif, supplierIncRate, supplierInc, maxSuppliers)
 
 			// TODO_IN_THIS_COMMIT: something more elegant than sleeping
 			// Wait a tick for the wait group to be incremented to before
@@ -259,14 +272,22 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 			go func() {
 				clearLine(s)
-				logger.Debug().Msg("waiting for chain state updates")
+				logger.Debug().
+					Int64("testStep", notif.testStep).
+					Msg("waiting for chain state updates")
 				notif.waitGroup.Wait()
 
-				logger.Debug().Msg("marking chain state update complete")
+				clearLine(s)
+				logger.Debug().
+					Int64("testStep", notif.testStep).
+					Msg("marking chain state update complete")
 				isChainStateUpdating.CompareAndSwap(true, false)
 
 				// Increment the test step after the chain state updates are complete.
-				logger.Debug().Msg("incrementing test step only")
+				clearLine(s)
+				logger.Debug().
+					Int64("testStep", notif.testStep).
+					Msg("incrementing test step only")
 				testStep.Add(1)
 			}()
 
@@ -277,22 +298,33 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// TODO_IN_THIS_COMMIT: consider moving to #ALoadOfConcurrentRelayRequestsAreSent
 	s.shouldRelayBatchBlocksObs = channel.Map(s.ctx, blockUpdatesChainStateObs,
 		func(ctx context.Context, notif *blockUpdatesChainStateNotif) (*relayBatchNotif, bool) {
-			// If there are chain state updates, wait for them to complete first.
-			if notif.waitGroup != nil {
-			}
+			//// If there are chain state updates, wait for them to complete first.
+			//if notif.waitGroup != nil {
+			//}
 
 			// If the chain state is updating, skip the batch(es) that would
 			// otherwise be scheduled for this block. I.e. do NOT increment
 			// the test height.
 			if isChainStateUpdating.Load() {
+				logger.Debug().
+					Int64("testStep", notif.testStep).
+					Int64("batch_number", batchNumber.Load()).
+					Msg("shouldRelayBatchBlocksObs skipping; chain state updating")
 				return nil, true
 			}
 
 			// Increment test height for each block where no chain state
 			// updates are in progress.
-			logger.Debug().Msg("incrementing test step & batch number")
-			testStep.Add(1)
+			//logger.Debug().Msg("incrementing test step & batch number")
+			//testStep.Add(1)
 			nextBatchNumber := batchNumber.Add(1)
+
+			logger.Debug().
+				Int64("testStep", notif.testStep).
+				Int64("prev_batch_number", nextBatchNumber-1).
+				Int64("next_batch_number", nextBatchNumber).
+				Msg("incrementing batch number only")
+			//testStep.Add(1)
 
 			return &relayBatchNotif{
 				batchNumber: nextBatchNumber,
@@ -392,7 +424,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 				clearLine(s)
 				logger.Info().Msgf(
-					"test height %d complete (%d/%d)",
+					"batch number %d complete (%d/%d)",
 					batch.batchNumber,
 					relaysPerSec,
 					relaysPerSec,
@@ -408,16 +440,32 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 func (s *relaysSuite) incrementGateways(
 	notif *blockUpdatesChainStateNotif,
+	gatewayIncRate,
 	gatewayInc,
 	maxGateways int64,
 ) {
 	// Return early if the test height is not a multiple of the
 	// gateway increment block count.
-	if notif.testStep%gatewayInc != 0 {
+	if notif.testStep%(gatewayIncRate+2) != gatewayIncRate+1 {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping gateway increment")
+
 		return
 	}
 
 	gatewayCount := s.gatewayCount.Load()
+
+	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
+	// (e.g. into shouldBlockUpdateChainStateObs)
+	if gatewayCount == maxGateways {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping gateway increment, max gateways reached")
+
+		return
+	}
+
 	gatewaysToStake := gatewayInc
 	if gatewayCount+gatewaysToStake > maxGateways {
 		gatewaysToStake = maxGateways - gatewayCount
@@ -437,6 +485,7 @@ func (s *relaysSuite) incrementGateways(
 		for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
 			time.Sleep(250)
 
+			s.gatewayCount.Add(1)
 			notif.waitGroup.Done()
 		}
 	}()
@@ -444,17 +493,33 @@ func (s *relaysSuite) incrementGateways(
 
 func (s *relaysSuite) incrementApps(
 	notif *blockUpdatesChainStateNotif,
-	appInc,
+	appIncRate,
+	appIncAmt,
 	maxApps int64,
 ) {
 	// Return early if the test height is not a multiple of the
 	// gateway increment block count.
-	if notif.testStep%appInc != 0 {
+	if notif.testStep%(appIncRate+2) != appIncRate+1 {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping app increment")
+
 		return
 	}
 
 	appCount := s.appCount.Load()
-	appsToStake := appInc
+
+	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
+	// (e.g. into shouldBlockUpdateChainStateObs)
+	if appCount == maxApps {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping app increment, max apps reached")
+
+		return
+	}
+
+	appsToStake := appIncAmt
 	if appCount+appsToStake > maxApps {
 		appsToStake = maxApps - appCount
 	}
@@ -473,6 +538,7 @@ func (s *relaysSuite) incrementApps(
 		for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
 			time.Sleep(250)
 
+			s.appCount.Add(1)
 			notif.waitGroup.Done()
 		}
 	}()
@@ -480,16 +546,32 @@ func (s *relaysSuite) incrementApps(
 
 func (s *relaysSuite) incrementSuppliers(
 	notif *blockUpdatesChainStateNotif,
+	supplierIncRate,
 	supplierInc,
 	maxSuppliers int64,
 ) {
 	// Return early if the test height is not a multiple of the
 	// gateway increment block count.
-	if notif.testStep%supplierInc != 0 {
+	if notif.testStep%(supplierIncRate+2) != supplierIncRate+1 {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping supplier increment, not an stake supplier block")
+
 		return
 	}
 
 	supplierCount := s.supplierCount.Load()
+
+	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
+	// (e.g. into shouldBlockUpdateChainStateObs)
+	if supplierCount == maxSuppliers {
+		logger.Debug().
+			Int64("testStep", notif.testStep).
+			Msg("skipping supplier increment, max suppliers reached")
+
+		return
+	}
+
 	suppliersToStake := supplierInc
 	if supplierCount+suppliersToStake > maxSuppliers {
 		suppliersToStake = maxSuppliers - supplierCount
@@ -509,6 +591,7 @@ func (s *relaysSuite) incrementSuppliers(
 		for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
 			time.Sleep(250)
 
+			s.supplierCount.Add(1)
 			notif.waitGroup.Done()
 		}
 	}()
