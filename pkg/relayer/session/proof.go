@@ -69,7 +69,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	createClaimHeight int64,
 ) {
 	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
-	// TODO_TECHDEBT: query the on-chain governance parameter once available.
+	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash

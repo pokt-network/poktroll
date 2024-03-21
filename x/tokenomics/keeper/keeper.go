@@ -3,7 +3,6 @@ package keeper
 import (
 	"fmt"
 
-	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -13,8 +12,6 @@ import (
 )
 
 type Keeper struct {
-	environment appmodule.Environment
-
 	cdc          codec.BinaryCodec
 	storeService store.KVStoreService
 	logger       log.Logger
@@ -27,6 +24,7 @@ type Keeper struct {
 	bankKeeper        types.BankKeeper
 	accountKeeper     types.AccountKeeper
 	applicationKeeper types.ApplicationKeeper
+	proofKeeper       types.ProofKeeper
 }
 
 func NewKeeper(
@@ -38,6 +36,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	accountKeeper types.AccountKeeper,
 	applicationKeeper types.ApplicationKeeper,
+	proofKeeper types.ProofKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -52,6 +51,7 @@ func NewKeeper(
 		bankKeeper:        bankKeeper,
 		accountKeeper:     accountKeeper,
 		applicationKeeper: applicationKeeper,
+		proofKeeper:       proofKeeper,
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"cosmossdk.io/core/appmodule"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,7 +23,7 @@ type TestSuite struct {
 	// blockTime       time.Time
 	// bankKeeper      *grouptestutil.MockBankKeeper
 	// accountKeeper   *grouptestutil.MockAccountKeeper
-	environment appmodule.Environment
+	// environment appmodule.Environment
 }
 
 func (s *TestSuite) SetupTest() {

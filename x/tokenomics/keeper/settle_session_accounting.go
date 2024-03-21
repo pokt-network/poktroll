@@ -187,6 +187,8 @@ func (k Keeper) SettleSessionAccounting(
 		return types.ErrTokenomicsApplicationModuleBurn
 	}
 
+	// TODO_UPNEXT(@Olshansk): Emit burn & mint events as a result of session settlement.
+
 	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
 
 	return nil
