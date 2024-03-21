@@ -400,11 +400,10 @@ func (k msgServer) validateClosestPath(
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
-
-	// TODO_IN_THIS_PR: Finish off the conversation related to this check: https://github.com/pokt-network/poktroll/pull/406/files#r1520790083
-	// and #PUC afterwards.
-	// TODO_BLOCKER: The seed of the path should be `ConcatAndHash(blockHash, '.', sessionId)`
-	// to prevent all proofs needing to use the same path.
+.
+	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): The seed of the path should be
+	// `ConcatAndHash(blockHash, '.', sessionId)` to prevent all proofs needing to use the same path.
+	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
 	if !bytes.Equal(proof.Path, blockHash) {
 		return types.ErrProofInvalidProof.Wrapf(
 			"proof path %x does not match block hash %x",
