@@ -62,6 +62,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		ClosestMerkleProof: msg.Proof,
 	}
 
+	// TODO_IMPROVE(@h5law #427): Utilise smt.VerifyCompactClosestProof here to
+	// reduce on-chain storage requirements for proofs.
 	if err := k.queryAndValidateClaimForProof(ctx, &proof); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
@@ -92,7 +94,11 @@ func (k msgServer) queryAndValidateClaimForProof(ctx context.Context, proof *typ
 	// values are guaranteed to match.
 	foundClaim, found := k.GetClaim(ctx, sessionId, proof.GetSupplierAddress())
 	if !found {
-		return types.ErrProofClaimNotFound.Wrapf("no claim found for session ID %q and supplier %q", sessionId, proof.GetSupplierAddress())
+		return types.ErrProofClaimNotFound.Wrapf(
+			"no claim found for session ID %q and supplier %q",
+			sessionId,
+			proof.GetSupplierAddress(),
+		)
 	}
 
 	claimSessionHeader := foundClaim.GetSessionHeader()
