@@ -2,8 +2,10 @@ package block
 
 import (
 	"context"
+	"sync"
 
 	"cosmossdk.io/depinject"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -34,6 +36,7 @@ const (
 //   - client.EventsQueryClient
 func NewBlockClient(
 	ctx context.Context,
+	cometClient cometBlockClient,
 	deps depinject.Config,
 ) (client.BlockClient, error) {
 	client, err := events.NewEventsReplayClient[client.Block](
@@ -46,7 +49,19 @@ func NewBlockClient(
 	if err != nil {
 		return nil, err
 	}
-	return &blockClient{eventsReplayClient: client}, nil
+
+	bClient := &blockClient{
+		eventsReplayClient: client,
+		latestBlockMu:      &sync.Mutex{},
+	}
+
+	go bClient.getLatestBlocks(ctx)
+
+	if err := bClient.getInitialBlock(ctx, cometClient); err != nil {
+		return nil, err
+	}
+
+	return bClient, nil
 }
 
 // blockClient is a wrapper around an EventsReplayClient that implements the
@@ -58,6 +73,12 @@ type blockClient struct {
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block]
+	// latestBlockMu is a mutex that protects the latestBlock field from concurrent
+	// reads and writes.
+	latestBlockMu *sync.Mutex
+	// latestBlock is the last block observed by the blockClient. It is updated
+	// by the updateLatestBlock goroutine that listens to the eventsReplayClient
+	latestBlock client.Block
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
@@ -65,13 +86,61 @@ func (b *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlockR
 	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
-// LatestsNBlocks returns the last n blocks observed by the BockClient.
+// LastNBlocks returns the last n blocks observed by the BlockClient.
 func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
 	return b.eventsReplayClient.LastNEvents(ctx, n)
+}
+
+// LastBlock returns the last blocks observed by the BlockClient.
+func (b *blockClient) LastBlock() client.Block {
+	b.latestBlockMu.Lock()
+	defer b.latestBlockMu.Unlock()
+	return b.latestBlock
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
 func (b *blockClient) Close() {
 	b.eventsReplayClient.Close()
+}
+
+// getLatestBlocks listens to the EventsReplayClient's EventsSequence and updates
+// the latestBlock field with the latest block observed.
+func (b *blockClient) getLatestBlocks(ctx context.Context) {
+	latestBlockCh := b.eventsReplayClient.EventsSequence(ctx).Subscribe(ctx).Ch()
+	for block := range latestBlockCh {
+		b.latestBlockMu.Lock()
+		b.latestBlock = block
+		b.latestBlockMu.Unlock()
+	}
+}
+
+// getInitialBlock fetches the initial block from the chain and sets it as the
+// latest block observed by the blockClient.
+// This is necessary to ensure that the blockClient has the latest block when
+// it is first created.
+// If b.latestBlock is already set by the getLatestBlocks goroutine, then this
+// function skips setting the initial block.
+func (b *blockClient) getInitialBlock(ctx context.Context, client cometBlockClient) error {
+	queryBlockResult, err := client.Block(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	initialBlock := &cometBlockEvent{}
+	initialBlock.Data.Value.Block = queryBlockResult.Block
+	initialBlock.Data.Value.BlockID = queryBlockResult.BlockID
+
+	b.latestBlockMu.Lock()
+	defer b.latestBlockMu.Unlock()
+
+	if b.latestBlock != nil {
+		b.latestBlock = initialBlock
+	}
+
+	return nil
+}
+
+type cometBlockClient interface {
+	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
 }
