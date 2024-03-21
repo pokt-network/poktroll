@@ -2,7 +2,6 @@ package testblock
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"cosmossdk.io/depinject"
