@@ -7,8 +7,7 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// TODO_IMPROVE: This implements a naive greedy approach that defaults to the
-// first available supplier.
+// TODO_IMPROVE: Use a more sophisticated endpoint selection strategy.
 // Future optimizations (e.g. Quality-of-Service) can be introduced here.
 // TODO(@h5law): Look into different endpoint selection depending on their suitability.
 // getRelayerUrl gets the URL of the relayer for the given service.
@@ -46,6 +45,10 @@ func (app *appGateServer) getRelayerUrl(
 	// This does not necessarily start from the first endpoint of a new session
 	// but will cycle through all valid endpoints of the same session if enough
 	// requests are made.
+	// This is a naive strategy that is used to ensure all endpoints are leveraged
+	// throughout the lifetime of the session. It is primarily used as a foundation
+	// for testing or development purposes but a more enhanced strategy is expected
+	// to be adopted by prod gateways.
 	app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
 
 	return validSupplierEndpoints[app.endpointSelectionIndex], nil
