@@ -63,7 +63,7 @@ roadmap changelog [here](./roadmap/roadmap_changelog.md).
 
 ### Quickstart
 
-The best way to get involved is by following the instructions [here](./quickstart.md).
+The best way to get involved is by following the instructions [here](./developer_guide/quickstart.md).
 
 ### Godoc
 
