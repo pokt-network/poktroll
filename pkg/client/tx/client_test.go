@@ -2,6 +2,7 @@ package tx_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"sync"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
+	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -401,8 +403,11 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
+	spec := smt.NoPrehashSpec(sha256.New(), true)
+	emptyBlockHash := make([]byte, spec.PathHasherSize())
+
 	for i := 0; i < tx.DefaultCommitTimeoutHeightOffset; i++ {
-		blocksPublishCh <- testblock.NewAnyTimesBlock(t, []byte{}, int64(i+1))
+		blocksPublishCh <- testblock.NewAnyTimesBlock(t, emptyBlockHash, int64(i+1))
 	}
 
 	// Assert that we receive the expected error type & message.

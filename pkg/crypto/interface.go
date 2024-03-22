@@ -4,7 +4,10 @@ package crypto
 import (
 	"context"
 
-	"github.com/noot/ring-go"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	ring "github.com/noot/ring-go"
+
+	"github.com/pokt-network/poktroll/x/service/types"
 )
 
 // RingCache is used to store rings used for signing and verifying relay requests.
@@ -12,19 +15,38 @@ import (
 // the addresses of the gateways the application is delegated to, and converting
 // them into their corresponding public key points on the secp256k1 curve.
 type RingCache interface {
+	RingClient
+
+	// GetCachedAddresses returns the addresses of the applications that are
+	// currently cached in the ring cache.
+	GetCachedAddresses() []string
 	// Start starts the ring cache, it takes a cancellable context and, in a
 	// separate goroutine, listens for on-chain delegation events and invalidates
 	// the cache if the redelegation event's AppAddress is stored in the cache.
 	Start(ctx context.Context)
-	// GetCachedAddresses returns the addresses of the applications that are
-	// currently cached in the ring cache.
-	GetCachedAddresses() []string
-	// GetRingForAddress returns the ring for the given application address if
-	// it exists. If it does not exist in the cache, it follows a lazy approach
-	// of querying the on-chain state and creating it just-in-time, caching for
-	// future retrievals.
-	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
 	// Stop stops the ring cache by unsubscribing from on-chain delegation events.
 	// And clears the cache, so that it no longer contains any rings,
 	Stop()
+}
+
+// RingClient is used to construct rings by querying the application module for
+// the addresses of the gateways the application delegated to, and converting
+// them into their corresponding public key points on the secp256k1 curve.
+type RingClient interface {
+	// GetRingForAddress returns the ring for the given application address if
+	// it exists.
+	GetRingForAddress(ctx context.Context, appAddress string) (*ring.Ring, error)
+
+	// VerifyRelayRequestSignature verifies the relay request signature against
+	// the ring for the application address in the relay request.
+	VerifyRelayRequestSignature(ctx context.Context, relayRequest *types.RelayRequest) error
+}
+
+// PubKeyClient is used to get the public key given an address.
+// On-chain and off-chain implementations should take care of retrieving the
+// address' account and returning its public key.
+type PubKeyClient interface {
+	// GetPubKeyFromAddress returns the public key of the given account address
+	// if it exists.
+	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
 }
