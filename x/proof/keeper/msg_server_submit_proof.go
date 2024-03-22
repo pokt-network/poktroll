@@ -95,6 +95,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Retrieve the supplier's public key.
+	supplierAddr := msg.GetSupplierAddress()
 	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -108,7 +109,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-
 	logger.Info("queried and validated the session header")
 
 	// Unmarshal the closest merkle proof from the message.
@@ -202,7 +202,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
-
 	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %s", sessionHeader.SessionId))
 
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
