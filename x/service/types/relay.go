@@ -9,20 +9,11 @@ import (
 // GetSignableBytesHash returns the hash of the signable bytes of the relay request
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
-	// NB: Since req.Meta is a pointer, this approach is not concurrent safe.
-	// Save the signature and restore it after getting the signable bytes.
-	// If two goroutines are calling this method at the same time, the last one
-	// could get the nil signature resulting form the first go routine and restore
-	// nil after getting the signable bytes.
-	// TODO_TECHDEBT: Consider using a deep copy of the response to avoid this issue
-	// by having req.Meta as a non-pointer type in the corresponding proto file.
-	signature := req.Meta.Signature
+func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
+	// req and req.Meta are not pointers, so we can set the signature to nil
+	// in order to generate the signable bytes hash without the need restore it.
 	req.Meta.Signature = nil
-
 	requestBz, err := req.Marshal()
-	// Set the signature back to its original value before checking the error
-	req.Meta.Signature = signature
 	if err != nil {
 		return [32]byte{}, err
 	}
@@ -36,15 +27,17 @@ func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 // and Signature fields.
 // TODO_TEST: Add tests for RelayRequest validation
 func (req *RelayRequest) ValidateBasic() error {
-	if req.GetMeta() == nil {
-		return ErrServiceInvalidRelayRequest.Wrap("missing meta")
+	meta := req.GetMeta()
+
+	if meta.GetSessionHeader() == nil {
+		return ErrServiceInvalidRelayRequest.Wrap("missing session header")
 	}
 
-	if err := req.GetMeta().GetSessionHeader().ValidateBasic(); err != nil {
+	if err := meta.GetSessionHeader().ValidateBasic(); err != nil {
 		return ErrServiceInvalidRelayRequest.Wrapf("invalid session header: %s", err)
 	}
 
-	if len(req.GetMeta().GetSignature()) == 0 {
+	if len(meta.GetSignature()) == 0 {
 		return ErrServiceInvalidRelayRequest.Wrap("missing application signature")
 	}
 
@@ -54,20 +47,11 @@ func (req *RelayRequest) ValidateBasic() error {
 // GetSignableBytesHash returns the hash of the signable bytes of the relay response
 // Hashing the marshaled response message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (res *RelayResponse) GetSignableBytesHash() ([32]byte, error) {
-	// NB: Since req.Meta is a pointer, this approach is not concurrent safe.
-	// Save the signature and restore it after getting the signable bytes.
-	// If two goroutines are calling this method at the same time, the last one
-	// could get the nil signature resulting form the first go routine and restore
-	// nil after getting the signable bytes.
-	// TODO_TECHDEBT: Consider using a deep copy of the response to avoid this issue
-	// by having req.Meta as a non-pointer type in the corresponding proto file.
-	signature := res.Meta.SupplierSignature
+func (res RelayResponse) GetSignableBytesHash() ([32]byte, error) {
+	// res and res.Meta are not pointers, so we can set the signature to nil
+	// in order to generate the signable bytes hash without the need restore it.
 	res.Meta.SupplierSignature = nil
-
 	responseBz, err := res.Marshal()
-	// Set the signature back to its original value
-	res.Meta.SupplierSignature = signature
 	if err != nil {
 		return [32]byte{}, err
 	}
@@ -85,15 +69,17 @@ func (res *RelayResponse) ValidateBasic() error {
 	// SessionHeader, consider sending an on-chain challenge, lowering their
 	// QoS, or other future work.
 
-	if res.GetMeta() == nil {
+	meta := res.GetMeta()
+
+	if meta.GetSessionHeader() == nil {
 		return ErrServiceInvalidRelayResponse.Wrap("missing meta")
 	}
 
-	if err := res.GetMeta().GetSessionHeader().ValidateBasic(); err != nil {
+	if err := meta.GetSessionHeader().ValidateBasic(); err != nil {
 		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %v", err)
 	}
 
-	if len(res.GetMeta().GetSupplierSignature()) == 0 {
+	if len(meta.GetSupplierSignature()) == 0 {
 		return ErrServiceInvalidRelayResponse.Wrap("missing supplier signature")
 	}
 
@@ -109,7 +95,7 @@ func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.Pub
 		return err
 	}
 
-	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().GetSupplierSignature()); !ok {
+	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature); !ok {
 		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
 	}
 

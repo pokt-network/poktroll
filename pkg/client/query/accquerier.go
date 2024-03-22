@@ -51,21 +51,24 @@ func (aq *accQuerier) GetAccount(
 	ctx context.Context,
 	address string,
 ) (types.AccountI, error) {
-	if foundAccount, accountFound := aq.accountCache[address]; accountFound {
+	if foundAccount, isAccountFound := aq.accountCache[address]; isAccountFound {
 		return foundAccount, nil
 	}
 
+	// Query the blockchain for the account record
 	req := &accounttypes.QueryAccountRequest{Address: address}
 	res, err := aq.accountQuerier.Account(ctx, req)
 	if err != nil {
 		return nil, ErrQueryAccountNotFound.Wrapf("address: %s [%v]", address, err)
 	}
+
+	// Unpack and cache the account object
 	var fetchedAccount types.AccountI
 	if err = queryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
 		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}
-
 	aq.accountCache[address] = fetchedAccount
+
 	return fetchedAccount, nil
 }
 

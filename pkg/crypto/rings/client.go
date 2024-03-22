@@ -84,9 +84,6 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	relayRequest *types.RelayRequest,
 ) error {
 	relayRequestMeta := relayRequest.GetMeta()
-	if relayRequestMeta == nil {
-		return ErrRingClientInvalidRelayRequest.Wrap("missing meta from relay request")
-	}
 
 	sessionHeader := relayRequestMeta.GetSessionHeader()
 	if err := sessionHeader.ValidateBasic(); err != nil {
@@ -107,7 +104,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		return ErrRingClientInvalidRelayRequest.Wrap("missing signature from relay request")
 	}
 
-	// Convert the request signature to a ring signature.
+	// Deserialize the request signature bytes back into a ring signature.
 	relayRequestRingSig := new(ring.RingSig)
 	if err := relayRequestRingSig.Deserialize(ring_secp256k1.NewCurve(), signature); err != nil {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
@@ -117,7 +114,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 
 	// Get the ring for the application address of the relay request.
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRingSig, err := rc.GetRingForAddress(ctx, appAddress)
+	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
@@ -125,7 +122,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	}
 
 	// Compare the expected ring signature against the one provided in the relay request.
-	if !relayRequestRingSig.Ring().Equals(expectedAppRingSig) {
+	if !relayRequestRingSig.Ring().Equals(expectedAppRing) {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"ring signature in the relay request does not match the expected one for the app %s", appAddress,
 		)

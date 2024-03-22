@@ -6,11 +6,14 @@ import (
 	"testing"
 
 	"cosmossdk.io/depinject"
+	"github.com/cometbft/cometbft/libs/json"
+	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
@@ -149,6 +152,21 @@ func NewRedelegationEventBytes(
 ) []byte {
 	t.Helper()
 	jsonTemplate := `{"tx":"SGVsbG8sIHdvcmxkIQ==","result":{"events":[{"type":"message","attributes":[{"key":"action","value":"/pocket.application.MsgDelegateToGateway"},{"key":"sender","value":"pokt1exampleaddress"},{"key":"module","value":"application"}]},{"type":"pocket.application.EventRedelegation","attributes":[{"key":"app_address","value":"\"%s\""},{"key":"gateway_address","value":"\"%s\""}]}]}}`
-	json := fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)
-	return []byte(json)
+
+	txResultEvent := &tx.CometTxEvent{}
+
+	err := json.Unmarshal(
+		[]byte(fmt.Sprintf(jsonTemplate, appAddress, gatewayAddress)),
+		&txResultEvent.Data.Value.TxResult,
+	)
+	require.NoError(t, err)
+
+	txResultBz, err := json.Marshal(txResultEvent)
+	require.NoError(t, err)
+
+	rpcResult := &rpctypes.RPCResponse{Result: txResultBz}
+	rpcResultBz, err := json.Marshal(rpcResult)
+	require.NoError(t, err)
+
+	return rpcResultBz
 }

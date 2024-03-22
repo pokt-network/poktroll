@@ -33,7 +33,7 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// Prepare the relay request.
 	relayRequest := &types.RelayRequest{
-		Meta: &types.RelayRequestMetadata{
+		Meta: types.RelayRequestMetadata{
 			SessionHeader: supplierEndpoint.Header,
 			Signature:     nil, // signature added below
 		},
@@ -67,11 +67,6 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("error marshaling relay request: %s", err)
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
-	// TODO_IN_THIS_PR(@red-0ne): Why do we need the following 4 lines?
-	var relayReq types.RelayRequest
-	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay request: %s", err)
-	}
 
 	// Create the HTTP request to send the request to the relayer.
 	// All the RPC protocols to be supported (JSONRPC, Rest, Websockets, gRPC, etc)
@@ -109,7 +104,7 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// relayResponse.ValidateBasic validates Meta and SessionHeader, so
 	// we can safely use the session header.
-	sessionHeader := relayResponse.GetMeta().GetSessionHeader()
+	sessionHeader := relayResponse.GetMeta().SessionHeader
 
 	// Get the supplier's public key.
 	supplierPubKey, err := sdk.accountQuerier.GetPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
@@ -126,7 +121,7 @@ func (sdk *poktrollSDK) SendRelay(
 
 	// Verify the relay response's supplier signature.
 	// TODO_TECHDEBT: if the RelayResponse has an internal error response, we
-	// 				  SHOULD NOT verify the signature, and return an error early.
+	// SHOULD NOT verify the signature, and return an error early.
 	// TODO_IMPROVE: Increase logging & telemetry get visibility into  failed responses.
 	if err := relayResponse.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
