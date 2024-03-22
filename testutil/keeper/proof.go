@@ -39,8 +39,8 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// ProofModuleKeepers is an aggregation of the proof keeper all its dependency
-// keepers,and the codec that they share. Each keeper is embedded such that the
+// ProofModuleKeepers is an aggregation of the proof keeper and all its dependency
+// keepers, and the codec that they share. Each keeper is embedded such that the
 // ProofModuleKeepers implements all the interfaces of the keepers.
 // To call a method which is common to multiple keepers (e.g. `#SetParams()`),
 // the field corresponding to the desired keeper on which to call the method
