@@ -28,6 +28,7 @@ func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 // TODO_TEST: Add tests for RelayRequest validation
 func (req *RelayRequest) ValidateBasic() error {
 	meta := req.GetMeta()
+
 	if meta.GetSessionHeader() == nil {
 		return ErrServiceInvalidRelayRequest.Wrap("missing session header")
 	}
@@ -69,6 +70,7 @@ func (res *RelayResponse) ValidateBasic() error {
 	// QoS, or other future work.
 
 	meta := res.GetMeta()
+
 	if meta.GetSessionHeader() == nil {
 		return ErrServiceInvalidRelayResponse.Wrap("missing meta")
 	}
