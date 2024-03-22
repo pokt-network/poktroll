@@ -53,21 +53,17 @@ type poktrollSDK struct {
 	// for a specific session
 	serviceSessionSuppliers map[string]map[string]*SessionSuppliers
 
-	// accountQuerier is the querier for the account module.
-	// It is used to get the the supplier's public key to verify the relay response signature.
-	accountQuerier client.AccountQueryClient
-
 	// applicationQuerier is the querier for the application module.
 	// It is used to query a specific application or all applications
 	applicationQuerier client.ApplicationQueryClient
 
+	// accountQuerier is the querier for the account module.
+	// It retrieves on-chain accounts provided the address.
+	accountQuerier client.AccountQueryClient
+
 	// blockClient is the client for the block module.
 	// It is used to get the current block height to query for the current session.
 	blockClient client.BlockClient
-
-	// accountCache is a cache of the supplier accounts that has been queried
-	// TODO_TECHDEBT: Add a size limit to the cache.
-	supplierAccountCache map[string]cryptotypes.PubKey
 }
 
 // NewPOKTRollSDK creates a new POKTRollSDK instance with the given configuration.
@@ -75,7 +71,6 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	sdk := &poktrollSDK{
 		config:                  config,
 		serviceSessionSuppliers: make(map[string]map[string]*SessionSuppliers),
-		supplierAccountCache:    make(map[string]cryptotypes.PubKey),
 	}
 
 	var err error
