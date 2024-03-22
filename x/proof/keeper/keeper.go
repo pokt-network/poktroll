@@ -10,8 +10,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
-	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
@@ -30,9 +30,9 @@ type (
 
 		sessionKeeper     types.SessionKeeper
 		applicationKeeper types.ApplicationKeeper
-		accountKeeper     types.AccountKeeper
-		ringClient        crypto.RingClient
-		pubKeyClient      crypto.PubKeyClient
+
+		ringClient     crypto.RingClient
+		accountQuerier client.AccountQueryClient
 	}
 )
 
@@ -50,23 +50,28 @@ func NewKeeper(
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
 	}
 
+	// TODO_TECHDEBT: Use cosmos-sdk based polylog implementation once available. Also remove polyzero import.
+	polylogger := polylog.Ctx(context.Background())
 	applicationQuerier := types.NewAppKeeperQueryClient(applicationKeeper)
 	accountQuerier := types.NewAccountKeeperQueryClient(accountKeeper)
-	// TODO_TECHDEBT: Use cosmos-sdk based polylog implementation once available. Also remove polyzero import.
-	polylogger := polylog.Ctx(context.TODO())
 
-	ringClientDeps := depinject.Supply(
-		polylogger,
-		applicationQuerier,
-		accountQuerier,
-	)
-
-	ringClient, err := rings.NewRingClient(ringClientDeps)
-	if err != nil {
-		panic(err)
-	}
-
-	pubKeyClient, err := pubkeyclient.NewPubKeyClient(depinject.Supply(accountQuerier))
+	// RingKeeperClient holds the logic of verifying RelayRequests ring signatures
+	// for both on-chain and off-chain actors.
+	//
+	// ApplicationQueries & accountQuerier are compatible with the environment
+	// they're used in and may or may not make an actual network request.
+	//
+	// When used in an on-chain context, the ProofKeeper supplies AppKeeperQueryClient
+	// and AccountKeeperQueryClient that are thin wrappers around the Application and
+	// Account keepers respectively to satisfy the RingClient needs.
+	//
+	// TODO_IMPROVE_CONSIDERATION: Make ring signature verification a stateless
+	// function and get rid of the RingClient and its dependencies by moving
+	// application ring retrieval to the application keeper, and making it
+	// retrievable using the application query client for off-chain actors. Signature
+	// verification code will still be shared across off/on chain environments.
+	ringKeeperClientDeps := depinject.Supply(polylogger, applicationQuerier, accountQuerier)
+	ringKeeperClient, err := rings.NewRingClient(ringKeeperClientDeps)
 	if err != nil {
 		panic(err)
 	}
@@ -79,9 +84,9 @@ func NewKeeper(
 
 		sessionKeeper:     sessionKeeper,
 		applicationKeeper: applicationKeeper,
-		accountKeeper:     accountKeeper,
-		ringClient:        ringClient,
-		pubKeyClient:      pubKeyClient,
+
+		ringClient:     ringKeeperClient,
+		accountQuerier: accountQuerier,
 	}
 }
 

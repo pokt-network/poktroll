@@ -210,7 +210,11 @@ func (k Keeper) hydrateSessionSuppliers(ctx context.Context, sh *sessionHydrator
 // TODO_INVESTIGATE: We are using a `Go` native implementation for a pseudo-random number generator. In order
 // for it to be language agnostic, a general purpose algorithm MUST be used.
 // pseudoRandomSelection returns a random subset of the candidates.
-func pseudoRandomSelection(candidates []*sharedtypes.Supplier, numTarget int, sessionIDBz []byte) []*sharedtypes.Supplier {
+func pseudoRandomSelection(
+	candidates []*sharedtypes.Supplier,
+	numTarget int,
+	sessionIDBz []byte,
+) []*sharedtypes.Supplier {
 	// Take the first 8 bytes of sessionId to use as the seed
 	// NB: There is specific reason why `BigEndian` was chosen over `LittleEndian` in this specific context.
 	seed := int64(binary.BigEndian.Uint64(sha3Hash(sessionIDBz)[:8]))

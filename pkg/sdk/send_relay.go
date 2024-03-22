@@ -19,19 +19,19 @@ func init() {
 
 // SendRelay sends a relay request to the given supplier's endpoint.
 // It signs the request, relays it to the supplier and verifies the response signature.
-// It takes an http.Request as an argument and uses its method and headers to create
-// the relay request.
+// The relay request is created by adding method headers to the provided http.Request.
 func (sdk *poktrollSDK) SendRelay(
 	ctx context.Context,
 	supplierEndpoint *SingleSupplierEndpoint,
 	request *http.Request,
 ) (response *types.RelayResponse, err error) {
+	// Retrieve the request's payload.
 	payloadBz, err := io.ReadAll(request.Body)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("reading request body: %s", err)
 	}
 
-	// Create the relay request.
+	// Prepare the relay request.
 	relayRequest := &types.RelayRequest{
 		Meta: &types.RelayRequestMetadata{
 			SessionHeader: supplierEndpoint.Header,
@@ -48,12 +48,13 @@ func (sdk *poktrollSDK) SendRelay(
 	}
 	signer := signer.NewRingSigner(appRing, sdk.signingKey)
 
-	// Hash and sign the request's signable bytes.
+	// Hash request's signable bytes.
 	signableBz, err := relayRequest.GetSignableBytesHash()
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error getting signable bytes: %s", err)
 	}
 
+	// Sign the relay request.
 	requestSig, err := signer.Sign(signableBz)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error signing relay: %s", err)
@@ -66,6 +67,7 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("error marshaling relay request: %s", err)
 	}
 	relayRequestReader := io.NopCloser(bytes.NewReader(relayRequestBz))
+	// TODO_IN_THIS_PR(@red-0ne): Why do we need the following 4 lines?
 	var relayReq types.RelayRequest
 	if err := relayReq.Unmarshal(relayRequestBz); err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay request: %s", err)
@@ -84,6 +86,7 @@ func (sdk *poktrollSDK) SendRelay(
 	sdk.logger.Debug().
 		Str("supplier_url", supplierEndpoint.Url.String()).
 		Msg("sending relay request")
+
 	relayHTTPResponse, err := http.DefaultClient.Do(relayHTTPRequest)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error sending relay request: %s", err)
@@ -95,36 +98,37 @@ func (sdk *poktrollSDK) SendRelay(
 		return nil, ErrSDKHandleRelay.Wrapf("error reading relay response body: %s", err)
 	}
 
-	// Unmarshal the response bytes into a RelayResponse.
+	// Unmarshal the response bytes into a RelayResponse and validate it.
 	relayResponse := &types.RelayResponse{}
 	if err := relayResponse.Unmarshal(relayResponseBz); err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("error unmarshaling relay response: %s", err)
 	}
-
 	if err := relayResponse.ValidateBasic(); err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("%s", err)
 	}
 
+	// relayResponse.ValidateBasic validates Meta and SessionHeader, so
+	// we can safely use the session header.
+	sessionHeader := relayResponse.GetMeta().GetSessionHeader()
+
 	// Get the supplier's public key.
-	supplierPubKey, err := sdk.getPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
+	supplierPubKey, err := sdk.accountQuerier.GetPubKeyFromAddress(ctx, supplierEndpoint.SupplierAddress)
 	if err != nil {
-		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %s", err)
+		return nil, ErrSDKHandleRelay.Wrapf("error getting supplier public key: %v", err)
 	}
 
 	sdk.logger.Debug().
 		Str("supplier", supplierEndpoint.SupplierAddress).
-		Str("application", relayResponse.GetMeta().GetSessionHeader().GetApplicationAddress()).
-		Str("service", relayResponse.GetMeta().GetSessionHeader().GetService().GetId()).
-		Int64("end_height", relayResponse.GetMeta().GetSessionHeader().GetSessionEndBlockHeight()).
+		Str("application", sessionHeader.GetApplicationAddress()).
+		Str("service", sessionHeader.GetService().GetId()).
+		Int64("end_height", sessionHeader.GetSessionEndBlockHeight()).
 		Msg("About to verify relay response signature.")
 
-	// Verify the response signature. We use the supplier address that we got from
-	// the getRelayerUrl function since this is the address we are expecting to sign the response.
-	// TODO_TECHDEBT: if the RelayResponse is an internal error response, we should not verify the signature
-	// as in some relayer early failures, it may not be signed by the supplier.
-	// TODO_IMPROVE: Add more logging & telemetry so we can get visibility and signal into
-	// failed responses.
-	if err := relayResponse.VerifySignature(supplierPubKey); err != nil {
+	// Verify the relay response's supplier signature.
+	// TODO_TECHDEBT: if the RelayResponse has an internal error response, we
+	// 				  SHOULD NOT verify the signature, and return an error early.
+	// TODO_IMPROVE: Increase logging & telemetry get visibility into  failed responses.
+	if err := relayResponse.VerifySupplierSignature(supplierPubKey); err != nil {
 		return nil, ErrSDKVerifyResponseSignature.Wrapf("%s", err)
 	}
 

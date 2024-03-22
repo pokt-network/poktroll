@@ -42,6 +42,11 @@ const (
 	preExistingProofsKey = "preExistingProofsKey"
 )
 
+// TODO_TECHDEBT: Evaluate if/where/how this function should be reused in other tests
+func (s *suite) TheUserShouldWaitForTheMessageToBeSubmited(module, message string) {
+	s.waitForMessageAction(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+}
+
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
 	s.waitForMessageAction("/poktroll.proof.MsgCreateClaim")
 }
