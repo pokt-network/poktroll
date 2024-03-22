@@ -154,15 +154,6 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Start at batch number -1 ... TODO: explain why - modulus operator
 	batchNumber.Add(-1)
 
-	//batchObs := channel.Map(s.ctx, s.blocksReplayObs,
-	//	func(ctx context.Context, block client.Block) (*atomic.Uint64, bool) {
-	//		// Increment the batch number every time a block is received.
-	//		testStep.Add(1)
-	//
-	//		return testStep, false
-	//	},
-	//)
-
 	// shouldBlockUpdateChainStateObs is an observable which is notified each block.
 	// If the current "test height" is a multiple of any actor increment block count,
 	// it ... TODO: finish
@@ -335,17 +326,22 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(table gocuke.DataTable) {
 	// Set initial relays per second
-	initialRelaysPerSecond := table.Cell(1, 0).Int64()
-	s.relaysPerSec.Store(initialRelaysPerSecond)
+	startRelayRate := table.Cell(1, 0).Int64()
+	s.relaysPerSec.Store(startRelayRate)
 
-	relaysPerSecInc := table.Cell(1, 1).Int64()
-	numBlocksPerInc := table.Cell(1, 2).Int64()
-	maxRelaysPerSec := table.Cell(1, 3).Int64()
+	relaysRateInc := table.Cell(1, 1).Int64()
+	blocksPerRelayRateInc := table.Cell(1, 2).Int64()
+	maxRelaysRate := table.Cell(1, 3).Int64()
 
 	// Set the total number of relay requests to be sent.
 	// It may be read from concurrently running goroutines but remains
 	// constant for the duration of the test.
-	s.totalExpectedRequests = computeTotalRequests(initialRelaysPerSecond, relaysPerSecInc, numBlocksPerInc, maxRelaysPerSec)
+	s.totalExpectedRequests = computeTotalRequests(
+		startRelayRate,
+		relaysRateInc,
+		blocksPerRelayRateInc,
+		maxRelaysRate,
+	)
 
 	// relayBatchObs maps from block heights at which a relay batch should be sent to
 	// the number of relays per second to send in that batch, incrementing the rps
@@ -355,9 +351,9 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 			relaysPerSec := s.relaysPerSec.Load()
 
 			if notif.batchNumber != 0 &&
-				notif.batchNumber%numBlocksPerInc == 0 {
+				notif.batchNumber%blocksPerRelayRateInc == 0 {
 				// Increment relaysPerSec.
-				relaysPerSec = s.relaysPerSec.Add(relaysPerSecInc)
+				relaysPerSec = s.relaysPerSec.Add(relaysRateInc)
 			}
 
 			// Populate the number of relay requests to send in this batch.
@@ -375,7 +371,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 	channel.ForEach(s.ctx, relayBatchObs,
 		func(ctx context.Context, batch *relayBatchNotif) {
-			relaysPerSec := batch.relaysPerSec
+			relayRate := batch.relaysPerSec
 			batchWaitGroup := sync.WaitGroup{}
 
 			// Send relay batch...
@@ -383,12 +379,12 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 				remainingRelays := s.totalExpectedRequests - s.relaysComplete.Load()
 				// Ensure the number of relays sent in this batch does not exceed the maximum.
 				// I.e. this is the last batch.
-				if remainingRelays < uint64(relaysPerSec) {
-					relaysPerSec = int64(remainingRelays)
+				if remainingRelays < uint64(relayRate) {
+					relayRate = int64(remainingRelays)
 				}
 
-				batchWaitGroup.Add(int(relaysPerSec))
-				for i := int64(0); i < relaysPerSec; i++ {
+				batchWaitGroup.Add(int(relayRate))
+				for i := int64(0); i < relayRate; i++ {
 					// Abort remaining relays in this batch if the context was cancelled.
 					select {
 					case <-s.ctx.Done():
@@ -413,6 +409,12 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 						batchWaitGroup.Done()
 					})
+
+					// TODO_IN_THIS_COMMIT: relay batches should continue while
+					// relayRate remains at maxRelayRate for blocksPerRelayRateInc blocks.
+					if relayRate == maxRelaysRate {
+						s.cancelCtx()
+					}
 				}
 
 			})
@@ -426,8 +428,8 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 				logger.Info().Msgf(
 					"batch number %d complete (%d/%d)",
 					batch.batchNumber,
-					relaysPerSec,
-					relaysPerSec,
+					relayRate,
+					relayRate,
 				)
 				printProgressLine(s, progressBarWidth, s.relaysComplete.Load(), s.totalExpectedRequests)
 			}()
