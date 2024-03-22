@@ -191,7 +191,6 @@ func setupAppGateServerDependencies(
 		config.NewSupplyAccountQuerierFn(),                     // leaf
 		config.NewSupplyApplicationQuerierFn(),                 // leaf
 		config.NewSupplySessionQuerierFn(),                     // leaf
-		config.NewSupplyPubKeyClientFn(),
 		config.NewSupplyRingCacheFn(),
 
 		config.NewSupplyPOKTRollSDKFn(appGateConfig.SigningKey),

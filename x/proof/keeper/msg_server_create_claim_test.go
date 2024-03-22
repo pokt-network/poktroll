@@ -17,6 +17,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var defaultMerkleRoot = []byte{0, 1, 0, 1}
+
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
@@ -56,7 +58,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 		supplierAddr,
 		appAddr,
 		service,
-		nil,
+		defaultMerkleRoot,
 	)
 	createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
@@ -161,7 +163,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					supplierAddr,
 					appAddr,
 					service,
-					nil,
+					defaultMerkleRoot,
 				)
 			},
 			expectedErr: status.Error(
@@ -182,7 +184,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					wrongSupplierAddr,
 					appAddr,
 					service,
-					nil,
+					defaultMerkleRoot,
 				)
 			},
 			expectedErr: status.Error(
@@ -203,7 +205,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					randSupplierAddr,
 					appAddr,
 					service,
-					nil,
+					defaultMerkleRoot,
 				)
 			},
 			expectedErr: status.Error(
@@ -224,7 +226,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					// Use an application address not included in the session.
 					wrongAppAddr,
 					service,
-					nil,
+					defaultMerkleRoot,
 				)
 			},
 			expectedErr: status.Error(
@@ -245,7 +247,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 					// Use an application address that's nonexistent on-chain.
 					randAppAddr,
 					service,
-					nil,
+					defaultMerkleRoot,
 				)
 			},
 			expectedErr: status.Error(
@@ -277,10 +279,6 @@ func newTestClaimMsg(
 	merkleRoot smt.MerkleRoot,
 ) *types.MsgCreateClaim {
 	t.Helper()
-
-	if merkleRoot == nil {
-		merkleRoot = []byte{0, 1, 0, 1}
-	}
 
 	return types.NewMsgCreateClaim(
 		supplierAddr,

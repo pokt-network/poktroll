@@ -66,7 +66,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 	service := &sharedtypes.Service{Id: testServiceId}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddSessionActors(ctx, t, supplierAddr, appAddr, service)
+	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
@@ -159,10 +159,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	wrongService := &sharedtypes.Service{Id: "nosvc1"}
 
 	// Add a supplier and application pair that are expected to be in the session.
-	keepers.AddSessionActors(ctx, t, supplierAddr, appAddr, service)
+	keepers.AddServiceActors(ctx, t, service, supplierAddr, appAddr)
 
 	// Add a supplier and application pair that are *not* expected to be in the session.
-	keepers.AddSessionActors(ctx, t, wrongSupplierAddr, wrongAppAddr, wrongService)
+	keepers.AddServiceActors(ctx, t, service, wrongSupplierAddr, wrongAppAddr)
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
@@ -185,7 +185,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// the expected session end height.
 	wrongSessionEndHeightHeader := *validSessionHeader
 	wrongSessionEndHeightHeader.SessionEndBlockHeight = 3
-	
+
 	// TODO_TECHDEBT: add a test case such that we can distinguish between early
 	// & late session end block heights.
 
@@ -419,108 +419,6 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "relay request metadata is nil",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
-
-				// Set the relay request metadata to nil.
-				relay.Req.Meta = nil
-
-				// Ensure a valid relay response signature.
-				signRelayResponse(t, "supplier", supplierAddr, keyRing, relay)
-
-				relayBz, err := relay.Marshal()
-				require.NoError(t, err)
-
-				// Construct a session tree with 1 relay that has nil request metadata.
-				invalidRequestMetaSessionTree := newEmptySessionTree(t, validSessionHeader)
-
-				// Add the relay to the session tree.
-				err = invalidRequestMetaSessionTree.Update([]byte{1}, relayBz, 1)
-				require.NoError(t, err)
-
-				// Get the Merkle root for the session tree in order to construct a claim.
-				invalidRequestMetaMerkleRootBz, err := invalidRequestMetaSessionTree.Flush()
-				require.NoError(t, err)
-
-				// Create a claim with a merkle root derived from a session tree
-				// with an invalid relay request signature.
-				claimMsg := newTestClaimMsg(t,
-					validSessionHeader.GetSessionId(),
-					supplierAddr,
-					appAddr,
-					service,
-					invalidRequestMetaMerkleRootBz,
-				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
-				require.NoError(t, err)
-
-				// Construct new proof message derived from a session tree
-				// with invalid relay request metadata.
-				return newTestProofMsg(t,
-					supplierAddr,
-					validSessionHeader,
-					invalidRequestMetaSessionTree,
-					expectedClosestMerkleProofPath,
-				)
-			},
-			expectedErr: status.Error(
-				codes.FailedPrecondition,
-				types.ErrProofInvalidRelayRequest.Wrap("missing meta").Error(),
-			),
-		},
-		{
-			desc: "relay response metadata is nil",
-			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
-
-				// Ensure a valid relay request signature.
-				signRelayRequest(ctx, t, appAddr, keyRing, ringClient, relay)
-
-				// Set the relay response metadata to nil.
-				relay.Res.Meta = nil
-
-				relayBz, err := relay.Marshal()
-				require.NoError(t, err)
-
-				// Construct a session tree with 1 relay that has nil resopnse metadata.
-				invalidResponseMetaSessionTree := newEmptySessionTree(t, validSessionHeader)
-
-				// Add the relay to the session tree.
-				err = invalidRequestMetaSessionTree.Update([]byte{1}, relayBz, 1)
-				require.NoError(t, err)
-
-				// Get the Merkle root for the session tree in order to construct a claim.
-				invalidResponseMetaMerkleRootBz, err := invalidRsponseMetaSessionTree.Flush()
-				require.NoError(t, err)
-
-				// Create a claim with a merkle root derived from a session tree
-				// with a nil response metadata.
-				claimMsg := newTestClaimMsg(t,
-					validSessionHeader.GetSessionId(),
-					supplierAddr,
-					appAddr,
-					service,
-					invalidResponseMetaMerkleRootBz,
-				)
-				_, err = srv.CreateClaim(ctx, claimMsg)
-				require.NoError(t, err)
-
-				// Construct new proof message derived from a session tree
-				// with invalid relay response metadata.
-				return newTestProofMsg(t,
-					supplierAddr,
-					validSessionHeader,
-					invalidResponseMetaSessionTree,
-					expectedClosestMerkleProofPath,
-				)
-			},
-			expectedErr: status.Error(
-				codes.FailedPrecondition,
-				types.ErrProofInvalidRelayResponse.Wrap("missing meta").Error(),
-			),
-		},
-		{ 
 			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay request session header must match proof session header",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
@@ -572,7 +470,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				).Error(),
 			),
 		},
-		{ 
+		{
 			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay response session header must match proof session header",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
@@ -1242,14 +1140,14 @@ func newEmptyRelay(
 ) *servicetypes.Relay {
 	return &servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
-			Meta: &servicetypes.RelayRequestMetadata{
+			Meta: servicetypes.RelayRequestMetadata{
 				SessionHeader: requestHeader,
 				Signature:     nil, // Signature addded elsewhere.
 			},
 			Payload: nil,
 		},
 		Res: &servicetypes.RelayResponse{
-			Meta: &servicetypes.RelayResponseMetadata{
+			Meta: servicetypes.RelayResponseMetadata{
 				SessionHeader:     responseHeader,
 				SupplierSignature: nil, // Signature added elsewhere.
 			},

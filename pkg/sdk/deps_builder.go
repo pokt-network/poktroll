@@ -12,7 +12,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
-	pubkeyclient "github.com/pokt-network/poktroll/pkg/crypto/pubkey_client"
 	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
@@ -55,19 +54,12 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(grpcClient))
 
-	// Create and supply the account querier to the pubKey Client
+	// Create the account querier and add it to the required dependencies.
 	accountQuerier, err := query.NewAccountQuerier(deps)
 	if err != nil {
 		return nil, err
 	}
-
-	// Create and supply the pubKey Client
-	pubKeyClientDeps := depinject.Supply(accountQuerier)
-	pubKeyClient, err := pubkeyclient.NewPubKeyClient(pubKeyClientDeps)
-	if err != nil {
-		return nil, err
-	}
-	deps = depinject.Configs(deps, depinject.Supply(pubKeyClient))
+	deps = depinject.Configs(deps, depinject.Supply(accountQuerier))
 
 	// Create and supply the application querier
 	applicationQuerier, err := query.NewApplicationQuerier(deps)

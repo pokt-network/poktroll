@@ -36,12 +36,13 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 // and when that call is made, it returns the given EventsObservable[Block].
 func NewAnyTimesCommittedBlocksSequenceBlockClient(
 	t *testing.T,
+	blockHash []byte,
 	blocksObs observable.Observable[client.Block],
 ) *mockclient.MockBlockClient {
 	t.Helper()
 
 	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
-	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
+	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, blockHash, 0)
 
 	// Set up the mock expectation for the CommittedBlocksSequence method. When
 	// the method is called, it returns a new replay observable that publishes
@@ -91,14 +92,14 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 // method is called, it returns a mock Block with the provided hash and height.
 func NewAnyTimeLastNBlocksBlockClient(
 	t *testing.T,
-	hash []byte,
-	height int64,
+	blockHash []byte,
+	blockHeight int64,
 ) *mockclient.MockBlockClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	// Create a mock block that returns the provided hash and height.
-	blockMock := NewAnyTimesBlock(t, hash, height)
+	blockMock := NewAnyTimesBlock(t, blockHash, blockHeight)
 	// Create a mock block client that expects calls to LastNBlocks method and
 	// returns the mock block.
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
@@ -110,14 +111,18 @@ func NewAnyTimeLastNBlocksBlockClient(
 // NewAnyTimesBlock creates a mock Block that expects calls to Height and Hash
 // methods any number of times. When the methods are called, they return the
 // provided height and hash respectively.
-func NewAnyTimesBlock(t *testing.T, hash []byte, height int64) *mockclient.MockBlock {
+func NewAnyTimesBlock(
+	t *testing.T,
+	blockHash []byte,
+	blockHeight int64,
+) *mockclient.MockBlock {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	// Create a mock block that returns the provided hash and height AnyTimes.
 	blockMock := mockclient.NewMockBlock(ctrl)
-	blockMock.EXPECT().Height().Return(height).AnyTimes()
-	blockMock.EXPECT().Hash().Return(hash).AnyTimes()
+	blockMock.EXPECT().Height().Return(blockHeight).AnyTimes()
+	blockMock.EXPECT().Hash().Return(blockHash).AnyTimes()
 
 	return blockMock
 }

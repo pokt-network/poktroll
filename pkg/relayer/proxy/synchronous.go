@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	sdkerrors "cosmossdk.io/errors"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -173,16 +172,6 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	if err != nil {
 		sync.replyWithError(ctx, []byte{}, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
-		return
-	}
-
-	if relayRequest.Meta == nil {
-		err = sdkerrors.Wrapf(
-			ErrRelayerProxyInvalidRelayRequest,
-			"missing meta from relay request: %v", relayRequest,
-		)
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
-		sync.logger.Warn().Err(err).Msg("relay request metadata is nil which could be a result of failed unmashaling")
 		return
 	}
 

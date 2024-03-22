@@ -1,0 +1,11 @@
+config:
+  signing_key_name: supplier1
+  suppliers:
+    - service_id: anvil
+      type: http
+      service_config:
+        url: http://anvil:8547/
+      proxy_names:
+        - http-proxy
+      hosts:
+        - tcp://relayminer1:8545

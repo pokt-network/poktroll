@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	"github.com/noot/ring-go"
+	ring "github.com/noot/ring-go"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
@@ -20,17 +20,16 @@ type ringCache struct {
 	// logger is the logger for the ring cache.
 	logger polylog.Logger
 
-	// ringsByAddr maintains a map of application addresses to the ring composed of
-	// the public keys of the application and the gateways the application is delegated to.
+	// ringsByAddr maintains a map from app addresses to the ring composed of
+	// the public keys of both the application and its delegated gateways.
 	ringsByAddr   map[string]*ring.Ring
 	ringsByAddrMu *sync.RWMutex
 
 	// delegationClient is used to listen for on-chain delegation events and
-	// invalidate ringsByAddr entries for rings that have been updated on chain.
+	// invalidate entries in ringsByAddr if an associated updated has been made.
 	delegationClient client.DelegationClient
 
-	// ringClient is used to retrieve the rings that are cached and verify relay
-	// request signatures against the rings.
+	// ringClient is used to retrieve cached rings and verify relay requests.
 	ringClient crypto.RingClient
 }
 
@@ -68,21 +67,21 @@ func NewRingCache(deps depinject.Config) (_ crypto.RingCache, err error) {
 
 // Start starts the ring cache by subscribing to on-chain redelegation events.
 func (rc *ringCache) Start(ctx context.Context) {
-	rc.logger.Info().Msg("starting ring ringsByAddr")
-	// Listen for redelegation events and invalidate the cache if contains a ring
-	// corresponding to the redelegation event's address .
+	rc.logger.Info().Msg("starting ring cache")
+	// Stop the ringCache when the context is cancelled.
 	go func() {
 		select {
 		case <-ctx.Done():
-			// Stop the ring cache if the context is cancelled.
 			rc.Stop()
 		}
 	}()
+	// Listen for redelegation events and invalidate the cache if it contains an
+	// address corresponding to the redelegation event's.
 	go rc.goInvalidateCache(ctx)
 }
 
 // goInvalidateCache listens for redelegation events and invalidates the
-// cache if ring corresponding to the app address in the redelegation event
+// cache if the ring corresponding to the app address in the redelegation event
 // exists in the cache.
 // This function is intended to be run in a goroutine.
 func (rc *ringCache) goInvalidateCache(ctx context.Context) {
@@ -107,7 +106,8 @@ func (rc *ringCache) goInvalidateCache(ctx context.Context) {
 		})
 }
 
-// Stop stops the ring cache by unsubscribing from on-chain redelegation events.
+// Stop stops the ring cache by unsubscribing from on-chain redelegation events
+// and clears any existing entries.
 func (rc *ringCache) Stop() {
 	// Clear the cache.
 	rc.ringsByAddrMu.Lock()
@@ -122,11 +122,12 @@ func (rc *ringCache) Stop() {
 func (rc *ringCache) GetCachedAddresses() []string {
 	rc.ringsByAddrMu.RLock()
 	defer rc.ringsByAddrMu.RUnlock()
-	keys := make([]string, 0, len(rc.ringsByAddr))
-	for k := range rc.ringsByAddr {
-		keys = append(keys, k)
+
+	appAddresses := make([]string, 0, len(rc.ringsByAddr))
+	for appAddr := range rc.ringsByAddr {
+		appAddresses = append(appAddresses, appAddr)
 	}
-	return keys
+	return appAddresses
 }
 
 // GetRingForAddress returns the ring for the address provided. If it does not
@@ -137,33 +138,32 @@ func (rc *ringCache) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
 ) (ring *ring.Ring, err error) {
-	// Lock the ringsByAddr map.
 	rc.ringsByAddrMu.Lock()
 	defer rc.ringsByAddrMu.Unlock()
 
 	// Check if the ring is in the cache.
 	ring, ok := rc.ringsByAddr[appAddress]
 
-	if !ok {
-		// If the ring is not in the cache, get it from the ring client.
+	// Use the existing ring if it's cached.
+	if ok {
 		rc.logger.Debug().
 			Str("app_address", appAddress).
-			Msg("ring ringsByAddr miss; fetching from application module")
-		ring, err = rc.ringClient.GetRingForAddress(ctx, appAddress)
+			Msg("ring cache hit; using cached ring")
 
-		// Add the address points to the cache.
-		rc.ringsByAddr[appAddress] = ring
-	} else {
-		// If the ring is in the cache, create it from the points.
-		rc.logger.Debug().
-			Str("app_address", appAddress).
-			Msg("ring ringsByAddr hit; creating from points")
+		return ring, nil
 	}
+
+	// If the ring is not in the cache, get it from the ring client.
+	rc.logger.Debug().
+		Str("app_address", appAddress).
+		Msg("ring cache miss; fetching from application module")
+
+	ring, err = rc.ringClient.GetRingForAddress(ctx, appAddress)
 	if err != nil {
 		return nil, err
 	}
+	rc.ringsByAddr[appAddress] = ring
 
-	// Return the ring.
 	return ring, nil
 }
 

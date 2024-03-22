@@ -225,8 +225,15 @@ func (rp *relayerSessionsManager) validateConfig() error {
 // waitForBlock blocks until the block at the given height (or greater) is
 // observed as having been committed.
 func (rs *relayerSessionsManager) waitForBlock(ctx context.Context, height int64) client.Block {
+	// Create a cancellable child context for managing the CommittedBlocksSequence lifecycle.
+	// Since the subscription is no longer needed after the block it is looking for
+	// is reached, cancelling the child context at the end of the function will stop
+	// the subscriptions and close the publish channel associated with the
+	// CommittedBlocksSequence observable which is not exposing it.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	subscription := rs.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx)
-	defer subscription.Unsubscribe()
 
 	for block := range subscription.Ch() {
 		if block.Height() >= height {
@@ -249,7 +256,7 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 	// ensure the session tree exists for this relay
 	// TODO_CONSIDERATION: if we get the session header from the response, there
 	// is no possibility that we forgot to hydrate it (i.e. blindly trust the client).
-	sessionHeader := relay.GetReq().GetMeta().GetSessionHeader()
+	sessionHeader := relay.GetReq().GetMeta().SessionHeader
 	smst, err := rs.ensureSessionTree(sessionHeader)
 	if err != nil {
 		// TODO_IMPROVE: log additional info?

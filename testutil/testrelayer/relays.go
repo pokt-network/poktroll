@@ -20,7 +20,7 @@ func NewMinedRelay(
 ) *relayer.MinedRelay {
 	relay := servicetypes.Relay{
 		Req: &servicetypes.RelayRequest{
-			Meta: &servicetypes.RelayRequestMetadata{
+			Meta: servicetypes.RelayRequestMetadata{
 				SessionHeader: &sessiontypes.SessionHeader{
 					SessionStartBlockHeight: sessionStartHeight,
 					SessionEndBlockHeight:   sessionEndHeight,
