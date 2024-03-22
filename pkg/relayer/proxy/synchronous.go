@@ -175,15 +175,6 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		return
 	}
 
-	if relayRequest.Meta == nil {
-		err = ErrRelayerProxyInvalidRelayRequest.Wrapf(
-			"missing meta from relay request: %v", relayRequest,
-		)
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
-		sync.logger.Warn().Err(err).Msg("relay request metadata is nil which could be a result of failed unmashaling")
-		return
-	}
-
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
 	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
 	if err != nil {

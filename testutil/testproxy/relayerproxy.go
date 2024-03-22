@@ -393,7 +393,7 @@ func GenerateRelayRequest(
 	sessionId, _ := sessionkeeper.GetSessionId(appAddress, serviceId, blockHashBz, blockHeight)
 
 	return &servicetypes.RelayRequest{
-		Meta: &servicetypes.RelayRequestMetadata{
+		Meta: servicetypes.RelayRequestMetadata{
 			SessionHeader: &sessiontypes.SessionHeader{
 				ApplicationAddress:      appAddress,
 				SessionId:               string(sessionId[:]),

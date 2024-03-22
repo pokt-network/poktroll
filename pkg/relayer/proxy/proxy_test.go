@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/pkg/relayer/proxy"
 	"github.com/pokt-network/poktroll/testutil/testproxy"
-	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -386,15 +385,6 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			expectedErrMsg:  "cannot unmarshal request payload",
 		},
 		{
-			desc: "Missing session meta from relay request",
-
-			relayerProxyBehavior: defaultRelayerProxyBehavior,
-			inputScenario:        sendRequestWithMissingMeta,
-
-			expectedErrCode: -32000,
-			expectedErrMsg:  "missing meta from relay request",
-		},
-		{
 			desc: "Missing signature from relay request",
 
 			relayerProxyBehavior: defaultRelayerProxyBehavior,
@@ -419,7 +409,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithMissingSessionHeaderApplicationAddress,
 
 			expectedErrCode: -32000,
-			expectedErrMsg:  "missing application address from relay request",
+			expectedErrMsg:  "invalid session header: invalid application address",
 		},
 		{
 			desc: "Non staked application address",
@@ -437,7 +427,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithRingSignatureMismatch,
 
 			expectedErrCode: -32000,
-			expectedErrMsg:  "ring signature does not match ring for application address",
+			expectedErrMsg:  "ring signature in the relay request does not match the expected one for the app",
 		},
 		{
 			desc: "Session mismatch",
@@ -471,7 +461,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithSignatureForDifferentPayload,
 
 			expectedErrCode: -32000,
-			expectedErrMsg:  "invalid ring signature",
+			expectedErrMsg:  "invalid relay request signature or bytes",
 		},
 		{
 			desc: "Successful relay",
@@ -570,19 +560,6 @@ func sendRequestWithUnparsableBody(
 	require.NotNil(t, res)
 
 	return testproxy.GetRelayResponseError(t, res)
-}
-
-func sendRequestWithMissingMeta(
-	t *testing.T,
-	test *testproxy.TestBehavior,
-) (errorCode int32, errorMessage string) {
-
-	req := &servicetypes.RelayRequest{
-		// RelayRequest is missing Metadata
-		Payload: testproxy.PrepareJsonRPCRequestPayload(),
-	}
-
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultProxyServer, defaultService, req)
 }
 
 func sendRequestWithMissingSignature(

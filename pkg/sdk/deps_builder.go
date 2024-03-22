@@ -60,7 +60,7 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(grpcClient))
 
-	// Create and supply the account querier
+	// Create the account querier and add it to the required dependencies.
 	accountQuerier, err := query.NewAccountQuerier(deps)
 	if err != nil {
 		return nil, err
