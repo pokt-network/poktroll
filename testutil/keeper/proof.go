@@ -97,8 +97,6 @@ func ProofKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 // NewProofModuleKeepers is a helper function to create a proof keeper and a context. It uses
 // real dependencies for all keepers except the bank keeper, which is mocked as it's not used
 // directly by the proof keeper or its dependencies.
-//
-// TODO_CONSIDERATION: can we remove the bank keeper as a dependency of the proof keeper?
 func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ ProofModuleKeepers, ctx context.Context) {
 	t.Helper()
 
