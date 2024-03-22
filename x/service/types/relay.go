@@ -1,57 +1,101 @@
 package types
 
-import "crypto/sha256"
+import (
+	"crypto/sha256"
 
-// getSignableBytes returns the bytes resulting from marshaling the relay request
-// A value receiver is used to avoid overwriting any pre-existing signature
-func (req RelayRequest) getSignableBytes() ([]byte, error) {
-	// set signature to nil
-	req.Meta.Signature = nil
-
-	return req.Marshal()
-}
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+)
 
 // GetSignableBytesHash returns the hash of the signable bytes of the relay request
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (req *RelayRequest) GetSignableBytesHash() ([32]byte, error) {
-	requestBz, err := req.getSignableBytes()
+func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
+	// req and req.Meta are not pointers, so we can set the signature to nil
+	// in order to generate the signable bytes hash without the need restore it.
+	req.Meta.Signature = nil
+	requestBz, err := req.Marshal()
 	if err != nil {
 		return [32]byte{}, err
 	}
 
-	// return the marshaled request hash to guarantee that the signable bytes are
-	// always of a constant and expected length
+	// return the marshaled request hash to guarantee that the signable bytes
+	// are always of a constant and expected length
 	return sha256.Sum256(requestBz), nil
 }
 
-// getSignableBytes returns the bytes resulting from marshaling the relay response
-// A value receiver is used to avoid overwriting any pre-existing signature
-func (res RelayResponse) getSignableBytes() ([]byte, error) {
-	// set signature to nil
-	res.Meta.SupplierSignature = nil
+// ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
+// and Signature fields.
+// TODO_TEST: Add tests for RelayRequest validation
+func (req *RelayRequest) ValidateBasic() error {
+	meta := req.GetMeta()
+	if meta.GetSessionHeader() == nil {
+		return ErrServiceInvalidRelayRequest.Wrap("missing session header")
+	}
 
-	return res.Marshal()
+	if err := meta.GetSessionHeader().ValidateBasic(); err != nil {
+		return ErrServiceInvalidRelayRequest.Wrapf("invalid session header: %s", err)
+	}
+
+	if len(meta.GetSignature()) == 0 {
+		return ErrServiceInvalidRelayRequest.Wrap("missing application signature")
+	}
+
+	return nil
 }
 
 // GetSignableBytesHash returns the hash of the signable bytes of the relay response
 // Hashing the marshaled response message guarantees that the signable bytes are
 // always of a constant and expected length.
-func (res *RelayResponse) GetSignableBytesHash() ([32]byte, error) {
-	responseBz, err := res.getSignableBytes()
+func (res RelayResponse) GetSignableBytesHash() ([32]byte, error) {
+	// res and res.Meta are not pointers, so we can set the signature to nil
+	// in order to generate the signable bytes hash without the need restore it.
+	res.Meta.SupplierSignature = nil
+	responseBz, err := res.Marshal()
 	if err != nil {
 		return [32]byte{}, err
 	}
 
-	// return the marshaled response hash to guarantee that the signable bytes are
-	// always of a constant and expected length
+	// return the marshaled response hash to guarantee that the signable bytes
+	// are always of a constant and expected length
 	return sha256.Sum256(responseBz), nil
 }
 
+// ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
+// and SupplierSignature fields.
+// TODO_TEST: Add tests for RelayResponse validation
 func (res *RelayResponse) ValidateBasic() error {
 	// TODO_FUTURE: if a client gets a response with an invalid/incomplete
 	// SessionHeader, consider sending an on-chain challenge, lowering their
 	// QoS, or other future work.
+
+	meta := res.GetMeta()
+	if meta.GetSessionHeader() == nil {
+		return ErrServiceInvalidRelayResponse.Wrap("missing meta")
+	}
+
+	if err := meta.GetSessionHeader().ValidateBasic(); err != nil {
+		return ErrServiceInvalidRelayResponse.Wrapf("invalid session header: %v", err)
+	}
+
+	if len(meta.GetSupplierSignature()) == 0 {
+		return ErrServiceInvalidRelayResponse.Wrap("missing supplier signature")
+	}
+
+	return nil
+}
+
+// VerifySupplierSignature ensures the signature provided by the supplier is
+// valid according to their relay response.
+func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.PubKey) error {
+	// Get the signable bytes hash of the response.
+	signableBz, err := res.GetSignableBytesHash()
+	if err != nil {
+		return err
+	}
+
+	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature); !ok {
+		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
+	}
 
 	return nil
 }

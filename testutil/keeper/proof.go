@@ -80,6 +80,8 @@ func ProofKeeper(
 		log.NewNopLogger(),
 		authority.String(),
 		mockSessionKeeper,
+		nil,
+		nil,
 	)
 
 	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
