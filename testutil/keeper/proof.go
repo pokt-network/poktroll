@@ -216,12 +216,14 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 	return keepers, ctx
 }
 
-func (keepers *ProofModuleKeepers) AddSessionActors(
+// AddServiceActors adds a supplier and an application for a specific
+// service so a successful session can be generated for testing purposes.
+func (keepers *ProofModuleKeepers) AddServiceActors(
 	ctx context.Context,
 	t *testing.T,
+	service *sharedtypes.Service,	
 	supplierAddr string,
 	appAddr string,
-	service *sharedtypes.Service,
 ) {
 	t.Helper()
 
@@ -240,6 +242,8 @@ func (keepers *ProofModuleKeepers) AddSessionActors(
 	})
 }
 
+// GetSessionHeader is a helper to retrieve the session header
+// for a specific (app, service, height).
 func (keepers *ProofModuleKeepers) GetSessionHeader(
 	ctx context.Context,
 	t *testing.T,
@@ -247,6 +251,8 @@ func (keepers *ProofModuleKeepers) GetSessionHeader(
 	service *sharedtypes.Service,
 	blockHeight int64,
 ) *sessiontypes.SessionHeader {
+	t.Helper()
+
 	sessionRes, err := keepers.GetSession(
 		ctx,
 		&sessiontypes.QueryGetSessionRequest{

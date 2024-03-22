@@ -70,11 +70,14 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 	// Get the session for the application/supplier pair which is expected
 	// to be claimed and for which a valid proof would be accepted.
+	// Given the setup above, it is guaranteed that the supplier created
+	// will be part of the session.
 	sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
 
 	// Construct a proof message server from the proof keeper.
 	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
+	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
 		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
@@ -182,6 +185,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// the expected session end height.
 	wrongSessionEndHeightHeader := *validSessionHeader
 	wrongSessionEndHeightHeader.SessionEndBlockHeight = 3
+	
 	// TODO_TECHDEBT: add a test case such that we can distinguish between early
 	// & late session end block heights.
 
@@ -237,7 +241,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// to set the error expectation for the relevant test case.
 	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
 
-	// Ensure a valid relay response signature.
+	// Ensure valid relay request and response signatures.
 	signRelayRequest(ctx, t, appAddr, keyRing, ringClient, mangledRelay)
 	signRelayResponse(t, "supplier", supplierAddr, keyRing, mangledRelay)
 
@@ -246,6 +250,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mangle the serialized relay to cause an error during deserialization.
+	// Mangling could involve any byte randomly being swapped to any value
+	// so unmarshaling fails, but we are setting the first byte to 0 for simplicity.
 	mangledRelayBz[0] = 0x00
 
 	// Declare an invalid signature byte slice to construct expected relay request
@@ -356,7 +362,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					expectedClosestMerkleProofPath,
 				)
 
-				// Set merkle proof to an empty byte slice.
+				// Set merkle proof to an incorrect byte slice.
 				proof.Proof = invalidClosestProofBytes
 
 				return proof
@@ -372,7 +378,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		{
 			desc: "relay must be deserializable",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				// Construct a session tree to which to add 1 relay which is unserializable.
+				// Construct a session tree to which we'll add 1 unserializable relay.
 				mangledRelaySessionTree := newEmptySessionTree(t, validSessionHeader)
 
 				// Add the mangled relay to the session tree.
@@ -478,34 +484,34 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Construct a session tree with 1 relay that has nil resopnse metadata.
-				invalidRequestMetaSessionTree := newEmptySessionTree(t, validSessionHeader)
+				invalidResponseMetaSessionTree := newEmptySessionTree(t, validSessionHeader)
 
 				// Add the relay to the session tree.
 				err = invalidRequestMetaSessionTree.Update([]byte{1}, relayBz, 1)
 				require.NoError(t, err)
 
 				// Get the Merkle root for the session tree in order to construct a claim.
-				invalidRequestMetaMerkleRootBz, err := invalidRequestMetaSessionTree.Flush()
+				invalidResponseMetaMerkleRootBz, err := invalidRsponseMetaSessionTree.Flush()
 				require.NoError(t, err)
 
 				// Create a claim with a merkle root derived from a session tree
-				// with an invalid relay request signature.
+				// with a nil response metadata.
 				claimMsg := newTestClaimMsg(t,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
 					service,
-					invalidRequestMetaMerkleRootBz,
+					invalidResponseMetaMerkleRootBz,
 				)
 				_, err = srv.CreateClaim(ctx, claimMsg)
 				require.NoError(t, err)
 
 				// Construct new proof message derived from a session tree
-				// with invalid relay request metadata.
+				// with invalid relay response metadata.
 				return newTestProofMsg(t,
 					supplierAddr,
 					validSessionHeader,
-					invalidRequestMetaSessionTree,
+					invalidResponseMetaSessionTree,
 					expectedClosestMerkleProofPath,
 				)
 			},
@@ -514,7 +520,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				types.ErrProofInvalidRelayResponse.Wrap("missing meta").Error(),
 			),
 		},
-		{ // TODO_TECHDEBT: expand: test case to cover each session header field.
+		{ 
+			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay request session header must match proof session header",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
@@ -565,7 +572,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				).Error(),
 			),
 		},
-		{ // TODO_TECHDEBT: expand: test case to cover each session header field.
+		{ 
+			// TODO_TEST(community): expand: test case to cover each session header field.
 			desc: "relay response session header must match proof session header",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a session tree with 1 relay with a session header containing
@@ -677,7 +685,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				relay := newEmptyRelay(validSessionHeader, validSessionHeader)
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
-				// Ensure a valid relay response signature
+				// Ensure a valid relay request signature
 				signRelayRequest(ctx, t, appAddr, keyRing, ringClient, relay)
 
 				relayBz, err := relay.Marshal()
@@ -722,7 +730,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "merkle proof path must match on-chain proof submission block hash)",
+			// TODO_BLOCKER: block hash should be a seed for the merkle proof hash; https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
+			desc: "merkle proof path must match on-chain proof submission block hash",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
@@ -915,7 +924,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				wrongMerkleRootBz, err := wrongMerkleRootSessionTree.Flush()
 				require.NoError(t, err)
 
-				// Create a valid claim.
+				// Create a claim with the incorrect Merkle root.
 				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
@@ -973,6 +982,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			proofRes, err := keepers.AllProofs(ctx, &types.QueryAllProofsRequest{})
 			require.NoError(t, err)
 
+			// Expect zero proofs to have been persisted as all test cases are error cases.
 			proofs := proofRes.GetProofs()
 			require.Lenf(t, proofs, 0, "expected 0 proofs, got %d", len(proofs))
 		})
@@ -1106,7 +1116,6 @@ func createClaimAndStoreBlockHash(
 	msgServer types.MsgServer,
 	keepers *keepertest.ProofModuleKeepers,
 ) {
-
 	validMerkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
 
@@ -1121,7 +1130,8 @@ func createClaimAndStoreBlockHash(
 	_, err = msgServer.CreateClaim(ctx, validClaimMsg)
 	require.NoError(t, err)
 
-	// TODO(@Red0ne) add a comment explaining why we have to do this.
+	// TODO_DOCUMENT(@Red0ne): Update comment & documentation explaining why we have to do this.
+	// Consider adding some centralized helpers for this anywhere where we do `+ GetSessionGracePeriod`
 	validProofSubmissionHeight :=
 		validClaimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
 			sessionkeeper.GetSessionGracePeriodBlockCount()
@@ -1129,7 +1139,7 @@ func createClaimAndStoreBlockHash(
 	// Set block height to be after the session grace period.
 	validBlockHeightCtx := keepertest.SetBlockHeight(ctx, validProofSubmissionHeight)
 
-	// Set the current block hash in the session store at this block height.
+	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
 	keepers.StoreBlockHash(validBlockHeightCtx)
 }
 
