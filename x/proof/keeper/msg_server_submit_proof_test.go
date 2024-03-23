@@ -3,7 +3,6 @@ package keeper_test
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/binary"
 	"fmt"
 	"os"
 	"strings"
@@ -894,6 +893,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	}
 }
 
+// newFilledSessionTree creates a new session tree with numRelays of relays
+// filled out using the request and response headers provided where every
+// relay is signed by the supplier and application respectively.
 func newFilledSessionTree(
 	ctx context.Context, t *testing.T,
 	numRelays uint,
@@ -904,6 +906,7 @@ func newFilledSessionTree(
 ) relayer.SessionTree {
 	t.Helper()
 
+	// Initialize an empty session tree with the given session header.
 	sessionTree := newEmptySessionTree(t, sessionTreeHeader)
 
 	// Add numRelays of relays to the session tree.
@@ -946,6 +949,9 @@ func newEmptySessionTree(
 	return sessionTree
 }
 
+// fillSessionTree fills the session tree with valid signed relays.
+// A total of numRelays relays are added to the session tree with
+// increasing weights (relay 1 has weight 1, relay 2 has weight 2, etc.).
 func fillSessionTree(
 	ctx context.Context, t *testing.T,
 	sessionTree relayer.SessionTree,
@@ -958,9 +964,6 @@ func fillSessionTree(
 	t.Helper()
 
 	for i := 0; i < int(numRelays); i++ {
-		idxKey := make([]byte, 64)
-		binary.PutVarint(idxKey, int64(i))
-
 		relay := newSignedEmptyRelay(
 			ctx, t,
 			supplierKeyUid, supplierAddr,
@@ -971,11 +974,17 @@ func fillSessionTree(
 		relayBz, err := relay.Marshal()
 		require.NoError(t, err)
 
-		err = sessionTree.Update(idxKey, relayBz, 1)
+		relayHash := sha256.Sum256(relayBz)
+		relayKey := relayHash[:]
+
+		relayWeight := uint64(i)
+		err = sessionTree.Update(relayKey, relayBz, relayWeight)
 		require.NoError(t, err)
 	}
 }
 
+// newTestProofMsg creates a new submit proof message that can be submitted
+// to be validated and stored on-chain.
 func newTestProofMsg(
 	t *testing.T,
 	supplierAddr string,

@@ -128,7 +128,7 @@ func TestMsgStakeApplication_ValidateBasic(t *testing.T) {
 				Address: sample.AccAddress(),
 				Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
 				Services: []*sharedtypes.ApplicationServiceConfig{
-					{Service: &sharedtypes.Service{Id: "123456790"}},
+					{Service: &sharedtypes.Service{Id: "TooLongId1234567890"}},
 				},
 			},
 			expectedErr: ErrAppInvalidServiceConfigs,

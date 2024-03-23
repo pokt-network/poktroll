@@ -17,7 +17,8 @@ import (
 
 var (
 	_ relayer.Miner = (*miner)(nil)
-	// TODO_TECHDEBT(@h5law): Retrieve the relay hasher mechanism from the `smt` repo.
+	// TODO_BLOCKER(@Olshansk): Retrieve the relay hasher mechanism from the `smt` repo.
+	// Need to centralize the logic & mechanism
 	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
