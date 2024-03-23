@@ -805,7 +805,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "merkle proof must validate claimed merkle root",
+			desc: "Valid proof cannot validate claim with an incorrect root",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				wrongMerkleRootSessionTree := newFilledSessionTree(
 					ctx, t,
