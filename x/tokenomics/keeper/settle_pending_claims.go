@@ -29,6 +29,7 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 
 	numClaimsSettled := 0
 	for _, claim := range expiringClaims {
+		fmt.Println("OLSH1")
 		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx)
 		if err != nil {
 			logger.Error(fmt.Sprintf("error checking if proof is required for claim %s: %v", claim.SessionHeader.SessionId, err))
@@ -54,13 +55,13 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
 					return err
 				}
-
+				fmt.Println("OLSH2")
 				continue
 			}
 			// If a proof is found, it is valid because verification is done
 			// at the time of submission.
 		}
-
+		fmt.Println("OLSH3")
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %s: %v", claim.SessionHeader.SessionId, err))
@@ -90,7 +91,7 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
-
+	fmt.Println("OLSH0")
 	blockHeight := ctx.BlockHeight()
 
 	// TODO_BLOCKER: query the on-chain governance parameter once available.

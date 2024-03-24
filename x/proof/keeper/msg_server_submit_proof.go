@@ -95,7 +95,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Retrieve the supplier's public key.
-	supplierAddr := msg.GetSupplierAddress()
 	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
