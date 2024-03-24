@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"hash"
 
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
@@ -17,13 +18,17 @@ import (
 )
 
 // SMT specification used for the proof verification.
-var SmtSpec *smt.TrieSpec
+var (
+	pathHasher hash.Hash
+	SmtSpec    *smt.TrieSpec
+)
 
 func init() {
 	// Use a spec that does not prehash values in the smst. This returns a nil
 	// value hasher for the proof verification in order to to avoid hashing the
 	// value twice.
-	SmtSpec = smt.NoPrehashSpec(sha256.New(), true)
+	pathHasher = sha256.New()
+	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -406,16 +411,22 @@ func (k msgServer) validateClosestPath(
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
-	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): The seed of the path should be
-	// `ConcatAndHash(blockHash, '.', sessionId)` to prevent all proofs needing to use the same path.
-	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-	if !bytes.Equal(proof.Path, blockHash) {
+	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
+	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"proof path %x does not match block hash %x",
+			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
-			blockHash,
+			expectedProofPath,
 		)
 	}
 
 	return nil
+}
+
+func GetPathForProof(blockHash []byte, sessionId string) []byte {
+	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
+	// statement below and change all relevant parts in the codebase.
+	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
+	return blockHash
+	// return pathHasher.Sum(append(blockHash, []byte(sessionId)...))
 }

@@ -43,20 +43,19 @@ const (
 )
 
 var (
-	expectedMerkleProofPath []byte
 	blockHeaderHash         []byte
+	expectedMerkleProofPath []byte
 )
 
 func init() {
-	expectedMerkleProofPath = make([]byte, keeper.SmtSpec.PathHasherSize())
-	blockHeaderHash = make([]byte, keeper.SmtSpec.PathHasherSize())
-	copy(blockHeaderHash, expectedMerkleProofPath)
+	// The CometBFT header hash is 32 bytes: https://docs.cometbft.com/main/spec/core/data_structures
+	blockHeaderHash = make([]byte, 32)
+	expectedMerkleProofPath = keeper.GetPathForProof(blockHeaderHash, "TODO_BLOCKER_session_id_currently_unused")
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
 	opts := []keepertest.ProofKeepersOpt{
-		// TODO_IN_THIS_PR: Update this comment
-		// Set block hash such that on-chain closest merkle proof validation uses the expected path.
+		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
 		// Set block height to 1 so there is a valid session on-chain.
 		keepertest.WithBlockHeight(1),
@@ -651,8 +650,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 		},
 		{
-			// TODO_IN_THIS_PR: block hash should be a seed for the merkle proof hash; https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-			desc: "merkle proof path must match on-chain proof submission block hash",
+			desc: "the merkle proof path provided does not match the one expected/enforced by the protocol",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Construct a new valid session tree for this test case because once the
 				// closest proof has already been generated, the path cannot be changed.
@@ -686,9 +684,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.FailedPrecondition,
-				// TODO_IN_THIS_PR: Update this comment
 				types.ErrProofInvalidProof.Wrapf(
-					"proof path %x does not match block hash %x",
+					"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 					wrongClosestProofPath,
 					blockHeaderHash,
 				).Error(),
