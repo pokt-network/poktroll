@@ -6,6 +6,25 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
+// GetHashFromBytes returns the hash of the relay (full, request or response) bytes.
+// It is used as helper in the case that the relay is already marshaled and
+// centralizes the hasher used.
+func GetHashFromBytes(relayBz []byte) [32]byte {
+	return sha256.Sum256(relayBz)
+}
+
+// GetHash returns the hash of the relay, which contains both the signed
+// relay request and the relay response. It is used as the key for insertion
+// into the SMT.
+func (relay *Relay) GetHash() ([32]byte, error) {
+	relayBz, err := relay.Marshal()
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return GetHashFromBytes(relayBz), nil
+}
+
 // GetSignableBytesHash returns the hash of the signable bytes of the relay request
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.
@@ -20,7 +39,7 @@ func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 
 	// return the marshaled request hash to guarantee that the signable bytes
 	// are always of a constant and expected length
-	return sha256.Sum256(requestBz), nil
+	return GetHashFromBytes(requestBz), nil
 }
 
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
@@ -28,6 +47,7 @@ func (req RelayRequest) GetSignableBytesHash() ([32]byte, error) {
 // TODO_TEST: Add tests for RelayRequest validation
 func (req *RelayRequest) ValidateBasic() error {
 	meta := req.GetMeta()
+
 	if meta.GetSessionHeader() == nil {
 		return ErrServiceInvalidRelayRequest.Wrap("missing session header")
 	}
@@ -57,7 +77,7 @@ func (res RelayResponse) GetSignableBytesHash() ([32]byte, error) {
 
 	// return the marshaled response hash to guarantee that the signable bytes
 	// are always of a constant and expected length
-	return sha256.Sum256(responseBz), nil
+	return GetHashFromBytes(responseBz), nil
 }
 
 // ValidateBasic performs basic validation of the RelayResponse Meta, SessionHeader
@@ -69,6 +89,7 @@ func (res *RelayResponse) ValidateBasic() error {
 	// QoS, or other future work.
 
 	meta := res.GetMeta()
+
 	if meta.GetSessionHeader() == nil {
 		return ErrServiceInvalidRelayResponse.Wrap("missing meta")
 	}

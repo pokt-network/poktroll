@@ -68,6 +68,8 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
 ) {
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
 	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
@@ -96,6 +98,8 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
 		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
+		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
+		// from `BlockHash` to `Foo(BlockHash, SessionId)`
 		proof, err := session.ProveClosest(latestBlock.Hash())
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false

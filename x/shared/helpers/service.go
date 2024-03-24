@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	maxServiceIdLength = 8  // Limiting all serviceIds to 8 characters
-	maxServiceIdName   = 42 // Limit the the name of the
+	maxServiceIdLength = 16 // Limiting all serviceIds to 16 characters
+	maxServiceIdName   = 42 // Limit the the name of the service name to 42 characters
 
 	regexServiceId   = "^[a-zA-Z0-9_-]+$"  // Define the regex pattern to match allowed characters
 	regexServiceName = "^[a-zA-Z0-9-_ ]+$" // Define the regex pattern to match allowed characters (allows spaces)

@@ -10,13 +10,16 @@ func ParamKeyTable() paramtypes.KeyTable {
 }
 
 // NewParams creates a new Params instance
-func NewParams() Params {
-	return Params{}
+func NewParams(minRelayDifficultyBits uint64) Params {
+	return Params{
+		MinRelayDifficultyBits: minRelayDifficultyBits,
+	}
 }
 
 // DefaultParams returns a default set of parameters
 func DefaultParams() Params {
-	return NewParams()
+	// TODO_BLOCKER(#142, #401): Determine the default value.
+	return NewParams(0)
 }
 
 // ParamSetPairs get the params.ParamSet

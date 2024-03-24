@@ -66,22 +66,22 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	logger := k.Logger().With("method", "hydrateSession")
 
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
-		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate the session metadata: %v", err)
+		return nil, err
 	}
 	logger.Debug("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
-		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate the session ID: %v", err)
+		return nil, err
 	}
 	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
-		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate application for session: %v", err)
+		return nil, err
 	}
 	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
-		return nil, types.ErrSessionHydration.Wrapf("failed to hydrate suppliers for session: %v", err)
+		return nil, err
 	}
 	logger.Debug("Finished hydrating session suppliers: %+v")
 
@@ -137,7 +137,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 	foundApp, appIsFound := k.applicationKeeper.GetApplication(ctx, sh.sessionHeader.ApplicationAddress)
 	if !appIsFound {
 		return types.ErrSessionAppNotFound.Wrapf(
-			"could not find app with address: %s at height %d",
+			"could not find app with address %q at height %d",
 			sh.sessionHeader.ApplicationAddress,
 			sh.sessionHeader.SessionStartBlockHeight,
 		)
@@ -151,7 +151,7 @@ func (k Keeper) hydrateSessionApplication(ctx context.Context, sh *sessionHydrat
 	}
 
 	return types.ErrSessionAppNotStakedForService.Wrapf(
-		"application %s not staked for service %s",
+		"application %q not staked for service ID %q",
 		sh.sessionHeader.ApplicationAddress,
 		sh.sessionHeader.Service.Id,
 	)

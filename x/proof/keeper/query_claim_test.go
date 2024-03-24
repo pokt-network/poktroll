@@ -19,7 +19,7 @@ import (
 var _ = strconv.IntSize
 
 func TestClaimQuerySingle(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t, nil)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 2)
 
 	var wrongSupplierAddr = sample.AccAddress()
@@ -150,7 +150,7 @@ func TestClaimQuerySingle(t *testing.T) {
 }
 
 func TestClaimQueryPaginated(t *testing.T) {
-	keeper, ctx := keepertest.ProofKeeper(t, nil)
+	keeper, ctx := keepertest.ProofKeeper(t)
 	claims := createNClaims(keeper, ctx, 10)
 
 	request := func(next []byte, offset, limit uint64, total bool) *types.QueryAllClaimsRequest {

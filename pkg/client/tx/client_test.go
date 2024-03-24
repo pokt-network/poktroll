@@ -404,6 +404,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
+	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
 	spec := smt.NoPrehashSpec(sha256.New(), true)
 	emptyBlockHash := make([]byte, spec.PathHasherSize())
 
