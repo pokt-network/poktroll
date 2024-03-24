@@ -18,7 +18,8 @@ import (
 var (
 	_ relayer.Miner = (*miner)(nil)
 	// TODO_BLOCKER(@Olshansk): Retrieve the relay hasher mechanism from the `smt` repo.
-	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT: Centralize the configuration for the SMT spec. Look at
+	// `GetHashFromBytes` in `miner.go`.
 	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.

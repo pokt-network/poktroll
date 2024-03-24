@@ -586,6 +586,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
+			desc: "relay request signature is valid but signed by an incorrect application",
+			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
+				return nil
+			},
+		},
+		{
 			desc: "relay response signature must be valid",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the relay response signature to an invalid byte slice.
@@ -637,6 +644,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
+			desc: "relay response signature is valid but signed by an incorrect supplier",
+			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
+				return nil
+			},
+		},
+		{
 			// TODO_IN_THIS_PR: block hash should be a seed for the merkle proof hash; https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
 			desc: "merkle proof path must match on-chain proof submission block hash",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
@@ -681,7 +695,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 			),
 		},
 		{
-			desc: "relay difficulty must be greater than or equal to minimum",
+			desc: "relay difficulty must be greater than or equal to minimum (zero difficulty)",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
 				// Set the minimum relay difficulty to a non-zero value such that the relays
 				// constructed by the test helpers have a negligable chance of being valid.
@@ -713,6 +727,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 					10,
 				).Error(),
 			),
+		},
+		{
+			desc: "relay difficulty must be greater than or equal to minimum (non-zero difficulty)",
+			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
+				t.Skip("TODO_TECHDEBT(@bryanchriswhite): Implement this")
+				return nil
+			},
 		},
 		{ // group: claim must exist for proof message
 			desc: "claim must exist for proof message",
@@ -754,18 +775,10 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 		{
 			desc: "claim and proof session start heights must match",
 			newProofMsg: func(t *testing.T) *types.MsgSubmitProof {
-				// Advance the block height such that no hydration errors can occur when
-				// getting a session with start height less than the current block height.
+				// Advance the block height to shift the session start height.
 				sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
 				ctx = sdkCtx.WithBlockHeight(3)
-
-				// Shift the session start height ...
-
-				t.Cleanup(func() {
-					// Restore the block height of the context to zero.
-					sdkCtx := cosmostypes.UnwrapSDKContext(ctx)
-					ctx = sdkCtx.WithBlockHeight(0)
-				})
+				t.Cleanup(resetBlockHeightFn(&ctx))
 
 				// Construct new proof message.
 				return newTestProofMsg(t,
@@ -1167,6 +1180,8 @@ func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetyp
 	}
 }
 
+// TODO_DISCUSS(@red-0ne, @Olshansk): Should this logic be centralized
+// in the relayer package?
 // signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
 // on behalf of appAddr using the clients provided.
 func signRelayRequest(
@@ -1205,6 +1220,8 @@ func signRelayRequest(
 	relay.Req.Meta.Signature = signatureBz
 }
 
+// TODO_DISCUSS(@red-0ne, @Olshansk): Should this logic be centralized
+// in the relayer package?
 // signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
 // on behalf of supplierAddr using the clients provided.
 func signRelayResponse(

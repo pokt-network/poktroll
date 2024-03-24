@@ -351,12 +351,10 @@ func verifyClosestProof(
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte, minDifficultyBits uint64) error {
-	hasher := sha256.New()
-	hasher.Write(relayBz)
-	relayHash := hasher.Sum(nil)
+func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
+	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	difficultyBits, err := protocol.CountDifficultyBits(relayHash)
+	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
@@ -366,11 +364,11 @@ func validateMiningDifficulty(relayBz []byte, minDifficultyBits uint64) error {
 
 	// TODO: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
-	if uint64(difficultyBits) < minDifficultyBits {
+	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the minimum difficulty %d",
-			difficultyBits,
-			minDifficultyBits,
+			relayDifficultyBits,
+			minRelayDifficultyBits,
 		)
 	}
 
