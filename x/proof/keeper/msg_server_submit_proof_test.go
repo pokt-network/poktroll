@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"os"
 	"strings"
@@ -49,9 +48,8 @@ var (
 )
 
 func init() {
-	spec := smt.NoPrehashSpec(sha256.New(), true)
-	expectedMerkleProofPath = make([]byte, spec.PathHasherSize())
-	blockHeaderHash = make([]byte, spec.PathHasherSize())
+	expectedMerkleProofPath = make([]byte, keeper.SmtSpec.PathHasherSize())
+	blockHeaderHash = make([]byte, keeper.SmtSpec.PathHasherSize())
 	copy(blockHeaderHash, expectedMerkleProofPath)
 }
 
@@ -974,11 +972,12 @@ func fillSessionTree(
 		relayBz, err := relay.Marshal()
 		require.NoError(t, err)
 
-		relayHash := sha256.Sum256(relayBz)
-		relayKey := relayHash[:]
+		relayKey, err := relay.GetHash()
+		require.NoError(t, err)
 
 		relayWeight := uint64(i)
-		err = sessionTree.Update(relayKey, relayBz, relayWeight)
+
+		err = sessionTree.Update(relayKey[:], relayBz, relayWeight)
 		require.NoError(t, err)
 	}
 }
@@ -1010,6 +1009,10 @@ func newTestProofMsg(
 	}
 }
 
+// createClaimAndStoreBlockHash creates a valid claim, submits it on-chain,
+// and on success, stores the block hash for retrieval at future heights.
+// TODO_CONSIDERATION(@bryanchriswhite): Consider if we could/should split
+// this into two functions.
 func createClaimAndStoreBlockHash(
 	ctx context.Context,
 	t *testing.T,
@@ -1020,75 +1023,74 @@ func createClaimAndStoreBlockHash(
 	msgServer types.MsgServer,
 	keepers *keepertest.ProofModuleKeepers,
 ) {
-	validMerkleRootBz, err := sessionTree.Flush()
+	merkleRootBz, err := sessionTree.Flush()
 	require.NoError(t, err)
 
-	// Create a valid claim.
-	validClaimMsg := newTestClaimMsg(t,
+	// Create a create claim message.
+	claimMsg := newTestClaimMsg(t,
 		sessionHeader.GetSessionId(),
 		supplierAddr,
 		appAddr,
 		service,
-		validMerkleRootBz,
+		merkleRootBz,
 	)
-	_, err = msgServer.CreateClaim(ctx, validClaimMsg)
+	_, err = msgServer.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 
-	// TODO_DOCUMENT(@Red0ne): Update comment & documentation explaining why we have to do this.
-	// Consider adding some centralized helpers for this anywhere where we do `+ GetSessionGracePeriod`
-	validProofSubmissionHeight :=
-		validClaimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
+	proofSubmissionHeight :=
+		claimMsg.GetSessionHeader().GetSessionEndBlockHeight() +
 			sessionkeeper.GetSessionGracePeriodBlockCount()
 
 	// Set block height to be after the session grace period.
-	validBlockHeightCtx := keepertest.SetBlockHeight(ctx, validProofSubmissionHeight)
+	blockHeightCtx := keepertest.SetBlockHeight(ctx, proofSubmissionHeight)
 
 	// Store the current context's block hash for future height, which is currently an EndBlocker operation.
-	keepers.StoreBlockHash(validBlockHeightCtx)
+	keepers.StoreBlockHash(blockHeightCtx)
 }
 
+// getClosestRelayDifficultyBits returns the number of leading 0s (i.e. relay
+// mining difficulty bits) in the relayHash stored in the sessionTree that is
+// is closest to the merkle proof path provided.
 func getClosestRelayDifficultyBits(
 	t *testing.T,
 	sessionTree relayer.SessionTree,
 	closestMerkleProofPath []byte,
 ) uint64 {
-	validClosestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
+	// Retrieve a merkle proof that is closest to the path provided
+	closestMerkleProof, err := sessionTree.ProveClosest(closestMerkleProofPath)
 	require.NoError(t, err)
 
-	validClosestMerkleProofBz, err := validClosestMerkleProof.Marshal()
+	// Extract the Relay (containing the RelayResponse & RelayRequest) from the merkle proof.
+	relay := new(servicetypes.Relay)
+	relayBz := closestMerkleProof.GetValueHash(keeper.SmtSpec)
+	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
-	validSparseMerkleClosestProof := new(smt.SparseMerkleClosestProof)
-	err = validSparseMerkleClosestProof.Unmarshal(validClosestMerkleProofBz)
+	// Retrieve the hash of the relay.
+	relayHash, err := relay.GetHash()
 	require.NoError(t, err)
 
-	sumSize := 8
-	validClosestValueHash := validSparseMerkleClosestProof.ClosestValueHash
-	validRelay := new(servicetypes.Relay)
-	err = validRelay.Unmarshal(validClosestValueHash[:len(validClosestValueHash)-sumSize])
+	// Count the number of leading 0s in the relay hash to determine its difficulty.
+	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
 	require.NoError(t, err)
 
-	validRelayBz, err := validRelay.Marshal()
-	require.NoError(t, err)
-
-	validRelayHash := sha256.Sum256(validRelayBz)
-
-	validRelayDifficultyBits, err := protocol.CountDifficultyBits(validRelayHash[:])
-	require.NoError(t, err)
-
-	return uint64(validRelayDifficultyBits)
+	return uint64(relayDifficultyBits)
 }
 
+// createAccount creates a new account with the given address keyring UID
+// and stores it in the account keeper.
 func createAccount(
 	ctx context.Context,
 	t *testing.T,
-	uid string,
+	addrKeyringUid string,
 	keyRing keyring.Keyring,
 	accountKeeper types.AccountKeeper,
 ) cosmostypes.AccountI {
 	t.Helper()
 
-	pubKey := createKeypair(t, uid, keyRing)
+	pubKey := createKeypair(t, addrKeyringUid, keyRing)
 	addr, err := cosmostypes.AccAddressFromHexUnsafe(pubKey.Address().String())
 	require.NoError(t, err)
 
@@ -1099,15 +1101,18 @@ func createAccount(
 	return account
 }
 
+// createKeypair creates a new public/private keypair that can be retrieved
+// from the keyRing using the addrUid provided. It returns the corresponding
+// public key.
 func createKeypair(
 	t *testing.T,
-	uid string,
+	addrKeyringUid string,
 	keyRing keyring.Keyring,
 ) cryptotypes.PubKey {
 	t.Helper()
 
 	record, _, err := keyRing.NewMnemonic(
-		uid,
+		addrKeyringUid,
 		keyring.English,
 		cosmostypes.FullFundraiserPath,
 		keyring.DefaultBIP39Passphrase,

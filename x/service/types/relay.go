@@ -6,6 +6,18 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
+// GetHash returns the hash of the relay, which contains both the signed
+// relay request and the relay response. It is used as the key for insertion
+// into the SMT.
+func (relay *Relay) GetHash() ([32]byte, error) {
+	relayBz, err := relay.Marshal()
+	if err != nil {
+		return [32]byte{}, err
+	}
+
+	return sha256.Sum256(relayBz), nil
+}
+
 // GetSignableBytesHash returns the hash of the signable bytes of the relay request
 // Hashing the marshaled request message guarantees that the signable bytes are
 // always of a constant and expected length.

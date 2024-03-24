@@ -73,12 +73,8 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 ) {
 	logger := polylog.Ctx(ctx)
 
-	// TODO_TECHDEBT: refactor this logic to a shared package.
-
-	// TODO_TECHDEBT: query the on-chain governance SessionGracePeriod parameter once available.
-	// createClaimWindowStartHeight has to systematically start after the session's
-	// grace period ends to ensure the Claim creation is done after the session
-	// has been finalized.
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
 	createClaimWindowStartHeight := sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.

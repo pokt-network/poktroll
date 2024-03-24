@@ -68,6 +68,8 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
 	ctx context.Context,
 	createClaimHeight int64,
 ) {
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
 	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_TECHDEBT: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset

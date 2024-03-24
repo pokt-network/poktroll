@@ -17,13 +17,13 @@ import (
 )
 
 // SMT specification used for the proof verification.
-var spec *smt.TrieSpec
+var SmtSpec *smt.TrieSpec
 
 func init() {
 	// Use a spec that does not prehash values in the smst. This returns a nil
 	// value hasher for the proof verification in order to to avoid hashing the
 	// value twice.
-	spec = smt.NoPrehashSpec(sha256.New(), true)
+	SmtSpec = smt.NoPrehashSpec(sha256.New(), true)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -96,7 +96,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(spec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -335,7 +335,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, spec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
 	if err != nil {
 		return err
 	}
@@ -400,8 +400,9 @@ func (k msgServer) validateClosestPath(
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
 	//
-	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
-	// TODO_BLOCKER: Update `blockHeight` to be the value of when the `ProofWindow`
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
+	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()

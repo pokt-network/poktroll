@@ -18,7 +18,7 @@ import (
 var (
 	_ relayer.Miner = (*miner)(nil)
 	// TODO_BLOCKER(@Olshansk): Retrieve the relay hasher mechanism from the `smt` repo.
-	// Need to centralize the logic & mechanism
+	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
 	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
@@ -115,6 +115,7 @@ func (mnr *miner) mapMineRelay(
 	//
 	// TODO_IMPROVE: We need to hash the key; it would be nice if smst.Update() could do it
 	// since smst has a reference to the hasherConstructor
+	// TODO_TECHDEBT: Why is this not `relay.GetHash()`?
 	relayHash := mnr.hash(relayBz)
 
 	// The relay IS NOT volume / reward applicable
