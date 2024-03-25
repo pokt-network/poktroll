@@ -2,7 +2,6 @@ package keeper_test
 
 import (
 	"context"
-	"fmt"
 	// "encoding/binary"
 	// "go/token"
 	"testing"
@@ -82,7 +81,6 @@ func (s *TestSuite) SetupTest() {
 
 	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
 	s.sdkCtx = sdk.UnwrapSDKContext(s.ctx)
-	fmt.Println("OLSH-2", s.ctx)
 
 	// key := storetypes.NewKVStoreKey(types.StoreKey)
 	// storeService := runtime.NewKVStoreService(key)
@@ -203,7 +201,6 @@ func (s *TestSuite) TestSettleClaims() {
 	appAddr := sample.AccAddress()
 
 	ctx := s.ctx
-	fmt.Println("OLSH-1", s.ctx)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	// keepers.SetSupplier(ctx, sharedtypes.Supplier{
 	// 	Address: supplierAddr,

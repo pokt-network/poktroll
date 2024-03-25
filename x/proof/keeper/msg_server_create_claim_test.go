@@ -168,7 +168,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
-				types.ErrProofInvalidSessionHeader.Wrapf(
+				types.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
 					sessionRes.GetSession().GetSessionId(),
 					"invalid_session_id",
@@ -263,8 +263,8 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			createClaimRes, _ := srv.CreateClaim(ctx, test.claimMsgFn(t))
-			// require.ErrorContains(t, err, test.expectedErr.Error())
+			createClaimRes, err := srv.CreateClaim(ctx, test.claimMsgFn(t))
+			require.ErrorContains(t, err, test.expectedErr.Error())
 			require.Nil(t, createClaimRes)
 		})
 	}
@@ -287,7 +287,7 @@ func newTestClaimMsg(
 			Service:                 service,
 			SessionStartBlockHeight: 1,
 			SessionId:               sessionId,
-			SessionEndBlockHeight:   2,
+			SessionEndBlockHeight:   4,
 		},
 		merkleRoot,
 	)

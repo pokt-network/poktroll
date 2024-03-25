@@ -149,7 +149,6 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-// TODO_IN_THIS_PR: How do we unit/integration test this?
 func (am AppModule) EndBlock(goCtx context.Context) error {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	return EndBlocker(ctx, am.tokenomicsKeeper)

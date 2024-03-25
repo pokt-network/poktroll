@@ -6,9 +6,9 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 import "cosmos_proto/cosmos.proto";
 import "gogoproto/gogo.proto";
 
-// EventClaimExpired is an event emitted whenever an a claim that requires an
-// on-chain proof in order to be settled expires without the necessary proof.
-// This implies that work may have been done that will never be rewarded.
+// EventClaimExpired is an event emitted whenever a claim requiring an on-chain
+// proof doesn't have one. The claim cannot be settled, leading to that work
+// never being rewarded.
 message EventClaimExpired {
     string supplier_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
     string application_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];

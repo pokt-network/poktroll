@@ -119,6 +119,3 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 func (k Keeper) isProofRequiredForClaim(_ sdk.Context) (bool, error) {
 	return true, nil
 }
-
-// RemoveClaim(ctx context.Context, sessionId, supplierAddr string)
-// GetProof(ctx context.Context, sessionId, supplierAddr string) (proof prooftypes.Proof, isProofFound bool)
