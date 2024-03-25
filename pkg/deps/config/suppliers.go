@@ -84,6 +84,8 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 		_ *cobra.Command,
 	) (depinject.Config, error) {
 
+		// Create a cosmos client from the queryNodeRPCURL used by the block client
+		// to initialize the block client by querying the latest block.
 		cosmosClient, err := cosmosclient.NewClientFromNode(queryNodeRPCURL.String())
 		if err != nil {
 			return nil, err

@@ -74,10 +74,11 @@ type blockClient struct {
 	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block]
 	// latestBlockMu is a mutex that protects the latestBlock field from concurrent
-	// reads and writes.
+	// writes from getLatestBlocks and getInitialBlock.
 	latestBlockMu *sync.Mutex
-	// latestBlock is the last block observed by the blockClient. It is updated
-	// by the updateLatestBlock goroutine that listens to the eventsReplayClient
+	// latestBlock is the last block observed by the blockClient.
+	// It is initialized by the getInitialBlock function and then updated by the
+	// updateLatestBlock goroutine that listens to the eventsReplayClient.
 	latestBlock client.Block
 }
 
@@ -140,6 +141,9 @@ func (b *blockClient) getInitialBlock(ctx context.Context, client cometBlockClie
 
 	return nil
 }
+
+// cometBlockClient is an interface that defines the Block method for the comet
+// client. This is used to mock the comet client in the block package.
 
 type cometBlockClient interface {
 	Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error)
