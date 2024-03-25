@@ -283,15 +283,12 @@ func newTestClaimMsg(
 	return types.NewMsgCreateClaim(
 		supplierAddr,
 		&sessiontypes.SessionHeader{
-			ApplicationAddress:      sample.AccAddress(),
+			ApplicationAddress:      appAddr,
+			Service:                 service,
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   2,
 			SessionId:               sessionId,
-			Service: &sharedtypes.Service{
-				Id:   "svc_id",
-				Name: "svc_name",
-			},
-			merkleRoot,
+			SessionEndBlockHeight:   2,
 		},
+		merkleRoot,
 	)
 }

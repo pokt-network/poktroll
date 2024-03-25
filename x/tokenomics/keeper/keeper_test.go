@@ -27,6 +27,7 @@ import (
 	// "github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	// mocks "github.com/pokt-network/poktroll/testutil/tokenomics/mocks"
