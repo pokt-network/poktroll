@@ -124,7 +124,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
+		latestBlock := rs.blockClient.LastBlock()
 		logger.Info().
 			Int64("current_block", latestBlock.Height()+1).
 			Msg("submitting claim")

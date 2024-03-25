@@ -229,7 +229,7 @@ func (txnClient *txClient) SignAndBroadcast(
 	}
 
 	// Calculate timeout height
-	timeoutHeight := txnClient.blockClient.LastNBlocks(ctx, 1)[0].
+	timeoutHeight := txnClient.blockClient.LastBlock().
 		Height() + txnClient.commitTimeoutHeightOffset
 
 	// TODO_TECHDEBT: this should be configurable

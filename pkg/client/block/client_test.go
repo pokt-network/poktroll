@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/cometbft/cometbft/libs/json"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cometbft/cometbft/types"
 	comettypes "github.com/cometbft/cometbft/types"
@@ -65,8 +66,13 @@ func TestBlockClient(t *testing.T) {
 
 	deps := depinject.Supply(eventsQueryClient)
 
+	cometClient := &testCometClient{
+		expectedHeight: expectedHeight,
+		expectedHash:   expectedHash,
+	}
+
 	// Set up block client.
-	blockClient, err := block.NewBlockClient(ctx, deps)
+	blockClient, err := block.NewBlockClient(ctx, cometClient, deps)
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
@@ -78,6 +84,13 @@ func TestBlockClient(t *testing.T) {
 			name: "LastNBlocks(1) successfully returns latest block",
 			fn: func() client.Block {
 				lastBlock := blockClient.LastNBlocks(ctx, 1)[0]
+				return lastBlock
+			},
+		},
+		{
+			name: "LastBlock successfully returns latest block",
+			fn: func() client.Block {
+				lastBlock := blockClient.LastBlock()
 				return lastBlock
 			},
 		},
@@ -138,4 +151,19 @@ type testBlockEventDataStruct struct {
 type testBlockEventValueStruct struct {
 	Block   *types.Block  `json:"block"`
 	BlockID types.BlockID `json:"block_id"`
+}
+
+type testCometClient struct {
+	expectedHeight int64
+	expectedHash   []byte
+}
+
+func (t *testCometClient) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
+	block := &coretypes.ResultBlock{
+		Block: &comettypes.Block{},
+	}
+	block.Block.Height = t.expectedHeight
+	block.BlockID.Hash = t.expectedHash
+
+	return block, nil
 }

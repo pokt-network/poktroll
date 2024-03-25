@@ -90,7 +90,7 @@ func (rp *relayerProxy) getTargetSessionBlockHeight(
 	ctx context.Context,
 	relayRequest *types.RelayRequest,
 ) (sessionBlockHeight int64, err error) {
-	currentBlockHeight := rp.blockClient.LastNBlocks(ctx, 1)[0].Height()
+	currentBlockHeight := rp.blockClient.LastBlock().Height()
 	sessionEndblockHeight := relayRequest.Meta.SessionHeader.GetSessionEndBlockHeight()
 
 	// Check if the RelayRequest's session has expired.
