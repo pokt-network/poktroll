@@ -14,5 +14,6 @@ func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 	//    even without a proof to be able to scale to unbounded Claims & Proofs.
 	// 2. Implementation - This cannot be done from the `x/proof` module because
 	//    it would create a circular dependency.
-	return k.SettleExpiringClaims(ctx)
+	_, _, err := k.SettlePendingClaims(ctx)
+	return err
 }

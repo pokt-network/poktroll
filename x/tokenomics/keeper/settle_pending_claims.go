@@ -4,17 +4,16 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pokt-network/smt"
 
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-const ()
-
-// SettleExpiringClaims settles all pending claims.
-func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
-	logger := k.Logger().With("method", "SettleExpiringClaims")
+// SettlePendingClaims settles all pending claims.
+func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
+	logger := k.Logger().With("method", "SettlePendingClaims")
 
 	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
 	// and only retrieving the expiringClaims that need to be settled rather than all
@@ -22,40 +21,41 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 	expiringClaims, err := k.getExpiringClaims(ctx)
 	if err != nil {
 		logger.Error(fmt.Sprintf("error getting expiring claims: %v", err))
-		return err
+		return 0, 0, err
 	}
 
 	blockHeight := ctx.BlockHeight()
 
-	numClaimsSettled := 0
 	for _, claim := range expiringClaims {
-		fmt.Println("OLSH1")
-		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx)
+		sessionId := claim.SessionHeader.SessionId
+		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
 		if err != nil {
-			logger.Error(fmt.Sprintf("error checking if proof is required for claim %s: %v", claim.SessionHeader.SessionId, err))
-			return err
+			logger.Error(fmt.Sprintf("error checking if proof is required for claim %s: %v", sessionId, err))
+			return 0, 0, err
 		}
+
+		root := (smt.MerkleRoot)(claim.GetRootHash())
+		claimComputeUnits := root.Sum()
 
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		if isProofRequiredForClaim {
-			_, isProofFound := k.proofKeeper.GetProof(ctx, claim.SessionHeader.SessionId, claim.SupplierAddress)
-			if err != nil {
-				logger.Error(fmt.Sprintf("error getting proof for claim %s: %v", claim.SessionHeader.SessionId, err))
-				return err
-			}
+			_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
 				claimExpiredEvent := types.EventClaimExpired{
-					SupplierAddress:         claim.SupplierAddress,
-					ApplicationAddress:      claim.SessionHeader.ApplicationAddress,
-					SessionStartBlockHeight: uint64(claim.SessionHeader.SessionStartBlockHeight),
-					ServiceId:               claim.SessionHeader.Service.Id,
+					Claim:        &claim,
+					ComputeUnits: claimComputeUnits,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
-					return err
+					return 0, 0, err
 				}
-				fmt.Println("OLSH2")
+				// The claim & proof are no longer necessary, so there's no need for them
+				// to take up on-chain space.
+				// TODO_BLOCKER(@Olshansk): Decide if we should be doing this or not.
+				// It could be used for data analysis and historical purposes, but not needed
+				// for functionality.
+				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
 				continue
 			}
 			// If a proof is found, it is valid because verification is done
@@ -65,7 +65,16 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %s: %v", claim.SessionHeader.SessionId, err))
-			return err
+			return 0, 0, err
+		}
+
+		claimExpiredEvent := types.EventClaimSettled{
+			Claim:         &claim,
+			ComputeUnits:  claimComputeUnits,
+			ProofRequired: isProofRequiredForClaim,
+		}
+		if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+			return 0, 0, err
 		}
 
 		// The claim & proof are no longer necessary, so there's no need for them
@@ -73,8 +82,8 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 		// TODO_BLOCKER(@Olshansk): Decide if we should be doing this or not.
 		// It could be used for data analysis and historical purposes, but not needed
 		// for functionality.
-		k.proofKeeper.RemoveClaim(ctx, claim.SessionHeader.SessionId, claim.SupplierAddress)
-		k.proofKeeper.RemoveProof(ctx, claim.SessionHeader.SessionId, claim.SupplierAddress)
+		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+		k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim %s at block height %d", claim.SessionHeader.SessionId, blockHeight))
@@ -82,7 +91,7 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 
 	logger.Info(fmt.Sprintf("settled %d claims at block height %d", numClaimsSettled, blockHeight))
 
-	return nil
+	return numClaimsSettled, numClaimsExpired, nil
 
 }
 
@@ -91,7 +100,6 @@ func (k Keeper) SettleExpiringClaims(ctx sdk.Context) error {
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
 func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
-	fmt.Println("OLSH0")
 	blockHeight := ctx.BlockHeight()
 
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
@@ -105,7 +113,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	// Loop over all claims we need to check for expiration
 	for _, claim := range claims {
 		expirationHeight := claim.SessionHeader.SessionEndBlockHeight + submitProofWindowEndHeight
-		if expirationHeight == blockHeight {
+		if blockHeight >= expirationHeight {
 			expiringClaims = append(expiringClaims, claim)
 		}
 	}
@@ -114,8 +122,19 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	return expiringClaims, nil
 }
 
-// TODO_UPNEXT(@Olshansk): Implement this function. For now, require a proof
-// for each claim
-func (k Keeper) isProofRequiredForClaim(_ sdk.Context) (bool, error) {
+// isProofRequiredForClaim checks if a proof is required for a claim.
+// If it is not, the claim will be settled without a proof.
+// If it is, the claim will only be settled if a valid proof is available.
+func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) (bool, error) {
+	// NB: Assumption that claim is non-nil and has a valid root sum because it
+	// is retrieved from the store.
+	root := (smt.MerkleRoot)(claim.GetRootHash())
+	claimComputeUnits := root.Sum()
+	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this function.
+	// For now, require a proof if numCompute
+	// for each claim.
+	if claimComputeUnits < 100 {
+		return false, nil
+	}
 	return true, nil
 }

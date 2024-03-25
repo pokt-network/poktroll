@@ -28,8 +28,8 @@ import (
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable.
 const (
+	// TODO_BLOCKER: This should not be hardcoded once the num blocks per session is configurable.
 	numBlocksPerSession = 4
 	testServiceId       = "svc1"
 )

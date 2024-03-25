@@ -8,9 +8,6 @@ import (
 
 // TODO_TECHDEBT: Make sure this is used everywhere we validate components
 // of the session header.
-// TODO_IN_THIS_PR: Search for all `SessionStartBlockHeight: 0,` and make sure
-// ValidateBasic is called on the session header fixing tests where necessary.
-// ValidateBasic does basic stateless validation of the session header data.
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {

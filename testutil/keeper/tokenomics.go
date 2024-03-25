@@ -177,8 +177,11 @@ func NewTokenomicsModuleKeepers(t testing.TB, opts ...TokenomicsKeepersOpt) (_ T
 	keys := storetypes.NewKVStoreKeys(
 		tokenomicstypes.StoreKey,
 		banktypes.StoreKey,
+		gatewaytypes.StoreKey,
 		authtypes.StoreKey,
+		sessiontypes.StoreKey,
 		apptypes.StoreKey,
+		suppliertypes.StoreKey,
 		prooftypes.StoreKey,
 	)
 

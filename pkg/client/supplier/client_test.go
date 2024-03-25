@@ -104,7 +104,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	var rootHash []byte
 	sessionHeader := sessiontypes.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
-		SessionStartBlockHeight: 0,
+		SessionStartBlockHeight: 1,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
 			Id: testService,
@@ -162,7 +162,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 
 	sessionHeader := sessiontypes.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
-		SessionStartBlockHeight: 0,
+		SessionStartBlockHeight: 1,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
 			Id: testService,

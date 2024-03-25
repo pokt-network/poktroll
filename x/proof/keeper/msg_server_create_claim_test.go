@@ -13,6 +13,7 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -285,9 +286,9 @@ func newTestClaimMsg(
 		&sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
 			Service:                 service,
-			SessionStartBlockHeight: 1,
 			SessionId:               sessionId,
-			SessionEndBlockHeight:   4,
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 		},
 		merkleRoot,
 	)
