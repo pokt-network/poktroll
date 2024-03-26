@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"fmt"
 	"hash"
+	"fmt"
 
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
@@ -16,13 +16,6 @@ import (
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
-)
-
-const (
-	// relayMinDifficultyBits is the minimum difficulty that a relay must have
-	// to be reward (i.e. volume) applicable.
-	// TODO_BLOCKER: relayMinDifficultyBits should be a governance-based parameter
-	relayMinDifficultyBits = 0
 )
 
 // SMT specification used for the proof verification.
