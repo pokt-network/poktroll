@@ -23,15 +23,14 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable.
 const (
-	numBlocksPerSession = 4
-	testServiceId       = "svc1"
+	testServiceId = "svc1"
 )
 
 // Dummy variable to avoid unused import error.
@@ -56,7 +55,7 @@ func networkWithClaimObjects(
 	// Construct an in-memory keyring so that it can be populated and used prior
 	// to network start.
 	kr := keyring.NewInMemory(cfg.Codec)
-	// Populate the in-memmory keyring with as many pre-generated accounts as
+	// Populate the in-memory keyring with as many pre-generated accounts as
 	// we expect to need for the test (i.e. numApps + numSuppliers).
 	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, numSuppliers+numApps)
 
@@ -123,7 +122,7 @@ func networkWithClaimObjects(
 	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
-		sessionEndHeight += numBlocksPerSession
+		sessionEndHeight += sessionkeeper.NumBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
 				claim := createClaim(
@@ -138,7 +137,6 @@ func networkWithClaimObjects(
 			}
 		}
 	}
-
 	return net, claims
 }
 
@@ -154,10 +152,10 @@ func encodeSessionHeader(
 
 	sessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      appAddr,
-		SessionStartBlockHeight: sessionStartHeight,
-		SessionId:               sessionId,
-		SessionEndBlockHeight:   sessionStartHeight + numBlocksPerSession,
 		Service:                 &sharedtypes.Service{Id: testServiceId},
+		SessionId:               sessionId,
+		SessionStartBlockHeight: sessionStartHeight,
+		SessionEndBlockHeight:   sessionStartHeight + sessionkeeper.NumBlocksPerSession,
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -176,7 +174,7 @@ func createClaim(
 	t.Helper()
 
 	rootHash := []byte("root_hash")
-	sessionStartHeight := sessionEndHeight - numBlocksPerSession
+	sessionStartHeight := sessionEndHeight - sessionkeeper.NumBlocksPerSession
 	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
 	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)

@@ -186,17 +186,22 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-.PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
+	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
+	@find ./api/poktroll/ -type f | while read -r file; do \
+		echo "Processing file: $$file"; \
+		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
+	done
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
-			echo "Processing module $$module"; \
+			echo "Further processing module $$module"; \
 			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
 					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
+
 
 .PHONY: proto_clean
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
@@ -337,7 +342,7 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # 	e.g. TODO_HACK: This is a hack, we need to fix it later
 # 2. If there's a specific issue, or specific person, add that in paranthesiss
 #   e.g. TODO(@Olshansk): Automatically link to the Github user https://github.com/olshansk
-#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/pocket/issues/420
+#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/poktroll/issues/420
 #   e.g. TODO_DISCUSS(@Olshansk, #420): Specific individual should tend to the action item in the specific ticket
 #   e.g. TODO_CLEANUP(core): This is not tied to an issue, or a person, but should only be done by the core team.
 #   e.g. TODO_CLEANUP: This is not tied to an issue, or a person, and can be done by the core team or external contributors.

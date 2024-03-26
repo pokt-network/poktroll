@@ -19,8 +19,8 @@ var (
 	md_SessionHeader                            protoreflect.MessageDescriptor
 	fd_SessionHeader_application_address        protoreflect.FieldDescriptor
 	fd_SessionHeader_service                    protoreflect.FieldDescriptor
-	fd_SessionHeader_session_start_block_height protoreflect.FieldDescriptor
 	fd_SessionHeader_session_id                 protoreflect.FieldDescriptor
+	fd_SessionHeader_session_start_block_height protoreflect.FieldDescriptor
 	fd_SessionHeader_session_end_block_height   protoreflect.FieldDescriptor
 )
 
@@ -29,8 +29,8 @@ func init() {
 	md_SessionHeader = File_poktroll_session_session_proto.Messages().ByName("SessionHeader")
 	fd_SessionHeader_application_address = md_SessionHeader.Fields().ByName("application_address")
 	fd_SessionHeader_service = md_SessionHeader.Fields().ByName("service")
-	fd_SessionHeader_session_start_block_height = md_SessionHeader.Fields().ByName("session_start_block_height")
 	fd_SessionHeader_session_id = md_SessionHeader.Fields().ByName("session_id")
+	fd_SessionHeader_session_start_block_height = md_SessionHeader.Fields().ByName("session_start_block_height")
 	fd_SessionHeader_session_end_block_height = md_SessionHeader.Fields().ByName("session_end_block_height")
 }
 
@@ -111,15 +111,15 @@ func (x *fastReflection_SessionHeader) Range(f func(protoreflect.FieldDescriptor
 			return
 		}
 	}
-	if x.SessionStartBlockHeight != int64(0) {
-		value := protoreflect.ValueOfInt64(x.SessionStartBlockHeight)
-		if !f(fd_SessionHeader_session_start_block_height, value) {
-			return
-		}
-	}
 	if x.SessionId != "" {
 		value := protoreflect.ValueOfString(x.SessionId)
 		if !f(fd_SessionHeader_session_id, value) {
+			return
+		}
+	}
+	if x.SessionStartBlockHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.SessionStartBlockHeight)
+		if !f(fd_SessionHeader_session_start_block_height, value) {
 			return
 		}
 	}
@@ -148,10 +148,10 @@ func (x *fastReflection_SessionHeader) Has(fd protoreflect.FieldDescriptor) bool
 		return x.ApplicationAddress != ""
 	case "poktroll.session.SessionHeader.service":
 		return x.Service != nil
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		return x.SessionStartBlockHeight != int64(0)
 	case "poktroll.session.SessionHeader.session_id":
 		return x.SessionId != ""
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		return x.SessionStartBlockHeight != int64(0)
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		return x.SessionEndBlockHeight != int64(0)
 	default:
@@ -174,10 +174,10 @@ func (x *fastReflection_SessionHeader) Clear(fd protoreflect.FieldDescriptor) {
 		x.ApplicationAddress = ""
 	case "poktroll.session.SessionHeader.service":
 		x.Service = nil
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		x.SessionStartBlockHeight = int64(0)
 	case "poktroll.session.SessionHeader.session_id":
 		x.SessionId = ""
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		x.SessionStartBlockHeight = int64(0)
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		x.SessionEndBlockHeight = int64(0)
 	default:
@@ -202,12 +202,12 @@ func (x *fastReflection_SessionHeader) Get(descriptor protoreflect.FieldDescript
 	case "poktroll.session.SessionHeader.service":
 		value := x.Service
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		value := x.SessionStartBlockHeight
-		return protoreflect.ValueOfInt64(value)
 	case "poktroll.session.SessionHeader.session_id":
 		value := x.SessionId
 		return protoreflect.ValueOfString(value)
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		value := x.SessionStartBlockHeight
+		return protoreflect.ValueOfInt64(value)
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		value := x.SessionEndBlockHeight
 		return protoreflect.ValueOfInt64(value)
@@ -235,10 +235,10 @@ func (x *fastReflection_SessionHeader) Set(fd protoreflect.FieldDescriptor, valu
 		x.ApplicationAddress = value.Interface().(string)
 	case "poktroll.session.SessionHeader.service":
 		x.Service = value.Message().Interface().(*shared.Service)
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		x.SessionStartBlockHeight = value.Int()
 	case "poktroll.session.SessionHeader.session_id":
 		x.SessionId = value.Interface().(string)
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		x.SessionStartBlockHeight = value.Int()
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		x.SessionEndBlockHeight = value.Int()
 	default:
@@ -268,10 +268,10 @@ func (x *fastReflection_SessionHeader) Mutable(fd protoreflect.FieldDescriptor) 
 		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
 	case "poktroll.session.SessionHeader.application_address":
 		panic(fmt.Errorf("field application_address of message poktroll.session.SessionHeader is not mutable"))
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		panic(fmt.Errorf("field session_start_block_height of message poktroll.session.SessionHeader is not mutable"))
 	case "poktroll.session.SessionHeader.session_id":
 		panic(fmt.Errorf("field session_id of message poktroll.session.SessionHeader is not mutable"))
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		panic(fmt.Errorf("field session_start_block_height of message poktroll.session.SessionHeader is not mutable"))
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		panic(fmt.Errorf("field session_end_block_height of message poktroll.session.SessionHeader is not mutable"))
 	default:
@@ -292,10 +292,10 @@ func (x *fastReflection_SessionHeader) NewField(fd protoreflect.FieldDescriptor)
 	case "poktroll.session.SessionHeader.service":
 		m := new(shared.Service)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.session.SessionHeader.session_start_block_height":
-		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.session.SessionHeader.session_id":
 		return protoreflect.ValueOfString("")
+	case "poktroll.session.SessionHeader.session_start_block_height":
+		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.session.SessionHeader.session_end_block_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
@@ -375,12 +375,12 @@ func (x *fastReflection_SessionHeader) ProtoMethods() *protoiface.Methods {
 			l = options.Size(x.Service)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
-		if x.SessionStartBlockHeight != 0 {
-			n += 1 + runtime.Sov(uint64(x.SessionStartBlockHeight))
-		}
 		l = len(x.SessionId)
 		if l > 0 {
 			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.SessionStartBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.SessionStartBlockHeight))
 		}
 		if x.SessionEndBlockHeight != 0 {
 			n += 1 + runtime.Sov(uint64(x.SessionEndBlockHeight))
@@ -419,17 +419,17 @@ func (x *fastReflection_SessionHeader) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x28
 		}
+		if x.SessionStartBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionStartBlockHeight))
+			i--
+			dAtA[i] = 0x20
+		}
 		if len(x.SessionId) > 0 {
 			i -= len(x.SessionId)
 			copy(dAtA[i:], x.SessionId)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.SessionId)))
 			i--
-			dAtA[i] = 0x22
-		}
-		if x.SessionStartBlockHeight != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionStartBlockHeight))
-			i--
-			dAtA[i] = 0x18
+			dAtA[i] = 0x1a
 		}
 		if x.Service != nil {
 			encoded, err := options.Marshal(x.Service)
@@ -570,25 +570,6 @@ func (x *fastReflection_SessionHeader) ProtoMethods() *protoiface.Methods {
 				}
 				iNdEx = postIndex
 			case 3:
-				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionStartBlockHeight", wireType)
-				}
-				x.SessionStartBlockHeight = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.SessionStartBlockHeight |= int64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionId", wireType)
 				}
@@ -620,6 +601,25 @@ func (x *fastReflection_SessionHeader) ProtoMethods() *protoiface.Methods {
 				}
 				x.SessionId = string(dAtA[iNdEx:postIndex])
 				iNdEx = postIndex
+			case 4:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionStartBlockHeight", wireType)
+				}
+				x.SessionStartBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.SessionStartBlockHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
 			case 5:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionEndBlockHeight", wireType)
@@ -1506,12 +1506,15 @@ type SessionHeader struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ApplicationAddress      string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"`                     // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
-	Service                 *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                                                                     // The service this session is for
-	SessionStartBlockHeight int64           `protobuf:"varint,3,opt,name=session_start_block_height,json=sessionStartBlockHeight,proto3" json:"session_start_block_height,omitempty"` // The height at which this session started
+	ApplicationAddress string          `protobuf:"bytes,1,opt,name=application_address,json=applicationAddress,proto3" json:"application_address,omitempty"` // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Service            *shared.Service `protobuf:"bytes,2,opt,name=service,proto3" json:"service,omitempty"`                                                 // The service this session is for
 	// NOTE: session_id can be derived from the above values using on-chain but is included in the header for convenience
-	SessionId             string `protobuf:"bytes,4,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                          // A unique pseudoranom ID for this session
-	SessionEndBlockHeight int64  `protobuf:"varint,5,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"` // The height at which this session ended, this is the last block of the session
+	SessionId               string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                                                // A unique pseudoranom ID for this session
+	SessionStartBlockHeight int64  `protobuf:"varint,4,opt,name=session_start_block_height,json=sessionStartBlockHeight,proto3" json:"session_start_block_height,omitempty"` // The height at which this session started
+	// TODO_BLOCKER: `session_end_block_height` is not required for the header because
+	// it is a derivative of `start` + `num_blocks_per_session` as goverened by on-chain
+	// params at the time of the session start. Could/should we remove it?
+	SessionEndBlockHeight int64 `protobuf:"varint,5,opt,name=session_end_block_height,json=sessionEndBlockHeight,proto3" json:"session_end_block_height,omitempty"` // The height at which this session ended, this is the last block of the session
 }
 
 func (x *SessionHeader) Reset() {
@@ -1548,18 +1551,18 @@ func (x *SessionHeader) GetService() *shared.Service {
 	return nil
 }
 
-func (x *SessionHeader) GetSessionStartBlockHeight() int64 {
-	if x != nil {
-		return x.SessionStartBlockHeight
-	}
-	return 0
-}
-
 func (x *SessionHeader) GetSessionId() string {
 	if x != nil {
 		return x.SessionId
 	}
 	return ""
+}
+
+func (x *SessionHeader) GetSessionStartBlockHeight() int64 {
+	if x != nil {
+		return x.SessionStartBlockHeight
+	}
+	return 0
 }
 
 func (x *SessionHeader) GetSessionEndBlockHeight() int64 {
@@ -1669,13 +1672,13 @@ var file_poktroll_session_session_proto_rawDesc = []byte{
 	0x73, 0x12, 0x32, 0x0a, 0x07, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x18, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x68,
 	0x61, 0x72, 0x65, 0x64, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3b, 0x0a, 0x1a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
-	0x5f, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69,
-	0x67, 0x68, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x17, 0x73, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67,
-	0x68, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49,
-	0x64, 0x12, 0x37, 0x0a, 0x18, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x5f, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x73, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x49, 0x64, 0x12, 0x3b, 0x0a, 0x1a, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f,
+	0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67,
+	0x68, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x17, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
+	0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68,
+	0x74, 0x12, 0x37, 0x0a, 0x18, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x65, 0x6e, 0x64,
 	0x5f, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x5f, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x05, 0x20,
 	0x01, 0x28, 0x03, 0x52, 0x15, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x45, 0x6e, 0x64, 0x42,
 	0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x22, 0xbb, 0x02, 0x0a, 0x07, 0x53,

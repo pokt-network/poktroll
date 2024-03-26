@@ -21,8 +21,6 @@ const (
 	smstRootSize = 40
 )
 
-// atomic.if this function is not atomic.
-
 // SettleSessionAccounting is responsible for all of the post-session accounting
 // necessary to burn, mint or transfer tokens depending on the amount of work
 // done. The amount of "work done" complete is dictated by `sum` of `root`.
@@ -31,64 +29,72 @@ const (
 // against a proof BEFORE calling this function.
 //
 // TODO_BLOCKER(@Olshansk): Is there a way to limit who can call this function?
-func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.Claim) error {
-	// Parse the context
+func (k Keeper) SettleSessionAccounting(
+	ctx context.Context,
+	claim *prooftypes.Claim,
+) error {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
+	// Make sure the claim is not nil
 	if claim == nil {
 		logger.Error("received a nil claim")
 		return types.ErrTokenomicsClaimNil
 	}
 
+	// Retrieve & validate the session header
 	sessionHeader := claim.GetSessionHeader()
-
-	// Make sure the session header is not nil
 	if sessionHeader == nil {
 		logger.Error("received a nil session header")
 		return types.ErrTokenomicsSessionHeaderNil
 	}
-
-	// Validate the session header
 	if err := sessionHeader.ValidateBasic(); err != nil {
 		logger.Error("received an invalid session header", "error", err)
 		return types.ErrTokenomicsSessionHeaderInvalid
 	}
 
-	// Decompose the claim into its constituent parts for readability
 	supplierAddr, err := sdk.AccAddressFromBech32(claim.GetSupplierAddress())
-	if err != nil {
+	if err != nil || supplierAddr == nil {
 		return types.ErrTokenomicsSupplierAddressInvalid
 	}
 
 	applicationAddress, err := sdk.AccAddressFromBech32(sessionHeader.GetApplicationAddress())
-	if err != nil {
+	if err != nil || applicationAddress == nil {
 		return types.ErrTokenomicsApplicationAddressInvalid
 	}
 
-	// Retrieve the application
-	application, found := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
-	if !found {
-		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
-		return types.ErrTokenomicsApplicationNotFound
-	}
-
+	// Retrieve the sum of the root as a proxy into the amount of work done
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 
 	// TODO_DISCUSS: This check should be the responsibility of the SMST package
 	// since it's used to get compute units from the root hash.
-	if len(root) != smstRootSize {
+	if root == nil || len(root) != smstRootSize {
 		logger.Error(fmt.Sprintf("received an invalid root hash of size: %d", len(root)))
 		return types.ErrTokenomicsRootHashInvalid
 	}
-
-	// Retrieve the sum of the root as a proxy into the amount of work done
 	claimComputeUnits := root.Sum()
+
+	// Helpers for logging the same metadata throughout this function calls
+	logger = logger.With(
+		"compute_units", claimComputeUnits,
+		"session_id", sessionHeader.GetSessionId(),
+		"supplier", supplierAddr,
+		"application", applicationAddress,
+	)
+
+	logger.Info("About to start session settlement accounting")
+
+	// Retrieve the staked application record
+	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
+	if !foundApplication {
+		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
+		return types.ErrTokenomicsApplicationNotFound
+	}
 
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
 	settlementAmt := k.getCoinFromComputeUnits(ctx, root)
-	settlementAmtCoins := sdk.NewCoins(settlementAmt)
+	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
 		"%d compute units equate to %s for session %s",
@@ -102,8 +108,9 @@ func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.C
 	// order economic effects with more optionality. This could include funds
 	// going to pnf, delegators, enabling bonuses/rebates, etc...
 
-	// Mint uPOKT to the supplier module account
-	if err := k.bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, settlementAmtCoins); err != nil {
+	// Mint new uPOKT to the supplier module account.
+	// These funds will be transferred to the supplier below.
+	if err := k.bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, settlementAmtuPOKT); err != nil {
 		return types.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
 			settlementAmt,
@@ -113,9 +120,10 @@ func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.C
 
 	logger.Info(fmt.Sprintf("minted %s in the supplier module", settlementAmt))
 
-	// Sent the minted coins to the supplier
+	// Send the newley minted uPOKT from the supplier module account
+	// to the supplier's account.
 	if err := k.bankKeeper.SendCoinsFromModuleToAccount(
-		ctx, suppliertypes.ModuleName, supplierAddr, settlementAmtCoins,
+		ctx, suppliertypes.ModuleName, supplierAddr, settlementAmtuPOKT,
 	); err != nil {
 		return types.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"sending %s to supplier with address %s: %v",
@@ -132,49 +140,56 @@ func (k Keeper) SettleSessionAccounting(ctx context.Context, claim *prooftypes.C
 		logger.Error(fmt.Sprintf(
 			"THIS SHOULD NOT HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
 			applicationAddress,
-			settlementAmtCoins,
+			settlementAmtuPOKT,
 			application.Stake,
 		))
 		// TODO_BLOCKER(@Olshansk, @RawthiL): The application was over-serviced in the last session so it basically
 		// goes "into debt". Need to design a way to handle this when we implement
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
-		settlementAmtCoins = sdk.NewCoins(*application.Stake)
+		settlementAmtuPOKT = sdk.NewCoins(*application.Stake)
 	}
 
-	// Undelegate the amount of coins that need to be burnt from the application stake.
+	// Undelegate the amount of uPOKT that need to be burnt from the application's stake.
 	// Since the application commits a certain amount of stake to the network to be able
 	// to pay for relay mining, this stake is taken from the funds "in escrow" rather
 	// than its balance.
-	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, apptypes.ModuleName, applicationAddress, settlementAmtCoins); err != nil {
+	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(
+		ctx, apptypes.ModuleName, applicationAddress, settlementAmtuPOKT,
+	); err != nil {
 		logger.Error(fmt.Sprintf(
 			"THIS SHOULD NOT HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
 			applicationAddress,
-			settlementAmtCoins,
+			settlementAmtuPOKT,
 			application.Stake,
 		))
 	}
-
-	// Send coins from the application to the application module account
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(
-		ctx, applicationAddress, apptypes.ModuleName, settlementAmtCoins,
-	); err != nil {
-		return types.ErrTokenomicsApplicationModuleFeeFailed
-	}
-
-	logger.Info(fmt.Sprintf("took %s from application with address %s", settlementAmt, applicationAddress))
-
-	// Burn uPOKT from the application module account
-	if err := k.bankKeeper.BurnCoins(ctx, apptypes.ModuleName, settlementAmtCoins); err != nil {
-		return types.ErrTokenomicsApplicationModuleBurn
-	}
-
-	logger.Info(fmt.Sprintf("burned %s in the application module", settlementAmt))
 
 	// Update the application's on-chain stake
 	newAppStake := (*application.Stake).Sub(settlementAmt)
 	application.Stake = &newAppStake
 	k.applicationKeeper.SetApplication(ctx, application)
+
+	logger.Info(fmt.Sprintf("unstaked %s uPOKT from the application with address %s to pay for on-chain service", settlementAmt, applicationAddress))
+
+	// Send the uPOKT to be burnt from the application's balance to the
+	// application module account.
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(
+		ctx, applicationAddress, apptypes.ModuleName, settlementAmtuPOKT,
+	); err != nil {
+		return types.ErrTokenomicsApplicationModuleFeeFailed
+	}
+
+	logger.Info(fmt.Sprintf("took %s uPOKT from application with address %s", settlementAmt, applicationAddress))
+
+	// Burn uPOKT from the application module account
+	if err := k.bankKeeper.BurnCoins(ctx, apptypes.ModuleName, settlementAmtuPOKT); err != nil {
+		return types.ErrTokenomicsApplicationModuleBurn
+	}
+
+	// TODO_UPNEXT(@Olshansk): Emit burn & mint events as a result of session settlement.
+
+	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
 
 	return nil
 }

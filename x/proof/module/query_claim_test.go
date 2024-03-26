@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
@@ -27,7 +27,7 @@ func TestClaim_Show(t *testing.T) {
 
 	ctx := net.Validators[0].ClientCtx
 	commonArgs := []string{
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 
 	var wrongSupplierAddr = sample.AccAddress()
@@ -128,7 +128,7 @@ func TestClaim_List(t *testing.T) {
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
-			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+			fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 		}
 		if next == nil {
 			args = append(args, fmt.Sprintf("--%s=%d", flags.FlagOffset, offset))
@@ -198,11 +198,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
+		require.Equal(t, sessionCount*numApps, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, sessionCount*numApps, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -223,11 +223,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
+		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {

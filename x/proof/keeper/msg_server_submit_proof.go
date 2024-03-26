@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"fmt"
 	"hash"
 
 	"github.com/pokt-network/smt"
@@ -35,9 +36,15 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 // TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processes the respective session.
+// TODO_IN_THIS_PR_DISCUSS: Do we need to validate if the signature on the Proof message corresponds to the supplier before upserting?
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+	// TODO_IN_THIS_PR_DISCUSS: A potential issue with doing proof validation inside
+	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
+	// This could be considered a feature (e.g. less state bloat against sybil attacks)
+	// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).
+	// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 	logger := k.Logger().With("method", "SubmitProof")
-	logger.Debug("about to start submitting proof")
+	logger.Info("About to start submitting proof")
 
 	/*
 		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
@@ -64,9 +71,21 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 
 		## Relay Mining validation
 		1. verify(proof.path) is the expected path; pseudo-random variation using on-chain data
-		2. verify(proof.ValueHash, expectedDiffictulty); governance based
+		2. verify(proof.ValueHash, expectedDifficulty); governance based
 		3. verify(claim.Root, proof.ClosestProof); verify the closest proof is correct
 	*/
+
+	// Decomposing a few variables for easier access
+	sessionHeader := msg.GetSessionHeader()
+	supplierAddr := msg.GetSupplierAddress()
+
+	// Helpers for logging the same metadata throughout this function calls
+	logger = logger.With(
+		"session_id", sessionHeader.GetSessionId(),
+		"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
+		"supplier", supplierAddr)
+
+	logger.Info("validated the submitProof message ")
 
 	// Basic validation of the SubmitProof message.
 	if err := msg.ValidateBasic(); err != nil {
@@ -74,7 +93,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Retrieve the supplier's public key.
-	supplierAddr := msg.GetSupplierAddress()
 	supplierPubKey, err := k.accountQuerier.GetPubKeyFromAddress(ctx, supplierAddr)
 	if err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
@@ -83,11 +101,12 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// Validate the session header.
 	if _, err := k.queryAndValidateSessionHeader(
 		ctx,
-		msg.GetSessionHeader(),
+		sessionHeader,
 		supplierAddr,
 	); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	logger.Info("queried and validated the session header")
 
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
@@ -112,13 +131,6 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 			).Error(),
 		)
 	}
-
-	logger = logger.
-		With(
-			"session_id", msg.GetSessionHeader().GetSessionId(),
-			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
-			"supplier", supplierAddr,
-		)
 
 	// Basic validation of the relay request.
 	relayReq := relay.GetReq()
@@ -200,14 +212,12 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
+	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %s", sessionHeader.SessionId))
 
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
-	k.Keeper.UpsertProof(ctx, proof)
-
-	// TODO_UPNEXT(@Olshansk, #359): Call `tokenomics.SettleSessionAccounting()` here
-
-	logger.Debug("successfully submitted proof")
+	k.UpsertProof(ctx, proof)
+	logger.Debug("successfully upserted the proof")
 
 	return &types.MsgSubmitProofResponse{}, nil
 }

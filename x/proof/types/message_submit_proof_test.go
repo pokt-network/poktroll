@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/testutil/sample"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
@@ -28,9 +28,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      "not_a_bech32_address",
 					Service:                 testService,
-					SessionStartBlockHeight: 0,
 					SessionId:               "mock_session_id",
-					SessionEndBlockHeight:   5,
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -47,9 +47,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 testService,
-					SessionStartBlockHeight: 0,
 					SessionId:               "mock_session_id",
-					SessionEndBlockHeight:   5,
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -66,9 +66,9 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 				SessionHeader: &sessiontypes.SessionHeader{
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 &sharedtypes.Service{Id: ""},
-					SessionStartBlockHeight: 0,
 					SessionId:               "mock_session_id",
-					SessionEndBlockHeight:   5,
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 				},
 				Proof: testClosestMerkleProof,
 			},
@@ -82,8 +82,8 @@ func TestMsgSubmitProof_ValidateBasic(t *testing.T) {
 					ApplicationAddress:      sample.AccAddress(),
 					Service:                 testService,
 					SessionId:               "mock_session_id",
-					SessionStartBlockHeight: 0,
-					SessionEndBlockHeight:   5,
+					SessionStartBlockHeight: 1,
+					SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 				},
 				Proof: testClosestMerkleProof,
 			},
