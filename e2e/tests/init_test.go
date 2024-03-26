@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -313,7 +314,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 		"get-session",
 		app.Address,
 		serviceId,
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
@@ -399,7 +400,7 @@ func (s *suite) buildAppMap() {
 		"query",
 		"application",
 		"list-application",
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
@@ -420,7 +421,7 @@ func (s *suite) buildSupplierMap() {
 		"query",
 		"supplier",
 		"list-supplier",
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
