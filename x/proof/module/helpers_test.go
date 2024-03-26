@@ -120,20 +120,24 @@ func networkWithClaimObjects(
 	require.NoError(t, net.WaitForNextBlock())
 
 	// Create numSessions * numClaimsPerSession claims for the supplier
-	sessionEndHeight := int64(1)
+	blockHeight := int64(1)
+	// TODO_TECHDEBT(@Olshansk): Revisit this forloop. Resolve the TECHDEBT
+	// issue that lies inside because it's creating an inconsistency between
+	// the number of sessions and the number of blocks.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
-		sessionEndHeight += sessionkeeper.NumBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
-					sessionEndHeight,
+					sessionkeeper.GetSessionStartBlockHeight(blockHeight),
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
-				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
+				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster.
+				// The current issue has to do with a "incorrect account sequence timestamp" error
 				require.NoError(t, net.WaitForNextBlock())
+				blockHeight += 1
 			}
 		}
 	}
@@ -155,7 +159,7 @@ func encodeSessionHeader(
 		Service:                 &sharedtypes.Service{Id: testServiceId},
 		SessionId:               sessionId,
 		SessionStartBlockHeight: sessionStartHeight,
-		SessionEndBlockHeight:   sessionStartHeight + sessionkeeper.NumBlocksPerSession,
+		SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -168,13 +172,12 @@ func createClaim(
 	net *network.Network,
 	ctx client.Context,
 	supplierAddr string,
-	sessionEndHeight int64,
+	sessionStartHeight int64,
 	appAddr string,
 ) *types.Claim {
 	t.Helper()
 
 	rootHash := []byte("root_hash")
-	sessionStartHeight := sessionEndHeight - sessionkeeper.NumBlocksPerSession
 	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
 	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
@@ -206,7 +209,7 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   sessionEndHeight,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}

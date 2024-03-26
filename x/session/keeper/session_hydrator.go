@@ -274,7 +274,6 @@ func GetSessionStartBlockHeight(blockHeight int64) int64 {
 	if blockHeight <= 0 {
 		return 0
 	}
-
 	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
 }
 

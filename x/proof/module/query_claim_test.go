@@ -44,7 +44,8 @@ func TestClaim_Show(t *testing.T) {
 			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
 			supplierAddr: claims[0].GetSupplierAddress(),
 
-			claim: claims[0],
+			claim:       claims[0],
+			expectedErr: nil,
 		},
 		{
 			desc:         "claim not found (wrong session ID)",
@@ -116,8 +117,8 @@ func TestClaim_Show(t *testing.T) {
 
 func TestClaim_List(t *testing.T) {
 	sessionCount := 2
-	numSuppliers := 4
-	numApps := 3
+	numSuppliers := 3
+	numApps := 2
 	numServices := 1
 	// Each supplier will submit a claim for each app x service combination (per session).
 	numClaimsPerSession := numSuppliers * numApps * numServices
