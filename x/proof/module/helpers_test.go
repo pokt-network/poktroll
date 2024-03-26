@@ -121,7 +121,7 @@ func networkWithClaimObjects(
 
 	// Create numSessions * numClaimsPerSession claims for the supplier
 	blockHeight := int64(1)
-	// TODO_TECHDEBT(@Olshansk): Revisit this forloop. Resolve the TECHDEBT
+	// TODO_HACK(@Olshansk): Revisit this forloop. Resolve the TECHDEBT
 	// issue that lies inside because it's creating an inconsistency between
 	// the number of sessions and the number of blocks.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
@@ -134,8 +134,9 @@ func networkWithClaimObjects(
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
-				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster.
-				// The current issue has to do with a "incorrect account sequence timestamp" error
+				// TODO_HACK(#196, @Olshansk): Move this outside of the forloop
+				// so that the test iteration is faster. The current issue has
+				// to do with a "incorrect account sequence timestamp" error
 				require.NoError(t, net.WaitForNextBlock())
 				blockHeight += 1
 			}
