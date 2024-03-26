@@ -3,28 +3,23 @@ package tokenomics
 
 import (
 	fmt "fmt"
-	io "io"
-	reflect "reflect"
-	sync "sync"
-
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoiface "google.golang.org/protobuf/runtime/protoiface"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-
-	proof "github.com/pokt-network/poktroll/api/poktroll/proof"
+	io "io"
+	reflect "reflect"
+	sync "sync"
 )
 
 var (
 	md_EventClaimExpired               protoreflect.MessageDescriptor
-	fd_EventClaimExpired_claim         protoreflect.FieldDescriptor
 	fd_EventClaimExpired_compute_units protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_tokenomics_event_proto_init()
 	md_EventClaimExpired = File_poktroll_tokenomics_event_proto.Messages().ByName("EventClaimExpired")
-	fd_EventClaimExpired_claim = md_EventClaimExpired.Fields().ByName("claim")
 	fd_EventClaimExpired_compute_units = md_EventClaimExpired.Fields().ByName("compute_units")
 }
 
@@ -93,12 +88,6 @@ func (x *fastReflection_EventClaimExpired) Interface() protoreflect.ProtoMessage
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventClaimExpired) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Claim != nil {
-		value := protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
-		if !f(fd_EventClaimExpired_claim, value) {
-			return
-		}
-	}
 	if x.ComputeUnits != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ComputeUnits)
 		if !f(fd_EventClaimExpired_compute_units, value) {
@@ -120,8 +109,6 @@ func (x *fastReflection_EventClaimExpired) Range(f func(protoreflect.FieldDescri
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventClaimExpired) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		return x.Claim != nil
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		return x.ComputeUnits != uint64(0)
 	default:
@@ -140,8 +127,6 @@ func (x *fastReflection_EventClaimExpired) Has(fd protoreflect.FieldDescriptor) 
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimExpired) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		x.Claim = nil
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		x.ComputeUnits = uint64(0)
 	default:
@@ -160,9 +145,6 @@ func (x *fastReflection_EventClaimExpired) Clear(fd protoreflect.FieldDescriptor
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventClaimExpired) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		value := x.Claim
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		value := x.ComputeUnits
 		return protoreflect.ValueOfUint64(value)
@@ -186,8 +168,6 @@ func (x *fastReflection_EventClaimExpired) Get(descriptor protoreflect.FieldDesc
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimExpired) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		x.Claim = value.Message().Interface().(*proof.Claim)
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		x.ComputeUnits = value.Uint()
 	default:
@@ -210,11 +190,6 @@ func (x *fastReflection_EventClaimExpired) Set(fd protoreflect.FieldDescriptor, 
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimExpired) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		if x.Claim == nil {
-			x.Claim = new(proof.Claim)
-		}
-		return protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		panic(fmt.Errorf("field compute_units of message poktroll.tokenomics.EventClaimExpired is not mutable"))
 	default:
@@ -230,9 +205,6 @@ func (x *fastReflection_EventClaimExpired) Mutable(fd protoreflect.FieldDescript
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventClaimExpired) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimExpired.claim":
-		m := new(proof.Claim)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimExpired.compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
 	default:
@@ -304,10 +276,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.Claim != nil {
-			l = options.Size(x.Claim)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		if x.ComputeUnits != 0 {
 			n += 1 + runtime.Sov(uint64(x.ComputeUnits))
 		}
@@ -344,20 +312,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.ComputeUnits))
 			i--
 			dAtA[i] = 0x10
-		}
-		if x.Claim != nil {
-			encoded, err := options.Marshal(x.Claim)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0xa
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -408,42 +362,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventClaimExpired: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Claim == nil {
-					x.Claim = &proof.Claim{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Claim); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ComputeUnits", wireType)
@@ -500,7 +418,6 @@ func (x *fastReflection_EventClaimExpired) ProtoMethods() *protoiface.Methods {
 
 var (
 	md_EventClaimSettled                protoreflect.MessageDescriptor
-	fd_EventClaimSettled_claim          protoreflect.FieldDescriptor
 	fd_EventClaimSettled_compute_units  protoreflect.FieldDescriptor
 	fd_EventClaimSettled_proof_required protoreflect.FieldDescriptor
 )
@@ -508,7 +425,6 @@ var (
 func init() {
 	file_poktroll_tokenomics_event_proto_init()
 	md_EventClaimSettled = File_poktroll_tokenomics_event_proto.Messages().ByName("EventClaimSettled")
-	fd_EventClaimSettled_claim = md_EventClaimSettled.Fields().ByName("claim")
 	fd_EventClaimSettled_compute_units = md_EventClaimSettled.Fields().ByName("compute_units")
 	fd_EventClaimSettled_proof_required = md_EventClaimSettled.Fields().ByName("proof_required")
 }
@@ -578,12 +494,6 @@ func (x *fastReflection_EventClaimSettled) Interface() protoreflect.ProtoMessage
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_EventClaimSettled) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.Claim != nil {
-		value := protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
-		if !f(fd_EventClaimSettled_claim, value) {
-			return
-		}
-	}
 	if x.ComputeUnits != uint64(0) {
 		value := protoreflect.ValueOfUint64(x.ComputeUnits)
 		if !f(fd_EventClaimSettled_compute_units, value) {
@@ -611,8 +521,6 @@ func (x *fastReflection_EventClaimSettled) Range(f func(protoreflect.FieldDescri
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_EventClaimSettled) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		return x.Claim != nil
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		return x.ComputeUnits != uint64(0)
 	case "poktroll.tokenomics.EventClaimSettled.proof_required":
@@ -633,8 +541,6 @@ func (x *fastReflection_EventClaimSettled) Has(fd protoreflect.FieldDescriptor) 
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimSettled) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		x.Claim = nil
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		x.ComputeUnits = uint64(0)
 	case "poktroll.tokenomics.EventClaimSettled.proof_required":
@@ -655,9 +561,6 @@ func (x *fastReflection_EventClaimSettled) Clear(fd protoreflect.FieldDescriptor
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_EventClaimSettled) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		value := x.Claim
-		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		value := x.ComputeUnits
 		return protoreflect.ValueOfUint64(value)
@@ -684,8 +587,6 @@ func (x *fastReflection_EventClaimSettled) Get(descriptor protoreflect.FieldDesc
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimSettled) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		x.Claim = value.Message().Interface().(*proof.Claim)
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		x.ComputeUnits = value.Uint()
 	case "poktroll.tokenomics.EventClaimSettled.proof_required":
@@ -710,11 +611,6 @@ func (x *fastReflection_EventClaimSettled) Set(fd protoreflect.FieldDescriptor, 
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_EventClaimSettled) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		if x.Claim == nil {
-			x.Claim = new(proof.Claim)
-		}
-		return protoreflect.ValueOfMessage(x.Claim.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		panic(fmt.Errorf("field compute_units of message poktroll.tokenomics.EventClaimSettled is not mutable"))
 	case "poktroll.tokenomics.EventClaimSettled.proof_required":
@@ -732,9 +628,6 @@ func (x *fastReflection_EventClaimSettled) Mutable(fd protoreflect.FieldDescript
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_EventClaimSettled) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.tokenomics.EventClaimSettled.claim":
-		m := new(proof.Claim)
-		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	case "poktroll.tokenomics.EventClaimSettled.compute_units":
 		return protoreflect.ValueOfUint64(uint64(0))
 	case "poktroll.tokenomics.EventClaimSettled.proof_required":
@@ -808,10 +701,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.Claim != nil {
-			l = options.Size(x.Claim)
-			n += 1 + l + runtime.Sov(uint64(l))
-		}
 		if x.ComputeUnits != 0 {
 			n += 1 + runtime.Sov(uint64(x.ComputeUnits))
 		}
@@ -862,20 +751,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 			i--
 			dAtA[i] = 0x10
 		}
-		if x.Claim != nil {
-			encoded, err := options.Marshal(x.Claim)
-			if err != nil {
-				return protoiface.MarshalOutput{
-					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
-					Buf:               input.Buf,
-				}, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
-			i--
-			dAtA[i] = 0xa
-		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
 		} else {
@@ -925,42 +800,6 @@ func (x *fastReflection_EventClaimSettled) ProtoMethods() *protoiface.Methods {
 				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: EventClaimSettled: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
-			case 1:
-				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Claim", wireType)
-				}
-				var msglen int
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					msglen |= int(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				if msglen < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				postIndex := iNdEx + msglen
-				if postIndex < 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
-				}
-				if postIndex > l {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-				}
-				if x.Claim == nil {
-					x.Claim = &proof.Claim{}
-				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Claim); err != nil {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
-				}
-				iNdEx = postIndex
 			case 2:
 				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field ComputeUnits", wireType)
@@ -1056,8 +895,8 @@ type EventClaimExpired struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim        *proof.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	ComputeUnits uint64       `protobuf:"varint,2,opt,name=compute_units,json=computeUnits,proto3" json:"compute_units,omitempty"`
+	// poktroll.proof.Claim claim = 1;
+	ComputeUnits uint64 `protobuf:"varint,2,opt,name=compute_units,json=computeUnits,proto3" json:"compute_units,omitempty"`
 }
 
 func (x *EventClaimExpired) Reset() {
@@ -1080,13 +919,6 @@ func (*EventClaimExpired) Descriptor() ([]byte, []int) {
 	return file_poktroll_tokenomics_event_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *EventClaimExpired) GetClaim() *proof.Claim {
-	if x != nil {
-		return x.Claim
-	}
-	return nil
-}
-
 func (x *EventClaimExpired) GetComputeUnits() uint64 {
 	if x != nil {
 		return x.ComputeUnits
@@ -1101,9 +933,9 @@ type EventClaimSettled struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Claim         *proof.Claim `protobuf:"bytes,1,opt,name=claim,proto3" json:"claim,omitempty"`
-	ComputeUnits  uint64       `protobuf:"varint,2,opt,name=compute_units,json=computeUnits,proto3" json:"compute_units,omitempty"`
-	ProofRequired bool         `protobuf:"varint,3,opt,name=proof_required,json=proofRequired,proto3" json:"proof_required,omitempty"`
+	// poktroll.proof.Claim claim = 1;
+	ComputeUnits  uint64 `protobuf:"varint,2,opt,name=compute_units,json=computeUnits,proto3" json:"compute_units,omitempty"`
+	ProofRequired bool   `protobuf:"varint,3,opt,name=proof_required,json=proofRequired,proto3" json:"proof_required,omitempty"`
 }
 
 func (x *EventClaimSettled) Reset() {
@@ -1126,13 +958,6 @@ func (*EventClaimSettled) Descriptor() ([]byte, []int) {
 	return file_poktroll_tokenomics_event_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *EventClaimSettled) GetClaim() *proof.Claim {
-	if x != nil {
-		return x.Claim
-	}
-	return nil
-}
-
 func (x *EventClaimSettled) GetComputeUnits() uint64 {
 	if x != nil {
 		return x.ComputeUnits
@@ -1153,36 +978,29 @@ var file_poktroll_tokenomics_event_proto_rawDesc = []byte{
 	0x0a, 0x1f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
 	0x6f, 0x6d, 0x69, 0x63, 0x73, 0x2f, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x13, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65,
-	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x1a, 0x1a, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
-	0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x22, 0x65, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d,
-	0x45, 0x78, 0x70, 0x69, 0x72, 0x65, 0x64, 0x12, 0x2b, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63,
-	0x6c, 0x61, 0x69, 0x6d, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f,
-	0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x63, 0x6f, 0x6d,
-	0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x22, 0x8c, 0x01, 0x0a, 0x11, 0x45, 0x76,
-	0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x53, 0x65, 0x74, 0x74, 0x6c, 0x65, 0x64, 0x12,
-	0x2b, 0x0a, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x15,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e,
-	0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x05, 0x63, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x23, 0x0a, 0x0d,
-	0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x04, 0x52, 0x0c, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74,
-	0x73, 0x12, 0x25, 0x0a, 0x0e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69,
-	0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0d, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x42, 0xb8, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f,
-	0x6d, 0x69, 0x63, 0x73, 0x42, 0x0a, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f,
-	0x50, 0x01, 0x5a, 0x24, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f,
-	0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f,
-	0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02,
-	0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f,
-	0x6d, 0x69, 0x63, 0x73, 0xca, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b,
-	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
-	0x69, 0x63, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x22, 0x38, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43,
+	0x6c, 0x61, 0x69, 0x6d, 0x45, 0x78, 0x70, 0x69, 0x72, 0x65, 0x64, 0x12, 0x23, 0x0a, 0x0d, 0x63,
+	0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x04, 0x52, 0x0c, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73,
+	0x22, 0x5f, 0x0a, 0x11, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x53, 0x65,
+	0x74, 0x74, 0x6c, 0x65, 0x64, 0x12, 0x23, 0x0a, 0x0d, 0x63, 0x6f, 0x6d, 0x70, 0x75, 0x74, 0x65,
+	0x5f, 0x75, 0x6e, 0x69, 0x74, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0c, 0x63, 0x6f,
+	0x6d, 0x70, 0x75, 0x74, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x73, 0x12, 0x25, 0x0a, 0x0e, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x5f, 0x72, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x0d, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x71, 0x75, 0x69, 0x72, 0x65,
+	0x64, 0x42, 0xb8, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x42, 0x0a, 0x45,
+	0x76, 0x65, 0x6e, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x24, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63,
+	0x73, 0xa2, 0x02, 0x03, 0x50, 0x54, 0x58, 0xaa, 0x02, 0x13, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0xca, 0x02, 0x13,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d,
+	0x69, 0x63, 0x73, 0xe2, 0x02, 0x1f, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x54,
+	0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x3a, 0x3a, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x6f, 0x6d, 0x69, 0x63, 0x73, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1201,16 +1019,13 @@ var file_poktroll_tokenomics_event_proto_msgTypes = make([]protoimpl.MessageInfo
 var file_poktroll_tokenomics_event_proto_goTypes = []interface{}{
 	(*EventClaimExpired)(nil), // 0: poktroll.tokenomics.EventClaimExpired
 	(*EventClaimSettled)(nil), // 1: poktroll.tokenomics.EventClaimSettled
-	(*proof.Claim)(nil),       // 2: poktroll.proof.Claim
 }
 var file_poktroll_tokenomics_event_proto_depIdxs = []int32{
-	2, // 0: poktroll.tokenomics.EventClaimExpired.claim:type_name -> poktroll.proof.Claim
-	2, // 1: poktroll.tokenomics.EventClaimSettled.claim:type_name -> poktroll.proof.Claim
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_tokenomics_event_proto_init() }

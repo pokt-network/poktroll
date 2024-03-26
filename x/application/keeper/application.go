@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 
 	"cosmossdk.io/store/prefix"
 	storetypes "cosmossdk.io/store/types"
@@ -24,8 +23,6 @@ func (k Keeper) GetApplication(
 	ctx context.Context,
 	appAddr string,
 ) (app types.Application, found bool) {
-	logger := k.Logger().With("Func", "GetApplication").With("appAddr", appAddr)
-
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ApplicationKeyPrefix))
 
@@ -33,8 +30,6 @@ func (k Keeper) GetApplication(
 	if appBz == nil {
 		return app, false
 	}
-
-	logger.Info(fmt.Sprintf("found application with address: %s", appAddr))
 
 	k.cdc.MustUnmarshal(appBz, &app)
 	return app, true

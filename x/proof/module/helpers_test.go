@@ -23,15 +23,14 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 const (
-	// TODO_BLOCKER: This should not be hardcoded once the num blocks per session is configurable.
-	numBlocksPerSession = 4
-	testServiceId       = "svc1"
+	testServiceId = "svc1"
 )
 
 // Dummy variable to avoid unused import error.
@@ -123,11 +122,9 @@ func networkWithClaimObjects(
 	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
-		fmt.Println("OLSH sessionIdx", sessionIdx, numSessions)
-		sessionEndHeight += numBlocksPerSession
+		sessionEndHeight += sessionkeeper.NumBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
-				fmt.Println("OLSH3")
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
@@ -140,7 +137,6 @@ func networkWithClaimObjects(
 			}
 		}
 	}
-	fmt.Println("OLSH4", len(claims))
 	return net, claims
 }
 
@@ -156,10 +152,10 @@ func encodeSessionHeader(
 
 	sessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      appAddr,
-		SessionStartBlockHeight: sessionStartHeight,
-		SessionId:               sessionId,
-		SessionEndBlockHeight:   sessionStartHeight + numBlocksPerSession,
 		Service:                 &sharedtypes.Service{Id: testServiceId},
+		SessionId:               sessionId,
+		SessionStartBlockHeight: sessionStartHeight,
+		SessionEndBlockHeight:   sessionStartHeight + sessionkeeper.NumBlocksPerSession,
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -178,7 +174,7 @@ func createClaim(
 	t.Helper()
 
 	rootHash := []byte("root_hash")
-	sessionStartHeight := sessionEndHeight - numBlocksPerSession
+	sessionStartHeight := sessionEndHeight - sessionkeeper.NumBlocksPerSession
 	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
 	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)

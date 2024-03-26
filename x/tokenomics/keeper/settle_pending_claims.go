@@ -44,7 +44,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
 				claimExpiredEvent := types.EventClaimExpired{
-					Claim:        &claim,
+					// Claim:        &claim,
 					ComputeUnits: claimComputeUnits,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
@@ -61,7 +61,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			// If a proof is found, it is valid because verification is done
 			// at the time of submission.
 		}
-		fmt.Println("OLSH3")
+
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
 			logger.Error(fmt.Sprintf("error settling session accounting for claim %s: %v", claim.SessionHeader.SessionId, err))
@@ -69,7 +69,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		}
 
 		claimExpiredEvent := types.EventClaimSettled{
-			Claim:         &claim,
+			// Claim:         &claim,
 			ComputeUnits:  claimComputeUnits,
 			ProofRequired: isProofRequiredForClaim,
 		}

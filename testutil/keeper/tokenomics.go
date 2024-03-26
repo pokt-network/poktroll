@@ -315,28 +315,3 @@ func NewTokenomicsModuleKeepers(t testing.TB, opts ...TokenomicsKeepersOpt) (_ T
 
 	return keepers, ctx
 }
-
-// BlockedAddresses returns all the app's blocked account addresses.
-// func BlockedAddresses() map[string]bool {
-// 	modAccAddrs := make(map[string]bool)
-// 	for acc := range GetMaccPerms() {
-// 		modAccAddrs[authtypes.NewModuleAddress(acc).String()] = true
-// 	}
-
-// 	// allow the following addresses to receive funds
-// 	delete(modAccAddrs, authtypes.NewModuleAddress(govtypes.ModuleName).String())
-
-// 	return modAccAddrs
-// }
-
-// // GetMaccPerms returns a copy of the module account permissions
-// //
-// // NOTE: This is solely to be used for testing purposes.
-// func GetMaccPerms() map[string][]string {
-// 	dupMaccPerms := make(map[string][]string)
-// 	for k, v := range maccPerms {
-// 		dupMaccPerms[k] = v
-// 	}
-
-// 	return dupMaccPerms
-// }
