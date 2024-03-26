@@ -56,7 +56,7 @@ func networkWithClaimObjects(
 	// Construct an in-memory keyring so that it can be populated and used prior
 	// to network start.
 	kr := keyring.NewInMemory(cfg.Codec)
-	// Populate the in-memmory keyring with as many pre-generated accounts as
+	// Populate the in-memory keyring with as many pre-generated accounts as
 	// we expect to need for the test (i.e. numApps + numSuppliers).
 	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, numSuppliers+numApps)
 
@@ -123,9 +123,11 @@ func networkWithClaimObjects(
 	// Create numSessions * numClaimsPerSession claims for the supplier
 	sessionEndHeight := int64(1)
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
+		fmt.Println("OLSH sessionIdx", sessionIdx, numSessions)
 		sessionEndHeight += numBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
+				fmt.Println("OLSH3")
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
@@ -138,7 +140,7 @@ func networkWithClaimObjects(
 			}
 		}
 	}
-
+	fmt.Println("OLSH4", len(claims))
 	return net, claims
 }
 

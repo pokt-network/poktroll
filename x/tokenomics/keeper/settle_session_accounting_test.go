@@ -49,7 +49,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 				Id:   "svc1",
 				Name: "svcName1",
 			},
-			SessionId:               "session_id",
+			SessionId:               "sessi1on_id",
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 		},
