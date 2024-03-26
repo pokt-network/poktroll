@@ -437,6 +437,8 @@ func GetPathForProof(blockHash []byte, sessionId string) []byte {
 	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
 	// statement below and change all relevant parts in the codebase.
 	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-	return blockHash
+	path := make([]byte, SmtSpec.PathHasherSize())
+	copy(path, blockHash)
+	return path
 	// return pathHasher.Sum(append(blockHash, []byte(sessionId)...))
 }
