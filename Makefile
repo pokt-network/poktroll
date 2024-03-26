@@ -189,7 +189,6 @@ proto_ignite_gen: ## Generate protobuf artifacts using ignite
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
 	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
 	@find ./api/poktroll/ -type f | while read -r file; do \
-		echo "Processing file: $$file"; \
 		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
 	done
 	@for dir in $(wildcard ./api/poktroll/*/); do \
