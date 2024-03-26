@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -113,13 +113,13 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 	res, err := s.pocketd.RunCommand(cmds...)
 	s.pocketd.result = res
 	if err != nil {
-		s.Fatalf("error running command %s: %s", cmd, err)
+		s.Fatalf("ERROR: error running command %s: %s", cmd, err)
 	}
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
-		s.Fatalf("stdout must contain %s", arg1)
+		s.Fatalf("ERROR: stdout must contain %s", arg1)
 	}
 }
 
@@ -137,15 +137,15 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error sending upokt: %s", err)
+		s.Fatalf("ERROR: error sending upokt: %s", err)
 	}
 	s.pocketd.result = res
 }
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	if int64(bal) < amount {
-		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
+	if bal < amount {
+		s.Fatalf("ERROR: account %s does not have enough upokt: %d < %d", accName, bal, amount)
 	}
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
@@ -159,17 +159,17 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	// Get previous stake
 	prevStakeStr, ok := s.scenarioState[accStakeKey(actorType, accName)]
 	if !ok {
-		s.Fatalf("no previous stake found for %s", accName)
+		s.Fatalf("ERROR: no previous stake found for %s", accName)
 	}
 	prevStake, ok := prevStakeStr.(int64)
 	if !ok {
-		s.Fatalf("previous stake for %s is not an int", accName)
+		s.Fatalf("ERROR: previous stake for %s is not an int", accName)
 	}
 
 	// Get current stake
 	ok, currStake := s.getStakedAmount(actorType, accName)
 	if !ok {
-		s.Fatalf("no current stake found for %s", accName)
+		s.Fatalf("ERROR: no current stake found for %s", accName)
 	}
 
 	// Validate the change in stake
@@ -180,11 +180,11 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expec
 	// Get previous balance
 	prevBalanceStr, ok := s.scenarioState[accBalanceKey(accName)]
 	if !ok {
-		s.Fatalf("no previous balance found for %s", accName)
+		s.Fatalf("ERROR: no previous balance found for %s", accName)
 	}
 	prevBalance, ok := prevBalanceStr.(int64)
 	if !ok {
-		s.Fatalf("previous balance for %s is not an int", accName)
+		s.Fatalf("ERROR: previous balance for %s is not an int", accName)
 	}
 
 	// Get current balance
@@ -204,10 +204,10 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
 	configFile, err := ioutil.TempFile("", configPathPattern)
 	if err != nil {
-		s.Fatalf("error creating config file: %q", err)
+		s.Fatalf("ERROR: error creating config file: %q", err)
 	}
 	if _, err = configFile.Write([]byte(configContent)); err != nil {
-		s.Fatalf("error writing config file: %q", err)
+		s.Fatalf("ERROR: error writing config file: %q", err)
 	}
 
 	args := []string{
@@ -227,11 +227,11 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
 	if err != nil {
-		s.Fatalf("error removing config file: %q", err)
+		s.Fatalf("ERROR: error removing config file: %q", err)
 	}
 
 	if err != nil {
-		s.Fatalf("error staking %s: %s", actorType, err)
+		s.Fatalf("ERROR: error staking %s: %s", actorType, err)
 	}
 	s.pocketd.result = res
 }
@@ -249,7 +249,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error unstaking %s: %s", actorType, err)
+		s.Fatalf("ERROR: error unstaking %s: %s", actorType, err)
 	}
 	s.pocketd.result = res
 }
@@ -257,7 +257,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if !found {
-		s.Fatalf("account %s should be staked", accName)
+		s.Fatalf("ERROR: account %s should be staked", accName)
 	}
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
@@ -265,7 +265,7 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if found {
-		s.Fatalf("account %s should not be staked", accName)
+		s.Fatalf("ERROR: account %s should not be staked", accName)
 	}
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
@@ -273,10 +273,10 @@ func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
 	found, stakeAmount := s.getStakedAmount(actorType, accName)
 	if !found {
-		s.Fatalf("account %s should be staked", accName)
+		s.Fatalf("ERROR: account %s should be staked", accName)
 	}
 	if int64(stakeAmount) != amount {
-		s.Fatalf("account %s stake amount is not %d", accName, amount)
+		s.Fatalf("ERROR: account %s stake amount is not %d", accName, amount)
 	}
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
@@ -287,7 +287,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 			return
 		}
 	}
-	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
+	s.Fatalf("ERROR: application %s is not staked for service %s", appName, serviceId)
 }
 
 func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
@@ -296,17 +296,17 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 			return
 		}
 	}
-	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
+	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
 	app, found := accNameToAppMap[appName]
 	if !found {
-		s.Fatalf("application %s not found", appName)
+		s.Fatalf("ERROR: application %s not found", appName)
 	}
 	expectedSupplier, found := accNameToSupplierMap[supplierName]
 	if !found {
-		s.Fatalf("supplier %s not found", supplierName)
+		s.Fatalf("ERROR: supplier %s not found", supplierName)
 	}
 	argsAndFlags := []string{
 		"query",
@@ -318,7 +318,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
-		s.Fatalf("error getting session for app %s and service %s: %s", appName, serviceId, err)
+		s.Fatalf("ERROR: error getting session for app %s and service %s: %s", appName, serviceId, err)
 	}
 	var resp sessiontypes.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -328,13 +328,13 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 			return
 		}
 	}
-	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
 	if err != nil {
-		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
+		s.Fatalf("ERROR: error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
 	}
 
 	relayKey := relayReferenceKey(appName, supplierName)
@@ -358,7 +358,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error getting %s: %s", actorType, err)
+		s.Fatalf("ERROR: error getting %s: %s", actorType, err)
 	}
 	s.pocketd.result = res
 	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
@@ -368,7 +368,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 		stakedAmountRe := regexp.MustCompile(`address: ` + escapedAddress + `\s+stake:\s+amount: "(\d+)"`)
 		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
 		if len(matches) < 2 {
-			s.Fatalf("no stake amount found for %s", accName)
+			s.Fatalf("ERROR: no stake amount found for %s", accName)
 		}
 		amount, err = strconv.Atoi(matches[1])
 		require.NoError(s, err)
@@ -382,7 +382,7 @@ func (s *suite) buildAddrMap() {
 		"keys", "list", keyRingFlag,
 	)
 	if err != nil {
-		s.Fatalf("error getting keys: %s", err)
+		s.Fatalf("ERROR: error getting keys: %s", err)
 	}
 	s.pocketd.result = res
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
@@ -404,7 +404,7 @@ func (s *suite) buildAppMap() {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
-		s.Fatalf("error getting application list: %s", err)
+		s.Fatalf("ERROR: error getting application list: %s", err)
 	}
 	s.pocketd.result = res
 	var resp apptypes.QueryAllApplicationsResponse
@@ -425,7 +425,7 @@ func (s *suite) buildSupplierMap() {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	if err != nil {
-		s.Fatalf("error getting supplier list: %s", err)
+		s.Fatalf("ERROR: error getting supplier list: %s", err)
 	}
 	s.pocketd.result = res
 	var resp suppliertypes.QueryAllSuppliersResponse
@@ -436,7 +436,7 @@ func (s *suite) buildSupplierMap() {
 	}
 }
 
-func (s *suite) getAccBalance(accName string) int {
+func (s *suite) getAccBalance(accName string) int64 {
 	s.Helper()
 	args := []string{
 		"query",
@@ -446,16 +446,16 @@ func (s *suite) getAccBalance(accName string) int {
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
+		s.Fatalf("ERROR: error getting balance: %s", err)
 	}
 	s.pocketd.result = res
 	match := amountRe.FindStringSubmatch(res.Stdout)
 	if len(match) < 2 {
-		s.Fatalf("no balance found for %s", accName)
+		s.Fatalf("ERROR: no balance found for %s", accName)
 	}
 	found, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
-	return found
+	return int64(found)
 }
 
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
@@ -465,20 +465,20 @@ func (s *suite) validateAmountChange(prevAmount, currAmount, expectedAmountChang
 	switch condition {
 	case "more":
 		if currAmount <= prevAmount {
-			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, currAmount, prevAmount)
+			s.Fatalf("ERROR: account %s expected to have more upokt but: %d <= %d", accName, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("account %s balance expected to increase by %d, but only increased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: account %s balance expected to increase by %d, but only increased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	case "less":
 		if currAmount >= prevAmount {
-			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, currAmount, prevAmount)
+			s.Fatalf("ERROR: account %s expected to have less upokt but: %d >= %d", accName, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("account %s balance expected to decrease by %d, but only decreased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: account %s balance expected to decrease by %d, but only decreased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	default:
-		s.Fatalf("unknown condition %s", condition)
+		s.Fatalf("ERROR: unknown condition %s", condition)
 	}
 
 }
