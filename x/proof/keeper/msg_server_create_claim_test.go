@@ -288,7 +288,7 @@ func newTestClaimMsg(
 			Service:                 service,
 			SessionId:               sessionId,
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		merkleRoot,
 	)

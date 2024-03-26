@@ -51,7 +51,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(42),
 	}
@@ -255,7 +255,7 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 			},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(sum),
 	}

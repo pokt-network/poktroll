@@ -49,7 +49,7 @@ func (s *TestSuite) SetupTest() {
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		RootHash: []byte("default_roo_hash"),
 	}
