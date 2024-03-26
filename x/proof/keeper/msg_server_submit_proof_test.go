@@ -38,6 +38,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+// TODO_TECHDEBT(@bryanchriswhite): Simplify this file; https://github.com/pokt-network/poktroll/pull/417#pullrequestreview-1958582600
+
 const (
 	supplierUid = "supplier"
 )
@@ -1003,7 +1005,7 @@ func newTestProofMsg(
 ) *types.MsgSubmitProof {
 	t.Helper()
 
-	// Generate a closest proof from the session tree using emptyBlockHash.
+	// Generate a closest proof from the session tree using closestProofPath.
 	merkleProof, err := sessionTree.ProveClosest(closestProofPath)
 	require.NoError(t, err)
 	require.NotNil(t, merkleProof)
@@ -1177,8 +1179,7 @@ func newEmptyRelay(reqHeader, resHeader *sessiontypes.SessionHeader) *servicetyp
 	}
 }
 
-// TODO_DISCUSS(@red-0ne, @Olshansk): Should this logic be centralized
-// in the relayer package?
+// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
 // signRelayRequest signs the relay request (updates relay.Req.Meta.Signature)
 // on behalf of appAddr using the clients provided.
 func signRelayRequest(
@@ -1217,7 +1218,7 @@ func signRelayRequest(
 	relay.Req.Meta.Signature = signatureBz
 }
 
-// TODO_DISCUSS(@red-0ne, @Olshansk): Should this logic be centralized
+// TODO_TECHDEBT(@red-0ne): Centralize this logic in the relayer package.
 // in the relayer package?
 // signRelayResponse signs the relay response (updates relay.Res.Meta.SupplierSignature)
 // on behalf of supplierAddr using the clients provided.

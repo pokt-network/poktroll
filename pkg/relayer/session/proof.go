@@ -10,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	proofkeeper "github.com/pokt-network/poktroll/x/proof/keeper"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
@@ -100,7 +101,8 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
 		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
-		proof, err := session.ProveClosest(latestBlock.Hash())
+		path := proofkeeper.GetPathForProof(latestBlock.Hash(), session.GetSessionHeader().GetSessionId())
+		proof, err := session.ProveClosest(path)
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false
 		}
