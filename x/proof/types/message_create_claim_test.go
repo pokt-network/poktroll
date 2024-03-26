@@ -23,10 +23,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -40,10 +38,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: -1,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -57,10 +53,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "",
@@ -74,10 +68,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "invalid service id", // invalid service ID
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "invalid service id"},
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -91,10 +83,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
@@ -109,10 +99,8 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					ApplicationAddress: sample.AccAddress(),
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
 					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",

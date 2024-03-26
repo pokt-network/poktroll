@@ -119,7 +119,7 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
 	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
-		s.Fatalf("ERROR: stdout must contain %s", arg1)
+		s.Fatalf("ERROR: stdout must contain '%s' but instead contains: '%s'", arg1, s.pocketd.result.Stdout)
 	}
 }
 
@@ -468,14 +468,14 @@ func (s *suite) validateAmountChange(prevAmount, currAmount, expectedAmountChang
 			s.Fatalf("ERROR: account %s expected to have more upokt but: %d <= %d", accName, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: account %s balance expected to increase by %d, but only increased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: account %s balance expected to increase by %d, but actually increased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	case "less":
 		if currAmount >= prevAmount {
 			s.Fatalf("ERROR: account %s expected to have less upokt but: %d >= %d", accName, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: account %s balance expected to decrease by %d, but only decreased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: account %s balance expected to decrease by %d, but actually decreased by %d", accName, expectedAmountChange, deltaAmount)
 		}
 	default:
 		s.Fatalf("ERROR: unknown condition %s", condition)
