@@ -10,4 +10,7 @@ import "gogoproto/gogo.proto";
 message Params {
   option (amino.name) = "poktroll/x/proof/Params";
   option (gogoproto.equal) = true;
+
+  // The minimum difficulty in bits for a relay to be included in a Merkle proof.
+  uint64 min_relay_difficulty_bits = 1;
 }
