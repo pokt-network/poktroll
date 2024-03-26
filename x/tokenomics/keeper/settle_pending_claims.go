@@ -11,7 +11,19 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// SettlePendingClaims settles all pending claims.
+const (
+	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this properly. Using a constant
+	// for "probabilistic proofs" is just a simple placeholder mechanism to get
+	// #359 over the finish line.
+	ProofRequiredComputeUnits = 100
+)
+
+// SettlePendingClaims settles all pending (i.e. expiring) claims.
+// If a claim is expired and requires a proof and a proof IS available -> it's settled.
+// If a claim is expired and requires a proof and a proof IS NOT available -> it's deleted.
+// If a claim is expired and does NOT require a proof -> it's settled.
+// Events are emitted for each claim that is settled or removed.
+// On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
 func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
 
@@ -27,24 +39,26 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	blockHeight := ctx.BlockHeight()
 
 	for _, claim := range expiringClaims {
+		// Retrieve the number of compute units in the claim for the events emitted
+		root := (smt.MerkleRoot)(claim.GetRootHash())
+		claimComputeUnits := root.Sum()
+
 		sessionId := claim.SessionHeader.SessionId
+
+		// Using the probabilistic proofs approach, determine if this expiring
+		// claim required an on-chain proof
 		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
 		if err != nil {
 			logger.Error(fmt.Sprintf("error checking if proof is required for claim %s: %v", sessionId, err))
 			return 0, 0, err
 		}
-
-		root := (smt.MerkleRoot)(claim.GetRootHash())
-		claimComputeUnits := root.Sum()
-
-		// Using the probabilistic proofs approach, determine if this expiring
-		// claim required an on-chain proof
 		if isProofRequiredForClaim {
 			_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
+				// Emit an event that a claim has expired and being removed without being settled.
 				claimExpiredEvent := types.EventClaimExpired{
-					// Claim:        &claim,
+					Claim:        &claim,
 					ComputeUnits: claimComputeUnits,
 				}
 				if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
@@ -52,13 +66,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 				}
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
-				// TODO_BLOCKER(@Olshansk): Decide if we should be doing this or not.
-				// It could be used for data analysis and historical purposes, but not needed
-				// for functionality.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
 				continue
 			}
-			// If a proof is found, it is valid because verification is done
+			// NB: If a proof is found, it is valid because verification is done
 			// at the time of submission.
 		}
 
@@ -69,7 +80,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		}
 
 		claimExpiredEvent := types.EventClaimSettled{
-			// Claim:         &claim,
+			Claim:         &claim,
 			ComputeUnits:  claimComputeUnits,
 			ProofRequired: isProofRequiredForClaim,
 		}
@@ -79,9 +90,6 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
-		// TODO_BLOCKER(@Olshansk): Decide if we should be doing this or not.
-		// It could be used for data analysis and historical purposes, but not needed
-		// for functionality.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
 		k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 
@@ -130,10 +138,7 @@ func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) 
 	// is retrieved from the store.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
-	// TODO_BLOCKER/TODO_UPNEXT(@Olshansk): Implement this function.
-	// For now, require a proof if numCompute
-	// for each claim.
-	if claimComputeUnits < 100 {
+	if claimComputeUnits < ProofRequiredComputeUnits {
 		return false, nil
 	}
 	return true, nil

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"hash"
 	"fmt"
+	"hash"
 
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"

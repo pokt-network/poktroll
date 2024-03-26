@@ -34,27 +34,15 @@ type TestSuite struct {
 	sdkCtx  sdk.Context
 	ctx     context.Context
 	keepers keepertest.TokenomicsModuleKeepers
+	claim   prooftypes.Claim
 }
 
 func (s *TestSuite) SetupTest() {
-	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
-	s.sdkCtx = sdk.UnwrapSDKContext(s.ctx)
-}
-
-func TestSettleExpiringSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
-}
-
-func (s *TestSuite) TestClaimWithoutProofExpires() {
-	t := s.T()
 	supplierAddr := sample.AccAddress()
 	appAddr := sample.AccAddress()
 
-	ctx := s.ctx
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-
 	// Prepare and insert the claim
-	claim := prooftypes.Claim{
+	s.claim = prooftypes.Claim{
 		SupplierAddress: supplierAddr,
 		SessionHeader: &sessiontypes.SessionHeader{
 			ApplicationAddress:      appAddr,
@@ -63,50 +51,74 @@ func (s *TestSuite) TestClaimWithoutProofExpires() {
 			SessionStartBlockHeight: 1,
 			SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
 		},
-		RootHash: []byte("root_hash"),
+		RootHash: []byte("default_roo_hash"),
 	}
-	s.keepers.UpsertClaim(ctx, claim)
 
-	// Verify that the claim exists
+	s.keepers, s.ctx = keepertest.NewTokenomicsModuleKeepers(s.T())
+	s.sdkCtx = sdk.UnwrapSDKContext(s.ctx)
+}
+
+func TestSettleExpiringSuite(t *testing.T) {
+	suite.Run(t, new(TestSuite))
+}
+
+// TODO_IN_THIS_PR(@Olshansk): Things to test
+// 1. Balance changes (up and down)
+// 2. Claim that requires a proof but doesn't have one expires
+// 3. Claim that requires a proof and has one settles
+// 4. Claim that doesn't require a proof settles
+// 5. Expand on other test cases to add in the future
+// 6. Validate the emitted events
+
+func (s *TestSuite) TestClaimSettlesAfterProofWindowCloses() {
+	// Retrieve default values
+	t := s.T()
+	ctx := s.ctx
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	claim := s.claim
+
+	// Add the claim & verify it exists
+	s.keepers.UpsertClaim(ctx, claim)
 	claims := s.keepers.GetAllClaims(ctx)
 	s.Require().Len(claims, 1)
 
 	// Settle expiring claims at height 2 (while the session is still active).
-	// Expectations: No claims should be settled.
-	sdkCtx = sdkCtx.WithBlockHeight(2)
+	// Expectations: No claims should be settled because the session is still ongoing
+	sdkCtx = sdkCtx.WithBlockHeight(claim.SessionHeader.SessionEndBlockHeight - 2)
 	numClaimsSettled, numClaimsExpired, err := s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), numClaimsSettled)
 	require.Equal(t, uint64(0), numClaimsExpired)
-	// Check that the claims still exists
+	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 1)
 
-	// Try to settle expiring claims at height 2 (while the session is still active).
-	// Goal: Claims should not be settled.
-	sdkCtx = sdkCtx.WithBlockHeight(5)
+	// Try to settle expiring claim a little after it ended.
+	// Goal: Claims should not be settled because the proof window hasn't closed yet.
+	sdkCtx = sdkCtx.WithBlockHeight(claim.SessionHeader.SessionEndBlockHeight + 2)
 	numClaimsSettled, numClaimsExpired, err = s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), numClaimsSettled)
 	require.Equal(t, uint64(0), numClaimsExpired)
-	// Check that the claims still exists
+	// Validate that the claim still exists
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 1)
 
-	// Try to settle expiring claims at height 20 (after the proof window closes).
+	// Try to settle expiring claims a long time after it ended
 	// Expectation: All (1) claims should be settled.
-	sdkCtx = sdkCtx.WithBlockHeight(20)
+	sdkCtx = sdkCtx.WithBlockHeight(claim.SessionHeader.SessionEndBlockHeight * 10)
 	numClaimsSettled, numClaimsExpired, err = s.keepers.SettlePendingClaims(sdkCtx)
 	// Check that no claims were settled
 	require.NoError(t, err)
 	require.Equal(t, uint64(0), numClaimsSettled)
 	require.Equal(t, uint64(0), numClaimsExpired)
-	// Check that the claims expired
+	// Validate that the claims expired
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 0)
 
+	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 1)
 }

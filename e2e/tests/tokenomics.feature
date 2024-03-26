@@ -1,13 +1,13 @@
 Feature: Tokenomics Namespaces
 
-    # This test
+    # TODO_IN_THIS_PR(@Olshansk): Finish this uni-test.
     Scenario: Basic tokenomics validation that Supplier mint equals Application burn
         Given the user has the pocketd binary installed
         And an account exists for "supplier1"
         And an account exists for "app1"
         When the supplier "supplier1" has serviced a session with "20" relays for service "svc1" for application "app1"
-        # And the user should wait for "5" seconds
-        # TODO_UPNEXT(@Olshansk, #359): Expand on the two expectations below after integrating the tokenomics module
-        # into the supplier module.
+        And the user should wait for the "proof" "CreateClaim" Message to be submited
+        And the user should wait for the "proof" "SubmitProof" Message to be submited
+
         # Then the account balance of "supplier1" should be "1000" uPOKT "more" than before
         # And the "application" stake of "app1" should be "1000" uPOKT "less" than before

@@ -27,7 +27,7 @@ func (k Keeper) GetSession(ctx context.Context, req *types.QueryGetSessionReques
 	// while the `Msg` server handles the code flow of the validator when a new block is being proposed.
 	blockHeight := req.BlockHeight
 
-	k.Logger().Info(fmt.Sprintf("Getting session for height: %d", blockHeight))
+	k.Logger().Debug(fmt.Sprintf("Getting session for height: %d", blockHeight))
 
 	sessionHydrator := NewSessionHydrator(req.ApplicationAddress, req.Service.Id, blockHeight)
 	session, err := k.HydrateSession(ctx, sessionHydrator)
