@@ -3,6 +3,9 @@ package poktroll.application.module;
 
 import "cosmos/app/v1alpha1/module.proto";
 
+// TODO(@Olshansk): Look into `x/auth/proto/cosmos/auth/module/v1/module.proto`
+// to see if we need to have permissions here.
+
 // Module is the config object for the module.
 message Module {
   option (cosmos.app.v1alpha1.module) = {

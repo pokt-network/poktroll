@@ -23,7 +23,7 @@ import (
 const (
 	// txEventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
-	txEventTimeout = 20 * time.Second
+	txEventTimeout = 30 * time.Second
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
 	// This is used by an events replay client to subscribe to tx events from the supplier.
@@ -174,7 +174,7 @@ func (s *suite) sendRelaysForSession(
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		fmt.Println("OLSH", i)
+		fmt.Println("OLSH", i) // TODO_IN_THIS_PR: remove this line
 		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}

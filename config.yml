@@ -51,6 +51,28 @@ accounts:
     mnemonic: "elder spatial erosion soap athlete tide subject recipe also awkward head pattern cart version beach usual oxygen confirm erupt diamond maze smooth census garment"
     coins:
       - 300000000upokt
+  # TODO_IMPROVE(@okdas, @Olshansk): We have staked actors at genesis, but
+  # their corresponding on-chain module accounts have no funds. This leads
+  # to claim & proof issues because we can't undelegate funds from escrow
+  # to pay for services.
+  # The module accounts have a bit of extra funds to cover the cost of "overused"
+  # sessions. In prod, during genesis, these should be set to 0.
+  # - name: application_module
+  #   address: pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+  #   coins:
+  #     - 100000000upokt
+  # - name: supplier_module
+  #   address: pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
+  #   coins:
+  #     - 100000000upokt
+  # - name: gateway_module
+  #   address: pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
+  #   coins:
+  #     - 100000000upokt
+  # - name: service_module
+  #   address: pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
+  #   coins:
+  #     - 100000000upokt
 faucet:
   name: faucet
   coins:
@@ -68,14 +90,11 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "5s"
-        timeout_propose: "5s"
+        timeout_commit: "3s"
+        timeout_propose: "3s"
     client:
       chain-id: poktroll
 
-# TODO_TECHDEBT(@Olshansk, @okdas): We are staking the app & supplier, but the
-# respective account modules on-chain. Look at the `acc_balance_query_modules`
-# make target to get more insight into this.
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
   app_state:

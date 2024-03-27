@@ -31,9 +31,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		supplier = k.createSupplier(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Supplier found. Updating supplier for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier found. About to try and update supplier with address %s", msg.Address))
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
+			logger.Error(fmt.Sprintf("could not update supplier for address %s due to error %v", msg.Address, err))
 			return nil, err
 		}
 		coinsToDelegate = (*msg.Stake).Sub(currSupplierStake)

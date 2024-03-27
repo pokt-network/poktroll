@@ -157,7 +157,7 @@ func (k Keeper) SettleSessionAccounting(
 	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(
 		ctx, apptypes.ModuleName, applicationAddress, settlementAmtuPOKT,
 	); err != nil {
-		return types.ErrTokenomicsApplicationUndelegationFailed.Wrapf("undelegating %s from application %s: %v", settlementAmt, applicationAddress, err)
+		return types.ErrTokenomicsApplicationUndelegationFailed.Wrapf("undelegating %s from application module in order to send to %s: %v", settlementAmt, applicationAddress, err)
 	}
 
 	// Update the application's on-chain stake

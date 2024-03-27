@@ -33,9 +33,10 @@ func (k msgServer) StakeGateway(
 		gateway = k.createGateway(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Gateway found. Updating gateway stake for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Gateway found. About to try and update gateway for address %s", msg.Address))
 		currGatewayStake := *gateway.Stake
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
+			logger.Error(fmt.Sprintf("could not update gateway for address %s due to error %v", msg.Address, err))
 			return nil, err
 		}
 		coinsToDelegate, err = (*msg.Stake).SafeSub(currGatewayStake)

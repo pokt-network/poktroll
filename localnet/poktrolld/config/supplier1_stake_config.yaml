@@ -1,6 +1,6 @@
 # TODO(@Olshansk, @okdas): Add more services (in addition to anvil) for apps and suppliers to stake for.
 # TODO_TECHDEBT: svc1 below are only in place to make GetSession testable
-stake_amount: 1000upokt
+stake_amount: 1069upokt
 services:
   - service_id: anvil
     endpoints:

@@ -32,9 +32,10 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		foundApp = k.createApplication(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Application found. Updating application for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %s", msg.Address))
 		currAppStake := *foundApp.Stake
 		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
+			logger.Error(fmt.Sprintf("could not update application for address %s due to error %v", msg.Address, err))
 			return nil, err
 		}
 		coinsToDelegate = (*msg.Stake).Sub(currAppStake)
