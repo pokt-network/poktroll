@@ -61,6 +61,8 @@ import (
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
 
+	telemetry "github.com/pokt-network/poktroll/telemetry"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/pokt-network/poktroll/docs"
@@ -313,6 +315,10 @@ func New(
 	// 	voteExtHandler := NewVoteExtensionHandler()
 	// 	voteExtHandler.SetHandlers(bApp)
 	// }
+
+	// Setup the application with block metrics that hook into the ABCI handlers.
+	// TODO_TECHDEBT: Use a flag to enable/disable block metrics.
+	baseAppOptions = append(baseAppOptions, telemetry.InitBlockMetrics)
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
