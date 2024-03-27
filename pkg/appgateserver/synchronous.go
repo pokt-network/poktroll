@@ -14,7 +14,6 @@ import (
 func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
-	payloadBz []byte,
 	requestType sharedtypes.RPCType,
 	request *http.Request,
 	writer http.ResponseWriter,
@@ -42,7 +41,7 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, request)
+	relayResponse, err := app.sdk.SendRelay(ctx, *supplierEndpoint, *request)
 	if err != nil {
 		return err
 	}

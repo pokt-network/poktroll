@@ -14,7 +14,8 @@ Feature: Tokenomics Namespaces
         And the "application" account for "app2" is staked
         When the supplier "supplier2" has serviced a session with "20" relays for service "anvil" for application "app2"
         And the user should wait for the "proof" "CreateClaim" Message to be submitted
-        # And the user should wait for the "proof" "SubmitProof" Message to be submitted
-
-        # Then the account balance of "supplier2" should be "1000" uPOKT "more" than before
-        # And the "application" stake of "app2" should be "1000" uPOKT "less" than before
+        And the user should wait for the "proof" "SubmitProof" Message to be submitted
+        And the user should wait for the "proof" "SubmitProof" Message to be submitted
+        And the user should wait for the "tokenomics" "ClaimSettled" Event to be broadcasted
+        Then the account balance of "supplier2" should be "420" uPOKT "more" than before
+        And the "application" stake of "app2" should be "420" uPOKT "less" than before

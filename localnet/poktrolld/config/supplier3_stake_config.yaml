@@ -1,4 +1,4 @@
-stake_amount: 1071upokt
+stake_amount: 100071upokt
 services:
   - service_id: anvil
     endpoints:

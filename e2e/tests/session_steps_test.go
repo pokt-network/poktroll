@@ -30,7 +30,8 @@ const (
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
 	testEventsReplayClientBufferSize  = 100
-	testServiceId                     = "anvil"
+	// TOMORROW: Rename above to Tx and add an EVENT subscription for SettleClaim & ExpiredClaim
+	testServiceId = "anvil"
 	// eventsReplayClientKey is the suite#scenarioState key for the events replay client
 	// which is subscribed to tx events where the tx sender is the scenario's supplier.
 	eventsReplayClientKey = "eventsReplayClientKey"
@@ -45,6 +46,10 @@ const (
 // TODO_TECHDEBT: Evaluate if/where/how this function should be reused in other tests
 func (s *suite) TheUserShouldWaitForTheMessageToBeSubmitted(module, message string) {
 	s.waitForMessageAction(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+}
+
+func (s *suite) TheUserShouldWaitForTheEventToBeBroadcasted(module, message string) {
+	s.waitForMessageAction(fmt.Sprintf("/poktroll.%s.Event%s", module, message))
 }
 
 func (s *suite) AfterTheSupplierCreatesAClaimForTheSessionForServiceForApplication(serviceId, appName string) {
@@ -174,7 +179,7 @@ func (s *suite) sendRelaysForSession(
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		fmt.Println("OLSH", i) // TODO_IN_THIS_PR: remove this line
+		fmt.Printf("Sending relay %d \n", i)
 		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
@@ -198,6 +203,7 @@ func (s *suite) waitForMessageAction(action string) {
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
+				fmt.Println(event)
 				for _, attribute := range event.Attributes {
 					if attribute.Key == "action" {
 						if attribute.Value == action {

@@ -314,7 +314,7 @@ func main() {
   selectedSupplier := sessionSuppliers.SuppliersEndpoints[0]
 
   // Send the request to the selected supplier and wait for the response
-  response, err := poktrollSDK.SendRelay(ctx, selectedSupplier, httpRequest)
+  response, err := poktrollSDK.SendRelay(ctx, *selectedSupplier, *httpRequest)
 }
 ```
 

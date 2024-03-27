@@ -2,7 +2,6 @@ package types
 
 import (
 	"crypto/sha256"
-	"fmt"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
@@ -114,8 +113,6 @@ func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.Pub
 	if err != nil {
 		return err
 	}
-	ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature)
-	+fmt.Println("OLSH", ok, res.GetMeta().SupplierSignature, res, supplierPubKey)
 	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature); !ok {
 		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
 	}
