@@ -65,6 +65,10 @@ client:
 validators:
   - name: validator1
     bonded: 900000000upokt
+    app:
+      telemetry:
+        enabled: true
+        prometheus_retention_time: 600
     config:
       moniker: "validator1"
       consensus:

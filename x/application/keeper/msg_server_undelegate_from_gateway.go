@@ -5,10 +5,15 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUndelegateFromGateway) (*types.MsgUndelegateFromGatewayResponse, error) {
+	isSuccessful := false
+	defer telemetry.StateDataCounter(ctx, "undelegate_from_gateway", func() bool { return isSuccessful })
+
 	logger := k.Logger().With("method", "UndelegateFromGateway")
 	logger.Info(fmt.Sprintf("About to undelegate application from gateway with msg: %v", msg))
 
@@ -54,6 +59,8 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
 		return nil, err
 	}
+
+	isSuccessful = true
 
 	return &types.MsgUndelegateFromGatewayResponse{}, nil
 }

@@ -168,7 +168,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
 k8s_resource(
     "validator",
     labels=["pocket_network"],
-    port_forwards=["36657", "36658", "40004"],
+    port_forwards=["36657", "36658", "40004", "1317"],
 )
 
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])

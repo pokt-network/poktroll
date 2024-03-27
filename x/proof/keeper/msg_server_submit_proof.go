@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -37,7 +38,13 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 // TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processes the respective session.
-func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
+func (k msgServer) SubmitProof(
+	ctx context.Context,
+	msg *types.MsgSubmitProof,
+) (*types.MsgSubmitProofResponse, error) {
+	isSuccessful := false
+	defer telemetry.StateDataCounter(ctx, "submit_proof", func() bool { return isSuccessful })
+
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Debug("about to start submitting proof")
 
@@ -197,6 +204,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// TODO_UPNEXT(@Olshansk, #359): Call `tokenomics.SettleSessionAccounting()` here
 
 	logger.Debug("successfully submitted proof")
+
+	isSuccessful = true
 
 	return &types.MsgSubmitProofResponse{}, nil
 }
