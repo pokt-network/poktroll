@@ -8,7 +8,7 @@ import (
 )
 
 // handleSynchronousRelay handles relay requests for synchronous protocols, where
-// there is a one-to-one correspondance between the request and response.
+// there is a one-to-one correspondence between the request and response.
 // It does everything from preparing, signing and sending the request.
 // It then blocks on the response to come back and forward it to the provided writer.
 func (app *appGateServer) handleSynchronousRelay(
