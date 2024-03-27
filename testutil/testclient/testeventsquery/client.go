@@ -9,6 +9,7 @@ import (
 
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/golang/mock/gomock"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -21,7 +22,7 @@ import (
 
 // NewLocalnetClient creates and returns a new events query client that's configured
 // for use with the LocalNet validator. Any options provided are applied to the client.
-func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
+func NewLocalnetClient(t gocuke.TestingT, opts ...client.EventsQueryClientOption) client.EventsQueryClient {
 	t.Helper()
 
 	return events.NewEventsQueryClient(testclient.CometLocalWebsocketURL, opts...)
