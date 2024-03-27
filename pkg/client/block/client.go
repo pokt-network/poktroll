@@ -135,7 +135,9 @@ func (b *blockClient) getInitialBlock(ctx context.Context, client cometBlockClie
 	b.latestBlockMu.Lock()
 	defer b.latestBlockMu.Unlock()
 
-	if b.latestBlock != nil {
+	// If the latest block is not already set by the getLatestBlocks goroutine,
+	// then set it to the initial block.
+	if b.latestBlock == nil {
 		b.latestBlock = initialBlock
 	}
 

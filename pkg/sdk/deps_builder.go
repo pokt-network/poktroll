@@ -32,7 +32,7 @@ func (sdk *poktrollSDK) buildDeps(
 	// Supply the logger
 	deps = depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx)))
 
-	cosmosClient, err := cosmosclient.NewClientFromNode(config.QueryNodeUrl.Host)
+	cosmosClient, err := cosmosclient.NewClientFromNode(config.QueryNodeUrl.String())
 	if err != nil {
 		return nil, err
 	}
