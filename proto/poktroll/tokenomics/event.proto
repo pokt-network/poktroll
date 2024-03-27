@@ -3,7 +3,6 @@ package poktroll.tokenomics;
 
 option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 
-// TODO_IN_THIS_PR: Figure how why this is so difficult to import in pulsar.
 import "poktroll/proof/claim.proto";
 
 // EventClaimExpired is an event emitted whenever a claim requiring an on-chain

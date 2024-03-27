@@ -9,6 +9,8 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
+// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
+
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
 	logger := k.Logger().With("method", "StakeApplication")
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))

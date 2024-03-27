@@ -10,6 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
+// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
+
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
@@ -51,6 +53,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err))
 		return nil, err
 	}
+	logger.Info(fmt.Sprintf("Successfully sent %v coins from %s to %s module account", coinsToDelegate, supplierAddress, types.ModuleName))
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)

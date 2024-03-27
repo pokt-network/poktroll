@@ -344,7 +344,7 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
 	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
-
+	fmt.Println("OLSH", stdout)
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
 	require.Contains(s, stdout, `"result":"0x`)
 }

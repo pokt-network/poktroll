@@ -36,9 +36,10 @@ func init() {
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
 // TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processes the respective session.
-// TODO_IN_THIS_PR_DISCUSS: Do we need to validate if the signature on the Proof message corresponds to the supplier before upserting?
+// TODO_TECHDEBT_DISCUSS: Do we need to validate if the signature on the Proof
+// message corresponds to the supplier before upserting?
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
-	// TODO_IN_THIS_PR_DISCUSS: A potential issue with doing proof validation inside
+	// TODO_BLOCKER_DISCUSS: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).
 	// This could be considered a feature (e.g. less state bloat against sybil attacks)
 	// or a bug (i.e. no mechanisms for slashing suppliers who submit false proofs).

@@ -68,11 +68,14 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "1s"
-        timeout_propose: "1s"
+        timeout_commit: "5s"
+        timeout_propose: "5s"
     client:
       chain-id: poktroll
 
+# TODO_TECHDEBT(@Olshansk, @okdas): We are staking the app & supplier, but the
+# respective account modules on-chain. Look at the `acc_balance_query_modules`
+# make target to get more insight into this.
 # We can persist arbitrary genesis values via 1 to 1 mapping to genesis.json
 genesis:
   app_state:

@@ -83,10 +83,10 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 	require.Equal(s, accNameToAddrMap[supplierName], claim.SupplierAddress)
 }
 
-func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierName, relayCountStr, serviceId, appName string) {
+func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication(supplierName, numRelaysStr, serviceId, appName string) {
 	ctx := context.Background()
 
-	relayCount, err := strconv.Atoi(relayCountStr)
+	numRelays, err := strconv.Atoi(numRelaysStr)
 	require.NoError(s, err)
 
 	// Query for any existing claims so that we can compare against them in
@@ -120,7 +120,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 		appName,
 		supplierName,
 		testServiceId,
-		relayCount,
+		numRelays,
 	)
 }
 
@@ -174,6 +174,7 @@ func (s *suite) sendRelaysForSession(
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
+		fmt.Println("OLSH", i)
 		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}

@@ -5,5 +5,6 @@ services:
       # The endpoint URL for the Anvil service is provided via the RelayMiner.
       # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
       # This setup allows for flexible and dynamic service provisioning within the network.
-      - url: http://relayminer2:8545
+      # TODO_IN_THIS_PR: Discuss with @okdas if this should be `relayminer2` instead of `relayminer1`
+      - url: http://relayminer1:8545
         rpc_type: json_rpc
