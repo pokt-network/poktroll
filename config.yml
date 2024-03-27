@@ -68,7 +68,7 @@ validators:
     app:
       telemetry:
         enabled: true
-        prometheus_retention_time: 600
+        prometheus-retention-time: "600"
     config:
       moniker: "validator1"
       consensus:
