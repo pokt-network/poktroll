@@ -157,12 +157,7 @@ func (k Keeper) SettleSessionAccounting(
 	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(
 		ctx, apptypes.ModuleName, applicationAddress, settlementAmtuPOKT,
 	); err != nil {
-		logger.Error(fmt.Sprintf(
-			"THIS SHOULD NOT HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
-			applicationAddress,
-			settlementAmtuPOKT,
-			application.Stake,
-		))
+		return types.ErrTokenomicsApplicationUndelegationFailed.Wrapf("undelegating %s from application %s: %v", settlementAmt, applicationAddress, err)
 	}
 
 	// Update the application's on-chain stake
@@ -177,17 +172,15 @@ func (k Keeper) SettleSessionAccounting(
 	if err := k.bankKeeper.SendCoinsFromAccountToModule(
 		ctx, applicationAddress, apptypes.ModuleName, settlementAmtuPOKT,
 	); err != nil {
-		return types.ErrTokenomicsApplicationModuleFeeFailed
+		return types.ErrTokenomicsApplicationModuleFeeFailed.Wrapf("sending %s from application %s module account: %v", settlementAmt, applicationAddress, err)
 	}
 
 	logger.Info(fmt.Sprintf("took %s uPOKT from application with address %s", settlementAmt, applicationAddress))
 
 	// Burn uPOKT from the application module account
 	if err := k.bankKeeper.BurnCoins(ctx, apptypes.ModuleName, settlementAmtuPOKT); err != nil {
-		return types.ErrTokenomicsApplicationModuleBurn
+		return types.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementAmt, err)
 	}
-
-	// TODO_UPNEXT(@Olshansk): Emit burn & mint events as a result of session settlement.
 
 	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
 

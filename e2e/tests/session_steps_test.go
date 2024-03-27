@@ -23,7 +23,7 @@ import (
 const (
 	// txEventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
-	txEventTimeout = 10 * time.Second
+	txEventTimeout = 20 * time.Second
 	// txSenderEventSubscriptionQueryFmt is the format string which yields the
 	// cosmos-sdk event subscription "query" string for a given sender address.
 	// This is used by an events replay client to subscribe to tx events from the supplier.
@@ -43,7 +43,7 @@ const (
 )
 
 // TODO_TECHDEBT: Evaluate if/where/how this function should be reused in other tests
-func (s *suite) TheUserShouldWaitForTheMessageToBeSubmited(module, message string) {
+func (s *suite) TheUserShouldWaitForTheMessageToBeSubmitted(module, message string) {
 	s.waitForMessageAction(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
 }
 

@@ -361,11 +361,12 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 		s.Fatalf("ERROR: error getting %s: %s", actorType, err)
 	}
 	s.pocketd.result = res
+
 	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
 	amount := 0
 	if found {
 		escapedAddress := regexp.QuoteMeta(accNameToAddrMap[accName])
-		stakedAmountRe := regexp.MustCompile(`address: ` + escapedAddress + `\s+stake:\s+amount: "(\d+)"`)
+		stakedAmountRe := regexp.MustCompile(`(?s)address: ` + escapedAddress + `\s+(?:.*?\s+)?stake:\s+amount: "(\d+)"`)
 		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
 		if len(matches) < 2 {
 			s.Fatalf("ERROR: no stake amount found for %s", accName)

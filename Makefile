@@ -571,20 +571,22 @@ get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
-	@echo "~~~ Balances ~~~"
+	@echo "~ Balances ~"
 	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
-	@echo "~~~ Spendable Balances ~~~"
+	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
 	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_module_app
-acc_balance_query_module_app: ## Query the balance of the network level "application" module
+.PHONY: acc_balance_query_modules
+acc_balance_query_modules: ## Query the balance of the network level module
+	@echo "### Applicaiton ###"
 	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
-
-.PHONY: acc_balance_query_module_supplier
-acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
-	SUPPLIER1=$(make poktrolld_addr ACC_NAME=supplier1)
-	make acc_balance_query ACC=SUPPLIER1
+	@echo "### Supplier ###"
+	make acc_balance_query ACC=pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
+	@echo "### Gateway ###"
+	make acc_balance_query ACC=pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
+	@echo "### Service ###"
+	make acc_balance_query ACC=pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
