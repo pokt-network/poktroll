@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cosmossdk.io/depinject"
@@ -11,6 +10,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -138,7 +138,16 @@ func NewEventsReplayClient[T any](
 	}
 
 	// Concurrently publish events to the observable emitted by replayObsCache.
-	go rClient.goPublishEvents(ctx)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				rClient.publishEvents(ctx)
+			}
+		}
+	}()
 
 	return rClient, nil
 }
@@ -196,7 +205,7 @@ func (rClient *replayClient[T]) Close() {
 	close(rClient.replayObsCachePublishCh)
 }
 
-// goPublishEvents runs the work function returned by retryPublishEventsFactory,
+// publishEvents runs the work function returned by retryPublishEventsFactory,
 // re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
 func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
@@ -291,6 +300,7 @@ func (rClient *replayClient[T]) newMapEventsBytesToTFn(
 		ctx context.Context,
 		eitherEventBz either.Bytes,
 	) (_ T, skip bool) {
+		logger := polylog.Ctx(ctx)
 		eventBz, err := eitherEventBz.ValueOrError()
 		if err != nil {
 			errCh <- err
