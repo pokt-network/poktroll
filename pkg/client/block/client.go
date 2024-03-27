@@ -135,7 +135,7 @@ func (b *blockClient) getInitialBlock(ctx context.Context, client cometBlockClie
 	b.latestBlockMu.Lock()
 	defer b.latestBlockMu.Unlock()
 
-	if b.latestBlock != nil {
+	if b.latestBlock == nil {
 		b.latestBlock = initialBlock
 	}
 
