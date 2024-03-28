@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"hash"
 
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
@@ -17,13 +18,17 @@ import (
 )
 
 // SMT specification used for the proof verification.
-var spec *smt.TrieSpec
+var (
+	pathHasher hash.Hash
+	SmtSpec    *smt.TrieSpec
+)
 
 func init() {
 	// Use a spec that does not prehash values in the smst. This returns a nil
 	// value hasher for the proof verification in order to to avoid hashing the
 	// value twice.
-	spec = smt.NoPrehashSpec(sha256.New(), true)
+	pathHasher = sha256.New()
+	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -96,7 +101,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(spec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -335,7 +340,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, spec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
 	if err != nil {
 		return err
 	}
@@ -351,12 +356,10 @@ func verifyClosestProof(
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte, minDifficultyBits uint64) error {
-	hasher := sha256.New()
-	hasher.Write(relayBz)
-	relayHash := hasher.Sum(nil)
+func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
+	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	difficultyBits, err := protocol.CountDifficultyBits(relayHash)
+	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
@@ -366,11 +369,11 @@ func validateMiningDifficulty(relayBz []byte, minDifficultyBits uint64) error {
 
 	// TODO: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
-	if uint64(difficultyBits) < minDifficultyBits {
+	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"relay difficulty %d is less than the minimum difficulty %d",
-			difficultyBits,
-			minDifficultyBits,
+			relayDifficultyBits,
+			minRelayDifficultyBits,
 		)
 	}
 
@@ -400,23 +403,30 @@ func (k msgServer) validateClosestPath(
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
 	//
-	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
-	// TODO_BLOCKER: Update `blockHeight` to be the value of when the `ProofWindow`
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
+	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
-	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): The seed of the path should be
-	// `ConcatAndHash(blockHash, '.', sessionId)` to prevent all proofs needing to use the same path.
-	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-	if !bytes.Equal(proof.Path, blockHash) {
+	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
+	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"proof path %x does not match block hash %x",
+			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
-			blockHash,
+			expectedProofPath,
 		)
 	}
 
 	return nil
+}
+
+func GetPathForProof(blockHash []byte, sessionId string) []byte {
+	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
+	// statement below and change all relevant parts in the codebase.
+	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
+	return blockHash
+	// return pathHasher.Sum(append(blockHash, []byte(sessionId)...))
 }
