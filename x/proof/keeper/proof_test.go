@@ -37,7 +37,7 @@ func createNProofs(keeper keeper.Keeper, ctx context.Context, n int) []types.Pro
 				Service:                 &sharedtypes.Service{Id: testServiceId},
 				SessionId:               fmt.Sprintf("session-%d", i),
 				SessionStartBlockHeight: 1,
-				SessionEndBlockHeight:   1 + sessionkeeper.NumBlocksPerSession,
+				SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 			},
 			ClosestMerkleProof: nil,
 		}

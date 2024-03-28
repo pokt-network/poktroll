@@ -27,6 +27,13 @@ func init() {
 	cmd.InitSDKConfig()
 }
 
+// The module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
+func TestModuleAddressSupplier(t *testing.T) {
+	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
+	require.Equal(t, "pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa", moduleAddress.String())
+}
+
 func createNSuppliers(keeper keeper.Keeper, ctx context.Context, n int) []sharedtypes.Supplier {
 	suppliers := make([]sharedtypes.Supplier, n)
 	for i := range suppliers {
@@ -85,11 +92,4 @@ func TestSupplierGetAll(t *testing.T) {
 		nullify.Fill(suppliers),
 		nullify.Fill(keeper.GetAllSuppliers(ctx)),
 	)
-}
-
-// The application module address is derived off of its semantic name.
-// This test is a helper for us to easily identify the underlying address.
-func TestApplicationModuleAddress(t *testing.T) {
-	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
-	require.Equal(t, "pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa", moduleAddress.String())
 }

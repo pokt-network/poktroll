@@ -35,7 +35,9 @@ func createNServices(keeper keeper.Keeper, ctx context.Context, n int) []sharedt
 	return services
 }
 
-func TestServiceModuleAddress(t *testing.T) {
+// The module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
+func TestModuleAddressService(t *testing.T) {
 	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
 	require.Equal(t, "pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf", moduleAddress.String())
 }

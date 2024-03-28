@@ -69,6 +69,8 @@ import (
 	ibcfeetypes "github.com/cosmos/ibc-go/v8/modules/apps/29-fee/types"
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
 	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"
 	proofmodulev1 "github.com/pokt-network/poktroll/api/poktroll/proof/module"
@@ -90,8 +92,6 @@ import (
 	suppliermoduletypes "github.com/pokt-network/poktroll/x/supplier/types"
 	_ "github.com/pokt-network/poktroll/x/tokenomics/module" // import for side-effects
 	tokenomicsmoduletypes "github.com/pokt-network/poktroll/x/tokenomics/types"
-	"google.golang.org/protobuf/types/known/durationpb"
-	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
 var (

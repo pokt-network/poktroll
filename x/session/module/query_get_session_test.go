@@ -6,7 +6,7 @@ import (
 	"time"
 
 	sdkerrors "cosmossdk.io/errors"
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/gogo/status"
 	"github.com/stretchr/testify/require"
@@ -157,7 +157,7 @@ func TestCLI_GetSession(t *testing.T) {
 
 	// We want to use the `--output=json` flag for all tests so it's easy to unmarshal below
 	common := []string{
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 
 	// Run the tests

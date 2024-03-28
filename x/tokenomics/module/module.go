@@ -18,9 +18,7 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	// this line is used by starport scaffolding # 1
-
-	modulev1 "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
+	tokenomicsmodule "github.com/pokt-network/poktroll/api/poktroll/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -95,29 +93,29 @@ func (AppModuleBasic) RegisterGRPCGatewayRoutes(clientCtx client.Context, mux *r
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
-	accountKeeper types.AccountKeeper
-	bankKeeper    types.BankKeeper
+	tokenomicsKeeper keeper.Keeper
+	accountKeeper    types.AccountKeeper
+	bankKeeper       types.BankKeeper
 }
 
 func NewAppModule(
 	cdc codec.Codec,
-	keeper keeper.Keeper,
+	tokenomicsKeeper keeper.Keeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic: NewAppModuleBasic(cdc),
-		keeper:         keeper,
-		accountKeeper:  accountKeeper,
-		bankKeeper:     bankKeeper,
+		AppModuleBasic:   NewAppModuleBasic(cdc),
+		tokenomicsKeeper: tokenomicsKeeper,
+		accountKeeper:    accountKeeper,
+		bankKeeper:       bankKeeper,
 	}
 }
 
 // RegisterServices registers a gRPC query service to respond to the module-specific gRPC queries
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.keeper))
-	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterMsgServer(cfg.MsgServer(), keeper.NewMsgServerImpl(am.tokenomicsKeeper))
+	types.RegisterQueryServer(cfg.QueryServer(), am.tokenomicsKeeper)
 }
 
 // RegisterInvariants registers the invariants of the module. If an invariant deviates from its predicted value, the InvariantRegistry triggers appropriate logic (most often the chain will be halted)
@@ -129,12 +127,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONCodec, gs json.Ra
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	InitGenesis(ctx, am.keeper, genState)
+	InitGenesis(ctx, am.tokenomicsKeeper, genState)
 }
 
 // ExportGenesis returns the module's exported genesis state as raw JSON bytes.
 func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONCodec) json.RawMessage {
-	genState := ExportGenesis(ctx, am.keeper)
+	genState := ExportGenesis(ctx, am.tokenomicsKeeper)
 	return cdc.MustMarshalJSON(genState)
 }
 
@@ -151,8 +149,9 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
-func (am AppModule) EndBlock(_ context.Context) error {
-	return nil
+func (am AppModule) EndBlock(goCtx context.Context) error {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	return EndBlocker(ctx, am.tokenomicsKeeper)
 }
 
 // IsOnePerModuleType implements the depinject.OnePerModuleType interface.
@@ -166,7 +165,7 @@ func (am AppModule) IsAppModule() {}
 // ----------------------------------------------------------------------------
 
 func init() {
-	appmodule.Register(&modulev1.Module{}, appmodule.Provide(ProvideModule))
+	appmodule.Register(&tokenomicsmodule.Module{}, appmodule.Provide(ProvideModule))
 }
 
 type ModuleInputs struct {
@@ -174,13 +173,13 @@ type ModuleInputs struct {
 
 	StoreService store.KVStoreService
 	Cdc          codec.Codec
-	Config       *modulev1.Module
+	Config       *tokenomicsmodule.Module
 	Logger       log.Logger
 
 	AccountKeeper     types.AccountKeeper
 	BankKeeper        types.BankKeeper
 	ApplicationKeeper types.ApplicationKeeper
-	SupplierKeeper    types.SupplierKeeper
+	ProofKeeper       types.ProofKeeper
 }
 
 type ModuleOutputs struct {
@@ -204,7 +203,7 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.BankKeeper,
 		in.AccountKeeper,
 		in.ApplicationKeeper,
-		in.SupplierKeeper,
+		in.ProofKeeper,
 	)
 	m := NewAppModule(
 		in.Cdc,

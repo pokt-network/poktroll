@@ -5,8 +5,10 @@ import (
 	"strconv"
 	"testing"
 
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/cmd/poktrolld/cmd"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/nullify"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -24,6 +26,17 @@ func createNApplications(keeper keeper.Keeper, ctx context.Context, n int) []typ
 		keeper.SetApplication(ctx, apps[i])
 	}
 	return apps
+}
+
+func init() {
+	cmd.InitSDKConfig()
+}
+
+// The module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
+func TestModuleAddressApplication(t *testing.T) {
+	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
+	require.Equal(t, "pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm", moduleAddress.String())
 }
 
 func TestApplicationGet(t *testing.T) {

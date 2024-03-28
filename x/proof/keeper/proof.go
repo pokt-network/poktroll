@@ -46,7 +46,7 @@ func (k Keeper) GetProof(ctx context.Context, sessionId, supplierAddr string) (_
 
 // RemoveProof removes a proof from the store
 func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string) {
-	logger := k.Logger().With("method", "RemoveClaim")
+	logger := k.Logger().With("method", "RemoveProof")
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))

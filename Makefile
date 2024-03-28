@@ -7,6 +7,11 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
+GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
+SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
+
 # Detect operating system
 OS := $(shell uname -s)
 
@@ -186,17 +191,21 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-.PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
+	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
+	@find ./api/poktroll/ -type f | while read -r file; do \
+		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
+	done
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
-			echo "Processing module $$module"; \
+			echo "Further processing module $$module"; \
 			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
 					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
+
 
 .PHONY: proto_clean
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
@@ -337,7 +346,7 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # 	e.g. TODO_HACK: This is a hack, we need to fix it later
 # 2. If there's a specific issue, or specific person, add that in paranthesiss
 #   e.g. TODO(@Olshansk): Automatically link to the Github user https://github.com/olshansk
-#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/pocket/issues/420
+#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/poktroll/issues/420
 #   e.g. TODO_DISCUSS(@Olshansk, #420): Specific individual should tend to the action item in the specific ticket
 #   e.g. TODO_CLEANUP(core): This is not tied to an issue, or a person, but should only be done by the core team.
 #   e.g. TODO_CLEANUP: This is not tied to an issue, or a person, and can be done by the core team or external contributors.
@@ -390,7 +399,7 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -430,7 +439,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
@@ -508,7 +517,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
@@ -567,20 +576,24 @@ get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
-	@echo "~~~ Balances ~~~"
+	@echo "~ Balances ~"
 	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
-	@echo "~~~ Spendable Balances ~~~"
+	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
 	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_module_app
-acc_balance_query_module_app: ## Query the balance of the network level "application" module
-	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
-
-.PHONY: acc_balance_query_module_supplier
-acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
-	SUPPLIER1=$(make poktrolld_addr ACC_NAME=supplier1)
-	make acc_balance_query ACC=SUPPLIER1
+# Search for `func TestModuleAddress` in the codebase to get an understanding
+# of how we got these values.
+.PHONY: acc_balance_query_modules
+acc_balance_query_modules: ## Query the balance of the network level module
+	@echo "### Applicaiton ###"
+	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
+	@echo "### Supplier ###"
+	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
+	@echo "### Gateway ###"
+	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
+	@echo "### Service ###"
+	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
@@ -604,7 +617,7 @@ acc_balance_total_supply: ## Query the total supply of the network
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
-	# @printf "Addresses: ${ADDRESSES}"
+# @printf "Addresses: ${ADDRESSES}"
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
@@ -613,6 +626,26 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE) \
 			--chain-id $(CHAIN_ID);)
+
+# TODO_HACK: Until we figure out how to give module addresses a default value on genesis.
+# See `config.yml` for more details. When the escrowed balance follow below zero, we
+# hit a consensus error.
+# TODO_IN_THIS_PR: Make sure there's a check so we don't undelegate more coins than
+# what's available.
+# TODO: Figure out how to recover from consensus failures.
+# $(eval ADDRESSES= $(APPLICATION_MODULE_ADDRESS) $(SUPPLIER_MODULE_ADDRESS) $(GATEWAY_MODULE_ADDRESS) $(SERVICE_MODULE_ADDRESS))
+# $(eval i=1) # Initialize counter
+# @echo $(i)
+# $(foreach addr,$(ADDRESSES),\
+# 	echo $(addr);\
+# 	poktrolld tx bank send \
+# 		$(PNF_ADDR) $(addr) 10000000upokt \
+# 		--yes \
+# 		--home=$(POKTROLLD_HOME) \
+# 		--node $(POCKET_NODE) \
+# 		--chain-id $(CHAIN_ID); \
+# 	$(eval i=$$(shell expr $(i) + 1))\
+	)
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`

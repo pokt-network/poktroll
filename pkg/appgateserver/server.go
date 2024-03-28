@@ -227,7 +227,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 	// TODO_RESEARCH: Should this be started in a goroutine, to allow for
 	// concurrent requests from numerous applications?
 	if err := app.handleSynchronousRelay(
-		ctx, appAddress, serviceId, requestPayloadBz, requestType, request, writer); err != nil {
+		ctx, appAddress, serviceId, requestType, request, writer); err != nil {
 
 		// Reply with an error response if there was an error handling the relay.
 		app.replyWithError(ctx, requestPayloadBz, writer, serviceId, requestType.String(), err)

@@ -3,11 +3,11 @@ package types
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/sample"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
@@ -18,35 +18,49 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			desc: "invalid address",
+			desc: "invalid supplier address",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: "invalid_address",
+				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
+					SessionStartBlockHeight: 100,
+					SessionEndBlockHeight:   101,
+					SessionId:               "valid_session_id",
+				},
 			},
 			expectedErr: ErrProofInvalidAddress,
 		},
 		{
-			desc: "valid address but invalid session start height",
+			desc: "valid supplier address but invalid session start height",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
-					SessionStartBlockHeight: -1, // Invalid start height
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
+					SessionStartBlockHeight: -1,
+					SessionEndBlockHeight:   101,
+					SessionId:               "valid_session_id",
 				},
 			},
-			expectedErr: ErrProofInvalidSessionStartHeight,
+			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
-			desc: "valid address and session start height but invalid session ID",
+			desc: "valid supplier address and session start height but invalid session ID",
 
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
-					SessionId:               "", // Invalid session ID
+					SessionEndBlockHeight:   101,
+					SessionId:               "",
 				},
 			},
-			expectedErr: ErrProofInvalidSessionId,
+			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
 			desc: "valid address, session start height, session ID but invalid service",
@@ -54,14 +68,14 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "invalid service id"},
 					SessionStartBlockHeight: 100,
+					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
-					Service: &sharedtypes.Service{
-						Id: "invalid_service_id", // Assuming this ID is invalid
-					}, // Should trigger error
 				},
 			},
-			expectedErr: ErrProofInvalidService,
+			expectedErr: ErrProofInvalidSessionHeader,
 		},
 		{
 			desc: "valid address, session start height, session ID, service but invalid root hash",
@@ -69,11 +83,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
+					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
 				},
 				RootHash: []byte(""), // Invalid root hash
 			},
@@ -85,11 +99,11 @@ func TestMsgCreateClaim_ValidateBasic(t *testing.T) {
 			msg: MsgCreateClaim{
 				SupplierAddress: sample.AccAddress(),
 				SessionHeader: &sessiontypes.SessionHeader{
+					ApplicationAddress:      sample.AccAddress(),
+					Service:                 &sharedtypes.Service{Id: "svcId"},
 					SessionStartBlockHeight: 100,
+					SessionEndBlockHeight:   101,
 					SessionId:               "valid_session_id",
-					Service: &sharedtypes.Service{
-						Id: "svcId", // Assuming this ID is valid
-					},
 				},
 				RootHash: []byte("valid_root_hash"), // Assuming this is valid
 			},

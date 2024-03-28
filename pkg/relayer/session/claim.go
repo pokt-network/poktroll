@@ -77,7 +77,7 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimHeight(
 	// into account the heights, windows and grace periods into helper functions.
 	createClaimWindowStartHeight := sessionEndHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 
-	// TODO_TECHDEBT: query the on-chain governance parameter once available.
+	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovCreateClaimWindowStartHeightOffset
 
 	// we wait for createClaimWindowStartHeight to be received before proceeding since we need its hash

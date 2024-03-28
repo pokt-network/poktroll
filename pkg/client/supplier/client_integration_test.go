@@ -26,7 +26,7 @@ func TestNewSupplierClient_Localnet(t *testing.T) {
 	var rootHash []byte
 	sessionHeader := sessiontypes.SessionHeader{
 		ApplicationAddress:      "",
-		SessionStartBlockHeight: 0,
+		SessionStartBlockHeight: 1,
 		SessionId:               "",
 	}
 	err := supplierClient.CreateClaim(ctx, sessionHeader, rootHash)

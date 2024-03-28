@@ -22,14 +22,12 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	sessionId := claim.GetSessionHeader().GetSessionId()
 	primaryKey := types.ClaimPrimaryKey(sessionId, claim.SupplierAddress)
 	primaryStore.Set(primaryKey, claimBz)
-
 	logger.Info(fmt.Sprintf("upserted claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the address index: supplierAddress -> [ClaimPrimaryKey]
 	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ClaimSupplierAddressPrefix))
 	supplierAddrKey := types.ClaimSupplierAddressKey(claim.SupplierAddress, primaryKey)
 	supplierAddrStore.Set(supplierAddrKey, primaryKey)
-
 	logger.Info(fmt.Sprintf("indexed claim for supplier %s with primaryKey %s", claim.SupplierAddress, primaryKey))
 
 	// Update the session end height index: sessionEndHeight -> [ClaimPrimaryKey]
@@ -37,7 +35,6 @@ func (k Keeper) UpsertClaim(ctx context.Context, claim types.Claim) {
 	sessionEndHeight := claim.GetSessionHeader().GetSessionEndBlockHeight()
 	sessionEndHeightKey := types.ClaimSupplierEndSessionHeightKey(sessionEndHeight, primaryKey)
 	sessionEndHeightStore.Set(sessionEndHeightKey, primaryKey)
-
 	logger.Info(fmt.Sprintf("indexed claim for supplier %s at session ending height %d", claim.SupplierAddress, sessionEndHeight))
 }
 

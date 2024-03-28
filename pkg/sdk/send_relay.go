@@ -22,8 +22,8 @@ func init() {
 // The relay request is created by adding method headers to the provided http.Request.
 func (sdk *poktrollSDK) SendRelay(
 	ctx context.Context,
-	supplierEndpoint *SingleSupplierEndpoint,
-	request *http.Request,
+	supplierEndpoint SingleSupplierEndpoint,
+	request http.Request,
 ) (response *types.RelayResponse, err error) {
 	// Retrieve the request's payload.
 	payloadBz, err := io.ReadAll(request.Body)

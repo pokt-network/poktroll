@@ -9,6 +9,8 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
+// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
+
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
 	logger := k.Logger().With("method", "StakeApplication")
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
@@ -30,12 +32,23 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		foundApp = k.createApplication(ctx, msg)
 		coinsToDelegate = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Application found. Updating application for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %s", msg.Address))
 		currAppStake := *foundApp.Stake
 		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
+			logger.Error(fmt.Sprintf("could not update application for address %s due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToDelegate = (*msg.Stake).Sub(currAppStake)
+		coinsToDelegate, err = (*msg.Stake).SafeSub(currAppStake)
+		logger.Debug(fmt.Sprintf("Application is going to delegate an additional %+v coins", coinsToDelegate))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Must always stake or upstake (> 0 delta)
+	if coinsToDelegate.IsZero() {
+		logger.Warn(fmt.Sprintf("Application %s must delegate more than 0 additional coins", msg.Address))
+		return nil, types.ErrAppInvalidStake.Wrapf("application %s must delegate more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the application
@@ -45,13 +58,13 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 		return nil, err
 	}
 
-	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the application to the staked application pool
 	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err))
 		return nil, err
 	}
+	logger.Info(fmt.Sprintf("Successfully delegated %v coins from %s to %s module account", coinsToDelegate, appAddress, types.ModuleName))
 
 	// Update the Application in the store
 	k.SetApplication(ctx, foundApp)

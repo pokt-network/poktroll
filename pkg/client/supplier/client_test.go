@@ -104,7 +104,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	var rootHash []byte
 	sessionHeader := sessiontypes.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
-		SessionStartBlockHeight: 0,
+		SessionStartBlockHeight: 1,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
 			Id: testService,
@@ -162,7 +162,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 
 	sessionHeader := sessiontypes.SessionHeader{
 		ApplicationAddress:      testAppAddr.String(),
-		SessionStartBlockHeight: 0,
+		SessionStartBlockHeight: 1,
 		SessionId:               "",
 		Service: &sharedtypes.Service{
 			Id: testService,
@@ -174,7 +174,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 
 	// Generating an ephemeral tree & spec just so we can submit
 	// a proof of the right size.
-	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
 	emptyPath := make([]byte, tree.PathHasherSize())
 	proof, err := tree.ProveClosest(emptyPath)

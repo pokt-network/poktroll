@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	// this line is used by starport scaffolding # 1
 
 	"cosmossdk.io/core/appmodule"
 	"cosmossdk.io/core/store"
@@ -17,8 +18,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-
-	// this line is used by starport scaffolding # 1
 
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
 	"github.com/pokt-network/poktroll/x/application/keeper"
@@ -35,9 +34,11 @@ var (
 	_ appmodule.AppModule       = (*AppModule)(nil)
 	_ appmodule.HasBeginBlocker = (*AppModule)(nil)
 	_ appmodule.HasEndBlocker   = (*AppModule)(nil)
+
+	// _ sdk.ModuleAccountI = (*AppModule)(nil)
 )
 
-// ----------------------------------------------------------------------------
+// -------------------------------------------------------------------------`---
 // AppModuleBasic
 // ----------------------------------------------------------------------------
 

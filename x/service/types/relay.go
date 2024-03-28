@@ -113,7 +113,6 @@ func (res *RelayResponse) VerifySupplierSignature(supplierPubKey cryptotypes.Pub
 	if err != nil {
 		return err
 	}
-
 	if ok := supplierPubKey.VerifySignature(signableBz[:], res.GetMeta().SupplierSignature); !ok {
 		return ErrServiceInvalidRelayResponse.Wrap("invalid signature")
 	}

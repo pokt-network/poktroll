@@ -28,7 +28,7 @@ The goal of this document is to get you up and running with a LocalNet and
 end-to-end relay.
 
 **If you encounter any problems**, the best way to get support
-from the team is by creating a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+from the team is by creating a new [GitHub Issue here](https://github.com/pokt-network/poktroll/issues/new/choose).
 :::
 
 ## Install Dependencies

@@ -31,7 +31,7 @@ needed to send an end-to-end relay.
 
 ### Report issues
 
-If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+If you encounter any problems, please create a new [GitHub Issue here](https://github.com/pokt-network/poktroll/issues/new/choose).
 
 ### TL;DR
 

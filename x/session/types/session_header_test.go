@@ -11,6 +11,11 @@ import (
 )
 
 func TestSessionHeader_ValidateBasic(t *testing.T) {
+	svc := sharedtypes.Service{
+		Id:   "svc_id",
+		Name: "svc_name",
+	}
+
 	tests := []struct {
 		desc          string
 		sessionHeader types.SessionHeader
@@ -21,7 +26,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      "invalid_address",
 				SessionId:               "valid_session_id",
-				Service:                 &sharedtypes.Service{},
+				Service:                 &svc,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
@@ -32,7 +37,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "",
-				Service:                 &sharedtypes.Service{},
+				Service:                 &svc,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},
@@ -50,11 +55,22 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			expectedErr: types.ErrSessionInvalidService,
 		},
 		{
+			desc: "invalid - start block height is 0",
+			sessionHeader: types.SessionHeader{
+				ApplicationAddress:      sample.AccAddress(),
+				SessionId:               "valid_session_id",
+				Service:                 &svc,
+				SessionStartBlockHeight: 0,
+				SessionEndBlockHeight:   42,
+			},
+			expectedErr: types.ErrSessionInvalidBlockHeight,
+		},
+		{
 			desc: "invalid - start block height greater than end block height",
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 &sharedtypes.Service{},
+				Service:                 &svc,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   99,
 			},
@@ -65,7 +81,7 @@ func TestSessionHeader_ValidateBasic(t *testing.T) {
 			sessionHeader: types.SessionHeader{
 				ApplicationAddress:      sample.AccAddress(),
 				SessionId:               "valid_session_id",
-				Service:                 &sharedtypes.Service{},
+				Service:                 &svc,
 				SessionStartBlockHeight: 100,
 				SessionEndBlockHeight:   101,
 			},

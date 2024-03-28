@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
@@ -22,7 +22,7 @@ func TestShowApplication(t *testing.T) {
 
 	ctx := net.Validators[0].ClientCtx
 	common := []string{
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	tests := []struct {
 		desc      string
@@ -78,7 +78,7 @@ func TestListApplication(t *testing.T) {
 	ctx := net.Validators[0].ClientCtx
 	request := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
-			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+			fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 		}
 		if next == nil {
 			args = append(args, fmt.Sprintf("--%s=%d", flags.FlagOffset, offset))

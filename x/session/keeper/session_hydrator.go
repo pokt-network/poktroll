@@ -73,7 +73,7 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
+	logger.Debug(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, err
@@ -274,7 +274,6 @@ func GetSessionStartBlockHeight(blockHeight int64) int64 {
 	if blockHeight <= 0 {
 		return 0
 	}
-
 	return blockHeight - ((blockHeight - 1) % NumBlocksPerSession)
 }
 

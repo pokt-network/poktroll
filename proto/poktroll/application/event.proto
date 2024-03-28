@@ -4,13 +4,11 @@ package poktroll.application;
 option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 import "cosmos_proto/cosmos.proto";
-import "gogoproto/gogo.proto";
 
 // EventRedelegation is an event emitted whenever an application changes its
 // delegatee gateways on chain. This is in response to both a DelegateToGateway
 // and UndelegateFromGateway message.
 message EventRedelegation {
-  // TODO: Check if this tag is relevant for events: (gogoproto.jsontag) = "app_address"
   string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the application, using cosmos' ScalarDescriptor to ensure deterministic encoding
   string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"]; // The Bech32 address of the gateway the application has changed their delegation of, using cosmos' ScalarDescriptor to ensure deterministic encoding
 }
