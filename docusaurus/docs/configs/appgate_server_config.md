@@ -23,6 +23,15 @@ It is responsible for multiple things:
   - [`listening_endpoint`](#listening_endpoint)
   - [`metrics`](#metrics)
 
+:::tip
+
+You can learn more about the different types of Gateways / Applications in
+[this](https://youtu.be/jVW-3lRzVT0?si=a23rh3UGoekk8rA8&t=920) presentation.
+
+TODO(@Olshansk): Update the documentation to reflect the content of the video.
+
+:::
+
 ## Usage
 
 The `AppGateServer` start command accepts a `--config` flag that points to a

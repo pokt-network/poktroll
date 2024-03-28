@@ -335,6 +335,10 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
+	// that allows any application to send a relay in LocalNet and our E2E Tests.
+	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
+
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
 	if err != nil {
 		s.Fatalf("ERROR: error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
@@ -345,6 +349,10 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
+	// that allows any application to send a relay in LocalNet and our E2E Tests.
+	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
+
 	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
@@ -375,6 +383,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 			s.Fatalf("ERROR: no stake amount found for %s", accName)
 		}
 		for _, match := range matches {
+			fmt.Println("match: ", match[1], match[2])
 			if match[1] == escapedAddress {
 				amount, err = strconv.Atoi(match[2])
 				require.NoError(s, err)

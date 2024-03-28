@@ -110,14 +110,15 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Mint new uPOKT to the supplier module account.
 	// These funds will be transferred to the supplier below.
-	if err := k.bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, settlementAmtuPOKT); err != nil {
+	if err := k.bankKeeper.MintCoins(
+		ctx, suppliertypes.ModuleName, settlementAmtuPOKT,
+	); err != nil {
 		return types.ErrTokenomicsSupplierModuleMintFailed.Wrapf(
 			"minting %s to the supplier module account: %v",
 			settlementAmt,
 			err,
 		)
 	}
-
 	logger.Info(fmt.Sprintf("minted %s in the supplier module", settlementAmt))
 
 	// Send the newley minted uPOKT from the supplier module account
@@ -132,8 +133,7 @@ func (k Keeper) SettleSessionAccounting(
 			err,
 		)
 	}
-
-	logger.Info(fmt.Sprintf("sent %s to supplier with address %s", settlementAmt, supplierAddr))
+	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %s", settlementAmt, supplierAddr))
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.Stake.IsLT(settlementAmt) {
@@ -159,17 +159,7 @@ func (k Keeper) SettleSessionAccounting(
 	); err != nil {
 		return types.ErrTokenomicsApplicationUndelegationFailed.Wrapf("undelegating %s from application module in order to send to %s: %v", settlementAmt, applicationAddress, err)
 	}
-
-	// Update the application's on-chain stake
-	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
-	if err != nil {
-		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %s stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
-	}
-	fmt.Println("OLSH APP STAKE BEFORE AND AFTER", application.Stake, settlementAmt, newAppStake)
-	application.Stake = &newAppStake
-	k.applicationKeeper.SetApplication(ctx, application)
-
-	logger.Info(fmt.Sprintf("unstaked %s uPOKT from the application with address %s to pay for on-chain service", settlementAmt, applicationAddress))
+	logger.Info(fmt.Sprintf("undelegated %s from the application account with address %s to pay for on-chain service", settlementAmt, applicationAddress))
 
 	// Send the uPOKT to be burnt from the application's balance to the
 	// application module account.
@@ -178,15 +168,24 @@ func (k Keeper) SettleSessionAccounting(
 	); err != nil {
 		return types.ErrTokenomicsApplicationModuleFeeFailed.Wrapf("sending %s from application %s module account: %v", settlementAmt, applicationAddress, err)
 	}
-
-	logger.Info(fmt.Sprintf("took %s uPOKT from application with address %s", settlementAmt, applicationAddress))
+	logger.Info(fmt.Sprintf("sent %s from application with address %s", settlementAmt, applicationAddress))
 
 	// Burn uPOKT from the application module account
-	if err := k.bankKeeper.BurnCoins(ctx, apptypes.ModuleName, settlementAmtuPOKT); err != nil {
+	if err := k.bankKeeper.BurnCoins(
+		ctx, apptypes.ModuleName, settlementAmtuPOKT,
+	); err != nil {
 		return types.ErrTokenomicsApplicationModuleBurn.Wrapf("burning %s from the application module account: %v", settlementAmt, err)
 	}
-
 	logger.Info(fmt.Sprintf("burned %s from the application module account", settlementAmt))
+
+	// Update the application's on-chain stake
+	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
+	if err != nil {
+		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %s stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
+	}
+	application.Stake = &newAppStake
+	k.applicationKeeper.SetApplication(ctx, application)
+	logger.Info(fmt.Sprintf("updated stake for application with address %s to %s", applicationAddress, newAppStake))
 
 	return nil
 }
