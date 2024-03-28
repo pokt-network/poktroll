@@ -14,7 +14,7 @@ func TestGetTransportCreds(t *testing.T) {
 	tests := []struct {
 		desc    string
 		hostUrl string
-		want    credentials.TransportCredentials
+		expectedCredentials    credentials.TransportCredentials
 	}{
 		{
 			desc:    "Test grpcs scheme",
