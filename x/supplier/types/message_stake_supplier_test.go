@@ -155,7 +155,7 @@ func TestMsgStakeSupplier_ValidateBasic(t *testing.T) {
 				Services: []*sharedtypes.SupplierServiceConfig{
 					{
 						Service: &sharedtypes.Service{
-							Id: "123456790",
+							Id: "TooLongId1234567890",
 						},
 						Endpoints: []*sharedtypes.SupplierEndpoint{
 							{

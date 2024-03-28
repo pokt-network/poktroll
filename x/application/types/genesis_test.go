@@ -315,7 +315,7 @@ func TestGenesisState_Validate(t *testing.T) {
 						Address: addr1,
 						Stake:   &stake1,
 						ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
-							{Service: &sharedtypes.Service{Id: "12345678901"}},
+							{Service: &sharedtypes.Service{Id: "TooLongId1234567890"}},
 						},
 						DelegateeGatewayAddresses: emptyDelegatees,
 					},
