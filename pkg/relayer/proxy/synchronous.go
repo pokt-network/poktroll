@@ -251,6 +251,10 @@ func (sync *synchronousRPCServer) serveHTTP(
 	}
 
 	// Check if the response is gzip-compressed
+	// TODO: Add other algorithms, or an alternative would be to switch to http
+	// client that manages all low-level HTTP decisions for us, something like
+	// https://github.com/imroc/req, https://github.com/valyala/fasthttp or
+	// https://github.com/go-resty/resty
 	var responseBody io.ReadCloser = httpResponse.Body
 	if httpResponse.Header.Get("Content-Encoding") == "gzip" {
 		responseBody, err = gzip.NewReader(httpResponse.Body)
