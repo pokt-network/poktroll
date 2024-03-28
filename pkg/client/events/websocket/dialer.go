@@ -27,7 +27,6 @@ func (wsDialer *websocketDialer) DialContext(
 	ctx context.Context,
 	urlString string,
 ) (client.Connection, error) {
-
 	dialer := websocket.DefaultDialer
 
 	if strings.HasPrefix(urlString, "wss://") {
