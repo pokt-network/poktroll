@@ -37,7 +37,17 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			logger.Error(fmt.Sprintf("could not update supplier for address %s due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToDelegate = (*msg.Stake).Sub(currSupplierStake)
+		coinsToDelegate, err = (*msg.Stake).SafeSub(currSupplierStake)
+		logger.Debug(fmt.Sprintf("Supplier is going to delegate an additional %+v coins", coinsToDelegate))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Must always stake or upstake (> 0 delta)
+	if coinsToDelegate.IsZero() {
+		logger.Warn(fmt.Sprintf("Supplier %s must delegate more than 0 additional coins", msg.Address))
+		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %s must delegate more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the supplier

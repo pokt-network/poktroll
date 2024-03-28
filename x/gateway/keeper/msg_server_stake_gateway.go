@@ -40,9 +40,16 @@ func (k msgServer) StakeGateway(
 			return nil, err
 		}
 		coinsToDelegate, err = (*msg.Stake).SafeSub(currGatewayStake)
+		logger.Debug(fmt.Sprintf("Gateway is going to delegate an additional %+v coins", coinsToDelegate))
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Must always stake or upstake (> 0 delta)
+	if coinsToDelegate.IsZero() {
+		logger.Warn(fmt.Sprintf("Gateway %s must delegate more than 0 additional coins", msg.Address))
+		return nil, types.ErrGatewayInvalidStake.Wrapf("gateway %s must delegate more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the gateway

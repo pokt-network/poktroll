@@ -8,7 +8,7 @@ Feature: Session Namespace
     And the user should wait for the "proof" "CreateClaim" Message to be submitted
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
     # TODO_IMPROVE: And an event should be emitted...
-    And after the supplier submits a proof for the session for service "svc1" for application "app1"
+    And the user should wait for the "proof" "CreateClaim" Message to be submitted
     Then the proof submitted by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
     # TODO_IMPROVE: And an event should be emitted...
 

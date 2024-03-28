@@ -79,12 +79,12 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 			return 0, 0, err
 		}
 
-		claimExpiredEvent := types.EventClaimSettled{
+		claimSettledEvent := types.EventClaimSettled{
 			Claim:         &claim,
 			ComputeUnits:  claimComputeUnits,
 			ProofRequired: isProofRequiredForClaim,
 		}
-		if err := ctx.EventManager().EmitTypedEvent(&claimExpiredEvent); err != nil {
+		if err := ctx.EventManager().EmitTypedEvent(&claimSettledEvent); err != nil {
 			return 0, 0, err
 		}
 
@@ -97,7 +97,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		logger.Info(fmt.Sprintf("Successfully settled claim %s at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	logger.Info(fmt.Sprintf("settled %d claims at block height %d", numClaimsSettled, blockHeight))
+	logger.Info(fmt.Sprintf("settled %d claims and expired %d at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	return numClaimsSettled, numClaimsExpired, nil
 

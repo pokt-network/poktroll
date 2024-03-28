@@ -161,7 +161,11 @@ func (k Keeper) SettleSessionAccounting(
 	}
 
 	// Update the application's on-chain stake
-	newAppStake := (*application.Stake).Sub(settlementAmt)
+	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
+	if err != nil {
+		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %s stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
+	}
+	fmt.Println("OLSH APP STAKE BEFORE AND AFTER", application.Stake, settlementAmt, newAppStake)
 	application.Stake = &newAppStake
 	k.applicationKeeper.SetApplication(ctx, application)
 

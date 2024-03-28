@@ -144,7 +144,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	if bal < amount {
+	if bal < int(amount) {
 		s.Fatalf("ERROR: account %s does not have enough upokt: %d < %d", accName, bal, amount)
 	}
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
@@ -157,41 +157,45 @@ func (s *suite) AnAccountExistsFor(accName string) {
 
 func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName string, expectedStakeChange int64, condition string) {
 	// Get previous stake
-	prevStakeStr, ok := s.scenarioState[accStakeKey(actorType, accName)]
+	stakeKey := accStakeKey(actorType, accName)
+	prevStakeAny, ok := s.scenarioState[stakeKey]
 	if !ok {
 		s.Fatalf("ERROR: no previous stake found for %s", accName)
 	}
-	prevStake, ok := prevStakeStr.(int64)
+	prevStake, ok := prevStakeAny.(int)
 	if !ok {
 		s.Fatalf("ERROR: previous stake for %s is not an int", accName)
 	}
 
 	// Get current stake
-	ok, currStake := s.getStakedAmount(actorType, accName)
+	currStake, ok := s.getStakedAmount(actorType, accName)
 	if !ok {
 		s.Fatalf("ERROR: no current stake found for %s", accName)
 	}
+	s.scenarioState[stakeKey] = currStake // save the stake for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevStake, int64(currStake), expectedStakeChange, accName, condition)
+	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition)
 }
 
 func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
 	// Get previous balance
-	prevBalanceStr, ok := s.scenarioState[accBalanceKey(accName)]
+	balanceKey := accBalanceKey(accName)
+	prevBalanceAny, ok := s.scenarioState[balanceKey]
 	if !ok {
 		s.Fatalf("ERROR: no previous balance found for %s", accName)
 	}
-	prevBalance, ok := prevBalanceStr.(int64)
+	prevBalance, ok := prevBalanceAny.(int)
 	if !ok {
 		s.Fatalf("ERROR: previous balance for %s is not an int", accName)
 	}
 
 	// Get current balance
 	currBalance := s.getAccBalance(accName)
+	s.scenarioState[balanceKey] = currBalance // save the balance for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevBalance, int64(currBalance), expectedStakeChange, accName, condition)
+	s.validateAmountChange(prevBalance, currBalance, expectedStakeChange, accName, condition)
 }
 
 func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
@@ -255,7 +259,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 }
 
 func (s *suite) TheAccountForIsStaked(actorType, accName string) {
-	found, stakeAmount := s.getStakedAmount(actorType, accName)
+	stakeAmount, found := s.getStakedAmount(actorType, accName)
 	if !found {
 		s.Fatalf("ERROR: account %s should be staked", accName)
 	}
@@ -263,15 +267,14 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 }
 
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
-	found, stakeAmount := s.getStakedAmount(actorType, accName)
+	_, found := s.getStakedAmount(actorType, accName)
 	if found {
 		s.Fatalf("ERROR: account %s should not be staked", accName)
 	}
-	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
-	found, stakeAmount := s.getStakedAmount(actorType, accName)
+	stakeAmount, found := s.getStakedAmount(actorType, accName)
 	if !found {
 		s.Fatalf("ERROR: account %s should be staked", accName)
 	}
@@ -348,7 +351,7 @@ func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName s
 	require.Contains(s, stdout, `"result":"0x`)
 }
 
-func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
+func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	s.Helper()
 	args := []string{
 		"query",
@@ -364,16 +367,22 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
 	amount := 0
 	if found {
-		escapedAddress := regexp.QuoteMeta(accNameToAddrMap[accName])
-		stakedAmountRe := regexp.MustCompile(`(?s)address: ` + escapedAddress + `\s+(?:.*?\s+)?stake:\s+amount: "(\d+)"`)
-		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
+		escapedAddress := accNameToAddrMap[accName]
+		re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
+		matches := re.FindAllStringSubmatch(res.Stdout, -1)
+
 		if len(matches) < 2 {
 			s.Fatalf("ERROR: no stake amount found for %s", accName)
 		}
-		amount, err = strconv.Atoi(matches[1])
-		require.NoError(s, err)
+		for _, match := range matches {
+			if match[1] == escapedAddress {
+				amount, err = strconv.Atoi(match[2])
+				require.NoError(s, err)
+				return amount, true
+			}
+		}
 	}
-	return found, amount
+	return 0, false
 }
 
 func (s *suite) buildAddrMap() {
@@ -436,7 +445,7 @@ func (s *suite) buildSupplierMap() {
 	}
 }
 
-func (s *suite) getAccBalance(accName string) int64 {
+func (s *suite) getAccBalance(accName string) int {
 	s.Helper()
 	args := []string{
 		"query",
@@ -453,13 +462,13 @@ func (s *suite) getAccBalance(accName string) int64 {
 	if len(match) < 2 {
 		s.Fatalf("ERROR: no balance found for %s", accName)
 	}
-	found, err := strconv.Atoi(match[1])
+	accBalance, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
-	return int64(found)
+	return accBalance
 }
 
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
-func (s *suite) validateAmountChange(prevAmount, currAmount, expectedAmountChange int64, accName, condition string) {
+func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountChange int64, accName, condition string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
 	// Verify if balance is more or less than before
 	switch condition {
