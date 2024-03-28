@@ -31,7 +31,7 @@ func TestGetTransportCreds(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			u, err := url.Parse(tc.hostUrl)
-			require.Nil(t, err)
+			require.NoError(t, err)
 
 			got, err := getTransportCreds(u)
 			require.Nil(t, err)
