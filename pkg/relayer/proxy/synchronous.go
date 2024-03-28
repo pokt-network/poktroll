@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 	"net/http"
@@ -249,6 +250,16 @@ func (sync *synchronousRPCServer) serveHTTP(
 		return nil, err
 	}
 
+	// Check if the response is gzip-compressed
+	var responseBody io.ReadCloser = httpResponse.Body
+	if httpResponse.Header.Get("Content-Encoding") == "gzip" {
+		responseBody, err = gzip.NewReader(httpResponse.Body)
+		if err != nil {
+			return nil, err
+		}
+		defer responseBody.Close()
+	}
+
 	// Build the relay response from the native service response
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
 	// and has to be the same as the relayResponse session header.
@@ -256,7 +267,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("relay_request_session_header", relayRequest.Meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
-	relayResponse, err := sync.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sync.newRelayResponse(responseBody, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
 	}

@@ -2,10 +2,12 @@ package proxy_test
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -515,6 +517,66 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			expectedErrCode: -32000,
 			expectedErrMsg:  "session expired", // Relay rejected by the supplier
+		},
+		// How do I do this? :D
+		{
+			desc: "Successful relay with gzip-compressed response",
+			relayerProxyBehavior: []func(*testproxy.TestBehavior){
+				testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierKeyName, blockHeight),
+				func(test *testproxy.TestBehavior) {
+					// Create a handler that serves gzip-compressed responses
+					handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Encoding", "gzip")
+						gzipWriter := gzip.NewWriter(w)
+						defer gzipWriter.Close()
+
+						responseData := []byte(`{"jsonrpc":"2.0","id":1,"result":"0x12a0f8b"}`)
+						gzipWriter.Write(responseData)
+					})
+
+					// Start the test server with the gzip-enabled handler
+					testServer := httptest.NewServer(handler)
+					defer testServer.Close()
+
+					// Create a new gzip-enabled proxied service configuration
+					gzipProxiedService := &config.RelayMinerProxyConfig{
+						ProxyName: "gzipProxy",
+						Type:      config.ProxyTypeHTTP,
+						Host:      "127.0.0.1:8082",
+						Suppliers: map[string]*config.RelayMinerSupplierConfig{
+							"gzipService": {
+								ServiceId: "gzipService",
+								Type:      config.ProxyTypeHTTP,
+								Hosts:     []string{"supplier:8548"},
+								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
+									Url: &url.URL{Scheme: "http", Host: testServer.URL[7:], Path: "/"},
+								},
+							},
+						},
+					}
+
+					// Add the gzip-enabled proxied service to the existing proxied services
+					proxiedServices["gzipProxy"] = gzipProxiedService
+				},
+				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
+				testproxy.WithDefaultApplication(appPrivateKey),
+				testproxy.WithDefaultSessionSupplier(supplierKeyName, "gzipService", appPrivateKey),
+			},
+			inputScenario: func(t *testing.T, test *testproxy.TestBehavior) (errCode int32, errMsg string) {
+				req := testproxy.GenerateRelayRequest(
+					test,
+					appPrivateKey,
+					"gzipService",
+					blockHeight,
+					testproxy.PrepareJsonRPCRequestPayload(),
+				)
+				req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
+
+				// Send the request to the gzip-enabled proxied service
+				return testproxy.MarshalAndSend(test, proxiedServices, "gzipProxy", "gzipService", req)
+			},
+			expectedErrCode: 0,
+			expectedErrMsg:  "",
 		},
 	}
 
