@@ -50,7 +50,7 @@ func TestConstructGRPCUrl(t *testing.T) {
 	tests := []struct {
 		desc    string
 		hostUrl string
-		want    string
+		expectedUrl    string
 	}{
 		{
 			desc:    "https results in grpcs",
