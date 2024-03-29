@@ -45,7 +45,9 @@ proxies:
     # 127.0.0.1 with a reverse proxy when there's another process on localhost
     # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
     # Required.
-    host: 127.0.0.1:8080
+
+    # Listen Address is more self-explainatory than a `host`.
+    listen_address: 127.0.0.1:8080
 
   # TODO_IMPROVE: https is not currently supported, but this is how it could potentially look.
   # - name: example-how-we-can-support-https
@@ -68,7 +70,11 @@ suppliers:
     # Type of how the supplier offers service through the network.
     # Must match the type of the proxy the supplier is connected to.
     # Required.
+
+    # Supplier stake has a `rpc_type: json_rpc`. Would it be easier if we consolidate them (so service inside supplier stake config shares more configuration with relayminer suppier service configs)?
     type: http
+
+    
     # Configuration of the service offered through RelayMiner.
     service_config:
       # URL RelayMiner proxies the requests to.
