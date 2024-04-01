@@ -376,13 +376,11 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	amount := 0
 	if found {
 		escapedAddress := accNameToAddrMap[accName]
-		// re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
-		re := regexp.MustCompile(`address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
+		re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
+		// re := regexp.MustCompile(`address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 		matches := re.FindAllStringSubmatch(res.Stdout, -1)
-		fmt.Println(res.Stdout)
-		fmt.Println(0, len(matches))
-		if len(matches) < 2 {
-			s.Fatalf("ERROR: no stake amount found for %s", accName)
+		if len(matches) < 1 {
+			s.Fatalf("ERROR: could not find any staked %ss", actorType)
 		}
 		for _, match := range matches {
 			fmt.Println("match: ", match[1], match[2])
@@ -393,6 +391,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 			}
 		}
 	}
+	s.Fatalf("ERROR: could not find stake amount for %s with name %s", actorType, accName)
 	return 0, false
 }
 
