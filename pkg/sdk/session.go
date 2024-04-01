@@ -42,7 +42,11 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 	sdk.serviceSessionSuppliersMu.RLock()
 	defer sdk.serviceSessionSuppliersMu.RUnlock()
 
-	latestBlockHeight := sdk.blockClient.LastNBlocks(ctx, 1)[0].Height()
+	blocks, err := sdk.blockClient.LastNBlocks(ctx, 1)
+	if err != nil || len(blocks) == 0 {
+		return nil, err // Or more specific error handling
+	}
+	latestBlockHeight := blocks[0].Height()
 
 	// Create the latestSessions map entry for the serviceId if it doesn't exist.
 	if _, ok := sdk.serviceSessionSuppliers[serviceId]; !ok {
@@ -72,6 +76,10 @@ func (sdk *poktrollSDK) GetSessionSupplierEndpoints(
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if session == nil {
+		return nil, errors.New("session is nil")
 	}
 
 	// Override the old Session and SessionSuppliers and construct the new one.
