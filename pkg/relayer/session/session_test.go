@@ -2,10 +2,12 @@ package session_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"testing"
 	"time"
 
 	"cosmossdk.io/depinject"
+	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -25,14 +27,17 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		sessionStartHeight = 1
 		sessionEndHeight   = 2
 	)
+
+	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
 	var (
-		zeroByteSlice = []byte{0}
-		_, ctx        = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
+		spec           = smt.NoPrehashSpec(sha256.New(), true)
+		emptyBlockHash = make([]byte, spec.PathHasherSize())
 	)
 
 	// Set up dependencies.
 	blocksObs, blockPublishCh := channel.NewReplayObservable[client.Block](ctx, 1)
-	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, blocksObs)
+	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
 
 	deps := depinject.Supply(blockClient, supplierClient)
@@ -60,7 +65,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Publish a block to the blockPublishCh to simulate non-actionable blocks.
-	noopBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionStartHeight)
+	noopBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionStartHeight)
 	blockPublishCh <- noopBlock
 
 	// Calculate the session grace period end block height to emit that block height
@@ -70,7 +75,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// Publish a block to the blockPublishCh to trigger claim creation for the session.
 	// TODO_TECHDEBT: assumes claiming at sessionGracePeriodEndBlockHeight is valid.
 	// This will likely change in future work.
-	triggerClaimBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionGracePeriodEndBlockHeight)
+	triggerClaimBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight)
 	blockPublishCh <- triggerClaimBlock
 
 	// TODO_IMPROVE: ensure correctness of persisted session trees here.
@@ -78,7 +83,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	// Publish a block to the blockPublishCh to trigger proof submission for the session.
 	// TODO_TECHDEBT: assumes proving at sessionGracePeriodEndBlockHeight + 1 is valid.
 	// This will likely change in future work.
-	triggerProofBlock := testblock.NewAnyTimesBlock(t, zeroByteSlice, sessionGracePeriodEndBlockHeight+1)
+	triggerProofBlock := testblock.NewAnyTimesBlock(t, emptyBlockHash, sessionGracePeriodEndBlockHeight+1)
 	blockPublishCh <- triggerProofBlock
 
 	// Wait a tick to allow the relayer sessions manager to process asynchronously.

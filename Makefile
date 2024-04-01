@@ -616,8 +616,14 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`
-	@printf "!!!!!!!!! YOU MUST RUN THE FOLLOWING COMMAND ONCE FOR E2E TESTS TO WORK AFTER THE NETWORK HAS STARTED !!!!!!!!!\n"\
-	"\t\tmake acc_initialize_pubkeys\n"
+	@echo "+----------------------------------------------------------------------------------+"
+	@echo "|                                                                                  |"
+	@echo "|     IMPORTANT: Please run the following command once to initialize E2E tests     |"
+	@echo "|     after the network has started:                                               |"
+	@echo "|         make acc_initialize_pubkeys                                              |"
+	@echo "|                                                                                  |"
+	@echo "+----------------------------------------------------------------------------------+"
+
 
 ##############
 ### Claims ###
