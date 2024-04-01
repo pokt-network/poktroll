@@ -61,7 +61,7 @@ func (k msgServer) StakeGateway(
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
 		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err))

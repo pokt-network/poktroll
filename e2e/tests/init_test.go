@@ -175,7 +175,7 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	s.scenarioState[stakeKey] = currStake // save the stake for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition)
+	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition, "stake")
 }
 
 func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
@@ -195,7 +195,7 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expec
 	s.scenarioState[balanceKey] = currBalance // save the balance for later
 
 	// Validate the change in stake
-	s.validateAmountChange(prevBalance, currBalance, expectedStakeChange, accName, condition)
+	s.validateAmountChange(prevBalance, currBalance, expectedStakeChange, accName, condition, "balance")
 }
 
 func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
@@ -376,9 +376,11 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	amount := 0
 	if found {
 		escapedAddress := accNameToAddrMap[accName]
-		re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
+		// re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
+		re := regexp.MustCompile(`address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 		matches := re.FindAllStringSubmatch(res.Stdout, -1)
-
+		fmt.Println(res.Stdout)
+		fmt.Println(0, len(matches))
 		if len(matches) < 2 {
 			s.Fatalf("ERROR: no stake amount found for %s", accName)
 		}
@@ -477,23 +479,23 @@ func (s *suite) getAccBalance(accName string) int {
 }
 
 // validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
-func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountChange int64, accName, condition string) {
+func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountChange int64, accName, condition, balanceType string) {
 	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
 	// Verify if balance is more or less than before
 	switch condition {
 	case "more":
 		if currAmount <= prevAmount {
-			s.Fatalf("ERROR: account %s expected to have more upokt but: %d <= %d", accName, currAmount, prevAmount)
+			s.Fatalf("ERROR: %s %s expected to have more upokt but: %d <= %d", accName, balanceType, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: account %s balance expected to increase by %d, but actually increased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: %s %s expected to increase by %d, but actually increased by %d", accName, balanceType, expectedAmountChange, deltaAmount)
 		}
 	case "less":
 		if currAmount >= prevAmount {
-			s.Fatalf("ERROR: account %s expected to have less upokt but: %d >= %d", accName, currAmount, prevAmount)
+			s.Fatalf("ERROR: %s %s expected to have less upokt but: %d >= %d", accName, balanceType, currAmount, prevAmount)
 		}
 		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: account %s balance expected to decrease by %d, but actually decreased by %d", accName, expectedAmountChange, deltaAmount)
+			s.Fatalf("ERROR: %s %s expected to decrease by %d, but actually decreased by %d", accName, balanceType, expectedAmountChange, deltaAmount)
 		}
 	default:
 		s.Fatalf("ERROR: unknown condition %s", condition)

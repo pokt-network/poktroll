@@ -38,6 +38,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 	blockHeight := ctx.BlockHeight()
 
+	logger.Info(fmt.Sprintf("found %d expiring claims at block height %d", len(expiringClaims), blockHeight))
+
 	for _, claim := range expiringClaims {
 		// Retrieve the number of compute units in the claim for the events emitted
 		root := (smt.MerkleRoot)(claim.GetRootHash())

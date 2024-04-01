@@ -150,27 +150,8 @@ func (k Keeper) SettleSessionAccounting(
 		settlementAmtuPOKT = sdk.NewCoins(*application.Stake)
 	}
 
-	// Undelegate the amount of uPOKT that need to be burnt from the application's stake.
-	// Since the application commits a certain amount of stake to the network to be able
-	// to pay for relay mining, this stake is taken from the funds "in escrow" rather
-	// than its balance.
-	if err := k.bankKeeper.UndelegateCoinsFromModuleToAccount(
-		ctx, apptypes.ModuleName, applicationAddress, settlementAmtuPOKT,
-	); err != nil {
-		return types.ErrTokenomicsApplicationUndelegationFailed.Wrapf("undelegating %s from application module in order to send to %s: %v", settlementAmt, applicationAddress, err)
-	}
-	logger.Info(fmt.Sprintf("undelegated %s from the application account with address %s to pay for on-chain service", settlementAmt, applicationAddress))
-
-	// Send the uPOKT to be burnt from the application's balance to the
-	// application module account.
-	if err := k.bankKeeper.SendCoinsFromAccountToModule(
-		ctx, applicationAddress, apptypes.ModuleName, settlementAmtuPOKT,
-	); err != nil {
-		return types.ErrTokenomicsApplicationModuleFeeFailed.Wrapf("sending %s from application %s module account: %v", settlementAmt, applicationAddress, err)
-	}
-	logger.Info(fmt.Sprintf("sent %s from application with address %s", settlementAmt, applicationAddress))
-
-	// Burn uPOKT from the application module account
+	// Burn uPOKT from the application module account which was held in escrow
+	// on behalf of the application account.
 	if err := k.bankKeeper.BurnCoins(
 		ctx, apptypes.ModuleName, settlementAmtuPOKT,
 	); err != nil {

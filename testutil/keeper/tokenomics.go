@@ -133,12 +133,6 @@ func TokenomicsKeeper(t testing.TB) (
 	mockBankKeeper.EXPECT().
 		SendCoinsFromModuleToAccount(gomock.Any(), suppliertypes.ModuleName, gomock.Any(), gomock.Any()).
 		AnyTimes()
-	mockBankKeeper.EXPECT().
-		SendCoinsFromAccountToModule(gomock.Any(), gomock.Any(), apptypes.ModuleName, gomock.Any()).
-		AnyTimes()
-	mockBankKeeper.EXPECT().
-		UndelegateCoinsFromModuleToAccount(gomock.Any(), apptypes.ModuleName, gomock.Any(), gomock.Any()).
-		AnyTimes()
 
 	// Mock the account keeper
 	mockAccountKeeper := mocks.NewMockAccountKeeper(ctrl)

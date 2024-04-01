@@ -59,7 +59,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the supplier to the staked supplier pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err))
 		return nil, err

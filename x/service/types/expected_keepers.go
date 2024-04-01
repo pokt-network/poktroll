@@ -17,8 +17,6 @@ type AccountKeeper interface {
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
 	SpendableCoins(context.Context, sdk.AccAddress) sdk.Coins
-	// Methods imported from bank should be defined here
-
 	SendCoinsFromAccountToModule(
 		ctx context.Context,
 		senderAddr sdk.AccAddress,

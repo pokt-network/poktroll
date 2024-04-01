@@ -16,13 +16,13 @@ type AccountKeeper interface {
 
 // BankKeeper defines the expected interface for the Bank module.
 type BankKeeper interface {
-	DelegateCoinsFromAccountToModule(
+	SendCoinsFromAccountToModule(
 		ctx context.Context,
 		senderAddr sdk.AccAddress,
 		recipientModule string,
 		amt sdk.Coins,
 	) error
-	UndelegateCoinsFromModuleToAccount(
+	SendCoinsFromModuleToAccount(
 		ctx context.Context,
 		senderModule string,
 		recipientAddr sdk.AccAddress,

@@ -56,7 +56,7 @@ A few changes were made, but the important pieces are the focus of each of the n
 
 ### After Change #2
 
-![Screenshot 2023-11-13 at 12 42 02 PM](https://github.com/pokt-network/pocket/assets/1892194/d1bc7be8-47c3-4358-be77-626533c7f98e)
+![Screenshot 2023-11-13 at 12 42 02 PM](https://github.com/pokt-network/poktroll/assets/1892194/d1bc7be8-47c3-4358-be77-626533c7f98e)
 
 ### Before Change #2
 
