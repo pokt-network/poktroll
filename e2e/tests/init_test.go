@@ -261,7 +261,7 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 	stakeAmount, found := s.getStakedAmount(actorType, accName)
 	if !found {
-		s.Fatalf("ERROR: account %s should be staked", accName)
+		s.Fatalf("ERROR: account %s of type %s SHOULD be staked", accName, actorType)
 	}
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
@@ -269,7 +269,7 @@ func (s *suite) TheAccountForIsStaked(actorType, accName string) {
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
 	_, found := s.getStakedAmount(actorType, accName)
 	if found {
-		s.Fatalf("ERROR: account %s should not be staked", accName)
+		s.Fatalf("ERROR: account %s of type SHOULD NOT be staked", accName, actorType)
 	}
 }
 
@@ -377,10 +377,9 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	if found {
 		escapedAddress := accNameToAddrMap[accName]
 		re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
-		// re := regexp.MustCompile(`address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 		matches := re.FindAllStringSubmatch(res.Stdout, -1)
 		if len(matches) < 1 {
-			s.Fatalf("ERROR: could not find any staked %ss", actorType)
+			return 0, false
 		}
 		for _, match := range matches {
 			fmt.Println("match: ", match[1], match[2])
@@ -391,7 +390,6 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 			}
 		}
 	}
-	s.Fatalf("ERROR: could not find stake amount for %s with name %s", actorType, accName)
 	return 0, false
 }
 
