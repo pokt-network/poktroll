@@ -144,6 +144,7 @@ func NewTxClient(
 		commitTimeoutHeightOffset: DefaultCommitTimeoutHeightOffset,
 		txErrorChans:              make(txErrorChansByHash),
 		txTimeoutPool:             make(txTimeoutPool),
+		connRetryLimit:            events.DefaultConnRetryLimit,
 	}
 
 	if err = depinject.Inject(
