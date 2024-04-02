@@ -104,7 +104,7 @@ func NewAnyTimeLastNBlocksBlockClient(
 	// returns the mock block.
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
 	blockClientMock.EXPECT().LastNBlocks(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
-	blockClientMock.EXPECT().LastBlock().Return(blockMock).AnyTimes()
+	blockClientMock.EXPECT().LastBlock(gomock.Any()).Return(blockMock).AnyTimes()
 
 	return blockClientMock
 }

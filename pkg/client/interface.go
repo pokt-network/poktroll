@@ -148,7 +148,7 @@ type BlockClient interface {
 	// the chain.
 	LastNBlocks(context.Context, int) []Block
 	// LastBlock returns the latest block that have been committed to the chain.
-	LastBlock() Block
+	LastBlock(context.Context) Block
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()
