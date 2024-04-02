@@ -91,8 +91,10 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 
+		deps = depinject.Configs(deps, depinject.Supply(cosmosClient))
+
 		// Requires a query client to be supplied to the deps
-		blockClient, err := block.NewBlockClient(ctx, cosmosClient, deps)
+		blockClient, err := block.NewBlockClient(ctx, deps)
 		if err != nil {
 			return nil, err
 		}

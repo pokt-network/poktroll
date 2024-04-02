@@ -25,7 +25,7 @@ func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	require.NotNil(t, queryClient)
 
 	deps := depinject.Supply(queryClient)
-	bClient, err := block.NewBlockClient(ctx, nil, deps)
+	bClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 
 	return bClient
