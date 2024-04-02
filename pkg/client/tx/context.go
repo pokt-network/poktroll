@@ -86,7 +86,7 @@ func (txCtx cosmosTxContext) EncodeTx(txBuilder cosmosclient.TxBuilder) ([]byte,
 // ABCI operation completes and returns a TxResponse of the transaction status at that point in time.
 func (txCtx cosmosTxContext) BroadcastTx(txBytes []byte) (*cosmostypes.TxResponse, error) {
 	clientCtx := cosmosclient.Context(txCtx.clientCtx)
-	return clientCtx.BroadcastTxAsync(txBytes)
+	return clientCtx.BroadcastTxSync(txBytes)
 }
 
 // QueryTx queries the transaction based on its hash and optionally provides proof

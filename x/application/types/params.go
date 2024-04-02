@@ -11,7 +11,7 @@ var (
 
 	KeyMaxDelegatedGateways = []byte("MaxDelegatedGateways")
 	// TODO: Determine the default value
-	DefaultMaxDelegatedGateways uint64 = 7
+	DefaultMaxDelegatedGateways uint64 = 10
 )
 
 // ParamKeyTable the param key table for launch module

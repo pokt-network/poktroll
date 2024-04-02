@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/term"
@@ -22,13 +25,15 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	"github.com/pokt-network/poktroll/x/session/keeper"
+	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
 const (
 	// TODO_BLOCKER: parameterize blocks per second
 	blocksPerSecond       = 1
-	localnetPoktrollWSURL = "ws://localhost:42069/websocket"
+	localnetPoktrollWSURL = "ws://localhost:36775/websocket"
 	// maxConcurrentBatchLimit is the maximum number of concurrent relay batches that can be sent.
 	//
 	// TODO_TECHDEBT: consider parameterizing for cases where all CPUs are not
@@ -39,11 +44,14 @@ const (
 )
 
 var (
-	//localnetAnvilURL   string
-	localnetGatewayURL string
 	// maxConcurrentRequestLimit is the maximum number of concurrent requests that can be made.
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
+	fundingAccountKeyName     = "pnf"
+	fundingAmount             = sdk.NewCoin("upokt", math.NewInt(10000000))
+	stakeAmount               = sdk.NewCoin("upokt", math.NewInt(10000))
+	applicationStakeAmount    = sdk.NewCoin("upokt", math.NewInt(100000))
+	anvilService              = &sharedtypes.Service{Id: "anvil"}
 )
 
 type relaysSuite struct {
@@ -52,19 +60,26 @@ type relaysSuite struct {
 	cancelCtx       context.CancelFunc
 	startTime       time.Time
 	blockClient     client.BlockClient
+	txContext       client.TxContext
 	blocksReplayObs client.BlockReplayObservable
 
 	shouldRelayBatchBlocksObs observable.Observable[*relayBatchNotif]
 
-	relaysSent     atomic.Uint64
-	relaysComplete atomic.Uint64
+	fundingAccountInfo *accountInfo
+	relaysSent         atomic.Uint64
+	relaysComplete     atomic.Uint64
 
 	startingBlockHeight int64
-	gatewayCount        atomic.Int64
-	appCount            atomic.Int64
-	supplierCount       atomic.Int64
 	relaysPerSec        atomic.Int64
 	nextRelaysPerSec    chan int64
+
+	provisionedGateways []*provisionedOffChainActor
+	activeGateways      []*provisionedOffChainActor
+
+	provisionedSuppliers []*provisionedOffChainActor
+	activeSuppliers      []*provisionedOffChainActor
+
+	applications []*accountInfo
 
 	totalExpectedRequests uint64
 
@@ -76,6 +91,17 @@ type relaysSuite struct {
 //	prevValue int64
 //	nextValue int64
 //}
+
+type accountInfo struct {
+	keyName    string
+	accAddress sdk.AccAddress
+	privKey    *secp256k1.PrivKey
+}
+
+type provisionedOffChainActor struct {
+	accountInfo
+	exposedServerAddress string
+}
 
 type sessionInfoNotif struct {
 	blockHeight             int64
@@ -115,13 +141,30 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		s.cancelCtx()
 	})
 
-	// TODO_TECHDEBT: add support for non-localnet environments.
-	localnetGatewayURL = "http://localhost:42069/anvil"
-
 	// Set up the block client.
 	s.blockClient = testblock.NewLocalnetClient(s.ctx, s)
+
+	// Setup the txClient
+	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
+
 	//blockClientCtx, cancelBlocksObs := context.WithCancel(s.ctx)
 	s.blocksReplayObs = s.blockClient.CommittedBlocksSequence(s.ctx)
+
+	s.initFundingAccount(fundingAccountKeyName)
+
+	// TODO_IN_THIS_COMMIT: source gateway config content
+	s.provisionedGateways = []*provisionedOffChainActor{
+		{accountInfo: accountInfo{keyName: `gateway1`}, exposedServerAddress: `http://localhost:42079`},
+		{accountInfo: accountInfo{keyName: `gateway2`}, exposedServerAddress: `http://localhost:42080`},
+		{accountInfo: accountInfo{keyName: `gateway3`}, exposedServerAddress: `http://localhost:42081`},
+	}
+
+	// TODO_IN_THIS_COMMIT: source supplier config content
+	s.provisionedSuppliers = []*provisionedOffChainActor{
+		{accountInfo: accountInfo{keyName: `supplier1`}, exposedServerAddress: `http://relayminer1:8545`},
+		{accountInfo: accountInfo{keyName: `supplier2`}, exposedServerAddress: `http://relayminer2:8545`},
+		{accountInfo: accountInfo{keyName: `supplier3`}, exposedServerAddress: `http://relayminer3:8545`},
+	}
 
 	//s.blocksReplayObs = s.blockClient.CommittedBlocksSequence(blockClientCtx)
 	//s.Cleanup(func() { cancelBlocksObs() })
@@ -133,32 +176,45 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 	// TODO_IN_THIS_COMMIT: account the difference between initially staked actors in
 	// configured network and the target numbers initial actors.
 
+	// Stake initial supplier(s)
+	supplierCount := table.Cell(3, 1).Int64()
+	s.initProvisionedActors(s.provisionedSuppliers)
+	s.activateInitialSuppliers(int(supplierCount))
+
 	// Stake initial gateway(s)
-	s.gatewayCount.Store(1)
+	gatewayCount := table.Cell(1, 1).Int64()
+	s.initProvisionedActors(s.provisionedGateways)
+	s.activateInitialGateways(int(gatewayCount))
+
+	s.waitForNextBlock()
 
 	// Stake initial application(s)
-	s.appCount.Store(1)
-
-	// Stake initial supplier(s)
-	s.supplierCount.Store(1)
+	appCount := table.Cell(2, 1).Int64()
+	s.addInitialApplications(int(appCount))
 
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	gatewayInc := table.Cell(1, 1).Int64()
+
 	gatewayBlockIncRate := table.Cell(1, 2).Int64()
-	maxGateways := table.Cell(1, 3).Int64()
 	require.Truef(s, gatewayBlockIncRate%keeper.NumBlocksPerSession == 0, "gateway increment rate must be a multiple of the session length")
+
+	maxGateways := table.Cell(1, 3).Int64()
+	require.Truef(s, len(s.provisionedGateways) >= int(maxGateways), "provisioned gateways must be greater or equal than the max gateways to be staked")
+
+	supplierInc := table.Cell(3, 1).Int64()
+
+	supplierBlockIncRate := table.Cell(3, 2).Int64()
+	require.Truef(s, supplierBlockIncRate%keeper.NumBlocksPerSession == 0, "supplier increment rate must be a multiple of the session length")
+
+	maxSuppliers := table.Cell(3, 3).Int64()
+	require.Truef(s, len(s.provisionedSuppliers) >= int(maxSuppliers), "provisioned suppliers must be greater or equal than the max suppliers to be staked")
 
 	appInc := table.Cell(2, 1).Int64()
 	appBlockIncRate := table.Cell(2, 2).Int64()
 	maxApps := table.Cell(2, 3).Int64()
 	require.Truef(s, appBlockIncRate%keeper.NumBlocksPerSession == 0, "app increment rate must be a multiple of the session length")
-
-	supplierInc := table.Cell(3, 1).Int64()
-	supplierBlockIncRate := table.Cell(3, 2).Int64()
-	maxSuppliers := table.Cell(3, 3).Int64()
-	require.Truef(s, supplierBlockIncRate%keeper.NumBlocksPerSession == 0, "supplier increment rate must be a multiple of the session length")
 
 	batchNumber := new(atomic.Int64)
 	// Start at batch number -1 ... TODO: explain why - modulus operator
@@ -175,13 +231,15 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			ctx context.Context,
 			block client.Block,
 		) (*sessionInfoNotif, bool) {
-			sessionNum := block.Height() / keeper.NumBlocksPerSession
-			sessionBlockIdx := block.Height() % keeper.NumBlocksPerSession
-			sessionBlocksRemaining := keeper.NumBlocksPerSession - sessionBlockIdx
+			blockHeight := block.Height()
+			sessionNum := keeper.GetSessionNumber(blockHeight)
+			sessionStartBlockHeight := keeper.GetSessionStartBlockHeight(blockHeight)
+			sessionEndBlockHeight := keeper.GetSessionEndBlockHeight(blockHeight)
+			sessionBlocksRemaining := sessionEndBlockHeight - blockHeight
 
 			// If the current block is not the first block of the session, wait for the
 			// next session to start.
-			if waitingForFirstSession.Load() && sessionBlockIdx != 0 {
+			if waitingForFirstSession.Load() && blockHeight != sessionStartBlockHeight {
 				clearLine(s)
 				logger.Info().
 					Int64("block_height", block.Height()).
@@ -192,12 +250,11 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			}
 			waitingForFirstSession.CompareAndSwap(true, false)
 
-			// TODO_IN_THIS_COMMIT: check for off-by-one errors.
 			return &sessionInfoNotif{
-				blockHeight:             block.Height(),
+				blockHeight:             blockHeight,
 				sessionNumber:           sessionNum,
-				sessionStartBlockHeight: sessionNum * keeper.NumBlocksPerSession,
-				sessionEndBlockHeight:   (sessionNum + 1) * keeper.NumBlocksPerSession,
+				sessionStartBlockHeight: sessionStartBlockHeight,
+				sessionEndBlockHeight:   sessionEndBlockHeight,
 			}, false
 		},
 	)
@@ -218,19 +275,19 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// Otherwise, we would need to check if any block in the next session
 			// is an increment height.
 
-			nextSessionHeight := sessionInfo.sessionEndBlockHeight + 1
+			nextSessionNum := sessionInfo.sessionNumber + 1
 
 			// TODO_TECHDEBT(#21): replace with gov param query when available.
 			gatewaySessionIncRate := gatewayBlockIncRate / keeper.NumBlocksPerSession
-			isGatewayStakeHeight := nextSessionHeight%(gatewaySessionIncRate) == 0
+			isGatewayStakeHeight := nextSessionNum%(gatewaySessionIncRate) == 0
 
 			// TODO_TECHDEBT(#21): replace with gov param query when available.
 			appSessionIncRate := appBlockIncRate / keeper.NumBlocksPerSession
-			isAppStakeHeight := nextSessionHeight%(appSessionIncRate) == 0
+			isAppStakeHeight := nextSessionNum%(appSessionIncRate) == 0
 
 			// TODO_TECHDEBT(#21): replace with gov param query when available.
 			supplierSessionIncRate := supplierBlockIncRate / keeper.NumBlocksPerSession
-			isSupplierStakeHeight := nextSessionHeight%(supplierSessionIncRate) == 0
+			isSupplierStakeHeight := nextSessionNum%(supplierSessionIncRate) == 0
 
 			isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 
@@ -381,6 +438,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 	// tickerCircuitBreaker is used to limit the concurrency of batches and error
 	// if the limit would be exceeded.
+	// TODO_DISCUSS: Are we really going to have concurrent batches?
 	tickerCircuitBreaker := sync2.NewCircuitBreaker(maxConcurrentBatchLimit)
 	// batchLimiter limits request concurrency to match the maximum supported by hardware.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
@@ -400,6 +458,8 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 				}
 
 				batchWaitGroup.Add(int(relayRate))
+				relayInterval := time.Second / time.Duration(relayRate)
+				startTime := time.Now()
 				for i := int64(0); i < relayRate; i++ {
 					// Abort remaining relays in this batch if the context was cancelled.
 					select {
@@ -410,21 +470,25 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerSecondAsFollows(ta
 
 					// Each relay should not block on any other relay; however,
 					// maximum concurrency is limited by hardware capabilities.
-					batchLimiter.Go(s.ctx, func() {
-						s.relaysSent.Add(1)
+					batchLimiter.Go(s.ctx, func(i int64) func() {
+						return func() {
+							s.relaysSent.Add(1)
 
-						// Permute & distribute relays across all applications and gateways...
+							// Distribute relays evenly across the nominal relay interval.
+							elapsedTime := time.Since(startTime)
+							idealTime := time.Duration(i) * relayInterval
+							if elapsedTime < idealTime {
+								time.Sleep(idealTime - elapsedTime)
+							}
 
-						// Send relay...
-						// TODO: resume here!!!
-						// TODO: resume here!!!
-						// TODO: resume here!!!
-						time.Sleep(time.Millisecond * 250)
+							// Permute & distribute relays across all applications and gateways...
+							s.sendRelay(i)
 
-						s.relaysComplete.Add(1)
+							s.relaysComplete.Add(1)
 
-						batchWaitGroup.Done()
-					})
+							batchWaitGroup.Done()
+						}
+					}(i))
 				}
 
 				// relayRate remains at maxRelayRate for relayRateBlocksInc blocks worth of batches.
@@ -468,7 +532,7 @@ func (s *relaysSuite) incrementGateways(
 	gatewayInc,
 	maxGateways int64,
 ) {
-	gatewayCount := s.gatewayCount.Load()
+	gatewayCount := int64(s.getActiveGatewaysCount())
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -502,12 +566,11 @@ func (s *relaysSuite) incrementGateways(
 		)
 
 		for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-			go func() {
-				time.Sleep(250)
-
-				s.gatewayCount.Add(1)
+			gateway := s.provisionedGateways[gatewayCount+gwIdx]
+			go func(gw *provisionedOffChainActor) {
+				s.activateGateway(gw)
 				notif.waitGroup.Done()
-			}()
+			}(gateway)
 		}
 	}()
 }
@@ -517,7 +580,7 @@ func (s *relaysSuite) incrementApps(
 	appIncAmt,
 	maxApps int64,
 ) {
-	appCount := s.appCount.Load()
+	appCount := int64(s.getApplicationsCount())
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -551,12 +614,10 @@ func (s *relaysSuite) incrementApps(
 		)
 
 		for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
-			go func() {
-				time.Sleep(250)
-
-				s.appCount.Add(1)
+			go func(idx int64) {
+				s.addApplication(int(idx))
 				notif.waitGroup.Done()
-			}()
+			}(appIdx)
 		}
 	}()
 }
@@ -566,7 +627,7 @@ func (s *relaysSuite) incrementSuppliers(
 	supplierInc,
 	maxSuppliers int64,
 ) {
-	supplierCount := s.supplierCount.Load()
+	supplierCount := int64(s.getActiveSuppliersCount())
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -600,12 +661,11 @@ func (s *relaysSuite) incrementSuppliers(
 		)
 
 		for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-			go func() {
-				time.Sleep(250)
-
-				s.supplierCount.Add(1)
+			supplier := s.provisionedSuppliers[supplierCount+supplierIdx]
+			go func(supp *provisionedOffChainActor) {
+				s.activateSupplier(supp)
 				notif.waitGroup.Done()
-			}()
+			}(supplier)
 		}
 	}()
 }

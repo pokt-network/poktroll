@@ -8,14 +8,14 @@ Feature: Loading gateway server with relays
       | gateway     | 1     |
       | application | 1     |
       | supplier    | 1     |
-    And more actors are staked as follows:
-      | actor       | actor inc rate | blocks per inc | max actors |
-      | gateway     | 1              | 4              | 4          |
-      | application | 1              | 4              | 3          |
-      | supplier    | 1              | 4              | 2          |
-    When a load of concurrent relay requests are sent per second as follows:
-      | start relay rate | relay inc rate | blocks per inc | max relays rate |
-      | 5                | 5              | 4              | 20              |
+    #And more actors are staked as follows:
+    #  | actor       | actor inc rate | blocks per inc | max actors |
+    #  | gateway     | 1              | 4              | 3          |
+    #  | application | 2              | 4              | 5          |
+    #  | supplier    | 1              | 4              | 3          |
+    #When a load of concurrent relay requests are sent per second as follows:
+    #  | start relay rate | relay inc rate | blocks per inc | max relays rate |
+    #  | 5                | 10             | 4              | 25              |
 
 #    Examples:
 #      |  |  |
