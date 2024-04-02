@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	block "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -38,8 +38,10 @@ func (sdk *poktrollSDK) buildDeps(
 	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 
+	blockClientConnRetryLimitOpt := block.WithConnRetryLimit(config.ConnRetryLimit)
+
 	// Create and supply the block client that depends on the events query client
-	blockClient, err := block.NewBlockClient(ctx, deps)
+	blockClient, err := block.NewBlockClient(ctx, deps, blockClientConnRetryLimitOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +85,10 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
 
+	delegationClientConnRetryLimitOpt := delegation.WithConnRetryLimit(config.ConnRetryLimit)
+
 	// Create and supply the delegation client
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps, delegationClientConnRetryLimitOpt)
 	if err != nil {
 		return nil, err
 	}

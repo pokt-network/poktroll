@@ -46,18 +46,29 @@ const (
 func NewDelegationClient(
 	ctx context.Context,
 	deps depinject.Config,
-) (client.DelegationClient, error) {
-	client, err := events.NewEventsReplayClient[client.Redelegation](
+	opts ...client.DelegationClientOption,
+) (_ client.DelegationClient, err error) {
+	dClient := &delegationClient{
+		connRetryLimit: events.DefaultConnRetryLimit,
+	}
+
+	for _, opt := range opts {
+		opt(dClient)
+	}
+
+	dClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Redelegation](
 		ctx,
 		deps,
 		delegationEventQuery,
 		newRedelegationEventFactoryFn(),
 		defaultRedelegationsReplayLimit,
+		events.WithConnRetryLimit[client.Redelegation](dClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &delegationClient{eventsReplayClient: client}, nil
+
+	return dClient, nil
 }
 
 // delegationClient is a wrapper around an EventsReplayClient that implements
@@ -69,6 +80,11 @@ type delegationClient struct {
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Redelegation objects and to correctly return a RedelegationReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Redelegation]
+
+	// connRetryLimit is the number of times the underlying replay client
+	// should retry in the event that it encounters an error or its connection is interrupted.
+	// If connRetryLimit is < 0, it will retry indefinitely.
+	connRetryLimit int
 }
 
 // RedelegationsSequence returns a replay observable of Redelgation events

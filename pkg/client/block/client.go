@@ -35,18 +35,29 @@ const (
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-) (client.BlockClient, error) {
-	client, err := events.NewEventsReplayClient[client.Block](
+	opts ...client.BlockClientOption,
+) (_ client.BlockClient, err error) {
+	bClient := &blockClient{
+		connRetryLimit: events.DefaultConnRetryLimit,
+	}
+
+	for _, opt := range opts {
+		opt(bClient)
+	}
+
+	bClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Block](
 		ctx,
 		deps,
 		committedBlocksQuery,
 		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
+		events.WithConnRetryLimit[client.Block](bClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &blockClient{eventsReplayClient: client}, nil
+
+	return bClient, nil
 }
 
 // blockClient is a wrapper around an EventsReplayClient that implements the
@@ -58,6 +69,11 @@ type blockClient struct {
 	// These enable the EventsReplayClient to correctly map the raw event bytes
 	// to Block objects and to correctly return a BlockReplayObservable
 	eventsReplayClient client.EventsReplayClient[client.Block]
+
+	// connRetryLimit is the number of times the underlying replay client
+	// should retry in the event that it encounters an error or its connection is interrupted.
+	// If connRetryLimit is < 0, it will retry indefinitely.
+	connRetryLimit int
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.

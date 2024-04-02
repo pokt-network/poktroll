@@ -58,6 +58,11 @@ func OnError(
 				return nil
 			}
 
+			if retryLimit < 0 {
+				time.Sleep(retryDelay)
+				continue
+			}
+
 			if retryCount >= retryLimit {
 				return err
 			}
