@@ -9,25 +9,24 @@ import (
 // be used to subscribe to onchain events and query the chain via a client
 // context or send transactions via a tx client context.
 func RPCToWebsocketURL(hostUrl *url.URL) string {
-	if hostUrl.Scheme == "http" {
+	switch hostUrl.Scheme {
+	case "http":
 		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
-	} else if hostUrl.Scheme == "ws" {
+	case "ws":
 		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
+	default:
+		return fmt.Sprintf("wss://%s/websocket", hostUrl.Host)
 	}
-
-	return fmt.Sprintf("wss://%s/websocket", hostUrl.Host)
 }
 
-// ConstructGRPCUrl constructs a gRPC url string ensuring it contains either the scheme "grpcs" or "grpc"
-// This allows the SDK client control whether a TLS-enabled connection is used and some flexibility when specifying the gRPC URL.
+// ConstructGRPCUrl constructs a gRPC url string ensuring it contains either the scheme "https" or "http"
 func ConstructGRPCUrl(hostUrl *url.URL) string {
-	if hostUrl.Scheme == "http" {
-		return fmt.Sprintf("grpc://%s", hostUrl.Host)
-	} else if hostUrl.Scheme == "grpc" {
-		return fmt.Sprintf("grpc://%s", hostUrl.Host)
-	} else if hostUrl.Scheme == "tcp" {
+	switch hostUrl.Scheme {
+	case "http":
+		return fmt.Sprintf("http://%s", hostUrl.Host)
+	case "tcp":
 		return fmt.Sprintf("tcp://%s", hostUrl.Host)
+	default:
+		return fmt.Sprintf("https://%s", hostUrl.Host)
 	}
-
-	return fmt.Sprintf("grpcs://%s", hostUrl.Host)
 }

@@ -53,24 +53,9 @@ func TestConstructGRPCUrl(t *testing.T) {
 		expectedUrl string
 	}{
 		{
-			desc:        "https results in grpcs",
-			hostUrl:     "https://poktroll.com",
-			expectedUrl: "grpcs://poktroll.com",
-		},
-		{
-			desc:        "https with port results in grpcs",
+			desc:        "https with port",
 			hostUrl:     "https://poktroll.com:443",
-			expectedUrl: "grpcs://poktroll.com:443",
-		},
-		{
-			desc:        "grpcs stays grpcs",
-			hostUrl:     "grpcs://poktroll.com",
-			expectedUrl: "grpcs://poktroll.com",
-		},
-		{
-			desc:        "grpc stays grpc",
-			hostUrl:     "grpc://poktroll.com",
-			expectedUrl: "grpc://poktroll.com",
+			expectedUrl: "https://poktroll.com:443",
 		},
 		{
 			desc:        "tcp stays tcp",
@@ -78,14 +63,9 @@ func TestConstructGRPCUrl(t *testing.T) {
 			expectedUrl: "tcp://poktroll.com",
 		},
 		{
-			desc:        "http results in grpc",
-			hostUrl:     "http://poktroll.com",
-			expectedUrl: "grpc://poktroll.com",
-		},
-		{
-			desc:        "default is grpcs",
+			desc:        "default is https",
 			hostUrl:     "other://poktroll.com",
-			expectedUrl: "grpcs://poktroll.com",
+			expectedUrl: "https://poktroll.com",
 		},
 	}
 

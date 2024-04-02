@@ -106,7 +106,7 @@ func (sdk *poktrollSDK) buildDeps(
 func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
 	urlString := ConstructGRPCUrl(url)
 
-	if strings.HasPrefix(urlString, "grpcs://") {
+	if strings.HasPrefix(urlString, "https://") {
 		return credentials.NewTLS(&tls.Config{}), nil
 	}
 

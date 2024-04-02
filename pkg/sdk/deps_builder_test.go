@@ -17,12 +17,12 @@ func TestGetTransportCreds(t *testing.T) {
 		expectedCredentials credentials.TransportCredentials
 	}{
 		{
-			desc:                "Test grpcs scheme",
-			hostUrl:             "grpcs://poktroll.com",
+			desc:                "Test https scheme",
+			hostUrl:             "https://poktroll.com",
 			expectedCredentials: credentials.NewTLS(&tls.Config{}),
 		},
 		{
-			desc:                "Test any non-grpcs scheme",
+			desc:                "Test any non-https scheme",
 			hostUrl:             "http://poktroll.com",
 			expectedCredentials: insecure.NewCredentials(),
 		},
