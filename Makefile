@@ -7,6 +7,8 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+# Search for `func TestModuleAddress` in the codebase to get an understanding
+# of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
@@ -582,11 +584,9 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 	@echo "Querying spendable balance for $(ACC)"
 	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-# Search for `func TestModuleAddress` in the codebase to get an understanding
-# of how we got these values.
 .PHONY: acc_balance_query_modules
 acc_balance_query_modules: ## Query the balance of the network level module
-	@echo "### Applicaiton ###"
+	@echo "### Application ###"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
 	@echo "### Supplier ###"
 	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
@@ -617,7 +617,6 @@ acc_balance_total_supply: ## Query the total supply of the network
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
-# @printf "Addresses: ${ADDRESSES}"
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
@@ -626,26 +625,6 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE) \
 			--chain-id $(CHAIN_ID);)
-
-# TODO_HACK: Until we figure out how to give module addresses a default value on genesis.
-# See `config.yml` for more details. When the escrowed balance follow below zero, we
-# hit a consensus error.
-# TODO_IN_THIS_PR: Make sure there's a check so we don't undelegate more coins than
-# what's available.
-# TODO: Figure out how to recover from consensus failures.
-# $(eval ADDRESSES= $(APPLICATION_MODULE_ADDRESS) $(SUPPLIER_MODULE_ADDRESS) $(GATEWAY_MODULE_ADDRESS) $(SERVICE_MODULE_ADDRESS))
-# $(eval i=1) # Initialize counter
-# @echo $(i)
-# $(foreach addr,$(ADDRESSES),\
-# 	echo $(addr);\
-# 	poktrolld tx bank send \
-# 		$(PNF_ADDR) $(addr) 10000000upokt \
-# 		--yes \
-# 		--home=$(POKTROLLD_HOME) \
-# 		--node $(POCKET_NODE) \
-# 		--chain-id $(CHAIN_ID); \
-# 	$(eval i=$$(shell expr $(i) + 1))\
-	)
 
 .PHONY: acc_initialize_pubkeys_warn_message
 acc_initialize_pubkeys_warn_message: ## Print a warning message about the need to run `make acc_initialize_pubkeys`

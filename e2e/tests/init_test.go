@@ -50,6 +50,7 @@ func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
 
+
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
