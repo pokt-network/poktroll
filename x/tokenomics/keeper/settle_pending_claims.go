@@ -137,6 +137,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // isProofRequiredForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
+// TODO_TECHDEBT(#419): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) (bool, error) {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store.
