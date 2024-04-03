@@ -146,8 +146,9 @@ func (b *blockClient) getInitialBlock(ctx context.Context) error {
 	// because it is guaranteed to be notified on block events in #goForEachBLockEvent().
 	var initialBlock client.Block
 	select {
-	case initialBlock = <-b.latestBlockReplayObs.Subscribe(ctx).Ch():
 	case initialBlock = <-blockQueryResultCh:
+	case <-b.latestBlockReplayObs.Subscribe(ctx).Ch():
+		return nil
 	case err := <-queryErrCh:
 		return err
 	}
