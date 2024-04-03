@@ -58,15 +58,16 @@ func NewBlockClient(
 	bClient := &blockClient{
 		eventsReplayClient:   eventsReplayClient,
 		latestBlockReplayObs: latestBlockReplayObs,
+		latestBlockPublishCh: latestBlockPublishCh,
 	}
 
 	if err := depinject.Inject(deps, &bClient.queryClient); err != nil {
 		return nil, err
 	}
 
-	bClient.forEachBlockEvent(ctx, latestBlockPublishCh)
+	bClient.forEachBlockEvent(ctx)
 
-	if err := bClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	if err := bClient.getInitialBlock(ctx); err != nil {
 		return nil, err
 	}
 
@@ -92,6 +93,9 @@ type blockClient struct {
 	// the block query client & the events replay client. It is the "canonical"
 	// source of block notifications for blockClient.
 	latestBlockReplayObs observable.ReplayObservable[client.Block]
+
+	// latestBlockPublishCh is the publish channel that corresponds to latestBlockReplayObs.
+	latestBlockPublishCh chan<- client.Block
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
@@ -114,21 +118,22 @@ func (b *blockClient) LastBlock(ctx context.Context) (block client.Block) {
 // and closes all downstream connections.
 func (b *blockClient) Close() {
 	b.eventsReplayClient.Close()
+	close(b.latestBlockPublishCh)
 }
 
 // forEachBlockEvent asynchronously observes block event notifications from the
 // EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
-func (b *blockClient) forEachBlockEvent(ctx context.Context, latestBlockPublishCh chan<- client.Block) {
+func (b *blockClient) forEachBlockEvent(ctx context.Context) {
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
-			latestBlockPublishCh <- block
+			b.latestBlockPublishCh <- block
 		},
 	)
 }
 
 // getInitialBlock requests the latest block while concurrently waiting for the
 // next block event, publishing whichever occurs first to latestBlockPublishCh.
-func (b *blockClient) getInitialBlock(ctx context.Context, latestBlockPublishCh chan<- client.Block) error {
+func (b *blockClient) getInitialBlock(ctx context.Context) error {
 	blockQueryResultCh := make(chan client.Block)
 
 	// Query the latest block asynchronously.
@@ -148,7 +153,7 @@ func (b *blockClient) getInitialBlock(ctx context.Context, latestBlockPublishCh 
 	}
 
 	// Publish the fastest result as the initial block.
-	latestBlockPublishCh <- initialBlock
+	b.latestBlockPublishCh <- initialBlock
 	return nil
 }
 
