@@ -205,16 +205,16 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForTxResultEvent(targetAction string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClientState, found := s.scenarioState[txResultEventsReplayClientKey]
+	txResultEventsReplayClientState, found := s.scenarioState[txResultEventsReplayClientKey]
 	require.True(s, found, fmt.Sprintf("%s not found in scenarioState", txResultEventsReplayClientKey))
 
-	eventsReplayClient, ok := eventsReplayClientState.(client.EventsReplayClient[*abci.TxResult])
+	txResultEventsReplayClient, ok := txResultEventsReplayClientState.(client.EventsReplayClient[*abci.TxResult])
 	require.True(s, ok, fmt.Sprintf("%s not of the right type", txResultEventsReplayClientKey))
 	require.NotNil(s, eventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*abci.TxResult](
-		ctx, eventsReplayClient.EventsSequence(ctx),
+		ctx, txResultEventsReplayClient.EventsSequence(ctx),
 		func(_ context.Context, txResult *abci.TxResult) {
 			if txResult == nil {
 				return
