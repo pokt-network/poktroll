@@ -48,9 +48,7 @@ func NewDelegationClient(
 	deps depinject.Config,
 	opts ...client.DelegationClientOption,
 ) (_ client.DelegationClient, err error) {
-	dClient := &delegationClient{
-		connRetryLimit: events.DefaultConnRetryLimit,
-	}
+	dClient := &delegationClient{}
 
 	for _, opt := range opts {
 		opt(dClient)

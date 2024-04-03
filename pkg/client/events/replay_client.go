@@ -114,6 +114,7 @@ func NewEventsReplayClient[T any](
 		queryString:         queryString,
 		eventDecoder:        newEventFn,
 		replayObsBufferSize: replayObsBufferSize,
+		connRetryLimit:      DefaultConnRetryLimit,
 	}
 
 	for _, opt := range opts {
@@ -137,7 +138,7 @@ func NewEventsReplayClient[T any](
 	}
 
 	// Concurrently publish events to the observable emitted by replayObsCache.
-	go rClient.goPublishEvents(ctx, rClient.connRetryLimit)
+	go rClient.goPublishEvents(ctx)
 
 	return rClient, nil
 }
@@ -198,13 +199,13 @@ func (rClient *replayClient[T]) Close() {
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,
 // re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
-func (rClient *replayClient[T]) goPublishEvents(ctx context.Context, retryLimit int) {
+func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to replayObsCachePublishCh such that
 	// replayObsCache.Last(ctx, 1) will return it.
 	publishErr := retry.OnError(
 		ctx,
-		retryLimit,
+		rClient.connRetryLimit,
 		eventsBytesRetryDelay,
 		eventsBytesRetryResetTimeout,
 		"goPublishEvents",
@@ -282,10 +283,10 @@ func (rClient *replayClient[T]) retryPublishEventsFactory(ctx context.Context) f
 // If deserialisation failed because the event bytes were for a different event
 // type, this value is also skipped. If deserialisation failed for some other
 // reason, this function panics.
-func (rClient *replayClient[T]) newMapEventsBytesToTFn(errCh chan<- error, cancel context.CancelFunc) func(
-	context.Context,
-	either.Bytes,
-) (T, bool) {
+func (rClient *replayClient[T]) newMapEventsBytesToTFn(
+	errCh chan<- error,
+	cancelEventsBzObs context.CancelFunc,
+) func(context.Context, either.Bytes) (T, bool) {
 	return func(
 		ctx context.Context,
 		eitherEventBz either.Bytes,
@@ -311,8 +312,12 @@ func (rClient *replayClient[T]) newMapEventsBytesToTFn(errCh chan<- error, cance
 
 			// Don't publish (skip) if there was some other kind of error,
 			// and send that error on the errCh.
-			cancel()
 			errCh <- err
+
+			// The source observable may not necessarily close automatically in this case,
+			// cancel its context to ensure its closure and prevent a memory/goroutine leak.
+			cancelEventsBzObs()
+
 			return *new(T), true
 		}
 		return event, false

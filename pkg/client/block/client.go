@@ -37,9 +37,7 @@ func NewBlockClient(
 	deps depinject.Config,
 	opts ...client.BlockClientOption,
 ) (_ client.BlockClient, err error) {
-	bClient := &blockClient{
-		connRetryLimit: events.DefaultConnRetryLimit,
-	}
+	bClient := &blockClient{}
 
 	for _, opt := range opts {
 		opt(bClient)

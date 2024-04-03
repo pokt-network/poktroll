@@ -123,7 +123,6 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 		msgSenderQuery,
 		tx.UnmarshalTxResult,
 		testEventsReplayClientBufferSize,
-		events.DefaultConnRetryLimit,
 	)
 	require.NoError(s, err)
 	s.scenarioState[txResultEventsReplayClientKey] = txSendEventsReplayClient
