@@ -21,50 +21,47 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	}
 
 	// Check if the application already exists or not
-	var (
-		err             error
-		coinsToDelegate sdk.Coin
-	)
-
+	var err error
+	var coinsToEscrow sdk.Coin
 	foundApp, isAppFound := k.GetApplication(ctx, msg.Address)
 	if !isAppFound {
-		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Application not found. Creating new application for address %q", msg.Address))
 		foundApp = k.createApplication(ctx, msg)
-		coinsToDelegate = *msg.Stake
+		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Application found. About to try and update application for address %q", msg.Address))
 		currAppStake := *foundApp.Stake
 		if err = k.updateApplication(ctx, &foundApp, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update application for address %s due to error %v", msg.Address, err))
+			logger.Error(fmt.Sprintf("could not update application for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToDelegate, err = (*msg.Stake).SafeSub(currAppStake)
-		logger.Debug(fmt.Sprintf("Application is going to delegate an additional %+v coins", coinsToDelegate))
+		coinsToEscrow, err = (*msg.Stake).SafeSub(currAppStake)
+		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Must always stake or upstake (> 0 delta)
-	if coinsToDelegate.IsZero() {
-		logger.Warn(fmt.Sprintf("Application %s must delegate more than 0 additional coins", msg.Address))
-		return nil, types.ErrAppInvalidStake.Wrapf("application %s must delegate more than 0 additional coins", msg.Address)
+	if coinsToEscrow.IsZero() {
+		logger.Warn(fmt.Sprintf("Application %q must escrow more than 0 additional coins", msg.Address))
+		return nil, types.ErrAppInvalidStake.Wrapf("application %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the application
 	appAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Error(fmt.Sprintf("could not parse address %q", msg.Address))
 		return nil, err
 	}
 
 	// Send the coins from the application to the staked application pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, appAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, appAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, appAddress, types.ModuleName, err))
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Successfully delegated %v coins from %s to %s module account", coinsToDelegate, appAddress, types.ModuleName))
+	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, appAddress, types.ModuleName))
 
 	// Update the Application in the store
 	k.SetApplication(ctx, foundApp)
@@ -92,7 +89,7 @@ func (k msgServer) updateApplication(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != app.Address {
-		return types.ErrAppUnauthorized.Wrapf("msg Address (%s) != application address (%s)", msg.Address, app.Address)
+		return types.ErrAppUnauthorized.Wrapf("msg Address (%q) != application address (%q)", msg.Address, app.Address)
 	}
 
 	// Validate that the stake is not being lowered

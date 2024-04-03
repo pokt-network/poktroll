@@ -41,7 +41,7 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, *supplierEndpoint, *request)
+	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, *request)
 	if err != nil {
 		return err
 	}

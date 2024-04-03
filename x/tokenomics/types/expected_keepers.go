@@ -20,6 +20,7 @@ type AccountKeeper interface {
 type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
+	// TODO_IN_THIS_PR: Update all the comments on why we use Send instead of Delegate for all expected_keepers.
 	SendCoinsFromModuleToAccount(
 		ctx context.Context,
 		senderModule string,

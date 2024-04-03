@@ -56,7 +56,7 @@ type ProofModuleKeepers struct {
 	Codec *codec.ProtoCodec
 }
 
-// ProofKeepersOpt is a function which receives and potentailly modifies the context
+// ProofKeepersOpt is a function which receives and potentially modifies the context
 // and proof keepers during construction of the aggregation.
 type ProofKeepersOpt func(context.Context, *ProofModuleKeepers) context.Context
 

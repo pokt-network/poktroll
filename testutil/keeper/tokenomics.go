@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"cosmossdk.io/log"
@@ -62,13 +61,13 @@ type TokenomicsModuleKeepers struct {
 	Codec *codec.ProtoCodec
 }
 
-// TokenomicsKeepersOpt is a function which receives and potentailly modifies the context
+// TokenomicsKeepersOpt is a function which receives and potentially modifies the context
 // and tokenomics keepers during construction of the aggregation.
 type TokenomicsKeepersOpt func(context.Context, *TokenomicsModuleKeepers) context.Context
 
 func TokenomicsKeeper(t testing.TB) (
 	tokenomicsKeeper tokenomicskeeper.Keeper,
-	ttx context.Context,
+	ctx context.Context,
 	appAddr string,
 	supplierAddr string,
 ) {
@@ -153,18 +152,20 @@ func TokenomicsKeeper(t testing.TB) (
 		mockProofKeeper,
 	)
 
-	ctx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
+	sdkCtx := sdk.NewContext(stateStore, cmtproto.Header{}, false, log.NewNopLogger())
 
 	// Initialize params
-	require.NoError(t, k.SetParams(ctx, tokenomicstypes.DefaultParams()))
+	require.NoError(t, k.SetParams(sdkCtx, tokenomicstypes.DefaultParams()))
 
-	return k, ctx, application.Address, supplier.Address
+	return k, sdkCtx, application.Address, supplier.Address
 }
 
-// NewTokenomicsModuleKeepers is a helper function to create a tokenomics keeper and a context. It uses
-// real dependencies for all keepers except the bank keeper, which is mocked as it's not used
-// directly by the tokenomics keeper or its dependencies.
-func NewTokenomicsModuleKeepers(t testing.TB, opts ...TokenomicsKeepersOpt) (_ TokenomicsModuleKeepers, ctx context.Context) {
+// NewTokenomicsModuleKeepers is a helper function to create a tokenomics keeper
+// and a context. It uses real dependencies for all upstream keepers.
+func NewTokenomicsModuleKeepers(
+	t testing.TB,
+	opts ...TokenomicsKeepersOpt,
+) (_ TokenomicsModuleKeepers, ctx context.Context) {
 	t.Helper()
 
 	// Collect store keys for all keepers which be constructed & interact with the state store.
@@ -209,7 +210,7 @@ func NewTokenomicsModuleKeepers(t testing.TB, opts ...TokenomicsKeepersOpt) (_ T
 		authority.String(),
 	)
 
-	fmt.Println("authority.String()", authority.String())
+	t.Logf("authority.String(): %s", authority.String())
 
 	// Construct a real bank keeper so that the balances can be updated & verified
 	bankKeeper := bankkeeper.NewBaseKeeper(

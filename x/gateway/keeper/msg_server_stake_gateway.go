@@ -26,45 +26,45 @@ func (k msgServer) StakeGateway(
 
 	// Check if the gateway already exists or not
 	var err error
-	var coinsToDelegate sdk.Coin
+	var coinsToEscrow sdk.Coin
 	gateway, isGatewayFound := k.GetGateway(ctx, msg.Address)
 	if !isGatewayFound {
-		logger.Info(fmt.Sprintf("Gateway not found. Creating new gateway for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Gateway not found. Creating new gateway for address %q", msg.Address))
 		gateway = k.createGateway(ctx, msg)
-		coinsToDelegate = *msg.Stake
+		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Gateway found. About to try and update gateway for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Gateway found. About to try and update gateway for address %q", msg.Address))
 		currGatewayStake := *gateway.Stake
 		if err = k.updateGateway(ctx, &gateway, msg); err != nil {
-			logger.Error(fmt.Sprintf("could not update gateway for address %s due to error %v", msg.Address, err))
+			logger.Error(fmt.Sprintf("could not update gateway for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToDelegate, err = (*msg.Stake).SafeSub(currGatewayStake)
-		logger.Debug(fmt.Sprintf("Gateway is going to delegate an additional %+v coins", coinsToDelegate))
+		coinsToEscrow, err = (*msg.Stake).SafeSub(currGatewayStake)
+		logger.Info(fmt.Sprintf("Gateway is going to escrow an additional %+v coins", coinsToEscrow))
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Must always stake or upstake (> 0 delta)
-	if coinsToDelegate.IsZero() {
-		logger.Warn(fmt.Sprintf("Gateway %s must delegate more than 0 additional coins", msg.Address))
-		return nil, types.ErrGatewayInvalidStake.Wrapf("gateway %s must delegate more than 0 additional coins", msg.Address)
+	if coinsToEscrow.IsZero() {
+		logger.Warn(fmt.Sprintf("Gateway %q must escrow more than 0 additional coins", msg.Address))
+		return nil, types.ErrGatewayInvalidStake.Wrapf("gateway %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the gateway
 	gatewayAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Error(fmt.Sprintf("could not parse address %q", msg.Address))
 		return nil, err
 	}
 
 	// Send the coins from the gateway to the staked gateway pool
-	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, gatewayAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
 		// TODO_TECHDEBT(#384): determine whether to continue using cosmos logger for debug level.
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, gatewayAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not escrowed %v coins from %q to %q module account due to %v", coinsToEscrow, gatewayAddress, types.ModuleName, err))
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (k msgServer) updateGateway(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return types.ErrGatewayUnauthorized.Wrapf("msg Address (%s) != gateway address (%s)", msg.Address, gateway.Address)
+		return types.ErrGatewayUnauthorized.Wrapf("msg Address (%q) != gateway address (%q)", msg.Address, gateway.Address)
 	}
 	if msg.Stake == nil {
 		return types.ErrGatewayInvalidStake.Wrapf("stake amount cannot be nil")

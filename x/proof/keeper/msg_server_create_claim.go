@@ -14,7 +14,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
 	logger := k.Logger().With("method", "CreateClaim")
-	logger.Debug("creating claim")
+	logger.Info("creating claim")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		2. [ ] msg distribution validation
 	*/
 
-	logger.Debug("validated claim")
+	logger.Info("validated claim")
 
 	// Construct and upsert claim after all validation.
 	claim := types.Claim{
@@ -62,7 +62,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
-	logger.Debug("created new claim")
+	logger.Info("created new claim")
 
 	// TODO: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil

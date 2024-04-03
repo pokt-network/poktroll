@@ -30,11 +30,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
 	// and only retrieving the expiringClaims that need to be settled rather than all
 	// of them and iterating through them one by one.
-	expiringClaims, err := k.getExpiringClaims(ctx)
-	if err != nil {
-		logger.Error(fmt.Sprintf("error getting expiring claims: %v", err))
-		return 0, 0, err
-	}
+	expiringClaims := k.getExpiringClaims(ctx)
 
 	blockHeight := ctx.BlockHeight()
 
@@ -49,11 +45,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
-		isProofRequiredForClaim, err := k.isProofRequiredForClaim(ctx, &claim)
-		if err != nil {
-			logger.Error(fmt.Sprintf("error checking if proof is required for claim %s: %v", sessionId, err))
-			return 0, 0, err
-		}
+		isProofRequiredForClaim := k.isProofRequiredForClaim(ctx, &claim)
 		if isProofRequiredForClaim {
 			_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 			// If a proof is not found, the claim will expire and never be settled.
@@ -110,7 +102,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 // This is the height at which the proof window closes.
 // If the proof window closes and a proof IS NOT required -> settle the claim.
 // If the proof window closes and a proof IS required -> only settle it if a proof is available.
-func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim, err error) {
+func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.Claim) {
 	blockHeight := ctx.BlockHeight()
 
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
@@ -132,20 +124,23 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 	}
 
 	// Return the actually expiring claims
-	return expiringClaims, nil
+	return expiringClaims
 }
 
 // isProofRequiredForClaim checks if a proof is required for a claim.
 // If it is not, the claim will be settled without a proof.
 // If it is, the claim will only be settled if a valid proof is available.
 // TODO_TECHDEBT(#419): Document safety assumptions of the probabilistic proofs mechanism.
-func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) (bool, error) {
+func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) bool {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
 	// is retrieved from the store.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
+	// TODO_BLOCKER(#419): This is just VERY BASIC placeholder logic to have something
+	// in place while we implement proper probabilistic proofs. If you're reading it,
+	// do not overthink it and look at the documents linked in #419.
 	if claimComputeUnits < ProofRequiredComputeUnits {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }

@@ -14,7 +14,7 @@ message EventClaimExpired {
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
-// The booleans determine
+// The proof_required determines whether the claim requires a proof that has been submitted or not
 message EventClaimSettled {
     poktroll.proof.Claim claim = 1;
     uint64 compute_units = 2;

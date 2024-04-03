@@ -342,7 +342,6 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 			return 0, false
 		}
 		for _, match := range matches {
-			fmt.Println("match: ", match[1], match[2])
 			if match[1] == escapedAddress {
 				amount, err = strconv.Atoi(match[2])
 				require.NoError(s, err)

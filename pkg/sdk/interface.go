@@ -26,7 +26,7 @@ type POKTRollSDK interface {
 	// SendRelay sends a relay request to the given supplier's endpoint.
 	SendRelay(
 		ctx context.Context,
-		sessionSupplierEndpoint SingleSupplierEndpoint,
+		sessionSupplierEndpoint *SingleSupplierEndpoint,
 		request http.Request,
 	) (response *servicetypes.RelayResponse, err error)
 }

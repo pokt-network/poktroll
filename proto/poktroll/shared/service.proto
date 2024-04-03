@@ -64,3 +64,4 @@ message ConfigOption {
   ConfigOptions key = 1; // Config option key
   string value = 2; // Config option value
 }
+

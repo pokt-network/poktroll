@@ -70,6 +70,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v8/modules/apps/transfer/types"
 	ibcexported "github.com/cosmos/ibc-go/v8/modules/core/exported"
 	"google.golang.org/protobuf/types/known/durationpb"
+	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	applicationmodulev1 "github.com/pokt-network/poktroll/api/poktroll/application/module"
 	gatewaymodulev1 "github.com/pokt-network/poktroll/api/poktroll/gateway/module"

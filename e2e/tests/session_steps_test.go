@@ -35,9 +35,9 @@ const (
 	// This is used by an events replay client to subscribe to tx events from the supplier.
 	// See: https://docs.cosmos.network/v0.47/learn/advanced/events#subscribing-to-events
 	txSenderEventSubscriptionQueryFmt = "tm.event='Tx' AND message.sender='%s'"
-	// onChainClaimEventSubscriptionQueryFmt is the format string which yields a
+	// newBlockEventSubscriptionQuery is the format string which yields a
 	// subscription query to listen for on-chain new block events.
-	onChainClaimEventSubscriptionQueryFmt = "tm.event='NewBlock'"
+	newBlockEventSubscriptionQuery = "tm.event='NewBlock'"
 	// eventsReplayClientBufferSize is the buffer size for the events replay client
 	// for the subscriptions above.
 	eventsReplayClientBufferSize = 100
@@ -129,7 +129,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	s.scenarioState[txResultEventsReplayClientKey] = txSendEventsReplayClient
 
 	// Construct an events query client to listen for claim settlement or expiration events on-chain.
-	onChainClaimEventQuery := onChainClaimEventSubscriptionQueryFmt
+	onChainClaimEventQuery := newBlockEventSubscriptionQuery
 	onChainClaimEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
 		ctx,
 		deps,
@@ -195,13 +195,13 @@ func (s *suite) sendRelaysForSession(
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
 	for i := 0; i < relayLimit; i++ {
-		fmt.Printf("Sending relay %d \n", i)
+		s.Logf("Sending relay %d \n", i)
 		s.TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, data)
 		s.TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName, supplierName)
 	}
 }
 
-// waitForEvent waits for an event to be observed which has the given message action.
+// waitForTxResultEvent waits for an event to be observed which has the given message action.
 func (s *suite) waitForTxResultEvent(targetAction string) {
 	ctx, done := context.WithCancel(context.Background())
 

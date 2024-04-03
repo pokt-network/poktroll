@@ -1093,7 +1093,7 @@ func (x *EventClaimExpired) GetComputeUnits() uint64 {
 }
 
 // EventClaimSettled is an event emitted whenever a claim is settled.
-// The booleans determine
+// The proof_required determines whether the claim requires a proof that has been submitted or not
 type EventClaimSettled struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

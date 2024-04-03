@@ -68,22 +68,22 @@ func (k Keeper) HydrateSession(ctx context.Context, sh *sessionHydrator) (*types
 	if err := k.hydrateSessionMetadata(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Debug("Finished hydrating session metadata")
+	logger.Info("Finished hydrating session metadata")
 
 	if err := k.hydrateSessionID(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Debug(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
+	logger.Info(fmt.Sprintf("Finished hydrating session ID: %s", sh.sessionHeader.SessionId))
 
 	if err := k.hydrateSessionApplication(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Debug("Finished hydrating session application: %+v", sh.session.Application)
+	logger.Info("Finished hydrating session application: %+v", sh.session.Application)
 
 	if err := k.hydrateSessionSuppliers(ctx, sh); err != nil {
 		return nil, err
 	}
-	logger.Debug("Finished hydrating session suppliers: %+v")
+	logger.Info("Finished hydrating session suppliers: %+v")
 
 	sh.session.Header = sh.sessionHeader
 	sh.session.SessionId = sh.sessionHeader.SessionId
