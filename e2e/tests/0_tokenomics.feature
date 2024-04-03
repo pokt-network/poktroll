@@ -1,7 +1,7 @@
 # TODO_TECHDEBT: This file is called `0_tokenomics.feature` instead of
 # `tokenomics.feature` to force it to run before other tests.
 
-Feature: Tokenomics Namespaces
+Feature: Tokenomics Namespace
 
     # NB: Requires `make supplier1_stake && make app1_stake && make acc_initialize_pubkeys` to be executed
     # TODO_TECHDEBT_DISCUSS: Decide if we want to make staking part of the scenario itself even though it is out of scope.
