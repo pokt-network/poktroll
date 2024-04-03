@@ -73,13 +73,14 @@ type relaysSuite struct {
 	relaysPerSec        atomic.Int64
 	nextRelaysPerSec    chan int64
 
-	provisionedGateways []*provisionedOffChainActor
-	activeGateways      []*provisionedOffChainActor
-
+	provisionedGateways  []*provisionedOffChainActor
 	provisionedSuppliers []*provisionedOffChainActor
-	activeSuppliers      []*provisionedOffChainActor
 
+	gateways     []*provisionedOffChainActor
+	suppliers    []*provisionedOffChainActor
 	applications []*accountInfo
+
+	delegationMu sync.Mutex
 
 	totalExpectedRequests uint64
 
@@ -93,9 +94,10 @@ type relaysSuite struct {
 //}
 
 type accountInfo struct {
-	keyName    string
-	accAddress sdk.AccAddress
-	privKey    *secp256k1.PrivKey
+	keyName     string
+	accAddress  sdk.AccAddress
+	privKey     *secp256k1.PrivKey
+	pendingMsgs []sdk.Msg
 }
 
 type provisionedOffChainActor struct {
@@ -138,6 +140,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Cancel the context if this process is interrupted or exits.
 	signals.GoOnExitSignal(func() {
 		fmt.Println("")
+		for _, app := range s.applications {
+			s.txContext.GetKeyring().Delete(app.keyName)
+		}
 		s.cancelCtx()
 	})
 
@@ -167,7 +172,12 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	}
 
 	//s.blocksReplayObs = s.blockClient.CommittedBlocksSequence(blockClientCtx)
-	//s.Cleanup(func() { cancelBlocksObs() })
+	s.Cleanup(func() {
+		for _, app := range s.applications {
+			s.txContext.GetKeyring().Delete(app.keyName)
+		}
+		//cancelBlocksObs()
+	})
 	//s.onChainStateChangeStartCh = make(chan struct{}, 1)
 	//s.onChainStateChangeCompleteCh = make(chan struct{}, 1)
 }
@@ -176,22 +186,23 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 	// TODO_IN_THIS_COMMIT: account the difference between initially staked actors in
 	// configured network and the target numbers initial actors.
 
-	// Stake initial supplier(s)
 	supplierCount := table.Cell(3, 1).Int64()
-	s.initProvisionedActors(s.provisionedSuppliers)
-	s.activateInitialSuppliers(int(supplierCount))
+	s.addInitialSuppliers(supplierCount)
 
-	// Stake initial gateway(s)
 	gatewayCount := table.Cell(1, 1).Int64()
-	s.initProvisionedActors(s.provisionedGateways)
-	s.activateInitialGateways(int(gatewayCount))
+	s.addInitialGateways(gatewayCount)
 
+	appCount := table.Cell(2, 1).Int64()
+	s.addInitialApplications(appCount)
+
+	s.sendFundInitialActorsMsgs(supplierCount, gatewayCount, appCount)
 	s.waitForNextBlock()
 
-	// Stake initial application(s)
-	appCount := table.Cell(2, 1).Int64()
-	s.addInitialApplications(int(appCount))
+	s.sendInitialActorsStakeMsgs(supplierCount, gatewayCount, appCount)
+	s.waitForNextBlock()
 
+	s.sendInitialDelegateMsgs(appCount, gatewayCount)
+	s.waitForNextBlock()
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
@@ -532,7 +543,7 @@ func (s *relaysSuite) incrementGateways(
 	gatewayInc,
 	maxGateways int64,
 ) {
-	gatewayCount := int64(s.getActiveGatewaysCount())
+	gatewayCount := int64(len(s.gateways))
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -551,7 +562,7 @@ func (s *relaysSuite) incrementGateways(
 		gatewaysToStake = maxGateways - gatewayCount
 	}
 
-	notif.waitGroup.Add(int(gatewaysToStake))
+	notif.waitGroup.Add(1)
 
 	go func() {
 		defer s.printProgressLine()
@@ -565,13 +576,28 @@ func (s *relaysSuite) incrementGateways(
 			gatewayCount+gatewaysToStake,
 		)
 
+		s.delegationMu.Lock()
+		stakedGateways := []*provisionedOffChainActor{}
 		for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-			gateway := s.provisionedGateways[gatewayCount+gwIdx]
-			go func(gw *provisionedOffChainActor) {
-				s.activateGateway(gw)
-				notif.waitGroup.Done()
-			}(gateway)
+			gateway := s.addGateway(gatewayCount + gwIdx)
+			s.generateStakeGatewayMsg(gateway)
+			s.sendTx(gateway.keyName, gateway.pendingMsgs...)
+			gateway.pendingMsgs = []sdk.Msg{}
+			stakedGateways = append(stakedGateways, gateway)
 		}
+		s.waitForNextBlock()
+		s.gateways = append(s.gateways, stakedGateways...)
+
+		for _, app := range s.applications {
+			for _, gateway := range stakedGateways {
+				s.generateDelegateToGatewayMsg(app, gateway)
+			}
+			s.sendTx(app.keyName, app.pendingMsgs...)
+			app.pendingMsgs = []sdk.Msg{}
+		}
+		s.delegationMu.Unlock()
+		s.waitForNextBlock()
+		notif.waitGroup.Done()
 	}()
 }
 
@@ -580,7 +606,7 @@ func (s *relaysSuite) incrementApps(
 	appIncAmt,
 	maxApps int64,
 ) {
-	appCount := int64(s.getApplicationsCount())
+	appCount := int64(len(s.applications))
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -599,7 +625,7 @@ func (s *relaysSuite) incrementApps(
 		appsToStake = maxApps - appCount
 	}
 
-	notif.waitGroup.Add(int(appsToStake))
+	notif.waitGroup.Add(1)
 
 	go func() {
 		defer s.printProgressLine()
@@ -613,12 +639,29 @@ func (s *relaysSuite) incrementApps(
 			appCount+appsToStake,
 		)
 
+		newApplications := []*accountInfo{}
 		for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
-			go func(idx int64) {
-				s.addApplication(int(idx))
-				notif.waitGroup.Done()
-			}(appIdx)
+			app := s.createApplicationAccount(appCount + appIdx + 1)
+			s.generateFundApplicationMsg(app)
+			newApplications = append(newApplications, app)
 		}
+		s.sendTx(s.fundingAccountInfo.keyName, s.fundingAccountInfo.pendingMsgs...)
+		s.fundingAccountInfo.pendingMsgs = []sdk.Msg{}
+		s.waitForNextBlock()
+
+		s.delegationMu.Lock()
+		for _, app := range newApplications {
+			s.generateStakeApplicationMsg(app)
+			for _, gateway := range s.gateways {
+				s.generateDelegateToGatewayMsg(app, gateway)
+			}
+			s.sendTx(app.keyName, app.pendingMsgs...)
+			app.pendingMsgs = []sdk.Msg{}
+		}
+		s.waitForNextBlock()
+		s.applications = append(s.applications, newApplications...)
+		s.delegationMu.Unlock()
+		notif.waitGroup.Done()
 	}()
 }
 
@@ -627,7 +670,7 @@ func (s *relaysSuite) incrementSuppliers(
 	supplierInc,
 	maxSuppliers int64,
 ) {
-	supplierCount := int64(s.getActiveSuppliersCount())
+	supplierCount := int64(len(s.suppliers))
 
 	// TODO_IN_THIS_COMMIT: move this check upstream in the pipeline
 	// (e.g. into shouldBlockUpdateChainStateObs)
@@ -646,7 +689,7 @@ func (s *relaysSuite) incrementSuppliers(
 		suppliersToStake = maxSuppliers - supplierCount
 	}
 
-	notif.waitGroup.Add(int(suppliersToStake))
+	notif.waitGroup.Add(1)
 
 	go func() {
 		defer s.printProgressLine()
@@ -660,13 +703,17 @@ func (s *relaysSuite) incrementSuppliers(
 			supplierCount+suppliersToStake,
 		)
 
+		newSuppliers := []*provisionedOffChainActor{}
 		for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-			supplier := s.provisionedSuppliers[supplierCount+supplierIdx]
-			go func(supp *provisionedOffChainActor) {
-				s.activateSupplier(supp)
-				notif.waitGroup.Done()
-			}(supplier)
+			supplier := s.addSupplier(supplierCount + supplierIdx)
+			s.generateStakeSupplierMsg(supplier)
+			s.sendTx(supplier.keyName, supplier.pendingMsgs...)
+			supplier.pendingMsgs = []sdk.Msg{}
+			newSuppliers = append(newSuppliers, supplier)
 		}
+		s.waitForNextBlock()
+		s.suppliers = append(s.suppliers, newSuppliers...)
+		notif.waitGroup.Done()
 	}()
 }
 
