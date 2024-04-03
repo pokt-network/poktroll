@@ -138,7 +138,7 @@ func NewEventsReplayClient[T any](
 	}
 
 	// Concurrently publish events to the observable emitted by replayObsCache.
-	go rClient.goPublishEvents(ctx, rClient.connRetryLimit)
+	go rClient.goPublishEvents(ctx)
 
 	return rClient, nil
 }
