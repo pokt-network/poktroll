@@ -246,16 +246,16 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	eventsReplayClientState, found := s.scenarioState[newBlockEventReplayClientKey]
+	newBlockEventsReplayClientState, found := s.scenarioState[newBlockEventReplayClientKey]
 	require.True(s, found, fmt.Sprintf("%s not found in scenarioState", newBlockEventReplayClientKey))
 
-	eventsReplayClient, ok := eventsReplayClientState.(client.EventsReplayClient[*block.CometNewBlockEvent])
+	newBlockEventsReplayClient, ok := newBlockEventsReplayClientState.(client.EventsReplayClient[*block.CometNewBlockEvent])
 	require.True(s, ok, fmt.Sprintf("%s not of the right type", newBlockEventReplayClientKey))
-	require.NotNil(s, eventsReplayClient)
+	require.NotNil(s, newBlockEventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*block.CometNewBlockEvent](
-		ctx, eventsReplayClient.EventsSequence(ctx),
+		ctx, newBlockEventsReplayClient.EventsSequence(ctx),
 		func(_ context.Context, newBlockEvent *block.CometNewBlockEvent) {
 			if newBlockEvent == nil {
 				return
