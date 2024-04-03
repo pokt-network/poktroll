@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	// txEventTimeout is the duration of time to wait after sending a valid tx
+	// eventTimeout is the duration of time to wait after sending a valid tx
 	// before the test should time out (fail).
 	eventTimeout = 60 * time.Second
 	// testServiceId is the service ID used for testing purposes that is
@@ -78,7 +78,7 @@ func (s *suite) TheClaimCreatedBySupplierForServiceForApplicationShouldBePersist
 
 	// Assert that the number of claims has increased by one.
 	preExistingClaims, ok := s.scenarioState[preExistingClaimsKey].([]prooftypes.Claim)
-	require.True(s, ok, fmt.Sprintf("%s not found in scenarioState", preExistingClaimsKey))
+	require.Truef(s, ok, "%s not found in scenarioState", preExistingClaimsKey)
 	// NB: We are avoiding the use of require.Len here because it provides unreadable output
 	// TODO_TECHDEBT: Due to the speed of the blocks of the LocalNet validator, along with the small number
 	// of blocks per session, multiple claims may be created throughout the duration of the test. Until
@@ -205,12 +205,12 @@ func (s *suite) sendRelaysForSession(
 func (s *suite) waitForTxResultEvent(targetAction string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	txResultEventsReplayClientState, found := s.scenarioState[txResultEventsReplayClientKey]
-	require.True(s, found, fmt.Sprintf("%s not found in scenarioState", txResultEventsReplayClientKey))
+	txResultEventsReplayClientState, ok := s.scenarioState[txResultEventsReplayClientKey]
+	require.Truef(s, ok, "%s not found in scenarioState", txResultEventsReplayClientKey)
 
 	txResultEventsReplayClient, ok := txResultEventsReplayClientState.(client.EventsReplayClient[*abci.TxResult])
-	require.True(s, ok, fmt.Sprintf("%s not of the right type", txResultEventsReplayClientKey))
-	require.NotNil(s, eventsReplayClient)
+	require.Truef(s, ok, "%s not of the right type", txResultEventsReplayClientKey)
+	require.NotNil(s, txResultEventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
 	channel.ForEach[*abci.TxResult](
@@ -236,7 +236,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	)
 
 	select {
-	case <-time.After(txEventTimeout):
+	case <-time.After(eventTimeout):
 		s.Fatalf("timed out waiting for message with action %q", targetAction)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
@@ -246,11 +246,11 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	ctx, done := context.WithCancel(context.Background())
 
-	newBlockEventsReplayClientState, found := s.scenarioState[newBlockEventReplayClientKey]
-	require.True(s, found, fmt.Sprintf("%s not found in scenarioState", newBlockEventReplayClientKey))
+	newBlockEventsReplayClientState, ok := s.scenarioState[newBlockEventReplayClientKey]
+	require.Truef(s, ok, "%s not found in scenarioState", newBlockEventReplayClientKey)
 
 	newBlockEventsReplayClient, ok := newBlockEventsReplayClientState.(client.EventsReplayClient[*block.CometNewBlockEvent])
-	require.True(s, ok, fmt.Sprintf("%s not of the right type", newBlockEventReplayClientKey))
+	require.Truef(s, ok, "%s not of the right type", newBlockEventReplayClientKey)
 	require.NotNil(s, newBlockEventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
@@ -276,7 +276,7 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	)
 
 	select {
-	case <-time.After(txEventTimeout):
+	case <-time.After(eventTimeout):
 		s.Fatalf("timed out waiting for NewBlock event %q", targetEvent)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")

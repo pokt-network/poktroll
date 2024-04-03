@@ -6,8 +6,8 @@ import (
 	sharedhelpers "github.com/pokt-network/poktroll/x/shared/helpers"
 )
 
-// TODO_TECHDEBT: Make sure this is used everywhere we validate components
-// of the session header.
+// TODO_TECHDEBT: Ensure this is used everywhere a SessionHeader is validated.
+// ValidateBasic performs basic stateless validation of a SessionHeader.
 func (sh *SessionHeader) ValidateBasic() error {
 	// Validate the application address
 	if _, err := sdk.AccAddressFromBech32(sh.ApplicationAddress); err != nil {

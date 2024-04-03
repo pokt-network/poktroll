@@ -32,8 +32,9 @@ import (
 )
 
 var (
-	addrRe   *regexp.Regexp
-	amountRe *regexp.Regexp
+	addrRe          *regexp.Regexp
+	amountRe        *regexp.Regexp
+	addrAndAmountRe *regexp.Regexp
 
 	accNameToAddrMap     = make(map[string]string)
 	accAddrToNameMap     = make(map[string]string)
@@ -49,7 +50,7 @@ var (
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
-
+	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
@@ -112,16 +113,12 @@ func (s *suite) ThePocketdBinaryShouldExitWithoutError() {
 func (s *suite) TheUserRunsTheCommand(cmd string) {
 	cmds := strings.Split(cmd, " ")
 	res, err := s.pocketd.RunCommand(cmds...)
+	require.NoError(s, err, "error running command %s", cmd)
 	s.pocketd.result = res
-	if err != nil {
-		s.Fatalf("ERROR: error running command %s: %s", cmd, err)
-	}
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
-	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
-		s.Fatalf("ERROR: stdout must contain '%s' but instead contains: '%s'", arg1, s.pocketd.result.Stdout)
-	}
+	require.Contains(s, s.pocketd.result.Stdout, arg1)
 }
 
 func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
@@ -137,17 +134,13 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("ERROR: error sending upokt: %s", err)
-	}
+	require.NoError(s, err, "error sending upokt: %s")
 	s.pocketd.result = res
 }
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	if bal < int(amount) {
-		s.Fatalf("ERROR: account %s does not have enough upokt: %d < %d", accName, bal, amount)
-	}
+	require.LessF(s, bal, int(amount), "account %s does not have enough upokt", accName)
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
@@ -160,19 +153,13 @@ func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName stri
 	// Get previous stake
 	stakeKey := accStakeKey(actorType, accName)
 	prevStakeAny, ok := s.scenarioState[stakeKey]
-	if !ok {
-		s.Fatalf("ERROR: no previous stake found for %s", accName)
-	}
+	require.True(s, ok, "no previous stake found for %s", accName)
 	prevStake, ok := prevStakeAny.(int)
-	if !ok {
-		s.Fatalf("ERROR: previous stake for %s is not an int", accName)
-	}
+	require.True(s, ok, "previous stake for %s is not an int", accName)
 
 	// Get current stake
 	currStake, ok := s.getStakedAmount(actorType, accName)
-	if !ok {
-		s.Fatalf("ERROR: no current stake found for %s", accName)
-	}
+	require.True(s, ok, "no current stake found for %s", accName)
 	s.scenarioState[stakeKey] = currStake // save the stake for later
 
 	// Validate the change in stake
@@ -183,13 +170,9 @@ func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expec
 	// Get previous balance
 	balanceKey := accBalanceKey(accName)
 	prevBalanceAny, ok := s.scenarioState[balanceKey]
-	if !ok {
-		s.Fatalf("ERROR: no previous balance found for %s", accName)
-	}
+	require.True(s, ok, "no previous balance found for %s", accName)
 	prevBalance, ok := prevBalanceAny.(int)
-	if !ok {
-		s.Fatalf("ERROR: previous balance for %s is not an int", accName)
-	}
+	require.True(s, ok, "previous balance for %s is not an int", accName)
 
 	// Get current balance
 	currBalance := s.getAccBalance(accName)
@@ -206,14 +189,12 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
-	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
 	configFile, err := ioutil.TempFile("", configPathPattern)
-	if err != nil {
-		s.Fatalf("ERROR: error creating config file: %q", err)
-	}
-	if _, err = configFile.Write([]byte(configContent)); err != nil {
-		s.Fatalf("ERROR: error writing config file: %q", err)
-	}
+	require.NoError(s, err, "error creating config file: %q")
+
+	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
+	_, err = configFile.Write([]byte(configContent))
+	require.NoError(s, err, "error writing config file: %q")
 
 	args := []string{
 		"tx",
@@ -231,13 +212,8 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
-	if err != nil {
-		s.Fatalf("ERROR: error removing config file: %q", err)
-	}
+	require.NoError(s, err, "error removing config file: %q")
 
-	if err != nil {
-		s.Fatalf("ERROR: error staking %s: %s", actorType, err)
-	}
 	s.pocketd.result = res
 }
 
@@ -252,36 +228,28 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 		chainIdFlag,
 		"-y",
 	}
+
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("ERROR: error unstaking %s: %s", actorType, err)
-	}
+	require.NoError(s, err, "error unstaking %s", actorType)
+
 	s.pocketd.result = res
 }
 
 func (s *suite) TheAccountForIsStaked(actorType, accName string) {
-	stakeAmount, found := s.getStakedAmount(actorType, accName)
-	if !found {
-		s.Fatalf("ERROR: account %s of type %s SHOULD be staked", accName, actorType)
-	}
+	stakeAmount, ok := s.getStakedAmount(actorType, accName)
+	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
-	_, found := s.getStakedAmount(actorType, accName)
-	if found {
-		s.Fatalf("ERROR: account %s of type SHOULD NOT be staked", accName, actorType)
-	}
+	_, ok := s.getStakedAmount(actorType, accName)
+	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)
 }
 
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
-	stakeAmount, found := s.getStakedAmount(actorType, accName)
-	if !found {
-		s.Fatalf("ERROR: account %s should be staked", accName)
-	}
-	if int64(stakeAmount) != amount {
-		s.Fatalf("ERROR: account %s stake amount is not %d", accName, amount)
-	}
+	stakeAmount, ok := s.getStakedAmount(actorType, accName)
+	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
+	require.Equalf(s, int64(stakeAmount), amount, "account %s stake amount is not %d", accName, amount)
 	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
@@ -291,7 +259,7 @@ func (s *suite) TheApplicationIsStakedForService(appName string, serviceId strin
 			return
 		}
 	}
-	s.Fatalf("ERROR: application %s is not staked for service %s", appName, serviceId)
+	s.Fatalf("application %s is not staked for service %s", appName, serviceId)
 }
 
 func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId string) {
@@ -300,18 +268,16 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 			return
 		}
 	}
-	s.Fatalf("ERROR: supplier %s is not staked for service %s", supplierName, serviceId)
+	s.Fatalf("supplier %s is not staked for service %s", supplierName, serviceId)
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
-	app, found := accNameToAppMap[appName]
-	if !found {
-		s.Fatalf("ERROR: application %s not found", appName)
-	}
-	expectedSupplier, found := accNameToSupplierMap[supplierName]
-	if !found {
-		s.Fatalf("ERROR: supplier %s not found", supplierName)
-	}
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	expectedSupplier, ok := accNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found", supplierName)
+
 	argsAndFlags := []string{
 		"query",
 		"session",
@@ -321,9 +287,8 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("ERROR: error getting session for app %s and service %s: %s", appName, serviceId, err)
-	}
+	require.NoError(s, err, "error getting session for app %s and service %s: %s", appName, serviceId, err)
+
 	var resp sessiontypes.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
@@ -332,7 +297,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 			return
 		}
 	}
-	s.Fatalf("ERROR: session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
+	s.Fatalf("session for app %s and service %s does not contain supplier %s", appName, serviceId, supplierName)
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
@@ -341,9 +306,7 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
-	if err != nil {
-		s.Fatalf("ERROR: error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
-	}
+	require.NoErrorf(s, err, "error sending relay request from app %s to supplier %s for service %s", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)
 	s.scenarioState[relayKey] = res.Stdout
@@ -368,17 +331,13 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 		fmt.Sprintf("list-%s", actorType),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("ERROR: error getting %s: %s", actorType, err)
-	}
+	require.NoError(s, err, "error getting %s: %s", actorType, err)
 	s.pocketd.result = res
 
-	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
+	escapedAddress := accNameToAddrMap[accName]
 	amount := 0
-	if found {
-		escapedAddress := accNameToAddrMap[accName]
-		re := regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
-		matches := re.FindAllStringSubmatch(res.Stdout, -1)
+	if strings.Contains(res.Stdout, escapedAddress) {
+		matches := addrAndAmountRe.FindAllStringSubmatch(res.Stdout, -1)
 		if len(matches) < 1 {
 			return 0, false
 		}
@@ -399,9 +358,7 @@ func (s *suite) buildAddrMap() {
 	res, err := s.pocketd.RunCommand(
 		"keys", "list", keyRingFlag,
 	)
-	if err != nil {
-		s.Fatalf("ERROR: error getting keys: %s", err)
-	}
+	require.NoError(s, err, "error getting keys: %s")
 	s.pocketd.result = res
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
 	for _, match := range matches {
@@ -421,9 +378,7 @@ func (s *suite) buildAppMap() {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("ERROR: error getting application list: %s", err)
-	}
+	require.NoError(s, err, "error getting application list: %s")
 	s.pocketd.result = res
 	var resp apptypes.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -442,9 +397,7 @@ func (s *suite) buildSupplierMap() {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("ERROR: error getting supplier list: %s", err)
-	}
+	require.NoError(s, err, "error getting supplier list: %s")
 	s.pocketd.result = res
 	var resp suppliertypes.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -456,6 +409,7 @@ func (s *suite) buildSupplierMap() {
 
 func (s *suite) getAccBalance(accName string) int {
 	s.Helper()
+
 	args := []string{
 		"query",
 		"bank",
@@ -463,16 +417,15 @@ func (s *suite) getAccBalance(accName string) int {
 		accNameToAddrMap[accName],
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("ERROR: error getting balance: %s", err)
-	}
+	require.NoError(s, err, "error getting balance: %s")
 	s.pocketd.result = res
+
 	match := amountRe.FindStringSubmatch(res.Stdout)
-	if len(match) < 2 {
-		s.Fatalf("ERROR: no balance found for %s", accName)
-	}
+	require.GreaterOrEqual(s, match, 2, "no balance found for %s", accName)
+
 	accBalance, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
+
 	return accBalance
 }
 
@@ -482,21 +435,13 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 	// Verify if balance is more or less than before
 	switch condition {
 	case "more":
-		if currAmount <= prevAmount {
-			s.Fatalf("ERROR: %s %s expected to have more upokt but: %d <= %d", accName, balanceType, currAmount, prevAmount)
-		}
-		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: %s %s expected to increase by %d, but actually increased by %d", accName, balanceType, expectedAmountChange, deltaAmount)
-		}
+		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
+		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
 	case "less":
-		if currAmount >= prevAmount {
-			s.Fatalf("ERROR: %s %s expected to have less upokt but: %d >= %d", accName, balanceType, currAmount, prevAmount)
-		}
-		if deltaAmount != expectedAmountChange {
-			s.Fatalf("ERROR: %s %s expected to decrease by %d, but actually decreased by %d", accName, balanceType, expectedAmountChange, deltaAmount)
-		}
+		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
+		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
-		s.Fatalf("ERROR: unknown condition %s", condition)
+		s.Fatalf("unknown condition %s", condition)
 	}
 
 }
