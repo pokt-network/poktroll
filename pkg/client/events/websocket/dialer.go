@@ -10,6 +10,8 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 )
 
+const wssPrefix = "wss://"
+
 var _ client.Dialer = (*websocketDialer)(nil)
 
 // websocketDialer implements the Dialer interface using the gorilla websocket
@@ -29,7 +31,7 @@ func (wsDialer *websocketDialer) DialContext(
 ) (client.Connection, error) {
 	dialer := websocket.DefaultDialer
 
-	if strings.HasPrefix(urlString, "wss://") {
+	if strings.HasPrefix(urlString, wssPrefix) {
 		dialer.TLSClientConfig = &tls.Config{}
 	}
 
