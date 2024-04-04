@@ -1,5 +1,6 @@
 ---
 title: Send tokens
+sidebar_position: 4
 ---
 
 # Sending Tokens

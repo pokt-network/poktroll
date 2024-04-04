@@ -1,5 +1,6 @@
 ---
 title: Check balance
+sidebar_position: 3
 ---
 
 # Checking Your Wallet Balance
@@ -48,6 +49,6 @@ This output indicates that the wallet address holds 8999 upokt tokens.
 
 :::tip
 
-For network-specific balance queries or when accessing a remote node, use the --node flag to specify the node endpoint. For example, for a testnet node, you could use --node=https://testnet-validated-validator-rpc.poktroll.com/. This flag is crucial for accurate and up-to-date balance information.
+For network-specific balance queries or when accessing a remote node, use the --node flag to specify the node endpoint. For example, for a testnet node, you could use `--node=https://testnet-validated-validator-rpc.poktroll.com/`.
 
 :::

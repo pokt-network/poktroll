@@ -5,7 +5,7 @@ sidebar_position: 1
 
 # Creating a New Wallet
 
-This guide will walk you through creating a new wallet on the poktrolld blockchain. Before proceeding, it's important to understand the implications of keyring backends for securing your wallet. By default, `--keyring-backend=test` is used for demonstration purposes in this documentation, suitable for initial testing. However, for actual deployments or production use, operators should consider using a more secure keyring backend, such as `os`, `file`, or `kwallet`. For more information on keyring backends, refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main/user/run-node/keyring).
+This guide will walk you through creating a new wallet on the Pocket Network Shannon blockchain. Before proceeding, it's important to understand the implications of keyring backends for securing your wallet. By default, `--keyring-backend=test` is used for demonstration purposes in this documentation, suitable for initial testing. However, for actual deployments or production use, operators should consider using a more secure keyring backend, such as `os`, `file`, or `kwallet`. For more information on keyring backends, refer to the [Cosmos SDK Keyring documentation](https://docs.cosmos.network/main/user/run-node/keyring).
 
 :::info
 
@@ -15,7 +15,7 @@ This guide will walk you through creating a new wallet on the poktrolld blockcha
 
 ## Step 1: Install poktrolld
 
-Ensure you have poktrolld installed on your system. Follow the [installation guide](./install-poktrolld.md) specific to your operating system.
+Ensure you have poktrolld installed on your system. Follow the [installation guide](./install-poktrolld) specific to your operating system.
 
 ## Step 2: Creating the Wallet
 
