@@ -20,7 +20,7 @@ type AccountKeeper interface {
 type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	// We use the bankkeeper SendXXX instead of DelegateXX methods instead
+	// We use the bankkeeper SendXXX instead of DelegateXX methods
 	// because their purpose is to "escrow" funds on behalf of an account rather
 	// than "delegate" funds from one account to another which is more closely
 	// linked to staking.
