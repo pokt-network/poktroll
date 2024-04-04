@@ -15,6 +15,7 @@ import (
 
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
+	"github.com/pokt-network/poktroll/x/session/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
@@ -57,7 +58,7 @@ func (s *relaysSuite) sendFundInitialActorsMsgs(
 	for i := int64(0); i < applicationCount; i++ {
 		pendingMsgs = append(pendingMsgs, banktypes.NewMsgSend(
 			s.fundingAccountInfo.accAddress,
-			s.applications[i].accAddress,
+			s.activeApplications[i].accAddress,
 			sdk.NewCoins(fundingAmount),
 		))
 	}
@@ -139,7 +140,7 @@ func (s *relaysSuite) addInitialSuppliers(suppliersCount int64) {
 
 		supplier.accAddress = accAddress
 		supplier.pendingMsgs = []sdk.Msg{}
-		s.suppliers = append(s.suppliers, supplier)
+		s.activeSuppliers = append(s.activeSuppliers, supplier)
 	}
 }
 
@@ -161,7 +162,7 @@ func (s *relaysSuite) addSupplier(index int64) *provisionedOffChainActor {
 func (s *relaysSuite) addInitialGateways(gatewaysCount int64) {
 	for i := int64(0); i < gatewaysCount; i++ {
 		gateway := s.addGateway(i)
-		s.gateways = append(s.gateways, gateway)
+		s.activeGateways = append(s.activeGateways, gateway)
 	}
 }
 
@@ -183,7 +184,7 @@ func (s *relaysSuite) addGateway(index int64) *provisionedOffChainActor {
 func (s *relaysSuite) addInitialApplications(appCount int64) {
 	for i := int64(0); i < appCount; i++ {
 		application := s.createApplicationAccount(i + 1)
-		s.applications = append(s.applications, application)
+		s.activeApplications = append(s.activeApplications, application)
 	}
 }
 
@@ -191,21 +192,21 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 	supplierCount int64, gatewayCount int64, applicationCount int64,
 ) {
 	for suppIdx := int64(0); suppIdx < supplierCount; suppIdx++ {
-		supplier := s.suppliers[suppIdx]
+		supplier := s.activeSuppliers[suppIdx]
 		s.generateStakeSupplierMsg(supplier)
 		s.sendTx(supplier.keyName, supplier.pendingMsgs...)
 		supplier.pendingMsgs = []sdk.Msg{}
 	}
 
 	for gwIdx := int64(0); gwIdx < gatewayCount; gwIdx++ {
-		gateway := s.gateways[gwIdx]
+		gateway := s.activeGateways[gwIdx]
 		s.generateStakeGatewayMsg(gateway)
 		s.sendTx(gateway.keyName, gateway.pendingMsgs...)
 		gateway.pendingMsgs = []sdk.Msg{}
 	}
 
 	for appIdx := int64(0); appIdx < applicationCount; appIdx++ {
-		application := s.applications[appIdx]
+		application := s.activeApplications[appIdx]
 		s.generateStakeApplicationMsg(application)
 		s.sendTx(application.keyName, application.pendingMsgs...)
 		application.pendingMsgs = []sdk.Msg{}
@@ -216,9 +217,9 @@ func (s *relaysSuite) sendInitialDelegateMsgs(
 	applicationCount int64, gatewayCount int64,
 ) {
 	for appIdx := int64(0); appIdx < applicationCount; appIdx++ {
-		application := s.applications[appIdx]
+		application := s.activeApplications[appIdx]
 		for gwIdx := int64(0); gwIdx < gatewayCount; gwIdx++ {
-			gateway := s.gateways[gwIdx]
+			gateway := s.activeGateways[gwIdx]
 			s.generateDelegateToGatewayMsg(application, gateway)
 		}
 		s.sendTx(application.keyName, application.pendingMsgs...)
@@ -249,6 +250,10 @@ func (s *relaysSuite) createApplicationAccount(appIdx int64) *accountInfo {
 }
 
 func (s *relaysSuite) sendTx(keyName string, msgs ...sdk.Msg) {
+	if len(msgs) == 0 {
+		return
+	}
+
 	txBuilder := s.txContext.NewTxBuilder()
 	err := txBuilder.SetMsgs(msgs...)
 	require.NoError(s, err)
@@ -258,7 +263,9 @@ func (s *relaysSuite) sendTx(keyName string, msgs ...sdk.Msg) {
 	txBuilder.SetGasLimit(690000042)
 
 	err = s.txContext.SignTx(keyName, txBuilder, false, false)
-	require.NoError(s, err)
+	if err != nil {
+		require.NoError(s, err)
+	}
 
 	// serialize transactions
 	txBz, err := s.txContext.EncodeTx(txBuilder)
@@ -269,7 +276,12 @@ func (s *relaysSuite) sendTx(keyName string, msgs ...sdk.Msg) {
 }
 
 func (s *relaysSuite) waitForNextBlock() {
-	currentHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
+	blocks := s.blockClient.LastNBlocks(s.ctx, 1)
+	block := blocks[0]
+	if block == nil {
+		return
+	}
+	currentHeight := block.Height()
 
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
@@ -281,12 +293,11 @@ func (s *relaysSuite) waitForNextBlock() {
 	}
 }
 
-func (s *relaysSuite) sendRelay(iteration int64) {
+func (s *relaysSuite) sendRelay(iteration uint64) {
 	data := `{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`
 
-	gateway := s.gateways[iteration%int64(len(s.gateways))]
-	application := s.applications[iteration%int64(len(s.applications))]
-	s.Logf("Sending relay from application %s to gateway %s", application.keyName, gateway.keyName)
+	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
+	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
 	gatewayUrl, err := url.Parse(gateway.exposedServerAddress)
 	require.NoError(s, err)
@@ -302,4 +313,17 @@ func (s *relaysSuite) sendRelay(iteration int64) {
 		strings.NewReader(data),
 	)
 	require.NoError(s, err)
+}
+
+func (s *relaysSuite) shouldIncrementActor(
+	sessionInfo *sessionInfoNotif,
+	actorBlockIncRate, actorInc, maxActorNum int64,
+) bool {
+	// TODO_TECHDEBT(#21): replace with gov param query when available.
+	actorSessionIncRate := actorBlockIncRate / keeper.NumBlocksPerSession
+	nextSessionNumber := sessionInfo.sessionNumber + 1
+	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
+	maxActorNumReached := actorInc == maxActorNum
+
+	return isSessionStartHeight && nextSessionNumber%actorSessionIncRate == 0 && !maxActorNumReached
 }

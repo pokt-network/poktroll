@@ -13,9 +13,7 @@ Feature: Loading gateway server with relays
       | gateway     | 1              | 4              | 3          |
       | application | 2              | 4              | 5          |
       | supplier    | 1              | 4              | 3          |
-    When a load of concurrent relay requests are sent per second as follows:
-      | start relay rate | relay inc rate | blocks per inc | max relays rate |
-      | 5                | 10             | 4              | 25              |
+    When a load of "1" concurrent relay requests are sent per application per second
 
 #    Examples:
 #      |  |  |
