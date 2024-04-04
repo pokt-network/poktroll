@@ -7,7 +7,7 @@ import (
 	_ "github.com/cosmos/cosmos-proto"
 	runtime "github.com/cosmos/cosmos-proto/runtime"
 	_ "github.com/cosmos/gogoproto/gogoproto"
-	session "github.com/pokt-network/poktroll/api/poktroll/session"
+
 	shared "github.com/pokt-network/poktroll/api/poktroll/shared"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -109,9 +109,9 @@ func (x *fastReflection_QueryParamsRequest) Has(fd protoreflect.FieldDescriptor)
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -125,9 +125,9 @@ func (x *fastReflection_QueryParamsRequest) Clear(fd protoreflect.FieldDescripto
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -141,9 +141,9 @@ func (x *fastReflection_QueryParamsRequest) Get(descriptor protoreflect.FieldDes
 	switch descriptor.FullName() {
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -161,9 +161,9 @@ func (x *fastReflection_QueryParamsRequest) Set(fd protoreflect.FieldDescriptor,
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -181,9 +181,9 @@ func (x *fastReflection_QueryParamsRequest) Mutable(fd protoreflect.FieldDescrip
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -194,9 +194,9 @@ func (x *fastReflection_QueryParamsRequest) NewField(fd protoreflect.FieldDescri
 	switch fd.FullName() {
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -206,7 +206,7 @@ func (x *fastReflection_QueryParamsRequest) NewField(fd protoreflect.FieldDescri
 func (x *fastReflection_QueryParamsRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.session.QueryParamsRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.QueryParamsRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -471,13 +471,13 @@ func (x *fastReflection_QueryParamsResponse) Range(f func(protoreflect.FieldDesc
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryParamsResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		return x.Params != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -489,13 +489,13 @@ func (x *fastReflection_QueryParamsResponse) Has(fd protoreflect.FieldDescriptor
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryParamsResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		x.Params = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -507,14 +507,14 @@ func (x *fastReflection_QueryParamsResponse) Clear(fd protoreflect.FieldDescript
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryParamsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		value := x.Params
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -530,13 +530,13 @@ func (x *fastReflection_QueryParamsResponse) Get(descriptor protoreflect.FieldDe
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryParamsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		x.Params = value.Message().Interface().(*Params)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -552,16 +552,16 @@ func (x *fastReflection_QueryParamsResponse) Set(fd protoreflect.FieldDescriptor
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryParamsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		if x.Params == nil {
 			x.Params = new(Params)
 		}
 		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -570,14 +570,14 @@ func (x *fastReflection_QueryParamsResponse) Mutable(fd protoreflect.FieldDescri
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryParamsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryParamsResponse.params":
+	case "poktroll.QueryParamsResponse.params":
 		m := new(Params)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryParamsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryParamsResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryParamsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryParamsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -587,7 +587,7 @@ func (x *fastReflection_QueryParamsResponse) NewField(fd protoreflect.FieldDescr
 func (x *fastReflection_QueryParamsResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.session.QueryParamsResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.QueryParamsResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -922,17 +922,17 @@ func (x *fastReflection_QueryGetSessionRequest) Range(f func(protoreflect.FieldD
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryGetSessionRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.application_address":
+	case "poktroll.QueryGetSessionRequest.application_address":
 		return x.ApplicationAddress != ""
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		return x.Service != nil
-	case "poktroll.session.QueryGetSessionRequest.block_height":
+	case "poktroll.QueryGetSessionRequest.block_height":
 		return x.BlockHeight != int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -944,17 +944,17 @@ func (x *fastReflection_QueryGetSessionRequest) Has(fd protoreflect.FieldDescrip
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.application_address":
+	case "poktroll.QueryGetSessionRequest.application_address":
 		x.ApplicationAddress = ""
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		x.Service = nil
-	case "poktroll.session.QueryGetSessionRequest.block_height":
+	case "poktroll.QueryGetSessionRequest.block_height":
 		x.BlockHeight = int64(0)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -966,20 +966,20 @@ func (x *fastReflection_QueryGetSessionRequest) Clear(fd protoreflect.FieldDescr
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryGetSessionRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.application_address":
+	case "poktroll.QueryGetSessionRequest.application_address":
 		value := x.ApplicationAddress
 		return protoreflect.ValueOfString(value)
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		value := x.Service
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
-	case "poktroll.session.QueryGetSessionRequest.block_height":
+	case "poktroll.QueryGetSessionRequest.block_height":
 		value := x.BlockHeight
 		return protoreflect.ValueOfInt64(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -995,17 +995,17 @@ func (x *fastReflection_QueryGetSessionRequest) Get(descriptor protoreflect.Fiel
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.application_address":
+	case "poktroll.QueryGetSessionRequest.application_address":
 		x.ApplicationAddress = value.Interface().(string)
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		x.Service = value.Message().Interface().(*shared.Service)
-	case "poktroll.session.QueryGetSessionRequest.block_height":
+	case "poktroll.QueryGetSessionRequest.block_height":
 		x.BlockHeight = value.Int()
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1021,20 +1021,20 @@ func (x *fastReflection_QueryGetSessionRequest) Set(fd protoreflect.FieldDescrip
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		if x.Service == nil {
 			x.Service = new(shared.Service)
 		}
 		return protoreflect.ValueOfMessage(x.Service.ProtoReflect())
-	case "poktroll.session.QueryGetSessionRequest.application_address":
-		panic(fmt.Errorf("field application_address of message poktroll.session.QueryGetSessionRequest is not mutable"))
-	case "poktroll.session.QueryGetSessionRequest.block_height":
-		panic(fmt.Errorf("field block_height of message poktroll.session.QueryGetSessionRequest is not mutable"))
+	case "poktroll.QueryGetSessionRequest.application_address":
+		panic(fmt.Errorf("field application_address of message poktroll.QueryGetSessionRequest is not mutable"))
+	case "poktroll.QueryGetSessionRequest.block_height":
+		panic(fmt.Errorf("field block_height of message poktroll.QueryGetSessionRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1043,18 +1043,18 @@ func (x *fastReflection_QueryGetSessionRequest) Mutable(fd protoreflect.FieldDes
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryGetSessionRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionRequest.application_address":
+	case "poktroll.QueryGetSessionRequest.application_address":
 		return protoreflect.ValueOfString("")
-	case "poktroll.session.QueryGetSessionRequest.service":
+	case "poktroll.QueryGetSessionRequest.service":
 		m := new(shared.Service)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
-	case "poktroll.session.QueryGetSessionRequest.block_height":
+	case "poktroll.QueryGetSessionRequest.block_height":
 		return protoreflect.ValueOfInt64(int64(0))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionRequest"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1064,7 +1064,7 @@ func (x *fastReflection_QueryGetSessionRequest) NewField(fd protoreflect.FieldDe
 func (x *fastReflection_QueryGetSessionRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.session.QueryGetSessionRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.QueryGetSessionRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1453,13 +1453,13 @@ func (x *fastReflection_QueryGetSessionResponse) Range(f func(protoreflect.Field
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_QueryGetSessionResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
+	case "poktroll.QueryGetSessionResponse.session":
 		return x.Session != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1471,13 +1471,13 @@ func (x *fastReflection_QueryGetSessionResponse) Has(fd protoreflect.FieldDescri
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
+	case "poktroll.QueryGetSessionResponse.session":
 		x.Session = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1489,14 +1489,14 @@ func (x *fastReflection_QueryGetSessionResponse) Clear(fd protoreflect.FieldDesc
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_QueryGetSessionResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
+	case "poktroll.QueryGetSessionResponse.session":
 		value := x.Session
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1512,13 +1512,13 @@ func (x *fastReflection_QueryGetSessionResponse) Get(descriptor protoreflect.Fie
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
-		x.Session = value.Message().Interface().(*session.Session)
+	case "poktroll.QueryGetSessionResponse.session":
+		x.Session = value.Message().Interface().(*Session)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1534,16 +1534,16 @@ func (x *fastReflection_QueryGetSessionResponse) Set(fd protoreflect.FieldDescri
 // Mutable is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
+	case "poktroll.QueryGetSessionResponse.session":
 		if x.Session == nil {
-			x.Session = new(session.Session)
+			x.Session = new(Session)
 		}
 		return protoreflect.ValueOfMessage(x.Session.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1552,14 +1552,14 @@ func (x *fastReflection_QueryGetSessionResponse) Mutable(fd protoreflect.FieldDe
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_QueryGetSessionResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.session.QueryGetSessionResponse.session":
-		m := new(session.Session)
+	case "poktroll.QueryGetSessionResponse.session":
+		m := new(Session)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.session.QueryGetSessionResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.QueryGetSessionResponse"))
 		}
-		panic(fmt.Errorf("message poktroll.session.QueryGetSessionResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.QueryGetSessionResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1569,7 +1569,7 @@ func (x *fastReflection_QueryGetSessionResponse) NewField(fd protoreflect.FieldD
 func (x *fastReflection_QueryGetSessionResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.session.QueryGetSessionResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.QueryGetSessionResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1750,7 +1750,7 @@ func (x *fastReflection_QueryGetSessionResponse) ProtoMethods() *protoiface.Meth
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
 				if x.Session == nil {
-					x.Session = &session.Session{}
+					x.Session = &Session{}
 				}
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Session); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
@@ -1924,7 +1924,7 @@ type QueryGetSessionResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Session *session.Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
+	Session *Session `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
 }
 
 func (x *QueryGetSessionResponse) Reset() {
@@ -1947,7 +1947,7 @@ func (*QueryGetSessionResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_session_query_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueryGetSessionResponse) GetSession() *session.Session {
+func (x *QueryGetSessionResponse) GetSession() *Session {
 	if x != nil {
 		return x.Session
 	}
@@ -2042,22 +2042,22 @@ func file_poktroll_session_query_proto_rawDescGZIP() []byte {
 
 var file_poktroll_session_query_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_poktroll_session_query_proto_goTypes = []interface{}{
-	(*QueryParamsRequest)(nil),      // 0: poktroll.session.QueryParamsRequest
-	(*QueryParamsResponse)(nil),     // 1: poktroll.session.QueryParamsResponse
-	(*QueryGetSessionRequest)(nil),  // 2: poktroll.session.QueryGetSessionRequest
-	(*QueryGetSessionResponse)(nil), // 3: poktroll.session.QueryGetSessionResponse
-	(*Params)(nil),                  // 4: poktroll.session.Params
+	(*QueryParamsRequest)(nil),      // 0: poktroll.QueryParamsRequest
+	(*QueryParamsResponse)(nil),     // 1: poktroll.QueryParamsResponse
+	(*QueryGetSessionRequest)(nil),  // 2: poktroll.QueryGetSessionRequest
+	(*QueryGetSessionResponse)(nil), // 3: poktroll.QueryGetSessionResponse
+	(*Params)(nil),                  // 4: poktroll.Params
 	(*shared.Service)(nil),          // 5: poktroll.shared.Service
-	(*session.Session)(nil),         // 6: poktroll.session.Session
+	(*Session)(nil),         // 6: poktroll.Session
 }
 var file_poktroll_session_query_proto_depIdxs = []int32{
-	4, // 0: poktroll.session.QueryParamsResponse.params:type_name -> poktroll.session.Params
-	5, // 1: poktroll.session.QueryGetSessionRequest.service:type_name -> poktroll.shared.Service
-	6, // 2: poktroll.session.QueryGetSessionResponse.session:type_name -> poktroll.session.Session
-	0, // 3: poktroll.session.Query.Params:input_type -> poktroll.session.QueryParamsRequest
-	2, // 4: poktroll.session.Query.GetSession:input_type -> poktroll.session.QueryGetSessionRequest
-	1, // 5: poktroll.session.Query.Params:output_type -> poktroll.session.QueryParamsResponse
-	3, // 6: poktroll.session.Query.GetSession:output_type -> poktroll.session.QueryGetSessionResponse
+	4, // 0: poktroll.QueryParamsResponse.params:type_name -> poktroll.Params
+	5, // 1: poktroll.QueryGetSessionRequest.service:type_name -> poktroll.shared.Service
+	6, // 2: poktroll.QueryGetSessionResponse.session:type_name -> poktroll.Session
+	0, // 3: poktroll.Query.Params:input_type -> poktroll.QueryParamsRequest
+	2, // 4: poktroll.Query.GetSession:input_type -> poktroll.QueryGetSessionRequest
+	1, // 5: poktroll.Query.Params:output_type -> poktroll.QueryParamsResponse
+	3, // 6: poktroll.Query.GetSession:output_type -> poktroll.QueryGetSessionResponse
 	5, // [5:7] is the sub-list for method output_type
 	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
