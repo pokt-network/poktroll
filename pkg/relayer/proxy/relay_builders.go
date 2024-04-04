@@ -14,7 +14,6 @@ func (sync *synchronousRPCServer) newRelayRequest(request *http.Request) (*types
 	if err != nil {
 		return nil, err
 	}
-	defer request.Body.Close()
 
 	sync.logger.Debug().Msg("unmarshaling relay request")
 
@@ -34,8 +33,6 @@ func (sync *synchronousRPCServer) newRelayResponse(
 	responseBody io.ReadCloser,
 	sessionHeader *sessiontypes.SessionHeader,
 ) (*types.RelayResponse, error) {
-	defer responseBody.Close()
-
 	relayResponse := &types.RelayResponse{
 		Meta: types.RelayResponseMetadata{SessionHeader: sessionHeader},
 	}
