@@ -276,12 +276,7 @@ func (s *relaysSuite) sendTx(keyName string, msgs ...sdk.Msg) {
 }
 
 func (s *relaysSuite) waitForNextBlock() {
-	blocks := s.blockClient.LastNBlocks(s.ctx, 1)
-	block := blocks[0]
-	if block == nil {
-		return
-	}
-	currentHeight := block.Height()
+	currentHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
 
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()

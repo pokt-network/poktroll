@@ -63,6 +63,7 @@ type relaysSuite struct {
 	relaysSent         atomic.Uint64
 
 	waitingForFirstSession atomic.Bool
+	startBlockHeight       int64
 
 	provisionedGateways  []*provisionedOffChainActor
 	provisionedSuppliers []*provisionedOffChainActor
@@ -194,8 +195,6 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		maxSuppliers/supplierInc*supplierBlockIncRate,
 	)
 
-	var startBlockHeight int64
-
 	// sessionInfoObs maps committed blocks to a notification which includes the
 	// session number and the start and end block heights of the session.
 	// It runs at the same frequency as committed blocks (i.e. 1:1).
@@ -227,7 +226,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			}
 
 			if s.waitingForFirstSession.Load() {
-				startBlockHeight = blockHeight
+				s.startBlockHeight = blockHeight
 			}
 
 			s.waitingForFirstSession.CompareAndSwap(true, false)
@@ -236,8 +235,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// [Prepared][Gw: 1, Supp: 1, App: 1]
 			// [Relays][RPS: 10, Sent: 100]
 			// [Session][Num: 1, Start: 5, End, 9]
-			s.printProgressLine(blockHeight-startBlockHeight, testDurationBlocks)
-			if blockHeight >= startBlockHeight+testDurationBlocks {
+			// s.printProgressLine(blockHeight-s.startBlockHeight, testDurationBlocks)
+			if blockHeight >= s.startBlockHeight+testDurationBlocks+1 {
 				s.cancelCtx()
 			}
 
@@ -280,6 +279,10 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 				newApps = s.stakeApps(notif, appInc, maxApps)
 			}
 
+			if len(newApps) == 0 && len(newGateways) == 0 {
+				return
+			}
+
 			s.waitForNextBlock()
 			s.stakeAndDelegateApps(newApps, newGateways)
 		},
@@ -302,6 +305,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerApplicationPerSeco
 			continue
 		}
 
+		logger.Info().Msgf("sending relay request %d at %s", s.relaysSent.Load(), time.Now())
 		batchLimiter.Go(s.ctx, func() {
 			s.sendRelay(s.relaysSent.Add(1) - 1)
 		})
