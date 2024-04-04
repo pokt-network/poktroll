@@ -93,7 +93,6 @@ WORKDIR /
 """,
     only=["./bin/poktrolld"],
     entrypoint=["/tilt-restart-wrapper", "--watch_file=/tmp/.restart-proc", "--entr_flags=-r", "poktrolld"],
-    # entrypoint=["/bin/sh", "/scripts/pocket.sh"],
     live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
 )
 
