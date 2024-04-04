@@ -3,39 +3,68 @@ package keeper_test
 import (
 	"testing"
 
+	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
-	"github.com/pokt-network/poktroll/testutil/proof"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/proof/keeper"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+var defaultMerkleRoot = []byte{0, 1, 0, 1}
+
 func TestMsgServer_CreateClaim_Success(t *testing.T) {
-	appSupplierPair := proof.AppSupplierPair{
-		AppAddr:      sample.AccAddress(),
-		SupplierAddr: sample.AccAddress(),
-	}
+	// Set block height to 1 so there is a valid session on-chain.
+	blockHeightOpt := keepertest.WithBlockHeight(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+
 	service := &sharedtypes.Service{Id: testServiceId}
-	sessionFixturesByAddr := proof.NewSessionFixturesWithPairings(t, service, appSupplierPair)
+	supplierAddr := sample.AccAddress()
+	appAddr := sample.AccAddress()
 
-	proofKeeper, ctx := keepertest.ProofKeeper(t, sessionFixturesByAddr)
-	srv := keeper.NewMsgServerImpl(proofKeeper)
+	keepers.SetSupplier(ctx, sharedtypes.Supplier{
+		Address: supplierAddr,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{Service: service},
+		},
+	})
 
-	claimMsg := newTestClaimMsg(t, testSessionId)
-	claimMsg.SupplierAddress = appSupplierPair.SupplierAddr
-	claimMsg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
+	keepers.SetApplication(ctx, apptypes.Application{
+		Address: appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{Service: service},
+		},
+	})
 
+	sessionRes, err := keepers.GetSession(
+		ctx,
+		&sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			Service:            service,
+			BlockHeight:        1,
+		},
+	)
+	require.NoError(t, err)
+
+	claimMsg := newTestClaimMsg(t,
+		sessionRes.GetSession().GetSessionId(),
+		supplierAddr,
+		appAddr,
+		service,
+		defaultMerkleRoot,
+	)
 	createClaimRes, err := srv.CreateClaim(ctx, claimMsg)
 	require.NoError(t, err)
 	require.NotNil(t, createClaimRes)
 
-	claimRes, err := proofKeeper.AllClaims(ctx, &types.QueryAllClaimsRequest{})
+	claimRes, err := keepers.AllClaims(ctx, &types.QueryAllClaimsRequest{})
 	require.NoError(t, err)
 
 	claims := claimRes.GetClaims()
@@ -47,15 +76,78 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 }
 
 func TestMsgServer_CreateClaim_Error(t *testing.T) {
-	service := &sharedtypes.Service{Id: testServiceId}
-	appSupplierPair := proof.AppSupplierPair{
-		AppAddr:      sample.AccAddress(),
-		SupplierAddr: sample.AccAddress(),
-	}
-	sessionFixturesByAppAddr := proof.NewSessionFixturesWithPairings(t, service, appSupplierPair)
+	// Set block height to 1 so there is a valid session on-chain.
+	blockHeightOpt := keepertest.WithBlockHeight(1)
+	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
+	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
 
-	proofKeeper, ctx := keepertest.ProofKeeper(t, sessionFixturesByAppAddr)
-	srv := keeper.NewMsgServerImpl(proofKeeper)
+	// service is the only service for which a session should exist.
+	service := &sharedtypes.Service{Id: testServiceId}
+	// supplierAddr is staked for "svc1" such that it is expected to be in the session.
+	supplierAddr := sample.AccAddress()
+	// wrongSupplierAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
+	wrongSupplierAddr := sample.AccAddress()
+	// randSupplierAddr is *not* staked for any service.
+	randSupplierAddr := sample.AccAddress()
+
+	// appAddr is staked for "svc1" such that it is expected to be in the session.
+	appAddr := sample.AccAddress()
+	// wrongAppAddr is staked for "nosvc1" such that it is *not* expected to be in the session.
+	wrongAppAddr := sample.AccAddress()
+	// randAppAddr is *not* staked for any service.
+	randAppAddr := sample.AccAddress()
+
+	supplierKeeper := keepers.SupplierKeeper
+	appKeeper := keepers.ApplicationKeeper
+
+	// Add a supplier that is expected to be in the session.
+	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+		Address: supplierAddr,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{Service: service},
+		},
+	})
+
+	// Add a supplier that is *not* expected to be in the session.
+	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{
+		Address: wrongSupplierAddr,
+		Services: []*sharedtypes.SupplierServiceConfig{
+			{Service: &sharedtypes.Service{Id: "nosvc1"}},
+		},
+	})
+
+	// Add an application that is expected to be in the session.
+	appKeeper.SetApplication(ctx, apptypes.Application{
+		Address: appAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{Service: service},
+		},
+	})
+
+	// Add an application that is *not* expected to be in the session.
+	appKeeper.SetApplication(ctx, apptypes.Application{
+		Address: wrongAppAddr,
+		ServiceConfigs: []*sharedtypes.ApplicationServiceConfig{
+			{Service: &sharedtypes.Service{Id: "nosvc1"}},
+		},
+	})
+
+	// Query for the session which contains the expected app and supplier pair.
+	sessionRes, err := keepers.SessionKeeper.GetSession(
+		ctx,
+		&sessiontypes.QueryGetSessionRequest{
+			ApplicationAddress: appAddr,
+			Service:            service,
+			BlockHeight:        1,
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, sessionRes)
+	require.Equal(t, appAddr, sessionRes.GetSession().GetApplication().GetAddress())
+
+	sessionResSuppliers := sessionRes.GetSession().GetSuppliers()
+	require.NotEmpty(t, sessionResSuppliers)
+	require.Equal(t, supplierAddr, sessionResSuppliers[0].GetAddress())
 
 	tests := []struct {
 		desc        string
@@ -65,17 +157,20 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				msg := newTestClaimMsg(t, "invalid_session_id")
-				msg.SupplierAddress = appSupplierPair.SupplierAddr
-				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
-
-				return msg
+				return newTestClaimMsg(t,
+					// Use a session ID that doesn't match.
+					"invalid_session_id",
+					supplierAddr,
+					appAddr,
+					service,
+					defaultMerkleRoot,
+				)
 			},
 			expectedErr: status.Error(
 				codes.InvalidArgument,
 				types.ErrProofInvalidSessionId.Wrapf(
 					"session ID does not match on-chain session ID; expected %q, got %q",
-					testSessionId,
+					sessionRes.GetSession().GetSessionId(),
 					"invalid_session_id",
 				).Error(),
 			),
@@ -83,15 +178,86 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				msg := newTestClaimMsg(t, testSessionId)
-				msg.SessionHeader.ApplicationAddress = appSupplierPair.AppAddr
-
-				// Overwrite supplier address to one not included in the session fixtures.
-				msg.SupplierAddress = sample.AccAddress()
-
-				return msg
+				return newTestClaimMsg(t,
+					sessionRes.GetSession().GetSessionId(),
+					// Use a supplier address not included in the session.
+					wrongSupplierAddr,
+					appAddr,
+					service,
+					defaultMerkleRoot,
+				)
 			},
-			expectedErr: types.ErrProofNotFound,
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrProofNotFound.Wrapf(
+					"supplier address %q not found in session ID %q",
+					wrongSupplierAddr,
+					sessionRes.GetSession().GetSessionId(),
+				).Error(),
+			),
+		},
+		{
+			desc: "claim msg supplier address must exist on-chain",
+			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+				return newTestClaimMsg(t,
+					sessionRes.GetSession().GetSessionId(),
+					// Use a supplier address that's nonexistent on-chain.
+					randSupplierAddr,
+					appAddr,
+					service,
+					defaultMerkleRoot,
+				)
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				types.ErrProofNotFound.Wrapf(
+					"supplier address %q not found in session ID %q",
+					randSupplierAddr,
+					sessionRes.GetSession().GetSessionId(),
+				).Error(),
+			),
+		},
+		{
+			desc: "claim msg application address must be in the session",
+			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+				return newTestClaimMsg(t,
+					sessionRes.GetSession().GetSessionId(),
+					supplierAddr,
+					// Use an application address not included in the session.
+					wrongAppAddr,
+					service,
+					defaultMerkleRoot,
+				)
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				sessiontypes.ErrSessionAppNotStakedForService.Wrapf(
+					"application %q not staked for service ID %q",
+					wrongAppAddr,
+					service.GetId(),
+				).Error(),
+			),
+		},
+		{
+			desc: "claim msg application address must exist on-chain",
+			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
+				return newTestClaimMsg(t,
+					sessionRes.GetSession().GetSessionId(),
+					supplierAddr,
+					// Use an application address that's nonexistent on-chain.
+					randAppAddr,
+					service,
+					defaultMerkleRoot,
+				)
+			},
+			expectedErr: status.Error(
+				codes.InvalidArgument,
+				sessiontypes.ErrSessionAppNotFound.Wrapf(
+					"could not find app with address %q at height %d",
+					randAppAddr,
+					sessionRes.GetSession().GetHeader().GetSessionStartBlockHeight(),
+				).Error(),
+			),
 		},
 	}
 
@@ -104,20 +270,25 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	}
 }
 
-func newTestClaimMsg(t *testing.T, sessionId string) *types.MsgCreateClaim {
+func newTestClaimMsg(
+	t *testing.T,
+	sessionId string,
+	supplierAddr string,
+	appAddr string,
+	service *sharedtypes.Service,
+	merkleRoot smt.MerkleRoot,
+) *types.MsgCreateClaim {
 	t.Helper()
 
 	return types.NewMsgCreateClaim(
-		sample.AccAddress(),
+		supplierAddr,
 		&sessiontypes.SessionHeader{
-			ApplicationAddress:      sample.AccAddress(),
-			SessionStartBlockHeight: 0,
+			ApplicationAddress:      appAddr,
 			SessionId:               sessionId,
-			Service: &sharedtypes.Service{
-				Id:   "svc1",
-				Name: "svc1",
-			},
+			Service:                 service,
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   4,
 		},
-		[]byte{0, 0, 0, 0},
+		merkleRoot,
 	)
 }
