@@ -20,13 +20,11 @@ type AccountKeeper interface {
 type BankKeeper interface {
 	MintCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx context.Context, moduleName string, amt sdk.Coins) error
-	// TODO_IN_THIS_PR: Update all the comments on why we use Send instead of Delegate for all expected_keepers.
-	SendCoinsFromModuleToAccount(
-		ctx context.Context,
-		senderModule string,
-		recipientAddr sdk.AccAddress,
-		amt sdk.Coins,
-	) error
+	// We use the bankkeeper SendXXX instead of DelegateXX methods instead
+	// because their purpose is to "escrow" funds on behalf of an account rather
+	// than "delegate" funds from one account to another which is more closely
+	// linked to staking.
+	SendCoinsFromModuleToAccount(ctx context.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
 }
 
 type ApplicationKeeper interface {

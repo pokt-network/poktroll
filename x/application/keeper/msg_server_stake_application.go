@@ -9,8 +9,6 @@ import (
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
-// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
-
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
 	logger := k.Logger().With("method", "StakeApplication")
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
@@ -36,10 +34,11 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 			return nil, err
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currAppStake)
-		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 		if err != nil {
+			logger.Error(fmt.Sprintf("could not calculate coins to escrow due to error %v", err))
 			return nil, err
 		}
+		logger.Info(fmt.Sprintf("Application is going to escrow an additional %+v coins", coinsToEscrow))
 	}
 
 	// Must always stake or upstake (> 0 delta)

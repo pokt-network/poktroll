@@ -62,15 +62,7 @@ func TestSettleExpiringSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
 }
 
-// TODO_IN_THIS_PR(@Olshansk): Things to test
-// 1. Balance changes (up and down)
-// 2. Claim that requires a proof but doesn't have one expires
-// 3. Claim that requires a proof and has one settles
-// 4. Claim that doesn't require a proof settles
-// 5. Expand on other test cases to add in the future
-// 6. Validate the emitted events
-
-func (s *TestSuite) TestClaimSettlesAfterProofWindowCloses() {
+func (s *TestSuite) TestClaimSettlesWhenAProofIsRequired() {
 	// Retrieve default values
 	t := s.T()
 	ctx := s.ctx
@@ -121,4 +113,24 @@ func (s *TestSuite) TestClaimSettlesAfterProofWindowCloses() {
 	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 1)
+}
+
+func (s *TestSuite) TestClaimSettlesWhenAProofIsNotRequired() {
+	s.T().Skip("TODO_TEST: Implement that a claim is properly settled when a claim is provided but a proof is not needed for it")
+}
+
+func (s *TestSuite) TestClaimDoesNotSettleBeforeProofWindowCloses() {
+	s.T().Skip("TODO_TEST: Implement that a claim remains unsettled before the proof window closes")
+}
+
+func (s *TestSuite) TestClaimDoesNotSettleIfProofIsInvalid() {
+	s.T().Skip("TODO_TEST: Implement that a claim remains unsettled before the proof window closes")
+}
+
+func (s *TestSuite) TestClaimDoesNotSettleIfProofIsRequiredButMissing() {
+	s.T().Skip("TODO_TEST: Implement that a claim remains unsettled before the proof window closes")
+}
+
+func (s *TestSuite) TestMultipleClaimsSettleWithMultipleApplicationsAndSuppliers() {
+	s.T().Skip("TODO_TEST: Implement that multiple claims settle at once when different sessions have overlapping applications and suppliers")
 }

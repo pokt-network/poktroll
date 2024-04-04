@@ -10,8 +10,6 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_IMPROVE(@Olshansk): Add more logging to staking & unstaking branches (success, failure, etc...).
-
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
@@ -38,10 +36,10 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 			return nil, err
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
-		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 		if err != nil {
 			return nil, err
 		}
+		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
 	}
 
 	// Must always stake or upstake (> 0 delta)
@@ -57,7 +55,6 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 		return nil, err
 	}
 
-	// TODO_IMPROVE: Should we avoid making this call if `coinsToEscrow` = 0?
 	// Send the coins from the supplier to the staked supplier pool
 	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {

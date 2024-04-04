@@ -1,6 +1,6 @@
 Feature: Relay Namespace
 
-#     # NB: `make acc_initialize_pubkeys` must have been executed before this test is run
+    # NB: `make acc_initialize_pubkeys` must have been executed before this test is run
     Scenario: App can send relay to Supplier
         Given the user has the pocketd binary installed
         And the application "app1" is staked for service "anvil"

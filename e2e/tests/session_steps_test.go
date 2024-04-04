@@ -57,11 +57,11 @@ const (
 	preExistingProofsKey = "preExistingProofsKey"
 )
 
-func (s *suite) TheUserShouldWaitForTheMessageToBeSubmitted(module, message string) {
+func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
 	s.waitForTxResultEvent(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
 }
 
-func (s *suite) TheUserShouldWaitForTheNewBlockEventToBeBroadcasted(module, message string) {
+func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
 	s.waitForNewBlockEvent(fmt.Sprintf("poktroll.%s.Event%s", module, message))
 }
 

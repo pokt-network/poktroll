@@ -1,10 +1,10 @@
 package app
 
 import (
+	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
 	"path/filepath"
-	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/log"
@@ -62,7 +62,6 @@ import (
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
 const (

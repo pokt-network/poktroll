@@ -134,13 +134,13 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error sending upokt: %s")
+	require.NoErrorf(s, err, "error sending upokt from %s to %s", accName1, accName2)
 	s.pocketd.result = res
 }
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	require.LessF(s, bal, int(amount), "account %s does not have enough upokt", accName)
+	require.Greaterf(s, bal, int(amount), "account %s does not have enough upokt", accName)
 	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
@@ -406,6 +406,8 @@ func (s *suite) buildSupplierMap() {
 	}
 }
 
+// TODO_TECHDEBT(@bryanchriswhite): Cleanup & deduplicate the code related
+// to this accessors. Ref: https://github.com/pokt-network/poktroll/pull/448/files#r1547930911
 func (s *suite) getAccBalance(accName string) int {
 	s.Helper()
 
@@ -420,7 +422,7 @@ func (s *suite) getAccBalance(accName string) int {
 	s.pocketd.result = res
 
 	match := amountRe.FindStringSubmatch(res.Stdout)
-	require.GreaterOrEqual(s, match, 2, "no balance found for %s", accName)
+	require.GreaterOrEqual(s, len(match), 2, "no balance found for %s", accName)
 
 	accBalance, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
@@ -434,10 +436,10 @@ func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountC
 	// Verify if balance is more or less than before
 	switch condition {
 	case "more":
-		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
+		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
 		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
 	case "less":
-		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
+		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
 		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
 	default:
 		s.Fatalf("unknown condition %s", condition)

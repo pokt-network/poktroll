@@ -68,8 +68,8 @@ validators:
     config:
       moniker: "validator1"
       consensus:
-        timeout_commit: "3s"
-        timeout_propose: "3s"
+        timeout_commit: "2s"
+        timeout_propose: "2s"
     client:
       chain-id: poktroll
 

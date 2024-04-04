@@ -25,7 +25,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/app"
+	applicationmocks "github.com/pokt-network/poktroll/testutil/application/mocks"
+	gatewaymocks "github.com/pokt-network/poktroll/testutil/gateway/mocks"
 	"github.com/pokt-network/poktroll/testutil/proof/mocks"
+	sessionmocks "github.com/pokt-network/poktroll/testutil/session/mocks"
+	suppliermocks "github.com/pokt-network/poktroll/testutil/supplier/mocks"
 	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaykeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
@@ -126,7 +130,6 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 
 	// Mock the bank keeper.
 	ctrl := gomock.NewController(t)
-	bankKeeperMock := mocks.NewMockBankKeeper(ctrl)
 
 	// Construct a real account keeper so that public keys can be queried.
 	accountKeeper := authkeeper.NewAccountKeeper(
@@ -145,7 +148,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[gatewaytypes.StoreKey]),
 		logger,
 		authority.String(),
-		bankKeeperMock,
+		gatewaymocks.NewMockBankKeeper(ctrl),
 	)
 	require.NoError(t, gatewayKeeper.SetParams(ctx, gatewaytypes.DefaultParams()))
 
@@ -155,7 +158,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[apptypes.StoreKey]),
 		logger,
 		authority.String(),
-		bankKeeperMock,
+		applicationmocks.NewMockBankKeeper(ctrl),
 		accountKeeper,
 		gatewayKeeper,
 	)
@@ -167,7 +170,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		runtime.NewKVStoreService(keys[suppliertypes.StoreKey]),
 		log.NewNopLogger(),
 		authority.String(),
-		bankKeeperMock,
+		suppliermocks.NewMockBankKeeper(ctrl),
 	)
 	require.NoError(t, supplierKeeper.SetParams(ctx, suppliertypes.DefaultParams()))
 
@@ -178,7 +181,7 @@ func NewProofModuleKeepers(t testing.TB, opts ...ProofKeepersOpt) (_ *ProofModul
 		log.NewNopLogger(),
 		authority.String(),
 		accountKeeper,
-		bankKeeperMock,
+		sessionmocks.NewMockBankKeeper(ctrl),
 		appKeeper,
 		supplierKeeper,
 	)

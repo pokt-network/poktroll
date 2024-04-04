@@ -7,8 +7,8 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
-# Search for `func TestModuleAddress` in the codebase to get an understanding
-# of how we got these values.
+# On-chain module account addresses. Search for `func TestModuleAddress` in the
+# codebase to get an understanding of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
@@ -585,7 +585,7 @@ acc_balance_query: ## Query the balance of the account specified (make acc_balan
 	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
 .PHONY: acc_balance_query_modules
-acc_balance_query_modules: ## Query the balance of the network level module
+acc_balance_query_modules: ## Query the balance of the network level module accounts
 	@echo "### Application ###"
 	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
 	@echo "### Supplier ###"
