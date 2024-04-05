@@ -99,19 +99,12 @@ genesis:
         max_delegated_gateways: "100"
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-          delegatee_gateway_addresses: [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          delegatee_gateway_addresses: []
           service_configs:
             - service:
                 id: anvil
                 name: ""
           stake:
-            amount: "1000"
-            denom: upokt
-    gateway:
-      gatewayList:
-        - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-          stake:
-            # TODO_IN_THIS_COMMIT: ensure amount is sufficient/reasonable.
             amount: "1000"
             denom: upokt
     supplier:
