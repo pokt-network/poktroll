@@ -11,6 +11,7 @@ localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "validator": {"cleanupBeforeEachStart": True},
     "relayminers": {"count": 1},
+    "gateways": {"count": 1},
     "appgateservers": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -159,13 +160,40 @@ for x in range(localnet_config["appgateservers"]["count"]):
     )
     k8s_resource(
         "appgateserver" + str(actor_number),
-        labels=["supplier_nodes"],
+        labels=["applications"],
         resource_deps=["validator"],
         port_forwards=[
             str(42068+actor_number)+":42069", # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
             str(40054+actor_number)+":40006", # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
             str(9079+actor_number)+":9090", # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
+        ],
+    )
+
+# Provision Gateways
+actor_number = 0
+for x in range(localnet_config["gateways"]["count"]):
+    actor_number = actor_number + 1
+    helm_resource(
+        "gateway" + str(actor_number),
+        chart_prefix + "appgate-server",
+        flags=[
+            "--values=./localnet/kubernetes/values-common.yaml",
+            "--values=./localnet/kubernetes/values-gateway.yaml",
+            "--set=config.signing_key=gateway" + str(actor_number),
+        ],
+        image_deps=["poktrolld"],
+        image_keys=[("image.repository", "image.tag")],
+    )
+    k8s_resource(
+        "gateway" + str(actor_number),
+        labels=["gateways"],
+        resource_deps=["validator"],
+        port_forwards=[
+            str(42078+actor_number)+":42069", # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
+            str(40064+actor_number)+":40006", # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
+            # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
+            str(9089+actor_number)+":9090", # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
         ],
     )
 
