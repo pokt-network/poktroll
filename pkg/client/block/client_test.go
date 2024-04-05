@@ -11,10 +11,12 @@ import (
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cometbft/cometbft/types"
 	comettypes "github.com/cometbft/cometbft/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -64,15 +66,28 @@ func TestBlockClient(t *testing.T) {
 		expectedRPCResponseBz,
 	)
 
-	deps := depinject.Supply(eventsQueryClient)
+	ctrl := gomock.NewController(t)
+	cometClientMock := mockclient.NewMockCometRPC(ctrl)
 
-	cometClient := &testCometClient{
-		expectedHeight: expectedHeight,
-		expectedHash:   expectedHash,
-	}
+	cometClientMock.EXPECT().
+		Block(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
+			return &coretypes.ResultBlock{
+				Block: &types.Block{
+					Header: types.Header{
+						Height: expectedHeight,
+					},
+				},
+				BlockID: types.BlockID{
+					Hash: expectedHash,
+				},
+			}, nil
+		})
+
+	deps := depinject.Supply(eventsQueryClient, cometClientMock)
 
 	// Set up block client.
-	blockClient, err := block.NewBlockClient(ctx, cometClient, deps)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	require.NoError(t, err)
 	require.NotNil(t, blockClient)
 
@@ -90,7 +105,7 @@ func TestBlockClient(t *testing.T) {
 		{
 			name: "LastBlock successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LastBlock()
+				lastBlock := blockClient.LastBlock(ctx)
 				return lastBlock
 			},
 		},

@@ -6,10 +6,10 @@ import (
 	"cosmossdk.io/depinject"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	block "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/delegation"
 	eventsquery "github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/query"
@@ -26,23 +26,25 @@ func (sdk *poktrollSDK) buildDeps(
 ) (depinject.Config, error) {
 	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
 
-	// Have a new depinject config
-	deps := depinject.Configs()
-
-	// Supply the logger
-	deps = depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx)))
-
 	cosmosClient, err := cosmosclient.NewClientFromNode(config.QueryNodeUrl.String())
 	if err != nil {
 		return nil, err
 	}
+
+	// Supply the logger & cosmos RPC client.
+	deps := depinject.Configs(
+		depinject.Supply(
+			polylog.Ctx(ctx),
+			cosmosClient,
+		),
+	)
 
 	// Create and supply the events query client
 	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 
 	// Create and supply the block client that depends on the events query client
-	blockClient, err := block.NewBlockClient(ctx, cosmosClient, deps)
+	blockClient, err := block.NewBlockClient(ctx, deps)
 	if err != nil {
 		return nil, err
 	}

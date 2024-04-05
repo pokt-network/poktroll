@@ -25,7 +25,7 @@ func TestBlockClient_LastNBlocks(t *testing.T) {
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	block := blockClient.LastBlock()
+	block := blockClient.LastBlock(ctx)
 	require.NotEmpty(t, block)
 	require.NotZero(t, block.Height())
 	require.NotZero(t, block.Hash())

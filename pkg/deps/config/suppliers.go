@@ -8,7 +8,7 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -91,8 +91,10 @@ func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 			return nil, err
 		}
 
+		deps = depinject.Configs(deps, depinject.Supply(cosmosClient))
+
 		// Requires a query client to be supplied to the deps
-		blockClient, err := block.NewBlockClient(ctx, cosmosClient, deps)
+		blockClient, err := block.NewBlockClient(ctx, deps)
 		if err != nil {
 			return nil, err
 		}
