@@ -78,10 +78,8 @@ func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Con
 		WithCodec(Marshaler).
 		WithTxConfig(TxConfig).
 		WithHomeDir(homedir).
-		WithSignModeStr(flags.SignModeDirect).
 		WithAccountRetriever(authtypes.AccountRetriever{}).
-		WithInterfaceRegistry(InterfaceRegistry).
-		WithSkipConfirmation(true)
+		WithInterfaceRegistry(InterfaceRegistry)
 
 	clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, flagSet)
 	require.NoError(t, err)
@@ -106,7 +104,6 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
 	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")
-	mockFlagSet.String(flags.FlagBroadcastMode, flags.BroadcastSync, "use poktroll chain-id")
 	err := mockFlagSet.Parse([]string{})
 	require.NoError(t, err)
 

@@ -91,41 +91,43 @@ genesis:
         min_deposit:
           - amount: "10000"
             denom: upokt
-#    application:
-#      params:
-#        max_delegated_gateways: "7"
-#      applicationList:
-#        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
-#          delegatee_gateway_addresses: [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
-#          service_configs:
-#            - service:
-#                id: anvil
-#                name: ""
-#          stake:
-#            amount: "1000"
-#            denom: upokt
-#    gateway:
-#      gatewayList:
-#        - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
-#          stake:
-#            # TODO_IN_THIS_COMMIT: ensure amount is sufficient/reasonable.
-#            amount: "1000"
-#            denom: upokt
-#    supplier:
-#      supplierList:
-#        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
-#          services:
-#            - endpoints:
-#                - configs: []
-#                  rpc_type: JSON_RPC
-#                  url: http://relayminer1:8545
-#              service:
-#                id: anvil
-#                name: ""
-#          stake:
-#            amount: "1000"
-#            denom: upokt
-#    service:
-#      params:
-#        add_service_fee: "1000000000"
-#
+    application:
+      params:
+        # TODO_HACK: Have a sufficient amount of delegated gateways to comply with
+        # the load testing plan requirements.
+        # TODO_BLOCKER: Be able to change this value from the load testing plan.
+        max_delegated_gateways: "100"
+      applicationList:
+        - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
+          delegatee_gateway_addresses: [pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4]
+          service_configs:
+            - service:
+                id: anvil
+                name: ""
+          stake:
+            amount: "1000"
+            denom: upokt
+    gateway:
+      gatewayList:
+        - address: pokt15vzxjqklzjtlz7lahe8z2dfe9nm5vxwwmscne4
+          stake:
+            # TODO_IN_THIS_COMMIT: ensure amount is sufficient/reasonable.
+            amount: "1000"
+            denom: upokt
+    supplier:
+      supplierList:
+        - address: pokt19a3t4yunp0dlpfjrp7qwnzwlrzd5fzs2gjaaaj
+          services:
+            - endpoints:
+                - configs: []
+                  rpc_type: JSON_RPC
+                  url: http://relayminer1:8545
+              service:
+                id: anvil
+                name: ""
+          stake:
+            amount: "1000"
+            denom: upokt
+    service:
+      params:
+        add_service_fee: "1000000000"

@@ -6,7 +6,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/golang/mock/gomock"
-	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -19,7 +18,7 @@ import (
 
 // NewLocalnetClient creates and returns a new BlockClient that's configured for
 // use with the LocalNet validator.
-func NewLocalnetClient(ctx context.Context, t gocuke.TestingT) client.BlockClient {
+func NewLocalnetClient(ctx context.Context, t *testing.T) client.BlockClient {
 	t.Helper()
 
 	queryClient := testeventsquery.NewLocalnetClient(t)
