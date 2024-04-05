@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"hash"
 
 	"github.com/pokt-network/smt"
 	"google.golang.org/grpc/codes"
@@ -16,21 +17,18 @@ import (
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
 
-const (
-	// relayMinDifficultyBits is the minimum difficulty that a relay must have
-	// to be reward (i.e. volume) applicable.
-	// TODO_BLOCKER: relayMinDifficultyBits should be a governance-based parameter
-	relayMinDifficultyBits = 0
-)
-
 // SMT specification used for the proof verification.
-var spec *smt.TrieSpec
+var (
+	pathHasher hash.Hash
+	SmtSpec    *smt.TrieSpec
+)
 
 func init() {
 	// Use a spec that does not prehash values in the smst. This returns a nil
 	// value hasher for the proof verification in order to to avoid hashing the
 	// value twice.
-	spec = smt.NoPrehashSpec(sha256.New(), true)
+	pathHasher = sha256.New()
+	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -94,19 +92,24 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// Unmarshal the closest merkle proof from the message.
 	sparseMerkleClosestProof := &smt.SparseMerkleClosestProof{}
 	if err := sparseMerkleClosestProof.Unmarshal(msg.GetProof()); err != nil {
-		return nil, types.ErrProofInvalidProof.Wrapf(
-			"failed to unmarshal closest merkle proof: %s",
-			err,
+		return nil, status.Error(codes.InvalidArgument,
+			types.ErrProofInvalidProof.Wrapf(
+				"failed to unmarshal closest merkle proof: %s",
+				err,
+			).Error(),
 		)
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(spec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
-		return nil, types.ErrProofInvalidRelay.Wrapf(
-			"failed to unmarshal relay: %s",
-			err,
+		return nil, status.Error(
+			codes.InvalidArgument,
+			types.ErrProofInvalidRelay.Wrapf(
+				"failed to unmarshal relay: %s",
+				err,
+			).Error(),
 		)
 	}
 
@@ -156,8 +159,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 	logger.Debug("successfully verified relay response signature")
 
+	// Get the proof module's governance parameters.
+	params := k.GetParams(ctx)
+
 	// Verify the relay difficulty is above the minimum required to earn rewards.
-	if err := validateMiningDifficulty(relayBz); err != nil {
+	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated relay mining difficulty")
@@ -168,6 +174,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		return nil, status.Error(codes.FailedPrecondition, err.Error())
 	}
 	logger.Debug("successfully validated proof path")
+
+	// Verify the relay's difficulty.
+	if err := validateMiningDifficulty(relayBz, params.MinRelayDifficultyBits); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, err.Error())
+	}
 
 	// Retrieve the corresponding claim for the proof submitted so it can be
 	// used in the proof validation below.
@@ -269,7 +280,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	// Compare the Application address.
 	if sessionHeader.GetApplicationAddress() != expectedSessionHeader.GetApplicationAddress() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders application addresses mismatch expect: %q, got: %q",
+			"session headers application addresses mismatch; expect: %q, got: %q",
 			expectedSessionHeader.GetApplicationAddress(),
 			sessionHeader.GetApplicationAddress(),
 		)
@@ -278,7 +289,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	// Compare the Service IDs.
 	if sessionHeader.GetService().GetId() != expectedSessionHeader.GetService().GetId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders service IDs mismatch expect: %q, got: %q",
+			"session headers service IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetService().GetId(),
 			sessionHeader.GetService().GetId(),
 		)
@@ -296,7 +307,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	// Compare the Session start block heights.
 	if sessionHeader.GetSessionStartBlockHeight() != expectedSessionHeader.GetSessionStartBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session start heights mismatch expect: %d, got: %d",
+			"session headers session start heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionStartBlockHeight(),
 			sessionHeader.GetSessionStartBlockHeight(),
 		)
@@ -305,7 +316,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	// Compare the Session end block heights.
 	if sessionHeader.GetSessionEndBlockHeight() != expectedSessionHeader.GetSessionEndBlockHeight() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session end heights mismatch expect: %d, got: %d",
+			"session headers session end heights mismatch; expected: %d, got: %d",
 			expectedSessionHeader.GetSessionEndBlockHeight(),
 			sessionHeader.GetSessionEndBlockHeight(),
 		)
@@ -314,7 +325,7 @@ func compareSessionHeaders(expectedSessionHeader, sessionHeader *sessiontypes.Se
 	// Compare the Session IDs.
 	if sessionHeader.GetSessionId() != expectedSessionHeader.GetSessionId() {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"sessionHeaders session IDs mismatch expect: %q, got: %q",
+			"session headers session IDs mismatch; expected: %q, got: %q",
 			expectedSessionHeader.GetSessionId(),
 			sessionHeader.GetSessionId(),
 		)
@@ -329,7 +340,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, spec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
 	if err != nil {
 		return err
 	}
@@ -345,12 +356,10 @@ func verifyClosestProof(
 // required minimum threshold.
 // TODO_TECHDEBT: Factor out the relay mining difficulty validation into a shared
 // function that can be used by both the proof and the miner packages.
-func validateMiningDifficulty(relayBz []byte) error {
-	hasher := sha256.New()
-	hasher.Write(relayBz)
-	relayHash := hasher.Sum(nil)
+func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
+	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	difficultyBits, err := protocol.CountDifficultyBits(relayHash)
+	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
@@ -360,11 +369,11 @@ func validateMiningDifficulty(relayBz []byte) error {
 
 	// TODO: Devise a test that tries to attack the network and ensure that there
 	// is sufficient telemetry.
-	if difficultyBits < relayMinDifficultyBits {
+	if uint64(relayDifficultyBits) < minRelayDifficultyBits {
 		return types.ErrProofInvalidRelay.Wrapf(
-			"relay difficulty %d is less than the required difficulty %d",
-			difficultyBits,
-			relayMinDifficultyBits,
+			"relay difficulty %d is less than the minimum difficulty %d",
+			relayDifficultyBits,
+			minRelayDifficultyBits,
 		)
 	}
 
@@ -394,23 +403,30 @@ func (k msgServer) validateClosestPath(
 	// Since smt.ProveClosest is defined in terms of submitProofWindowStartHeight,
 	// this block's hash needs to be used for validation too.
 	//
-	// TODO_TECHDEBT(#409): Reference the session rollover documentation here.
-	// TODO_BLOCKER: Update `blockHeight` to be the value of when the `ProofWindow`
+	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
+	// into account the heights, windows and grace periods into helper functions.
+	// TODO_BLOCKER@(@Olshansk): Update `blockHeight` to be the value of when the `ProofWindow`
 	// opens once the variable is added.
 	sessionEndBlockHeightWithGracePeriod := sessionHeader.GetSessionEndBlockHeight() +
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
-	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): The seed of the path should be
-	// `ConcatAndHash(blockHash, '.', sessionId)` to prevent all proofs needing to use the same path.
-	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
-	if !bytes.Equal(proof.Path, blockHash) {
+	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
+	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(
-			"proof path %x does not match block hash %x",
+			"the proof for the path provided (%x) does not match one expected by the on-chain protocol (%x)",
 			proof.Path,
-			blockHash,
+			expectedProofPath,
 		)
 	}
 
 	return nil
+}
+
+func GetPathForProof(blockHash []byte, sessionId string) []byte {
+	// TODO_BLOCKER(@Olshansk, @red-0ne, @h5law): We need to replace the return
+	// statement below and change all relevant parts in the codebase.
+	// See the conversation in the following thread for more details: https://github.com/pokt-network/poktroll/pull/406#discussion_r1520790083
+	return blockHash
+	// return pathHasher.Sum(append(blockHash, []byte(sessionId)...))
 }
