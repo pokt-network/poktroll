@@ -1,18 +1,61 @@
-**Full Node - Docker Compose**
+---
+title: Full Node
+sidebar_position: 1
+---
+
+# Full Node <!-- omit in toc -->
 
 - [What is a Full Node](#what-is-a-full-node)
-- [Docker Compose Example Repository](#docker-compose-example-repository)
+- [Roles \& Responsibilities](#roles--responsibilities)
+- [Types of Full Nodes](#types-of-full-nodes)
+- [Pocket Network Full Nodes](#pocket-network-full-nodes)
+- [Docker Compose Example](#docker-compose-example)
+- [Kubernetes Example](#kubernetes-example)
 
-### What is a Full Node
+## What is a Full Node
 
-In a blockchain network, a Full Node retains a complete copy of the ledger, verifying all transactions and blocks according to the network's rules. While it does not play a role in block creation or consensus, it is crucial for ensuring data integrity, enhancing network security, and fostering decentralization. Full Nodes facilitate this by distributing transactions and blocks to other nodes.
+In blockchain networks, a Full Node retains a complete copy of the ledger.
 
-Within the Pocket Network ecosystem, the role of Full Nodes is pivotal for Node Runners. These nodes are essential for off-chain entities like RelayMiners and AppGates, which rely on interaction with the Pocket Network blockchain for optimal functionality.
+You can visit the [Cosmos SDK documentation](https://docs.cosmos.network/main/user/run-node/run-node)
+for more information on Full Nodes.
 
-This guide outlines the setup process for a Full Node using Docker Compose, offering a simplified and efficient method for launching a Full Node.
+## Roles & Responsibilities
 
-### Docker Compose Example Repository
+It is usually responsible for:
 
-To help you understand how a Full Node can be operated with Docker Compose, we have prepared an example in the [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example) GitHub repository.
+1. Verifying all committed transactions and blocks
+2. Increase network security through data redundancy
+3. Fostering decentralization
+4. Gossiping blocks & transactions to other nodes
 
-Please refer to the "Deploying a Full Node" section of the guide in that repository for detailed instructions on setting up your Full Node using the provided Docker Compose example.
+It is not responsible for:
+
+1. Proposing new blocks
+2. Participating in consensus
+
+## Types of Full Nodes
+
+There are two types of Full Nodes:
+
+1. **Archive Nodes**: These nodes store the entire history of the blockchain.
+2. **Pruning Nodes**: These nodes store only the most recent blocks and transactions.
+
+## Pocket Network Full Nodes
+
+Within Pocket Network, the role of Full Nodes is pivotal for Node Runners. These
+nodes needed for off-chain entities like [RelayMiners](./relay_miner.md) and
+[AppGates](./appgate_server.md), which rely on interaction with the Pocket Network
+blockchain for full functionality.
+
+This guide outlines how to configure, deploy nad maintain Full Nodes.
+
+## Docker Compose Example
+
+Please refer to the `Deploying a Full Node` section in [poktroll-docker-compose-example](https://github.com/pokt-network/poktroll-docker-compose-example#deploying-a-full-node)
+GitHub repository on how to deploy an AppGate Server using `docker-compose`.
+
+_TODO: Move over the relevant information from the `poktroll-docker-compose-example` repository into the docs_
+
+## Kubernetes Example
+
+_TODO: Provide an example using [strangelove-ventures/cosmos-operator](https://github.com/strangelove-ventures/cosmos-operator)._
