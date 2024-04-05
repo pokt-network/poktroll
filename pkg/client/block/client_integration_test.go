@@ -18,7 +18,7 @@ import (
 
 const blockIntegrationSubTimeout = 5 * time.Second
 
-func TestBlockClient_LastNBlocks(t *testing.T) {
+func TestBlockClient_LastBlock(t *testing.T) {
 	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	ctx := context.Background()
 

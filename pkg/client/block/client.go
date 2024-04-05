@@ -5,7 +5,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cometclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
@@ -55,32 +55,32 @@ func NewBlockClient(
 	// new block, whether it comes from a direct query or an event subscription query.
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, defaultBlocksReplayLimit)
 
-	bClient := &blockClient{
+	blockClient := &blockReplayClient{
 		eventsReplayClient:   eventsReplayClient,
 		latestBlockReplayObs: latestBlockReplayObs,
 		latestBlockPublishCh: latestBlockPublishCh,
 	}
 
-	if err := depinject.Inject(deps, &bClient.queryClient); err != nil {
+	if err := depinject.Inject(deps, &blockClient.queryClient); err != nil {
 		return nil, err
 	}
 
-	bClient.forEachBlockEvent(ctx)
+	blockClient.forEachBlockEvent(ctx)
 
-	if err := bClient.getInitialBlock(ctx); err != nil {
+	if err := blockClient.getInitialBlock(ctx); err != nil {
 		return nil, err
 	}
 
-	return bClient, nil
+	return blockClient, nil
 }
 
-// blockClient is a wrapper around an EventsReplayClient that implements the
+// blockReplayClient is a wrapper around an EventsReplayClient that implements the
 // BlockClient interface for use with cosmos-sdk networks.
-type blockClient struct {
+type blockReplayClient struct {
 	// queryClient is the RPC client that is used to query for the initial block
 	// upon blockClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
-	queryClient cosmosclient.CometRPC
+	queryClient cometclient.CometRPC
 
 	// eventsReplayClient is the underlying EventsReplayClient that is used to
 	// subscribe to new committed block events. It uses both the Block type
@@ -99,31 +99,26 @@ type blockClient struct {
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
-func (b *blockClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
+func (b *blockReplayClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
 	return b.eventsReplayClient.EventsSequence(ctx)
 }
 
-// LastNBlocks returns the last n blocks observed by the BlockClient.
-func (b *blockClient) LastNBlocks(ctx context.Context, n int) []client.Block {
-	return b.eventsReplayClient.LastNEvents(ctx, n)
-}
-
 // LastBlock returns the last blocks observed by the BlockClient.
-func (b *blockClient) LastBlock(ctx context.Context) (block client.Block) {
+func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) {
 	// ReplayObservable#Last() is guaranteed to return at least one element.
 	return b.latestBlockReplayObs.Last(ctx, 1)[0]
 }
 
 // Close closes the underlying websocket connection for the EventsQueryClient
 // and closes all downstream connections.
-func (b *blockClient) Close() {
+func (b *blockReplayClient) Close() {
 	b.eventsReplayClient.Close()
 	close(b.latestBlockPublishCh)
 }
 
 // forEachBlockEvent asynchronously observes block event notifications from the
 // EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
-func (b *blockClient) forEachBlockEvent(ctx context.Context) {
+func (b *blockReplayClient) forEachBlockEvent(ctx context.Context) {
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
 			b.latestBlockPublishCh <- block
@@ -131,9 +126,12 @@ func (b *blockClient) forEachBlockEvent(ctx context.Context) {
 	)
 }
 
-// getInitialBlock requests the latest block while concurrently waiting for the
-// next block event, publishing whichever occurs first to latestBlockPublishCh.
-func (b *blockClient) getInitialBlock(ctx context.Context) error {
+// getInitialBlock fetches the latest committed on-chain block at the time the
+// client starts up, while concurrently waiting for the next block event,
+// publishing whichever occurs first to latestBlockPublishCh.
+// This is necessary to ensure that the most recent block is available to the
+// blockClient when it is first created.
+func (b *blockReplayClient) getInitialBlock(ctx context.Context) error {
 	blockQueryResultCh := make(chan client.Block)
 
 	// Query the latest block asynchronously.
@@ -161,7 +159,7 @@ func (b *blockClient) getInitialBlock(ctx context.Context) error {
 // queryLatestBlock constructs a comet RPC block client & asynchronously queries for
 // the latest block. It returns an error channel which may be sent a block query error.
 // It is *NOT* intended to be called in a goroutine.
-func (b *blockClient) queryLatestBlock(ctx context.Context, blockQueryResultCh chan<- client.Block) <-chan error {
+func (b *blockReplayClient) queryLatestBlock(ctx context.Context, blockQueryResultCh chan<- client.Block) <-chan error {
 	errCh := make(chan error)
 
 	go func() {

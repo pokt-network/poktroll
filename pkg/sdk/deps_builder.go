@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -26,7 +26,7 @@ func (sdk *poktrollSDK) buildDeps(
 ) (depinject.Config, error) {
 	pocketNodeWebsocketURL := HostToWebsocketURL(config.QueryNodeUrl.Host)
 
-	cosmosClient, err := cosmosclient.NewClientFromNode(config.QueryNodeUrl.String())
+	cometClient, err := sdkclient.NewClientFromNode(config.QueryNodeUrl.String())
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (sdk *poktrollSDK) buildDeps(
 	deps := depinject.Configs(
 		depinject.Supply(
 			polylog.Ctx(ctx),
-			cosmosClient,
+			cometClient,
 		),
 	)
 

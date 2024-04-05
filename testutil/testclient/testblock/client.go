@@ -41,8 +41,8 @@ func NewAnyTimesCommittedBlocksSequenceBlockClient(
 ) *mockclient.MockBlockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
-	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, blockHash, 0)
+	// Create a mock for the block client which expects the LastBlock method to be called any number of times.
+	blockClientMock := NewAnyTimeLastBlockBlockClient(t, blockHash, 0)
 
 	// Set up the mock expectation for the CommittedBlocksSequence method. When
 	// the method is called, it returns a new replay observable that publishes
@@ -66,8 +66,8 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 ) *mockclient.MockBlockClient {
 	t.Helper()
 
-	// Create a mock for the block client which expects the LastNBlocks method to be called any number of times.
-	blockClientMock := NewAnyTimeLastNBlocksBlockClient(t, nil, 0)
+	// Create a mock for the block client which expects the LastBlock method to be called any number of times.
+	blockClientMock := NewAnyTimeLastBlockBlockClient(t, nil, 0)
 
 	// Set up the mock expectation for the CommittedBlocksSequence method. When
 	// the method is called, it returns a new replay observable that publishes
@@ -87,10 +87,10 @@ func NewOneTimeCommittedBlocksSequenceBlockClient(
 	return blockClientMock
 }
 
-// NewAnyTimeLastNBlocksBlockClient creates a mock BlockClient that expects
-// calls to the LastNBlocks method any number of times. When the LastNBlocks
+// NewAnyTimeLastBlockBlockClient creates a mock BlockClient that expects
+// calls to the LastBlock method any number of times. When the LastBlock
 // method is called, it returns a mock Block with the provided hash and height.
-func NewAnyTimeLastNBlocksBlockClient(
+func NewAnyTimeLastBlockBlockClient(
 	t *testing.T,
 	blockHash []byte,
 	blockHeight int64,
@@ -100,10 +100,9 @@ func NewAnyTimeLastNBlocksBlockClient(
 
 	// Create a mock block that returns the provided hash and height.
 	blockMock := NewAnyTimesBlock(t, blockHash, blockHeight)
-	// Create a mock block client that expects calls to LastNBlocks method and
+	// Create a mock block client that expects calls to LastBlock method and
 	// returns the mock block.
 	blockClientMock := mockclient.NewMockBlockClient(ctrl)
-	blockClientMock.EXPECT().LastNBlocks(gomock.Any(), gomock.Any()).Return([]client.Block{blockMock}).AnyTimes()
 	blockClientMock.EXPECT().LastBlock(gomock.Any()).Return(blockMock).AnyTimes()
 
 	return blockClientMock

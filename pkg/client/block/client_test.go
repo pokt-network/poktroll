@@ -10,7 +10,6 @@ import (
 	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cometbft/cometbft/types"
-	comettypes "github.com/cometbft/cometbft/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
@@ -36,7 +35,7 @@ func TestBlockClient(t *testing.T) {
 			Data: testBlockEventDataStruct{
 				Value: testBlockEventValueStruct{
 					Block: &types.Block{
-						Header: comettypes.Header{
+						Header: types.Header{
 							Height: 1,
 							Time:   time.Now(),
 						},
@@ -96,9 +95,9 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LastNBlocks(1) successfully returns latest block",
+			name: "LastBlock successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LastNBlocks(ctx, 1)[0]
+				lastBlock := blockClient.LastBlock(ctx)
 				return lastBlock
 			},
 		},
@@ -166,19 +165,4 @@ type testBlockEventDataStruct struct {
 type testBlockEventValueStruct struct {
 	Block   *types.Block  `json:"block"`
 	BlockID types.BlockID `json:"block_id"`
-}
-
-type testCometClient struct {
-	expectedHeight int64
-	expectedHash   []byte
-}
-
-func (t *testCometClient) Block(ctx context.Context, height *int64) (*coretypes.ResultBlock, error) {
-	block := &coretypes.ResultBlock{
-		Block: &comettypes.Block{},
-	}
-	block.Block.Height = t.expectedHeight
-	block.BlockID.Hash = t.expectedHash
-
-	return block, nil
 }
