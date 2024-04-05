@@ -40,6 +40,8 @@ func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
 ) (client.BlockClient, error) {
+	ctx, close := context.WithCancel(ctx)
+
 	eventsReplayClient, err := events.NewEventsReplayClient[client.Block](
 		ctx,
 		deps,
@@ -54,20 +56,19 @@ func NewBlockClient(
 	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
 	// new block, whether it comes from a direct query or an event subscription query.
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, defaultBlocksReplayLimit)
-
 	blockClient := &blockReplayClient{
 		eventsReplayClient:   eventsReplayClient,
 		latestBlockReplayObs: latestBlockReplayObs,
-		latestBlockPublishCh: latestBlockPublishCh,
+		close:                close,
 	}
 
 	if err := depinject.Inject(deps, &blockClient.queryClient); err != nil {
 		return nil, err
 	}
 
-	blockClient.forEachBlockEvent(ctx)
+	blockClient.forEachBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := blockClient.getInitialBlock(ctx); err != nil {
+	if err := blockClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
@@ -94,8 +95,8 @@ type blockReplayClient struct {
 	// source of block notifications for blockClient.
 	latestBlockReplayObs observable.ReplayObservable[client.Block]
 
-	// latestBlockPublishCh is the publish channel that corresponds to latestBlockReplayObs.
-	latestBlockPublishCh chan<- client.Block
+	// close is a function that cancels the context of the blockClient.
+	close context.CancelFunc
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
@@ -113,15 +114,19 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
 	b.eventsReplayClient.Close()
-	close(b.latestBlockPublishCh)
+	//close(b.latestBlockPublishCh)
+	b.close()
 }
 
 // forEachBlockEvent asynchronously observes block event notifications from the
 // EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
-func (b *blockReplayClient) forEachBlockEvent(ctx context.Context) {
+func (b *blockReplayClient) forEachBlockEvent(
+	ctx context.Context,
+	latestBlockPublishCh chan<- client.Block,
+) {
 	channel.ForEach(ctx, b.eventsReplayClient.EventsSequence(ctx),
 		func(ctx context.Context, block client.Block) {
-			b.latestBlockPublishCh <- block
+			latestBlockPublishCh <- block
 		},
 	)
 }
@@ -131,7 +136,10 @@ func (b *blockReplayClient) forEachBlockEvent(ctx context.Context) {
 // publishing whichever occurs first to latestBlockPublishCh.
 // This is necessary to ensure that the most recent block is available to the
 // blockClient when it is first created.
-func (b *blockReplayClient) getInitialBlock(ctx context.Context) error {
+func (b *blockReplayClient) getInitialBlock(
+	ctx context.Context,
+	latestBlockPublishCh chan<- client.Block,
+) error {
 	blockQueryResultCh := make(chan client.Block)
 
 	// Query the latest block asynchronously.
@@ -152,7 +160,7 @@ func (b *blockReplayClient) getInitialBlock(ctx context.Context) error {
 	}
 
 	// Publish the fastest result as the initial block.
-	b.latestBlockPublishCh <- initialBlock
+	latestBlockPublishCh <- initialBlock
 	return nil
 }
 
