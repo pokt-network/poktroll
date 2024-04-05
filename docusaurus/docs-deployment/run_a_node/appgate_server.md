@@ -7,7 +7,7 @@
 
 An AppGate Server plays a crucial role within the Pocket Network ecosystem, serving as a bridge between decentralized applications (dApps), such as mobile or web applications, and the Suppliers operating on the Pocket Network. Its primary function is to handle the necessary intermediary logic and facilitate seamless communication and transactions.
 
-If you're a Node Runner interested in deploying a [Gateway](../actors/gateway.md) or a sovereign [Application](../actors/application.md) that requires direct access to Pocket Network functionalities, setting up an AppGate Server is highly recommended.
+If you're a Node Runner interested in deploying a [Gateway](https://dev.poktroll.com/protocol/actors/gateway.md) or a sovereign [Application](https://dev.poktroll.com/protocol/actors/application.md) that requires direct access to Pocket Network functionalities, setting up an AppGate Server is highly recommended.
 
 ### Docker Compose Example Repository
 

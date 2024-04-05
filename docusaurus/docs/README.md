@@ -56,14 +56,14 @@ to build a better understanding of Pocket Network:
 
 ## Roadmap
 
-You can details related to our roadmap [here](./roadmap/roadmap.md) and the
-roadmap changelog [here](./roadmap/roadmap_changelog.md).
+You can details related to our roadmap [here](./planning/roadmap/roadmap.md) and the
+roadmap changelog [here](./planning/roadmap/roadmap_changelog.md).
 
 ## Getting Started
 
 ### Quickstart
 
-The best way to get involved is by following the instructions [here](./developer_guide/quickstart.md).
+The best way to get involved is by following the instructions [here](./development/developer_guide/quickstart.md).
 
 ### Godoc
 

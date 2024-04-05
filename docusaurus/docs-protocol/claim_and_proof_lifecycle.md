@@ -143,17 +143,17 @@ _TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it writte
 
 A serialized version of the `Claim` is stored on-chain.
 
-You can find the definition for the [Claim structure here](../../../proto/poktroll/proof/claim.proto).
+You can find the definition for the [Claim structure here](https://github.com/pokt-network/poktroll/tree/main/proto/poktroll/proof/claim.proto).
 
 ### CreateClaim Transaction
 
 A `CreateClaim` transaction can be submitted by a `Supplier` to store a claim `on-chain`.
 
-You can find the definition for the [CreateClaim Transaction here](../../../proto/poktroll/proof/tx.proto).
+You can find the definition for the [CreateClaim Transaction here](https://github.com/pokt-network/poktroll/tree/main/proto/poktroll/proof/tx.proto).
 
 ### CreateClaim Validation
 
-_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](./../../../x/proof/keeper/msg_server_create_claim.go) is fully implemented._
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](https://github.com/pokt-network/poktroll/tree/main/x/proof/keeper/msg_server_create_claim.go) is fully implemented._
 
 ### Claim Window
 
@@ -182,7 +182,7 @@ _TODO_DOCUMENT(@Olshansk): Link to a document on compute units once it it writte
 
 A serialized version of the `Proof` is stored on-chain.
 
-You can find the definition for the [Proof structure here](../../../proto/poktroll/proof/proof.proto)
+You can find the definition for the [Proof structure here](https://github.com/pokt-network/poktroll/tree/main/proto/poktroll/proof/proof.proto)
 
 ### SubmitProof Transaction
 
@@ -191,11 +191,11 @@ A `SubmitProof` transaction can be submitted by a `Supplier` to store a proof `o
 If the `Proof` is invalid, or if there is no corresponding `Claim` for the `Proof`, the
 transaction will be rejected.
 
-You can find the definition for the [SubmitProof Transaction here](../../../proto/poktroll/proof/tx.proto).
+You can find the definition for the [SubmitProof Transaction here](https://github.com/pokt-network/poktroll/tree/main/proto/poktroll/proof/tx.proto).
 
 ### SubmitProof Validation
 
-_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](./../../../x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](https://github.com/pokt-network/poktroll/tree/main/x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
 
 ### Proof Window
 

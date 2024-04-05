@@ -12,32 +12,20 @@ const config = {
   tagline: "Roll the POKT",
   favicon: "img/logo.png",
 
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-
-  // GitHub pages deployment config.
   url: "https://poktroll.com/",
   baseUrl: "/",
-  // Custom domain config.
-  // url: "https://docs.poktroll.com",
-  // baseUrl: "/",
 
   markdown: { mermaid: true },
   themes: ["@docusaurus/theme-mermaid"],
 
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
   organizationName: "pokt-network", // Usually your GitHub org/user name (ORGANIZATION_NAME)
   projectName: "poktroll", // Usually your repo name. (PROJECT_NAME)
   deploymentBranch: "gh-pages", // Deployment branch (DEPLOYMENT_BRANCH)
-  trailingSlash: false,
 
+  trailingSlash: false,
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: "en",
     locales: ["en"],
@@ -45,24 +33,42 @@ const config = {
 
   presets: [
     [
-      // "classic",
-      "@docusaurus/preset-classic",
+      "classic",
+      // "@docusaurus/preset-classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          routeBasePath: "/",
-          sidebarPath: "./sidebars.js",
+          sidebarPath: require.resolve("./sidebars.js"),
         },
         theme: {},
       }),
     ],
   ],
 
+  plugins: [
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "docs-deployment",
+        path: "docs-deployment",
+        routeBasePath: "docs-deployment",
+        sidebarPath: require.resolve("./sidebars-deployment.js"),
+      },
+    ],
+    [
+      "@docusaurus/plugin-content-docs",
+      {
+        id: "docs-development",
+        path: "docs-development",
+        routeBasePath: "docs-development",
+        sidebarPath: require.resolve("./sidebars-development.js"),
+      },
+    ],
+  ],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
-      // image: "img/docusaurus-social-card.jpg",
       style: "dark",
       navbar: {
         title: "Pocket Network",
@@ -70,7 +76,36 @@ const config = {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
         },
-        items: [],
+        items: [
+          {
+            to: "docs-deployment/README",
+            label: "⚙️ Deployment",
+            position: "left",
+            docsPluginId: "docs-deployment",
+            activeBasePath: "docs-deployment",
+          },
+          {
+            to: "docs/development",
+            label: "👨‍💻 Development",
+            position: "left",
+            docsPluginId: "developmentPluginId",
+            activeBaseRegex: "docs/(next|v8)",
+          },
+          {
+            docsPluginId: "protocolPluginId",
+            to: "docs/protocol",
+            label: "🧠 Protocol",
+            position: "left",
+            activeBaseRegex: "docs/(next|v8)",
+          },
+          {
+            docsPluginId: "planningPluginId",
+            to: "docs/planning",
+            label: "🗒️ Planning",
+            position: "left",
+            activeBaseRegex: "docs/(.*)",
+          },
+        ],
       },
       footer: {
         style: "dark",

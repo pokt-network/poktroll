@@ -30,7 +30,7 @@ TODO(@red-0ne): Review this document and submit a PR with updates & edits.
 
 ## Introduction
 
-The [Gateway Actor](./../actors/gateway.md) section covers what a Gateway is.
+The [Gateway Actor](./../../actors/gateway.md) section covers what a Gateway is.
 Recall that it is a permissionless protocol actor to whom the Application can
 **optionally** delegate on-chain trust in order to perform off-chain operations.
 
@@ -217,7 +217,7 @@ sequenceDiagram
 
 ## Relay Signatures
 
-As explained in the [Claim & Proof Lifecycle](./../protocol/claim_and_proof_lifecycle.md) document,
+As explained in the [Claim & Proof Lifecycle](./claim_and_proof_lifecycle.md) document,
 the `Application` that signs the relay request is the one whose stake is used to
 for access to services provided by the Pocket `Supplier` Network.
 

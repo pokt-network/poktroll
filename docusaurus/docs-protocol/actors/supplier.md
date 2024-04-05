@@ -17,11 +17,11 @@ providing services as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of a `Supplier` can be found at [supplier.proto](./../../../proto/poktroll/shared/supplier.proto).
+The on-chain representation of a `Supplier` can be found at [supplier.proto](https://github.com/pokt-network/poktroll/tree/main/proto/poktroll/shared/supplier.proto).
 
 ## Configuration
 
-Configurations to stake an `Supplier` can be found at [supplier_staking_config.md](../configs/supplier_staking_config.md).
+Configurations to stake an `Supplier` can be found at [supplier_staking_config.md](https://dev.poktroll.com/deployment/configs/supplier_staking_config.md).
 
 ## CLI
 
