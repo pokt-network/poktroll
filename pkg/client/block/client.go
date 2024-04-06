@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	cometclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
@@ -50,6 +49,7 @@ func NewBlockClient(
 		defaultBlocksReplayLimit,
 	)
 	if err != nil {
+		close()
 		return nil, err
 	}
 
@@ -62,7 +62,7 @@ func NewBlockClient(
 		close:                close,
 	}
 
-	if err := depinject.Inject(deps, &blockClient.queryClient); err != nil {
+	if err := depinject.Inject(deps, &blockClient.onStartQueryClient); err != nil {
 		return nil, err
 	}
 
@@ -78,10 +78,10 @@ func NewBlockClient(
 // blockReplayClient is a wrapper around an EventsReplayClient that implements the
 // BlockClient interface for use with cosmos-sdk networks.
 type blockReplayClient struct {
-	// queryClient is the RPC client that is used to query for the initial block
+	// onStartQueryClient is the RPC client that is used to query for the initial block
 	// upon blockClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
-	queryClient cometclient.CometRPC
+	onStartQueryClient cometclient.CometRPC
 
 	// eventsReplayClient is the underlying EventsReplayClient that is used to
 	// subscribe to new committed block events. It uses both the Block type
@@ -171,7 +171,7 @@ func (b *blockReplayClient) queryLatestBlock(ctx context.Context, blockQueryResu
 	errCh := make(chan error)
 
 	go func() {
-		queryBlockResult, err := b.queryClient.Block(ctx, nil)
+		queryBlockResult, err := b.onStartQueryClient.Block(ctx, nil)
 		if err != nil {
 			errCh <- err
 			return
@@ -182,18 +182,4 @@ func (b *blockReplayClient) queryLatestBlock(ctx context.Context, blockQueryResu
 	}()
 
 	return errCh
-}
-
-// cometBlockResult is a non-alias of the comet ResultBlock type that implements the client.Block interface.
-// TODO_DISCUSS_IN_THIS_COMMIT: should this be moved somewhere else?
-type cometBlockResult coretypes.ResultBlock
-
-func (cbr *cometBlockResult) Height() int64 {
-	return cbr.Block.Height
-}
-
-// TODO_CONSIDERATION: should this return an array instead of a slice
-// (would need to update client.Block interface)?
-func (cbr *cometBlockResult) Hash() []byte {
-	return cbr.BlockID.Hash
 }
