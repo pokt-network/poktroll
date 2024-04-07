@@ -86,7 +86,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Retrieve the staked application record
 	application, foundApplication := k.applicationKeeper.GetApplication(ctx, applicationAddress.String())
 	if !foundApplication {
-		logger.Error(fmt.Sprintf("application for claim with address %s not found", applicationAddress))
+		logger.Warn(fmt.Sprintf("application for claim with address %q not found", applicationAddress))
 		return types.ErrTokenomicsApplicationNotFound
 	}
 
@@ -133,7 +133,7 @@ func (k Keeper) SettleSessionAccounting(
 			err,
 		)
 	}
-	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %s", settlementAmt, supplierAddr))
+	logger.Info(fmt.Sprintf("sent %s from the supplier module to the supplier account with address %q", settlementAmt, supplierAddr))
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.Stake.IsLT(settlementAmt) {
@@ -162,11 +162,11 @@ func (k Keeper) SettleSessionAccounting(
 	// Update the application's on-chain stake
 	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
 	if err != nil {
-		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %s stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
+		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
 	}
 	application.Stake = &newAppStake
 	k.applicationKeeper.SetApplication(ctx, application)
-	logger.Info(fmt.Sprintf("updated stake for application with address %s to %s", applicationAddress, newAppStake))
+	logger.Info(fmt.Sprintf("updated stake for application with address %q to %s", applicationAddress, newAppStake))
 
 	return nil
 }

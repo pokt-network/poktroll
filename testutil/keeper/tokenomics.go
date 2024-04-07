@@ -45,7 +45,7 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// TokenomicsModuleKeepers is an aggregation of the tokenomics keeper and all its dependency
+// TokenomicsModuleKeepers is an aggregation of the tokenomics keeper, all its dependency
 // keepers, and the codec that they share. Each keeper is embedded such that the
 // TokenomicsModuleKeepers implements all the interfaces of the keepers.
 // To call a method which is common to multiple keepers (e.g. `#SetParams()`),

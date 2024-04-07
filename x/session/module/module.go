@@ -150,10 +150,10 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
 // TODO_TECHDEBT( @red-0ne): Add unit/integration tests for this.
-func (am AppModule) EndBlock(goCtx context.Context) error {
+func (am AppModule) EndBlock(ctx context.Context) error {
 	logger := am.keeper.Logger().With("EndBlock", "SessionModuleEndBlock")
-	ctx := sdk.UnwrapSDKContext(goCtx)
-	blockHeight := ctx.BlockHeight()
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	blockHeight := sdkCtx.BlockHeight()
 
 	// Store the block hash at the end of every block.
 	// This is necessary to correctly and pseudo-randomly construct a SessionID.

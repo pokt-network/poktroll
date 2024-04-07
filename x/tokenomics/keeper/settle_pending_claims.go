@@ -61,6 +61,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
+				
+				numClaimsExpired++
 				continue
 			}
 			// NB: If a proof is found, it is valid because verification is done
@@ -69,7 +71,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 		// Manage the mint & burn accounting for the claim.
 		if err := k.SettleSessionAccounting(ctx, &claim); err != nil {
-			logger.Error(fmt.Sprintf("error settling session accounting for claim %s: %v", claim.SessionHeader.SessionId, err))
+			logger.Error(fmt.Sprintf("error settling session accounting for claim %q: %v", claim.SessionHeader.SessionId, err))
 			return 0, 0, err
 		}
 
@@ -89,10 +91,10 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 
 		numClaimsSettled++
-		logger.Info(fmt.Sprintf("Successfully settled claim %s at block height %d", claim.SessionHeader.SessionId, blockHeight))
+		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
 	}
 
-	logger.Info(fmt.Sprintf("settled %d claims and expired %d at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
+	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
 	return numClaimsSettled, numClaimsExpired, nil
 
@@ -133,7 +135,7 @@ func (k Keeper) getExpiringClaims(ctx sdk.Context) (expiringClaims []prooftypes.
 // TODO_TECHDEBT(#419): Document safety assumptions of the probabilistic proofs mechanism.
 func (k Keeper) isProofRequiredForClaim(_ sdk.Context, claim *prooftypes.Claim) bool {
 	// NB: Assumption that claim is non-nil and has a valid root sum because it
-	// is retrieved from the store.
+	// is retrieved from the store and validated, on-chain, at time of creation.
 	root := (smt.MerkleRoot)(claim.GetRootHash())
 	claimComputeUnits := root.Sum()
 	// TODO_BLOCKER(#419): This is just VERY BASIC placeholder logic to have something

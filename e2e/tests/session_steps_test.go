@@ -129,11 +129,10 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 	s.scenarioState[txResultEventsReplayClientKey] = txSendEventsReplayClient
 
 	// Construct an events query client to listen for claim settlement or expiration events on-chain.
-	onChainClaimEventQuery := newBlockEventSubscriptionQuery
 	onChainClaimEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
 		ctx,
 		deps,
-		onChainClaimEventQuery,
+		newBlockEventSubscriptionQuery,
 		block.UnmarshalNewBlockEvent,
 		eventsReplayClientBufferSize,
 	)
@@ -209,7 +208,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 	require.Truef(s, ok, "%s not found in scenarioState", txResultEventsReplayClientKey)
 
 	txResultEventsReplayClient, ok := txResultEventsReplayClientState.(client.EventsReplayClient[*abci.TxResult])
-	require.Truef(s, ok, "%s not of the right type", txResultEventsReplayClientKey)
+	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*abci.TxResult], got %T", txResultEventsReplayClientKey, txResultEventsReplayClientState)
 	require.NotNil(s, txResultEventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.
@@ -250,7 +249,7 @@ func (s *suite) waitForNewBlockEvent(targetEvent string) {
 	require.Truef(s, ok, "%s not found in scenarioState", newBlockEventReplayClientKey)
 
 	newBlockEventsReplayClient, ok := newBlockEventsReplayClientState.(client.EventsReplayClient[*block.CometNewBlockEvent])
-	require.Truef(s, ok, "%s not of the right type", newBlockEventReplayClientKey)
+	require.True(s, ok, "%q not of the right type; expected client.EventsReplayClient[*block.CometNewBlockEvent], got %T", newBlockEventReplayClientKey, newBlockEventsReplayClientState)
 	require.NotNil(s, newBlockEventsReplayClient)
 
 	// For each observed event, **asynchronously** check if it contains the given action.

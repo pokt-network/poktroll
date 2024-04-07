@@ -40,10 +40,10 @@ func (k msgServer) StakeGateway(
 			return nil, err
 		}
 		coinsToEscrow, err = (*msg.Stake).SafeSub(currGatewayStake)
-		logger.Info(fmt.Sprintf("Gateway is going to escrow an additional %+v coins", coinsToEscrow))
 		if err != nil {
 			return nil, err
 		}
+		logger.Info(fmt.Sprintf("Gateway is going to escrow an additional %+v coins", coinsToEscrow))
 	}
 
 	// Must always stake or upstake (> 0 delta)
@@ -92,7 +92,7 @@ func (k msgServer) updateGateway(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != gateway.Address {
-		return types.ErrGatewayUnauthorized.Wrapf("msg Address (%q) != gateway address (%q)", msg.Address, gateway.Address)
+		return types.ErrGatewayUnauthorized.Wrapf("msg Address %q != gateway address %q", msg.Address, gateway.Address)
 	}
 	if msg.Stake == nil {
 		return types.ErrGatewayInvalidStake.Wrapf("stake amount cannot be nil")

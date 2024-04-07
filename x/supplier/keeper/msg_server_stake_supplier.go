@@ -88,7 +88,7 @@ func (k msgServer) updateSupplier(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != supplier.Address {
-		return types.ErrSupplierUnauthorized.Wrapf("msg Address (%q) != supplier address (%q)", msg.Address, supplier.Address)
+		return types.ErrSupplierUnauthorized.Wrapf("msg Address %q != supplier address %q", msg.Address, supplier.Address)
 	}
 
 	// Validate that the stake is not being lowered

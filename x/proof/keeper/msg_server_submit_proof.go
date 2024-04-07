@@ -216,7 +216,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		SessionHeader:      msg.GetSessionHeader(),
 		ClosestMerkleProof: msg.GetProof(),
 	}
-	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %s", sessionHeader.SessionId))
+	logger.Info(fmt.Sprintf("queried and validated the claim for session ID %q", sessionHeader.SessionId))
 
 	// TODO_BLOCKER: check if this proof already exists and return an appropriate error
 	// in any case where the supplier should no longer be able to update the given proof.
