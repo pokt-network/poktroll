@@ -15,7 +15,7 @@ func (k msgServer) StakeGateway(
 	msg *types.MsgStakeGateway,
 ) (*types.MsgStakeGatewayResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(goCtx, "stake_gateway", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(goCtx, "stake_gateway", func() bool { return isSuccessful })
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -67,7 +67,6 @@ func (k msgServer) StakeGateway(
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
 	isSuccessful = true
-
 	return &types.MsgStakeGatewayResponse{}, nil
 }
 

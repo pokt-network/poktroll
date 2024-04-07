@@ -17,7 +17,7 @@ func (k msgServer) UnstakeGateway(
 	msg *types.MsgUnstakeGateway,
 ) (*types.MsgUnstakeGatewayResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(goCtx, "unstake_gateway", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(goCtx, "unstake_gateway", func() bool { return isSuccessful })
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -56,6 +56,5 @@ func (k msgServer) UnstakeGateway(
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
 
 	isSuccessful = true
-
 	return &types.MsgUnstakeGatewayResponse{}, nil
 }

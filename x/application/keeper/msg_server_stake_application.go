@@ -12,7 +12,7 @@ import (
 
 func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeApplication) (*types.MsgStakeApplicationResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(ctx, "stake_application", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(ctx, "stake_application", func() bool { return isSuccessful })
 
 	logger := k.Logger().With("method", "StakeApplication")
 	logger.Info(fmt.Sprintf("About to stake application with msg: %v", msg))
@@ -62,7 +62,6 @@ func (k msgServer) StakeApplication(ctx context.Context, msg *types.MsgStakeAppl
 	logger.Info(fmt.Sprintf("Successfully updated application stake for app: %+v", foundApp))
 
 	isSuccessful = true
-
 	return &types.MsgStakeApplicationResponse{}, nil
 }
 

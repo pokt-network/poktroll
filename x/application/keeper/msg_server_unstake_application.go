@@ -16,7 +16,7 @@ func (k msgServer) UnstakeApplication(
 	msg *types.MsgUnstakeApplication,
 ) (*types.MsgUnstakeApplicationResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(ctx, "unstake_application", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(ctx, "unstake_application", func() bool { return isSuccessful })
 
 	logger := k.Logger().With("method", "UnstakeApplication")
 	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
@@ -49,6 +49,5 @@ func (k msgServer) UnstakeApplication(
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
 
 	isSuccessful = true
-
 	return &types.MsgUnstakeApplicationResponse{}, nil
 }

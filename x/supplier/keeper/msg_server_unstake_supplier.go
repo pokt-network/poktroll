@@ -16,7 +16,7 @@ func (k msgServer) UnstakeSupplier(
 	msg *types.MsgUnstakeSupplier,
 ) (*types.MsgUnstakeSupplierResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(ctx, "unstake_supplier", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(ctx, "unstake_supplier", func() bool { return isSuccessful })
 
 	logger := k.Logger().With("method", "UnstakeSupplier")
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
@@ -52,6 +52,5 @@ func (k msgServer) UnstakeSupplier(
 	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
 
 	isSuccessful = true
-
 	return &types.MsgUnstakeSupplierResponse{}, nil
 }

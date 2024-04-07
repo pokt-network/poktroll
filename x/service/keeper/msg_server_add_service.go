@@ -20,7 +20,7 @@ func (k msgServer) AddService(
 	msg *types.MsgAddService,
 ) (*types.MsgAddServiceResponse, error) {
 	isSuccessful := false
-	defer telemetry.StateDataCounter(goCtx, "add_service", func() bool { return isSuccessful })
+	defer telemetry.AppMsgCounter(goCtx, "add_service", func() bool { return isSuccessful })
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
@@ -85,6 +85,5 @@ func (k msgServer) AddService(
 	k.SetService(ctx, msg.Service)
 
 	isSuccessful = true
-
 	return &types.MsgAddServiceResponse{}, nil
 }
