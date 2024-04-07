@@ -53,6 +53,8 @@ func initPrepareProposalHandlerWithMetrics(
 	}
 }
 
+// initStreamingManagerWithMetrics initializes the streaming manager that listens
+// for finalize block events to capture ResponseFinalizeBlock size.
 func initStreamingManagerWithMetrics() storetypes.StreamingManager {
 	return storetypes.StreamingManager{
 		ABCIListeners: []storetypes.ABCIListener{
@@ -61,8 +63,12 @@ func initStreamingManagerWithMetrics() storetypes.StreamingManager {
 	}
 }
 
+// metricsABCIListener is an implementation of the StreamingManager that hooks
+// into ListenFinalizeBlock to capture ResponseFinalizeBlock size.
 type metricsABCIListener struct{}
 
+// ListenFinalizeBlock captures the ResponseFinalizeBlock size and emits it as a
+// gauge metric.
 func (mal metricsABCIListener) ListenFinalizeBlock(
 	ctx context.Context,
 	req abci.RequestFinalizeBlock,
@@ -78,6 +84,8 @@ func (mal metricsABCIListener) ListenFinalizeBlock(
 	return nil
 }
 
+// ListenCommit is a no-op implementation of the StreamingManager's ListenCommit
+// method.
 func (mal metricsABCIListener) ListenCommit(
 	ctx context.Context,
 	res abci.ResponseCommit,
