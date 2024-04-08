@@ -122,6 +122,32 @@ check_docker:
 		exit 1; \
 	fi; \
 	}
+.PHONY: check_kind
+# Internal helper target - check if kind is installed
+check_kind:
+	@if ! command -v kind >/dev/null 2>&1; then \
+		echo "kind is not installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
+		exit 1; \
+	fi
+
+.PHONY: check_k
+ ## Internal helper target - checks if Docker is running
+check_docker_ps: check_docker
+	@echo "Checking if Docker is running..."
+	@docker ps > /dev/null 2>&1 || (echo "Docker is not running. Please start Docker and try again."; exit 1)
+
+.PHONY: check_kind_context
+## Internal helper target - checks if the kind-kind context exists and is set
+check_kind_context: check_kind
+	@if ! kubectl config get-contexts | grep -q 'kind-kind'; then \
+		echo "kind-kind context does not exist. Please create it or switch to it."; \
+		exit 1; \
+	fi
+	@if ! kubectl config current-context | grep -q 'kind-kind'; then \
+		echo "kind-kind context is not currently set. Use 'kubectl config use-context kind-kind' to set it."; \
+		exit 1; \
+	fi
+
 
 .PHONY: check_godoc
 # Internal helper target - check if godoc is installed
@@ -229,7 +255,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: proto_regen localnet_regenesis ## Starts localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
