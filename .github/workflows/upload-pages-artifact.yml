@@ -3,9 +3,9 @@ name: Check and Deploy docusaurus
 on:
   push:
     branches: ["main"]
-  pull_request: # Triggers the workflow on PRs
+  pull_request:
     branches: ["main"]
-    paths: # Ensures the workflow runs only when there are changes in the docusaurus directory
+    paths:
       - "docusaurus/**"
 
 concurrency:
@@ -13,13 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate-and-deploy:
-    permissions:
-      id-token: write
-      pages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,20 +36,47 @@ jobs:
           cd docusaurus
           yarn build
 
-      # Conditional deployment steps, only for pushes to the main branch
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "yarn"
+          cache-dependency-path: docusaurus/yarn.lock
+
+      - name: Install dependencies
+        run: |
+          cd docusaurus
+          yarn install
+
+      - name: Build
+        run: |
+          cd docusaurus
+          yarn build
+
       - name: Setup Pages
-        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
         with:
           enablement: true
 
       - name: Upload artifact
-        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v2
         with:
           path: docusaurus/build
 
       - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v2
