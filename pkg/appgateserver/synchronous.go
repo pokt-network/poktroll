@@ -19,7 +19,9 @@ func (app *appGateServer) handleSynchronousRelay(
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
-	relaysTotal.With("service_id", serviceId, "request_type", requestType.String()).Add(1)
+	relaysTotal.
+		With("service_id", serviceId, "request_type", requestType.String()).
+		Add(1)
 
 	// TODO_IMPROVE: log additional info?
 	app.logger.Debug().
@@ -55,6 +57,10 @@ func (app *appGateServer) handleSynchronousRelay(
 	if _, err := writer.Write(relayResponse.Payload); err != nil {
 		return ErrAppGateHandleRelay.Wrapf("writing relay response payload: %s", err)
 	}
+
+	relaysSuccessTotal.
+		With("service_id", serviceId, "request_type", requestType.String()).
+		Add(1)
 
 	return nil
 }
