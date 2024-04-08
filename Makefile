@@ -385,7 +385,8 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # TODO_REFACTOR               - Similar to TECHDEBT, but will require a substantial rewrite and change across the codebase
 # TODO_CONSIDERATION          - A comment that involves extra work but was thoughts / considered as part of some implementation
 # TODO_CONSOLIDATE            - We likely have similar implementations/types of the same thing, and we should consolidate them.
-# TODO_ADDTEST                - Add more tests for a specific code section
+# TODO_ADDTEST / TODO_TEST    - Add more tests for a specific code section
+# TODO_FLAKY                  - Signals that the test is flaky and we are aware of it. Provide an explanation if you know why.
 # TODO_DEPRECATE              - Code that should be removed in the future
 # TODO_RESEARCH               - A non-trivial action item that requires deep research and investigation being next steps can be taken
 # TODO_DOCUMENT		          - A comment that involves the creation of a README or other documentation
