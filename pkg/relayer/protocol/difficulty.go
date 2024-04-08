@@ -8,7 +8,7 @@ import "math/bits"
 // MustCountDifficultyBits returns the number of leading zero bits in the given
 // byte slice. It panics if an error is encountered.
 func MustCountDifficultyBits(bz []byte) int {
-	diff, err := CountDifficultyBits(bz)
+	diff, err := CountHashDifficultyBits(bz)
 	if err != nil {
 		panic(err)
 	}
@@ -16,7 +16,7 @@ func MustCountDifficultyBits(bz []byte) int {
 	return diff
 }
 
-// CountDifficultyBits returns the number of leading zero bits in the given byte
+// CountHashDifficultyBits returns the number of leading zero bits in the given byte
 // slice. It returns an error if the byte slice is all zero bits.
 //
 // TODO_IMPROVE(@h5law): Remove the forloop logic and replace with a simplified
@@ -24,12 +24,12 @@ func MustCountDifficultyBits(bz []byte) int {
 // 32 bytes. We use Sha256 (32 bytes) and CosmosSDK defaults to 32 byte block
 // hashes so specifying makes sense here.
 //
-//	func CountDifficultyBits(bz [32]byte) int {
+//	func CountHashDifficultyBits(bz [32]byte) int {
 //		return bits.LeadingZeros64(binary.LittleEndian.Uint64(bz))
 //	}
 //
 // The above would mean we can replace MustCountDifficultyBits entirely.
-func CountDifficultyBits(bz []byte) (int, error) {
+func CountHashDifficultyBits(bz []byte) (int, error) {
 	bzLen := len(bz)
 
 	var zeroBits int

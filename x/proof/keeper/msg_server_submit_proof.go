@@ -362,7 +362,7 @@ func verifyClosestProof(
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
 	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
+	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
