@@ -1,16 +1,19 @@
-# Based off of https://github.com/LayZeeDK/github-pages-docusaurus
-name: Deploy docusaurus docs to GitHub pages
+name: Check and Deploy docusaurus
 
 on:
   push:
     branches: ["main"]
+  pull_request: # Triggers the workflow on PRs
+    branches: ["main"]
+    paths: # Ensures the workflow runs only when there are changes in the docusaurus directory
+      - "docusaurus/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  validate-and-deploy:
     permissions:
       id-token: write
       pages: write
@@ -22,12 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 👇 Build steps
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: docusaurus/yarn.lock
 
       - name: Install dependencies
@@ -40,20 +42,20 @@ jobs:
           cd docusaurus
           yarn build
 
-      # 👆 Build steps
-
+      # Conditional deployment steps, only for pushes to the main branch
       - name: Setup Pages
+        if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v4
         with:
           enablement: true
 
       - name: Upload artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v2
         with:
-          # 👇 Specify build output path relative to the subdirectory
           path: docusaurus/build
 
       - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v2
-
