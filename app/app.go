@@ -318,7 +318,7 @@ func New(
 
 	// Setup the application with block metrics that hook into the ABCI handlers.
 	// TODO_TECHDEBT: Use a flag to enable/disable block metrics.
-	baseAppOptions = append(baseAppOptions, telemetry.InitAppMetrics)
+	baseAppOptions = append(baseAppOptions, telemetry.InitAppMetrics(DefaultNodeHome))
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
