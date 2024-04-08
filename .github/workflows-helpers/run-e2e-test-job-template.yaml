@@ -30,13 +30,13 @@ spec:
             - name: E2E_DEBUG_OUTPUT
               value: "false" # Flip to true to see the command and result of the execution
             - name: POKTROLLD_HOME
-              value: /root/.pocket
+              value: /root/.poktroll
             - name: APPGATE_SERVER_URL
               value: http://${NAMESPACE}-appgate-server:80
           volumeMounts:
-            - mountPath: /root/.pocket/keyring-test/
+            - mountPath: /root/.poktroll/keyring-test/
               name: keys-volume
-            - mountPath: /root/.pocket/config/
+            - mountPath: /root/.poktroll/config/
               name: configs-volume
       restartPolicy: Never
       volumes:
