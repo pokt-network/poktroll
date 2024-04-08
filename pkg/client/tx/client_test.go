@@ -288,6 +288,8 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
+	t.Log("TODO_TECHDEBT: Flaky test warning: TestTxClient_SignAndBroadcast_CheckTxError")
+
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
