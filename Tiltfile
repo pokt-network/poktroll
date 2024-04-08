@@ -1,6 +1,7 @@
 load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
+load("ext://secret", "secret_create_generic")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
@@ -10,6 +11,7 @@ localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "validator": {"cleanupBeforeEachStart": True},
     "relayminers": {"count": 1},
+    "gateways": {"count": 1},
     "appgateservers": {"count": 1},
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -38,6 +40,9 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 configmap_create(
     "poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/")
 )
+
+# Import keyring/keybase files into Kubernetes Secret
+secret_create_generic( "poktrolld-keys", from_file=listdir("localnet/poktrolld/keyring-test/"))
 # Import configuration files into Kubernetes ConfigMap
 configmap_create(
     "poktrolld-configs", from_file=listdir("localnet/poktrolld/config/"), watch=True
@@ -88,7 +93,7 @@ COPY bin/poktrolld /usr/local/bin/poktrolld
 WORKDIR /
 """,
     only=["./bin/poktrolld"],
-    entrypoint=["/bin/sh", "/scripts/pocket.sh"],
+    entrypoint=["/tilt-restart-wrapper", "--watch_file=/tmp/.restart-proc", "--entr_flags=-r", "poktrolld"],
     live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
 )
 
@@ -191,7 +196,6 @@ for x in range(localnet_config["gateways"]["count"]):
             str(9089+actor_number)+":9090", # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
         ],
     )
-
 
 k8s_resource(
     "validator",

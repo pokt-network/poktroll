@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"io"
 	"net/http"
@@ -98,6 +99,7 @@ func (sync *synchronousRPCServer) Stop(ctx context.Context) error {
 func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	startTime := time.Now()
 	ctx := request.Context()
+	defer request.Body.Close()
 
 	var originHost string
 	// When the proxy is behind a reverse proxy, or is getting its requests from
@@ -249,6 +251,12 @@ func (sync *synchronousRPCServer) serveHTTP(
 		return nil, err
 	}
 
+	responseBody, err := decodeHTTPResponseBody(httpResponse)
+	if err != nil {
+		return nil, err
+	}
+	defer responseBody.Close()
+
 	// Build the relay response from the native service response
 	// Use relayRequest.Meta.SessionHeader on the relayResponse session header since it was verified to be valid
 	// and has to be the same as the relayResponse session header.
@@ -256,7 +264,7 @@ func (sync *synchronousRPCServer) serveHTTP(
 		Str("relay_request_session_header", relayRequest.Meta.SessionHeader.String()).
 		Msg("building relay response protobuf from service response")
 
-	relayResponse, err := sync.newRelayResponse(httpResponse, relayRequest.Meta.SessionHeader)
+	relayResponse, err := sync.newRelayResponse(responseBody, relayRequest.Meta.SessionHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -276,4 +284,25 @@ func (sync *synchronousRPCServer) sendRelayResponse(
 
 	_, err = writer.Write(relayResponseBz)
 	return err
+}
+
+// decodeHTTPResponseBody takes an *http.Response and returns an io.ReadCloser
+// that provides access to the decoded response body. If the Content-Encoding
+// indicates a supported encoding, it applies the necessary decoding.
+// If the encoding is unsupported or an error occurs during decoding setup,
+// it returns an error.
+func decodeHTTPResponseBody(httpResponse *http.Response) (io.ReadCloser, error) {
+	switch httpResponse.Header.Get("Content-Encoding") {
+	case "gzip":
+		return gzip.NewReader(httpResponse.Body)
+	// TODO: Add other algorithms, or an alternative would be to switch to http
+	// client that manages all low-level HTTP decisions for us, something like
+	// https://github.com/imroc/req, https://github.com/valyala/fasthttp or
+	// https://github.com/go-resty/resty
+	// case "deflate":
+	//     return flate.NewReader(httpResponse.Body), nil
+	default:
+		// No encoding or unsupported encoding, return the original body.
+		return httpResponse.Body, nil
+	}
 }
