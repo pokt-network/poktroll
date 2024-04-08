@@ -36,7 +36,7 @@ func TestIsValidService(t *testing.T) {
 		{
 			desc: "ID exceeds max length",
 
-			serviceId:   "TooLongId123", // Exceeds maxServiceIdLength
+			serviceId:   "TooLongId1234567890", // Exceeds maxServiceIdLength
 			serviceName: "Valid Name",
 
 			expectedIsValid: false,
@@ -152,7 +152,7 @@ func TestIsValidServiceId(t *testing.T) {
 		{
 			desc: "Exceeds maximum length",
 
-			serviceId:       "hello-world",
+			serviceId:       "TooLongId1234567890",
 			expectedIsValid: false, // exceeds maxServiceIdLength
 		},
 		{
@@ -176,7 +176,7 @@ func TestIsValidServiceId(t *testing.T) {
 		{
 			desc: "Above maximum length boundary",
 
-			serviceId:       "123456789",
+			serviceId:       "TooLongId1234567890",
 			expectedIsValid: false, // exceeds maxServiceIdLength
 		},
 		{
