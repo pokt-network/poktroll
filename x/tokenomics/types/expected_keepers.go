@@ -40,4 +40,5 @@ type ProofKeeper interface {
 
 	// Only used for testing & simulation
 	UpsertClaim(ctx context.Context, claim prooftypes.Claim)
+	UpsertProof(ctx context.Context, claim prooftypes.Proof)
 }

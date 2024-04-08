@@ -61,7 +61,7 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 				// The claim & proof are no longer necessary, so there's no need for them
 				// to take up on-chain space.
 				k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
-				
+
 				numClaimsExpired++
 				continue
 			}
@@ -87,7 +87,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
-		// TODO_TECHDEBT: Make sure `RemoveProof` does not fail when trying to remove non-submitted proofs
+		// NB: We are calling `RemoveProof` of whether or not the proof was required
+		// to delete it from the state. It is okay for it to fail here if it doesn't exist.
 		k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
 
 		numClaimsSettled++

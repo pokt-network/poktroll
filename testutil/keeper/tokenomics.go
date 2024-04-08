@@ -196,21 +196,25 @@ func NewTokenomicsModuleKeepers(
 	// Prepare the chain's authority
 	cdc := codec.NewProtoCodec(registry)
 	authority := authtypes.NewModuleAddress(govtypes.ModuleName)
-
-	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
+	t.Logf("authority.String(): %s", authority.String())
 
 	// Construct a real account keeper so that public keys can be queried.
+	addrCodec := addresscodec.NewBech32Codec(app.AccountAddressPrefix)
 	accountKeeper := authkeeper.NewAccountKeeper(
 		cdc,
 		runtime.NewKVStoreService(keys[authtypes.StoreKey]),
 		authtypes.ProtoBaseAccount,
-		map[string][]string{minttypes.ModuleName: {authtypes.Minter}},
+		// These module accounts are necessary in order to settle balances
+		// during claim expiration.
+		map[string][]string{
+			minttypes.ModuleName:     {authtypes.Minter},
+			suppliertypes.ModuleName: {authtypes.Minter, authtypes.Burner},
+			apptypes.ModuleName:      {authtypes.Minter, authtypes.Burner},
+		},
 		addrCodec,
 		app.AccountAddressPrefix,
 		authority.String(),
 	)
-
-	t.Logf("authority.String(): %s", authority.String())
 
 	// Construct a real bank keeper so that the balances can be updated & verified
 	bankKeeper := bankkeeper.NewBaseKeeper(
@@ -222,6 +226,10 @@ func NewTokenomicsModuleKeepers(
 		logger,
 	)
 	require.NoError(t, bankKeeper.SetParams(ctx, banktypes.DefaultParams()))
+
+	// Provide some initial funds to the suppliers & applications module accounts.
+	bankKeeper.MintCoins(ctx, suppliertypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
+	bankKeeper.MintCoins(ctx, apptypes.ModuleName, sdk.NewCoins(sdk.NewCoin("upokt", math.NewInt(1000000000000))))
 
 	// Construct gateway keeper with a mocked bank keeper.
 	gatewayKeeper := gatewaykeeper.NewKeeper(

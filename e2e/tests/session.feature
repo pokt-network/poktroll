@@ -5,7 +5,9 @@ Feature: Session Namespace
     When the supplier "supplier1" has serviced a session with "5" relays for service "svc1" for application "app1"
     And the user should wait for the "proof" module "CreateClaim" Message to be submitted
     Then the claim created by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
+    # TODO_IMPROVE(@bryanchriswhite): And a cosmos-sdk event (e.g. EventClaimCreated) should be emitted.
     And the user should wait for the "proof" module "SubmitProof" Message to be submitted
+    # TODO_IMPROVE(@bryanchriswhite): And a cosmos-sdk event (e.g. EventClaimCreated) should be emitted.
     Then the proof submitted by supplier "supplier1" for service "svc1" for application "app1" should be persisted on-chain
 
 # TODO_BLOCKER(@red-0ne): Make sure to implement and validate this test

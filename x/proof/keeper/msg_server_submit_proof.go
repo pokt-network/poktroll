@@ -39,9 +39,14 @@ func init() {
 // SubmitProof is the server handler to submit and store a proof on-chain.
 // A proof that's stored on-chain is what leads to rewards (i.e. inflation)
 // downstream, making the series of checks a critical part of the protocol.
-// TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processes the respective session.
-// TODO_TECHDEBT_DISCUSS: Do we need to validate if the signature on the Proof
-// message corresponds to the supplier before upserting?
+//
+// TODO_BLOCKER: Prevent proof upserts after the tokenomics module has processed
+// the respective session.
+//
+// Note: The entity sending the SubmitProof messages does not necessarily need
+// to correspond to the supplier signing the proof. For example, a single entity
+// could (theoretically) batch multiple proofs (signed by the corresponding supplier)
+// into one transaction to save on transaction fees.
 func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (*types.MsgSubmitProofResponse, error) {
 	// TODO_BLOCKER_DISCUSS: A potential issue with doing proof validation inside
 	// `SubmitProof` is that we will not be storing false proofs on-chain (e.g. for slashing purposes).

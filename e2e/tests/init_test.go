@@ -5,10 +5,10 @@ package e2e
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -134,7 +134,7 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoErrorf(s, err, "error sending upokt from %s to %s", accName1, accName2)
+	require.NoError(s, err, "error sending upokt from %q to %q", accName1, accName2)
 	s.pocketd.result = res
 }
 
@@ -189,12 +189,12 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
-	configFile, err := ioutil.TempFile("", configPathPattern)
-	require.NoError(s, err, "error creating config file: %q")
+	configFile, err := os.CreateTemp("", configPathPattern)
+	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
 	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
 	_, err = configFile.Write([]byte(configContent))
-	require.NoError(s, err, "error writing config file: %q")
+	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
 	args := []string{
 		"tx",
@@ -212,7 +212,7 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
-	require.NoError(s, err, "error removing config file: %q")
+	require.NoError(s, err, "error removing config file %q", configFile.Name())
 
 	s.pocketd.result = res
 }
@@ -287,7 +287,7 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	require.NoError(s, err, "error getting session for app %s and service %s: %s", appName, serviceId, err)
+	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
 
 	var resp sessiontypes.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -306,7 +306,7 @@ func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName
 	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
 
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
-	require.NoErrorf(s, err, "error sending relay request from app %s to supplier %s for service %s", appName, supplierName, serviceId)
+	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)
 	s.scenarioState[relayKey] = res.Stdout
@@ -331,7 +331,7 @@ func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 		fmt.Sprintf("list-%s", actorType),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error getting %s: %s", actorType, err)
+	require.NoError(s, err, "error getting %s", actorType)
 	s.pocketd.result = res
 
 	escapedAddress := accNameToAddrMap[accName]
@@ -357,7 +357,7 @@ func (s *suite) buildAddrMap() {
 	res, err := s.pocketd.RunCommand(
 		"keys", "list", keyRingFlag,
 	)
-	require.NoError(s, err, "error getting keys: %s")
+	require.NoError(s, err, "error getting keys")
 	s.pocketd.result = res
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
 	for _, match := range matches {
@@ -377,7 +377,7 @@ func (s *suite) buildAppMap() {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	require.NoError(s, err, "error getting application list: %s")
+	require.NoError(s, err, "error getting application list")
 	s.pocketd.result = res
 	var resp apptypes.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -396,7 +396,7 @@ func (s *suite) buildSupplierMap() {
 		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	require.NoError(s, err, "error getting supplier list: %s")
+	require.NoError(s, err, "error getting supplier list")
 	s.pocketd.result = res
 	var resp suppliertypes.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -418,7 +418,7 @@ func (s *suite) getAccBalance(accName string) int {
 		accNameToAddrMap[accName],
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err, "error getting balance: %s")
+	require.NoError(s, err, "error getting balance")
 	s.pocketd.result = res
 
 	match := amountRe.FindStringSubmatch(res.Stdout)
