@@ -172,8 +172,12 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	kvStore, err := badger.NewKVStore("")
 	require.NoError(t, err)
 
+	// Generating an ephemeral tree & spec just so we can submit
+	// a proof of the right size.
+	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
 	tree := smt.NewSparseMerkleSumTrie(kvStore, sha256.New())
-	proof, err := tree.ProveClosest([]byte{1})
+	emptyPath := make([]byte, tree.PathHasherSize())
+	proof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)
 
 	go func() {

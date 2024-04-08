@@ -5,13 +5,11 @@ package delegation
 // of listening to all events and doing a verbose filter.
 
 import (
-	"encoding/json"
 	"strconv"
-
-	"cosmossdk.io/api/tendermint/abci"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 )
 
 // redelegationEventType is the type of the EventRedelegation event emitted by
@@ -19,10 +17,6 @@ import (
 const redelegationEventType = "pocket.application.EventRedelegation"
 
 var _ client.Redelegation = (*redelegation)(nil)
-
-// TxEvent is an alias for the CometBFT TxResult type used to decode the
-// response bytes from the EventsQueryClient's subscription
-type TxEvent = abci.TxResult
 
 // redelegation wraps the EventRedelegation event emitted by the application
 // module, for use in the observable, it is one of the log entries embedded
@@ -49,19 +43,15 @@ func (d redelegation) GetGatewayAddress() string {
 // fails then the error is returned.
 func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 	return func(eventBz []byte) (client.Redelegation, error) {
-		txEvent := new(TxEvent)
-		// Try to deserialize the provided bytes into a TxEvent.
-		if err := json.Unmarshal(eventBz, txEvent); err != nil {
+		// Try to deserialize the provided bytes into an abci.TxResult.
+		txResult, err := tx.UnmarshalTxResult(eventBz)
+		if err != nil {
 			return nil, err
 		}
-		// Check if the TxEvent has empty transaction bytes, which indicates
-		// the message is probably not a valid transaction event.
-		if len(txEvent.Tx) == 0 {
-			return nil, events.ErrEventsUnmarshalEvent.Wrap("empty transaction bytes")
-		}
+
 		// Iterate through the log entries to find EventRedelegation
-		for _, event := range txEvent.Result.Events {
-			if event.GetType_() != redelegationEventType {
+		for _, event := range txResult.Result.Events {
+			if event.GetType() != redelegationEventType {
 				continue
 			}
 			var redelegationEvent redelegation

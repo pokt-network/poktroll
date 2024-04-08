@@ -19,8 +19,8 @@ import (
 	comettypes "github.com/cometbft/cometbft/rpc/core/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	accounttypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -46,7 +46,7 @@ type SupplierClient interface {
 	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
 	// for the same session. The proof is validated on-chain as part of the pocket
 	// protocol.
-	// TODO_IMPROVE(@h5law #427): Use SparseCompactClosestProof here to reduce
+	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
 	// the amount of data stored on-chain.
 	SubmitProof(
 		ctx context.Context,
@@ -233,7 +233,10 @@ type SupplierClientOption func(SupplierClient)
 // on-chain account information
 type AccountQueryClient interface {
 	// GetAccount queries the chain for the details of the account provided
-	GetAccount(ctx context.Context, address string) (accounttypes.AccountI, error)
+	GetAccount(ctx context.Context, address string) (cosmostypes.AccountI, error)
+
+	// GetPubKeyFromAddress returns the public key of the given address.
+	GetPubKeyFromAddress(ctx context.Context, address string) (cryptotypes.PubKey, error)
 }
 
 // ApplicationQueryClient defines an interface that enables the querying of the

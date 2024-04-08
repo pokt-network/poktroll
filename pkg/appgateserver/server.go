@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"cosmossdk.io/depinject"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -65,6 +66,14 @@ type appGateServer struct {
 	// server is the HTTP server that will be used capture application requests
 	// so that they can be signed and relayed to the supplier.
 	server *http.Server
+
+	// endpointSelectionIndexMu is a mutex that protects the endpointSelectionIndex
+	// from concurrent relay requests.
+	endpointSelectionIndexMu sync.Mutex
+
+	// endpointSelectionIndex is the index of the last selected endpoint.
+	// It is used to cycle through the available endpoints in a round-robin fashion.
+	endpointSelectionIndex int
 }
 
 // NewAppGateServer creates a new appGateServer instance with the given dependencies.
