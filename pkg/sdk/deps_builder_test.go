@@ -17,14 +17,19 @@ func TestGetTransportCreds(t *testing.T) {
 		expectedCredentials credentials.TransportCredentials
 	}{
 		{
-			desc:                "Test https scheme",
-			hostUrl:             "https://poktroll.com",
-			expectedCredentials: credentials.NewTLS(&tls.Config{}),
-		},
-		{
-			desc:                "Test any non-https scheme",
+			desc:                "Test http results in insecure",
 			hostUrl:             "http://poktroll.com",
 			expectedCredentials: insecure.NewCredentials(),
+		},
+		{
+			desc:                "Test tcp results in insecure",
+			hostUrl:             "tcp://poktroll.com",
+			expectedCredentials: insecure.NewCredentials(),
+		},
+		{
+			desc:                "Test default is tls credentials",
+			hostUrl:             "other://poktroll.com",
+			expectedCredentials: credentials.NewTLS(&tls.Config{}),
 		},
 	}
 
