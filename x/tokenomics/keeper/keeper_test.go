@@ -183,7 +183,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimSettled_ProofRequiredAndProvided() 
 	// Upsert the proof
 	s.keepers.UpsertProof(ctx, s.proof)
 
-	// 1. Settle pending claims after proof window closest
+	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be claimed.
 	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more precise block heights once they are implemented.
 	blockHeight := s.claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
