@@ -155,7 +155,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	claims = s.keepers.GetAllClaims(ctx)
 	require.Len(t, claims, 0)
 
-	// Confirm an settlement event was emitted
+	// Confirm an expiration event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
 	// Validate the expiration event
