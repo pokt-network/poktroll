@@ -141,7 +141,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	claims := s.keepers.GetAllClaims(ctx)
 	s.Require().Len(claims, 1)
 
-	// 1. Settle pending claims after proof window closest
+	// 1. Settle pending claims after proof window closes
 	// Expectation: All (1) claims should be expired.
 	// TODO_IMPROVE(@red-0ne, @Olshansk): Use the governance parameters for more precise block heights once they are implemented.
 	blockHeight := claim.SessionHeader.SessionEndBlockHeight * 10 // proof window has definitely closed at this point
