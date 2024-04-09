@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"net/url"
-	"strings"
 
 	"cosmossdk.io/depinject"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
@@ -102,13 +101,14 @@ func (sdk *poktrollSDK) buildDeps(
 	return deps, nil
 }
 
-// getTransportCreds creates transport credentials based on the provided URL scheme
+// getTransportCreds creates TLS or non-TLS credentials based on the url scheme provided
 func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
-	urlString := ConstructGRPCUrl(url)
 
-	if strings.HasPrefix(urlString, "https://") {
-		return credentials.NewTLS(&tls.Config{}), nil
+	// Config has forced non-TLS
+	if url.Scheme == "http" || url.Scheme == "tcp" {
+		return insecure.NewCredentials(), nil
 	}
 
-	return insecure.NewCredentials(), nil
+	// Default to TLS
+	return credentials.NewTLS(&tls.Config{}), nil
 }

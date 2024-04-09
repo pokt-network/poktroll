@@ -18,15 +18,3 @@ func RPCToWebsocketURL(hostUrl *url.URL) string {
 		return fmt.Sprintf("wss://%s/websocket", hostUrl.Host)
 	}
 }
-
-// ConstructGRPCUrl constructs a gRPC url string ensuring it contains either the scheme "https" or "http"
-func ConstructGRPCUrl(hostUrl *url.URL) string {
-	switch hostUrl.Scheme {
-	case "http":
-		return fmt.Sprintf("http://%s", hostUrl.Host)
-	case "tcp":
-		return fmt.Sprintf("tcp://%s", hostUrl.Host)
-	default:
-		return fmt.Sprintf("https://%s", hostUrl.Host)
-	}
-}

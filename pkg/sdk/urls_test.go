@@ -45,36 +45,3 @@ func TestRPCToWebsocketURL(t *testing.T) {
 		})
 	}
 }
-
-func TestConstructGRPCUrl(t *testing.T) {
-	tests := []struct {
-		desc        string
-		hostUrl     string
-		expectedUrl string
-	}{
-		{
-			desc:        "https with port",
-			hostUrl:     "https://poktroll.com:443",
-			expectedUrl: "https://poktroll.com:443",
-		},
-		{
-			desc:        "tcp stays tcp",
-			hostUrl:     "tcp://poktroll.com",
-			expectedUrl: "tcp://poktroll.com",
-		},
-		{
-			desc:        "default is https",
-			hostUrl:     "other://poktroll.com",
-			expectedUrl: "https://poktroll.com",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.desc, func(t *testing.T) {
-			u, err := url.Parse(tc.hostUrl)
-			require.NoError(t, err)
-			got := sdk.ConstructGRPCUrl(u)
-			require.Equal(t, tc.expectedUrl, got)
-		})
-	}
-}
