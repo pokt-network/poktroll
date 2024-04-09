@@ -246,7 +246,7 @@ func (k msgServer) queryAndValidateClaimForProof(
 	// values are guaranteed to match.
 	foundClaim, found := k.GetClaim(ctx, sessionId, msg.GetSupplierAddress())
 	if !found {
-		return types.ErrProofClaimNotFound.Wrapf(
+		return nil, types.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
 			sessionId,
 			msg.GetSupplierAddress(),
