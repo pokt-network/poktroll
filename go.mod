@@ -43,7 +43,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
-	github.com/pokt-network/smt v0.9.2
+	github.com/pokt-network/smt v0.10.0
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
 	github.com/prometheus/client_golang v1.18.0
 	github.com/regen-network/gocuke v1.1.0
