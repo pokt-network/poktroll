@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	"github.com/stretchr/testify/require"
@@ -16,6 +16,7 @@ import (
 	_ "github.com/pokt-network/poktroll/testutil/testpolylog"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 func TestClaim_Show(t *testing.T) {
@@ -27,7 +28,7 @@ func TestClaim_Show(t *testing.T) {
 
 	ctx := net.Validators[0].ClientCtx
 	commonArgs := []string{
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 
 	var wrongSupplierAddr = sample.AccAddress()
@@ -44,7 +45,8 @@ func TestClaim_Show(t *testing.T) {
 			sessionId:    claims[0].GetSessionHeader().GetSessionId(),
 			supplierAddr: claims[0].GetSupplierAddress(),
 
-			claim: claims[0],
+			claim:       claims[0],
+			expectedErr: nil,
 		},
 		{
 			desc:         "claim not found (wrong session ID)",
@@ -114,21 +116,32 @@ func TestClaim_Show(t *testing.T) {
 	}
 }
 
+// TODO_HACK(@Olshansk): While working on #359, I uncovered that the configurations
+// set at the beginning of this test cannot be set independently of how the helpers
+// create claims. I'm adapting the tests in #448, in order to keep moving and not
+// waste too much time on fixing the test for now but will revisit.
 func TestClaim_List(t *testing.T) {
-	sessionCount := 2
 	numSuppliers := 4
-	numApps := 3
-	numServices := 1
-	// Each supplier will submit a claim for each app x service combination (per session).
-	numClaimsPerSession := numSuppliers * numApps * numServices
-	totalClaims := sessionCount * numClaimsPerSession
+	numApps := 1
+	// TODO_HACK(@Olshansk): Due to the bug found in `networkWithClaimObjects`, this
+	// is a temporary workaround instead of setting numSessions to its own
+	// independent constant, which requires us to temporarily align the
+	// with the num blocks per session. See the `forloop` in `networkWithClaimObjects`
+	// that has a TODO_HACK as well.
+	require.Equal(t, 0, numSuppliers*numApps%sessionkeeper.NumBlocksPerSession)
 
-	net, claims := networkWithClaimObjects(t, sessionCount, numSuppliers, numApps)
+	numSessions := numSuppliers * numApps / sessionkeeper.NumBlocksPerSession
+
+	// Submitting one claim per block for simplicity
+	numClaimsPerSession := sessionkeeper.NumBlocksPerSession
+	totalClaims := numSessions * numClaimsPerSession
+
+	net, claims := networkWithClaimObjects(t, numSessions, numSuppliers, numApps)
 
 	ctx := net.Validators[0].ClientCtx
 	prepareArgs := func(next []byte, offset, limit uint64, total bool) []string {
 		args := []string{
-			fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+			fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 		}
 		if next == nil {
 			args = append(args, fmt.Sprintf("--%s=%d", flags.FlagOffset, offset))
@@ -198,11 +211,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
+		require.Equal(t, numSessions*numApps, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, sessionCount*numApps, int(resp.Pagination.Total))
 	})
 
 	t.Run("BySession", func(t *testing.T) {
@@ -223,11 +236,11 @@ func TestClaim_List(t *testing.T) {
 		var resp types.QueryAllClaimsResponse
 		require.NoError(t, net.Config.Codec.UnmarshalJSON(out.Bytes(), &resp))
 
+		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 		require.ElementsMatch(t,
 			nullify.Fill(expectedClaims),
 			nullify.Fill(resp.Claims),
 		)
-		require.Equal(t, numSuppliers, int(resp.Pagination.Total))
 	})
 
 	t.Run("ByHeight", func(t *testing.T) {

@@ -1,33 +1,29 @@
-# Based off of https://github.com/LayZeeDK/github-pages-docusaurus
-name: Deploy docusaurus docs to GitHub pages
+name: Check and Deploy docusaurus
 
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "docusaurus/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    permissions:
-      id-token: write
-      pages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 👇 Build steps
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'yarn'
+          cache: "yarn"
           cache-dependency-path: docusaurus/yarn.lock
 
       - name: Install dependencies
@@ -40,7 +36,36 @@ jobs:
           cd docusaurus
           yarn build
 
-      # 👆 Build steps
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "yarn"
+          cache-dependency-path: docusaurus/yarn.lock
+
+      - name: Install dependencies
+        run: |
+          cd docusaurus
+          yarn install
+
+      - name: Build
+        run: |
+          cd docusaurus
+          yarn build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -50,10 +75,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          # 👇 Specify build output path relative to the subdirectory
           path: docusaurus/build
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
-

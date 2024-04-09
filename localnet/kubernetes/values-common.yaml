@@ -1,3 +1,5 @@
+keysSecretName: poktrolld-keys
+
 securityContext:
   # Allows to run delve inside a container.
   allowPrivilegeEscalation: true

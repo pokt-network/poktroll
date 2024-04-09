@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"testing"
 
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	clitestutil "github.com/cosmos/cosmos-sdk/testutil/cli"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/status"
+	"github.com/stretchr/testify/require"
+
 	"github.com/pokt-network/poktroll/testutil/network"
 	tokenomics "github.com/pokt-network/poktroll/x/tokenomics/module"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCLI_UpdateParams(t *testing.T) {
@@ -20,7 +21,7 @@ func TestCLI_UpdateParams(t *testing.T) {
 	ctx := net.Validators[0].ClientCtx
 
 	common := []string{
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 		fmt.Sprintf("--%s=%s", flags.FlagFrom, net.Validators[0].Address.String()),
 		fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync),
