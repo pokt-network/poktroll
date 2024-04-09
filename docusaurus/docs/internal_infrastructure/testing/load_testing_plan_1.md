@@ -123,12 +123,12 @@ pie showData
 - `Block Publishing` - `Tx` aggregation (ingress) and `Block` publishing (egress) could be more expensive than expected w.r.t network usage
 - `Data Availability State` - `Disk` could be a limiting factor depending on how quickly state grows
 
-|                         | RAM  | CPU  | Network | Disk |
-| ----------------------- | ---- | ---- | ------- | ---- |
-| Proof Validation        |   ❓ |   ❓ |         |      |
-| Block Generation        |   ❓ |   ❓ |         |      |
-| Block Publishing        |      |      |   ❓    |      |
-| Data Availability State |      |      |         |   ❓ |
+|                         | RAM | CPU | Network | Disk | Time |
+|-------------------------|-----|-----|---------|------|------|
+| Proof Validation        | ❓   | ❓   |         |      | ❓    |
+| Block Generation        | ❓   |     |         |      |      |
+| Block Publishing        |     |     | ❓       |      |      |
+| Data Availability State |     |     |         | ❓    |      |
 
 #### 3. AppGate Server (Application, Gateway, etc…)
 
@@ -141,12 +141,12 @@ pie showData
 - `Request Processing` - Signature generation, request marshaling / unmarshaling, etc…
 - `Response handling` - Slow supplier responses could increase pending relays at the AppGate level (i.e. RAM)
 
-|                    | RAM | CPU | Network | Disk |
-| ------------------ | --- | --- | ------- | ---- |
-| Relay Proxies      |     |     |   ❓    |      |
-| Caches & State     | ❓  | ❓  |         |      |
-| Request Processing | ❓  | ❓  |         |      |
-| ???                |     |     |         |   ❓ |
+|                    | RAM | CPU | Network | Disk | Time |
+|--------------------|-----|-----|---------|------|------|
+| Relay Proxies      |     |     | ❓       |      | ❓    |
+| Caches & State     | ❓   | ❓   |         |      |      |
+| Request Processing |     |     |         |      | ❓    |
+| ???                |     |     |         | ❓    |      |
 
 #### 4. RelayMiner (Supplier, SMT, etc..)
 
@@ -159,12 +159,12 @@ pie showData
 - `Request Processing` - Signature generation, request marshaling / unmarshaling, etc…
 - `Request generation` - Generating the actual response to the request via the dummy service
 
-|                    | RAM  | CPU  | Network | Disk |
-| ------------------ | ---- | ---- | ------- | ---- |
-| SMT                |   ❓ |   ❓ |         | ❓   |
-| Caches & State     |   ❓ |      |         |      |
-| Request Processing |   ❓ |      |         |      |
-| Request Generation |   ❓ |   ❓ |   ❓    |      |
+|                     | RAM | CPU | Network | Disk | Time |
+|---------------------|-----|-----|---------|------|------|
+| SMT                 | ❓   | ❓   |         | ❓    | ❓    |
+| Caches & State      | ❓   |     |         |      |      |
+| Request Processing  |     |     |         |      | ❓    |
+| Response Generation |     | ❓   | ❓       |      | ❓    |
 
 ### Out-of-scope
 

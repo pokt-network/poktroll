@@ -21,36 +21,47 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 
 	// Check if the supplier already exists or not
 	var err error
-	var coinsToDelegate sdk.Coin
+	var coinsToEscrow sdk.Coin
 	supplier, isSupplierFound := k.GetSupplier(ctx, msg.Address)
 
 	if !isSupplierFound {
-		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier not found. Creating new supplier for address %q", msg.Address))
 		supplier = k.createSupplier(ctx, msg)
-		coinsToDelegate = *msg.Stake
+		coinsToEscrow = *msg.Stake
 	} else {
-		logger.Info(fmt.Sprintf("Supplier found. Updating supplier for address %s", msg.Address))
+		logger.Info(fmt.Sprintf("Supplier found. About to try updating supplier with address %q", msg.Address))
 		currSupplierStake := *supplier.Stake
 		if err = k.updateSupplier(ctx, &supplier, msg); err != nil {
+			logger.Error(fmt.Sprintf("could not update supplier for address %q due to error %v", msg.Address, err))
 			return nil, err
 		}
-		coinsToDelegate = (*msg.Stake).Sub(currSupplierStake)
+		coinsToEscrow, err = (*msg.Stake).SafeSub(currSupplierStake)
+		if err != nil {
+			return nil, err
+		}
+		logger.Info(fmt.Sprintf("Supplier is going to escrow an additional %+v coins", coinsToEscrow))
+	}
+
+	// Must always stake or upstake (> 0 delta)
+	if coinsToEscrow.IsZero() {
+		logger.Warn(fmt.Sprintf("Supplier %q must escrow more than 0 additional coins", msg.Address))
+		return nil, types.ErrSupplierInvalidStake.Wrapf("supplier %q must escrow more than 0 additional coins", msg.Address)
 	}
 
 	// Retrieve the address of the supplier
 	supplierAddress, err := sdk.AccAddressFromBech32(msg.Address)
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not parse address %s", msg.Address))
+		logger.Error(fmt.Sprintf("could not parse address %q", msg.Address))
 		return nil, err
 	}
 
-	// TODO_IMPROVE: Should we avoid making this call if `coinsToDelegate` = 0?
 	// Send the coins from the supplier to the staked supplier pool
-	err = k.bankKeeper.DelegateCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToDelegate})
+	err = k.bankKeeper.SendCoinsFromAccountToModule(ctx, supplierAddress, types.ModuleName, []sdk.Coin{coinsToEscrow})
 	if err != nil {
-		logger.Error(fmt.Sprintf("could not send %v coins from %s to %s module account due to %v", coinsToDelegate, supplierAddress, types.ModuleName, err))
+		logger.Error(fmt.Sprintf("could not send %v coins from %q to %q module account due to %v", coinsToEscrow, supplierAddress, types.ModuleName, err))
 		return nil, err
 	}
+	logger.Info(fmt.Sprintf("Successfully escrowed %v coins from %q to %q module account", coinsToEscrow, supplierAddress, types.ModuleName))
 
 	// Update the Supplier in the store
 	k.SetSupplier(ctx, supplier)
@@ -77,7 +88,7 @@ func (k msgServer) updateSupplier(
 ) error {
 	// Checks if the the msg address is the same as the current owner
 	if msg.Address != supplier.Address {
-		return types.ErrSupplierUnauthorized.Wrapf("msg Address (%s) != supplier address (%s)", msg.Address, supplier.Address)
+		return types.ErrSupplierUnauthorized.Wrapf("msg Address %q != supplier address %q", msg.Address, supplier.Address)
 	}
 
 	// Validate that the stake is not being lowered

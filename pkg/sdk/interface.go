@@ -27,6 +27,6 @@ type POKTRollSDK interface {
 	SendRelay(
 		ctx context.Context,
 		sessionSupplierEndpoint *SingleSupplierEndpoint,
-		request *http.Request,
+		request http.Request,
 	) (response *servicetypes.RelayResponse, err error)
 }

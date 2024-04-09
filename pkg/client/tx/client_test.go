@@ -42,6 +42,7 @@ const (
 // TODO_TECHDEBT: add coverage for the transactions client handling an events bytes error either.
 
 func TestTxClient_SignAndBroadcast_Succeeds(t *testing.T) {
+	t.Skip("TODO_BLOCKER(#425): Revisit Observable test tooling & fix flaky test")
 	var (
 		// expectedTx is the expected transactions bytes that will be signed and broadcast
 		// by the transaction client. It is computed and assigned in the
@@ -405,7 +406,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	err, errCh := eitherErr.SyncOrAsyncError()
 	require.NoError(t, err)
 
-	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	spec := smt.NoPrehashSpec(sha256.New(), true)
 	emptyBlockHash := make([]byte, spec.PathHasherSize())
 

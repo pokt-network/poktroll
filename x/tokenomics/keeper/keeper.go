@@ -11,31 +11,21 @@ import (
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// Keeper is the structure that implements the `KeeperI` interface.
+type Keeper struct {
+	cdc          codec.BinaryCodec
+	storeService store.KVStoreService
+	logger       log.Logger
 
-// TODO_TECHDEBT(#240): See `x/nft/keeper.keeper.go` in the Cosmos SDK on how
-// we should refactor all our keepers. This keeper has started following a small
-// subset of those patterns.
-type (
-	Keeper struct {
-		cdc          codec.BinaryCodec
-		storeService store.KVStoreService
-		logger       log.Logger
+	// the address capable of executing a MsgUpdateParams message. Typically, this
+	// should be the x/gov module account.
+	authority string
 
-		// the address capable of executing a MsgUpdateParams message. Typically, this
-		// should be the x/gov module account.
-		authority string
-
-		bankKeeper        types.BankKeeper
-		accountKeeper     types.AccountKeeper
-		applicationKeeper types.ApplicationKeeper
-
-		// TODO_DISCUSS: The supplier keeper is not used in the tokenomics module,
-		// the bank keeper is the one that is used to handle the supplier rewards.
-		// Make sure to remove it from the expected keepers if removed from here.
-		supplierKeeper types.SupplierKeeper
-	}
-)
+	// keepers
+	bankKeeper        types.BankKeeper
+	accountKeeper     types.AccountKeeper
+	applicationKeeper types.ApplicationKeeper
+	proofKeeper       types.ProofKeeper
+}
 
 func NewKeeper(
 	cdc codec.BinaryCodec,
@@ -46,7 +36,7 @@ func NewKeeper(
 	bankKeeper types.BankKeeper,
 	accountKeeper types.AccountKeeper,
 	applicationKeeper types.ApplicationKeeper,
-	supplierKeeper types.SupplierKeeper,
+	proofKeeper types.ProofKeeper,
 ) Keeper {
 	if _, err := sdk.AccAddressFromBech32(authority); err != nil {
 		panic(fmt.Sprintf("invalid authority address: %s", authority))
@@ -61,7 +51,7 @@ func NewKeeper(
 		bankKeeper:        bankKeeper,
 		accountKeeper:     accountKeeper,
 		applicationKeeper: applicationKeeper,
-		supplierKeeper:    supplierKeeper,
+		proofKeeper:       proofKeeper,
 	}
 }
 
