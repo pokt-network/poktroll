@@ -519,18 +519,18 @@ func UnmarshalTxResult(txResultBz []byte) (*abci.TxResult, error) {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
-	var txResult CometTxEvent
+	var cometTxEvent CometTxEvent
 
 	// Try to deserialize the provided bytes into a TxResult.
-	if err := json.Unmarshal(rpcResponse.Result, &txResult); err != nil {
+	if err := json.Unmarshal(rpcResponse.Result, &cometTxEvent); err != nil {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap(err.Error())
 	}
 
 	// Check if the TxResult has empty transaction bytes, which indicates
 	// the message might not be a valid transaction event.
-	if bytes.Equal(txResult.Data.Value.TxResult.Tx, []byte{}) {
+	if bytes.Equal(cometTxEvent.Data.Value.TxResult.Tx, []byte{}) {
 		return nil, events.ErrEventsUnmarshalEvent.Wrap("event bytes do not correspond to an abci.TxResult")
 	}
 
-	return &txResult.Data.Value.TxResult, nil
+	return &cometTxEvent.Data.Value.TxResult, nil
 }

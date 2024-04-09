@@ -18,8 +18,6 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
-	// this line is used by starport scaffolding # 1
-
 	modulev1 "github.com/pokt-network/poktroll/api/poktroll/session/module"
 	"github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/session/types"
@@ -151,12 +149,18 @@ func (am AppModule) BeginBlock(_ context.Context) error {
 
 // EndBlock contains the logic that is automatically triggered at the end of each block.
 // The end block implementation is optional.
+// TODO_TECHDEBT( @red-0ne): Add unit/integration tests for this.
 func (am AppModule) EndBlock(ctx context.Context) error {
-	// Store the block hash at the end of every block, so we can query the block hash
-	// to construct the SessionID.
+	logger := am.keeper.Logger().With("EndBlock", "SessionModuleEndBlock")
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	blockHeight := sdkCtx.BlockHeight()
+
+	// Store the block hash at the end of every block.
+	// This is necessary to correctly and pseudo-randomly construct a SessionID.
 	// EndBlock is preferred over BeginBlock to avoid wasting resources if the block
 	// does not get committed.
 	am.keeper.StoreBlockHash(ctx)
+	logger.Info(fmt.Sprintf("Stored block hash at height %d", blockHeight))
 	return nil
 }
 
