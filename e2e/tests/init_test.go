@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -59,7 +60,7 @@ func init() {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	log.Printf("features path: %s", flagFeaturesPath)
+	log.Printf("Running features matching %q", filepath.Join("e2e", "tests", flagFeaturesPath))
 	m.Run()
 }
 
