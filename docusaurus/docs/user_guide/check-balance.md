@@ -3,37 +3,46 @@ title: Check balance
 sidebar_position: 3
 ---
 
-# Checking Your Wallet Balance
+# Checking Your Wallet Balance <!-- omit in toc -->
 
-Knowing your account's balance is crucial for effective transaction management on the poktrolld blockchain. This guide provides the necessary steps to check your wallet's balance using the `poktrolld` command-line interface.
+Knowing your account's balance is crucial for effective transaction management
+on the Pocket Network blockchain. This guide provides the necessary steps to
+check your wallet's balance using the `poktrolld` command-line interface (CLI).
 
 :::note
 
-You'll need access to your wallet address and the denomination of the token you wish to query. The default node is set to interact with a local instance. For network-specific queries, ensure you specify the correct node endpoint.
+You'll need access to your wallet address and the denomination of the token you
+wish to query (i.e. `upokt`).
+
+The default node is set to interact with a local instance. For network-specific
+queries (i.e. accessing TestNet or MainNet), you will need an RPC endpoint.
 
 :::
 
+- [Pre-requisites](#pre-requisites)
+- [Step 1: Preparing the Query](#step-1-preparing-the-query)
+- [Step 2: Viewing the Balance](#step-2-viewing-the-balance)
+- [Accessing non-local environments](#accessing-non-local-environments)
+
 ## Pre-requisites
 
-- poktrolld installed on your system.
-- The address of the wallet you wish to check.
-- Token denomination - `upokt` for POKT tokens.
+1. `poktrolld` is installed on your system
+2. You have the address of the wallet you wish to check
+3. You know the token denomination you wish to check: `upokt` for POKT tokens.
 
 ## Step 1: Preparing the Query
 
-You can check your wallet's balance by specifying the address and the token denomination. 
+You can check your wallet's balance by specifying the `address` in the following command:
 
 ```sh
 poktrolld query bank balance [address] upokt
 ```
 
-### Example:
+Example:
 
 ```sh
 poktrolld query bank balance pokt1hdfggsqdy66awgvr4lclyupddz4n2dfrl9rjwv upokt
 ```
-
-This command queries the balance of upokt tokens for the specified address.
 
 ## Step 2: Viewing the Balance
 
@@ -45,10 +54,14 @@ balance:
   denom: upokt
 ```
 
-This output indicates that the wallet address holds 8999 upokt tokens.
+This output indicates that the wallet address holds 8999 `upokt` tokens.
 
-:::tip
+## Accessing non-local environments
 
-For network-specific balance queries or when accessing a remote node, use the --node flag to specify the node endpoint. For example, for a testnet node, you could use `--node=https://testnet-validated-validator-rpc.poktroll.com/`.
+You must provide the `--node` flag to access non LocalNet environments.
 
-:::
+For example, to check a balance on TestNet, you would use the following command:
+
+```sh
+poktrolld query bank balance [address] upokt --node=https://testnet-validated-validator-rpc.poktroll.com
+```
