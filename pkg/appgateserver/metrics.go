@@ -1,7 +1,6 @@
 package appgateserver
 
 import (
-	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
@@ -9,9 +8,9 @@ import (
 const (
 	appGateServerSubsystem = "appgateserver"
 
-	requestsTotal        = "requests_total"
-	requestsSuccessTotal = "requests_success_total"
-	requestsErrorsTotal  = "requests_errors_total"
+	relaysTotalMetric        = "requests_total"
+	relaysSuccessTotalMetric = "requests_success_total"
+	relaysErrorsTotalMetric  = "requests_errors_total"
 )
 
 var (
@@ -23,9 +22,9 @@ var (
 	// Usage:
 	// - Monitor aggregate load and request rates.
 	// - Compare request volumes by service and request type.
-	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	relaysTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: appGateServerSubsystem,
-		Name:      requestsTotal,
+		Name:      relaysTotalMetric,
 	}, []string{"service_id", "request_type"})
 
 	// relaysErrorsTotal is a Counter metric tracking errors on the AppGate server.
@@ -36,9 +35,9 @@ var (
 	// Usage:
 	// - Monitor health and error rates by service and request type.
 	// - Identify and address high-error areas.
-	relaysErrorsTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	relaysErrorsTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: appGateServerSubsystem,
-		Name:      requestsErrorsTotal,
+		Name:      relaysErrorsTotalMetric,
 	}, []string{"service_id", "request_type"})
 
 	// relaysSuccessTotal is a Counter metric tracking successful requests on the AppGate server.
@@ -46,8 +45,8 @@ var (
 	// reliability and performance.
 	// Labeled by 'service_id' and 'request_type', it enables detailed analysis
 	// of successful requests.
-	relaysSuccessTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: appGateServerSubsystem,
-		Name:      requestsSuccessTotal,
+		Name:      relaysSuccessTotalMetric,
 	}, []string{"service_id", "request_type"})
 )
