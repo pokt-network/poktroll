@@ -158,7 +158,7 @@ func (s *TestSuite) TestClaimSettlement_ClaimExpired_ProofRequiredAndNotProvided
 	// Confirm an settlement event was emitted
 	events := sdkCtx.EventManager().Events()
 	require.Len(t, events, 5) // minting, burning, settling, etc..
-	// Validate the settlement event
+	// Validate the expiration event
 	expectedEvent, ok := s.getClaimEvent(events, "poktroll.tokenomics.EventClaimExpired").(*tokenomicstypes.EventClaimExpired)
 	require.True(t, ok)
 	require.Equal(t, numComputeUnits, expectedEvent.ComputeUnits)
