@@ -19,7 +19,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
-	// tokenomictypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 const (
