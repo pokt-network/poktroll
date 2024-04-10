@@ -12,18 +12,18 @@ const config = {
   tagline: "Roll the POKT",
   favicon: "img/logo.png",
 
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  markdown: {
+    mermaid: true,
+  },
+  themes: ["@docusaurus/theme-mermaid"],
 
   // GitHub pages deployment config.
   url: "https://poktroll.com/",
   baseUrl: "/",
+
   // Custom domain config.
   // url: "https://docs.poktroll.com",
   // baseUrl: "/",
-
-  markdown: { mermaid: true },
-  themes: ["@docusaurus/theme-mermaid"],
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -50,10 +50,16 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
         },
-        theme: {},
+        theme: {
+          // customCss: [
+          // require.resolve("./src/css/custom.css"),
+          // require.resolve("./src/css/header-icons.css"),
+          // ],
+        },
       }),
     ],
   ],
@@ -61,7 +67,11 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
+      docs: {
+        sidebar: {
+          hideable: false,
+        },
+      },
       // image: "img/docusaurus-social-card.jpg",
       style: "dark",
       navbar: {
