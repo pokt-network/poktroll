@@ -119,7 +119,7 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "code",
-                    "expr": "sum (relayminer_requests_total{pod=~\"^$relayminer.*\"}) by (pod)",
+                    "expr": "sum (appgateserver_requests_total{pod=~\"^$appgateserver.*\"}) by (request_type, service_id)",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -139,15 +139,54 @@
             },
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
                     "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
                         "hideFrom": {
                             "legend": false,
                             "tooltip": false,
                             "viz": false
                         },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
                         "scaleDistribution": {
                             "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
                         }
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
                     }
                 },
                 "overrides": []
@@ -160,50 +199,17 @@
             },
             "id": 10,
             "options": {
-                "calculate": true,
-                "calculation": {
-                    "yBuckets": {
-                        "scale": {
-                            "type": "linear"
-                        }
-                    }
-                },
-                "cellGap": 1,
-                "cellValues": {
-                    "unit": "dtdurations"
-                },
-                "color": {
-                    "exponent": 0.5,
-                    "fill": "dark-orange",
-                    "mode": "scheme",
-                    "reverse": false,
-                    "scale": "exponential",
-                    "scheme": "Oranges",
-                    "steps": 64
-                },
-                "exemplars": {
-                    "color": "rgba(255,0,255,0.7)"
-                },
-                "filterValues": {
-                    "le": 1e-9
-                },
                 "legend": {
-                    "show": true
-                },
-                "rowsFrame": {
-                    "layout": "auto"
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
                 "tooltip": {
                     "mode": "single",
-                    "showColorScale": false,
-                    "yHistogram": false
-                },
-                "yAxis": {
-                    "axisPlacement": "left",
-                    "reverse": false
+                    "sort": "none"
                 }
             },
-            "pluginVersion": "10.4.0",
             "targets": [
                 {
                     "datasource": {
@@ -212,20 +218,18 @@
                     },
                     "disableTextWrap": false,
                     "editorMode": "code",
-                    "exemplar": false,
-                    "expr": "relayminer_request_duration_seconds_bucket{pod=~\"^$relayminer.*\"}",
-                    "format": "heatmap",
+                    "expr": "sum (appgateserver_errors_total{pod=~\"^$appgateserver.*\"}) by (request_type, service_id)",
                     "fullMetaSearch": false,
-                    "includeNullMetadata": false,
+                    "includeNullMetadata": true,
                     "instant": false,
-                    "legendFormat": "{{le}}",
+                    "legendFormat": "__auto",
                     "range": true,
                     "refId": "A",
                     "useBackend": false
                 }
             ],
-            "title": "Request duration",
-            "type": "heatmap"
+            "title": "Relay errors",
+            "type": "timeseries"
         },
         {
             "collapsed": false,
@@ -325,8 +329,8 @@
                         "uid": "prometheus"
                     },
                     "disableTextWrap": false,
-                    "editorMode": "builder",
-                    "expr": "go_goroutines{job=\"$relayminer\"}",
+                    "editorMode": "code",
+                    "expr": "sum (go_goroutines{job=~\"$appgateserver-.*\"}) by (pod)",
                     "fullMetaSearch": false,
                     "includeNullMetadata": true,
                     "instant": false,
@@ -500,7 +504,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~\"^$relayminer.*\"}) by (container)",
+                    "expr": "sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{pod=~\"^$appgateserver.*\"}) by (container)",
                     "format": "time_series",
                     "legendFormat": "{{container}}",
                     "range": true,
@@ -511,7 +515,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(\n    kube_pod_container_resource_requests{pod=~\"^$relayminer.*\", resource=\"cpu\"}\n)\n",
+                    "expr": "sum(\n    kube_pod_container_resource_requests{pod=~\"^$appgateserver.*\", resource=\"cpu\"}\n)\n",
                     "format": "time_series",
                     "legendFormat": "requests",
                     "range": true,
@@ -522,7 +526,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(\n    kube_pod_container_resource_limits{pod=~\"^$relayminer.*\", resource=\"cpu\"}\n)\n",
+                    "expr": "sum(\n    kube_pod_container_resource_limits{pod=~\"^$appgateserver.*\", resource=\"cpu\"}\n)\n",
                     "format": "time_series",
                     "legendFormat": "limits",
                     "range": true,
@@ -700,7 +704,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", pod=~\"^$relayminer.*\", container!=\"\", image!=\"\"}) by (container)",
+                    "expr": "sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\", pod=~\"^$appgateserver.*\", container!=\"\", image!=\"\"}) by (container)",
                     "format": "time_series",
                     "legendFormat": "{{container}}",
                     "range": true,
@@ -711,7 +715,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(\n    kube_pod_container_resource_requests{job=\"kube-state-metrics\", pod=~\"^$relayminer.*\", resource=\"memory\"}\n)\n",
+                    "expr": "sum(\n    kube_pod_container_resource_requests{job=\"kube-state-metrics\", pod=~\"^$appgateserver.*\", resource=\"memory\"}\n)\n",
                     "format": "time_series",
                     "legendFormat": "requests",
                     "range": true,
@@ -722,7 +726,7 @@
                         "uid": "$datasource"
                     },
                     "editorMode": "code",
-                    "expr": "sum(\n    kube_pod_container_resource_limits{job=\"kube-state-metrics\", pod=~\"^$relayminer.*\", resource=\"memory\"}\n)\n",
+                    "expr": "sum(\n    kube_pod_container_resource_limits{job=\"kube-state-metrics\", pod=~\"^$appgateserver.*\", resource=\"memory\"}\n)\n",
                     "format": "time_series",
                     "legendFormat": "limits",
                     "range": true,
@@ -774,7 +778,7 @@
                         "uid": "P8E80F9AEF21F6940"
                     },
                     "editorMode": "builder",
-                    "expr": "{instance=\"$relayminer\"} |= `` | json",
+                    "expr": "{instance=\"$appgateserver\"} |= `` | json",
                     "queryType": "range",
                     "refId": "A"
                 }
@@ -790,27 +794,27 @@
         "list": [
             {
                 "current": {
-                    "selected": true,
-                    "text": "relayminer1",
-                    "value": "relayminer1"
+                    "selected": false,
+                    "text": "appgateserver1",
+                    "value": "appgateserver1"
                 },
                 "datasource": {
                     "type": "prometheus",
                     "uid": "prometheus"
                 },
-                "definition": "label_values(go_info{container=\"relayminer\"},job)",
+                "definition": "label_values(go_info{container=\"appgate-server\"},job)",
                 "hide": 0,
                 "includeAll": false,
                 "multi": false,
-                "name": "relayminer",
+                "name": "appgateserver",
                 "options": [],
                 "query": {
                     "qryType": 1,
-                    "query": "label_values(go_info{container=\"relayminer\"},job)",
+                    "query": "label_values(go_info{container=\"appgate-server\"},job)",
                     "refId": "PrometheusVariableQueryEditor-VariableQuery"
                 },
                 "refresh": 1,
-                "regex": "",
+                "regex": "/^(?<text>.*)-appgate/",
                 "skipUrlSync": false,
                 "sort": 0,
                 "type": "query"
@@ -823,8 +827,8 @@
     },
     "timepicker": {},
     "timezone": "browser",
-    "title": "Protocol / RelayMiner",
-    "uid": "relayminer",
-    "version": 4,
+    "title": "Protocol / AppGate Server",
+    "uid": "appgateserver",
+    "version": 1,
     "weekStart": ""
 }

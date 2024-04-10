@@ -73,7 +73,7 @@ if localnet_config["observability"]["enabled"]:
     )
 
     # Grafana discovers dashboards to "import" via a label
-    local("kubectl label configmap protocol-dashboards grafana_dashboard=1 --overwrite")
+    local_resource("protocol-dashboards-label","kubectl label configmap protocol-dashboards grafana_dashboard=1 --overwrite", resource_deps=["protocol-dashboards"])
 
 # Import keyring/keybase files into Kubernetes ConfigMap
 configmap_create(
@@ -150,6 +150,8 @@ helm_resource(
         "--values=./localnet/kubernetes/values-validator.yaml",
         "--set=persistence.cleanupBeforeEachStart="
         + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
+        "--set=serviceMonitor.enabled="
+        + str(localnet_config["observability"]["enabled"]),
     ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
@@ -195,6 +197,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-appgateserver.yaml",
             "--set=config.signing_key=app" + str(actor_number),
+            "--set=metrics.serviceMonitor.enabled="+ str(localnet_config["observability"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -203,6 +206,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
         "appgateserver" + str(actor_number),
         labels=["applications"],
         resource_deps=["validator"],
+        links=[link('http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=appgateserver' + str(actor_number), 'Grafana dashboard'),],
         port_forwards=[
             str(42068+actor_number)+":42069", # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
             str(40054+actor_number)+":40006", # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
@@ -222,6 +226,7 @@ for x in range(localnet_config["gateways"]["count"]):
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-gateway.yaml",
             "--set=config.signing_key=gateway" + str(actor_number),
+            "--set=metrics.serviceMonitor.enabled="+ str(localnet_config["observability"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -230,6 +235,7 @@ for x in range(localnet_config["gateways"]["count"]):
         "gateway" + str(actor_number),
         labels=["gateways"],
         resource_deps=["validator"],
+                links=[link('http://localhost:3003/d/appgateserver/protocol-appgate-server?orgId=1&refresh=5s&var-appgateserver=gateway' + str(actor_number), 'Grafana dashboard'),],
         port_forwards=[
             str(42078+actor_number)+":42069", # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
             str(40064+actor_number)+":40006", # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
@@ -242,6 +248,9 @@ k8s_resource(
     "validator",
     labels=["pocket_network"],
     port_forwards=["36657", "36658", "40004"],
+    links=[
+        link('http://localhost:3003/d/cosmoscometbft/protocol-cometbft-dashboard?orgId=1&from=now-1h&to=now', 'Validator dashboard'),
+    ]
 )
 
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
