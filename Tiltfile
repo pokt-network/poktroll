@@ -10,6 +10,7 @@ hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
     "validator": {"cleanupBeforeEachStart": True},
+    "observability": {"enabled": True},
     "relayminers": {"count": 1},
     "gateways": {"count": 1},
     "appgateservers": {"count": 1},
@@ -35,6 +36,44 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
     hot_reload_dirs.append(helm_chart_local_repo)
     print("Using local helm chart repo " + helm_chart_local_repo)
     chart_prefix = helm_chart_local_repo + "/charts/"
+
+
+# Observability
+if localnet_config["observability"]["enabled"]:
+    print("Observability enabled")
+    helm_repo("prometheus-community", "https://prometheus-community.github.io/helm-charts")
+    helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
+
+    helm_resource(
+        "observability",
+        "prometheus-community/kube-prometheus-stack",
+        flags=[
+          "--values=./localnet/kubernetes/observability-prometheus-stack.yaml",
+        ], resource_deps=["prometheus-community"]
+    )
+
+    helm_resource("loki", "grafana-helm-repo/loki-stack", flags=[
+          "--values=./localnet/kubernetes/observability-loki-stack.yaml",
+        ], resource_deps=["grafana-helm-repo"])
+
+    k8s_resource(
+        new_name="grafana",
+        workload="observability",
+        extra_pod_selectors=[{"app.kubernetes.io/name": "grafana"}],
+        port_forwards=["3003:3000"],
+        labels=["monitoring"],
+        links=[link('localhost:3003', 'Grafana'),],
+        pod_readiness="wait",
+        discovery_strategy="selectors-only"
+    )
+
+    # Import our custom grafana dashboards into Kubernetes ConfigMap
+    configmap_create(
+        "protocol-dashboards", from_file=listdir("localnet/grafana-dashboards/")
+    )
+
+    # Grafana discovers dashboards to "import" via a label
+    local("kubectl label configmap protocol-dashboards grafana_dashboard=1 --overwrite")
 
 # Import keyring/keybase files into Kubernetes ConfigMap
 configmap_create(
@@ -127,6 +166,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             "--values=./localnet/kubernetes/values-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-common.yaml",
             "--values=./localnet/kubernetes/values-relayminer-"+str(actor_number)+".yaml",
+            "--set=metrics.serviceMonitor.enabled="+ str(localnet_config["observability"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -135,6 +175,7 @@ for x in range(localnet_config["relayminers"]["count"]):
         "relayminer"  + str(actor_number),
         labels=["supplier_nodes"],
         resource_deps=["validator"],
+        links=[link('http://localhost:3003/d/relayminer/relayminer?orgId=1&var-relayminer=relayminer' + str(actor_number), 'Grafana dashboard'),],
         port_forwards=[
             str(8084+actor_number)+":8545", # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
             str(40044+actor_number)+":40005", # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
