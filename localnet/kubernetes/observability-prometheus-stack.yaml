@@ -1,19 +1,6 @@
 grafana:
   enabled: true
   adminPassword: none
-  # sidecar:
-  #   datasources:
-  #     label: ""
-  #     labelValue: ""
-  #     enabled: true
-  #     maxLines: 1000
-  #   dashboards:
-  #     enabled: true
-  # dashboardsConfigMaps: {}
-  # additionalDataSources:
-  #   - name: Loki
-  #     type: loki
-  #     url: http://loki:3100
   grafana.ini:
     auth:
       disable_login_form: true
