@@ -3,6 +3,7 @@ Feature: Loading gateway server with relays
   #Scenario Outline:
   Scenario: Incrementing the number of relays and actors
     Given localnet is running
+    And a rate of "1" relay requests per second is sent per application
     And the following initial actors are staked:
       | actor       | count |
       | gateway     | 1     |
@@ -13,7 +14,7 @@ Feature: Loading gateway server with relays
       | gateway     | 1              | 4              | 3          |
       | application | 2              | 4              | 5          |
       | supplier    | 1              | 4              | 3          |
-    When a load of "1" concurrent relay requests are sent per application per second
+    When a load of concurrent relay requests are sent from the applications
 
 #    Examples:
 #      |  |  |

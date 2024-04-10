@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -16,11 +17,14 @@ import (
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	"github.com/pokt-network/poktroll/cmd/signals"
+	config "github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
+	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	"github.com/pokt-network/poktroll/x/session/keeper"
@@ -34,17 +38,18 @@ var (
 	// fundingAccountKeyName is the key name of the account used to fund other accounts.
 	fundingAccountKeyName = "pnf"
 	// fundingAmount is the amount of tokens to fund other accounts.
-	// TODO_TECHDEBT: Make sure that applications have enough funds to pay for relays
-	// given the amount of relays they are expected to send.
 	fundingAmount = sdk.NewCoin("upokt", math.NewInt(10000000))
 	// stakeAmount is the amount of tokens to stake for suppliers and gateways.
 	stakeAmount = sdk.NewCoin("upokt", math.NewInt(2000))
-	// applicationStakeAmount is the amount of tokens to stake for an application.
-	// This amount should be enough to cover the cost of relays.
-	applicationStakeAmount = sdk.NewCoin("upokt", math.NewInt(100000))
-	// anvilService is the service ID for the Anvil service that all applications
+	// usedService is the service ID for the Anvil service that all applications
 	// and suppliers will be using in this test.
-	anvilService = &sharedtypes.Service{Id: "anvil"}
+	usedService = &sharedtypes.Service{Id: "anvil"}
+	// loadTestManifestPath is the path to the load test manifest file.
+	// It is used to the provisioned gateways and suppliers to use in the test.
+	// TODO_BLOCKER: Get the path of the load test manifest from CLI flags.
+	loadTestManifestPath = "../../loadtest_manifest.yaml"
+	// blockDuration is the duration of a block in seconds.
+	blockDuration = int64(1)
 )
 
 // relaysSuite is a test suite for the relays stress test.
@@ -79,64 +84,87 @@ type relaysSuite struct {
 	fundingAccountInfo *accountInfo
 	// relaysSent is the number of relay requests sent.
 	relaysSent atomic.Uint64
+	// relayRatePerApp is the rate of relay requests per application per second.
+	relayRatePerApp int64
+	// relayCost is the cost of a relay request.
+	relayCost int64
 
 	// waitingForFirstSession is a flag indicating whether the test is waiting for
 	// the first session to start.
 	waitingForFirstSession bool
 	// startBlockHeight is the block height at which the test started.
 	startBlockHeight int64
+	// testDurationBlocks is the duration of the test in blocks.
+	testDurationBlocks int64
+
+	// gatewayInitialCount is the number of gateways available at the start of the test.
+	gatewayInitialCount int64
+	// supplierInitialCount is the number of suppliers available at the start of the test.
+	supplierInitialCount int64
+	// appInitialCount is the number of applications available at the start of the test.
+	appInitialCount int64
 
 	// provisionedGateways is the list of provisioned gateways.
 	// These are the gateways that are available to be staked.
 	// Since AppGateServers are pre-provisioned, and already assigned a signingKeyName
-	// and exposedServerAddress, the test suite does not create new ones but pick
+	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list.
-	provisionedGateways []*provisionedOffChainActor
+	provisionedGateways []*provisionedActorInfo
 	// provisionedSuppliers is the list of provisioned suppliers.
 	// These are the suppliers that are available to be staked.
 	// Since RelayMiners are pre-provisioned, and already assigned a signingKeyName
-	// and exposedServerAddress, the test suite does not create new ones but pick
+	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list and use its information to create StakeSupplierMsgs
-	provisionedSuppliers []*provisionedOffChainActor
+	provisionedSuppliers []*provisionedActorInfo
 
 	// preparedGateways is the list of gateways that are already staked and ready
 	// to be used in the next session.
 	// They are segregated from activeGateways to avoid sending relay requests
 	// to them since the delegation will be active in the next session.
-	preparedGateways []*provisionedOffChainActor
+	preparedGateways []*provisionedActorInfo
 	// preparedApplications is the list of applications that are already staked and ready
 	// to be used in the next session.
 	// They are segregated from activeApplications to avoid sending relay requests
 	// from them since their delegations will be active in the next session.
-	preparedApplications []*accountInfo
+	preparedApplications []*applicationInfo
 	// preparedSuppliers is the list of suppliers that are already staked and ready
 	// to be used in the next session.
-	preparedSuppliers []*provisionedOffChainActor
+	preparedSuppliers []*provisionedActorInfo
 
 	// activeGateways is the list of gateways that are currently staked and active.
 	// They are used to send relay requests to the staked suppliers.
-	activeGateways []*provisionedOffChainActor
+	activeGateways []*provisionedActorInfo
 	// activeApplications is the list of applications that are currently staked and
 	// used to send relays to the gateways they delegated to.
-	activeApplications []*accountInfo
+	activeApplications []*applicationInfo
 	// activeSuppliers is the list of suppliers that are currently staked and
 	// ready to handle relay requests.
-	activeSuppliers []*provisionedOffChainActor
+	activeSuppliers []*provisionedActorInfo
 }
 
-// accountInfo is a struct containing the information of an account.
+// accountInfo contains the account info needed to build and send transactions.
 type accountInfo struct {
 	keyName     string
 	accAddress  sdk.AccAddress
-	privKey     *secp256k1.PrivKey
 	pendingMsgs []sdk.Msg
 }
 
-// provisionedOffChainActor is a struct containing the account and off-chain information
-// of a provisioned actor.
-type provisionedOffChainActor struct {
+// provisionedActorInfo represents gateways and suppliers that are provisioned
+// with their respective keyName and exposedUrl.
+// The supplier exposedUrl is the address advertised when staking a supplier.
+// The gateway exposedUrl is the address used to send relay requests to the gateway.
+type provisionedActorInfo struct {
 	accountInfo
-	exposedServerAddress string
+	exposedUrl string
+}
+
+// applicationInfo represents the dynamically created applications with their
+// corresponding private keys and amount to stake which is calculated based on
+// the time the application was created.
+type applicationInfo struct {
+	accountInfo
+	amountToStake sdk.Coin
+	privKey       *secp256k1.PrivKey
 }
 
 // sessionInfoNotif is a struct containing the session information of a block.
@@ -183,50 +211,64 @@ func (s *relaysSuite) LocalnetIsRunning() {
 	// Setup the txClient
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
 
+	// Set up the observable that will be notifying the suite about the committed blocks.
 	s.blocksReplayObs = s.blockClient.CommittedBlocksSequence(s.ctx)
+
+	// Set up the tokenomics client.
+	flagSet := testclient.NewLocalnetFlagSet(s)
+	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
+	tokenomicsClient := tokenomics.NewQueryClient(clientCtx)
+
+	// Get the relay cost from the tokenomics module.
+	res, err := tokenomicsClient.Params(s.ctx, &tokenomics.QueryParamsRequest{})
+	require.NoError(s, err)
+
+	s.relayCost = int64(res.Params.ComputeUnitsToTokensMultiplier)
 
 	// Initialize the funding account.
 	s.initFundingAccount(fundingAccountKeyName)
 
-	// TODO_IN_THIS_PR: source gateway config content
-	s.provisionedGateways = []*provisionedOffChainActor{
-		{accountInfo: accountInfo{keyName: `gateway1`}, exposedServerAddress: `http://localhost:42079`},
-		{accountInfo: accountInfo{keyName: `gateway2`}, exposedServerAddress: `http://localhost:42080`},
-		{accountInfo: accountInfo{keyName: `gateway3`}, exposedServerAddress: `http://localhost:42081`},
+	loadTestManifestContent, err := os.ReadFile(loadTestManifestPath)
+	require.NoError(s, err)
+
+	provisionedActors, err := config.ParseLoadTestManifest(loadTestManifestContent)
+	require.NoError(s, err)
+
+	for _, gateway := range provisionedActors.Gateways {
+		s.provisionedGateways = append(s.provisionedGateways, &provisionedActorInfo{
+			accountInfo: accountInfo{
+				keyName: gateway.KeyName,
+			},
+			exposedUrl: gateway.ExposedUrl,
+		})
 	}
 
-	// TODO_IN_THIS_PR: source supplier config content
-	s.provisionedSuppliers = []*provisionedOffChainActor{
-		{accountInfo: accountInfo{keyName: `supplier1`}, exposedServerAddress: `http://relayminer1:8545`},
-		{accountInfo: accountInfo{keyName: `supplier2`}, exposedServerAddress: `http://relayminer2:8545`},
-		{accountInfo: accountInfo{keyName: `supplier3`}, exposedServerAddress: `http://relayminer3:8545`},
+	for _, supplier := range provisionedActors.Suppliers {
+		s.provisionedSuppliers = append(s.provisionedSuppliers, &provisionedActorInfo{
+			accountInfo: accountInfo{
+				keyName: supplier.KeyName,
+			},
+			exposedUrl: supplier.ExposedUrl,
+		})
 	}
 }
 
+func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS string) {
+	relayRatePerApp, err := strconv.ParseInt(appRPS, 10, 32)
+	require.NoError(s, err)
+
+	s.relayRatePerApp = relayRatePerApp
+}
+
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
-	// Create the initial suppliers
-	supplierCount := table.Cell(3, 1).Int64()
-	s.addInitialSuppliers(supplierCount)
+	s.supplierInitialCount = table.Cell(3, 1).Int64()
+	s.addInitialSuppliers(s.supplierInitialCount)
 
-	// Create the initial gateways
-	gatewayCount := table.Cell(1, 1).Int64()
-	s.addInitialGateways(gatewayCount)
+	s.gatewayInitialCount = table.Cell(1, 1).Int64()
+	s.addInitialGateways(s.gatewayInitialCount)
 
-	// Create the inital applications
-	appCount := table.Cell(2, 1).Int64()
-	s.addInitialApplications(appCount)
-
-	// Fund all the initial actors
-	s.sendFundInitialActorsMsgs(supplierCount, gatewayCount, appCount)
-	s.waitForNextBlock()
-
-	// Stake All the initial actors
-	s.sendInitialActorsStakeMsgs(supplierCount, gatewayCount, appCount)
-	s.waitForNextBlock()
-
-	// Delegate all the initial applications to the initial gateways
-	s.sendInitialDelegateMsgs(appCount, gatewayCount)
-	s.waitForNextBlock()
+	s.appInitialCount = table.Cell(2, 1).Int64()
+	s.addInitialApplications(s.appInitialCount)
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
@@ -252,11 +294,23 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// The test duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
-	testDurationBlocks := math.Max(
+	s.testDurationBlocks = math.Max(
 		maxGateways/gatewayInc*gatewayBlockIncRate,
 		maxApps/appInc*appBlockIncRate,
 		maxSuppliers/supplierInc*supplierBlockIncRate,
 	)
+
+	// Fund all the initial actors
+	s.sendFundInitialActorsMsgs()
+	s.waitForNextBlock()
+
+	// Stake All the initial actors
+	s.sendInitialActorsStakeMsgs()
+	s.waitForNextBlock()
+
+	// Delegate all the initial applications to the initial gateways
+	s.sendInitialDelegateMsgs()
+	s.waitForNextBlock()
 
 	// sessionInfoObs maps committed blocks to a notification which includes the
 	// session number and the start and end block heights of the session.
@@ -297,8 +351,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 			logger.Info().
 				Int64("block_heihgt", blockHeight).
-				Msgf("progress: %d/%d", blockHeight-s.startBlockHeight, testDurationBlocks)
-			if blockHeight >= s.startBlockHeight+testDurationBlocks {
+				Msgf("progress: %d/%d", blockHeight-s.startBlockHeight, s.testDurationBlocks)
+			if blockHeight >= s.startBlockHeight+s.testDurationBlocks {
 				s.cancelCtx()
 			}
 
@@ -319,22 +373,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// Otherwise, we would need to check if any block in the next session
 			// is an increment height.
 
-			if notif.blockHeight == notif.sessionStartBlockHeight {
-				logger.Debug().
-					Int64("session_num", notif.sessionNumber).
-					Msg("activating prepared actors")
-
-				// Activate teh prepared actors and prune the prepared lists.
-
-				s.activeApplications = append(s.activeApplications, s.preparedApplications...)
-				s.preparedApplications = []*accountInfo{}
-
-				s.activeGateways = append(s.activeGateways, s.preparedGateways...)
-				s.preparedGateways = []*provisionedOffChainActor{}
-
-				s.activeSuppliers = append(s.activeSuppliers, s.preparedSuppliers...)
-				s.preparedSuppliers = []*provisionedOffChainActor{}
-			}
+			s.activatePreparedActors(notif)
 
 			if s.shouldIncrementActor(notif, supplierBlockIncRate, supplierInc, maxSuppliers) {
 				// Incrementing suppliers can run concurrently with other actors since
@@ -346,12 +385,12 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// for them.
 			// Stake messages are sent but not yet committed.
 
-			var newGateways []*provisionedOffChainActor
+			var newGateways []*provisionedActorInfo
 			if s.shouldIncrementActor(notif, gatewayBlockIncRate, gatewayInc, maxGateways) {
 				newGateways = s.stakeGateways(notif, gatewayInc, maxGateways)
 			}
 
-			var newApps []*accountInfo
+			var newApps []*applicationInfo
 			if s.shouldIncrementActor(notif, appBlockIncRate, appInc, maxApps) {
 				newApps = s.fundApps(notif, appInc, maxApps)
 			}
@@ -371,10 +410,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 }
 
-func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerApplicationPerSecond(appRPS string) {
-	relayRatePerApp, err := strconv.ParseInt(appRPS, 10, 32)
-	require.NoError(s, err)
-
+func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications() {
 	// Limit the number of concurrent requests to maxConcurrentRequestLimit.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
 	for {
@@ -393,7 +429,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentPerApplicationPerSeco
 
 		// Calculate the realys per second as the number of active applications
 		// each sending relayRatePerApp relays per second.
-		relaysPerSec := len(s.activeApplications) * int(relayRatePerApp)
+		relaysPerSec := len(s.activeApplications) * int(s.relayRatePerApp)
 		// Determine the interval between each relay request.
 		relayInterval := time.Second / time.Duration(relaysPerSec)
 
@@ -431,7 +467,7 @@ func (s *relaysSuite) stakeGateways(
 	sessionInfo *sessionInfoNotif,
 	gatewayInc,
 	maxGateways int64,
-) (newGateways []*provisionedOffChainActor) {
+) (newGateways []*provisionedActorInfo) {
 	gatewayCount := int64(len(s.activeGateways))
 
 	gatewaysToStake := gatewayInc
@@ -453,8 +489,7 @@ func (s *relaysSuite) stakeGateways(
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
 		gateway := s.addGateway(gatewayCount + gwIdx)
 		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(gateway.keyName, gateway.pendingMsgs...)
-		gateway.pendingMsgs = []sdk.Msg{}
+		s.sendTx(&gateway.accountInfo)
 		newGateways = append(newGateways, gateway)
 	}
 
@@ -469,7 +504,7 @@ func (s *relaysSuite) fundApps(
 	sessionInfo *sessionInfoNotif,
 	appIncAmt,
 	maxApps int64,
-) (newApps []*accountInfo) {
+) (newApps []*applicationInfo) {
 	appCount := int64(len(s.activeApplications))
 
 	appsToStake := appIncAmt
@@ -490,11 +525,10 @@ func (s *relaysSuite) fundApps(
 
 	for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
 		app := s.createApplicationAccount(appCount + appIdx + 1)
-		s.generateFundApplicationMsg(app)
+		s.generateFundApplicationMsg(app, sessionInfo.sessionEndBlockHeight+1)
 		newApps = append(newApps, app)
 	}
-	s.sendTx(s.fundingAccountInfo.keyName, s.fundingAccountInfo.pendingMsgs...)
-	s.fundingAccountInfo.pendingMsgs = []sdk.Msg{}
+	s.sendTx(s.fundingAccountInfo)
 
 	// Then new applications are returned so the caller can construct delegation messages
 	// given the existing gateways.
@@ -507,15 +541,14 @@ func (s *relaysSuite) fundApps(
 // It waits for the stake delegate messages to be committed before adding the new
 // actors to their corresponding prepared lists.
 func (s *relaysSuite) stakeAndDelegateApps(
-	newApps []*accountInfo,
-	newGateways []*provisionedOffChainActor,
+	newApps []*applicationInfo,
+	newGateways []*provisionedActorInfo,
 ) {
 	for _, app := range s.activeApplications {
 		for _, gateway := range newGateways {
 			s.generateDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(app.keyName, app.pendingMsgs...)
-		app.pendingMsgs = []sdk.Msg{}
+		s.sendTx(&app.accountInfo)
 	}
 
 	for _, app := range newApps {
@@ -528,8 +561,7 @@ func (s *relaysSuite) stakeAndDelegateApps(
 		for _, gateway := range newGateways {
 			s.generateDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(app.keyName, app.pendingMsgs...)
-		app.pendingMsgs = []sdk.Msg{}
+		s.sendTx(&app.accountInfo)
 	}
 
 	// Wait for the next block to commit the stake and delegate transactions.
@@ -564,12 +596,11 @@ func (s *relaysSuite) goIncrementSuppliers(
 		supplierCount+suppliersToStake,
 	)
 
-	var newSuppliers []*provisionedOffChainActor
+	var newSuppliers []*provisionedActorInfo
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
 		supplier := s.addSupplier(supplierCount + supplierIdx)
 		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(supplier.keyName, supplier.pendingMsgs...)
-		supplier.pendingMsgs = []sdk.Msg{}
+		s.sendTx(&supplier.accountInfo)
 		newSuppliers = append(newSuppliers, supplier)
 	}
 	s.waitForNextBlock()
