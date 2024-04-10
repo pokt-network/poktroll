@@ -21,5 +21,3 @@ grafana:
 prometheus:
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
-    # serviceMonitorSelector: {}
-    # serviceMonitorNamespaceSelector: {}
