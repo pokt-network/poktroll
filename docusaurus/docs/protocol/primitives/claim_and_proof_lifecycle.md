@@ -153,7 +153,7 @@ You can find the definition for the [CreateClaim Transaction here](../../../prot
 
 ### CreateClaim Validation
 
-_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](./../../../x/proof/keeper/msg_server_create_claim.go) is fully implemented._
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_create_claim.go](../../../x/proof/keeper/msg_server_create_claim.go) is fully implemented._
 
 ### Claim Window
 
@@ -195,7 +195,7 @@ You can find the definition for the [SubmitProof Transaction here](../../../prot
 
 ### SubmitProof Validation
 
-_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](./../../../x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
+_TODO(@bryanchriswhite, @Olshansk): Update this section once [msg_server_submit_proof.go](../../../x/proof/keeper/msg_server_submit_proof.go) is fully implemented._
 
 ### Proof Window
 

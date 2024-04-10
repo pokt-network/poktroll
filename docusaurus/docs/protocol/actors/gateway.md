@@ -17,11 +17,11 @@ on behalf of an [Application](./application.md).
 
 ## Schema
 
-The on-chain representation of a `Gateway` can be found at [gateway.proto](./../../../proto/poktroll/gateway/gateway.proto).
+The on-chain representation of a `Gateway` can be found at [gateway.proto](../../../proto/poktroll/gateway/gateway.proto).
 
 ## Configuration
 
-Configurations to stake a `Gateway` can be found at [gateway_staking_config.md](../configs/gateway_staking_config.md).
+Configurations to stake a `Gateway` can be found at [gateway_staking_config.md](../../operate/configs/gateway_staking_config.md).
 
 ## CLI
 

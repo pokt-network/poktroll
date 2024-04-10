@@ -50,15 +50,16 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: "docs",
+          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
+          sidebarCollapsible: false,
         },
         theme: {
-          // customCss: [
-          // require.resolve("./src/css/custom.css"),
-          // require.resolve("./src/css/header-icons.css"),
-          // ],
+          customCss: [
+            require.resolve("./src/css/custom.css"),
+            require.resolve("./src/css/header-icons.css"),
+          ],
         },
       }),
     ],
@@ -70,6 +71,7 @@ const config = {
       docs: {
         sidebar: {
           hideable: false,
+          autoCollapseCategories: false,
         },
       },
       // image: "img/docusaurus-social-card.jpg",
@@ -80,7 +82,32 @@ const config = {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
         },
-        items: [],
+        items: [
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "operateSidebar",
+            label: "⚙️ Operate",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "developSidebar",
+            label: "💻 Develop",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "protocolSidebar",
+            label: "🧠 Protocol",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "planningSidebar",
+            label: "🗒️ Planning",
+          },
+        ],
       },
       footer: {
         style: "dark",
