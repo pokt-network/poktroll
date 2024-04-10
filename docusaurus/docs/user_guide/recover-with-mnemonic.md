@@ -24,7 +24,7 @@ before proceeding.
 ## Pre-requisites
 
 - The mnemonic seed phrase of the wallet you wish to recover
-- `poktrolld` is installed on your system. See the instructions in the [installation guide](./install-poktrolld).
+- `poktrolld` is installed on your system; see the instructions in the [installation guide](./install-poktrolld)
 
 ## Step 1: Prepare to Recover Your Wallet
 
