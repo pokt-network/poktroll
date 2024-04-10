@@ -38,7 +38,7 @@ func PathMatchesProtobufGatewayGo(path string) (bool, error) {
 
 // PathMatchesMockGo matches generated mock go source files.
 func PathMatchesMockGo(path string) (bool, error) {
-	return strings.HasSuffix(path, "_mock.go"), nil
+	return (strings.HasSuffix(path, "_mock.go") || strings.Contains(path, "/gomock_reflect_")), nil
 }
 
 // PathMatchesTestGo matches go test files.
