@@ -15,7 +15,20 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ["@docusaurus/theme-mermaid"],
+  themes: [
+    "@docusaurus/theme-mermaid",
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      /** @type {import('@easyops-cn/docusaurus-search-local').PluginOptions} **/
+      {
+        docsRouteBasePath: "/",
+        hashed: false,
+        indexBlog: false,
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+      },
+    ],
+  ],
 
   // GitHub pages deployment config.
   url: "https://poktroll.com/",
