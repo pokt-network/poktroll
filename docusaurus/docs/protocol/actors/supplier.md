@@ -17,7 +17,7 @@ providing services as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of a `Supplier` can be found at [supplier.proto](../../../proto/poktroll/shared/supplier.proto).
+The on-chain representation of a `Supplier` can be found at [supplier.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/shared/supplier.proto).
 
 ## Configuration
 
