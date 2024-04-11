@@ -271,8 +271,8 @@ go_imports: check_go_version ## Run goimports on all go files
 ### Tests ###
 #############
 
-.PHONY: acc_initialize_pubkeys_warn_message test_e2e_env
-test_e2e_env: ## Setup the default env vars for E2E tests
+.PHONY: test_e2e_env
+test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
@@ -281,13 +281,13 @@ test_e2e_env: ## Setup the default env vars for E2E tests
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -v ./e2e/tests/... -tags=e2e,test
 
-.PHONY: test_e2e_claim_proof
-test_e2e_claim_proof: test_e2e_env ## Run only the E2E suite that exercises the claim/proof life-cycle
+.PHONY: test_e2e_session
+test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
 
 .PHONY: test_e2e_settlement
-test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the claim/proof life-cycle
-	go test -v ./e2e/tests/... -tags=e2e,test --features-path=tokenomics.feature
+test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=settlement.feature
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
