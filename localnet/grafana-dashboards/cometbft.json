@@ -20,7 +20,22 @@
     "fiscalYearStartMonth": 0,
     "gnetId": 11036,
     "graphTooltip": 0,
-    "links": [],
+    "links": [
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [
+                "claim_proof_settlement_logs"
+            ],
+            "targetBlank": false,
+            "title": "Claim/Proof/Settlement Logs",
+            "tooltip": "",
+            "type": "dashboards",
+            "url": ""
+        }
+    ],
     "panels": [
         {
             "collapsed": false,
@@ -1413,6 +1428,6 @@
     "timezone": "",
     "title": "Protocol / CometBFT Dashboard",
     "uid": "cosmoscometbft",
-    "version": 4,
+    "version": 5,
     "weekStart": ""
 }
