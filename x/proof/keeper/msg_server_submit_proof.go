@@ -33,7 +33,7 @@ func init() {
 	// value hasher for the proof verification in order to to avoid hashing the
 	// value twice.
 	pathHasher = sha256.New()
-	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
+	SmtSpec = smt.NewTrieSpec(pathHasher, true)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
