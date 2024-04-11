@@ -23,15 +23,14 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	proof "github.com/pokt-network/poktroll/x/proof/module"
 	"github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-// TODO_TECHDEBT: This should not be hardcoded once the num blocks per session is configurable.
 const (
-	numBlocksPerSession = 4
-	testServiceId       = "svc1"
+	testServiceId = "svc1"
 )
 
 // Dummy variable to avoid unused import error.
@@ -56,7 +55,7 @@ func networkWithClaimObjects(
 	// Construct an in-memory keyring so that it can be populated and used prior
 	// to network start.
 	kr := keyring.NewInMemory(cfg.Codec)
-	// Populate the in-memmory keyring with as many pre-generated accounts as
+	// Populate the in-memory keyring with as many pre-generated accounts as
 	// we expect to need for the test (i.e. numApps + numSuppliers).
 	testkeyring.CreatePreGeneratedKeyringAccounts(t, kr, numSuppliers+numApps)
 
@@ -121,24 +120,28 @@ func networkWithClaimObjects(
 	require.NoError(t, net.WaitForNextBlock())
 
 	// Create numSessions * numClaimsPerSession claims for the supplier
-	sessionEndHeight := int64(1)
+	blockHeight := int64(1)
+	// TODO_HACK(@Olshansk): Revisit this forloop. Resolve the TECHDEBT
+	// issue that lies inside because it's creating an inconsistency between
+	// the number of sessions and the number of blocks.
 	for sessionIdx := 0; sessionIdx < numSessions; sessionIdx++ {
-		sessionEndHeight += numBlocksPerSession
 		for _, appAcct := range appAccts {
 			for _, supplierAcct := range supplierAccts {
 				claim := createClaim(
 					t, net, ctx,
 					supplierAcct.Address.String(),
-					sessionEndHeight,
+					sessionkeeper.GetSessionStartBlockHeight(blockHeight),
 					appAcct.Address.String(),
 				)
 				claims = append(claims, *claim)
-				// TODO_TECHDEBT(#196): Move this outside of the forloop so that the test iteration is faster
+				// TODO_HACK(#196, @Olshansk): Move this outside of the forloop
+				// so that the test iteration is faster. The current issue has
+				// to do with a "incorrect account sequence timestamp" error
 				require.NoError(t, net.WaitForNextBlock())
+				blockHeight += 1
 			}
 		}
 	}
-
 	return net, claims
 }
 
@@ -154,10 +157,10 @@ func encodeSessionHeader(
 
 	sessionHeader := &sessiontypes.SessionHeader{
 		ApplicationAddress:      appAddr,
-		SessionStartBlockHeight: sessionStartHeight,
-		SessionId:               sessionId,
-		SessionEndBlockHeight:   sessionStartHeight + numBlocksPerSession,
 		Service:                 &sharedtypes.Service{Id: testServiceId},
+		SessionId:               sessionId,
+		SessionStartBlockHeight: sessionStartHeight,
+		SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
 	}
 	cdc := codec.NewProtoCodec(codectypes.NewInterfaceRegistry())
 	sessionHeaderBz := cdc.MustMarshalJSON(sessionHeader)
@@ -170,13 +173,12 @@ func createClaim(
 	net *network.Network,
 	ctx client.Context,
 	supplierAddr string,
-	sessionEndHeight int64,
+	sessionStartHeight int64,
 	appAddr string,
 ) *types.Claim {
 	t.Helper()
 
 	rootHash := []byte("root_hash")
-	sessionStartHeight := sessionEndHeight - numBlocksPerSession
 	sessionId := getSessionId(t, net, appAddr, supplierAddr, sessionStartHeight)
 	sessionHeaderEncoded := encodeSessionHeader(t, appAddr, sessionId, sessionStartHeight)
 	rootHashEncoded := base64.StdEncoding.EncodeToString(rootHash)
@@ -208,7 +210,7 @@ func createClaim(
 			Service:                 &sharedtypes.Service{Id: testServiceId},
 			SessionId:               sessionId,
 			SessionStartBlockHeight: sessionStartHeight,
-			SessionEndBlockHeight:   sessionEndHeight,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
 		},
 		RootHash: rootHash,
 	}

@@ -12,7 +12,7 @@ sidebar_position: 2
 
 ## What is AppGate Server?
 
-See the [AppGate Server](../actors/appgate_server.md) documentation for more
+See the [AppGate Server](../../protocol/actors/appgate_server.md) documentation for more
 information on what an AppGate Server is. This page aims to provide links and
 details on how to deploy and operate it.
 
@@ -20,8 +20,8 @@ details on how to deploy and operate it.
 
 An AppGate Server requires the following:
 
-1. A staked on-chain [Application](../actors/application.md) to pay for services.
-2. An optional on-chain [Gateway](../actors/gateway.md) to optionally proxy services.
+1. A staked on-chain [Application](../../protocol/actors/application.md) to pay for services.
+2. An optional on-chain [Gateway](../../protocol/actors/gateway.md) to optionally proxy services.
 3. A connection to a [Full Node](./full_node.md) to interact with the blockchain.
 
 :::tip

@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/relayer"
-	"github.com/pokt-network/poktroll/pkg/relayer/miner"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 )
@@ -30,11 +29,12 @@ func NewMinedRelay(
 		Res: &servicetypes.RelayResponse{},
 	}
 
-	// TODO_BLOCKER: use canonical codec to serialize the relay
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
+	// TODO_BLOCKER: marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	require.NoError(t, err)
-
-	relayHash := HashBytes(t, miner.DefaultRelayHasher, relayBz)
+	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
 		Relay: relay,
