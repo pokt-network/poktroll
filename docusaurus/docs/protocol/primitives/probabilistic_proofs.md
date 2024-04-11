@@ -19,5 +19,5 @@ document as a reference for writing this.
 Probabilistic Proofs is the solution to solving for the long tail of low relay
 sessions that can cause on-chain bloat.
 
-This complements the design of [Relay Mining](./../protocol/relay_mining.md)
+This complements the design of [Relay Mining](./relay_mining.md)
 to solve for all scenarios.
