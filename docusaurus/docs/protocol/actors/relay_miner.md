@@ -22,7 +22,7 @@ would need to run a `RelayMiner` in addition to the software that provides the s
 ## Configuration
 
 Configurations and additional documentation related to operating a `RelayMiner`
-can be found at [relayminer_config.md](../configs/relayminer_config.md).
+can be found at [relayminer_config.md](../../operate/configs/relayminer_config.md).
 
 ## CLI
 
