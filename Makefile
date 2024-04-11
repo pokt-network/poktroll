@@ -300,6 +300,10 @@ test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the sess
 test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
 
+.PHONY: test_load_relays_stress
+test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+	go test -v ./load-testing/tests/... -tags=e2e,test --features-path=relays_stress.feature
+
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
