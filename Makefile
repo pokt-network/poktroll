@@ -137,7 +137,7 @@ check_kind:
 		exit 1; \
 	fi
 
-.PHONY: check_k
+.PHONY: check_docker_ps
  ## Internal helper target - checks if Docker is running
 check_docker_ps: check_docker
 	@echo "Checking if Docker is running..."
