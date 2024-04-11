@@ -24,16 +24,18 @@ import (
 
 // SMT specification used for the proof verification.
 var (
-	pathHasher hash.Hash
-	SmtSpec    smt.TrieSpec
+	hasher  hash.Hash
+	SmtSpec smt.TrieSpec
 )
 
 func init() {
-	// Use a spec that does not prehash values in the smst. This returns a nil
-	// value hasher for the proof verification in order to to avoid hashing the
-	// value twice.
-	pathHasher = sha256.New()
-	SmtSpec = smt.NewTrieSpec(pathHasher, true)
+	// Use a spec that does not prehash values in the smst. This returns a nil value
+	// hasher for the proof verification in order to to avoid hashing the value twice.
+	hasher = sha256.New()
+	SmtSpec = smt.NewTrieSpec(
+		hasher, true,
+		smt.WithValueHasher(nil),
+	)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
