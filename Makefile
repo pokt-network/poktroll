@@ -287,7 +287,7 @@ test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
-	go test -v ./e2e/tests/... -tags=e2e,test
+	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
