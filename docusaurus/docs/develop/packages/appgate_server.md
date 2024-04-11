@@ -8,9 +8,9 @@ sidebar_position: 3
 - [What is AppGate Server?](#what-is-appgate-server)
 - [Architecture Overview](#architecture-overview)
   - [Starting the AppGate Server](#starting-the-appgate-server)
-- [Application Mode (self\_signing = true)](#application-mode-self_signing--true)
+- [Application Mode (self_signing = true)](#application-mode-self_signing--true)
   - [Application RPC Request Schema](#application-rpc-request-schema)
-- [Gateway Mode (self\_signing = false)](#gateway-mode-self_signing--false)
+- [Gateway Mode (self_signing = false)](#gateway-mode-self_signing--false)
   - [Gateway RPC Request Schema](#gateway-rpc-request-schema)
 - [POKTRollSDK integration](#poktrollsdk-integration)
 
@@ -20,7 +20,7 @@ sidebar_position: 3
 `Gateway`s to relay RPC requests to the Pocket Network `Supplier`s without having
 to manage the underlying logic of the protocol.
 
-An operator only needs to specify a single [configuration file](configs/appgate_server_config.md),
+An operator only needs to specify a single [configuration file](../../operate/configs/appgate_server_config.md),
 in order to run a sovereign `Application` or a `Gateway` via an `AppGate Server`.
 
 ## Architecture Overview
@@ -62,7 +62,7 @@ poktrolld appgate-server  \
   --keyring-backend <keyring-type>
 ```
 
-Where `<config-file>` is the path to the `.yaml` [appgate server config file](configs/appgate_server_config.md)
+Where `<config-file>` is the path to the `.yaml` [appgate server config file](../../operate/configs/appgate_server_config.md)
 and `<keyring-type>` is the backend to use for the keying. See the [cosmos documentation](https://docs.cosmos.network/v0.46/run-node/keyring.html)
 for the full available set.
 
@@ -82,9 +82,9 @@ It takes care of things such as:
 
 ## Application Mode (self_signing = true)
 
-If the [`self_signing`](configs/appgate_server_config.md#self_signing) field is
+If the [`self_signing`](../../operate/configs/appgate_server_config.md#self_signing) field is
 set to `true`, the `AppGate Server` will act as an `Application`. It will
-only serve the address derived from the [`signing_key`](configs/appgate_server_config.md#signing_key).
+only serve the address derived from the [`signing_key`](../../operate/configs/appgate_server_config.md#signing_key).
 
 `RelayRequests` sent to the `AppGate Server` will be signed with the `signing_key`
 resulting in a ring-signature that is only associated with the `Application`'s address.
@@ -102,7 +102,7 @@ When acting as an `Application`, the `AppGate Server` expects:
 
 - The `serviceId` to be part of the URL path
 - The payload to be the body of the POST request
-- The request should be sent to the [`listening_endpoint`](configs/appgate_server_config.md#listening_endpoint) specified in the config file
+- The request should be sent to the [`listening_endpoint`](../../operate/configs/appgate_server_config.md#listening_endpoint) specified in the config file
 
 The following `curl` command demonstrates how to send a JSON-RPC type request
 to the `AppGate Server`:
@@ -121,10 +121,10 @@ curl -X POST \
 
 ## Gateway Mode (self_signing = false)
 
-If the [`self_signing`](configs/appgate_server_config.md#self_signing) field
+If the [`self_signing`](../../operate/configs/appgate_server_config.md#self_signing) field
 is set to `false`, then the `AppGate Server` will act as a `Gateway`, serving
 `Application`s that delegated to the `Gateway` address represented by the
-[`signing_key`](configs/appgate_server_config.md#signing_key).
+[`signing_key`](../../operate/configs/appgate_server_config.md#signing_key).
 
 The `AppGate Server` will determine the `Application` address to use by extracting
 it from the `senderAddr` query parameter and use it along with the `signing_key` to
@@ -145,7 +145,7 @@ When acting as an `Gateway`, the `AppGate Server` expects:
 - The `serviceId` to be part of the URL path
 - The `payload` to be the body of the POST request
 - The `Application` address as a query parameter in the request URL
-- The request should be sent to the [`listening_endpoint`](configs/appgate_server_config.md#listening_endpoint) specified in the config file
+- The request should be sent to the [`listening_endpoint`](../../operate/configs/appgate_server_config.md#listening_endpoint) specified in the config file
 
 The following `curl` command demonstrates how to send a JSON-RPC type request
 to the `AppGate Server`:
@@ -190,4 +190,4 @@ While `POKTRollSDK` manages:
 - Verifying the `Supplier`'s signature.
 
 A sequence diagram demonstrating the interaction between the `AppGate Server` and
-the `POKTRollSDK` can be found in the [POKTRollSDK documentation](./../packages/sdk.md).
+the `POKTRollSDK` can be found in the [POKTRollSDK documentation](../packages/sdk.md).

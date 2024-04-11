@@ -21,11 +21,11 @@ sidebar_position: 2
 - [Features](#features)
 - [Usage (`EventsQueryClient`)](#usage-eventsqueryclient)
   - [Basic Example](#basic-example)
-  - [Advanced Usage](#advanced-usage)
+  - [Advanced Usage - Query Client](#advanced-usage---query-client)
   - [Configuration](#configuration)
 - [Usage (`EventsReplayClient`)](#usage-eventsreplayclient)
   - [Basic Usage](#basic-usage)
-  - [Advanced Usage](#advanced-usage-1)
+  - [- Replay Client](#--replay-client)
 - [Best Practices](#best-practices)
 - [FAQ](#faq)
   - [Why use `events` over directly using Gorilla WebSockets?](#why-use-events-over-directly-using-gorilla-websockets)
@@ -238,7 +238,7 @@ for eitherEvent := range observer.Ch() {
 }
 ```
 
-### Advanced Usage
+### Advanced Usage - Query Client
 
 ```go
 // Given some custom dialer & connection implementation, e.g.:
@@ -359,7 +359,7 @@ lastEventType = latestEventsObs.Last(ctx, 1)[0]
 cancel()
 ```
 
-### Advanced Usage
+### - Replay Client
 
 The `EventsReplayClient` can be lightly wrapped to define a custom client for
 a respective type. Examples of these include the `client.BlockClient` and
@@ -367,11 +367,10 @@ a respective type. Examples of these include the `client.BlockClient` and
 `EventsReplayClient`.
 
 :::danger
-TODO: Update links for BlockClient and DelegationClient when they are added to the documentation.
+TODO(@bryanchriswhite): Update links for BlockClient and DelegationClient when they are added to the documentation.
 :::
 
-See: [BlockClient](#TODO) and
-[DelegationClient](#TODO) for more detailed examples
+See: **BlockClient** and **DelegationClient** for more detailed examples
 on how to wrap and use the `EventsReplayClient` in a more advanced setting.
 
 ## Best Practices
