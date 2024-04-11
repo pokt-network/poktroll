@@ -32,24 +32,19 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
+				      backend_url: http://anvil.servicer:8545
 				      authentication:
 				        username: user
 				        password: pwd
 				      headers: {}
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				      - tcp://ethereum
-				    proxy_names:
-				      - http-example
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+								- tcp://ethereum
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: nil,
@@ -62,24 +57,24 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
-					"http-example": {
-						ProxyName:            "http-example",
-						Host:                 "127.0.0.1:8080",
-						Type:                 config.ProxyTypeHTTP,
+					"127.0.0.1:8080": {
+						ProxyName:            "127.0.0.1:8080",
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
+								ServiceId:  "ethereum",
+								ServerType: config.ServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
 										Password: "pwd",
 									},
 									Headers: map[string]string{},
 								},
-								Hosts: []string{
+								PubliclyExposedEndpoints: []string{
 									"ethereum.devnet1.poktroll.com",
 									"ethereum",
 								},
@@ -99,32 +94,26 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
+				      backend_url: http://anvil.servicer:8545
 				      authentication:
 				        username: user
 				        password: pwd
 				      headers: {}
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				  - service_id: 7b-llm-model
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://llama-endpoint
-				    hosts:
-				      - tcp://7b-llm-model.devnet1.poktroll.com
-				      - tcp://7b-llm-model
-				    proxy_names:
-				      - http-example
+				      backend_url: http://llama-endpoint
+							publicly_exposed_endpoints:
+								- tcp://7b-llm-model.devnet1.poktroll.com
+								- tcp://7b-llm-model
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: nil,
@@ -137,115 +126,37 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
-					"http-example": {
-						ProxyName:            "http-example",
-						Host:                 "127.0.0.1:8080",
-						Type:                 config.ProxyTypeHTTP,
+					"127.0.0.1:8080": {
+						ProxyName:            "127.0.0.1:8080",
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
+								ServiceId:  "ethereum",
+								ServerType: config.ServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
 										Username: "user",
 										Password: "pwd",
 									},
 									Headers: map[string]string{},
 								},
-								Hosts: []string{
+								PubliclyExposedEndpoints: []string{
 									"ethereum.devnet1.poktroll.com",
 									"ethereum",
 								},
 							},
 							"7b-llm-model": {
-								ServiceId: "7b-llm-model",
-								Type:      config.ProxyTypeHTTP,
+								ServiceId:  "7b-llm-model",
+								ServerType: config.ServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "llama-endpoint"},
+									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
-								Hosts: []string{
+								PubliclyExposedEndpoints: []string{
 									"7b-llm-model.devnet1.poktroll.com",
 									"7b-llm-model",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			desc: "valid: multiple proxies for a single supplier, no auth",
-
-			inputConfigYAML: `
-			  pocket_node:
-			    query_node_rpc_url: tcp://127.0.0.1:36657
-			    query_node_grpc_url: tcp://127.0.0.1:36658
-			    tx_node_rpc_url: tcp://127.0.0.1:36659
-			  signing_key_name: supplier1
-			  smt_store_path: smt_stores
-			  proxies:
-			    - proxy_name: first-proxy
-			      host: 127.0.0.1:8080
-			      type: http
-			    - proxy_name: second-proxy
-			      host: 127.0.0.1:8081
-			      type: http
-			  suppliers:
-			    - service_id: ethereum
-			      type: http
-			      service_config:
-			        url: http://anvil.servicer:8545
-			      hosts:
-			        - tcp://ethereum.devnet1.poktroll.com
-			      proxy_names:
-			        - first-proxy
-			        - second-proxy
-			  `,
-
-			expectedErr: nil,
-			expectedConfig: &config.RelayMinerConfig{
-				PocketNode: &config.RelayMinerPocketNodeConfig{
-					QueryNodeRPCUrl:  &url.URL{Scheme: "tcp", Host: "127.0.0.1:36657"},
-					QueryNodeGRPCUrl: &url.URL{Scheme: "tcp", Host: "127.0.0.1:36658"},
-					TxNodeRPCUrl:     &url.URL{Scheme: "tcp", Host: "127.0.0.1:36659"},
-				},
-				SigningKeyName: "supplier1",
-				SmtStorePath:   "smt_stores",
-				Proxies: map[string]*config.RelayMinerProxyConfig{
-					"first-proxy": {
-						ProxyName:            "first-proxy",
-						Host:                 "127.0.0.1:8080",
-						Type:                 config.ProxyTypeHTTP,
-						XForwardedHostLookup: false,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
-							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
-								},
-								Hosts: []string{
-									"ethereum.devnet1.poktroll.com",
-								},
-							},
-						},
-					},
-					"second-proxy": {
-						ProxyName:            "second-proxy",
-						Host:                 "127.0.0.1:8081",
-						Type:                 config.ProxyTypeHTTP,
-						XForwardedHostLookup: false,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
-							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
-								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
-								},
-								Hosts: []string{
-									"ethereum.devnet1.poktroll.com",
 								},
 							},
 						},
@@ -262,20 +173,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				      - tcp://ethereum
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+								- tcp://ethereum
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: nil,
@@ -288,19 +194,19 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
-					"http-example": {
-						ProxyName:            "http-example",
-						Host:                 "127.0.0.1:8080",
-						Type:                 config.ProxyTypeHTTP,
+					"127.0.0.1:8080": {
+						ProxyName:            "127.0.0.1:8080",
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
+								ServiceId:  "ethereum",
+								ServerType: config.ServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
-								Hosts: []string{
+								PubliclyExposedEndpoints: []string{
 									"ethereum.devnet1.poktroll.com",
 									"ethereum",
 								},
@@ -320,21 +226,15 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
-				    x_forwarded_host_lookup: true
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				      - tcp://ethereum
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
+				    x_forwarded_host_lookup: true
 				`,
 
 			expectedErr: nil,
@@ -347,19 +247,19 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
-					"http-example": {
-						ProxyName:            "http-example",
-						Host:                 "127.0.0.1:8080",
-						Type:                 config.ProxyTypeHTTP,
+					"127.0.0.1:8080": {
+						ProxyName:            "127.0.0.1:8080",
+						ListenAddress:        "127.0.0.1:8080",
+						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: true,
 						Suppliers: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
-								ServiceId: "ethereum",
-								Type:      config.ProxyTypeHTTP,
+								ServiceId:  "ethereum",
+								ServerType: config.ServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-									Url: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
+									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
-								Hosts: []string{
+								PubliclyExposedEndpoints: []string{
 									"ethereum.devnet1.poktroll.com",
 									"ethereum",
 								},
@@ -380,19 +280,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: &tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -407,19 +302,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  query_node_grpc_url: tcp://127.0.0.1:36658
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -434,19 +324,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -461,19 +346,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -488,19 +368,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -515,19 +390,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				# explicitly omitted signing key name
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSigningKeyName,
@@ -542,25 +412,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				# explicitly omitted smt store path
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSmtStorePath,
 		},
 		{
-			desc: "invalid: missing proxies section",
+			desc: "invalid: missing listen address",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -569,22 +434,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				# explicitly omitted proxies section
 				suppliers:
-				  - proxy_name: ethereum
-				    type: http
+				  - service_id: ethereum
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+						# explicitly missing listen address
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
-			desc: "invalid: empty proxies section",
+			desc: "invalid: empty listen address",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -593,22 +456,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies: # explicitly empty proxies section
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: # explicitly empty listen address
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
-			desc: "invalid: omitted proxy name",
+			desc: "invalid: missing server type",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -617,25 +478,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  # explicitly omitted proxy name
-				  - host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+						# explicitly missing server type
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
-			desc: "invalid: empty proxy name",
+			desc: "invalid: empty server type",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -644,25 +500,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: # explicitly empty proxy name
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: # explicitly empty server type
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
 		},
 		{
-			desc: "invalid: missing http proxy host",
+			desc: "invalid: unsupported server type",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -671,127 +522,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    # explicitly missing proxy host
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: unsupported
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
-		},
-		{
-			desc: "invalid: empty http proxy host",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: # explicitly empty proxy host
-				    type: http
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
-		},
-		{
-			desc: "invalid: missing proxy type",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    # explicitly missing proxy type
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
-		},
-		{
-			desc: "invalid: empty proxy type",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: # explicitly empty proxy type
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
-		},
-		{
-			desc: "invalid: unsupported proxy type",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: unsupported
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
@@ -806,19 +544,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
-				  # explicitly missing supplier name
-				  - type: http
+					# explicitly missing supplier name
+				  - server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -833,25 +566,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: # explicitly empty supplier name
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
-			desc: "invalid: unsupported supplier type",
+			desc: "invalid: bad supplier service config backend url",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -860,25 +588,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: unsupported
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: &http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
-			desc: "invalid: missing supplier type",
+			desc: "invalid: empty supplier service config backend url",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -887,25 +610,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    # explicitly missing supplier type
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: # explicitly empty supplier service config backend url
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
-			desc: "invalid: empty supplier type",
+			desc: "invalid: missing supplier service config backend url",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -914,25 +632,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: # explicitly empty supplier type
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      # explicitly missing supplier service config backend url
+							publicly_exposed_endpoints:
+								- tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
-			desc: "invalid: bad supplier service config url",
+			desc: "invalid: bad supplier exposed endpoint",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -941,25 +654,20 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: &http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- &tcp://ethereum.devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
-			desc: "invalid: empty supplier service config url",
+			desc: "invalid: blank supplier exposed endpoint",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -968,100 +676,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: # explicitly empty supplier service config url
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
-		},
-		{
-			desc: "invalid: missing supplier service config url",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      # explicitly missing supplier service config url
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
-		},
-		{
-			desc: "invalid: bad supplier host",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - &tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - http-example
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
-		},
-		{
-			desc: "invalid: blank supplier host",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - # explicitly blank supplier host
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- # explicitly blank supplier host
+				    listen_address: 127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -1076,57 +698,24 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				  tx_node_rpc_url: tcp://127.0.0.1:36659
 				signing_key_name: supplier1
 				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
 				suppliers:
 				  - service_id: ethereum
-				    type: http
+				    server_type: http
 				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://ethereum.devnet1.poktroll.com
-				    proxy_names:
-				      - bad-proxy-name
-				`,
-
-			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
-		},
-		{
-			desc: "invalid: empty supplier proxy references",
-
-			inputConfigYAML: `
-				pocket_node:
-				  query_node_rpc_url: tcp://127.0.0.1:36657
-				  query_node_grpc_url: tcp://127.0.0.1:36658
-				  tx_node_rpc_url: tcp://127.0.0.1:36659
-				signing_key_name: supplier1
-				smt_store_path: smt_stores
-				proxies:
-				  - proxy_name: http-example
-				    host: 127.0.0.1:8080
-				    type: http
-				suppliers:
-				  - service_id: ethereum
-				    type: http
-				    service_config:
-				      url: http://anvil.servicer:8545
-				    hosts:
-				      - tcp://devnet1.poktroll.com # hosts for both suppliers are the same
-				    proxy_names:
-				      - http-example
+				      backend_url: http://anvil.servicer:8545
+							publicly_exposed_endpoints:
+								- tcp://devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				  - service_id: avax
-				    type: http
+				    server_type: http
 				    service_config:
 				      url: http://avax.servicer:8545
-				    hosts:
-				      - tcp://devnet1.poktroll.com # hosts for both suppliers are the same
-				    proxy_names:
-				      - http-example
+							publicly_exposed_endpoints:
+								- tcp://devnet1.poktroll.com
+				    listen_address: 127.0.0.1:8080
 				`,
 
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
 		},
 		{
 			desc: "invalid: empty RelayMiner config file",
@@ -1195,14 +784,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 				require.Equal(
 					t,
-					proxy.Host,
-					config.Proxies[proxyName].Host,
+					proxy.ListenAddress,
+					config.Proxies[proxyName].ListenAddress,
 				)
 
 				require.Equal(
 					t,
-					proxy.Type,
-					config.Proxies[proxyName].Type,
+					proxy.ServerType,
+					config.Proxies[proxyName].ServerType,
 				)
 
 				for supplierName, supplier := range proxy.Suppliers {
@@ -1214,14 +803,14 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 					require.Equal(
 						t,
-						supplier.Type,
-						config.Proxies[proxyName].Suppliers[supplierName].Type,
+						supplier.ServerType,
+						config.Proxies[proxyName].Suppliers[supplierName].ServerType,
 					)
 
 					require.Equal(
 						t,
-						supplier.ServiceConfig.Url.String(),
-						config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.Url.String(),
+						supplier.ServiceConfig.BackendUrl.String(),
+						config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.BackendUrl.String(),
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {
@@ -1251,11 +840,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						)
 					}
 
-					for i, host := range supplier.Hosts {
+					for i, host := range supplier.PubliclyExposedEndpoints {
 						require.Contains(
 							t,
 							host,
-							config.Proxies[proxyName].Suppliers[supplierName].Hosts[i],
+							config.Proxies[proxyName].Suppliers[supplierName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

@@ -20,20 +20,15 @@ queries from and which services it forwards requests to._
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
   - [`tx_node_rpc_url`](#tx_node_rpc_url)
-- [RelayMiner proxies](#relayminer-proxies)
-  - [`proxy_name`](#proxy_name)
-  - [`type`](#type)
-  - [`host`](#host)
 - [Suppliers](#suppliers)
   - [`service_id`](#service_id)
-  - [`type`](#type-1)
+  - [`type`](#type)
   - [`service_config`](#service_config)
-    - [`url`](#url)
+    - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
-  - [`hosts`](#hosts)
-  - [`proxy_names`](#proxy_names)
-- [Proxy to Supplier referencing](#proxy-to-supplier-referencing)
+    - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
+  - [`listen_address`](#listen_address)
 - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
 - [Full config example](#full-config-example)
 - [Supported proxy types](#supported-proxy-types)
@@ -130,53 +125,14 @@ The RPC URL of the Pocket node that allows the `RelayMiner` to broadcast transac
 It may have a different host than the `query_node_rpc_url` but the same value is
 acceptable too.
 
-## RelayMiner proxies
-
-The `proxies` section of the configuration file is a list of proxies that the
-`RelayMiner` will use to start servers by listening on the configured host.
-
-At least one proxy is required for the `RelayMiner` to start.
-
-```yaml
-proxies:
-  - proxy_name: <string>
-    type: <enum{http}>
-    host: <host>
-```
-
-### `proxy_name`
-
-_`Required`_, _`Unique`_
-
-Is the name of the proxy which will be used as a unique identifier to reference
-proxies in the [Suppliers](#suppliers) section of the configuration file.
-It corresponds to a server that will be started by the `RelayMiner` instance
-and must be unique across all proxies.
-
-### `type`
-
-_`Required`_
-
-The type of the proxy server to be started. Must be one of the [supported types](#supported-proxy-types).
-When other types are supported, the `type` field could determine if additional
-configuration options are allowed be them optional or required.
-
-### `host`
-
-_`Required`_, _`Unique`_
-
-The host to which the proxy server will be started and listening to. It must be
-a valid host according to the `type` filed and must be unique across all proxies.
-
 ## Suppliers
 
 The `suppliers` section of the configuration file is a list of suppliers that
 represent the services that the `RelayMiner` will offer to the Pocket network
-through the configured proxies and their corresponding services to where the
-requests will be forwarded to.
+and their corresponding services to where the requests will be forwarded to.
 
 Each suppliers entry's `service_id` must reflect the on-chain `Service.Id` the supplier
-staked for and the `hosts` list must contain the same endpoints hosts that the
+staked for and the `publicly_exposed_endpoints` list must contain the same endpoints hosts that the
 supplier advertised when staking for that service.
 
 At least one supplier is required for the `RelayMiner` to be functional.
@@ -184,18 +140,17 @@ At least one supplier is required for the `RelayMiner` to be functional.
 ```yaml
 suppliers:
   - service_id: <string>
-    type: <enum{http}>
+    server_type: <enum{http}>
     service_config:
-      url: <url>
+      backend_url: <url>
       authentication:
         username: <string>
         password: <string>
       headers:
         <key>: <value>
-    hosts:
-      - <host>
-    proxy_names:
-      - <string>
+      publicly_exposed_endpoints:
+        - <host>
+    listen_address: <host>
 ```
 
 ### `service_id`
@@ -212,9 +167,8 @@ service.
 
 _`Required`_
 
-The transport type that the service will be offered on. It must match the `type` field
-of the proxy that the supplier is referencing through `proxy_names`.
-Must be one of the [supported types](#supported-proxy-types).
+The transport type that the service will be offered on. It must be one of the
+[supported types](#supported-proxy-types).
 
 ### `service_config`
 
@@ -224,7 +178,7 @@ The `service_config` section of the supplier configuration is a set of options
 that are specific to the service that the `RelayMiner` will be offering to the
 Pocket network.
 
-#### `url`
+#### `backend_url`
 
 _`Required`_
 
@@ -249,19 +203,20 @@ that will be added to the request headers when the `RelayMiner` forwards the
 requests to the service. It can be used to add additional headers like
 `Authorization: Bearer <TOKEN>` for example.
 
-### `hosts`
+#### `publicly_exposed_endpoints`
 
-_`Required`_, _`Unique` for each referenced proxy_, _`Unique` within the supplier's `hosts` list_
+_`Required`_, _`Unique` within the supplier's `hosts` list_
 
-The `hosts` section of the supplier configuration is a list of hosts that the
-`RelayMiner` will accept requests from. It must be a valid host that reflects
-the on-chain supplier staking service endpoints.
+The `publicly_exposed_endpoints` section of the supplier configuration is a list
+of hosts that the `RelayMiner` will accept requests from. It must be a valid host
+that reflects the on-chain supplier staking service endpoints.
 
 It is used to determine if the incoming request is allowed to be processed by
-the referenced proxy server as well as to check if the request's RPC-Type matches
-the on-chain endpoint's RPC-Type.
+the server listening on `listen_address` as well as to check if the request's
+RPC-Type matches the on-chain endpoint's RPC-Type.
 
-There are various reasons to having multiple hosts for the same supplier services.
+There are various reasons to having multiple `publicly_exposed_endpoints`
+for the same supplier service.
 
 - The on-chain Supplier may provide the same Service on multiple domains
   (e.g. for different regions).
@@ -272,56 +227,20 @@ There are various reasons to having multiple hosts for the same supplier service
 - The operator may want to have a different domain for internal requests.
 - The on-chain Service configuration accepts multiple endpoints.
 
-It must be unique across all the `hosts` lined to a given proxy.
-
 _Note: The `service_id` of the supplier is automatically added to the `hosts` list as
 it may help troubleshooting the `RelayMiner` and/or send requests internally
 from a k8s cluster for example._
 
-### `proxy_names`
+### `listen_address`
 
-_`Required`_, _`Unique` within the `proxy_names` list_
+_`Required`_
 
-The `proxy_names` section of the supplier configuration is the list of proxies
-that the `RelayMiner` will use to serve the requests for the given supplier entry.
+The address on which the `RelayMiner` will start a server to listen for incoming
+requests. It must be a valid host according to the `type` field.
 
-It must be a valid proxy name that is defined in the `proxies` section of the
-configuration file, must be unique across the supplier's `proxy_names` and the
-`supplier` `type` must match the `type` of the referenced `proxy`.
-
-## Proxy to Supplier referencing
-
-To illustrate how the `suppliers.proxy_names` and `proxies.proxy_name` fields are used
-to reference proxies and suppliers, let's consider the following configuration file:
-
-```yaml
-proxies:
-  - proxy_name: http-example
-    ...
-  - proxy_name: http-example-2
-suppliers:
-  - service_id: ethereum
-    ...
-    proxy_names:
-      - http-example
-      - http-example-2
-  - name: 7b-llm-model
-    ...
-    proxy_names:
-      - http-example
-```
-
-In this example, the `ethereum` supplier is referencing two proxies, `http-example`
-and `http-example-2` and the `7b-llm-model` supplier is referencing only the
-`http-example` proxy. This would result in the following setup:
-
-```yaml
-- http-example
-  - ethereum
-  - 7b-llm-model
-- http-example-2
-  - ethereum
-```
+The same `listen_address` can be used for multiple suppliers and/or different
+`publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
+to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`.
 
 ## RelayMiner config -> On-chain service relationship
 

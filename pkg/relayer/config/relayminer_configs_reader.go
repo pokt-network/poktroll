@@ -45,7 +45,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	}
 
 	// Hydrate the proxies
-	if err := relayMinerConfig.HydrateProxies(yamlRelayMinerConfig.Proxies); err != nil {
+	if err := relayMinerConfig.HydrateProxies(yamlRelayMinerConfig.Suppliers); err != nil {
 		return nil, err
 	}
 
@@ -54,31 +54,5 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, err
 	}
 
-	// Check if proxies are referencing hosts more than once
-	if err := relayMinerConfig.EnsureUniqueHosts(); err != nil {
-		return nil, err
-	}
-
 	return relayMinerConfig, nil
-}
-
-// EnsureUniqueHosts checks if each proxy is referencing a host more than once
-func (relayMinerConfig *RelayMinerConfig) EnsureUniqueHosts() error {
-	for _, proxyConfig := range relayMinerConfig.Proxies {
-		existingHosts := make(map[string]bool)
-		for _, supplierConfig := range proxyConfig.Suppliers {
-			for _, host := range supplierConfig.Hosts {
-				if _, ok := existingHosts[host]; ok {
-					return ErrRelayMinerConfigInvalidProxy.Wrapf(
-						"duplicate host %s in proxy %s",
-						host,
-						proxyConfig.ProxyName,
-					)
-				}
-				existingHosts[host] = true
-			}
-		}
-	}
-
-	return nil
 }

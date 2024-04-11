@@ -2,10 +2,9 @@ config:
   signing_key_name: supplier3
   suppliers:
     - service_id: anvil
-      type: http
+      server_type: http
       service_config:
-        url: http://anvil:8547/
-      proxy_names:
-        - http-proxy
-      hosts:
+        backend_url: http://anvil:8547/
+        publicly_exposed_endpoints:
         - tcp://relayminer3:8545
+      listen_address: 0.0.0.0:8545

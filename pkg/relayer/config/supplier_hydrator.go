@@ -13,41 +13,47 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	}
 	supplierConfig.ServiceId = yamlSupplierConfig.ServiceId
 
-	// Supplier hosts
-	supplierConfig.Hosts = []string{}
-	existingHosts := make(map[string]bool)
-	for _, host := range yamlSupplierConfig.Hosts {
+	// Supplier public endpoints
+	supplierConfig.PubliclyExposedEndpoints = []string{}
+	existingEndpoints := make(map[string]bool)
+	for _, host := range yamlSupplierConfig.ServiceConfig.PubliclyExposedEndpoints {
 		// Check if the supplier host is empty
 		if len(host) == 0 {
-			return ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier host")
+			return ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier public endpoint")
 		}
 
-		// Check if the supplier host is a valid URL
+		// Check if the supplier exposed endpoint is a valid URL
 		supplierHost, err := url.Parse(host)
 		if err != nil {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"invalid supplier host %s",
+				"invalid supplier public endpoint %s",
 				host,
 			)
 		}
 
-		// Check if the supplier host is unique
-		if _, ok := existingHosts[supplierHost.Host]; ok {
+		// Check if the supplier public endpoint is unique
+		if _, ok := existingEndpoints[supplierHost.Host]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"duplicate supplier host %s",
+				"duplicate supplier public endpoint %s",
 				host,
 			)
 		}
-		existingHosts[supplierHost.Host] = true
+		existingEndpoints[supplierHost.Host] = true
 
-		// Add the supplier host to the suppliers list
-		supplierConfig.Hosts = append(supplierConfig.Hosts, supplierHost.Host)
+		// Add the supplier public endpoint to the suppliers list
+		supplierConfig.PubliclyExposedEndpoints = append(
+			supplierConfig.PubliclyExposedEndpoints,
+			supplierHost.Host,
+		)
 	}
 
-	// Add a default host which corresponds to the supplier name if it is not
+	// Add a default endpoint which corresponds to the supplier name if it is not
 	// already in the list
-	if _, ok := existingHosts[supplierConfig.ServiceId]; !ok {
-		supplierConfig.Hosts = append(supplierConfig.Hosts, supplierConfig.ServiceId)
+	if _, ok := existingEndpoints[supplierConfig.ServiceId]; !ok {
+		supplierConfig.PubliclyExposedEndpoints = append(
+			supplierConfig.PubliclyExposedEndpoints,
+			supplierConfig.ServiceId,
+		)
 	}
 
 	// Populate the supplier service fields that are relevant to each supported
@@ -55,9 +61,9 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	// If other supplier types are added in the future, they should be handled
 	// by their own functions.
 	supplierConfig.ServiceConfig = &RelayMinerSupplierServiceConfig{}
-	switch yamlSupplierConfig.Type {
+	switch yamlSupplierConfig.ServerType {
 	case "http":
-		supplierConfig.Type = ProxyTypeHTTP
+		supplierConfig.ServerType = ServerTypeHTTP
 		if err := supplierConfig.ServiceConfig.
 			parseHTTPSupplierConfig(yamlSupplierConfig.ServiceConfig); err != nil {
 			return err
@@ -66,15 +72,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		// Fail if the supplier type is not supported
 		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier type %s",
-			yamlSupplierConfig.Type,
-		)
-	}
-
-	// Check if the supplier has proxies
-	if len(yamlSupplierConfig.ProxyNames) == 0 {
-		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-			"supplier %s has no proxies",
-			supplierConfig.ServiceId,
+			yamlSupplierConfig.ServerType,
 		)
 	}
 

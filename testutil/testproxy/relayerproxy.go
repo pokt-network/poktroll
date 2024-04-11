@@ -132,7 +132,7 @@ func WithRelayerProxiedServices(
 	return func(test *TestBehavior) {
 		for _, proxy := range proxiedServices {
 			for serviceId, service := range proxy.Suppliers {
-				server := &http.Server{Addr: service.ServiceConfig.Url.Host}
+				server := &http.Server{Addr: service.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Write(prepareJsonRPCResponsePayload())
 				})
@@ -291,8 +291,8 @@ func MarshalAndSend(
 	require.NoError(test.t, err)
 
 	var scheme string
-	switch proxiedServices[proxyServeName].Type {
-	case config.ProxyTypeHTTP:
+	switch proxiedServices[proxyServeName].ServerType {
+	case config.ServerTypeHTTP:
 		scheme = "http"
 	default:
 		require.FailNow(test.t, "unsupported proxy type")
@@ -304,8 +304,8 @@ func MarshalAndSend(
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},
 		},
-		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].Host},
-		Host: proxiedServices[proxyServeName].Suppliers[serviceId].Hosts[0],
+		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].ListenAddress},
+		Host: proxiedServices[proxyServeName].Suppliers[serviceId].PubliclyExposedEndpoints[0],
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)

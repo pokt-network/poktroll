@@ -26,8 +26,8 @@ const (
 	defaultService       = "service1"
 	secondaryService     = "service2"
 	thirdService         = "service3"
-	defaultProxyServer   = "server1"
-	secondaryProxyServer = "server2"
+	defaultProxyServer   = "127.0.0.1:8080"
+	secondaryProxyServer = "127.0.0.1:8081"
 )
 
 var (
@@ -82,39 +82,39 @@ func init() {
 
 	proxiedServices = map[string]*config.RelayMinerProxyConfig{
 		defaultProxyServer: {
-			ProxyName: defaultProxyServer,
-			Type:      config.ProxyTypeHTTP,
-			Host:      "127.0.0.1:8080",
+			ProxyName:     defaultProxyServer,
+			ServerType:    config.ServerTypeHTTP,
+			ListenAddress: defaultProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId: defaultService,
-					Type:      config.ProxyTypeHTTP,
-					Hosts:     []string{"supplier:8545"},
+					ServiceId:                defaultService,
+					ServerType:               config.ServerTypeHTTP,
+					PubliclyExposedEndpoints: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
+						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
 				secondaryService: {
-					ServiceId: secondaryService,
-					Type:      config.ProxyTypeHTTP,
-					Hosts:     []string{"supplier:8546"},
+					ServiceId:                secondaryService,
+					ServerType:               config.ServerTypeHTTP,
+					PubliclyExposedEndpoints: []string{"supplier:8546"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
+						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
 				},
 			},
 		},
 		secondaryProxyServer: {
-			ProxyName: secondaryProxyServer,
-			Type:      config.ProxyTypeHTTP,
-			Host:      "127.0.0.1:8081",
+			ProxyName:     secondaryProxyServer,
+			ServerType:    config.ServerTypeHTTP,
+			ListenAddress: secondaryProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				thirdService: {
-					ServiceId: thirdService,
-					Type:      config.ProxyTypeHTTP,
-					Hosts:     []string{"supplier:8547"},
+					ServiceId:                thirdService,
+					ServerType:               config.ServerTypeHTTP,
+					PubliclyExposedEndpoints: []string{"supplier:8547"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
+						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
 				},
 			},
@@ -150,12 +150,12 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
-	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[defaultProxyServer].Host))
+	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[defaultProxyServer].ListenAddress))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
 	// Test that RelayerProxy is handling requests from the other server
-	res, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[secondaryProxyServer].Host))
+	res, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[secondaryProxyServer].ListenAddress))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -261,16 +261,16 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 		defaultProxyServer: {
 			ProxyName: defaultProxyServer,
 			// The proxy is configured with an unsupported transport type
-			Type: config.ProxyType(100),
-			Host: "127.0.0.1:8080",
+			ServerType:    config.ServerType(100),
+			ListenAddress: defaultProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
-					Type:  config.ProxyType(100),
-					Hosts: []string{"supplier:8545"},
+					ServerType:               config.ServerType(100),
+					PubliclyExposedEndpoints: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
+						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
 			},
@@ -305,16 +305,16 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	missingServicesProxy := map[string]*config.RelayMinerProxyConfig{
 		defaultProxyServer: {
-			ProxyName: defaultProxyServer,
-			Type:      config.ProxyTypeHTTP,
-			Host:      "127.0.0.1:8080",
+			ProxyName:     defaultProxyServer,
+			ServerType:    config.ServerTypeHTTP,
+			ListenAddress: defaultProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
-					ServiceId: defaultService,
-					Type:      config.ProxyTypeHTTP,
-					Hosts:     []string{"supplier:8545"},
+					ServiceId:                defaultService,
+					ServerType:               config.ServerTypeHTTP,
+					PubliclyExposedEndpoints: []string{"supplier:8545"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
-						Url: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
+						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
 				},
 			},
@@ -391,7 +391,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			inputScenario:        sendRequestWithMissingSignature,
 
 			expectedErrCode: -32000,
-			expectedErrMsg:  "missing signature from relay request",
+			expectedErrMsg:  "missing application signature",
 		},
 		{
 			desc: "Invalid signature associated with relay request",
@@ -552,7 +552,7 @@ func sendRequestWithUnparsableBody(
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
 	res, err := http.DefaultClient.Post(
-		fmt.Sprintf("http://%s", proxiedServices[defaultProxyServer].Host),
+		fmt.Sprintf("http://%s", proxiedServices[defaultProxyServer].ListenAddress),
 		"application/json",
 		reader,
 	)
@@ -658,12 +658,12 @@ func sendRequestWithDifferentSession(
 	t *testing.T,
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
-	// Use secondaryService instead of service1 so the session IDs don't match
+	// Use a block height that generates a different session ID
 	req := testproxy.GenerateRelayRequest(
 		test,
 		appPrivateKey,
-		secondaryService,
-		blockHeight,
+		defaultService,
+		blockHeight+sessionkeeper.GetSessionGracePeriodBlockCount(),
 		testproxy.PrepareJsonRPCRequestPayload(),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)

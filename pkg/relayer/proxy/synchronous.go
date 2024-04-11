@@ -18,6 +18,8 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
+const unknownServiceId = "unknownServiceId"
+
 var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 
 func init() {
@@ -65,7 +67,7 @@ func NewSynchronousServer(
 	return &synchronousRPCServer{
 		logger:               logger,
 		supplierServiceMap:   supplierServiceMap,
-		server:               &http.Server{Addr: proxyConfig.Host},
+		server:               &http.Server{Addr: proxyConfig.ListenAddress},
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
 		proxyConfig:          proxyConfig,
@@ -101,6 +103,28 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	ctx := request.Context()
 	defer request.Body.Close()
 
+	sync.logger.Debug().Msg("serving synchronous relay request")
+
+	// Extract the relay request from the request body.
+	sync.logger.Debug().Msg("extracting relay request from request body")
+	relayRequest, err := sync.newRelayRequest(request)
+	if err != nil {
+		proxyName := sync.proxyConfig.ProxyName
+		sync.replyWithError(ctx, []byte{}, writer, proxyName, unknownServiceId, err)
+		sync.logger.Warn().Err(err).Msg("failed serving relay request")
+		return
+	}
+
+	if err := relayRequest.ValidateBasic(); err != nil {
+		proxyName := sync.proxyConfig.ProxyName
+		payload := relayRequest.Payload
+		sync.replyWithError(ctx, payload, writer, proxyName, unknownServiceId, err)
+		sync.logger.Warn().Err(err).Msg("failed validating relay response")
+		return
+	}
+
+	supplierService := relayRequest.Meta.SessionHeader.Service
+
 	var originHost string
 	// When the proxy is behind a reverse proxy, or is getting its requests from
 	// a CDN or a load balancer, the host header may not contain the on-chain
@@ -120,7 +144,6 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		originHost = request.Host
 	}
 
-	var supplierService *sharedtypes.Service
 	var serviceUrl *url.URL
 
 	// Get the Service and serviceUrl corresponding to the originHost.
@@ -130,10 +153,9 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// by building a map at the server initialization level with originHost as the
 	// key so that we can get the service and serviceUrl in O(1) time.
 	for _, supplierServiceConfig := range sync.proxyConfig.Suppliers {
-		for _, host := range supplierServiceConfig.Hosts {
-			if host == originHost {
-				supplierService = sync.supplierServiceMap[supplierServiceConfig.ServiceId]
-				serviceUrl = supplierServiceConfig.ServiceConfig.Url
+		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
+			if host == originHost && supplierService.Id == supplierServiceConfig.ServiceId {
+				serviceUrl = supplierServiceConfig.ServiceConfig.BackendUrl
 				break
 			}
 		}
@@ -143,7 +165,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		}
 	}
 
-	if supplierService == nil || serviceUrl == nil {
+	if serviceUrl == nil {
 		sync.replyWithError(
 			ctx,
 			[]byte{},
@@ -165,17 +187,6 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 			"proxy_name", sync.proxyConfig.ProxyName,
 			"service_id", supplierService.Id).Observe(duration)
 	}()
-
-	sync.logger.Debug().Msg("serving synchronous relay request")
-
-	// Extract the relay request from the request body.
-	sync.logger.Debug().Msg("extracting relay request from request body")
-	relayRequest, err := sync.newRelayRequest(request)
-	if err != nil {
-		sync.replyWithError(ctx, []byte{}, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
-		sync.logger.Warn().Err(err).Msg("failed serving relay request")
-		return
-	}
 
 	// Relay the request to the proxied service and build the response that will be sent back to the client.
 	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)

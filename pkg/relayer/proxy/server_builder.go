@@ -56,7 +56,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			// in any of the proxy config's suppliers' service's hosts
 			for _, proxyConfig := range rp.proxyConfigs {
 				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
-				if ok && slices.Contains(supplierService.Hosts, endpointUrl.Host) {
+				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Host) {
 					found = true
 					break
 				}
@@ -94,14 +94,14 @@ func (rp *relayerProxy) initializeProxyServers(
 	proxyServers := make(map[string]relayer.RelayServer)
 
 	for _, proxyConfig := range rp.proxyConfigs {
-		rp.logger.Info().Str("proxy host", proxyConfig.Host).Msg("starting relay proxy server")
+		rp.logger.Info().Str("proxy host", proxyConfig.ListenAddress).Msg("starting relay proxy server")
 
 		// TODO(@h5law): Implement a switch that handles all synchronous
 		// RPC types in one server type and asynchronous RPC types in another
 		// to create the appropriate RelayServer.
 		// Initialize the proxy server according to the proxy type defined in the config file
-		switch proxyConfig.Type {
-		case config.ProxyTypeHTTP:
+		switch proxyConfig.ServerType {
+		case config.ServerTypeHTTP:
 			proxyServers[proxyConfig.ProxyName] = NewSynchronousServer(
 				rp.logger,
 				proxyConfig,

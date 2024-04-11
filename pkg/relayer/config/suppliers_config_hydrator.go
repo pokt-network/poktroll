@@ -13,7 +13,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 			return err
 		}
 
-		// Supplier name should not be unique
+		// Supplier name should be unique
 		if _, ok := existingSuppliers[yamlSupplierConfig.ServiceId]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 				"duplicate supplier name %s",
@@ -23,28 +23,9 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 		// Mark the supplier as existing
 		existingSuppliers[yamlSupplierConfig.ServiceId] = true
 
-		// Add the supplier config to the referenced proxies
-		for _, proxyName := range yamlSupplierConfig.ProxyNames {
-			// If the proxy name is referencing a non-existent proxy, fail
-			if _, ok := relayMinerConfig.Proxies[proxyName]; !ok {
-				return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-					"no matching proxy %s for supplier %s",
-					supplierConfig.ServiceId,
-					proxyName,
-				)
-			}
-
-			// If the proxy name is referencing a proxy of a different type, fail
-			if supplierConfig.Type != relayMinerConfig.Proxies[proxyName].Type {
-				return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-					"supplier %s and proxy %s have different types",
-					supplierConfig.ServiceId,
-					proxyName,
-				)
-			}
-
-			relayMinerConfig.Proxies[proxyName].Suppliers[supplierConfig.ServiceId] = supplierConfig
-		}
+		relayMinerConfig.
+			Proxies[yamlSupplierConfig.ListenAddress].
+			Suppliers[supplierConfig.ServiceId] = supplierConfig
 	}
 
 	return nil
