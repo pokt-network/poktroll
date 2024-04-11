@@ -25,30 +25,32 @@ Configurations to stake an `Supplier` can be found at [supplier_staking_config.m
 
 ## CLI
 
-The `Supplier` actor depends on both the `supplier` and `proof` on-chain modules.
-The responsibilities of the two modules are as follows:
+The `Supplier` actor depends on both the [`supplier`](https://github.com/pokt-network/poktroll/tree/main/x/supplier)
+and [`proof`](https://github.com/pokt-network/poktroll/tree/main/x/proof) on-chain modules.
+These two modules' concerns are seperated as follows:
 
 ### Supplier Module
-- Supplier staking
-- Supplier unstaking
+- Supplier (un/)staking
 - Supplier querying
 
 ### Proof Module
-- Claim creation
-- Claim querying
-- Proof submission
-- Proof querying
+- Claim creation & querying
+- Proof submission & querying
 
 All of the read (i.e. query) based operations for the `Supplier` actor can be
-viewed by running the following, where `<module>` is either "`supplier`" or "`proof`":
+viewed by running the following:
 
 ```bash
-poktrolld query <module>
+poktrolld query supplier
+# or
+poktrolld query proof
 ```
 
-All of the write (i.e. tx) based operations for the `Suplier` actor can be
-viewed by running the following, where `<module>` is either "`supplier`" or "`proof`":
+All of the write (i.e. tx) based operations for the `Supplier` actor can be
+viewed by running the following:
 
 ```bash
-poktrolld tx <module>
+poktrolld tx supplier
+# or
+poktrolld tx proof
 ```
