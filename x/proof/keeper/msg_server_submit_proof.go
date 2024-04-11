@@ -25,7 +25,7 @@ import (
 // SMT specification used for the proof verification.
 var (
 	pathHasher hash.Hash
-	SmtSpec    *smt.TrieSpec
+	SmtSpec    smt.TrieSpec
 )
 
 func init() {
@@ -129,7 +129,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	}
 
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -359,7 +359,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &SmtSpec)
 	if err != nil {
 		return err
 	}
