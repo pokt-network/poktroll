@@ -1,4 +1,5 @@
 //go:generate go run gen/gen_fixtures.go gen/template.go
+
 // (see: https://pkg.go.dev/cmd/go/internal/generate)
 // (see: https://go.googlesource.com/proposal/+/refs/heads/master/design/go-generate.md)
 
@@ -7,7 +8,6 @@ package miner_test
 import (
 	"context"
 	"encoding/hex"
-	"hash"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +17,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/miner"
-	"github.com/pokt-network/poktroll/testutil/testrelayer"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -36,10 +35,7 @@ func TestMiner_MinedRelays(t *testing.T) {
 		actualMinedRelaysMu                   sync.Mutex
 		actualMinedRelays                     []*relayer.MinedRelay
 		mockRelaysObs, relaysFixturePublishCh = channel.NewObservable[*servicetypes.Relay]()
-		expectedMinedRelays                   = unmarshalHexMinedRelays(
-			t, marshaledMinableRelaysHex,
-			miner.DefaultRelayHasher,
-		)
+		expectedMinedRelays                   = unmarshalHexMinedRelays(t, marshaledMinableRelaysHex)
 	)
 
 	mnr, err := miner.NewMiner(miner.WithDifficulty(testDifficulty))
@@ -111,12 +107,11 @@ func unmarshalHexRelay(
 func unmarshalHexMinedRelays(
 	t *testing.T,
 	marshalledHexMinedRelays []string,
-	newHasher func() hash.Hash,
 ) (relays []*relayer.MinedRelay) {
 	t.Helper()
 
 	for _, marshalledRelayHex := range marshalledHexMinedRelays {
-		relays = append(relays, unmarshalHexMinedRelay(t, marshalledRelayHex, newHasher))
+		relays = append(relays, unmarshalHexMinedRelay(t, marshalledRelayHex))
 	}
 	return relays
 }
@@ -124,7 +119,6 @@ func unmarshalHexMinedRelays(
 func unmarshalHexMinedRelay(
 	t *testing.T,
 	marshalledHexMinedRelay string,
-	newHasher func() hash.Hash,
 ) *relayer.MinedRelay {
 	t.Helper()
 
@@ -135,11 +129,13 @@ func unmarshalHexMinedRelay(
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
-	relayHashBz := testrelayer.HashBytes(t, newHasher, relayBz)
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
+	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
 	return &relayer.MinedRelay{
 		Relay: relay,
 		Bytes: relayBz,
-		Hash:  relayHashBz,
+		Hash:  relayHash,
 	}
 }
