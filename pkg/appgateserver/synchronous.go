@@ -8,13 +8,12 @@ import (
 )
 
 // handleSynchronousRelay handles relay requests for synchronous protocols, where
-// there is a one-to-one correspondance between the request and response.
+// there is a one-to-one correspondence between the request and response.
 // It does everything from preparing, signing and sending the request.
 // It then blocks on the response to come back and forward it to the provided writer.
 func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
-	payloadBz []byte,
 	rpcType sharedtypes.RPCType,
 	request *http.Request,
 	writer http.ResponseWriter,
@@ -44,7 +43,7 @@ func (app *appGateServer) handleSynchronousRelay(
 		return ErrAppGateHandleRelay.Wrapf("getting supplier URL: %s", err)
 	}
 
-	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, request)
+	relayResponse, err := app.sdk.SendRelay(ctx, supplierEndpoint, *request)
 	if err != nil {
 		return err
 	}

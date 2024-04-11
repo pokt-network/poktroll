@@ -11,6 +11,7 @@ import (
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -48,9 +49,9 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 				Id:   "svc1",
 				Name: "svcName1",
 			},
+			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionId:               "1",
-			SessionEndBlockHeight:   5,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(42),
 	}
@@ -252,9 +253,9 @@ func baseClaim(appAddr, supplierAddr string, sum uint64) prooftypes.Claim {
 				Id:   "svc1",
 				Name: "svcName1",
 			},
+			SessionId:               "session_id",
 			SessionStartBlockHeight: 1,
-			SessionId:               "1",
-			SessionEndBlockHeight:   5,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
 		},
 		RootHash: smstRootWithSum(sum),
 	}

@@ -1,6 +1,7 @@
 package app
 
 import (
+	// this line is used by starport scaffolding # stargate/app/moduleImport
 	"io"
 	"os"
 	"path/filepath"
@@ -53,6 +54,7 @@ import (
 	ibctransferkeeper "github.com/cosmos/ibc-go/v8/modules/apps/transfer/keeper"
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
+	"github.com/pokt-network/poktroll/docs"
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
@@ -60,10 +62,6 @@ import (
 	sessionmodulekeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	suppliermodulekeeper "github.com/pokt-network/poktroll/x/supplier/keeper"
 	tokenomicsmodulekeeper "github.com/pokt-network/poktroll/x/tokenomics/keeper"
-
-	// this line is used by starport scaffolding # stargate/app/moduleImport
-
-	"github.com/pokt-network/poktroll/docs"
 )
 
 const (
