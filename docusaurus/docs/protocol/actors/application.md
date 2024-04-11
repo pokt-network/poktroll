@@ -17,11 +17,11 @@ services available on Pocket Network as a function of volume and time.
 
 ## Schema
 
-The on-chain representation of an `Application` can be found at [application.proto](./../../../proto/poktroll/application/application.proto).
+The on-chain representation of an `Application` can be found at [application.proto](https://github.com/pokt-network/poktroll/blob/main/proto/poktroll/application/application.proto).
 
 ## Configuration
 
-Configurations to stake an `Application` can be found at [app_staking_config.md](../configs/app_staking_config.md).
+Configurations to stake an `Application` can be found at [app_staking_config.md](../../operate/configs/app_staking_config.md).
 
 ## CLI
 

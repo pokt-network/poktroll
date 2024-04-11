@@ -12,7 +12,7 @@ sidebar_position: 3
 
 ## What is a RelayMiner
 
-See the [RelayMiner](../actors/appgate_server.md) documentation for more
+See the [RelayMiner](../../protocol/actors/appgate_server.md) documentation for more
 information on what a RelayMiner is. This page aims to provide links and
 details on how to deploy and operate it.
 
@@ -20,7 +20,7 @@ details on how to deploy and operate it.
 
 A RelayMiner requires the following:
 
-1. A staked on-chain [Supplier](../actors/supplier.md) to provide services.
+1. A staked on-chain [Supplier](../../protocol/actors/supplier.md) to provide services.
 2. A connection to a [Full Node](./full_node.md) to interact with the blockchain.
 
 :::tip
