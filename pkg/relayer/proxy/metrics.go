@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	relayMinerSubsystem = "relayminer"
+	relayMinerProcess = "relayminer"
 
 	requestsTotal        = "requests_total"
 	requestsErrorsTotal  = "requests_errors_total"
@@ -27,7 +27,7 @@ var (
 	// - Monitor total request load.
 	// - Compare requests across services or proxies.
 	relaysTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      requestsTotal,
 		Help:      "Total number of requests processed, labeled by proxy name and service ID.",
 	}, []string{"service_id"})
@@ -40,7 +40,7 @@ var (
 	// - Track and analyze error types and distribution.
 	// - Compare error rates for reliability analysis.
 	relaysErrorsTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      requestsErrorsTotal,
 		Help:      "Total number of error events.",
 	}, []string{"service_id"})
@@ -48,7 +48,7 @@ var (
 	// relaysSuccessTotal is a Counter metric for successful requests in the relay miner.
 	// It increments with each successful request, labeled by 'proxy_name' and 'service_id'.
 	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      requestsSuccessTotal,
 		Help:      "Total number of successful requests processed, labeled by proxy name and service ID.",
 	}, []string{"service_id"})
@@ -64,7 +64,7 @@ var (
 	// - Analyze typical response times and long-tail latency issues.
 	// - Compare performance across services or environments.
 	relaysDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      relayDurationSeconds,
 		Help:      "Histogram of request durations for performance analysis.",
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
@@ -79,7 +79,7 @@ var (
 	// TODO_TECHDEBT: Consider configuring bucket sizes externally for flexible adjustments
 	// in response to different data patterns or deployment scenarios.
 	relayResponseSizeBytes = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      responseSizeBytes,
 		Help:      "Histogram of response sizes in bytes for performance analysis.",
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
@@ -91,7 +91,7 @@ var (
 	// This data helps in accurately representing request size distribution and is vital
 	// for performance tuning.
 	relayRequestSizeBytes = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-		Subsystem: relayMinerSubsystem,
+		Subsystem: relayMinerProcess,
 		Name:      requestSizeBytes,
 		Help:      "Histogram of request sizes in bytes for performance analysis.",
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},

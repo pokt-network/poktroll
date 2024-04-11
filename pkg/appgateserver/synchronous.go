@@ -15,17 +15,17 @@ func (app *appGateServer) handleSynchronousRelay(
 	ctx context.Context,
 	appAddress, serviceId string,
 	payloadBz []byte,
-	requestType sharedtypes.RPCType,
+	rpcType sharedtypes.RPCType,
 	request *http.Request,
 	writer http.ResponseWriter,
 ) error {
 	relaysTotal.
-		With("service_id", serviceId, "request_type", requestType.String()).
+		With("service_id", serviceId, "rpc_type", rpcType.String()).
 		Add(1)
 
 	// TODO_IMPROVE: log additional info?
 	app.logger.Debug().
-		Str("request_type", requestType.String()).
+		Str("rpc_type", rpcType.String()).
 		Msg("got request type")
 
 	sessionSuppliers, err := app.sdk.GetSessionSupplierEndpoints(ctx, appAddress, serviceId)
@@ -37,7 +37,7 @@ func (app *appGateServer) handleSynchronousRelay(
 	supplierEndpoint, err := app.getRelayerUrl(
 		ctx,
 		serviceId,
-		requestType,
+		rpcType,
 		sessionSuppliers.SuppliersEndpoints,
 	)
 	if err != nil {
@@ -59,7 +59,7 @@ func (app *appGateServer) handleSynchronousRelay(
 	}
 
 	relaysSuccessTotal.
-		With("service_id", serviceId, "request_type", requestType.String()).
+		With("service_id", serviceId, "rpc_type", rpcType.String()).
 		Add(1)
 
 	return nil
