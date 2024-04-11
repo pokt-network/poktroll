@@ -1,0 +1,23 @@
+grafana:
+  enabled: true
+  adminPassword: none
+  grafana.ini:
+    auth:
+      disable_login_form: true
+      disable_signout_menu: true
+    auth.anonymous:
+      enabled: true
+      org_role: Admin
+    users:
+      allow_sign_up: false
+      allow_org_create: false
+      auto_assign_org: true
+      auto_assign_org_role: Admin
+      auto_assign_org_id: 1
+      viewers_can_edit: true
+    security:
+      allow_embedding: true
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
