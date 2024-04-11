@@ -12,18 +12,31 @@ const config = {
   tagline: "Roll the POKT",
   favicon: "img/logo.png",
 
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  markdown: {
+    mermaid: true,
+  },
+  themes: [
+    "@docusaurus/theme-mermaid",
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      /** @type {import('@easyops-cn/docusaurus-search-local').PluginOptions} **/
+      {
+        docsRouteBasePath: "/",
+        hashed: false,
+        indexBlog: false,
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+      },
+    ],
+  ],
 
   // GitHub pages deployment config.
   url: "https://poktroll.com/",
   baseUrl: "/",
+
   // Custom domain config.
   // url: "https://docs.poktroll.com",
   // baseUrl: "/",
-
-  markdown: { mermaid: true },
-  themes: ["@docusaurus/theme-mermaid"],
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -50,10 +63,17 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          // path: "docs",
           routeBasePath: "/",
           sidebarPath: "./sidebars.js",
+          sidebarCollapsible: false,
         },
-        theme: {},
+        theme: {
+          customCss: [
+            require.resolve("./src/css/custom.css"),
+            require.resolve("./src/css/header-icons.css"),
+          ],
+        },
       }),
     ],
   ],
@@ -61,7 +81,12 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      // Replace with your project's social card
+      docs: {
+        sidebar: {
+          hideable: false,
+          autoCollapseCategories: false,
+        },
+      },
       // image: "img/docusaurus-social-card.jpg",
       style: "dark",
       navbar: {
@@ -70,7 +95,32 @@ const config = {
           alt: "Pocket Network Logo",
           src: "img/logo.png",
         },
-        items: [],
+        items: [
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "operateSidebar",
+            label: "⚙️ Operate",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "developSidebar",
+            label: "💻 Develop",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "protocolSidebar",
+            label: "🧠 Protocol",
+          },
+          {
+            type: "docSidebar",
+            position: "left",
+            sidebarId: "planningSidebar",
+            label: "🗒️ Planning",
+          },
+        ],
       },
       footer: {
         style: "dark",
