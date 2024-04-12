@@ -42,7 +42,6 @@ var (
 	accNameToSupplierMap = make(map[string]sharedtypes.Supplier)
 
 	flagFeaturesPath string
-	flagScenario     string
 	keyRingFlag      = "--keyring-backend=test"
 	chainIdFlag      = "--chain-id=poktroll"
 	appGateServerUrl = "http://localhost:42069" // Keeping localhost by default because that is how we run the tests on our machines locally
@@ -54,7 +53,6 @@ func init() {
 	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
-	flag.StringVar(&flagScenario, "scenario", "*", "Specifies the scenario to run in the feature file")
 
 	// If "APPGATE_SERVER_URL" envar is present, use it for appGateServerUrl
 	if url := os.Getenv("APPGATE_SERVER_URL"); url != "" {
