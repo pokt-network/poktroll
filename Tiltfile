@@ -6,10 +6,26 @@ load("ext://secret", "secret_create_generic")
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
 
+def merge_dicts(base, updates):
+    for k, v in updates.items():
+        if k in base and type(base[k]) == "dict" and type(v) == "dict":
+            # Assume nested dict and merge
+            for vk, vv in v.items():
+                base[k][vk] = vv
+        else:
+            # Replace or set the value
+            base[k] = v
+
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
 localnet_config_defaults = {
-    "validator": {"cleanupBeforeEachStart": True},
+    "validator": {
+        "cleanupBeforeEachStart": True,
+        "logs": {
+            "level": "info",
+            "format": "json",
+        },
+    },
     "observability": {"enabled": True},
     "relayminers": {"count": 1},
     "gateways": {"count": 1},
@@ -19,12 +35,16 @@ localnet_config_defaults = {
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
 }
 localnet_config_file = read_yaml(localnet_config_path, default=localnet_config_defaults)
+# Initial empty config
 localnet_config = {}
-localnet_config.update(localnet_config_defaults)
-localnet_config.update(localnet_config_file)
-if (localnet_config_file != localnet_config) or (
-    not os.path.exists(localnet_config_path)
-):
+# Load the existing config file, if it exists, or use an empty dict as fallback
+localnet_config_file = read_yaml(localnet_config_path, default={})
+# Merge defaults into the localnet_config first
+merge_dicts(localnet_config, localnet_config_defaults)
+# Then merge file contents over defaults
+merge_dicts(localnet_config, localnet_config_file)
+# Check if there are differences or if the file doesn't exist
+if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
@@ -41,7 +61,6 @@ if localnet_config["helm_chart_local_repo"]["enabled"]:
 # Observability
 print("Observability enabled: " + str(localnet_config["observability"]["enabled"]))
 if localnet_config["observability"]["enabled"]:
-    print("Observability enabled")
     helm_repo(
         "prometheus-community", "https://prometheus-community.github.io/helm-charts"
     )
@@ -172,6 +191,10 @@ helm_resource(
         "--values=./localnet/kubernetes/values-validator.yaml",
         "--set=persistence.cleanupBeforeEachStart="
         + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
+        "--set=logs.level="
+        + str(localnet_config["validator"]["logs"]["level"]),
+        "--set=logs.format="
+        + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled="
         + str(localnet_config["observability"]["enabled"]),
     ],
