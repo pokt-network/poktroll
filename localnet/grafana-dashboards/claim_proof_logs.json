@@ -49,7 +49,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} |= `CreateClaim`",
+          "expr": "{container=\"poktrolld-validator\"} | json | method = `CreateClaim`",
           "queryType": "range",
           "refId": "Claim Creation"
         }
@@ -87,7 +87,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} |= `SubmitProof`",
+          "expr": "{container=\"poktrolld-validator\"} | json | method = `SubmitProof`",
           "queryType": "range",
           "refId": "Proof Submission"
         }
@@ -124,7 +124,7 @@
             "uid": "P8E80F9AEF21F6940"
           },
           "editorMode": "builder",
-          "expr": "{container=\"poktrolld-validator\"} |= `SettleSessionAccounting`",
+          "expr": "{container=\"poktrolld-validator\"} | json | method = `SettleSessionAccounting`",
           "queryType": "range",
           "refId": "Claim Settlement"
         }
