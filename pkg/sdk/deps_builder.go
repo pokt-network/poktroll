@@ -103,7 +103,6 @@ func (sdk *poktrollSDK) buildDeps(
 
 // getTransportCreds creates TLS or non-TLS credentials based on the url scheme provided
 func getTransportCreds(url *url.URL) (credentials.TransportCredentials, error) {
-
 	// Config has forced non-TLS
 	if url.Scheme == "http" || url.Scheme == "tcp" {
 		return insecure.NewCredentials(), nil
