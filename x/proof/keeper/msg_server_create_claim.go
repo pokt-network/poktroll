@@ -15,7 +15,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
 	isSuccessful := false
-	defer telemetry.AppMsgCounter(ctx, "create_claim", func() bool { return isSuccessful })
+	defer telemetry.EventSuccessCounter("create_claim", func() bool { return isSuccessful })
 
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Debug("creating claim")

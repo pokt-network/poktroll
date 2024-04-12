@@ -41,7 +41,7 @@ func (k msgServer) SubmitProof(
 	msg *types.MsgSubmitProof,
 ) (*types.MsgSubmitProofResponse, error) {
 	isSuccessful := false
-	defer telemetry.AppMsgCounter(ctx, "submit_proof", func() bool { return isSuccessful })
+	defer telemetry.EventSuccessCounter("submit_proof", func() bool { return isSuccessful })
 
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Debug("about to start submitting proof")
