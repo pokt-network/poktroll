@@ -16,10 +16,10 @@ func (app *appGateServer) replyWithError(
 	payloadBz []byte,
 	writer http.ResponseWriter,
 	serviceId string,
-	requestType string,
+	rpcType string,
 	err error,
 ) {
-	relaysErrorsTotal.With("service_id", serviceId, "request_type", requestType).Add(1)
+	relaysErrorsTotal.With("service_id", serviceId, "rpc_type", rpcType).Add(1)
 	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
 	if err != nil {
 		app.logger.Error().Err(err).Str("service_id", serviceId).Msg("failed getting error reply")

@@ -3,8 +3,19 @@ package proxy
 import (
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 
-	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/prometheus"
+)
+
+const (
+	relayMinerProcess = "relayminer"
+
+	requestsTotal        = "requests_total"
+	requestsErrorsTotal  = "requests_errors_total"
+	requestsSuccessTotal = "requests_success_total"
+	requestSizeBytes     = "request_size_bytes"
+	responseSizeBytes    = "response_size_bytes"
+	smtSizeBytes         = "smt_size_bytes"
+	relayDurationSeconds = "relay_duration_seconds"
 )
 
 var (
@@ -15,11 +26,11 @@ var (
 	// Usage:
 	// - Monitor total request load.
 	// - Compare requests across services or proxies.
-	relaysTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Subsystem: "relayminer",
-		Name:      "requests_total",
+	relaysTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      requestsTotal,
 		Help:      "Total number of requests processed, labeled by proxy name and service ID.",
-	}, []string{"proxy_name", "service_id"})
+	}, []string{"service_id"})
 
 	// relaysErrorsTotal is a Counter for total error events in the relay miner.
 	// It increments with each error, labeled by 'proxy_name' and 'service_id',
@@ -28,11 +39,19 @@ var (
 	// Usage:
 	// - Track and analyze error types and distribution.
 	// - Compare error rates for reliability analysis.
-	relaysErrorsTotal metrics.Counter = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
-		Subsystem: "relayminer",
-		Name:      "errors_total",
+	relaysErrorsTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      requestsErrorsTotal,
 		Help:      "Total number of error events.",
-	}, []string{"proxy_name", "service_id"})
+	}, []string{"service_id"})
+
+	// relaysSuccessTotal is a Counter metric for successful requests in the relay miner.
+	// It increments with each successful request, labeled by 'proxy_name' and 'service_id'.
+	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
+		Subsystem: relayMinerProcess,
+		Name:      requestsSuccessTotal,
+		Help:      "Total number of successful requests processed, labeled by proxy name and service ID.",
+	}, []string{"service_id"})
 
 	// relaysDurationSeconds observes request durations in the relay miner.
 	// This histogram, labeled by 'proxy_name' and 'service_id', measures response times,
@@ -44,26 +63,37 @@ var (
 	// Usage:
 	// - Analyze typical response times and long-tail latency issues.
 	// - Compare performance across services or environments.
-	relaysDurationSeconds metrics.Histogram = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-		Subsystem: "relayminer",
-		Name:      "request_duration_seconds",
+	relaysDurationSeconds = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      relayDurationSeconds,
 		Help:      "Histogram of request durations for performance analysis.",
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
-	}, []string{"proxy_name", "service_id"})
+	}, []string{"service_id"})
 
-	// TODO(@okdas): add `response_size_bytes`. Postponing to avoid new HTTP server writer implementation;
-	// will reevaluate with historical load data.
-	// responseSizeBytes is a histogram metric for observing proxy response size distribution.
+	// relayResponseSizeBytes is a histogram metric for observing proxy response size distribution.
 	// It counts responses in bytes, with buckets:
 	// - 100 bytes to 50,000 bytes, capturing a range from small to large responses.
 	// This data helps in accurately representing response size distribution and is vital
 	// for performance tuning.
 	//
-	// Note: Consider configuring bucket sizes externally for flexible adjustments
+	// TODO_TECHDEBT: Consider configuring bucket sizes externally for flexible adjustments
 	// in response to different data patterns or deployment scenarios.
-	// responseSizeBytes metrics.Histogram = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
-	// 	Subsystem: "relayminer",
-	// 	Name:      "response_size_bytes",
-	// 	Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
-	// }, []string{"proxy_name", "service_id"})
+	relayResponseSizeBytes = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      responseSizeBytes,
+		Help:      "Histogram of response sizes in bytes for performance analysis.",
+		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
+	}, []string{"service_id"})
+
+	// relayRequestSizeBytes is a histogram metric for observing proxy request size distribution.
+	// It counts requests in bytes, with buckets:
+	// - 100 bytes to 50,000 bytes, capturing a range from small to large requests.
+	// This data helps in accurately representing request size distribution and is vital
+	// for performance tuning.
+	relayRequestSizeBytes = prometheus.NewHistogramFrom(stdprometheus.HistogramOpts{
+		Subsystem: relayMinerProcess,
+		Name:      requestSizeBytes,
+		Help:      "Histogram of request sizes in bytes for performance analysis.",
+		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
+	}, []string{"service_id"})
 )
