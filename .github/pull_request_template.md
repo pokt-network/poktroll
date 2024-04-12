@@ -34,15 +34,25 @@ Select one or more:
 
 ## Testing
 
+**Documentation changes** (only if making doc changes)
+- [ ] `make docusaurus_start`; only needed if you make doc changes
+
+**Local Testing** (only if making code changes)
 - [ ] **Unit Tests**: `make go_develop_and_test`
 - [ ] **LocalNet E2E Tests**: `make test_e2e`
-- [ ] **DevNet E2E Tests**: Add the `devnet-test-e2e` label to the PR. **THIS IS VERY EXPENSIVE**, so only do it after all the reviews are complete.
-- [ ] **Documentation changes**: `make docusaurus_start`
+- See [quickstart guide](https://dev.poktroll.com/developer_guide/quickstart) for instructions
+
+**PR Testing** (only if making code changes)
+- [ ] **DevNet E2E Tests**: Add the `devnet-test-e2e` label to the PR.
+    - **THIS IS VERY EXPENSIVE**, so only do it after all the reviews are complete.
+    - Optionally run `make trigger_ci` if you want to re-trigger tests without any code changes
+    - If tests fail, try re-running failed tests only using the GitHub UI as shown [here](https://github.com/pokt-network/poktroll/assets/1892194/607984e9-0615-4569-9452-4c730190c1d2)
+
 
 ## Sanity Checklist
 
 - [ ] I have tested my changes using the available tooling
 - [ ] I have commented my code
 - [ ] I have performed a self-review of my own code; both comments & source code
-- [ ] I create and referenced any new tickets, if applicable
+- [ ] I create and reference any new tickets, if applicable
 - [ ] I have left TODOs throughout the codebase, if applicable
