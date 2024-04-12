@@ -17,7 +17,11 @@ func (k msgServer) UnstakeGateway(
 	msg *types.MsgUnstakeGateway,
 ) (*types.MsgUnstakeGatewayResponse, error) {
 	isSuccessful := false
-	defer telemetry.EventSuccessCounter("unstake_gateway", func() bool { return isSuccessful })
+	defer telemetry.EventSuccessCounter(
+		"unstake_gateway",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
 

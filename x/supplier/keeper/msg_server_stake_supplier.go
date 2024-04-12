@@ -13,7 +13,11 @@ import (
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
 	isSuccessful := false
-	defer telemetry.EventSuccessCounter("stake_supplier", func() bool { return isSuccessful })
+	defer telemetry.EventSuccessCounter(
+		"stake_supplier",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))

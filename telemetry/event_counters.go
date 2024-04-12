@@ -10,12 +10,17 @@ import (
 const eventSuccessKey = "event_type"
 
 // EventSuccessCounter increments a counter with the given data type and success status.
-func EventSuccessCounter(eventType string, isSuccessful func() bool) {
+func EventSuccessCounter(
+	eventType string,
+	getValue func() float32,
+	isSuccessful func() bool,
+) {
 	successResult := strconv.FormatBool(isSuccessful())
+	value := getValue()
 
 	telemetry.IncrCounterWithLabels(
 		[]string{eventSuccessKey},
-		1.0,
+		value,
 		[]metrics.Label{
 			{Name: "type", Value: eventType},
 			{Name: "is_successful", Value: successResult},

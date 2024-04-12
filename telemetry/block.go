@@ -15,7 +15,10 @@ const (
 	blockResultSizeBytesMetric = "block_result_size_bytes"
 )
 
-var _ storetypes.ABCIListener = (*metricsABCIListener)(nil)
+var (
+	_                storetypes.ABCIListener = (*metricsABCIListener)(nil)
+	DefaultCounterFn                         = func() float32 { return 1 }
+)
 
 // InitBlockMetrics initializes the block-specific metrics for the application.
 func InitBlockMetrics(app *baseapp.BaseApp) {

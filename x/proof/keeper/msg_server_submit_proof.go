@@ -58,7 +58,11 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	logger.Info("About to start submitting proof")
 
 	isSuccessful := false
-	defer telemetry.EventSuccessCounter("submit_proof", func() bool { return isSuccessful })
+	defer telemetry.EventSuccessCounter(
+		"submit_proof",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	/*
 		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
