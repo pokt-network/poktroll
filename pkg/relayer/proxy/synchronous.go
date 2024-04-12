@@ -178,17 +178,17 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	}
 
 	// Increment the relays counter.
-	relaysTotal.With("proxy_name", sync.proxyConfig.ProxyName, "service_id", supplierService.Id).Add(1)
+	relaysTotal.With("service_id", supplierService.Id).Add(1)
 	defer func() {
 		duration := time.Since(startTime).Seconds()
 
 		// Capture the relay request duration metric.
-		relaysDurationSeconds.With(
-			"proxy_name", sync.proxyConfig.ProxyName,
-			"service_id", supplierService.Id).Observe(duration)
+		relaysDurationSeconds.With("service_id", supplierService.Id).Observe(duration)
 	}()
 
-	// Relay the request to the proxied service and build the response that will be sent back to the client.
+	relayRequestSizeBytes.With("service_id", supplierService.Id).
+		Observe(float64(relayRequest.Size()))
+
 	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
@@ -210,6 +210,11 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		"session_start_height": relay.Res.Meta.SessionHeader.SessionStartBlockHeight,
 		"server_addr":          sync.server.Addr,
 	}).Msg("relay request served successfully")
+
+	relaysSuccessTotal.With("service_id", supplierService.Id).Add(1)
+
+	relayResponseSizeBytes.With("service_id", supplierService.Id).
+		Observe(float64(relay.Res.Size()))
 
 	// Emit the relay to the servedRelays observable.
 	sync.servedRelaysProducer <- relay
