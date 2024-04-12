@@ -29,11 +29,6 @@ suppliers:
   # Must be unique in the `suppliers` array.
   # Required.
   - service_id: ethereum
-    # Type of the supplier exposed by Relay Miner.
-    # Use `http` for all protocols using `http` (`json_rpc`, `ws`).
-    # Required.
-    server_type: http
-
     # Configuration of the service offered through RelayMiner.
     service_config:
       # Backend URL is the endpoint RelayMiner proxies the requests to.
@@ -71,16 +66,16 @@ suppliers:
         # - Port can differ from the staked port (e.g., Relay Miner on port 80, TLS on port 443).
         - ethereum.devnet1.relayminer.com
 
-    # Listen address, usually `0.0.0.0:80` (all network interfaces, port `80`).
+    # Listen url, usually `http://0.0.0.0:80` (all network interfaces, port `80`).
+    # The scheme in the URL is required in order to infer the server type.
     # Multiple suppliers can share one listen address.
     # Required.
-    listen_address: 0.0.0.0:80
+    listen_url: http://0.0.0.0:80
 
   # Example of exposing an ollama LLM endpoint.
   - service_id: ollama:mistral:7b
-    server_type: http
     service_config:
       backend_url: http://localhost:11434
       publicly_exposed_endpoints:
         - mistral-7b.devnet1.poktroll.com
-    listen_address: 0.0.0.0:80
+    listen_url: http://0.0.0.0:80

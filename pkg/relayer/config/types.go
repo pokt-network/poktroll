@@ -39,8 +39,7 @@ type YAMLRelayMinerMetricsConfig struct {
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
 	ServiceId            string                              `yaml:"service_id"`
-	ServerType           string                              `yaml:"server_type"`
-	ListenAddress        string                              `yaml:"listen_address"`
+	ListenUrl            string                              `yaml:"listen_url"`
 	XForwardedHostLookup bool                                `yaml:"x_forwarded_host_lookup"`
 	ServiceConfig        YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
 }

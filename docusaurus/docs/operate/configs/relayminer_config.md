@@ -22,13 +22,12 @@ queries from and which services it forwards requests to._
   - [`tx_node_rpc_url`](#tx_node_rpc_url)
 - [Suppliers](#suppliers)
   - [`service_id`](#service_id)
-  - [`type`](#type)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
-  - [`listen_address`](#listen_address)
+  - [`listen_url`](#listen_url)
 - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
 - [Full config example](#full-config-example)
 - [Supported proxy types](#supported-proxy-types)
@@ -140,7 +139,6 @@ At least one supplier is required for the `RelayMiner` to be functional.
 ```yaml
 suppliers:
   - service_id: <string>
-    server_type: <enum{http}>
     service_config:
       backend_url: <url>
       authentication:
@@ -150,7 +148,7 @@ suppliers:
         <key>: <value>
       publicly_exposed_endpoints:
         - <host>
-    listen_address: <host>
+    listen_url: <enum{http}>://<host>
 ```
 
 ### `service_id`
@@ -162,13 +160,6 @@ a service provided by the `Supplier` and served by the `RelayMiner` instance.
 
 It must match the `Service.Id` specified by the supplier when staking for the
 service.
-
-### `type`
-
-_`Required`_
-
-The transport type that the service will be offered on. It must be one of the
-[supported types](#supported-proxy-types).
 
 ### `service_config`
 
@@ -205,15 +196,15 @@ requests to the service. It can be used to add additional headers like
 
 #### `publicly_exposed_endpoints`
 
-_`Required`_, _`Unique` within the supplier's `hosts` list_
+_`Required`_, _`Unique` within the supplier's `publicly_exposed_endpoints` list_
 
 The `publicly_exposed_endpoints` section of the supplier configuration is a list
 of hosts that the `RelayMiner` will accept requests from. It must be a valid host
 that reflects the on-chain supplier staking service endpoints.
 
 It is used to determine if the incoming request is allowed to be processed by
-the server listening on `listen_address` as well as to check if the request's
-RPC-Type matches the on-chain endpoint's RPC-Type.
+the server listening on `listen_url` host address as well as to check if the
+request's RPC-Type matches the on-chain endpoint's RPC-Type.
 
 There are various reasons to having multiple `publicly_exposed_endpoints`
 for the same supplier service.
@@ -227,20 +218,21 @@ for the same supplier service.
 - The operator may want to have a different domain for internal requests.
 - The on-chain Service configuration accepts multiple endpoints.
 
-_Note: The `service_id` of the supplier is automatically added to the `hosts` list as
-it may help troubleshooting the `RelayMiner` and/or send requests internally
-from a k8s cluster for example._
+_Note: The `service_id` of the supplier is automatically added to the
+`publicly_exposed_endpoints` list as it may help troubleshooting the `RelayMiner`
+and/or send requests internally from a k8s cluster for example._
 
-### `listen_address`
+### `listen_url`
 
 _`Required`_
 
 The address on which the `RelayMiner` will start a server to listen for incoming
-requests. It must be a valid host according to the `type` field.
+requests. It will infer the server type from the URL scheme (http, https, etc...)
 
-The same `listen_address` can be used for multiple suppliers and/or different
+The same `listen_url` can be used for multiple suppliers and/or different
 `publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
-to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`.
+to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
+it received a request form.
 
 ## RelayMiner config -> On-chain service relationship
 

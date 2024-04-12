@@ -1,5 +1,7 @@
 package config
 
+import "net/url"
+
 // HydrateProxies populates the proxies fields of the RelayMinerConfig that
 // are relevant to the "proxies" section in the config file.
 func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
@@ -13,7 +15,22 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 	relayMinerConfig.Proxies = make(map[string]*RelayMinerProxyConfig)
 
 	for _, yamlSupplierConfig := range yamlSupplierConfigs {
-		proxyName := yamlSupplierConfig.ListenAddress
+		listenUrl, err := url.Parse(yamlSupplierConfig.ListenUrl)
+		if err != nil {
+			return ErrRelayMinerConfigInvalidProxy.Wrapf(
+				"invalid listen url %s",
+				yamlSupplierConfig.ListenUrl,
+			)
+		}
+
+		if listenUrl.Scheme == "" {
+			return ErrRelayMinerConfigInvalidProxy.Wrapf(
+				"missing scheme in listen url %s",
+				yamlSupplierConfig.ListenUrl,
+			)
+		}
+
+		proxyName := yamlSupplierConfig.ListenUrl
 
 		if _, ok := relayMinerConfig.Proxies[proxyName]; ok {
 			continue
@@ -26,7 +43,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 		}
 
 		// Populate the proxy fields that are relevant to each supported proxy type
-		switch yamlSupplierConfig.ServerType {
+		switch listenUrl.Scheme {
 		case "http":
 			if err := proxyConfig.parseHTTPProxyConfig(yamlSupplierConfig); err != nil {
 				return err
@@ -36,7 +53,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 			// Fail if the proxy type is not supported
 			return ErrRelayMinerConfigInvalidProxy.Wrapf(
 				"invalid proxy type %s",
-				yamlSupplierConfig.ServerType,
+				listenUrl.Scheme,
 			)
 		}
 

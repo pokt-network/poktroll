@@ -22,28 +22,19 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 			return ErrRelayMinerConfigInvalidSupplier.Wrap("empty supplier public endpoint")
 		}
 
-		// Check if the supplier exposed endpoint is a valid URL
-		supplierHost, err := url.Parse(host)
-		if err != nil {
-			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
-				"invalid supplier public endpoint %s",
-				host,
-			)
-		}
-
 		// Check if the supplier public endpoint is unique
-		if _, ok := existingEndpoints[supplierHost.Host]; ok {
+		if _, ok := existingEndpoints[host]; ok {
 			return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 				"duplicate supplier public endpoint %s",
 				host,
 			)
 		}
-		existingEndpoints[supplierHost.Host] = true
+		existingEndpoints[host] = true
 
 		// Add the supplier public endpoint to the suppliers list
 		supplierConfig.PubliclyExposedEndpoints = append(
 			supplierConfig.PubliclyExposedEndpoints,
-			supplierHost.Host,
+			host,
 		)
 	}
 
@@ -56,12 +47,27 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		)
 	}
 
+	backendUrl, err := url.Parse(yamlSupplierConfig.ServiceConfig.BackendUrl)
+	if err != nil {
+		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+			"invalid supplier backend url %s",
+			err.Error(),
+		)
+	}
+
+	if backendUrl.Scheme == "" {
+		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
+			"missing scheme in supplier backend url %s",
+			yamlSupplierConfig.ServiceConfig.BackendUrl,
+		)
+	}
+
 	// Populate the supplier service fields that are relevant to each supported
 	// supplier type.
 	// If other supplier types are added in the future, they should be handled
 	// by their own functions.
 	supplierConfig.ServiceConfig = &RelayMinerSupplierServiceConfig{}
-	switch yamlSupplierConfig.ServerType {
+	switch backendUrl.Scheme {
 	case "http":
 		supplierConfig.ServerType = ServerTypeHTTP
 		if err := supplierConfig.ServiceConfig.
@@ -72,7 +78,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 		// Fail if the supplier type is not supported
 		return ErrRelayMinerConfigInvalidSupplier.Wrapf(
 			"invalid supplier type %s",
-			yamlSupplierConfig.ServerType,
+			backendUrl.Scheme,
 		)
 	}
 

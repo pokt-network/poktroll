@@ -1,9 +1,6 @@
 package config
 
-import (
-	"fmt"
-	"net/url"
-)
+import "net/url"
 
 // parseHTTPProxyConfig populates the proxy fields of the target structure that
 // are relevant to the "http" type in the proxy section of the config file.
@@ -16,7 +13,7 @@ func (proxyConfig *RelayMinerProxyConfig) parseHTTPProxyConfig(
 	// we need to prepend it with the "http://" scheme to make it a valid URL;
 	// we end up using the `Host` field of the resulting `url.URL` struct,
 	// so the prepended scheme is irrelevant.
-	listenUrl, err := url.Parse(fmt.Sprintf("http://%s", yamlSupplierConfig.ListenAddress))
+	listenUrl, err := url.Parse(yamlSupplierConfig.ListenUrl)
 	if err != nil {
 		return ErrRelayMinerConfigInvalidProxy.Wrapf(
 			"invalid proxy listen address %s",

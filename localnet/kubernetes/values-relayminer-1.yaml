@@ -2,9 +2,8 @@ config:
   signing_key_name: supplier1
   suppliers:
     - service_id: anvil
-      server_type: http
       service_config:
         backend_url: http://anvil:8547/
         publicly_exposed_endpoints:
-        - tcp://relayminer1:8545
-      listen_address: 0.0.0.0:8545
+        - relayminer1:8545
+      listen_address: http://0.0.0.0:8545

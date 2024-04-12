@@ -14,7 +14,7 @@ a stake transaction required to provide RPC services on the Pocket Network._
   - [`services`](#services)
     - [`service_id`](#service_id)
     - [`endpoints`](#endpoints)
-      - [`url`](#url)
+      - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
 - [Example](#example)
 
@@ -74,7 +74,7 @@ _`Required`_, _`Non-empty`_
 services:
   - service_id: <string>
     endpoints:
-      - url: <protocol>://<hostname>:<port>
+      - publicly_exposed_url: <protocol>://<hostname>:<port>
         rpc_type: <string>
 ```
 
@@ -98,15 +98,16 @@ For example, it must match the regex `^[a-zA-Z0-9_-]{1,8}$`, and spaces are disa
 _`Required`_, _`Non-empty`_
 
 `endpoints` is a list of `endpoint` objects that the `Supplier` will advertise
-to the Pocket Network. Each `endpoint` object consists of an `url` and a `rpc_type`.
+to the Pocket Network. Each `endpoint` object consists of a `publicly_exposed_url`
+and a `rpc_type`.
 
-##### `url`
+##### `publicly_exposed_url`
 
 _`Required`_
 
-The `url` defines the endpoint for sending `RelayRequests` from the Pocket Network's `Gateways` and `Applications`. Typically, this endpoint is provided by a RelayMiner, which acts as a proxy. This setup means that the specified URL directs to the RelayMiner's endpoint, which in turn, routes the requests to the designated service node.
+The `publicly_exposed_url` defines the endpoint for sending `RelayRequests` from the Pocket Network's `Gateways` and `Applications`. Typically, this endpoint is provided by a RelayMiner, which acts as a proxy. This setup means that the specified URL directs to the RelayMiner's endpoint, which in turn, routes the requests to the designated service node.
 
-- **Example**: `https://etherium-relayminer1.relayminers.com:443` demonstrates how a RelayMiner endpoint, typically offered by the RelayMiner, proxies requests to an Etherium backend data node.
+- **Example**: `https://etherium-relayminer1.relayminers.com:443` demonstrates how a RelayMiner endpoint, typically offered by the RelayMiner, proxies requests to an Ethereum backend data node.
 
 
 ##### `rpc_type`

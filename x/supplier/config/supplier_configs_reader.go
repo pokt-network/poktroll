@@ -24,9 +24,9 @@ type YAMLStakeService struct {
 
 // YAMLServiceEndpoint is the structure describing a single service endpoint in the stake config file
 type YAMLServiceEndpoint struct {
-	Url     string            `yaml:"url"`
-	RPCType string            `yaml:"rpc_type"`
-	Config  map[string]string `yaml:"config,omitempty"`
+	PubliclyExposedUrl string            `yaml:"publicly_exposed_url"`
+	RPCType            string            `yaml:"rpc_type"`
+	Config             map[string]string `yaml:"config,omitempty"`
 }
 
 // SupplierStakeConfig is the structure describing the parsed supplier stake config
@@ -140,11 +140,11 @@ func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*sharedtypes.SupplierEndp
 // validateEndpointURL validates the endpoint URL, making sure that the string provided is a valid URL
 func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
 	// Validate the endpoint URL
-	if _, err := url.Parse(endpoint.Url); err != nil {
+	if _, err := url.Parse(endpoint.PubliclyExposedUrl); err != nil {
 		return "", ErrSupplierConfigInvalidURL.Wrapf("%s", err)
 	}
 
-	return endpoint.Url, nil
+	return endpoint.PubliclyExposedUrl, nil
 }
 
 // parseEndpointConfigs parses the endpoint config entries into a slice of ConfigOption
