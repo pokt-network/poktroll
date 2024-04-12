@@ -36,7 +36,7 @@ func (k Keeper) SettleSessionAccounting(
 ) error {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
 
-	var settlementAmt sdk.Coin
+	settlementAmt := sdk.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
 	telemetry.EventSuccessCounter(
 		"settle_session_accounting",
