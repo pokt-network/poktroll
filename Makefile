@@ -315,6 +315,14 @@ test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
 	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
 	go test -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_app
+test_e2e_app:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
+
+.PHONY: test_e2e_gateway
+test_e2e_gateway:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
+
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
 	go test -count=1 -v -race -tags test ./...
