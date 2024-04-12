@@ -129,6 +129,32 @@ check_docker:
 		exit 1; \
 	fi; \
 	}
+.PHONY: check_kind
+# Internal helper target - check if kind is installed
+check_kind:
+	@if ! command -v kind >/dev/null 2>&1; then \
+		echo "kind is not installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
+		exit 1; \
+	fi
+
+.PHONY: check_docker_ps
+ ## Internal helper target - checks if Docker is running
+check_docker_ps: check_docker
+	@echo "Checking if Docker is running..."
+	@docker ps > /dev/null 2>&1 || (echo "Docker is not running. Please start Docker and try again."; exit 1)
+
+.PHONY: check_kind_context
+## Internal helper target - checks if the kind-kind context exists and is set
+check_kind_context: check_kind
+	@if ! kubectl config get-contexts | grep -q 'kind-kind'; then \
+		echo "kind-kind context does not exist. Please create it or switch to it."; \
+		exit 1; \
+	fi
+	@if ! kubectl config current-context | grep -q 'kind-kind'; then \
+		echo "kind-kind context is not currently set. Use 'kubectl config use-context kind-kind' to set it."; \
+		exit 1; \
+	fi
+
 
 .PHONY: check_godoc
 # Internal helper target - check if godoc is installed
@@ -240,7 +266,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: proto_regen localnet_regenesis ## Starts localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
@@ -385,7 +411,8 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # TODO_REFACTOR               - Similar to TECHDEBT, but will require a substantial rewrite and change across the codebase
 # TODO_CONSIDERATION          - A comment that involves extra work but was thoughts / considered as part of some implementation
 # TODO_CONSOLIDATE            - We likely have similar implementations/types of the same thing, and we should consolidate them.
-# TODO_ADDTEST                - Add more tests for a specific code section
+# TODO_ADDTEST / TODO_TEST    - Add more tests for a specific code section
+# TODO_FLAKY                  - Signals that the test is flaky and we are aware of it. Provide an explanation if you know why.
 # TODO_DEPRECATE              - Code that should be removed in the future
 # TODO_RESEARCH               - A non-trivial action item that requires deep research and investigation being next steps can be taken
 # TODO_DOCUMENT		          - A comment that involves the creation of a README or other documentation
