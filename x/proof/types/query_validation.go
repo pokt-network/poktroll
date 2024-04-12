@@ -87,7 +87,7 @@ func (query *QueryAllProofsRequest) ValidateBasic() error {
 
 	default:
 		// No filter is set
-		logger.Debug().Msg("No specific filter set when requesting proofs")
+		logger.Info().Msg("No specific filter set when requesting proofs")
 	}
 
 	return nil

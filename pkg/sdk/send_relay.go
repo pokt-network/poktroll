@@ -23,7 +23,7 @@ func init() {
 func (sdk *poktrollSDK) SendRelay(
 	ctx context.Context,
 	supplierEndpoint *SingleSupplierEndpoint,
-	request *http.Request,
+	request http.Request,
 ) (response *types.RelayResponse, err error) {
 	// Retrieve the request's payload.
 	payloadBz, err := io.ReadAll(request.Body)

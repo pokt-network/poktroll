@@ -2,7 +2,6 @@ package miner
 
 import (
 	"context"
-	"crypto/sha256"
 	"hash"
 
 	"github.com/pokt-network/poktroll/pkg/either"
@@ -17,10 +16,6 @@ import (
 
 var (
 	_ relayer.Miner = (*miner)(nil)
-	// TODO_BLOCKER(@Olshansk): Retrieve the relay hasher mechanism from the `smt` repo.
-	// TODO_TECHDEBT: Centralize the configuration for the SMT spec. Look at
-	// `GetHashFromBytes` in `miner.go`.
-	DefaultRelayHasher = sha256.New
 	// TODO_BLOCKER: query on-chain governance params once available.
 	// Setting this to 0 to effectively disables mining for now.
 	// I.e., all relays are added to the tree.
@@ -87,10 +82,6 @@ func (mnr *miner) MinedRelays(
 // setDefaults ensures that the miner has been configured with a hasherConstructor and uses
 // the default hasherConstructor if not.
 func (mnr *miner) setDefaults() {
-	if mnr.relayHasher == nil {
-		mnr.relayHasher = DefaultRelayHasher
-	}
-
 	if mnr.relayDifficultyBits == 0 {
 		mnr.relayDifficultyBits = defaultRelayDifficultyBits
 	}
@@ -105,19 +96,14 @@ func (mnr *miner) mapMineRelay(
 	_ context.Context,
 	relay *servicetypes.Relay,
 ) (_ either.Either[*relayer.MinedRelay], skip bool) {
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	// TODO_BLOCKER: marshal using canonical codec.
 	relayBz, err := relay.Marshal()
 	if err != nil {
 		return either.Error[*relayer.MinedRelay](err), false
 	}
-
-	// TODO_BLOCKER: Centralize the logic of hashing a relay. It should live
-	// alongside signing & verification.
-	//
-	// TODO_IMPROVE: We need to hash the key; it would be nice if smst.Update() could do it
-	// since smst has a reference to the hasherConstructor
-	// TODO_TECHDEBT: Why is this not `relay.GetHash()`?
-	relayHash := mnr.hash(relayBz)
+	relayHashArr := servicetypes.GetHashFromBytes(relayBz)
+	relayHash := relayHashArr[:]
 
 	// The relay IS NOT volume / reward applicable
 	if protocol.MustCountDifficultyBits(relayHash) < mnr.relayDifficultyBits {
@@ -130,11 +116,4 @@ func (mnr *miner) mapMineRelay(
 		Bytes: relayBz,
 		Hash:  relayHash,
 	}), false
-}
-
-// hash constructs a new hasher and hashes the given input bytes.
-func (mnr *miner) hash(inputBz []byte) []byte {
-	hasher := mnr.relayHasher()
-	hasher.Write(inputBz)
-	return hasher.Sum(nil)
 }

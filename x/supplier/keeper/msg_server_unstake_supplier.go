@@ -41,7 +41,7 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Send the coins from the supplier pool back to the supplier
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", supplier.Stake, supplierAddress, types.ModuleName, err))
 		return nil, err

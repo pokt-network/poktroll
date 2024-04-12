@@ -28,7 +28,7 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 		sessionEndHeight   = 2
 	)
 
-	// TODO_TECHDEBT: Centralize the configuration for the SMT spec.
+	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
 	var (
 		_, ctx         = testpolylog.NewLoggerWithCtx(context.Background(), polyzero.DebugLevel)
 		spec           = smt.NoPrehashSpec(sha256.New(), true)
