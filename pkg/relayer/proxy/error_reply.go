@@ -20,7 +20,7 @@ func (sync *synchronousRPCServer) replyWithError(
 	serviceId string,
 	err error,
 ) {
-	relaysErrorsTotal.With("service_id", serviceId, "proxy_name", proxyName).Add(1)
+	relaysErrorsTotal.With("service_id", serviceId).Add(1)
 
 	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
 	if err != nil {
