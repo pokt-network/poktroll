@@ -42,7 +42,11 @@ viewed by running the following:
 
 ```bash
 poktrolld query supplier
-# or
+```
+
+or
+
+```bash
 poktrolld query proof
 ```
 
@@ -51,6 +55,10 @@ viewed by running the following:
 
 ```bash
 poktrolld tx supplier
-# or
+```
+
+or
+
+```bash
 poktrolld tx proof
 ```
