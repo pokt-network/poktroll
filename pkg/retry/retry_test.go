@@ -441,3 +441,100 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 		require.Contains(t, line, expectedErrMsg)
 	}
 }
+
+// assert that a negative retry limit continually calls workFn
+func TestOnError_NegativeRetryLimit(t *testing.T) {
+	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+
+	// Setup test variables and log capture
+	var (
+		logOutput          bytes.Buffer
+		testFnCallCount    int32
+		minimumCallCount   = 100
+		expectedRetryDelay = time.Millisecond
+		retryLimit         = -1
+		retryResetTimeout  = 3 * time.Millisecond
+		testFnCallTimeCh   = make(chan time.Time, minimumCallCount)
+		ctx                = context.Background()
+	)
+
+	// Redirect the log output for verification later
+	log.SetOutput(&logOutput)
+
+	// Define the test function that simulates an error and counts its invocations
+	testFn := func() chan error {
+		// Track the invocation time
+		testFnCallTimeCh <- time.Now()
+
+		errCh := make(chan error, 1)
+
+		count := atomic.LoadInt32(&testFnCallCount)
+		if count == int32(retryLimit) {
+			go func() {
+				time.Sleep(retryResetTimeout)
+				errCh <- testErr
+			}()
+		} else {
+			errCh <- testErr
+		}
+
+		// Increment the invocation count atomically
+		atomic.AddInt32(&testFnCallCount, 1)
+		return errCh
+	}
+
+	retryOnErrorErrCh := make(chan error, 1)
+	// Spawn a goroutine to test the OnError function
+	go func() {
+		retryOnErrorErrCh <- retry.OnError(
+			ctx,
+			retryLimit,
+			expectedRetryDelay,
+			retryResetTimeout,
+			"TestOnError",
+			testFn,
+		)
+	}()
+
+	// Wait for the OnError function to execute and retry the expected number of times
+	totalExpectedDelay := expectedRetryDelay * time.Duration(minimumCallCount)
+	time.Sleep(totalExpectedDelay + 100*time.Millisecond)
+
+	// Assert that the test function was called the expected number of times
+	require.GreaterOrEqual(t, minimumCallCount, int(testFnCallCount))
+
+	// Assert that the retry delay between function calls matches the expected delay
+	var prevCallTime = new(time.Time)
+	for i := 0; i < minimumCallCount; i++ {
+		select {
+		case nextCallTime := <-testFnCallTimeCh:
+			if i != 0 {
+				actualRetryDelay := nextCallTime.Sub(*prevCallTime)
+				require.GreaterOrEqual(t, actualRetryDelay, expectedRetryDelay)
+			}
+
+			*prevCallTime = nextCallTime
+		default:
+			t.Fatalf(
+				"expected %d calls to testFn, but only received %d",
+				minimumCallCount, i+1,
+			)
+		}
+	}
+
+	// Verify the logged error messages
+	var (
+		logOutputLines = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
+		expectedPrefix = "ERROR: retrying TestOnError after error: test error"
+	)
+
+	require.Lenf(
+		t, logOutputLines,
+		minimumCallCount-1,
+		"expected %d log lines, got %d",
+		minimumCallCount-1, len(logOutputLines),
+	)
+	for _, line := range logOutputLines {
+		require.Contains(t, line, expectedPrefix)
+	}
+}
