@@ -27,7 +27,7 @@ Configurations to stake an `Supplier` can be found at [supplier_staking_config.m
 
 The `Supplier` actor depends on both the [`supplier`](https://github.com/pokt-network/poktroll/tree/main/x/supplier)
 and [`proof`](https://github.com/pokt-network/poktroll/tree/main/x/proof) on-chain modules.
-These two modules' concerns are seperated as follows:
+These two modules' concerns are separated as follows:
 
 ### Supplier Module
 - Supplier (un/)staking
