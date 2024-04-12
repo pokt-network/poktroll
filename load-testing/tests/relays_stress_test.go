@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	"github.com/pokt-network/poktroll/cmd/signals"
-	config "github.com/pokt-network/poktroll/load-testing/config"
+	"github.com/pokt-network/poktroll/load-testing/config"
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -76,6 +77,9 @@ type relaysSuite struct {
 	// sessionInfoObs is the observable mapping committed blocks to session information.
 	// It is used to determine when to stake new actors and when they become active.
 	sessionInfoObs observable.Observable[*sessionInfoNotif]
+	// batchInfoObs is the observable mapping session information to batch information.
+	// It is used to determine when to send a batch of relay requests to the network.
+	batchInfoObs observable.Observable[*batchInfoNotif]
 
 	// txContext is the transaction context used to sign and send transactions.
 	txContext client.TxContext
@@ -89,9 +93,9 @@ type relaysSuite struct {
 	// relayCost is the cost of a relay request.
 	relayCost int64
 
-	// waitingForFirstSession is a flag indicating whether the test is waiting for
-	// the first session to start.
-	waitingForFirstSession bool
+	//// waitingForFirstSession is a flag indicating whether the test is waiting for
+	//// the first session to start.
+	//waitingForFirstSession bool
 	// startBlockHeight is the block height at which the test started.
 	startBlockHeight int64
 	// testDurationBlocks is the duration of the test in blocks.
@@ -173,6 +177,14 @@ type sessionInfoNotif struct {
 	sessionNumber           int64
 	sessionStartBlockHeight int64
 	sessionEndBlockHeight   int64
+}
+
+type batchInfoNotif struct {
+	sessionInfoNotif
+	prevBatchTime time.Time
+	nextBatchTime time.Time
+	appAccounts   []*applicationInfo
+	gateways      []*provisionedActorInfo
 }
 
 func TestLoadRelays(t *testing.T) {
@@ -289,7 +301,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	maxApps := table.Cell(2, 3).Int64()
 	require.Truef(s, appBlockIncRate%keeper.NumBlocksPerSession == 0, "app increment rate must be a multiple of the session length")
 
-	s.waitingForFirstSession = true
+	waitingForFirstSession := true
 
 	// The test duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
@@ -332,7 +344,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 			// If the test has not started and the current block is not the first block
 			// of the session, wait for the next session to start.
-			if s.waitingForFirstSession && sessionInfo.blockHeight != sessionInfo.sessionStartBlockHeight {
+			if waitingForFirstSession && sessionInfo.blockHeight != sessionInfo.sessionStartBlockHeight {
 				logger.Info().
 					Int64("block_height", blockHeight).
 					Int64("session_num", sessionInfo.sessionNumber).
@@ -342,12 +354,12 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			}
 
 			// If the test has not started, set the start block height to the current block height.
-			if s.waitingForFirstSession {
+			if waitingForFirstSession {
 				s.startBlockHeight = blockHeight
 			}
 
 			// Mark the test as started.
-			s.waitingForFirstSession = false
+			waitingForFirstSession = false
 
 			logger.Info().
 				Int64("block_heihgt", blockHeight).
@@ -360,11 +372,16 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		},
 	)
 
+	var prevBatchTime time.Time
+
 	// shouldBlockUpdateChainStateObs is an observable which is notified each block.
 	// If the current "test height" is equal to the session start block height,
 	// activate all the staked actors to be used in the current session.
 	// If the current "test height" is a multiple of any actor increment block count,
 	// stake new actors to be used in the next session.
+	batchInfoObs, batchInfoPublishCh := channel.NewReplayObservable[*batchInfoNotif](s.ctx, 5)
+	s.batchInfoObs = batchInfoObs
+
 	channel.ForEach(s.ctx, s.sessionInfoObs,
 		func(ctx context.Context, notif *sessionInfoNotif) {
 			// On the first block of each session, check if any new actors need to
@@ -373,7 +390,26 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// Otherwise, we would need to check if any block in the next session
 			// is an increment height.
 
+			// TODO_CONSIDERATION: is there still a need to assign the prepared
+			// and active actors on the suite?
 			s.activatePreparedActors(notif)
+
+			now := time.Now()
+
+			batchInfoPublishCh <- &batchInfoNotif{
+				sessionInfoNotif: *notif,
+				prevBatchTime:    prevBatchTime,
+				nextBatchTime:    now,
+				appAccounts:      s.activeApplications,
+				gateways:         s.activeGateways,
+			}
+
+			// Update prevBatchTime after this iteration completes.
+			prevBatchTime = now
+
+			// TODO_IN_THIS_COMMIT: no need to wait for next prepared actors.
+			// TODO_IN_THIS_COMMIT: no need to wait for next prepared actors.
+			// TODO_IN_THIS_COMMIT: no need to wait for next prepared actors.
 
 			if s.shouldIncrementActor(notif, supplierBlockIncRate, supplierInc, maxSuppliers) {
 				// Incrementing suppliers can run concurrently with other actors since
@@ -402,10 +438,23 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// Wait for the next block to commit stake transactions and be able
 			// to delegate the applications to the new gateways.
 			s.waitForNextBlock()
+
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+
 			// After this call all applications are delegating to all the gateways.
 			// This is to ensure that requests are distributed evenly across all gateways
 			// at any given time.
 			s.stakeAndDelegateApps(newApps, newGateways)
+
+			// Wait for the next block to commit delegation transactions and be able
+			// to send relay requests evenly distributed across all apps/gateways.
+			s.waitForNextBlock()
+
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
 		},
 	)
 }
@@ -413,52 +462,81 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications() {
 	// Limit the number of concurrent requests to maxConcurrentRequestLimit.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
-	for {
-		select {
-		// If the context is cancelled, the test is finished, stop sending relay requests.
-		case <-s.ctx.Done():
-			return
-		default:
-		}
 
-		// Do not send relay requests if the test is waiting for the first session to start.
-		// This is to align the relay requests with the active actors.
-		if s.waitingForFirstSession {
-			continue
-		}
+	// TODO_IN_THIS_COMMIT: comment...
+	blockWaitGroup := new(sync.WaitGroup)
+	blockWaitGroup.Add(int(s.testDurationBlocks))
+	batchWaitGroup := new(sync.WaitGroup)
 
-		// Calculate the realys per second as the number of active applications
-		// each sending relayRatePerApp relays per second.
-		relaysPerSec := len(s.activeApplications) * int(s.relayRatePerApp)
-		// Determine the interval between each relay request.
-		relayInterval := time.Second / time.Duration(relaysPerSec)
+	//fmt.Printf("s.testDurationBlocks: %d\n", s.testDurationBlocks)
 
-		batchLimiter.Go(s.ctx, func() {
-			relaysSent := s.relaysSent.Add(1) - 1
-			blockHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
-			sessionNum := keeper.GetSessionNumber(blockHeight)
-			app := s.activeApplications[relaysSent%uint64(len(s.activeApplications))]
-			gw := s.activeGateways[relaysSent%uint64(len(s.activeGateways))]
+	channel.ForEach(s.ctx, s.batchInfoObs,
+		func(ctx context.Context, batchInfo *batchInfoNotif) {
+			//fmt.Printf("[batchInfo] block_height: %d; session_num: %d; batch_time: %s\n", batchInfo.blockHeight, batchInfo.sessionNumber, batchInfo.nextBatchTime)
 
-			logger.Info().
-				Int64("session_num", sessionNum).
-				Int64("block_height", blockHeight).
-				Str("app", app.keyName).
-				Str("gw", gw.keyName).
-				Int("total_apps", len(s.activeApplications)).
-				Int("total_gws", len(s.activeGateways)).
-				Str("time", time.Now().Format(time.RFC3339Nano)).
-				Msgf("sending relay #%d", relaysSent)
-			s.sendRelay(relaysSent)
-		})
+			// Calculate the relays per second as the number of active applications
+			// each sending relayRatePerApp relays per second.
+			relaysPerSec := len(batchInfo.appAccounts) * int(s.relayRatePerApp)
+			// Determine the interval between each relay request.
+			relayInterval := time.Second / time.Duration(relaysPerSec)
 
-		// Sleep for the interval between each relay request.
-		// TODO_TECHDEBT: Cancel the sleep if the number of applications change,
-		// so that the relay rate is adjusted accordingly, since sleeping while
-		// the number of applications change will cause the relay rate to be slightly
-		// off.
-		time.Sleep(relayInterval)
-	}
+			//fmt.Printf("relaysPerSed: %d; relayInterval: %s\n", relaysPerSec, relayInterval)
+
+			batchWaitGroup.Add(relaysPerSec)
+			//fmt.Printf("batchWaitGroup.Add(%d)\n", relaysPerSec)
+
+			batchLimiter.Go(s.ctx, func() {
+				for i := 0; i < relaysPerSec; i++ {
+					select {
+					// If the context is cancelled, the test is finished, stop sending relay requests.
+					case <-ctx.Done():
+						fmt.Println("context done")
+						//batchWaitGroup.Done()
+						blockWaitGroup.Done()
+						return
+					default:
+					}
+
+					//fmt.Printf("i: %d\n", i)
+
+					relaysSent := s.relaysSent.Add(1) - 1
+					blockHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
+					sessionNum := keeper.GetSessionNumber(blockHeight)
+					app := batchInfo.appAccounts[relaysSent%uint64(len(batchInfo.appAccounts))]
+					gw := batchInfo.gateways[relaysSent%uint64(len(batchInfo.gateways))]
+
+					logger.Info().
+						Int64("session_num", sessionNum).
+						Int64("block_height", blockHeight).
+						Str("app", app.keyName).
+						Str("gw", gw.keyName).
+						Int("total_apps", len(batchInfo.appAccounts)).
+						Int("total_gws", len(batchInfo.gateways)).
+						Str("time", time.Now().Format(time.RFC3339Nano)).
+						Msgf("sending relay #%d", relaysSent)
+					s.sendRelay(relaysSent)
+
+					// Sleep for the interval between each relay request.
+					// TODO_TECHDEBT: Cancel the sleep if the number of applications change,
+					// so that the relay rate is adjusted accordingly, since sleeping while
+					// the number of applications change will cause the relay rate to be slightly
+					// off.
+					time.Sleep(relayInterval)
+
+					//fmt.Println("batchWaitGroup done")
+					batchWaitGroup.Done()
+				}
+			})
+
+			//fmt.Println("waiting for batchWaitGroup")
+			batchWaitGroup.Wait()
+			//fmt.Println("blockWaitGroup.Done()")
+			blockWaitGroup.Done()
+		},
+	)
+
+	blockWaitGroup.Wait()
+	//fmt.Println("blockWaitGroup wait over!")
 }
 
 // stakeGateways stakes the next gatewayInc number of gateways, picks their keyName
@@ -544,6 +622,10 @@ func (s *relaysSuite) stakeAndDelegateApps(
 	newApps []*applicationInfo,
 	newGateways []*provisionedActorInfo,
 ) {
+
+	// TODO_IN_THIS_COMMIT: send an UpdateParams message to the application
+	// module to set `max_delegated_gateways` accordingly.
+
 	for _, app := range s.activeApplications {
 		for _, gateway := range newGateways {
 			s.generateDelegateToGatewayMsg(app, gateway)

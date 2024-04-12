@@ -356,8 +356,11 @@ var (
 				Config: appconfig.WrapAny(&gatewaymodulev1.Module{}),
 			},
 			{
-				Name:   applicationmoduletypes.ModuleName,
-				Config: appconfig.WrapAny(&applicationmodulev1.Module{}),
+				Name: applicationmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&applicationmodulev1.Module{
+					// NB: pnf key address; see `poktrolld keys list --keyring-backend test`.
+					Authority: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
+				}),
 			},
 			{
 				Name:   suppliermoduletypes.ModuleName,
