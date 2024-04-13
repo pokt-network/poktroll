@@ -43,7 +43,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
-	github.com/pokt-network/smt v0.9.2
+	github.com/pokt-network/smt v0.10.2
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
 	github.com/prometheus/client_golang v1.18.0
 	github.com/regen-network/gocuke v1.1.0
@@ -275,6 +275,3 @@ require (
 	pgregory.net/rapid v1.1.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-// replace github.com/cosmos/cosmos-sdk => github.com/rollkit/cosmos-sdk v0.50.1-rollkit-v0.11.19-no-fraud-proofs
-replace github.com/pokt-network/smt => github.com/pokt-network/smt v0.9.3-0.20240321060129-e3dbbbd9f97d
