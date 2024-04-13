@@ -105,9 +105,16 @@ and a `rpc_type`.
 
 _`Required`_
 
-The `publicly_exposed_url` defines the endpoint for sending `RelayRequests` from the Pocket Network's `Gateways` and `Applications`. Typically, this endpoint is provided by a RelayMiner, which acts as a proxy. This setup means that the specified URL directs to the RelayMiner's endpoint, which in turn, routes the requests to the designated service node.
+The `publicly_exposed_url` defines the endpoint for sending `RelayRequests` from
+the Pocket Network's `Gateways` and `Applications`. This endpoint is provided by
+the `Supplier` when staking, and is meant to point to (or route requests to)
+the `Supplier`'s `RelayMiner` which in turn forwards these requests to the service node.
 
-- **Example**: `https://etherium-relayminer1.relayminers.com:443` demonstrates how a RelayMiner endpoint, typically offered by the RelayMiner, proxies requests to an Ethereum backend data node.
+- **Example**: When a `Supplier` stakes with a config file that contains
+`https://ethereum-relayminer1.relayminers.com:443` as a `publicly_exposed_url`,
+this endpoint will be discoverable on the Pocket Network by `Gateways` and
+`Applications` which can send it Ethereum `RelayRequests` to be processed by the
+`Supplier`'s `RelayMiner`.
 
 
 ##### `rpc_type`

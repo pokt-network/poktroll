@@ -18,8 +18,6 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-const unknownServiceId = "unknownServiceId"
-
 var _ relayer.RelayServer = (*synchronousRPCServer)(nil)
 
 func init() {
@@ -110,7 +108,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
 		proxyName := sync.proxyConfig.ProxyName
-		sync.replyWithError(ctx, []byte{}, writer, proxyName, unknownServiceId, err)
+		sync.replyWithError(ctx, []byte{}, writer, proxyName, "", err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
@@ -118,7 +116,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	if err := relayRequest.ValidateBasic(); err != nil {
 		proxyName := sync.proxyConfig.ProxyName
 		payload := relayRequest.Payload
-		sync.replyWithError(ctx, payload, writer, proxyName, unknownServiceId, err)
+		sync.replyWithError(ctx, payload, writer, proxyName, "", err)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
 	}
