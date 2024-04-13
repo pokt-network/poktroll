@@ -38,7 +38,8 @@ func (k Keeper) SettleSessionAccounting(
 
 	settlementAmt := sdk.NewCoin("upokt", math.NewInt(0))
 	isSuccessful := false
-	telemetry.EventSuccessCounter(
+	// This is emitted only when the function returns.
+	defer telemetry.EventSuccessCounter(
 		"settle_session_accounting",
 		func() float32 { return float32(settlementAmt.Amount.Int64()) },
 		func() bool { return isSuccessful },
