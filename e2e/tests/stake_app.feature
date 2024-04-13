@@ -8,7 +8,6 @@ Feature: Stake Namespaces
         Then the user should be able to see standard output containing "txhash:"
         And the user should be able to see standard output containing "code: 0"
         And the pocketd binary should exit without error
-        # TODO_TECHDEBT(@Olshansk, @red-0ne): Replace these time-based waits with event listening waits
         And the user should wait for "5" seconds
         And the "application" for account "app2" is staked with "1000070" uPOKT
         And the account balance of "app2" should be "1000070" uPOKT "less" than before
