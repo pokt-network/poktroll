@@ -11,9 +11,9 @@ import (
 func RPCToWebsocketURL(hostUrl *url.URL) string {
 	switch hostUrl.Scheme {
 	case "http":
-		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
+		fallthrough
 	case "ws":
-		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
+		fallthrough
 	case "tcp":
 		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
 	default:
