@@ -22,6 +22,7 @@ import (
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	tiablobcli "github.com/rollchains/tiablob/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -44,6 +45,9 @@ func initRootCmd(
 	)
 
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp, appExport, addModuleInitFlags)
+
+	keysCmd := keys.Commands()
+	keysCmd.AddCommand(tiablobcli.NewKeysCmd())
 
 	// add keybase, auxiliary RPC, query, genesis, and tx child commands
 	rootCmd.AddCommand(
