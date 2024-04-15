@@ -62,7 +62,7 @@ func init() {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	log.Printf("features path: %s", flagFeaturesPath)
+	log.Printf("Running features matching %q", path.Join("e2e", "tests", flagFeaturesPath))
 	m.Run()
 }
 

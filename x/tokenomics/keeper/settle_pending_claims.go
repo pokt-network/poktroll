@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
@@ -26,6 +27,19 @@ const (
 // On-chain Claims & Proofs are deleted after they're settled or expired to free up space.
 func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaimsExpired uint64, err error) {
 	logger := k.Logger().With("method", "SettlePendingClaims")
+
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"claims_settled",
+		func() float32 { return float32(numClaimsSettled) },
+		func() bool { return isSuccessful },
+	)
+
+	defer telemetry.EventSuccessCounter(
+		"claims_expired",
+		func() float32 { return float32(numClaimsExpired) },
+		func() bool { return isSuccessful },
+	)
 
 	// TODO_BLOCKER(@Olshansk): Optimize this by indexing expiringClaims appropriately
 	// and only retrieving the expiringClaims that need to be settled rather than all
@@ -97,8 +111,8 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 	logger.Info(fmt.Sprintf("settled %d and expired %d claims at block height %d", numClaimsSettled, numClaimsExpired, blockHeight))
 
+	isSuccessful = true
 	return numClaimsSettled, numClaimsExpired, nil
-
 }
 
 // getExpiringClaims returns all claims that are expiring at the current block height.

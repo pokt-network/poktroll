@@ -55,6 +55,7 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	"github.com/pokt-network/poktroll/docs"
+	telemetry "github.com/pokt-network/poktroll/telemetry"
 	applicationmodulekeeper "github.com/pokt-network/poktroll/x/application/keeper"
 	gatewaymodulekeeper "github.com/pokt-network/poktroll/x/gateway/keeper"
 	proofmodulekeeper "github.com/pokt-network/poktroll/x/proof/keeper"
@@ -311,6 +312,10 @@ func New(
 	// 	voteExtHandler := NewVoteExtensionHandler()
 	// 	voteExtHandler.SetHandlers(bApp)
 	// }
+
+	// Setup the application with block metrics that hook into the ABCI handlers.
+	// TODO_TECHDEBT: Use a flag to enable/disable block metrics.
+	baseAppOptions = append(baseAppOptions, telemetry.InitBlockMetrics)
 
 	app.App = appBuilder.Build(db, traceStore, baseAppOptions...)
 
