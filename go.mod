@@ -42,6 +42,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.1
+	github.com/hashicorp/go-metrics v0.5.2
 	github.com/noot/ring-go v0.0.0-20231019173746-6c4b33bcf03f
 	github.com/pokt-network/smt v0.10.2
 	github.com/pokt-network/smt/kvstore/badger v0.0.0-20240109205447-868237978c0b
@@ -176,7 +177,6 @@ require (
 	github.com/hashicorp/go-getter v1.7.3 // indirect
 	github.com/hashicorp/go-hclog v1.5.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
-	github.com/hashicorp/go-metrics v0.5.2 // indirect
 	github.com/hashicorp/go-plugin v1.5.2 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect

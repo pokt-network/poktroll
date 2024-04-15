@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -57,6 +58,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
+
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"submit_proof",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	/*
 		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
@@ -230,6 +238,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
+	isSuccessful = true
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
