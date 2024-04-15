@@ -7,7 +7,10 @@ toolchain go1.21.6
 replace (
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.7.0
-	// 	// https://github.com/rollchains/tiablob/pull/2/files
+	// https://github.com/rollchains/tiablob/pull/2/files
+	// Had to fork tiablob so a branch can be used to update this.
+	// Slashes aren't supported; https://github.com/golang/go/issues/32955#issuecomment-1337575957
+	// github.com/rollchains/tiablob => github.com/olshansk/tiablob celestia_publish
 	github.com/rollchains/tiablob => github.com/olshansk/tiablob v0.0.0-20240326185835-1092ea3a7188
 	// replace broken goleveldb
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
