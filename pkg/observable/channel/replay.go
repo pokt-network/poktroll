@@ -9,11 +9,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// replayPartialBufferTimeout is the duration to wait for the replay buffer to
-// accumulate at least 1 value before returning the accumulated values.
-// TODO_CONSIDERATION: perhaps this should be parameterized.
-const replayPartialBufferTimeout = 100 * time.Millisecond
-
 var (
 	_ observable.ReplayObservable[any] = (*replayObservable[any])(nil)
 	_ observable.Observable[any]       = (*replayObservable[any])(nil)
@@ -44,6 +39,7 @@ func NewReplayObservable[V any](
 	opts ...option[V],
 ) (observable.ReplayObservable[V], chan<- V) {
 	obsvbl, publishCh := NewObservable[V](opts...)
+	time.Sleep(time.Millisecond)
 	return ToReplayObservable[V](ctx, replayBufferSize, obsvbl), publishCh
 }
 
@@ -68,7 +64,7 @@ func ToReplayObservable[V any](
 		replayBuffer:     make([]V, 0, replayBufferSize),
 	}
 
-	srcObserver := srcObsvbl.Subscribe(ctx)
+	srcObserver := replayObsvbl.Subscribe(ctx)
 	go replayObsvbl.goBufferReplayNotifications(srcObserver)
 
 	return replayObsvbl
@@ -85,13 +81,6 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Use a temporary observer to accumulate replay values.
-	// Subscribe will always start with the replay buffer, so we can safely
-	// leverage it here for synchronization (i.e. blocking until at least 1
-	// notification has been accumulated). This also eliminates the need for
-	// locking and/or copying the replay buffer.
-	tempObserver := ro.Subscribe(ctx)
-
 	// If n is greater than the replay buffer size, return the entire replay buffer.
 	if n > ro.replayBufferSize {
 		n = ro.replayBufferSize
@@ -103,7 +92,28 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 
 	// accumulateReplayValues works concurrently and returns a context and cancellation
 	// function for signaling completion.
-	return accumulateReplayValues(tempObserver, n)
+	accValues := make([]V, n)
+	ro.replayBufferMu.Lock()
+	copySize := n
+	if len(ro.replayBuffer) < n {
+		copySize = len(ro.replayBuffer)
+	}
+	copy(accValues, ro.replayBuffer[len(ro.replayBuffer)-copySize:])
+
+	if len(accValues) < n {
+		sub := ro.Subscribe(ctx)
+		ro.replayBufferMu.Unlock()
+		for value := range sub.Ch() {
+			accValues[len(accValues)] = value
+			if len(accValues) >= n {
+				break
+			}
+		}
+	} else {
+		ro.replayBufferMu.Unlock()
+	}
+
+	return accValues
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
@@ -163,89 +173,5 @@ func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observabl
 			ro.replayBuffer = append(ro.replayBuffer[1:], notification)
 		}
 		ro.replayBufferMu.Unlock()
-	}
-}
-
-// accumulateReplayValues synchronously (but concurrently) accumulates n values
-// from the observer channel into the slice pointed to by accValues and then returns
-// said slice. It cancels the context either when n values have been accumulated
-// or when at least 1 value has been accumulated and replayPartialBufferTimeout
-// has elapsed.
-func accumulateReplayValues[V any](observer observable.Observer[V], n int) []V {
-	var (
-		// accValuesMu protects accValues from concurrent access.
-		accValuesMu sync.Mutex
-		// Accumulate replay values in a new slice to avoid (read) locking replayBufferMu.
-		accValues = new([]V)
-		// canceling the context will cause the loop in the goroutine to exit.
-		ctx, cancel = context.WithCancel(context.Background())
-	)
-
-	// Concurrently accumulate n values from the observer channel.
-	go func() {
-		// Defer canceling the context and unlocking accValuesMu. The function
-		// assumes that the mutex is locked when it gets execution control back
-		// from the loop.
-		defer func() {
-			cancel()
-			accValuesMu.Unlock()
-		}()
-		for {
-			// Lock the mutex to read accValues here and potentially write in
-			// the first case branch in the select below.
-			accValuesMu.Lock()
-
-			// The context was canceled since the last iteration.
-			if ctx.Err() != nil {
-				return
-			}
-
-			// We've accumulated n values.
-			if len(*accValues) >= n {
-				return
-			}
-
-			// Receive from the observer's channel if we can, otherwise let
-			// the loop run.
-			select {
-			// Receiving from the observer channel blocks if replayBuffer is empty.
-			case value, ok := <-observer.Ch():
-				// tempObserver was closed concurrently.
-				if !ok {
-					return
-				}
-
-				// Update the accumulated values pointed to by accValues.
-				*accValues = append(*accValues, value)
-			default:
-				// If we can't receive from the observer channel immediately,
-				// let the loop run.
-			}
-
-			// Unlock accValuesMu so that the select below gets a chance to check
-			// the length of *accValues to decide whether to cancel, and it can
-			// be relocked at the top of the loop as it must be locked when the
-			// loop exits.
-			accValuesMu.Unlock()
-			// Wait a tick before continuing the loop.
-			time.Sleep(time.Millisecond)
-		}
-	}()
-
-	// Wait for N values to be accumulated or timeout. When timing out, if we
-	// have at least 1 value, we can return it. Otherwise, we need to wait for
-	// the next value to be published (i.e. continue the loop).
-	for {
-		select {
-		case <-ctx.Done():
-			return *accValues
-		case <-time.After(replayPartialBufferTimeout):
-			accValuesMu.Lock()
-			if len(*accValues) > 1 {
-				cancel()
-				return *accValues
-			}
-			accValuesMu.Unlock()
-		}
 	}
 }

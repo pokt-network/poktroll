@@ -55,7 +55,7 @@ func NewBlockClient(
 
 	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
 	// new block, whether it comes from a direct query or an event subscription query.
-	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, defaultBlocksReplayLimit)
+	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
 	blockClient := &blockReplayClient{
 		eventsReplayClient:   eventsReplayClient,
 		latestBlockReplayObs: latestBlockReplayObs,
@@ -101,7 +101,7 @@ type blockReplayClient struct {
 
 // CommittedBlocksSequence returns a replay observable of new block events.
 func (b *blockReplayClient) CommittedBlocksSequence(ctx context.Context) client.BlockReplayObservable {
-	return b.eventsReplayClient.EventsSequence(ctx)
+	return b.latestBlockReplayObs
 }
 
 // LastBlock returns the last blocks observed by the BlockClient.
@@ -140,6 +140,8 @@ func (b *blockReplayClient) getInitialBlock(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
 ) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	blockQueryResultCh := make(chan client.Block)
 
 	// Query the latest block asynchronously.
