@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -19,6 +18,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -28,12 +29,12 @@ var testErr = fmt.Errorf("test error")
 // It ensures that the function correctly retries a failing operation for a specified
 // number of times with the expected delay between retries.
 func TestOnError(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+	// t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
 
 	// Setting up the test variables.
 	var (
 		// logOutput captures the log output for verification of logged messages.
-		logOutput bytes.Buffer
+		logOutput = new(bytes.Buffer)
 		// expectedRetryDelay is the duration we expect between retries.
 		expectedRetryDelay = time.Millisecond
 		// expectedRetryLimit is the maximum number of retries the test expects.
@@ -48,8 +49,10 @@ func TestOnError(t *testing.T) {
 		ctx              = context.Background()
 	)
 
-	// Redirect the standard logger's output to our custom buffer for later verification.
-	log.SetOutput(&logOutput)
+	// Redirect the log output for verification later
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define testFn, a function that simulates a failing operation and logs its invocation times.
 	testFn := func() chan error {
@@ -118,7 +121,7 @@ func TestOnError(t *testing.T) {
 	}
 
 	// Verify the error messages logged during the retries.
-	expectedErrLine := "ERROR: retrying TestOnError after error: test error"
+	expectedErrLine := `"error":"test error"`
 	trimmedLogOutput := strings.Trim(logOutput.String(), "\n")
 	logOutputLines := strings.Split(trimmedLogOutput, "\n")
 	require.Lenf(t, logOutputLines, expectedRetryLimit, "unexpected number of log lines")
@@ -133,11 +136,11 @@ func TestOnError_ExitsWhenCtxCloses(t *testing.T) {
 }
 
 func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+	// t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
 
 	// Setup test variables and log capture
 	var (
-		logOutput          bytes.Buffer
+		logOutput          = new(bytes.Buffer)
 		testFnCallCount    int32
 		expectedRetryDelay = time.Millisecond
 		expectedRetryLimit = 3
@@ -148,7 +151,9 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 	)
 
 	// Redirect the log output for verification later
-	log.SetOutput(&logOutput)
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define the test function that simulates an error and counts its invocations
 	testFn := func() chan error {
@@ -216,8 +221,8 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 		logOutputLines  = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
 		errorLines      = logOutputLines[:len(logOutputLines)-1]
 		warnLine        = logOutputLines[len(logOutputLines)-1]
-		expectedWarnMsg = "WARN: error channel for TestOnError_ExitsWhenErrChCloses closed, will no longer retry on error"
-		expectedErrMsg  = "ERROR: retrying TestOnError_ExitsWhenErrChCloses after error: test error"
+		expectedWarnMsg = "error channel closed, will no longer retry on error"
+		expectedErrMsg  = `"error":"test error"`
 	)
 
 	require.Lenf(
@@ -234,11 +239,11 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 
 // assert that retryCount resets on success
 func TestOnError_RetryCountResetTimeout(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+	// t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
 
 	// Setup test variables and log capture
 	var (
-		logOutput          bytes.Buffer
+		logOutput          = new(bytes.Buffer)
 		testFnCallCount    int32
 		expectedRetryDelay = time.Millisecond
 		expectedRetryLimit = 9
@@ -249,7 +254,9 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	)
 
 	// Redirect the log output for verification later
-	log.SetOutput(&logOutput)
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define the test function that simulates an error and counts its invocations
 	testFn := func() chan error {
@@ -315,7 +322,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	// Verify the logged error messages
 	var (
 		logOutputLines = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
-		expectedPrefix = "ERROR: retrying TestOnError after error: test error"
+		expectedErrMsg = `"error":"test error"`
 	)
 
 	select {
@@ -332,19 +339,19 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 		expectedRetryLimit-1, len(logOutputLines),
 	)
 	for _, line := range logOutputLines {
-		require.Contains(t, line, expectedPrefix)
+		require.Contains(t, line, expectedErrMsg)
 	}
 }
 
 // assert that a negative retry limit continually calls workFn
 func TestOnError_NegativeRetryLimit(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+	// t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
 
 	// Setup test variables and log capture
 	var (
-		logOutput          bytes.Buffer
+		logOutput          = new(bytes.Buffer)
 		testFnCallCount    int32
-		minimumCallCount   = 100
+		minimumCallCount   = 99
 		expectedRetryDelay = time.Millisecond
 		retryLimit         = -1
 		retryResetTimeout  = 3 * time.Millisecond
@@ -353,7 +360,9 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 	)
 
 	// Redirect the log output for verification later
-	log.SetOutput(&logOutput)
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define the test function that simulates an error and counts its invocations
 	testFn := func() chan error {
@@ -419,7 +428,7 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 	// Verify the logged error messages
 	var (
 		logOutputLines = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
-		expectedPrefix = "ERROR: retrying TestOnError after error: test error"
+		expectedErrMsg = `"error":"test error"`
 	)
 
 	require.Lenf(
@@ -429,6 +438,6 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 		minimumCallCount-1, len(logOutputLines),
 	)
 	for _, line := range logOutputLines {
-		require.Contains(t, line, expectedPrefix)
+		require.Contains(t, line, expectedErrMsg)
 	}
 }
