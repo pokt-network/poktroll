@@ -24,16 +24,18 @@ import (
 
 // SMT specification used for the proof verification.
 var (
-	pathHasher hash.Hash
-	SmtSpec    *smt.TrieSpec
+	hasher  hash.Hash
+	SmtSpec smt.TrieSpec
 )
 
 func init() {
-	// Use a spec that does not prehash values in the smst. This returns a nil
-	// value hasher for the proof verification in order to to avoid hashing the
-	// value twice.
-	pathHasher = sha256.New()
-	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
+	// Use a spec that does not prehash values in the smst. This returns a nil value
+	// hasher for the proof verification in order to to avoid hashing the value twice.
+	hasher = sha256.New()
+	SmtSpec = smt.NewTrieSpec(
+		hasher, true,
+		smt.WithValueHasher(nil),
+	)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -131,7 +133,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// TODO_IMPROVE(#427): Utilize smt.VerifyCompactClosestProof here to
 	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -362,7 +364,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &SmtSpec)
 	if err != nil {
 		return err
 	}
