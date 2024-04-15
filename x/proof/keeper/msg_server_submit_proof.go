@@ -138,6 +138,8 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
+	// TODO_IMPROVE(#427): Utilize smt.VerifyCompactClosestProof here to
+	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
 	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
@@ -257,7 +259,8 @@ func (k msgServer) queryAndValidateClaimForProof(
 	if !found {
 		return nil, types.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
-			sessionId, msg.GetSupplierAddress(),
+			sessionId,
+			msg.GetSupplierAddress(),
 		)
 	}
 
@@ -389,7 +392,7 @@ func verifyClosestProof(
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
 	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
+	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",
