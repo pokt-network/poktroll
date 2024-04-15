@@ -80,7 +80,7 @@ func NewPOKTRollSDK(ctx context.Context, config *POKTRollSDKConfig) (POKTRollSDK
 	// Build the dependencies if they are not provided in the config.
 	if config.Deps != nil {
 		deps = config.Deps
-	} else if deps, err = sdk.buildDeps(ctx); err != nil {
+	} else if deps, err = sdk.buildDeps(ctx, config); err != nil {
 		return nil, err
 	}
 

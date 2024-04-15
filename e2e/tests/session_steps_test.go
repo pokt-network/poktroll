@@ -122,7 +122,7 @@ func (s *suite) TheSupplierHasServicedASessionWithRelaysForServiceForApplication
 		deps,
 		msgSenderQuery,
 		tx.UnmarshalTxResult,
-		testEventsReplayClientBufferSize,
+		eventsReplayClientBufferSize,
 	)
 	require.NoError(s, err)
 	s.scenarioState[txResultEventsReplayClientKey] = txSendEventsReplayClient
