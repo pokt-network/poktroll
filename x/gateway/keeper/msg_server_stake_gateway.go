@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
@@ -15,6 +16,13 @@ func (k msgServer) StakeGateway(
 	goCtx context.Context,
 	msg *types.MsgStakeGateway,
 ) (*types.MsgStakeGatewayResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"stake_gateway",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "StakeGateway")
@@ -72,6 +80,7 @@ func (k msgServer) StakeGateway(
 	k.SetGateway(ctx, gateway)
 	logger.Info(fmt.Sprintf("Successfully updated stake for gateway: %+v", gateway))
 
+	isSuccessful = true
 	return &types.MsgStakeGatewayResponse{}, nil
 }
 

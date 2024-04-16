@@ -24,6 +24,9 @@ needed to send an end-to-end relay.
   - [localnet_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
+- [Observability](#observability)
+  - [Access dashboards with graphs and logs](#access-dashboards-with-graphs-and-logs)
+  - [How to update and save an existing dashboard?](#how-to-update-and-save-an-existing-dashboard)
 - [Troubleshooting](#troubleshooting)
   - [Clean Slate (Nuclear Option)](#clean-slate-nuclear-option)
 
@@ -109,6 +112,38 @@ You can always set it back to `false` with:
 ```bash
 sed -i'' -e '/helm_chart_local_repo:/,+1 s/\(enabled: \)false/\1true/; /helm_chart_local_repo:/,+1 s/\(enabled: \)true/\1false/' localnet_config.yaml
 ```
+
+## Observability
+
+You can configure LocalNet to deploy third-party observability tools such as Prometheus and Grafana:
+
+`localnet_config.yaml`:
+
+```yaml
+observability:
+  enabled: true
+```
+
+### Access dashboards with graphs and logs
+
+Each service in Tilt has a link to its own Grafana dashboard as seen in the image below.
+
+Specifically, the RelayMiner, Validator, AppGateServer and others each have a separate dashboards.
+
+![Example](./access_dashboard_on_service.png)
+
+### How to update and save an existing dashboard?
+
+Every time LocalNet is re-started, Grafana is deployed and provisioned from scratch.
+
+A list of existing dashboards are saved as JSON files in `localnet/grafana-dashboards`.
+If you wish to change a dashboard, do the following:
+
+1. Make the necessary modifications in the Grafana UI
+2. Click save button. This will then display the updated JSON output of the dashboard
+3. Copy-paste the output to the corresponding file in `localnet/grafana-dashboards`
+
+![Example](./grafana_save_dashboard.png)
 
 ## Troubleshooting
 

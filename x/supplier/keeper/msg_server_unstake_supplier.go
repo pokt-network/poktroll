@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -14,6 +15,13 @@ func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,
 ) (*types.MsgUnstakeSupplierResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"unstake_supplier",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "UnstakeSupplier")
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 
@@ -46,6 +54,7 @@ func (k msgServer) UnstakeSupplier(
 	// Update the Supplier in the store
 	k.RemoveSupplier(ctx, supplierAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
-	return &types.MsgUnstakeSupplierResponse{}, nil
 
+	isSuccessful = true
+	return &types.MsgUnstakeSupplierResponse{}, nil
 }

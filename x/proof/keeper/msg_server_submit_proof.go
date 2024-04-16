@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 	servicetypes "github.com/pokt-network/poktroll/x/service/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -24,16 +25,18 @@ import (
 
 // SMT specification used for the proof verification.
 var (
-	pathHasher hash.Hash
-	SmtSpec    *smt.TrieSpec
+	hasher  hash.Hash
+	SmtSpec smt.TrieSpec
 )
 
 func init() {
-	// Use a spec that does not prehash values in the smst. This returns a nil
-	// value hasher for the proof verification in order to to avoid hashing the
-	// value twice.
-	pathHasher = sha256.New()
-	SmtSpec = smt.NoPrehashSpec(pathHasher, true)
+	// Use a spec that does not prehash values in the smst. This returns a nil value
+	// hasher for the proof verification in order to to avoid hashing the value twice.
+	hasher = sha256.New()
+	SmtSpec = smt.NewTrieSpec(
+		hasher, true,
+		smt.WithValueHasher(nil),
+	)
 }
 
 // SubmitProof is the server handler to submit and store a proof on-chain.
@@ -55,6 +58,13 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	// Revisit this prior to mainnet launch as to whether the business logic for settling sessions should be in EndBlocker or here.
 	logger := k.Logger().With("method", "SubmitProof")
 	logger.Info("About to start submitting proof")
+
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"submit_proof",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	/*
 		TODO_DOCUMENT(@bryanchriswhite): Document these steps in proof
@@ -128,8 +138,10 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 		)
 	}
 
+	// TODO_IMPROVE(#427): Utilize smt.VerifyCompactClosestProof here to
+	// reduce on-chain storage requirements for proofs.
 	// Get the relay request and response from the proof.GetClosestMerkleProof.
-	relayBz := sparseMerkleClosestProof.GetValueHash(SmtSpec)
+	relayBz := sparseMerkleClosestProof.GetValueHash(&SmtSpec)
 	relay := &servicetypes.Relay{}
 	if err := k.cdc.Unmarshal(relayBz, relay); err != nil {
 		return nil, status.Error(
@@ -228,6 +240,7 @@ func (k msgServer) SubmitProof(ctx context.Context, msg *types.MsgSubmitProof) (
 	k.UpsertProof(ctx, proof)
 	logger.Info("successfully upserted the proof")
 
+	isSuccessful = true
 	return &types.MsgSubmitProofResponse{}, nil
 }
 
@@ -246,7 +259,8 @@ func (k msgServer) queryAndValidateClaimForProof(
 	if !found {
 		return nil, types.ErrProofClaimNotFound.Wrapf(
 			"no claim found for session ID %q and supplier %q",
-			sessionId, msg.GetSupplierAddress(),
+			sessionId,
+			msg.GetSupplierAddress(),
 		)
 	}
 
@@ -359,7 +373,7 @@ func verifyClosestProof(
 	proof *smt.SparseMerkleClosestProof,
 	claimRootHash []byte,
 ) error {
-	valid, err := smt.VerifyClosestProof(proof, claimRootHash, SmtSpec)
+	valid, err := smt.VerifyClosestProof(proof, claimRootHash, &SmtSpec)
 	if err != nil {
 		return err
 	}
@@ -378,7 +392,7 @@ func verifyClosestProof(
 func validateMiningDifficulty(relayBz []byte, minRelayDifficultyBits uint64) error {
 	relayHash := servicetypes.GetHashFromBytes(relayBz)
 
-	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
+	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
 	if err != nil {
 		return types.ErrProofInvalidRelay.Wrapf(
 			"error counting difficulty bits: %s",

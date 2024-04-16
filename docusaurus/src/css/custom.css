@@ -1,0 +1,230 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+:root {
+  --ifm-color-primary: #1f2327;
+  --ifm-color-primary-dark: #1c2023;
+  --ifm-color-primary-darker: #191c1f;
+  --ifm-color-primary-darkest: #16191b;
+  /*--ifm-color-primary-light: #5e99e3;*/
+  /*--ifm-color-primary-lighter: #6aa1e5;*/
+  /*--ifm-color-primary-lightest: #90b8ec;*/
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Change collapse button color */
+  --docusaurus-collapse-button-bg: #f2f2f2 !important;
+  --docusaurus-collapse-button-bg-hover: #dadada !important;
+
+  /* Search style var */
+  --ifm-navbar-search-input-placeholder-color: var(--ifm-color-emphasis-800);
+
+  /* Hyperlinks hover */
+  --ifm-link-color: #389f58;
+
+  --ifm-menu-color-background-active: #e9ecef;
+  /* Pocket Custom */
+  --pokt-header-vertical-devider: #353a40;
+
+  /* Pocket Custom */
+  --pokt-nav-borders: #e3e8ed;
+  --pokt-nav-selected-border: #27292f;
+
+  /* Disable nav boxshadow in light mode */
+  --ifm-navbar-shadow: 0;
+
+  /* Disable nav nested items padding */
+  --ifm-menu-color: var(--ifm-color-primary);
+
+  --ifm-navbar-height: 81px;
+
+  /* Font Family */
+  --ifm-font-family-base: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+    Cantarell, Noto Sans, sans-serif, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
+  /* Search highlight color */
+  --search-local-highlight-color: var(--mantine-primary-color-filled);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+  --ifm-color-primary: #e6edf3;
+  --ifm-color-primary-dark: #cfd5db;
+  --ifm-color-primary-darker: #b8bec2;
+  --ifm-color-primary-darkest: #a1a6aa;
+  /*--ifm-color-primary-light: #4ea7f2;*/
+  /*--ifm-color-primary-lighter: #5caef3;*/
+  /*--ifm-color-primary-lightest: #84c2f6;*/
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-navbar-background-color: #1a1b1e;
+  --ifm-menu-color-background-active: #27292f;
+
+  /* Change collapse button color */
+  --docusaurus-collapse-button-bg: #272729 !important;
+  --docusaurus-collapse-button-bg-hover: #232325 !important;
+
+  /* Search style var */
+  --ifm-navbar-search-input-icon: url('data:image/svg+xml;utf8,<svg fill="white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" height="16px" width="16px"><path d="M6.02945,10.20327a4.17382,4.17382,0,1,1,4.17382-4.17382A4.15609,4.15609,0,0,1,6.02945,10.20327Zm9.69195,4.2199L10.8989,9.59979A5.88021,5.88021,0,0,0,12.058,6.02856,6.00467,6.00467,0,1,0,9.59979,10.8989l4.82338,4.82338a.89729.89729,0,0,0,1.29912,0,.89749.89749,0,0,0-.00087-1.29909Z" /></svg>');
+
+  /*!* Hyperlinks hover *!*/
+  /*--ifm-link-color: #379F58;*/
+
+  /* Pocket Custom */
+  --pokt-header-vertical-devider: #ced4da;
+
+  /* Pocket Custom */
+  --pokt-nav-borders: #343438;
+  --pokt-nav-selected-border: #ebeaef;
+}
+
+body {
+  background-color: var(--ifm-navbar-background-color) !important;
+}
+
+a.mantine-Button-root:hover {
+  color: var(--_button-color, var(--button-color, var(--mantine-color-white)));
+  text-decoration: none;
+}
+
+/* Header navbar styling and layout */
+.navbar {
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  padding: 1rem;
+  height: auto;
+}
+.navbar__item {
+  position: relative;
+}
+.navbar__item:hover {
+  color: var(--mantine-primary-color-filled);
+}
+.navbar__item.navbar__link--active:before,
+.navbar__item .navbar__link.active:before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  border-bottom: 2px solid var(--mantine-primary-color-filled);
+  left: 0;
+  bottom: -8px;
+}
+.navbar__items.navbar__items--right {
+  flex-direction: row-reverse;
+}
+
+/* Navbar right section search styling */
+.navbar__search {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 4px;
+  padding: 3px;
+  margin-right: 16px;
+}
+
+.navbar__search-input {
+  background-color: transparent;
+  outline-color: transparent;
+}
+
+.navbar__search-input:hover {
+  border-color: transparent;
+}
+
+.navbar__item.header-link-button {
+  border-radius: 100px;
+  color: var(--mantine-color-gray-0);
+}
+
+/* sidebar nav menu styling and spacing */
+.theme-doc-sidebar-item-category:not(:first-child) {
+  margin-top: 2rem;
+}
+
+nav.menu {
+  padding: 2rem 1rem;
+  overflow: hidden;
+}
+
+nav.menu:hover {
+  overflow-y: auto;
+}
+
+nav.menu .menu__list {
+  padding-left: 0;
+}
+
+nav.menu li > .menu__link {
+  font-size: 14px;
+}
+
+nav.menu li > .menu__link:not(.menu__link--active) {
+  font-weight: 400;
+}
+nav.menu li > .menu__link.menu__link--active {
+  font-weight: 600;
+}
+
+nav.menu li > .menu__list-item-collapsible {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+nav.menu li > .menu__list-item-collapsible .menu__link {
+  color: var(--mantine-color-gray-filled);
+}
+
+/* blog sidebar */
+.blog-layout nav:not(.pagination-nav) {
+  border-right: 1px solid var(--mantine-color-default-border);
+  min-height: calc(100vh - var(--ifm-navbar-height));
+  margin: 0;
+  top: var(--ifm-navbar-height);
+  padding: 2rem 1rem;
+  overflow: hidden;
+}
+
+/* docs accordion */
+.docs-wrapper .mantine-Accordion-item {
+  border-left: calc(0.0625rem * var(--mantine-scale)) solid var(--_item-border-color);
+  border-bottom: none;
+}
+
+/* TABLE */
+table {
+  display: table;
+  width: 100%;
+}
+
+table thead {
+  background-color: transparent;
+}
+
+table thead tr {
+  border: none;
+}
+
+table tr {
+  border-color: var(--mantine-color-default-border);
+}
+
+table thead tr th {
+  color: var(--mantine-color-text) !important;
+}
+
+table tr td,
+table tr th {
+  border: none;
+  border-color: var(--mantine-color-default-border);
+}
+
+table tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+table tr:last-of-type td {
+  border-bottom: 1px solid;
+  /* border-bottom: calc(0.0625rem * var(--mantine-scale)) solid; */
+  border-color: var(--mantine-color-default-border);
+}
