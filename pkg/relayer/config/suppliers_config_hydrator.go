@@ -24,7 +24,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 		existingSuppliers[yamlSupplierConfig.ServiceId] = true
 
 		relayMinerConfig.
-			Proxies[yamlSupplierConfig.ListenUrl].
+			Servers[yamlSupplierConfig.ListenUrl].
 			Suppliers[supplierConfig.ServiceId] = supplierConfig
 	}
 

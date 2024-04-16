@@ -6,7 +6,7 @@ type ServerType int
 
 const (
 	ServerTypeHTTP ServerType = iota
-	// TODO: Support other proxy types: HTTPS, TCP, UNIX socket, UDP, QUIC, WebRTC ...
+	// TODO: Support other relay miner server types: HTTPS, TCP, UNIX socket, UDP, QUIC, WebRTC ...
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
@@ -64,7 +64,7 @@ type YAMLRelayMinerSupplierServiceAuthentication struct {
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
 	PocketNode     *RelayMinerPocketNodeConfig
-	Proxies        map[string]*RelayMinerProxyConfig
+	Servers        map[string]*RelayMinerServerConfig
 	Metrics        *RelayMinerMetricsConfig
 	SigningKeyName string
 	SmtStorePath   string
@@ -78,18 +78,18 @@ type RelayMinerPocketNodeConfig struct {
 	TxNodeRPCUrl     *url.URL
 }
 
-// RelayMinerProxyConfig is the structure resulting from parsing the proxy
+// RelayMinerServerConfig is the structure resulting from parsing the supplier
 // section of the RelayMiner config file.
-// Each proxy embeds a map of supplier configs that are associated with it.
-// Other proxy types may embed other fields in the future. eg. "https" may
+// Each server section embeds a map of supplier configs that are associated with it.
+// Other server types may embed other fields in the future. eg. "https" may
 // embed a TLS config.
-type RelayMinerProxyConfig struct {
-	// ServerType is the transport protocol used by the proxy server like (http, https, etc.)
+type RelayMinerServerConfig struct {
+	// ServerType is the transport protocol used by the server like (http, https, etc.)
 	ServerType ServerType
-	// ListenAddress is the host on which the proxy server will listen for incoming
-	// relay requests
+	// ListenAddress is the host on which the relay miner server will listen
+	// for incoming relay requests
 	ListenAddress string
-	// XForwardedHostLookup is a flag that indicates whether the proxy server
+	// XForwardedHostLookup is a flag that indicates whether the relay miner server
 	// should lookup the host from the X-Forwarded-Host header before falling
 	// back to the Host header.
 	XForwardedHostLookup bool
@@ -110,10 +110,10 @@ type RelayMinerSupplierConfig struct {
 	// ServiceId is the serviceId corresponding to the current configuration.
 	ServiceId string
 	// ServerType is the transport protocol used by the supplier, it must match the
-	// type of the proxy it is associated with.
+	// type of the relay miner server it is associated with.
 	ServerType ServerType
-	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier, the corresponding
-	// proxy server will accept relay requests for these hosts.
+	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier,
+	// the corresponding relay miner server will accept relay requests for these hosts.
 	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
@@ -127,7 +127,7 @@ type RelayMinerSupplierServiceConfig struct {
 	// BackendUrl is the URL of the service that relays will be proxied to.
 	BackendUrl *url.URL
 	// Authentication is the basic auth structure used to authenticate to the
-	// request being proxied from the current proxy server.
+	// request being proxied from the current relay miner server.
 	// If the service the relay requests are forwarded to requires basic auth
 	// then this field must be populated.
 	// TODO_TECHDEBT(@red-0ne): Pass the authentication to the service instance

@@ -43,15 +43,15 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier client.SessionQueryClient
 
-	// proxyServers is a map of proxyName -> RelayServer provided by the relayer proxy,
-	// where proxyName is the name of the proxy defined in the config file and
+	// servers is a map of listenAddress -> RelayServer provided by the relayer proxy,
+	// where listenAddress is the address of the server defined in the config file and
 	// RelayServer is the server that listens for incoming relay requests.
-	proxyServers map[string]relayer.RelayServer
+	servers map[string]relayer.RelayServer
 
-	// proxyConfigs is a map of proxyName -> RelayMinerProxyConfig where proxyName
-	// is the name of the proxy defined in the config file and RelayMinerProxyConfig
-	// is the configuration of the proxy.
-	proxyConfigs map[string]*config.RelayMinerProxyConfig
+	// serverConfigs is a map of listenAddress -> RelayMinerServerConfig where listenAddress
+	// is the address of the server defined in the config file and RelayMinerServerConfig
+	// is its configuration.
+	serverConfigs map[string]*config.RelayMinerServerConfig
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays relayer.RelaysObservable
@@ -128,7 +128,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 
 	startGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, relayServer := range rp.proxyServers {
+	for _, relayServer := range rp.servers {
 		server := relayServer // create a new variable scoped to the anonymous function
 		startGroup.Go(func() error { return server.Start(ctx) })
 	}
@@ -141,7 +141,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 func (rp *relayerProxy) Stop(ctx context.Context) error {
 	stopGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, relayServer := range rp.proxyServers {
+	for _, relayServer := range rp.servers {
 		// Create a new object (i.e. deep copy) variable scoped to the anonymous function below
 		server := relayServer
 		stopGroup.Go(func() error { return server.Stop(ctx) })
@@ -164,7 +164,7 @@ func (rp *relayerProxy) validateConfig() error {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
-	if rp.proxyConfigs == nil || len(rp.proxyConfigs) == 0 {
+	if rp.serverConfigs == nil || len(rp.serverConfigs) == 0 {
 		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
 	}
 

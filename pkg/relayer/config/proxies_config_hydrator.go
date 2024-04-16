@@ -2,59 +2,59 @@ package config
 
 import "net/url"
 
-// HydrateProxies populates the proxies fields of the RelayMinerConfig.
-func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
+// HydrateServers populates the servers fields of the RelayMinerConfig.
+func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 	yamlSupplierConfigs []YAMLRelayMinerSupplierConfig,
 ) error {
-	// At least one proxy is required
+	// At least one server is required
 	if len(yamlSupplierConfigs) == 0 {
 		return ErrRelayMinerConfigInvalidSupplier.Wrap("no suppliers provided")
 	}
 
-	relayMinerConfig.Proxies = make(map[string]*RelayMinerProxyConfig)
+	relayMinerConfig.Servers = make(map[string]*RelayMinerServerConfig)
 
 	for _, yamlSupplierConfig := range yamlSupplierConfigs {
 		listenUrl, err := url.Parse(yamlSupplierConfig.ListenUrl)
 		if err != nil {
-			return ErrRelayMinerConfigInvalidProxy.Wrapf(
+			return ErrRelayMinerConfigInvalidServer.Wrapf(
 				"invalid listen url %s",
 				yamlSupplierConfig.ListenUrl,
 			)
 		}
 
 		if listenUrl.Scheme == "" {
-			return ErrRelayMinerConfigInvalidProxy.Wrapf(
+			return ErrRelayMinerConfigInvalidServer.Wrapf(
 				"missing scheme in listen url %s",
 				yamlSupplierConfig.ListenUrl,
 			)
 		}
 
-		if _, ok := relayMinerConfig.Proxies[yamlSupplierConfig.ListenUrl]; ok {
+		if _, ok := relayMinerConfig.Servers[yamlSupplierConfig.ListenUrl]; ok {
 			continue
 		}
 
-		proxyConfig := &RelayMinerProxyConfig{
+		serverConfig := &RelayMinerServerConfig{
 			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
 			Suppliers:            make(map[string]*RelayMinerSupplierConfig),
 		}
 
-		// Populate the proxy fields that are relevant to each supported proxy type
+		// Populate the server fields that are relevant to each supported server type
 		switch listenUrl.Scheme {
 		case "http":
 		case "ws":
-			if err := proxyConfig.parseHTTPProxyConfig(yamlSupplierConfig); err != nil {
+			if err := serverConfig.parseHTTPServerConfig(yamlSupplierConfig); err != nil {
 				return err
 			}
-			proxyConfig.ServerType = ServerTypeHTTP
+			serverConfig.ServerType = ServerTypeHTTP
 		default:
-			// Fail if the proxy type is not supported
-			return ErrRelayMinerConfigInvalidProxy.Wrapf(
-				"invalid proxy type %s",
+			// Fail if the relay miner server type is not supported
+			return ErrRelayMinerConfigInvalidServer.Wrapf(
+				"invalid relay miner server type %s",
 				listenUrl.Scheme,
 			)
 		}
 
-		relayMinerConfig.Proxies[yamlSupplierConfig.ListenUrl] = proxyConfig
+		relayMinerConfig.Servers[yamlSupplierConfig.ListenUrl] = serverConfig
 	}
 
 	return nil

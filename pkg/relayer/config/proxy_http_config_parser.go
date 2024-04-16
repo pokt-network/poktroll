@@ -2,27 +2,27 @@ package config
 
 import "net/url"
 
-// parseHTTPProxyConfig populates the proxy fields of the target structure that
+// parseHTTPServerConfig populates the server fields of the target structure that
 // are relevant to the "http" type.
-// This function alters the target RelayMinerProxyConfig structure as a side effect.
-func (proxyConfig *RelayMinerProxyConfig) parseHTTPProxyConfig(
+// This function alters the target RelayMinerServerConfig structure as a side effect.
+func (serverConfig *RelayMinerServerConfig) parseHTTPServerConfig(
 	yamlSupplierConfig YAMLRelayMinerSupplierConfig,
 ) error {
 	// Validate yamlSupplierConfig.ListenUrl.
 	listenUrl, err := url.Parse(yamlSupplierConfig.ListenUrl)
 	if err != nil {
-		return ErrRelayMinerConfigInvalidProxy.Wrapf(
-			"invalid proxy listen address %s",
+		return ErrRelayMinerConfigInvalidServer.Wrapf(
+			"invalid relay miner server listen address %s",
 			err.Error(),
 		)
 	}
 
 	// Ensure that the host is not empty and use it as the server listen address.
 	if listenUrl.Host == "" {
-		return ErrRelayMinerConfigInvalidProxy.Wrap("empty proxy listen url")
+		return ErrRelayMinerConfigInvalidServer.Wrap("empty relay miner server listen address")
 	}
 
-	proxyConfig.ListenAddress = listenUrl.Host
+	serverConfig.ListenAddress = listenUrl.Host
 	return nil
 }
 

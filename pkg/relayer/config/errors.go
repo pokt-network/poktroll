@@ -10,5 +10,5 @@ var (
 	ErrRelayMinerConfigInvalidSmtStorePath   = sdkerrors.Register(codespace, 2103, "invalid smt store path in RelayMiner config")
 	ErrRelayMinerConfigEmpty                 = sdkerrors.Register(codespace, 2104, "empty RelayMiner config")
 	ErrRelayMinerConfigInvalidSupplier       = sdkerrors.Register(codespace, 2105, "invalid supplier in RelayMiner config")
-	ErrRelayMinerConfigInvalidProxy          = sdkerrors.Register(codespace, 2106, "invalid proxy in RelayMiner config")
+	ErrRelayMinerConfigInvalidServer         = sdkerrors.Register(codespace, 2106, "invalid server in RelayMiner config")
 )

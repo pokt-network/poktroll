@@ -127,7 +127,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 // It creates an HTTP server for each service and starts listening on the
 // provided host.
 func WithRelayerProxiedServices(
-	proxiedServices map[string]*config.RelayMinerProxyConfig,
+	proxiedServices map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		for _, proxy := range proxiedServices {
@@ -282,8 +282,8 @@ func WithSuccessiveSessions(
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
-	proxiedServices map[string]*config.RelayMinerProxyConfig,
-	proxyServeName string,
+	proxiedServices map[string]*config.RelayMinerServerConfig,
+	proxyServerName string,
 	serviceId string,
 	request *servicetypes.RelayRequest,
 ) (errCode int32, errorMessage string) {
@@ -291,11 +291,11 @@ func MarshalAndSend(
 	require.NoError(test.t, err)
 
 	var scheme string
-	switch proxiedServices[proxyServeName].ServerType {
+	switch proxiedServices[proxyServerName].ServerType {
 	case config.ServerTypeHTTP:
 		scheme = "http"
 	default:
-		require.FailNow(test.t, "unsupported proxy type")
+		require.FailNow(test.t, "unsupported server type")
 	}
 
 	// originHost is the endpoint that the client will retrieve from the on-chain
@@ -307,14 +307,14 @@ func MarshalAndSend(
 	// In a real-world scenario, the publicly exposed endpoint would reach a load
 	// balancer or a reverse proxy that would route the request to the address
 	// specified by ListenAddress.
-	originHost := proxiedServices[proxyServeName].Suppliers[serviceId].PubliclyExposedEndpoints[0]
+	originHost := proxiedServices[proxyServerName].Suppliers[serviceId].PubliclyExposedEndpoints[0]
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
 		Method: http.MethodPost,
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},
 		},
-		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].ListenAddress},
+		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServerName].ListenAddress},
 		Host: originHost,
 		Body: reader,
 	}

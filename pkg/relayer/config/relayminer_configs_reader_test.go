@@ -55,7 +55,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				},
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
-				Proxies: map[string]*config.RelayMinerProxyConfig{
+				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
@@ -83,7 +83,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			},
 		},
 		{
-			desc: "valid: multiple suppliers, single proxy",
+			desc: "valid: multiple suppliers, single server",
 
 			inputConfigYAML: `
 				pocket_node:
@@ -121,7 +121,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				},
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
-				Proxies: map[string]*config.RelayMinerProxyConfig{
+				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
@@ -187,7 +187,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				},
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
-				Proxies: map[string]*config.RelayMinerProxyConfig{
+				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
@@ -238,7 +238,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				},
 				SigningKeyName: "supplier1",
 				SmtStorePath:   "smt_stores",
-				Proxies: map[string]*config.RelayMinerProxyConfig{
+				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
@@ -427,7 +427,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: http:// # explicitly empty listen url
 				`,
 
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidServer,
 		},
 		{
 			desc: "invalid: empty server type",
@@ -448,7 +448,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: 127.0.0.1:8080
 				`,
 
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidServer,
 		},
 		{
 			desc: "invalid: unsupported server type",
@@ -469,7 +469,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				    listen_url: unsupported://127.0.0.1:8080
 				`,
 
-			expectedErr: config.ErrRelayMinerConfigInvalidProxy,
+			expectedErr: config.ErrRelayMinerConfigInvalidServer,
 		},
 		{
 			desc: "invalid: missing supplier name",
@@ -604,8 +604,8 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 
 			expectedErr: config.ErrRelayMinerConfigEmpty,
 		},
-		// TODO_NB: Test for supplier and proxy types mismatch once we have more
-		// than one proxy type.
+		// TODO_NB: Test for supplier and server types mismatch once we have more
+		// than one server type.
 	}
 
 	for _, test := range tests {
@@ -655,54 +655,54 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				config.PocketNode.TxNodeRPCUrl.String(),
 			)
 
-			for proxyName, proxy := range test.expectedConfig.Proxies {
+			for listenAddress, server := range test.expectedConfig.Servers {
 				require.Equal(
 					t,
-					proxy.ListenAddress,
-					config.Proxies[proxyName].ListenAddress,
+					server.ListenAddress,
+					config.Servers[listenAddress].ListenAddress,
 				)
 
 				require.Equal(
 					t,
-					proxy.ServerType,
-					config.Proxies[proxyName].ServerType,
+					server.ServerType,
+					config.Servers[listenAddress].ServerType,
 				)
 
-				for supplierName, supplier := range proxy.Suppliers {
+				for supplierName, supplier := range server.Suppliers {
 					require.Equal(
 						t,
 						supplier.ServiceId,
-						config.Proxies[proxyName].Suppliers[supplierName].ServiceId,
+						config.Servers[listenAddress].Suppliers[supplierName].ServiceId,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServerType,
-						config.Proxies[proxyName].Suppliers[supplierName].ServerType,
+						config.Servers[listenAddress].Suppliers[supplierName].ServerType,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServiceConfig.BackendUrl.String(),
-						config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.BackendUrl.String(),
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.Authentication,
+							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Username,
-							config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Password,
-							config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication.Password,
 						)
 					}
 
@@ -710,7 +710,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Equal(
 							t,
 							headerValue,
-							config.Proxies[proxyName].Suppliers[supplierName].ServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Headers[headerKey],
 						)
 					}
 
@@ -718,7 +718,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Contains(
 							t,
 							host,
-							config.Proxies[proxyName].Suppliers[supplierName].PubliclyExposedEndpoints[i],
+							config.Servers[listenAddress].Suppliers[supplierName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

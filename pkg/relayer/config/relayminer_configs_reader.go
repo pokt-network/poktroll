@@ -44,8 +44,8 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, err
 	}
 
-	// Hydrate the proxies
-	if err := relayMinerConfig.HydrateProxies(yamlRelayMinerConfig.Suppliers); err != nil {
+	// Hydrate the relay miner servers config
+	if err := relayMinerConfig.HydrateServers(yamlRelayMinerConfig.Suppliers); err != nil {
 		return nil, err
 	}
 

@@ -14,8 +14,8 @@ func WithSigningKeyName(keyName string) relayer.RelayerProxyOption {
 }
 
 // WithProxiedServicesEndpoints sets the endpoints of the proxied services.
-func WithProxiedServicesEndpoints(proxyConfig map[string]*config.RelayMinerProxyConfig) relayer.RelayerProxyOption {
+func WithProxiedServicesEndpoints(serverConfig map[string]*config.RelayMinerServerConfig) relayer.RelayerProxyOption {
 	return func(relProxy relayer.RelayerProxy) {
-		relProxy.(*relayerProxy).proxyConfigs = proxyConfig
+		relProxy.(*relayerProxy).serverConfigs = serverConfig
 	}
 }

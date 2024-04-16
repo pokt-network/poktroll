@@ -35,10 +35,10 @@ type synchronousRPCServer struct {
 	// representing the supplier's advertised services.
 	supplierServiceMap map[string]*sharedtypes.Service
 
-	// proxyConfig is the configuration of the proxy server. It contains the
+	// serverConfig is the configuration of the proxy server. It contains the
 	// host address of the server, the service endpoint, and the advertised service.
 	// endpoints it gets relay requests from.
-	proxyConfig *config.RelayMinerProxyConfig
+	serverConfig *config.RelayMinerServerConfig
 
 	// server is the HTTP server that listens for incoming relay requests.
 	server *http.Server
@@ -57,7 +57,7 @@ type synchronousRPCServer struct {
 // and returns a RelayServer that listens to incoming RelayRequests.
 func NewSynchronousServer(
 	logger polylog.Logger,
-	proxyConfig *config.RelayMinerProxyConfig,
+	serverConfig *config.RelayMinerServerConfig,
 	supplierServiceMap map[string]*sharedtypes.Service,
 	servedRelaysProducer chan<- *types.Relay,
 	proxy relayer.RelayerProxy,
@@ -65,10 +65,10 @@ func NewSynchronousServer(
 	return &synchronousRPCServer{
 		logger:               logger,
 		supplierServiceMap:   supplierServiceMap,
-		server:               &http.Server{Addr: proxyConfig.ListenAddress},
+		server:               &http.Server{Addr: serverConfig.ListenAddress},
 		relayerProxy:         proxy,
 		servedRelaysProducer: servedRelaysProducer,
-		proxyConfig:          proxyConfig,
+		serverConfig:         serverConfig,
 	}
 }
 
@@ -107,16 +107,16 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		proxyName := sync.proxyConfig.ProxyName
-		sync.replyWithError(ctx, []byte{}, writer, proxyName, "", err)
+		listenAddress := sync.serverConfig.ListenAddress
+		sync.replyWithError(ctx, []byte{}, writer, listenAddress, "", err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	if err := relayRequest.ValidateBasic(); err != nil {
-		proxyName := sync.proxyConfig.ProxyName
+		listenAddress := sync.serverConfig.ListenAddress
 		payload := relayRequest.Payload
-		sync.replyWithError(ctx, payload, writer, proxyName, "", err)
+		sync.replyWithError(ctx, payload, writer, listenAddress, "", err)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
 	}
@@ -130,11 +130,11 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// These CDNs and reverse proxies usually set the X-Forwarded-Host header
 	// to the original host.
 	// RelayMiner operators that have such a setup can set the XForwardedHostLookup
-	// option to true in the proxy config to enable the proxy to look up the
+	// option to true in the server config to enable the proxy to look up the
 	// original host from the X-Forwarded-Host header.
-	// Get the original host from X-Forwarded-Host header if specified in the proxy
+	// Get the original host from X-Forwarded-Host header if specified in the supplier
 	// config and fall back to the Host header if it is not specified.
-	if sync.proxyConfig.XForwardedHostLookup {
+	if sync.serverConfig.XForwardedHostLookup {
 		originHost = request.Header.Get("X-Forwarded-Host")
 	}
 
@@ -146,11 +146,11 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 
 	// Get the Service and serviceUrl corresponding to the originHost.
 	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
-	// iterating over the proxy config's suppliers and checking if the originHost
+	// iterating over the server config's suppliers and checking if the originHost
 	// is present in any of the supplier's service's hosts. We could improve this
 	// by building a map at the server initialization level with originHost as the
 	// key so that we can get the service and serviceUrl in O(1) time.
-	for _, supplierServiceConfig := range sync.proxyConfig.Suppliers {
+	for _, supplierServiceConfig := range sync.serverConfig.Suppliers {
 		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
 			if host == originHost && supplierService.Id == supplierServiceConfig.ServiceId {
 				serviceUrl = supplierServiceConfig.ServiceConfig.BackendUrl
@@ -168,7 +168,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 			ctx,
 			[]byte{},
 			writer,
-			sync.proxyConfig.ProxyName,
+			sync.serverConfig.ListenAddress,
 			"unknown",
 			ErrRelayerProxyServiceEndpointNotHandled,
 		)
@@ -190,14 +190,14 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.serverConfig.ListenAddress, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.proxyConfig.ProxyName, supplierService.Id, err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.serverConfig.ListenAddress, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}

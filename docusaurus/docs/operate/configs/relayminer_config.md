@@ -30,7 +30,7 @@ queries from and which services it forwards requests to._
   - [`listen_url`](#listen_url)
 - [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
 - [Full config example](#full-config-example)
-- [Supported proxy types](#supported-proxy-types)
+- [Supported server types](#supported-server-types)
 
 ## Usage
 
@@ -43,8 +43,8 @@ poktrolld relayminer --config ./relayminer_config.yaml --keyring-backend test
 
 ## Structure
 
-The `RelayMiner` configuration file is a `yaml` file that contains `top level options`,
-`proxies` and `suppliers` sections.
+The `RelayMiner` configuration file is a `yaml` file that contains `top level options`
+and `suppliers` sections.
 
 ## Top level options
 
@@ -212,7 +212,7 @@ for the same supplier service.
 - The on-chain Supplier may provide the same Service on multiple domains
   (e.g. for different regions).
 - The operator may want to route requests of different RPC types to
-  the same proxy
+  the same server
 - Migrating from one domain to another. Where the operator could still
   accept requests on the old domain while the new domain is being propagated.
 - The operator may want to have a different domain for internal requests.
@@ -289,6 +289,6 @@ at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://githu
 
 ---
 
-## Supported proxy types
+## Supported server types
 
-The list of supported proxy types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
+The list of supported server types can be found at [pkg/relayer/config/types.go](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)

@@ -31,7 +31,7 @@ suppliers:
   - service_id: ethereum
     # Configuration of the service offered through RelayMiner.
     service_config:
-      # Backend URL is the endpoint RelayMiner proxies the requests to.
+      # Backend URL is the endpoint that the RelayMiner proxies the requests to.
       # Also known as the data node or service node.
       # Required.
       backend_url: http://anvil.servicer:8545
