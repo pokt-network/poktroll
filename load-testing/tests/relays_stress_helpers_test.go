@@ -47,11 +47,11 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 	}
 }
 
-// sendFundInitialActorsMsgs uses the funding account to generate bank.SendMsg
+// sendFundAvailableActorsMsgs uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
-func (s *relaysSuite) sendFundInitialActorsMsgs() (suppliers []*provisionedActorInfo, gateways []*provisionedActorInfo, applications []*applicationInfo) {
-	for i := int64(0); i < s.supplierInitialCount; i++ {
-		supplier := s.addSupplier(i)
+func (s *relaysSuite) sendFundAvailableActorsMsgs() (suppliers, gateways, applications []*accountInfo) {
+	for keyName, _ := range s.suppliersUrl {
+		supplier := s.addSupplier(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
 			banktypes.NewMsgSend(
@@ -65,8 +65,8 @@ func (s *relaysSuite) sendFundInitialActorsMsgs() (suppliers []*provisionedActor
 	}
 
 	// Gateway accounts already exist in the provisioned gateways slice.
-	for i := int64(0); i < s.gatewayInitialCount; i++ {
-		gateway := s.addGateway(i)
+	for keyName, _ := range s.gatewayUrls {
+		gateway := s.addGateway(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
 			banktypes.NewMsgSend(
@@ -116,7 +116,7 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 // application and appends it to the funding account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single transaction.
-func (s *relaysSuite) generateFundApplicationMsg(application *applicationInfo) {
+func (s *relaysSuite) generateFundApplicationMsg(application *accountInfo) {
 	fundAppMsg := banktypes.NewMsgSend(
 		s.fundingAccountInfo.accAddress,
 		application.accAddress,
@@ -130,16 +130,16 @@ func (s *relaysSuite) generateFundApplicationMsg(application *applicationInfo) {
 // supplier then appends it to the suppliers account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single supplier transaction.
-func (s *relaysSuite) generateStakeSupplierMsg(supplier *provisionedActorInfo) {
+func (s *relaysSuite) generateStakeSupplierMsg(supplier *accountInfo) {
 	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
 		supplier.accAddress.String(),
-		stakeAmount,
+		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
 				Service: usedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
-						Url:     supplier.exposedUrl,
+						Url:     s.suppliersUrl[supplier.keyName],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
@@ -152,10 +152,10 @@ func (s *relaysSuite) generateStakeSupplierMsg(supplier *provisionedActorInfo) {
 
 // generateStakeGatewayMsg generates a MsgStakeGateway message to stake a given
 // gateway then appends it to the gateway account's pending messages.
-func (s *relaysSuite) generateStakeGatewayMsg(gateway *provisionedActorInfo) {
+func (s *relaysSuite) generateStakeGatewayMsg(gateway *accountInfo) {
 	stakeGatewayMsg := gatewaytypes.NewMsgStakeGateway(
 		gateway.accAddress.String(),
-		stakeAmount,
+		gateway.amountToStake,
 	)
 
 	gateway.pendingMsgs = append(gateway.pendingMsgs, stakeGatewayMsg)
@@ -166,7 +166,7 @@ func (s *relaysSuite) generateStakeGatewayMsg(gateway *provisionedActorInfo) {
 // No transaction is sent to give flexibility to the caller to group multiple
 // application messages into a single transaction which is useful for staking
 // then delegating to multiple gateways in the same transaction.
-func (s *relaysSuite) generateStakeApplicationMsg(application *applicationInfo) {
+func (s *relaysSuite) generateStakeApplicationMsg(application *accountInfo) {
 	stakeAppMsg := apptypes.NewMsgStakeApplication(
 		application.accAddress.String(),
 		application.amountToStake,
@@ -190,36 +190,36 @@ func (s *relaysSuite) generateDelegateToGatewayMsg(application, gateway *account
 
 // addSupplier populates the supplier's accAddress using the keyName provided
 // in the provisioned suppliers slice.
-func (s *relaysSuite) addSupplier(index int64) *provisionedActorInfo {
-	supplier := s.provisionedSuppliers[index]
-
-	keyRecord, err := s.txContext.GetKeyring().Key(supplier.keyName)
+func (s *relaysSuite) addSupplier(keyName string) *accountInfo {
+	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
 
 	accAddress, err := keyRecord.GetAddress()
 	require.NoError(s, err)
 
-	supplier.accAddress = accAddress
-	supplier.pendingMsgs = []sdk.Msg{}
-
-	return supplier
+	return &accountInfo{
+		accAddress:    accAddress,
+		keyName:       keyName,
+		pendingMsgs:   []sdk.Msg{},
+		amountToStake: fundingAmount,
+	}
 }
 
 // addGateway returns a populated gateway's accAddress using the keyName provided
 // in the provisioned gateways slice.
-func (s *relaysSuite) addGateway(index int64) *provisionedActorInfo {
-	gateway := s.provisionedGateways[index]
-
-	keyRecord, err := s.txContext.GetKeyring().Key(gateway.keyName)
+func (s *relaysSuite) addGateway(keyName string) *accountInfo {
+	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
 
 	accAddress, err := keyRecord.GetAddress()
 	require.NoError(s, err)
 
-	gateway.accAddress = accAddress
-	gateway.pendingMsgs = []sdk.Msg{}
-
-	return gateway
+	return &accountInfo{
+		accAddress:    accAddress,
+		keyName:       keyName,
+		pendingMsgs:   []sdk.Msg{},
+		amountToStake: fundingAmount,
+	}
 }
 
 // createApplicationAccount creates a new application account using the appIdx
@@ -227,7 +227,7 @@ func (s *relaysSuite) addGateway(index int64) *provisionedActorInfo {
 func (s *relaysSuite) createApplicationAccount(
 	appIdx int64,
 	fundingAmount sdk.Coin,
-) *applicationInfo {
+) *accountInfo {
 	keyName := fmt.Sprintf("app-%d", appIdx)
 	privKey := secp256k1.GenPrivKey()
 	privKeyHex := fmt.Sprintf("%x", privKey)
@@ -241,69 +241,52 @@ func (s *relaysSuite) createApplicationAccount(
 	accAddress, err := keyRecord.GetAddress()
 	require.NoError(s, err)
 
-	return &applicationInfo{
-		accountInfo: &accountInfo{
-			accAddress:  accAddress,
-			keyName:     keyName,
-			pendingMsgs: []sdk.Msg{},
-		},
+	return &accountInfo{
+		accAddress:    accAddress,
+		keyName:       keyName,
+		pendingMsgs:   []sdk.Msg{},
 		amountToStake: fundingAmount,
-		privKey:       privKey,
 	}
 }
 
 // sendInitialActorsStakeMsgs generates and sends StakeMsgs for the initial actors.
 func (s *relaysSuite) sendInitialActorsStakeMsgs(
-	suppliers []*provisionedActorInfo,
-	gateways []*provisionedActorInfo,
-	applications []*applicationInfo,
+	suppliers, gateways, applications []*accountInfo,
 ) int {
-	numTxs := 0
 	for _, supplier := range suppliers {
 		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(supplier.accountInfo)
-		numTxs++
+		s.sendTx(supplier)
 	}
 
 	for _, gateway := range gateways {
 		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(gateway.accountInfo)
-		numTxs++
+		s.sendTx(gateway)
 	}
 
 	for _, application := range applications {
 		s.generateStakeApplicationMsg(application)
-		s.sendTx(application.accountInfo)
-		numTxs++
+		s.sendTx(application)
 	}
 
-	return numTxs
+	return len(suppliers) + len(gateways) + len(applications)
 }
 
 // sendInitialDelegateMsgs pairs all applications with all gateways by generating
 // and sending DelegateMsgs.
-func (s *relaysSuite) sendInitialDelegateMsgs(
-	applications []*applicationInfo,
-	gateways []*provisionedActorInfo,
-) int {
-	numTxs := 0
+func (s *relaysSuite) sendInitialDelegateMsgs(applications, gateways []*accountInfo) int {
 	for _, application := range applications {
 		// Accumulate the delegate messages for for all gateways given the application.
 		for _, gateway := range gateways {
-			s.generateDelegateToGatewayMsg(application.accountInfo, gateway.accountInfo)
+			s.generateDelegateToGatewayMsg(application, gateway)
 		}
 		// Send the application's delegate messages in a single transaction.
-		s.sendTx(application.accountInfo)
-		numTxs++
+		s.sendTx(application)
 	}
 
-	return numTxs
+	return len(applications)
 }
 
 // sendTx sends a transaction with the provided messages using the keyName provided.
-// TODO_TECHDEBT: Pass the whole accountInfo instead of the keyName and pending
-// messages to be able to prune the accountInfo.pendingMsgs after the transaction is sent,
-// since this is redundant across the codebase.
 func (s *relaysSuite) sendTx(actor *accountInfo) {
 	// Trying to send empty messages will make SignTx fail.
 	if len(actor.pendingMsgs) == 0 {
@@ -314,7 +297,7 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	height := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
+	height := s.blocksReplayObs.Last(s.ctx, 1)[0].Height()
 	txBuilder.SetTimeoutHeight(uint64(height + 2))
 	txBuilder.SetGasLimit(690000042)
 
@@ -359,8 +342,7 @@ func (s *relaysSuite) sendRelay(iteration uint64) {
 	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
 	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
-	gatewayUrl, err := url.Parse(gateway.exposedUrl)
-	require.NoError(s, err)
+	gatewayUrl := s.gatewayUrls[gateway.keyName]
 
 	// Include the application address in the query to the gateway.
 	query := gatewayUrl.Query()
@@ -371,7 +353,7 @@ func (s *relaysSuite) sendRelay(iteration uint64) {
 	gatewayUrl.Path = usedService.Id
 
 	// TODO_TECHDEBT: Capture the relay response to check for failing relays.
-	_, err = http.DefaultClient.Post(
+	_, err := http.DefaultClient.Post(
 		gatewayUrl.String(),
 		"application/json",
 		strings.NewReader(data),
@@ -404,21 +386,13 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	require.NoError(s, err)
 
 	for _, gateway := range provisionedActors.Gateways {
-		s.provisionedGateways = append(s.provisionedGateways, &provisionedActorInfo{
-			accountInfo: &accountInfo{
-				keyName: gateway.KeyName,
-			},
-			exposedUrl: gateway.ExposedUrl,
-		})
+		exposedUrl, err := url.Parse(gateway.ExposedUrl)
+		require.NoError(s, err)
+		s.gatewayUrls[gateway.KeyName] = exposedUrl
 	}
 
 	for _, supplier := range provisionedActors.Suppliers {
-		s.provisionedSuppliers = append(s.provisionedSuppliers, &provisionedActorInfo{
-			accountInfo: &accountInfo{
-				keyName: supplier.KeyName,
-			},
-			exposedUrl: supplier.ExposedUrl,
-		})
+		s.suppliersUrl[supplier.KeyName] = supplier.ExposedUrl
 	}
 }
 
@@ -444,80 +418,94 @@ func (s *relaysSuite) setupTxEventListeners() {
 	)
 }
 
-func (s *relaysSuite) ensureFundedActor(
+func (s *relaysSuite) ensureFundedActors(
 	txResults []*types.TxResult,
-	actor *accountInfo,
+	actors []*accountInfo,
 ) {
-	actorFunded := false
-	for _, txResult := range txResults {
-		for _, event := range txResult.Result.Events {
-			if event.Type == "transfer" {
-				for _, attribute := range event.Attributes {
-					if attribute.Key == "recipient" && attribute.Value == actor.accAddress.String() {
-						return
-					}
+	for _, actor := range actors {
+		actorFunded := false
+		for _, txResult := range txResults {
+			for _, event := range txResult.Result.Events {
+				if event.Type != "transfer" {
+					continue
+				}
+
+				attrs := event.Attributes
+				addr := actor.accAddress.String()
+				if actorFunded = hasEventAttr(attrs, "recipient", addr); actorFunded {
+					break
 				}
 			}
-		}
-	}
 
-	require.Truef(s, actorFunded, "actor not funded")
+			if actorFunded {
+				break
+			}
+		}
+
+		require.Truef(s, actorFunded, "actor not funded")
+	}
 }
 
-func (s *relaysSuite) ensureStakedActor(
+func (s *relaysSuite) ensureStakedActors(
 	txResults []*types.TxResult,
 	msg string,
-	supplier *accountInfo,
+	actors []*accountInfo,
 ) {
-	supplierStaked := false
-	for _, txResult := range txResults {
-		for _, event := range txResult.Result.Events {
-			if event.Type == "message" {
-				for _, attribute := range event.Attributes {
-					if attribute.Key == "action" && attribute.Value == msg {
-						for _, attribute := range event.Attributes {
-							if attribute.Key == "sender" && attribute.Value == supplier.accAddress.String() {
-								return
-							}
-						}
-					}
+	for _, actor := range actors {
+		actorStaked := false
+		for _, txResult := range txResults {
+			for _, event := range txResult.Result.Events {
+				if event.Type != "message" {
+					continue
+				}
+
+				attrs := event.Attributes
+				addr := actor.accAddress.String()
+				if hasEventAttr(attrs, "action", msg) && hasEventAttr(attrs, "sender", addr) {
+					actorStaked = true
+					break
 				}
 			}
-		}
-	}
 
-	require.Truef(s, supplierStaked, "supplier not staked")
+			if actorStaked {
+				break
+			}
+		}
+
+		require.Truef(s, actorStaked, "actor not staked")
+	}
 }
 
-func (s *relaysSuite) ensureDelegatedApp(
+func (s *relaysSuite) ensureDelegatedApps(
 	txResults []*types.TxResult,
-	application *accountInfo,
-	gateways []*provisionedActorInfo,
+	applications, gateways []*accountInfo,
 ) {
-	numDelegatees := 0
-	for _, txResult := range txResults {
-		for _, event := range txResult.Result.Events {
-			if event.Type == EventRedelegation {
-				for _, attribute := range event.Attributes {
-					appAddress := fmt.Sprintf("%q", application.accAddress.String())
-					if attribute.Key == "app_address" && attribute.Value == appAddress {
-						for _, attribute := range event.Attributes {
-							if attribute.Key == "gateway_address" {
-								for _, gateway := range gateways {
-									gatewayAddr := fmt.Sprintf("%q", gateway.accAddress.String())
-									if attribute.Value == gatewayAddr {
-										numDelegatees++
-									}
-								}
-							}
-						}
+	for _, application := range applications {
+		numDelegatees := 0
+		for _, txResult := range txResults {
+			for _, event := range txResult.Result.Events {
+				if event.Type != EventRedelegation {
+					continue
+				}
+
+				attrs := event.Attributes
+				appAddr := fmt.Sprintf("%q", application.accAddress.String())
+				if !hasEventAttr(attrs, "app_address", appAddr) {
+					break
+				}
+
+				for _, gateway := range gateways {
+					gwAddr := fmt.Sprintf("%q", gateway.accAddress.String())
+					if hasEventAttr(attrs, "gateway_address", gwAddr) {
+						numDelegatees++
+						break
 					}
 				}
 			}
 		}
-	}
 
-	require.Truef(s, numDelegatees == len(gateways), "app not delegated to all gateways")
+		require.Truef(s, numDelegatees == len(gateways), "app not delegated to all gateways")
+	}
 }
 
 func (s *relaysSuite) getRelayCost() int64 {
@@ -542,12 +530,19 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 		// Activate teh prepared actors and prune the prepared lists.
 
 		s.activeApplications = append(s.activeApplications, s.preparedApplications...)
-		s.preparedApplications = []*applicationInfo{}
+		s.preparedApplications = []*accountInfo{}
 
 		s.activeGateways = append(s.activeGateways, s.preparedGateways...)
-		s.preparedGateways = []*provisionedActorInfo{}
-
-		s.activeSuppliers = append(s.activeSuppliers, s.preparedSuppliers...)
-		s.preparedSuppliers = []*provisionedActorInfo{}
+		s.preparedGateways = []*accountInfo{}
 	}
+}
+
+func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
+	for _, attribute := range attributes {
+		if attribute.Key == key && attribute.Value == value {
+			return true
+		}
+	}
+
+	return false
 }

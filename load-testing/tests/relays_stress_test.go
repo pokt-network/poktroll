@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -45,7 +45,7 @@ var (
 	// fundingAmount is the amount of tokens to fund other accounts.
 	fundingAmount = sdk.NewCoin("upokt", math.NewInt(10000000))
 	// stakeAmount is the amount of tokens to stake for suppliers and gateways.
-	stakeAmount = sdk.NewCoin("upokt", math.NewInt(9090013))
+	stakeAmount = sdk.NewCoin("upokt", math.NewInt(1100000))
 	// usedService is the service ID for the Anvil service that all applications
 	// and suppliers will be using in this test.
 	usedService = &sharedtypes.Service{Id: "anvil"}
@@ -77,9 +77,6 @@ type relaysSuite struct {
 	// cancelCtx is the cancel function for the global context.
 	cancelCtx context.CancelFunc
 
-	// blockClient is the block client used to subscribe to committed blocks and
-	// query for the last block height.
-	blockClient client.BlockClient
 	// blocksReplayObs is the observable for committed blocks.
 	// It is created from the block client and used to notify the test suite
 	// of new blocks committed.
@@ -105,9 +102,6 @@ type relaysSuite struct {
 	// relayCost is the cost of a relay request.
 	relayCost int64
 
-	//// waitingForFirstSession is a flag indicating whether the test is waiting for
-	//// the first session to start.
-	//waitingForFirstSession bool
 	// startBlockHeight is the block height at which the test started.
 	startBlockHeight int64
 	// testDurationBlocks is the duration of the test in blocks.
@@ -120,67 +114,47 @@ type relaysSuite struct {
 	// appInitialCount is the number of applications available at the start of the test.
 	appInitialCount int64
 
-	// provisionedGateways is the list of provisioned gateways.
+	// gatewayUrls is the list of provisioned gateways.
 	// These are the gateways that are available to be staked.
 	// Since AppGateServers are pre-provisioned, and already assigned a signingKeyName
 	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list.
-	provisionedGateways []*provisionedActorInfo
-	// provisionedSuppliers is the list of provisioned suppliers.
+	gatewayUrls map[string]*url.URL
+	// suppliersUrl is the list of provisioned suppliers.
 	// These are the suppliers that are available to be staked.
 	// Since RelayMiners are pre-provisioned, and already assigned a signingKeyName
 	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list and use its information to create StakeSupplierMsgs
-	provisionedSuppliers []*provisionedActorInfo
+	suppliersUrl map[string]string
 
 	// preparedGateways is the list of gateways that are already staked and ready
 	// to be used in the next session.
 	// They are segregated from activeGateways to avoid sending relay requests
 	// to them since the delegation will be active in the next session.
-	preparedGateways []*provisionedActorInfo
+	preparedGateways []*accountInfo
 	// preparedApplications is the list of applications that are already staked and ready
 	// to be used in the next session.
 	// They are segregated from activeApplications to avoid sending relay requests
 	// from them since their delegations will be active in the next session.
-	preparedApplications []*applicationInfo
-	// preparedSuppliers is the list of suppliers that are already staked and ready
-	// to be used in the next session.
-	preparedSuppliers []*provisionedActorInfo
-
+	preparedApplications []*accountInfo
 	// activeGateways is the list of gateways that are currently staked and active.
 	// They are used to send relay requests to the staked suppliers.
-	activeGateways []*provisionedActorInfo
+	activeGateways []*accountInfo
 	// activeApplications is the list of applications that are currently staked and
 	// used to send relays to the gateways they delegated to.
-	activeApplications []*applicationInfo
-	// activeSuppliers is the list of suppliers that are currently staked and
+	activeApplications []*accountInfo
+
+	// stakedSuppliers is the list of suppliers that are currently staked and
 	// ready to handle relay requests.
-	activeSuppliers []*provisionedActorInfo
+	stakedSuppliers []*accountInfo
 }
 
 // accountInfo contains the account info needed to build and send transactions.
 type accountInfo struct {
-	keyName     string
-	accAddress  sdk.AccAddress
-	pendingMsgs []sdk.Msg
-}
-
-// provisionedActorInfo represents gateways and suppliers that are provisioned
-// with their respective keyName and exposedUrl.
-// The supplier exposedUrl is the address advertised when staking a supplier.
-// The gateway exposedUrl is the address used to send relay requests to the gateway.
-type provisionedActorInfo struct {
-	*accountInfo
-	exposedUrl string
-}
-
-// applicationInfo represents the dynamically created applications with their
-// corresponding private keys and amount to stake which is calculated based on
-// the time the application was created.
-type applicationInfo struct {
-	*accountInfo
+	keyName       string
+	accAddress    sdk.AccAddress
+	pendingMsgs   []sdk.Msg
 	amountToStake sdk.Coin
-	privKey       *secp256k1.PrivKey
 }
 
 // sessionInfoNotif is a struct containing the session information of a block.
@@ -195,8 +169,8 @@ type batchInfoNotif struct {
 	sessionInfoNotif
 	prevBatchTime time.Time
 	nextBatchTime time.Time
-	appAccounts   []*applicationInfo
-	gateways      []*provisionedActorInfo
+	appAccounts   []*accountInfo
+	gateways      []*accountInfo
 }
 
 func TestLoadRelays(t *testing.T) {
@@ -229,14 +203,13 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		}
 	})
 
-	// Set up the block client.
-	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
+	// Set up the block client and observable that will be notifying the suite
+	// about the committed blocks.
+	s.blocksReplayObs = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T)).
+		CommittedBlocksSequence(s.ctx)
 
 	// Setup the txClient
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
-
-	// Set up the observable that will be notifying the suite about the committed blocks.
-	s.blocksReplayObs = s.blockClient.CommittedBlocksSequence(s.ctx)
 
 	// Get the relay cost from the tokenomics module.
 	s.relayCost = s.getRelayCost()
@@ -274,7 +247,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 	maxGateways := table.Cell(1, 3).Int64()
 	require.Truef(s,
-		len(s.provisionedGateways) >= int(maxGateways),
+		len(s.gatewayUrls) >= int(maxGateways),
 		"provisioned gateways must be greater or equal than the max gateways to be staked",
 	)
 
@@ -286,7 +259,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 	maxSuppliers := table.Cell(3, 3).Int64()
 	require.Truef(s,
-		len(s.provisionedSuppliers) >= int(maxSuppliers),
+		len(s.suppliersUrl) >= int(maxSuppliers),
 		"provisioned suppliers must be greater or equal than the max suppliers to be staked",
 	)
 
@@ -307,38 +280,23 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		maxSuppliers/supplierInc*supplierBlockIncRate,
 	)
 
-	// Fund all the initial actors
-	suppliers, gateways, applications := s.sendFundInitialActorsMsgs()
+	suppliers, gateways, applications := s.sendFundAvailableActorsMsgs()
 	txResults := s.waitForNextTxs(1)
-	for _, supplier := range suppliers {
-		s.ensureFundedActor(txResults, supplier.accountInfo)
-	}
-	for _, gateway := range gateways {
-		s.ensureFundedActor(txResults, gateway.accountInfo)
-	}
-	for _, app := range applications {
-		s.ensureFundedActor(txResults, app.accountInfo)
-	}
+	s.ensureFundedActors(txResults, suppliers)
+	s.ensureFundedActors(txResults, gateways)
+	s.ensureFundedActors(txResults, applications)
 
 	// Stake All the initial actors
 	numTxs := s.sendInitialActorsStakeMsgs(suppliers, gateways, applications)
 	txResults = s.waitForNextTxs(numTxs)
-	for _, supplier := range suppliers {
-		s.ensureStakedActor(txResults, MsgStakeSupplier, supplier.accountInfo)
-	}
-	for _, gateway := range gateways {
-		s.ensureStakedActor(txResults, MsgStakeGateway, gateway.accountInfo)
-	}
-	for _, application := range applications {
-		s.ensureStakedActor(txResults, MsgStakeApplication, application.accountInfo)
-	}
+	s.ensureStakedActors(txResults, MsgStakeSupplier, suppliers)
+	s.ensureStakedActors(txResults, MsgStakeGateway, gateways)
+	s.ensureStakedActors(txResults, MsgStakeApplication, applications)
 
 	// Delegate all the initial applications to the initial gateways
 	numTxs = s.sendInitialDelegateMsgs(applications, gateways)
 	txResults = s.waitForNextTxs(numTxs)
-	for _, application := range applications {
-		s.ensureDelegatedApp(txResults, application.accountInfo, gateways)
-	}
+	s.ensureDelegatedApps(txResults, applications, gateways)
 
 	// The test session is initially waiting for the next session to start.
 	waitingForFirstSession := true
@@ -442,12 +400,12 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 			// for them.
 			// Stake messages are sent but not yet committed.
 
-			var newGateways []*provisionedActorInfo
+			var newGateways []*accountInfo
 			if s.shouldIncrementActor(notif, gatewayBlockIncRate, gatewayInc, maxGateways) {
 				newGateways = s.stakeGateways(notif, gatewayInc, maxGateways)
 			}
 
-			var newApps []*applicationInfo
+			var newApps []*accountInfo
 			if s.shouldIncrementActor(notif, appBlockIncRate, appInc, maxApps) {
 				newApps = s.fundApps(notif, appInc, maxApps)
 			}
@@ -458,24 +416,25 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 			// Wait for the next block to commit stake transactions and be able
 			// to delegate the applications to the new gateways.
-			s.waitForNextTxs(0)
-
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			txResults = s.waitForNextTxs(len(newGateways) + 1)
+			s.ensureFundedActors(txResults, newApps)
+			s.ensureStakedActors(txResults, MsgStakeGateway, gateways)
 
 			// After this call all applications are delegating to all the gateways.
 			// This is to ensure that requests are distributed evenly across all gateways
 			// at any given time.
-			s.stakeAndDelegateApps(newApps, newGateways)
+			numTxs = s.stakeAndDelegateApps(newApps, newGateways)
 
 			// Wait for the next block to commit delegation transactions and be able
 			// to send relay requests evenly distributed across all apps/gateways.
-			s.waitForNextTxs(0)
+			txResults = s.waitForNextTxs(numTxs)
+			s.ensureStakedActors(txResults, MsgStakeApplication, newApps)
+			s.ensureDelegatedApps(txResults, s.activeApplications, newGateways)
+			s.ensureDelegatedApps(txResults, newApps, newGateways)
+			s.ensureDelegatedApps(txResults, newApps, s.activeGateways)
 
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
-			// TODO_IN_THIS_COMMIT: make tx assertions by reusing `waitForNewBlockEvent` from session_steps_test.go.
+			s.preparedApplications = append(s.preparedApplications, newApps...)
+			s.preparedGateways = append(s.preparedGateways, newGateways...)
 		},
 	)
 }
@@ -521,7 +480,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 					//fmt.Printf("i: %d\n", i)
 
 					relaysSent := s.relaysSent.Add(1) - 1
-					blockHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
+					blockHeight := s.blocksReplayObs.Last(s.ctx, 1)[0].Height()
 					sessionNum := keeper.GetSessionNumber(blockHeight)
 					app := batchInfo.appAccounts[relaysSent%uint64(len(batchInfo.appAccounts))]
 					gw := batchInfo.gateways[relaysSent%uint64(len(batchInfo.gateways))]
@@ -566,7 +525,7 @@ func (s *relaysSuite) stakeGateways(
 	sessionInfo *sessionInfoNotif,
 	gatewayInc,
 	maxGateways int64,
-) (newGateways []*provisionedActorInfo) {
+) (newGateways []*accountInfo) {
 	gatewayCount := int64(len(s.activeGateways))
 
 	gatewaysToStake := gatewayInc
@@ -586,9 +545,10 @@ func (s *relaysSuite) stakeGateways(
 	)
 
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
-		gateway := s.addGateway(gatewayCount + gwIdx)
+		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
+		gateway := s.addGateway(keyName)
 		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(gateway.accountInfo)
+		s.sendTx(gateway)
 		newGateways = append(newGateways, gateway)
 	}
 
@@ -603,8 +563,8 @@ func (s *relaysSuite) fundApps(
 	sessionInfo *sessionInfoNotif,
 	appIncAmt,
 	maxApps int64,
-) (newApps []*applicationInfo) {
-	appCount := int64(len(s.activeApplications))
+) (newApps []*accountInfo) {
+	appCount := int64(len(s.preparedApplications))
 
 	appsToStake := appIncAmt
 	if appCount+appsToStake > maxApps {
@@ -622,8 +582,8 @@ func (s *relaysSuite) fundApps(
 		appCount+appsToStake,
 	)
 
+	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
 	for appIdx := int64(0); appIdx < appsToStake; appIdx++ {
-		appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
 		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
 		s.generateFundApplicationMsg(app)
 		newApps = append(newApps, app)
@@ -640,19 +600,16 @@ func (s *relaysSuite) fundApps(
 // It also ensures that new gateways are delegated to the existing applications.
 // It waits for the stake delegate messages to be committed before adding the new
 // actors to their corresponding prepared lists.
-func (s *relaysSuite) stakeAndDelegateApps(
-	newApps []*applicationInfo,
-	newGateways []*provisionedActorInfo,
-) {
+func (s *relaysSuite) stakeAndDelegateApps(newApps, newGateways []*accountInfo) int {
 
 	// TODO_IN_THIS_COMMIT: send an UpdateParams message to the application
 	// module to set `max_delegated_gateways` accordingly.
 
 	for _, app := range s.activeApplications {
 		for _, gateway := range newGateways {
-			s.generateDelegateToGatewayMsg(app.accountInfo, gateway.accountInfo)
+			s.generateDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(app.accountInfo)
+		s.sendTx(app)
 	}
 
 	for _, app := range newApps {
@@ -660,18 +617,15 @@ func (s *relaysSuite) stakeAndDelegateApps(
 		// transaction to avoid waiting for an additional block.
 		s.generateStakeApplicationMsg(app)
 		for _, gateway := range s.activeGateways {
-			s.generateDelegateToGatewayMsg(app.accountInfo, gateway.accountInfo)
+			s.generateDelegateToGatewayMsg(app, gateway)
 		}
 		for _, gateway := range newGateways {
-			s.generateDelegateToGatewayMsg(app.accountInfo, gateway.accountInfo)
+			s.generateDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(app.accountInfo)
+		s.sendTx(app)
 	}
 
-	// Wait for the next block to commit the stake and delegate transactions.
-	s.waitForNextTxs(0)
-	s.preparedGateways = append(s.preparedGateways, newGateways...)
-	s.preparedApplications = append(s.preparedApplications, newApps...)
+	return len(s.activeApplications) + len(newApps)
 }
 
 // goIncrementSuppliers increments the number of suppliers to be staked.
@@ -682,7 +636,7 @@ func (s *relaysSuite) goIncrementSuppliers(
 	supplierInc,
 	maxSuppliers int64,
 ) {
-	supplierCount := int64(len(s.activeSuppliers))
+	supplierCount := int64(len(s.stakedSuppliers))
 
 	suppliersToStake := supplierInc
 	if supplierCount+suppliersToStake > maxSuppliers {
@@ -700,13 +654,15 @@ func (s *relaysSuite) goIncrementSuppliers(
 		supplierCount+suppliersToStake,
 	)
 
-	var newSuppliers []*provisionedActorInfo
+	var newSuppliers []*accountInfo
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
-		supplier := s.addSupplier(supplierCount + supplierIdx)
+		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
+		supplier := s.addSupplier(keyName)
 		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(supplier.accountInfo)
+		s.sendTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)
 	}
-	s.waitForNextTxs(0)
-	s.preparedSuppliers = append(s.preparedSuppliers, newSuppliers...)
+	txResults := s.waitForNextTxs(len(newSuppliers))
+	s.ensureStakedActors(txResults, MsgStakeSupplier, newSuppliers)
+	s.stakedSuppliers = append(s.stakedSuppliers, newSuppliers...)
 }
