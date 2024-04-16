@@ -19,6 +19,7 @@ type YAMLRelayMinerConfig struct {
 	Metrics        YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
 	Proxies        []YAMLRelayMinerProxyConfig    `yaml:"proxies"`
 	Suppliers      []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Pprof          YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
@@ -71,6 +72,13 @@ type YAMLRelayMinerSupplierServiceAuthentication struct {
 	Password string `yaml:"password,omitempty"`
 }
 
+// YAMLRelayMinerPprofConfig is the structure used to unmarshal the config
+// for `pprof`.
+type YAMLRelayMinerPprofConfig struct {
+	Enabled bool   `yaml:"enabled,omitempty"`
+	Addr    string `yaml:"addr,omitempty"`
+}
+
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
 	PocketNode     *RelayMinerPocketNodeConfig
@@ -78,6 +86,7 @@ type RelayMinerConfig struct {
 	Metrics        *RelayMinerMetricsConfig
 	SigningKeyName string
 	SmtStorePath   string
+	Pprof          *RelayMinerPprofConfig
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -160,4 +169,11 @@ type RelayMinerSupplierServiceConfig struct {
 type RelayMinerSupplierServiceAuthentication struct {
 	Username string
 	Password string
+}
+
+// RelayMinerPprofConfig is the structure used to unmarshal the config
+// for `pprof`.
+type RelayMinerPprofConfig struct {
+	Enabled bool
+	Addr    string
 }

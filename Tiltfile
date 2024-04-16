@@ -240,6 +240,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069 + actor_number)
             + ":9090",  # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
+            str(6069 + actor_number)
+            + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
         ],
     )
 

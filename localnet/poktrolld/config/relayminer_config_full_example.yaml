@@ -16,6 +16,12 @@ metrics:
   # The address that the metrics exporter will listen on. Can be just a port, or host:port
   addr: :9090
 
+# Pprof endpoint configuration. More information:
+# https://pkg.go.dev/github.com/google/pprof#section-readme
+pprof:
+  enabled: false
+  addr: :6060
+
 pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.
   # This can be used by the Cosmos client SDK, event subscriptions, etc...
@@ -28,106 +34,106 @@ pocket_node:
 
 # Proxies are endpoints that expose different suppliers to the internet.
 proxies:
-  # Name of the proxy. It will be used to reference in a supplier.
-  # Must be unique.
+# Name of the proxy. It will be used to reference in a supplier.
+# Must be unique.
+# Required.
+# TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
+# become handy in the future.
+# More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+- proxy_name: http-example
+  # Type of proxy: currently only http is supported but will support more
+  # (https, tcp, quic ...) in the future.
+  # MUST match the type of the supplier.
   # Required.
-  # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-  # become handy in the future.
-  # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-  - proxy_name: http-example
-    # Type of proxy: currently only http is supported but will support more
-    # (https, tcp, quic ...) in the future.
-    # MUST match the type of the supplier.
-    # Required.
-    type: http
-    # Hostname to open port on.
-    # Use 0.0.0.0 in containerized environments.
-    # 127.0.0.1 with a reverse proxy when there's another process on localhost
-    # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
-    # Required.
-    host: 127.0.0.1:8080
+  type: http
+  # Hostname to open port on.
+  # Use 0.0.0.0 in containerized environments.
+  # 127.0.0.1 with a reverse proxy when there's another process on localhost
+  # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
+  # Required.
+  host: 127.0.0.1:8080
 
-  # TODO_IMPROVE: https is not currently supported, but this is how it could potentially look.
-  # - name: example-how-we-can-support-https
-  #   type: https
-  #   host: 0.0.0.0:8443
-  #   tls:
-  #     enabled: true
-  #     certificate: /path/to/crt
-  #     key: /path/to/key
+# TODO_IMPROVE: https is not currently supported, but this is how it could potentially look.
+# - name: example-how-we-can-support-https
+#   type: https
+#   host: 0.0.0.0:8443
+#   tls:
+#     enabled: true
+#     certificate: /path/to/crt
+#     key: /path/to/key
 
 # Suppliers are different services that can be offered through RelayMiner.
 # When a supplier is configured to use a proxy and staked appropriately,
 # the relays will start flowing through RelayMiner.
 suppliers:
-  # The serviceId the supplier is offering on the network .
-  # It must match the Service.Id of the service that has been staked for.
-  # Must be unique.
+# The serviceId the supplier is offering on the network .
+# It must match the Service.Id of the service that has been staked for.
+# Must be unique.
+# Required.
+- service_id: ethereum
+  # Type of how the supplier offers service through the network.
+  # Must match the type of the proxy the supplier is connected to.
   # Required.
-  - service_id: ethereum
-    # Type of how the supplier offers service through the network.
-    # Must match the type of the proxy the supplier is connected to.
+  type: http
+  # Configuration of the service offered through RelayMiner.
+  service_config:
+    # URL RelayMiner proxies the requests to.
+    # Also known as the data node, or service node in some cases.
     # Required.
-    type: http
-    # Configuration of the service offered through RelayMiner.
-    service_config:
-      # URL RelayMiner proxies the requests to.
-      # Also known as the data node, or service node in some cases.
-      # Required.
-      url: http://anvil.servicer:8545
-      # Authentication for the service.
-      # HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
-      # Optional.
-      authentication:
-        username: user
-        password: pwd
+    url: http://anvil.servicer:8545
+    # Authentication for the service.
+    # HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+    # Optional.
+    authentication:
+      username: user
+      password: pwd
 
-      # TODO_IMPROVE: This is not supported in code yet,
-      # but some services authenticate via a header.
-      # Example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
-      # Authorization: Bearer <PASSWORD>
-      # Optional.
-      headers: {}
+    # TODO_IMPROVE: This is not supported in code yet,
+    # but some services authenticate via a header.
+    # Example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
+    # Authorization: Bearer <PASSWORD>
+    # Optional.
+    headers: {}
 
-    # A list of hosts the proxy is accepting requests from.
-    # When linked to the proxy, each host is going to be used to lookup the
-    # the Supplier.Service in Pocket Network.
-    # Each host in the list must match a Supplier.Service.Endpoint that the Supplier
-    # has advertised on-chain when staking for that Service.
-    # There are various reasons to having multiple hosts for the same supplier services,
-    # - The on-chain Supplier may provide the same Service on multiple domains
-    #   (e.g. for different regions).
-    # - The operator may want to route requests of different RPC types to
-    #   the same proxy.
-    # - Migrating from one domain to another. Where the operator could still
-    #   accept requests on the old domain while the new domain is being propagated.
-    # - The operator may want to have a different domain for internal requests.
-    # - The on-chain Service configuration accepts multiple endpoints.
-    # Must be unique within the proxy it is referenced in.
-    # Required.
-    hosts:
-      - ethereum.devnet1.poktroll.com
-      # The `service_id` of the supplier is automatically added to the hosts section
-      # for potential troubleshooting/debugging purposes such as:
-      # Having internal requests coming from non-FQDNs because of complex routing.
-      # Sending requests from k8s pods.
-      # Specify the `host` in curl requests when testing `curl -H "Host: ethereum" ...`
-      # and make the proxy server process the request without the need for an
-      # on-chain Endpoint entry.
-      # - ethereum # <- this part is added automatically.
+  # A list of hosts the proxy is accepting requests from.
+  # When linked to the proxy, each host is going to be used to lookup the
+  # the Supplier.Service in Pocket Network.
+  # Each host in the list must match a Supplier.Service.Endpoint that the Supplier
+  # has advertised on-chain when staking for that Service.
+  # There are various reasons to having multiple hosts for the same supplier services,
+  # - The on-chain Supplier may provide the same Service on multiple domains
+  #   (e.g. for different regions).
+  # - The operator may want to route requests of different RPC types to
+  #   the same proxy.
+  # - Migrating from one domain to another. Where the operator could still
+  #   accept requests on the old domain while the new domain is being propagated.
+  # - The operator may want to have a different domain for internal requests.
+  # - The on-chain Service configuration accepts multiple endpoints.
+  # Must be unique within the proxy it is referenced in.
+  # Required.
+  hosts:
+  - ethereum.devnet1.poktroll.com
+  # The `service_id` of the supplier is automatically added to the hosts section
+  # for potential troubleshooting/debugging purposes such as:
+  # Having internal requests coming from non-FQDNs because of complex routing.
+  # Sending requests from k8s pods.
+  # Specify the `host` in curl requests when testing `curl -H "Host: ethereum" ...`
+  # and make the proxy server process the request without the need for an
+  # on-chain Endpoint entry.
+  # - ethereum # <- this part is added automatically.
 
-    # Names of proxies that this supplier is connected to.
-    # This MUST correspond to the `proxy_name` entry in the `proxies` section
-    # in order for the supplier to be available to the external network.
-    # Required.
-    proxy_names:
-      - http-example # when the RelayMiner server builder runs.
-  - service_id: 7b-llm-model
-    type: http
-    service_config:
-      url: http://llama-endpoint
-    hosts:
-      - 7b-llm-model.devnet1.poktroll.com
-      # - 7b-llm-model # <- this part is added automatically.
-    proxy_names:
-      - http-example
+  # Names of proxies that this supplier is connected to.
+  # This MUST correspond to the `proxy_name` entry in the `proxies` section
+  # in order for the supplier to be available to the external network.
+  # Required.
+  proxy_names:
+  - http-example # when the RelayMiner server builder runs.
+- service_id: 7b-llm-model
+  type: http
+  service_config:
+    url: http://llama-endpoint
+  hosts:
+  - 7b-llm-model.devnet1.poktroll.com
+  # - 7b-llm-model # <- this part is added automatically.
+  proxy_names:
+  - http-example
