@@ -12,6 +12,66 @@ import (
 	"github.com/pokt-network/poktroll/testutil/testerrors"
 )
 
+func TestReplayObservable_Overflow(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	replayObs, replayPublishCh := channel.NewReplayObservable[int](context.Background(), 3)
+
+	//go func() {
+	//    time.Sleep(100 * time.Millisecond)
+
+	//    t.Log("starting loop")
+	//    for i := 0; i < 4; i++ {
+	//        replayPublishCh <- i
+	//        t.Logf("completed iteration: %d", i)
+	//    }
+	//}()
+
+	//time.Sleep(100 * time.Millisecond)
+
+	// This is what we want to have working
+	// Not because we're sending to early, but because we're losing values before
+	// the observer is added to the observer slice
+	//replayPublishCh <- 0
+	//replayPublishCh <- 1
+	//replayPublishCh <- 2
+
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		replayPublishCh <- 0
+		replayPublishCh <- 1
+		replayPublishCh <- 2
+	}()
+
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		replayPublishCh <- 3
+	}()
+
+	go func() {
+		select {
+		case <-time.After(550 * time.Millisecond):
+			t.FailNow()
+		case <-ctx.Done():
+		}
+	}()
+
+	t.Log("calling #Last()")
+	actualValues := replayObs.Last(ctx, 3)
+
+	t.Log("asserting...")
+	require.ElementsMatch(t, []int{0, 1, 2}, actualValues)
+	time.Sleep(500 * time.Millisecond)
+
+	//t.Log("calling #Last()")
+	//time.Sleep(60 * time.Millisecond)
+	//actualValues = replayObs.Last(ctx, 3)
+
+	//t.Log("asserting...")
+	//require.ElementsMatch(t, []int{1, 2, 3}, actualValues)
+}
+
 func TestReplayObservable(t *testing.T) {
 	var (
 		replayBufferSize = 3

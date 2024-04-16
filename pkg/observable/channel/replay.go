@@ -2,8 +2,8 @@ package channel
 
 import (
 	"context"
+	"fmt"
 	"sync"
-	"time"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/polylog"
@@ -39,7 +39,6 @@ func NewReplayObservable[V any](
 	opts ...option[V],
 ) (observable.ReplayObservable[V], chan<- V) {
 	obsvbl, publishCh := NewObservable[V](opts...)
-	time.Sleep(time.Millisecond)
 	return ToReplayObservable[V](ctx, replayBufferSize, obsvbl), publishCh
 }
 
@@ -77,6 +76,8 @@ func ToReplayObservable[V any](
 // block as long as it takes to accumulate and return them.
 // If n is greater than the replay buffer size, the entire replay buffer is returned.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
+	ro.replayBufferMu.RLock()
+	defer ro.replayBufferMu.RUnlock()
 	logger := polylog.Ctx(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -92,25 +93,27 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 
 	// accumulateReplayValues works concurrently and returns a context and cancellation
 	// function for signaling completion.
-	accValues := make([]V, n)
-	ro.replayBufferMu.Lock()
+	var accValues []V
 	copySize := n
 	if len(ro.replayBuffer) < n {
 		copySize = len(ro.replayBuffer)
 	}
-	copy(accValues, ro.replayBuffer[len(ro.replayBuffer)-copySize:])
+	logger.Debug().Msgf("replayBuffer %v", ro.replayBuffer)
+	for i := len(ro.replayBuffer) - copySize; i < len(ro.replayBuffer); i++ {
+		accValues = append(accValues, ro.replayBuffer[i])
+	}
 
 	if len(accValues) < n {
 		sub := ro.Subscribe(ctx)
-		ro.replayBufferMu.Unlock()
 		for value := range sub.Ch() {
-			accValues[len(accValues)] = value
+			logger.Debug().
+				Int("len", len(accValues)).
+				Msgf("replayObservable.Last: received value: %v", value)
+			accValues = append(accValues, value)
 			if len(accValues) >= n {
 				break
 			}
 		}
-	} else {
-		ro.replayBufferMu.Unlock()
 	}
 
 	return accValues
@@ -119,8 +122,10 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	ro.replayBufferMu.RLock()
-	defer ro.replayBufferMu.RUnlock()
+	//fmt.Println("Subscribing before locking")
+	//ro.replayBufferMu.RLock()
+	//fmt.Println("Subscribing locked")
+	//defer ro.replayBufferMu.RUnlock()
 
 	if ctx == nil {
 		ctx = context.Background()
@@ -145,7 +150,9 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 		observer.notify(notification)
 	}
 
+	fmt.Println("before adding observer")
 	ro.observerManager.add(observer)
+	fmt.Println("afeter adding observer")
 
 	// asynchronously wait for the context to be done and then unsubscribe
 	// this observer.
@@ -163,7 +170,9 @@ func (ro *replayObservable[V]) UnsubscribeAll() {
 // observer. It is intended to be run in a goroutine.
 func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observable.Observer[V]) {
 	for notification := range srcObserver.Ch() {
+		fmt.Println("buffer got value, locking")
 		ro.replayBufferMu.Lock()
+		fmt.Println("buffer locked")
 		// Add the notification to the buffer.
 		if len(ro.replayBuffer) < ro.replayBufferSize {
 			ro.replayBuffer = append(ro.replayBuffer, notification)
@@ -172,6 +181,7 @@ func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observabl
 			// oldest notification.
 			ro.replayBuffer = append(ro.replayBuffer[1:], notification)
 		}
+		fmt.Println("filling buffer")
 		ro.replayBufferMu.Unlock()
 	}
 }
