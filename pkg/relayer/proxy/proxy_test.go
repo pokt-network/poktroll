@@ -82,7 +82,6 @@ func init() {
 
 	proxiedServices = map[string]*config.RelayMinerProxyConfig{
 		defaultProxyServer: {
-			ProxyName:     defaultProxyServer,
 			ServerType:    config.ServerTypeHTTP,
 			ListenAddress: defaultProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
@@ -105,7 +104,6 @@ func init() {
 			},
 		},
 		secondaryProxyServer: {
-			ProxyName:     secondaryProxyServer,
 			ServerType:    config.ServerTypeHTTP,
 			ListenAddress: secondaryProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
@@ -259,7 +257,6 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 
 	unsupportedTransportProxy := map[string]*config.RelayMinerProxyConfig{
 		defaultProxyServer: {
-			ProxyName: defaultProxyServer,
 			// The proxy is configured with an unsupported transport type
 			ServerType:    config.ServerType(100),
 			ListenAddress: defaultProxyServer,
@@ -305,7 +302,6 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	missingServicesProxy := map[string]*config.RelayMinerProxyConfig{
 		defaultProxyServer: {
-			ProxyName:     defaultProxyServer,
 			ServerType:    config.ServerTypeHTTP,
 			ListenAddress: defaultProxyServer,
 			Suppliers: map[string]*config.RelayMinerSupplierConfig{
@@ -659,11 +655,12 @@ func sendRequestWithDifferentSession(
 	test *testproxy.TestBehavior,
 ) (errCode int32, errorMessage string) {
 	// Use a block height that generates a different session ID
+	blockHeightAfterSessionGracePeriod := blockHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	req := testproxy.GenerateRelayRequest(
 		test,
 		appPrivateKey,
 		defaultService,
-		blockHeight+sessionkeeper.GetSessionGracePeriodBlockCount(),
+		blockHeightAfterSessionGracePeriod,
 		testproxy.PrepareJsonRPCRequestPayload(),
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)

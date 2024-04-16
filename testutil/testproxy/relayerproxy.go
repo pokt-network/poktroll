@@ -298,6 +298,16 @@ func MarshalAndSend(
 		require.FailNow(test.t, "unsupported proxy type")
 	}
 
+	// originHost is the endpoint that the client will retrieve from the on-chain
+	// supplier record.
+	// The supplier may have multiple endpoints (e.g. for load geo-balancing, host
+	// failover, etc.)
+	// In the current test setup, we only have one endpoint per supplier and we
+	// are using it.
+	// In a real-world scenario, the publicly exposed endpoint would reach a load
+	// balancer or a reverse proxy that would route the request to the address
+	// specified by ListenAddress.
+	originHost := proxiedServices[proxyServeName].Suppliers[serviceId].PubliclyExposedEndpoints[0]
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
 		Method: http.MethodPost,
@@ -305,7 +315,7 @@ func MarshalAndSend(
 			"Content-Type": []string{"application/json"},
 		},
 		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].ListenAddress},
-		Host: proxiedServices[proxyServeName].Suppliers[serviceId].PubliclyExposedEndpoints[0],
+		Host: originHost,
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)

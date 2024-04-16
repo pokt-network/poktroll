@@ -84,8 +84,6 @@ type RelayMinerPocketNodeConfig struct {
 // Other proxy types may embed other fields in the future. eg. "https" may
 // embed a TLS config.
 type RelayMinerProxyConfig struct {
-	// ProxyName is the name of the proxy server, used to identify it in the config
-	ProxyName string
 	// ServerType is the transport protocol used by the proxy server like (http, https, etc.)
 	ServerType ServerType
 	// ListenAddress is the host on which the proxy server will listen for incoming

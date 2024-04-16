@@ -57,7 +57,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http://127.0.0.1:8080": {
-						ProxyName:            "http://127.0.0.1:8080",
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
@@ -124,7 +123,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http://127.0.0.1:8080": {
-						ProxyName:            "http://127.0.0.1:8080",
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
@@ -191,7 +189,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http://127.0.0.1:8080": {
-						ProxyName:            "http://127.0.0.1:8080",
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: false,
@@ -243,7 +240,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				SmtStorePath:   "smt_stores",
 				Proxies: map[string]*config.RelayMinerProxyConfig{
 					"http://127.0.0.1:8080": {
-						ProxyName:            "http://127.0.0.1:8080",
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.ServerTypeHTTP,
 						XForwardedHostLookup: true,
@@ -660,12 +656,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 			)
 
 			for proxyName, proxy := range test.expectedConfig.Proxies {
-				require.Equal(
-					t,
-					proxy.ProxyName,
-					config.Proxies[proxyName].ProxyName,
-				)
-
 				require.Equal(
 					t,
 					proxy.ListenAddress,

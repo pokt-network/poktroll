@@ -2,8 +2,7 @@ package config
 
 import "net/url"
 
-// HydrateProxies populates the proxies fields of the RelayMinerConfig that
-// are relevant to the "proxies" section in the config file.
+// HydrateProxies populates the proxies fields of the RelayMinerConfig.
 func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 	yamlSupplierConfigs []YAMLRelayMinerSupplierConfig,
 ) error {
@@ -30,14 +29,11 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 			)
 		}
 
-		proxyName := yamlSupplierConfig.ListenUrl
-
-		if _, ok := relayMinerConfig.Proxies[proxyName]; ok {
+		if _, ok := relayMinerConfig.Proxies[yamlSupplierConfig.ListenUrl]; ok {
 			continue
 		}
 
 		proxyConfig := &RelayMinerProxyConfig{
-			ProxyName:            proxyName,
 			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
 			Suppliers:            make(map[string]*RelayMinerSupplierConfig),
 		}
@@ -45,6 +41,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 		// Populate the proxy fields that are relevant to each supported proxy type
 		switch listenUrl.Scheme {
 		case "http":
+		case "ws":
 			if err := proxyConfig.parseHTTPProxyConfig(yamlSupplierConfig); err != nil {
 				return err
 			}
@@ -57,7 +54,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateProxies(
 			)
 		}
 
-		relayMinerConfig.Proxies[proxyConfig.ProxyName] = proxyConfig
+		relayMinerConfig.Proxies[yamlSupplierConfig.ListenUrl] = proxyConfig
 	}
 
 	return nil
