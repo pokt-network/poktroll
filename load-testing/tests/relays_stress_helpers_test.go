@@ -5,14 +5,25 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"testing"
 
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
+	"github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
+	"github.com/pokt-network/poktroll/load-testing/config"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
+	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	gatewaytypes "github.com/pokt-network/poktroll/x/gateway/types"
 	"github.com/pokt-network/poktroll/x/session/keeper"
@@ -38,49 +49,58 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 
 // sendFundInitialActorsMsgs uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
-func (s *relaysSuite) sendFundInitialActorsMsgs() {
-	// Supplier accounts already exist in the provisioned suppliers slice.
+func (s *relaysSuite) sendFundInitialActorsMsgs() (suppliers []*provisionedActorInfo, gateways []*provisionedActorInfo, applications []*applicationInfo) {
 	for i := int64(0); i < s.supplierInitialCount; i++ {
+		supplier := s.addSupplier(i)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
 			banktypes.NewMsgSend(
 				s.fundingAccountInfo.accAddress,
-				s.provisionedSuppliers[i].accAddress,
+				supplier.accAddress,
 				sdk.NewCoins(fundingAmount),
 			),
 		)
+
+		suppliers = append(suppliers, supplier)
 	}
 
 	// Gateway accounts already exist in the provisioned gateways slice.
 	for i := int64(0); i < s.gatewayInitialCount; i++ {
+		gateway := s.addGateway(i)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
 			banktypes.NewMsgSend(
 				s.fundingAccountInfo.accAddress,
-				s.provisionedGateways[i].accAddress,
+				gateway.accAddress,
 				sdk.NewCoins(fundingAmount),
 			),
 		)
+
+		gateways = append(gateways, gateway)
 	}
 
 	// Application accounts should already be created using addInitialApplications.
 	for i := int64(0); i < s.appInitialCount; i++ {
 		appFundingAmount := s.getAppFundingAmount(s.startBlockHeight)
+		application := s.createApplicationAccount(i+1, appFundingAmount)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
 			banktypes.NewMsgSend(
 				s.fundingAccountInfo.accAddress,
-				s.activeApplications[i].accAddress,
+				application.accAddress,
 				sdk.NewCoins(appFundingAmount),
 			),
 		)
-		s.activeApplications[i].amountToStake = appFundingAmount
+
+		applications = append(applications, application)
 	}
 
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
 	s.sendTx(s.fundingAccountInfo)
+
+	return suppliers, gateways, applications
 }
 
 // getAppFundingAmount calculates the application funding amount based on the
@@ -96,18 +116,12 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 // application and appends it to the funding account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single transaction.
-func (s *relaysSuite) generateFundApplicationMsg(
-	application *applicationInfo,
-	blockHeight int64,
-) {
-	appFundingAmount := s.getAppFundingAmount(blockHeight)
+func (s *relaysSuite) generateFundApplicationMsg(application *applicationInfo) {
 	fundAppMsg := banktypes.NewMsgSend(
 		s.fundingAccountInfo.accAddress,
 		application.accAddress,
-		sdk.NewCoins(appFundingAmount),
+		sdk.NewCoins(application.amountToStake),
 	)
-
-	application.amountToStake = appFundingAmount
 
 	s.fundingAccountInfo.pendingMsgs = append(s.fundingAccountInfo.pendingMsgs, fundAppMsg)
 }
@@ -119,7 +133,7 @@ func (s *relaysSuite) generateFundApplicationMsg(
 func (s *relaysSuite) generateStakeSupplierMsg(supplier *provisionedActorInfo) {
 	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
 		supplier.accAddress.String(),
-		sdk.NewCoin("upokt", math.NewInt(2000)),
+		stakeAmount,
 		[]*sharedtypes.SupplierServiceConfig{
 			{
 				Service: usedService,
@@ -165,25 +179,13 @@ func (s *relaysSuite) generateStakeApplicationMsg(application *applicationInfo) 
 // generateDelegateToGatewayMsg generates a MsgDelegateToGateway message to delegate
 // a given application to a given gateway then appends it to the application account's
 // pending messages.
-func (s *relaysSuite) generateDelegateToGatewayMsg(
-	application *applicationInfo,
-	gateway *provisionedActorInfo,
-) {
+func (s *relaysSuite) generateDelegateToGatewayMsg(application, gateway *accountInfo) {
 	delegateMsg := apptypes.NewMsgDelegateToGateway(
 		application.accAddress.String(),
 		gateway.accAddress.String(),
 	)
 
 	application.pendingMsgs = append(application.pendingMsgs, delegateMsg)
-}
-
-// addInitialSuppliers creates the initial active suppliers and appends them to
-// the active suppliers slice.
-func (s *relaysSuite) addInitialSuppliers(suppliersCount int64) {
-	for i := int64(0); i < suppliersCount; i++ {
-		supplier := s.addSupplier(i)
-		s.activeSuppliers = append(s.activeSuppliers, supplier)
-	}
 }
 
 // addSupplier populates the supplier's accAddress using the keyName provided
@@ -203,15 +205,6 @@ func (s *relaysSuite) addSupplier(index int64) *provisionedActorInfo {
 	return supplier
 }
 
-// addInitialGateways creates the initial active gateways and appends them to
-// the active gateways slice.
-func (s *relaysSuite) addInitialGateways(gatewaysCount int64) {
-	for i := int64(0); i < gatewaysCount; i++ {
-		gateway := s.addGateway(i)
-		s.activeGateways = append(s.activeGateways, gateway)
-	}
-}
-
 // addGateway returns a populated gateway's accAddress using the keyName provided
 // in the provisioned gateways slice.
 func (s *relaysSuite) addGateway(index int64) *provisionedActorInfo {
@@ -229,18 +222,12 @@ func (s *relaysSuite) addGateway(index int64) *provisionedActorInfo {
 	return gateway
 }
 
-// addInitialApplications creates the initial applications and appends them to the active
-// applications slice.
-func (s *relaysSuite) addInitialApplications(appCount int64) {
-	for i := int64(0); i < appCount; i++ {
-		application := s.createApplicationAccount(i + 1)
-		s.activeApplications = append(s.activeApplications, application)
-	}
-}
-
 // createApplicationAccount creates a new application account using the appIdx
 // provided and imports it in the keyring.
-func (s *relaysSuite) createApplicationAccount(appIdx int64) *applicationInfo {
+func (s *relaysSuite) createApplicationAccount(
+	appIdx int64,
+	fundingAmount sdk.Coin,
+) *applicationInfo {
 	keyName := fmt.Sprintf("app-%d", appIdx)
 	privKey := secp256k1.GenPrivKey()
 	privKeyHex := fmt.Sprintf("%x", privKey)
@@ -255,49 +242,62 @@ func (s *relaysSuite) createApplicationAccount(appIdx int64) *applicationInfo {
 	require.NoError(s, err)
 
 	return &applicationInfo{
-		accountInfo: accountInfo{
+		accountInfo: &accountInfo{
 			accAddress:  accAddress,
 			keyName:     keyName,
 			pendingMsgs: []sdk.Msg{},
 		},
-		privKey: privKey,
+		amountToStake: fundingAmount,
+		privKey:       privKey,
 	}
 }
 
 // sendInitialActorsStakeMsgs generates and sends StakeMsgs for the initial actors.
-func (s *relaysSuite) sendInitialActorsStakeMsgs() {
-	for suppIdx := int64(0); suppIdx < s.supplierInitialCount; suppIdx++ {
-		supplier := s.activeSuppliers[suppIdx]
+func (s *relaysSuite) sendInitialActorsStakeMsgs(
+	suppliers []*provisionedActorInfo,
+	gateways []*provisionedActorInfo,
+	applications []*applicationInfo,
+) int {
+	numTxs := 0
+	for _, supplier := range suppliers {
 		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(&supplier.accountInfo)
+		s.sendTx(supplier.accountInfo)
+		numTxs++
 	}
 
-	for gwIdx := int64(0); gwIdx < s.gatewayInitialCount; gwIdx++ {
-		gateway := s.activeGateways[gwIdx]
+	for _, gateway := range gateways {
 		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(&gateway.accountInfo)
+		s.sendTx(gateway.accountInfo)
+		numTxs++
 	}
 
-	for appIdx := int64(0); appIdx < s.appInitialCount; appIdx++ {
-		application := s.activeApplications[appIdx]
+	for _, application := range applications {
 		s.generateStakeApplicationMsg(application)
-		s.sendTx(&application.accountInfo)
+		s.sendTx(application.accountInfo)
+		numTxs++
 	}
+
+	return numTxs
 }
 
 // sendInitialDelegateMsgs pairs all applications with all gateways by generating
 // and sending DelegateMsgs.
-func (s *relaysSuite) sendInitialDelegateMsgs() {
-	for appIdx := int64(0); appIdx < s.appInitialCount; appIdx++ {
-		application := s.activeApplications[appIdx]
+func (s *relaysSuite) sendInitialDelegateMsgs(
+	applications []*applicationInfo,
+	gateways []*provisionedActorInfo,
+) int {
+	numTxs := 0
+	for _, application := range applications {
 		// Accumulate the delegate messages for for all gateways given the application.
-		for gwIdx := int64(0); gwIdx < s.gatewayInitialCount; gwIdx++ {
-			gateway := s.activeGateways[gwIdx]
-			s.generateDelegateToGatewayMsg(application, gateway)
+		for _, gateway := range gateways {
+			s.generateDelegateToGatewayMsg(application.accountInfo, gateway.accountInfo)
 		}
 		// Send the application's delegate messages in a single transaction.
-		s.sendTx(&application.accountInfo)
+		s.sendTx(application.accountInfo)
+		numTxs++
 	}
+
+	return numTxs
 }
 
 // sendTx sends a transaction with the provided messages using the keyName provided.
@@ -315,7 +315,7 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 	require.NoError(s, err)
 
 	height := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
-	txBuilder.SetTimeoutHeight(uint64(height + 1))
+	txBuilder.SetTimeoutHeight(uint64(height + 2))
 	txBuilder.SetGasLimit(690000042)
 
 	// All messages have to be signed by the keyName provided.
@@ -331,28 +331,23 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 
 	// txContext.BroadcastTx uses the async mode, if this method changes in the future
 	// to be synchronous, make sure to keep this async to avoid blocking the test.
-	// TODO_TECHDEBT: Capture the response and/or the TxResult check for errors.
-	// Even if errors should not make the load test fail, logging the TxResult is desired.
-	r, err := s.txContext.BroadcastTx(txBz)
+	_, err = s.txContext.BroadcastTx(txBz)
 	require.NoError(s, err)
-	_ = r
 	actor.pendingMsgs = []sdk.Msg{}
 }
 
-// waitForNextBlock waits for the next block to be committed.
+// waitForNextTxs waits for the next block to be committed.
 // It is used to ensure that the transactions are included in the next block.
-// TODO_TECHDEBT: Replace this with a TxResult listener.
-func (s *relaysSuite) waitForNextBlock() {
-	currentHeight := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
-
+func (s *relaysSuite) waitForNextTxs(numTxs int) []*types.TxResult {
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
-	blocksCh := s.blockClient.CommittedBlocksSequence(ctx).Subscribe(ctx).Ch()
-	for b := range blocksCh {
-		if b.Height() > currentHeight {
-			return
-		}
+	txResults := []*types.TxResult{}
+	ch := s.newBlocksEventsClient.Subscribe(ctx).Ch()
+	for i := 0; i < numTxs; i++ {
+		txResult := <-ch
+		txResults = append(txResults, txResult)
 	}
+	return txResults
 }
 
 // sendRelay sends a relay request from an application to a gateway by using
@@ -399,6 +394,143 @@ func (s *relaysSuite) shouldIncrementActor(
 	// Only increment the actor if the session has started, the session number is a multiple
 	// of the actorSessionIncRate, and the maxActorNum has not been reached.
 	return isSessionStartHeight && nextSessionNumber%actorSessionIncRate == 0 && !maxActorNumReached
+}
+
+func (s *relaysSuite) initializeProvisionedActors() {
+	loadTestManifestContent, err := os.ReadFile(loadTestManifestPath)
+	require.NoError(s, err)
+
+	provisionedActors, err := config.ParseLoadTestManifest(loadTestManifestContent)
+	require.NoError(s, err)
+
+	for _, gateway := range provisionedActors.Gateways {
+		s.provisionedGateways = append(s.provisionedGateways, &provisionedActorInfo{
+			accountInfo: &accountInfo{
+				keyName: gateway.KeyName,
+			},
+			exposedUrl: gateway.ExposedUrl,
+		})
+	}
+
+	for _, supplier := range provisionedActors.Suppliers {
+		s.provisionedSuppliers = append(s.provisionedSuppliers, &provisionedActorInfo{
+			accountInfo: &accountInfo{
+				keyName: supplier.KeyName,
+			},
+			exposedUrl: supplier.ExposedUrl,
+		})
+	}
+}
+
+func (s *relaysSuite) setupTxEventListeners() {
+	eventsQueryClient := testeventsquery.NewLocalnetClient(s.TestingT.(*testing.T))
+
+	deps := depinject.Supply(eventsQueryClient)
+	r, err := events.NewEventsReplayClient(
+		s.ctx,
+		deps,
+		newTxEventSubscriptionQuery,
+		tx.UnmarshalTxResult,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	s.newBlocksEventsClient = channel.Map(
+		s.ctx,
+		r.EventsSequence(s.ctx),
+		func(ctx context.Context, txResult *types.TxResult) (*types.TxResult, bool) {
+			return txResult, false
+		},
+	)
+}
+
+func (s *relaysSuite) ensureFundedActor(
+	txResults []*types.TxResult,
+	actor *accountInfo,
+) {
+	actorFunded := false
+	for _, txResult := range txResults {
+		for _, event := range txResult.Result.Events {
+			if event.Type == "transfer" {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == "recipient" && attribute.Value == actor.accAddress.String() {
+						return
+					}
+				}
+			}
+		}
+	}
+
+	require.Truef(s, actorFunded, "actor not funded")
+}
+
+func (s *relaysSuite) ensureStakedActor(
+	txResults []*types.TxResult,
+	msg string,
+	supplier *accountInfo,
+) {
+	supplierStaked := false
+	for _, txResult := range txResults {
+		for _, event := range txResult.Result.Events {
+			if event.Type == "message" {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == "action" && attribute.Value == msg {
+						for _, attribute := range event.Attributes {
+							if attribute.Key == "sender" && attribute.Value == supplier.accAddress.String() {
+								return
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	require.Truef(s, supplierStaked, "supplier not staked")
+}
+
+func (s *relaysSuite) ensureDelegatedApp(
+	txResults []*types.TxResult,
+	application *accountInfo,
+	gateways []*provisionedActorInfo,
+) {
+	numDelegatees := 0
+	for _, txResult := range txResults {
+		for _, event := range txResult.Result.Events {
+			if event.Type == EventRedelegation {
+				for _, attribute := range event.Attributes {
+					appAddress := fmt.Sprintf("%q", application.accAddress.String())
+					if attribute.Key == "app_address" && attribute.Value == appAddress {
+						for _, attribute := range event.Attributes {
+							if attribute.Key == "gateway_address" {
+								for _, gateway := range gateways {
+									gatewayAddr := fmt.Sprintf("%q", gateway.accAddress.String())
+									if attribute.Value == gatewayAddr {
+										numDelegatees++
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	require.Truef(s, numDelegatees == len(gateways), "app not delegated to all gateways")
+}
+
+func (s *relaysSuite) getRelayCost() int64 {
+	// Set up the tokenomics client.
+	flagSet := testclient.NewLocalnetFlagSet(s)
+	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
+	tokenomicsClient := tokenomics.NewQueryClient(clientCtx)
+
+	// Get the relay cost from the tokenomics module.
+	res, err := tokenomicsClient.Params(s.ctx, &tokenomics.QueryParamsRequest{})
+	require.NoError(s, err)
+
+	return int64(res.Params.ComputeUnitsToTokensMultiplier)
 }
 
 func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
