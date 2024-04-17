@@ -54,7 +54,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	claimMsg := newTestClaimMsg(t,
+	claimMsg := newTestClaimMsg(t, 1,
 		sessionRes.GetSession().GetSessionId(),
 		supplierAddr,
 		appAddr,
@@ -158,7 +158,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "on-chain session ID must match claim msg session ID",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return newTestClaimMsg(t, 1,
 					// Use a session ID that doesn't match.
 					"invalid_session_id",
 					supplierAddr,
@@ -179,7 +179,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return newTestClaimMsg(t, 1,
 					sessionRes.GetSession().GetSessionId(),
 					// Use a supplier address not included in the session.
 					wrongSupplierAddr,
@@ -200,7 +200,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg supplier address must exist on-chain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return newTestClaimMsg(t, 1,
 					sessionRes.GetSession().GetSessionId(),
 					// Use a supplier address that's nonexistent on-chain.
 					randSupplierAddr,
@@ -221,7 +221,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg application address must be in the session",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return newTestClaimMsg(t, 1,
 					sessionRes.GetSession().GetSessionId(),
 					supplierAddr,
 					// Use an application address not included in the session.
@@ -242,7 +242,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 		{
 			desc: "claim msg application address must exist on-chain",
 			claimMsgFn: func(t *testing.T) *types.MsgCreateClaim {
-				return newTestClaimMsg(t,
+				return newTestClaimMsg(t, 1,
 					sessionRes.GetSession().GetSessionId(),
 					supplierAddr,
 					// Use an application address that's nonexistent on-chain.
@@ -273,6 +273,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 
 func newTestClaimMsg(
 	t *testing.T,
+	sessionStartHeight int64,
 	sessionId string,
 	supplierAddr string,
 	appAddr string,
@@ -287,8 +288,8 @@ func newTestClaimMsg(
 			ApplicationAddress:      appAddr,
 			Service:                 service,
 			SessionId:               sessionId,
-			SessionStartBlockHeight: 1,
-			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+			SessionStartBlockHeight: sessionStartHeight,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(sessionStartHeight),
 		},
 		merkleRoot,
 	)
