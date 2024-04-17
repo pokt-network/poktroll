@@ -14,4 +14,4 @@ config:
   suppliers: []
   pprof:
     enabled: true
-    addr: :6060
+    addr: localhost:6060

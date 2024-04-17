@@ -20,7 +20,7 @@ metrics:
 # https://pkg.go.dev/github.com/google/pprof#section-readme
 pprof:
   enabled: false
-  addr: :6060
+  addr: localhost:6060
 
 pocket_node:
   # Pocket node URL that exposes CometBFT JSON-RPC API.

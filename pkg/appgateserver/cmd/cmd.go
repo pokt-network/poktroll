@@ -144,6 +144,13 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if appGateConfigs.Pprof.Enabled {
+		err = appGateServer.ServePprof(appGateConfigs.Pprof.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start pprof endpoint: %w", err)
+		}
+	}
+
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start app gate server: %w", err)

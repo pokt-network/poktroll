@@ -22,4 +22,4 @@ metrics:
   addr: :9090
 pprof:
   enabled: false
-  addr: :6060
+  addr: localhost:6060

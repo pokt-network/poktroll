@@ -16,6 +16,7 @@ queries from and which services it forwards requests to._
   - [`signing_key_name`](#signing_key_name)
   - [`smt_store_path`](#smt_store_path)
   - [`metrics`](#metrics)
+  - [`pprof`](#pprof)
 - [Pocket node connectivity](#pocket-node-connectivity)
   - [`query_node_rpc_url`](#query_node_rpc_url)
   - [`query_node_grpc_url`](#query_node_grpc_url)
@@ -95,6 +96,24 @@ metrics:
 When `enabled` is set to `true`, the exporter is active. The addr `value` of
 `:9090` implies the exporter is bound to port 9090 on all available network
 interfaces.
+
+
+### `pprof`
+
+_`Optional`_
+
+Configures a [pprof](https://github.com/google/pprof/blob/main/doc/README.md) endpoint for troubleshooting and debugging performance issues.
+
+Example configuration:
+
+```yaml
+pprof:
+  enabled: true
+  addr: localhost:6060
+```
+
+You can learn how to use that endpoint on [Performance Troubleshooting](../../develop/developer_guide/performance_troubleshooting.md) page.
+
 
 ## Pocket node connectivity
 
