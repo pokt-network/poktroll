@@ -112,6 +112,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
+
 		logger := polylog.Ctx(ctx)
 
 		// this session should no longer be updated

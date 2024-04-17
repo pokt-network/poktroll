@@ -95,6 +95,9 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
+
 		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
