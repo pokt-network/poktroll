@@ -250,7 +250,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             str(8084 + actor_number)
             + ":8545",  # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
             str(40044 + actor_number)
-            + ":40005",  # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
+            + ":40004",  # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069 + actor_number)
             + ":9090",  # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
@@ -291,7 +291,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
             str(42068 + actor_number)
             + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
             str(40054 + actor_number)
-            + ":40006",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
+            + ":40004",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
             str(9079 + actor_number)
             + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
@@ -332,7 +332,7 @@ for x in range(localnet_config["gateways"]["count"]):
             str(42078 + actor_number)
             + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
             str(40064 + actor_number)
-            + ":40006",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
+            + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
             str(9089 + actor_number)
             + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
