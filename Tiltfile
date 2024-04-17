@@ -25,11 +25,21 @@ localnet_config_defaults = {
             "level": "info",
             "format": "json",
         },
+        "delve": {"enabled": False},
     },
     "observability": {"enabled": True},
-    "relayminers": {"count": 1},
-    "gateways": {"count": 1},
-    "appgateservers": {"count": 1},
+    "relayminers": {
+        "count": 1,
+        "delve": {"enabled": False}
+    },
+    "gateways": {
+        "count": 1,
+        "delve": {"enabled": False},    
+    },
+    "appgateservers": {
+        "count": 1,
+        "delve": {"enabled": False},    
+    },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
