@@ -5,5 +5,5 @@ config:
       service_config:
         backend_url: http://anvil:8547/
         publicly_exposed_endpoints:
-        - relayminer2:8545
+        - relayminer2
       listen_url: http://0.0.0.0:8545

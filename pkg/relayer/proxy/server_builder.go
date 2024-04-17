@@ -42,7 +42,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Check that the supplier's advertised services' endpoints are present in
-	// the proxy config and handled by a proxy host
+	// the server config and handled by a server
 	// Iterate over the supplier's advertised services then iterate over each
 	// service's endpoint
 	for _, service := range supplier.Services {
@@ -54,9 +54,9 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			found := false
 			// Iterate over the server configs and check if `endpointUrl` is present
 			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
-			for _, proxyConfig := range rp.serverConfigs {
-				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
-				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Host) {
+			for _, serverConfig := range rp.serverConfigs {
+				supplierService, ok := serverConfig.Suppliers[service.Service.Id]
+				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
 					found = true
 					break
 				}

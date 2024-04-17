@@ -68,13 +68,13 @@ func init() {
 		},
 		secondaryService: {
 			{
-				Url:     "http://supplier:8546/",
+				Url:     "http://supplier1:8546/",
 				RpcType: sharedtypes.RPCType_GRPC,
 			},
 		},
 		thirdService: {
 			{
-				Url:     "http://supplier:8547/",
+				Url:     "http://supplier2:8547/",
 				RpcType: sharedtypes.RPCType_GRPC,
 			},
 		},
@@ -88,7 +88,7 @@ func init() {
 				defaultService: {
 					ServiceId:                defaultService,
 					ServerType:               config.ServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier:8545"},
+					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -96,7 +96,7 @@ func init() {
 				secondaryService: {
 					ServiceId:                secondaryService,
 					ServerType:               config.ServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier:8546"},
+					PubliclyExposedEndpoints: []string{"supplier1"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
 					},
@@ -110,7 +110,7 @@ func init() {
 				thirdService: {
 					ServiceId:                thirdService,
 					ServerType:               config.ServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier:8547"},
+					PubliclyExposedEndpoints: []string{"supplier2"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
 					},
@@ -265,7 +265,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
 					ServerType:               config.ServerType(100),
-					PubliclyExposedEndpoints: []string{"supplier:8545"},
+					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},
@@ -308,7 +308,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 				defaultService: {
 					ServiceId:                defaultService,
 					ServerType:               config.ServerTypeHTTP,
-					PubliclyExposedEndpoints: []string{"supplier:8545"},
+					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
 					},

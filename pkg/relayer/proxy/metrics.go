@@ -20,7 +20,7 @@ const (
 
 var (
 	// relaysTotal is a Counter metric for the total requests processed by the relay miner.
-	// It increments to track proxy requests and is labeled by 'proxy_name' and 'service_id',
+	// It increments to track proxy requests and is labeled by 'service_id',
 	// essential for monitoring load and traffic on different proxies and services.
 	//
 	// Usage:
@@ -33,7 +33,7 @@ var (
 	}, []string{"service_id"})
 
 	// relaysErrorsTotal is a Counter for total error events in the relay miner.
-	// It increments with each error, labeled by 'proxy_name' and 'service_id',
+	// It increments with each error, labeled by 'service_id',
 	// crucial for pinpointing error-prone areas for reliability improvement.
 	//
 	// Usage:
@@ -46,7 +46,7 @@ var (
 	}, []string{"service_id"})
 
 	// relaysSuccessTotal is a Counter metric for successful requests in the relay miner.
-	// It increments with each successful request, labeled by 'proxy_name' and 'service_id'.
+	// It increments with each successful request, labeled by ''service_id'.
 	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
 		Name:      requestsSuccessTotal,
@@ -54,7 +54,7 @@ var (
 	}, []string{"service_id"})
 
 	// relaysDurationSeconds observes request durations in the relay miner.
-	// This histogram, labeled by 'proxy_name' and 'service_id', measures response times,
+	// This histogram, labeled by 'service_id', measures response times,
 	// vital for performance analysis under different loads.
 	//
 	// Buckets:

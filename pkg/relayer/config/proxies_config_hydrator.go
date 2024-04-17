@@ -40,8 +40,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 
 		// Populate the server fields that are relevant to each supported server type
 		switch listenUrl.Scheme {
-		case "http":
-		case "ws":
+		case "http", "ws":
 			if err := serverConfig.parseHTTPServerConfig(yamlSupplierConfig); err != nil {
 				return err
 			}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -102,28 +103,27 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	defer request.Body.Close()
 
 	sync.logger.Debug().Msg("serving synchronous relay request")
+	listenAddress := sync.serverConfig.ListenAddress
 
 	// Extract the relay request from the request body.
 	sync.logger.Debug().Msg("extracting relay request from request body")
 	relayRequest, err := sync.newRelayRequest(request)
 	if err != nil {
-		listenAddress := sync.serverConfig.ListenAddress
 		sync.replyWithError(ctx, []byte{}, writer, listenAddress, "", err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	if err := relayRequest.ValidateBasic(); err != nil {
-		listenAddress := sync.serverConfig.ListenAddress
-		payload := relayRequest.Payload
-		sync.replyWithError(ctx, payload, writer, listenAddress, "", err)
+		sync.replyWithError(ctx, relayRequest.Payload, writer, listenAddress, "", err)
 		sync.logger.Warn().Err(err).Msg("failed validating relay response")
 		return
 	}
 
 	supplierService := relayRequest.Meta.SessionHeader.Service
+	requestPayload := relayRequest.Payload
 
-	var originHost string
+	originHost := request.Host
 	// When the proxy is behind a reverse proxy, or is getting its requests from
 	// a CDN or a load balancer, the host header may not contain the on-chain
 	// advertized address needed to determine the service that the relay request is for.
@@ -138,11 +138,17 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 		originHost = request.Header.Get("X-Forwarded-Host")
 	}
 
-	if originHost == "" {
-		originHost = request.Host
+	// Extract the hostname from the request's Host header to match it with the
+	// publicly exposed endpoints of the supplier service which are hostnames
+	// (i.e. hosts without the port number).
+	// Add the http scheme to the originHost to parse it as a URL.
+	originHostUrl, err := url.Parse(fmt.Sprintf("http://%s", originHost))
+	if err != nil {
+		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
+		return
 	}
 
-	var serviceUrl *url.URL
+	var serviceConfig *config.RelayMinerSupplierServiceConfig
 
 	// Get the Service and serviceUrl corresponding to the originHost.
 	// TODO_IMPROVE(red-0ne): Checking that the originHost is currently done by
@@ -152,24 +158,24 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// key so that we can get the service and serviceUrl in O(1) time.
 	for _, supplierServiceConfig := range sync.serverConfig.Suppliers {
 		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
-			if host == originHost && supplierService.Id == supplierServiceConfig.ServiceId {
-				serviceUrl = supplierServiceConfig.ServiceConfig.BackendUrl
+			if host == originHostUrl.Hostname() && supplierService.Id == supplierServiceConfig.ServiceId {
+				serviceConfig = supplierServiceConfig.ServiceConfig
 				break
 			}
 		}
 
-		if serviceUrl != nil {
+		if serviceConfig != nil {
 			break
 		}
 	}
 
-	if serviceUrl == nil {
+	if serviceConfig == nil {
 		sync.replyWithError(
 			ctx,
-			[]byte{},
+			requestPayload,
 			writer,
-			sync.serverConfig.ListenAddress,
-			"unknown",
+			listenAddress,
+			supplierService.Id,
 			ErrRelayerProxyServiceEndpointNotHandled,
 		)
 		return
@@ -187,17 +193,17 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	relayRequestSizeBytes.With("service_id", supplierService.Id).
 		Observe(float64(relayRequest.Size()))
 
-	relay, err := sync.serveHTTP(ctx, serviceUrl, supplierService, request, relayRequest)
+	relay, err := sync.serveHTTP(ctx, serviceConfig, supplierService, request, relayRequest)
 	if err != nil {
 		// Reply with an error if the relay could not be served.
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.serverConfig.ListenAddress, supplierService.Id, err)
+		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed serving relay request")
 		return
 	}
 
 	// Send the relay response to the client.
 	if err := sync.sendRelayResponse(relay.Res, writer); err != nil {
-		sync.replyWithError(ctx, relayRequest.Payload, writer, sync.serverConfig.ListenAddress, supplierService.Id, err)
+		sync.replyWithError(ctx, requestPayload, writer, listenAddress, supplierService.Id, err)
 		sync.logger.Warn().Err(err).Msg("failed sending relay response")
 		return
 	}
@@ -221,7 +227,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 // serveHTTP holds the underlying logic of ServeHTTP.
 func (sync *synchronousRPCServer) serveHTTP(
 	ctx context.Context,
-	serviceUrl *url.URL,
+	serviceConfig *config.RelayMinerSupplierServiceConfig,
 	supplierService *sharedtypes.Service,
 	request *http.Request,
 	relayRequest *types.RelayRequest,
@@ -248,15 +254,27 @@ func (sync *synchronousRPCServer) serveHTTP(
 	// Build the request to be sent to the native service by substituting
 	// the destination URL's host with the native service's listen address.
 	sync.logger.Debug().
-		Str("destination_url", serviceUrl.String()).
+		Str("destination_url", serviceConfig.BackendUrl.String()).
 		Msg("building relay request payload to service")
 
 	relayHTTPRequest := &http.Request{
 		Method: request.Method,
 		Header: request.Header,
-		URL:    serviceUrl,
-		Host:   serviceUrl.Host,
+		URL:    serviceConfig.BackendUrl,
+		Host:   serviceConfig.BackendUrl.Host,
 		Body:   requestBodyReader,
+	}
+
+	if serviceConfig.Authentication != nil {
+		relayHTTPRequest.SetBasicAuth(
+			serviceConfig.Authentication.Username,
+			serviceConfig.Authentication.Password,
+		)
+	}
+
+	// Add the headers to the request.
+	for key, value := range serviceConfig.Headers {
+		relayHTTPRequest.Header.Add(key, value)
 	}
 
 	// Send the relay request to the native service.
