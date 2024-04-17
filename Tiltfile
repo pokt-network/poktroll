@@ -207,6 +207,8 @@ helm_resource(
         + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled="
         + str(localnet_config["observability"]["enabled"]),
+        "--set=development.delve.enabled="
+        + str(localnet_config["validator"]["delve"]["enabled"]),
     ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
@@ -227,6 +229,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             + ".yaml",
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["relayminers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -266,6 +270,8 @@ for x in range(localnet_config["appgateservers"]["count"]):
             "--set=config.signing_key=app" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["appgateservers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -305,6 +311,8 @@ for x in range(localnet_config["gateways"]["count"]):
             "--set=config.signing_key=gateway" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["gateways"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
