@@ -45,6 +45,13 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
+	// TODO_IN_THIS_COMMIT: godoc comment.
+	pendingTxMu sync.Mutex
+	// TODO_IN_THIS_COMMIT: godoc comment.
+	queryNodeGRPCUrl *url.URL
+	// TODO_IN_THIS_COMMIT: godoc comment.
+	blockQueryClient cosmosclient.CometRPC
+
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
 }
