@@ -95,20 +95,31 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
+
 		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
-		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
+		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
+			sessionkeeper.GetSessionGracePeriodBlockCount()
+		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
+		if err != nil {
+			return either.Error[relayer.SessionTree](err), false
+		}
+
 		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
-		path := proofkeeper.GetPathForProof(latestBlock.Hash(), session.GetSessionHeader().GetSessionId())
+		blockHash := pathBlock.BlockID.Hash
+
+		path := proofkeeper.GetPathForProof(blockHash, session.GetSessionHeader().GetSessionId())
 		proof, err := session.ProveClosest(path)
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false
 		}
 
 		rs.logger.Info().
-			Int64("currentBlockHeight", latestBlock.Height()+1).
+			Int64("session_start_height", pathBlock.Block.Height).
 			Msg("submitting proof")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.

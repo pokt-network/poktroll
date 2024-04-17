@@ -454,14 +454,17 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
 
 	// TODO_IN_THIS_COMMIT: comment...
-	blockWaitGroup := new(sync.WaitGroup)
-	blockWaitGroup.Add(int(s.testDurationBlocks))
-	batchWaitGroup := new(sync.WaitGroup)
 
 	//fmt.Printf("s.testDurationBlocks: %d\n", s.testDurationBlocks)
 
 	channel.ForEach(s.ctx, s.batchInfoObs,
 		func(ctx context.Context, batchInfo *batchInfoNotif) {
+			if batchInfo.blockHeight >= s.startBlockHeight+s.testDurationBlocks {
+				logger.Info().Msg("cancelling scenario context...")
+				s.cancelCtx()
+				return
+			}
+
 			//fmt.Printf("[batchInfo] block_height: %d; session_num: %d; batch_time: %s\n", batchInfo.blockHeight, batchInfo.sessionNumber, batchInfo.nextBatchTime)
 
 			// Calculate the relays per second as the number of active applications
@@ -472,22 +475,11 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 
 			//fmt.Printf("relaysPerSed: %d; relayInterval: %s\n", relaysPerSec, relayInterval)
 
+			batchWaitGroup := new(sync.WaitGroup)
 			batchWaitGroup.Add(relaysPerSec)
-			//fmt.Printf("batchWaitGroup.Add(%d)\n", relaysPerSec)
 
-			batchLimiter.Go(s.ctx, func() {
-				for i := 0; i < relaysPerSec; i++ {
-					select {
-					// If the context is cancelled, the test is finished, stop sending relay requests.
-					case <-ctx.Done():
-						fmt.Println("context done")
-						//batchWaitGroup.Done()
-						blockWaitGroup.Done()
-						return
-					default:
-					}
-
-					//fmt.Printf("i: %d\n", i)
+			for i := 0; i < relaysPerSec; i++ {
+				batchLimiter.Go(s.ctx, func() {
 
 					relaysSent := s.relaysSent.Add(1) - 1
 					blockHeight := s.blocksReplayObs.Last(s.ctx, 1)[0].Height()
@@ -515,18 +507,14 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 
 					//fmt.Println("batchWaitGroup done")
 					batchWaitGroup.Done()
-				}
-			})
+				})
+			}
 
-			//fmt.Println("waiting for batchWaitGroup")
 			batchWaitGroup.Wait()
-			//fmt.Println("blockWaitGroup.Done()")
-			blockWaitGroup.Done()
 		},
 	)
 
-	blockWaitGroup.Wait()
-	//fmt.Println("blockWaitGroup wait over!")
+	<-s.ctx.Done()
 }
 
 // stakeGateways stakes the next gatewayInc number of gateways, picks their keyName

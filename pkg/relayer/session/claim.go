@@ -112,6 +112,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
+
 		logger := polylog.Ctx(ctx)
 
 		// this session should no longer be updated
@@ -120,9 +123,14 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
-		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
+		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
+			sessionkeeper.GetSessionGracePeriodBlockCount()
+		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
+		if err != nil {
+			return either.Error[relayer.SessionTree](err), false
+		}
 		logger.Info().
-			Int64("current_block", latestBlock.Height()+1).
+			Int64("session_start_block", pathBlock.Block.Height).
 			Msg("submitting claim")
 
 		sessionHeader := session.GetSessionHeader()

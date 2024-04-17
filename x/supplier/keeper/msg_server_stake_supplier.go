@@ -6,11 +6,19 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
 func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplier) (*types.MsgStakeSupplierResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"stake_supplier",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "StakeSupplier")
 	logger.Info(fmt.Sprintf("About to stake supplier with msg: %v", msg))
 
@@ -67,6 +75,7 @@ func (k msgServer) StakeSupplier(ctx context.Context, msg *types.MsgStakeSupplie
 	k.SetSupplier(ctx, supplier)
 	logger.Info(fmt.Sprintf("Successfully updated supplier stake for supplier: %+v", supplier))
 
+	isSuccessful = true
 	return &types.MsgStakeSupplierResponse{}, nil
 }
 

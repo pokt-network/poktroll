@@ -198,7 +198,7 @@ func setupRelayerDependencies(
 		newSupplyTxClientFn(signingKeyName),
 		newSupplySupplierClientFn(signingKeyName),
 		newSupplyRelayerProxyFn(signingKeyName, proxiedServiceEndpoints),
-		newSupplyRelayerSessionsManagerFn(smtStorePath),
+		newSupplyRelayerSessionsManagerFn(smtStorePath, queryNodeRPCUrl),
 	}
 
 	return config.SupplyConfig(ctx, cmd, supplierFuncs)
@@ -327,7 +327,10 @@ func newSupplyRelayerProxyFn(
 // newSupplyRelayerSessionsManagerFn returns a function which constructs a
 // RelayerSessionsManager instance and returns a new depinject.Config which
 // is supplied with the given deps and the new RelayerSessionsManager.
-func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
+func newSupplyRelayerSessionsManagerFn(
+	smtStorePath string,
+	queryNodeGRPCUrl *url.URL,
+) config.SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
@@ -336,6 +339,7 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		relayerSessionsManager, err := session.NewRelayerSessions(
 			ctx, deps,
 			session.WithStoresDirectory(smtStorePath),
+			session.WithQueryNodeGRPCUrl(queryNodeGRPCUrl),
 		)
 		if err != nil {
 			return nil, err

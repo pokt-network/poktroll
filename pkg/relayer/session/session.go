@@ -2,9 +2,11 @@ package session
 
 import (
 	"context"
+	"net/url"
 	"sync"
 
 	"cosmossdk.io/depinject"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -59,7 +61,7 @@ func NewRelayerSessions(
 	ctx context.Context,
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
-) (relayer.RelayerSessionsManager, error) {
+) (_ relayer.RelayerSessionsManager, err error) {
 	rs := &relayerSessionsManager{
 		logger:          polylog.Ctx(ctx),
 		sessionsTrees:   make(sessionsTreesMap),
@@ -79,6 +81,11 @@ func NewRelayerSessions(
 	}
 
 	if err := rs.validateConfig(); err != nil {
+		return nil, err
+	}
+
+	rs.blockQueryClient, err = cosmosclient.NewClientFromNode(rs.queryNodeGRPCUrl.String())
+	if err != nil {
 		return nil, err
 	}
 

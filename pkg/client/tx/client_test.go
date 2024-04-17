@@ -289,6 +289,8 @@ func TestTxClient_SignAndBroadcast_CheckTxError(t *testing.T) {
 		ctx                  = context.Background()
 	)
 
+	t.Log("TODO_FLAKY: Known flaky test - TestTxClient_SignAndBroadcast_CheckTxError")
+
 	keyring, signingKey := testkeyring.NewTestKeyringWithKey(t, testSigningKeyName)
 
 	eventsQueryClient := testeventsquery.NewOneTimeTxEventsQueryClient(
@@ -405,7 +407,7 @@ func TestTxClient_SignAndBroadcast_Timeout(t *testing.T) {
 	require.NoError(t, err)
 
 	// TODO_TECHDEBT(#446): Centralize the configuration for the SMT spec.
-	spec := smt.NoPrehashSpec(sha256.New(), true)
+	spec := smt.NewTrieSpec(sha256.New(), true)
 	emptyBlockHash := make([]byte, spec.PathHasherSize())
 
 	for i := 0; i < tx.DefaultCommitTimeoutHeightOffset; i++ {

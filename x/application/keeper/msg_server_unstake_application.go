@@ -5,11 +5,23 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 // TODO(#73): Determine if an application needs an unbonding period after unstaking.
-func (k msgServer) UnstakeApplication(ctx context.Context, msg *types.MsgUnstakeApplication) (*types.MsgUnstakeApplicationResponse, error) {
+func (k msgServer) UnstakeApplication(
+	ctx context.Context,
+	msg *types.MsgUnstakeApplication,
+) (*types.MsgUnstakeApplicationResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"unstake_application",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "UnstakeApplication")
 	logger.Info(fmt.Sprintf("About to unstake application with msg: %v", msg))
 
@@ -40,5 +52,6 @@ func (k msgServer) UnstakeApplication(ctx context.Context, msg *types.MsgUnstake
 	k.RemoveApplication(ctx, appAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the application: %+v", foundApp))
 
+	isSuccessful = true
 	return &types.MsgUnstakeApplicationResponse{}, nil
 }
