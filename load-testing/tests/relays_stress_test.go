@@ -45,7 +45,7 @@ var (
 	// fundingAmount is the amount of tokens to fund other accounts.
 	fundingAmount = sdk.NewCoin("upokt", math.NewInt(10000000))
 	// stakeAmount is the amount of tokens to stake for suppliers and gateways.
-	stakeAmount = sdk.NewCoin("upokt", math.NewInt(1100000))
+	stakeAmount = sdk.NewCoin("upokt", math.NewInt(1100009))
 	// usedService is the service ID for the Anvil service that all applications
 	// and suppliers will be using in this test.
 	usedService = &sharedtypes.Service{Id: "anvil"}
@@ -120,12 +120,12 @@ type relaysSuite struct {
 	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list.
 	gatewayUrls map[string]*url.URL
-	// suppliersUrl is the list of provisioned suppliers.
+	// suppliersUrls is the list of provisioned suppliers.
 	// These are the suppliers that are available to be staked.
 	// Since RelayMiners are pre-provisioned, and already assigned a signingKeyName
 	// and exposedServerAddress, the test suite does not create new ones but picks
 	// from this list and use its information to create StakeSupplierMsgs
-	suppliersUrl map[string]string
+	suppliersUrls map[string]*url.URL
 
 	// preparedGateways is the list of gateways that are already staked and ready
 	// to be used in the next session.
@@ -203,6 +203,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		}
 	})
 
+	s.gatewayUrls = make(map[string]*url.URL)
+	s.suppliersUrls = make(map[string]*url.URL)
+
 	// Set up the block client and observable that will be notifying the suite
 	// about the committed blocks.
 	s.blocksReplayObs = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T)).
@@ -259,7 +262,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 	maxSuppliers := table.Cell(3, 3).Int64()
 	require.Truef(s,
-		len(s.suppliersUrl) >= int(maxSuppliers),
+		len(s.suppliersUrls) >= int(maxSuppliers),
 		"provisioned suppliers must be greater or equal than the max suppliers to be staked",
 	)
 
@@ -280,11 +283,18 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		maxSuppliers/supplierInc*supplierBlockIncRate,
 	)
 
-	suppliers, gateways, applications := s.sendFundAvailableActorsMsgs()
+	// Fund all the provisioned suppliers and gateways while funding only the
+	// initial applications since they are created on the fly.
+	fundedSuppliers, fundedGateways, fundedApplications := s.sendFundAvailableActorsMsgs()
 	txResults := s.waitForNextTxs(1)
-	s.ensureFundedActors(txResults, suppliers)
-	s.ensureFundedActors(txResults, gateways)
-	s.ensureFundedActors(txResults, applications)
+	s.ensureFundedActors(txResults, fundedSuppliers)
+	s.ensureFundedActors(txResults, fundedGateways)
+	s.ensureFundedActors(txResults, fundedApplications)
+
+	// The initial actors are the first actors to be staked.
+	suppliers := fundedSuppliers[:s.supplierInitialCount]
+	gateways := fundedGateways[:s.gatewayInitialCount]
+	applications := fundedApplications[:s.appInitialCount]
 
 	// Stake All the initial actors
 	numTxs := s.sendInitialActorsStakeMsgs(suppliers, gateways, applications)

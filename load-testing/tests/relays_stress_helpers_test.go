@@ -50,7 +50,7 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 // sendFundAvailableActorsMsgs uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
 func (s *relaysSuite) sendFundAvailableActorsMsgs() (suppliers, gateways, applications []*accountInfo) {
-	for keyName, _ := range s.suppliersUrl {
+	for keyName := range s.suppliersUrls {
 		supplier := s.addSupplier(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
@@ -65,7 +65,7 @@ func (s *relaysSuite) sendFundAvailableActorsMsgs() (suppliers, gateways, applic
 	}
 
 	// Gateway accounts already exist in the provisioned gateways slice.
-	for keyName, _ := range s.gatewayUrls {
+	for keyName := range s.gatewayUrls {
 		gateway := s.addGateway(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
@@ -139,7 +139,7 @@ func (s *relaysSuite) generateStakeSupplierMsg(supplier *accountInfo) {
 				Service: usedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
-						Url:     s.suppliersUrl[supplier.keyName],
+						Url:     s.suppliersUrls[supplier.keyName].String(),
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
@@ -201,7 +201,7 @@ func (s *relaysSuite) addSupplier(keyName string) *accountInfo {
 		accAddress:    accAddress,
 		keyName:       keyName,
 		pendingMsgs:   []sdk.Msg{},
-		amountToStake: fundingAmount,
+		amountToStake: stakeAmount,
 	}
 }
 
@@ -218,7 +218,7 @@ func (s *relaysSuite) addGateway(keyName string) *accountInfo {
 		accAddress:    accAddress,
 		keyName:       keyName,
 		pendingMsgs:   []sdk.Msg{},
-		amountToStake: fundingAmount,
+		amountToStake: stakeAmount,
 	}
 }
 
@@ -226,7 +226,7 @@ func (s *relaysSuite) addGateway(keyName string) *accountInfo {
 // provided and imports it in the keyring.
 func (s *relaysSuite) createApplicationAccount(
 	appIdx int64,
-	fundingAmount sdk.Coin,
+	amountToStake sdk.Coin,
 ) *accountInfo {
 	keyName := fmt.Sprintf("app-%d", appIdx)
 	privKey := secp256k1.GenPrivKey()
@@ -245,7 +245,7 @@ func (s *relaysSuite) createApplicationAccount(
 		accAddress:    accAddress,
 		keyName:       keyName,
 		pendingMsgs:   []sdk.Msg{},
-		amountToStake: fundingAmount,
+		amountToStake: amountToStake,
 	}
 }
 
@@ -314,8 +314,10 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 
 	// txContext.BroadcastTx uses the async mode, if this method changes in the future
 	// to be synchronous, make sure to keep this async to avoid blocking the test.
-	_, err = s.txContext.BroadcastTx(txBz)
+	r, err := s.txContext.BroadcastTx(txBz)
 	require.NoError(s, err)
+	require.NotNil(s, r)
+	fmt.Printf("tx sent: %v+\n", r)
 	actor.pendingMsgs = []sdk.Msg{}
 }
 
@@ -392,7 +394,9 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	}
 
 	for _, supplier := range provisionedActors.Suppliers {
-		s.suppliersUrl[supplier.KeyName] = supplier.ExposedUrl
+		exposedUrl, err := url.Parse(supplier.ExposedUrl)
+		require.NoError(s, err)
+		s.suppliersUrls[supplier.KeyName] = exposedUrl
 	}
 }
 
