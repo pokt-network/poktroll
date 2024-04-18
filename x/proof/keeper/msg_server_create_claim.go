@@ -6,12 +6,20 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
 func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (*types.MsgCreateClaimResponse, error) {
 	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
+
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"create_claim",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
 
 	logger := k.Logger().With("method", "CreateClaim")
 	logger.Info("creating claim")
@@ -64,6 +72,7 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 
 	logger.Info("created new claim")
 
+	isSuccessful = true
 	// TODO: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
 }

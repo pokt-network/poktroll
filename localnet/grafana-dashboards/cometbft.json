@@ -20,7 +20,22 @@
     "fiscalYearStartMonth": 0,
     "gnetId": 11036,
     "graphTooltip": 0,
-    "links": [],
+    "links": [
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [
+                "application_logs"
+            ],
+            "targetBlank": false,
+            "title": "Application Logs",
+            "tooltip": "",
+            "type": "dashboards",
+            "url": ""
+        }
+    ],
     "panels": [
         {
             "collapsed": false,

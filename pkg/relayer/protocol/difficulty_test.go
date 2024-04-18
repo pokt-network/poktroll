@@ -42,7 +42,7 @@ func TestCountDifficultyBits(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("difficulty_%d_zero_bits", test.difficulty), func(t *testing.T) {
-			actualDifficulty, err := protocol.CountDifficultyBits(test.bz)
+			actualDifficulty, err := protocol.CountHashDifficultyBits(test.bz)
 			require.NoError(t, err)
 			require.Equal(t, test.difficulty, actualDifficulty)
 		})
@@ -50,7 +50,7 @@ func TestCountDifficultyBits(t *testing.T) {
 }
 
 func TestCountDifficultyBits_Error(t *testing.T) {
-	_, err := protocol.CountDifficultyBits([]byte{0, 0, 0, 0})
+	_, err := protocol.CountHashDifficultyBits([]byte{0, 0, 0, 0})
 	require.ErrorIs(t, err, protocol.ErrDifficulty)
 	require.ErrorContains(t, err, "difficulty matches bytes length")
 }
