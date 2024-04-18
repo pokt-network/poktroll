@@ -1,10 +1,22 @@
 package sdk
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
-// HostToWebsocketURL converts the provided host into a websocket URL that can
+// RPCToWebsocketURL converts the provided URL into a websocket URL string that can
 // be used to subscribe to onchain events and query the chain via a client
 // context or send transactions via a tx client context.
-func HostToWebsocketURL(host string) string {
-	return fmt.Sprintf("ws://%s/websocket", host)
+func RPCToWebsocketURL(hostUrl *url.URL) string {
+	switch hostUrl.Scheme {
+	case "http":
+		fallthrough
+	case "ws":
+		fallthrough
+	case "tcp":
+		return fmt.Sprintf("ws://%s/websocket", hostUrl.Host)
+	default:
+		return fmt.Sprintf("wss://%s/websocket", hostUrl.Host)
+	}
 }

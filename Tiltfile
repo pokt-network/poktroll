@@ -25,11 +25,21 @@ localnet_config_defaults = {
             "level": "info",
             "format": "json",
         },
+        "delve": {"enabled": False},
     },
     "observability": {"enabled": True},
-    "relayminers": {"count": 1},
-    "gateways": {"count": 1},
-    "appgateservers": {"count": 1},
+    "relayminers": {
+        "count": 1,
+        "delve": {"enabled": False}
+    },
+    "gateways": {
+        "count": 1,
+        "delve": {"enabled": False},    
+    },
+    "appgateservers": {
+        "count": 1,
+        "delve": {"enabled": False},    
+    },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
     "helm_chart_local_repo": {"enabled": False, "path": "../helm-charts"},
@@ -197,6 +207,8 @@ helm_resource(
         + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled="
         + str(localnet_config["observability"]["enabled"]),
+        "--set=development.delve.enabled="
+        + str(localnet_config["validator"]["delve"]["enabled"]),
     ],
     image_deps=["poktrolld"],
     image_keys=[("image.repository", "image.tag")],
@@ -217,6 +229,8 @@ for x in range(localnet_config["relayminers"]["count"]):
             + ".yaml",
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["relayminers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -236,7 +250,7 @@ for x in range(localnet_config["relayminers"]["count"]):
             str(8084 + actor_number)
             + ":8545",  # relayminer1 - exposes 8545, relayminer2 exposes 8546, etc.
             str(40044 + actor_number)
-            + ":40005",  # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
+            + ":40004",  # DLV port. relayminer1 - exposes 40045, relayminer2 exposes 40046, etc.
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069 + actor_number)
             + ":9090",  # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
@@ -256,6 +270,8 @@ for x in range(localnet_config["appgateservers"]["count"]):
             "--set=config.signing_key=app" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["appgateservers"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -275,7 +291,7 @@ for x in range(localnet_config["appgateservers"]["count"]):
             str(42068 + actor_number)
             + ":42069",  # appgateserver1 - exposes 42069, appgateserver2 exposes 42070, etc.
             str(40054 + actor_number)
-            + ":40006",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
+            + ":40004",  # DLV port. appgateserver1 - exposes 40055, appgateserver2 exposes 40056, etc.
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
             str(9079 + actor_number)
             + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
@@ -295,6 +311,8 @@ for x in range(localnet_config["gateways"]["count"]):
             "--set=config.signing_key=gateway" + str(actor_number),
             "--set=metrics.serviceMonitor.enabled="
             + str(localnet_config["observability"]["enabled"]),
+            "--set=development.delve.enabled="
+            + str(localnet_config["gateways"]["delve"]["enabled"]),
         ],
         image_deps=["poktrolld"],
         image_keys=[("image.repository", "image.tag")],
@@ -314,7 +332,7 @@ for x in range(localnet_config["gateways"]["count"]):
             str(42078 + actor_number)
             + ":42069",  # gateway1 - exposes 42079, gateway2 exposes 42080, etc.
             str(40064 + actor_number)
-            + ":40006",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
+            + ":40004",  # DLV port. gateway1 - exposes 40065, gateway2 exposes 40066, etc.
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
             str(9089 + actor_number)
             + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
