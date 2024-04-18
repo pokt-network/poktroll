@@ -33,6 +33,7 @@ const (
 	MsgStakeApplication = "/poktroll.application.MsgStakeApplication"
 	MsgStakeGateway     = "/poktroll.gateway.MsgStakeGateway"
 	MsgStakeSupplier    = "/poktroll.supplier.MsgStakeSupplier"
+	AppMsgUpdateParams  = "/poktroll.application.MsgUpdateParams"
 	EventRedelegation   = "poktroll.application.EventRedelegation"
 )
 
@@ -281,6 +282,10 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		maxApps/appInc*appBlockIncRate,
 		maxSuppliers/supplierInc*supplierBlockIncRate,
 	)
+
+	s.adjustMaxDelegationsParam(maxGateways)
+	s.waitForNextTxs(1)
+	s.ensureUpdatedMaxDelegations(maxGateways)
 
 	// Fund all the provisioned suppliers and gateways while funding only the
 	// initial applications since they are created on the fly.

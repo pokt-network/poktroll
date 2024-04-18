@@ -358,6 +358,8 @@ var (
 			{
 				Name: applicationmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&applicationmodulev1.Module{
+					// TODO_HACK: hardcoded authority address for now, to remove when
+					// we have proper governance in place.
 					// NB: pnf key address; see `poktrolld keys list --keyring-backend test`.
 					Authority: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",
 				}),

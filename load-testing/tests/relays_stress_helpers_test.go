@@ -467,6 +467,7 @@ func (s *relaysSuite) ensureFundedActors(
 		}
 
 		if !actorFunded {
+			s.cancelCtx()
 			s.Fatal("actor not funded")
 			return
 		}
@@ -500,12 +501,13 @@ func (s *relaysSuite) ensureStakedActors(
 		}
 
 		if !actorStaked {
-			s.Fatalf("actor %s not staked", actor.keyName)
 			for _, txResult := range txResults {
 				if txResult.Result.Log != "" {
 					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
 				}
 			}
+			s.cancelCtx()
+			s.Fatalf("actor %s not staked", actor.keyName)
 			return
 		}
 	}
@@ -540,6 +542,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 		}
 
 		if numDelegatees != len(gateways) {
+			s.cancelCtx()
 			s.Fatal("applications not delegated to all gateways")
 			return
 		}
@@ -752,4 +755,36 @@ func (s *relaysSuite) stakeSuppliers(
 	}
 
 	return newSuppliers
+}
+
+func (s *relaysSuite) adjustMaxDelegationsParam(maxGateways int64) {
+	// Set the max_delegated_gateways parameter to the number of gateways
+	// that are currently used in the test.
+
+	s.fundingAccountInfo.pendingMsgs = append(
+		s.fundingAccountInfo.pendingMsgs,
+		&apptypes.MsgUpdateParams{
+			Authority: s.fundingAccountInfo.accAddress.String(),
+			Params: apptypes.Params{
+				MaxDelegatedGateways: uint64(maxGateways),
+			},
+		},
+	)
+
+	s.sendTx(s.fundingAccountInfo)
+}
+
+func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
+	flagSet := testclient.NewLocalnetFlagSet(s)
+	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
+	appClient := apptypes.NewQueryClient(clientCtx)
+
+	// Get the updated max delegations param from the application module.
+	res, err := appClient.Params(s.ctx, &apptypes.QueryParamsRequest{})
+	require.NoError(s, err)
+
+	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {
+		s.cancelCtx()
+		s.Fatal("gateways not delegated to all applications")
+	}
 }
