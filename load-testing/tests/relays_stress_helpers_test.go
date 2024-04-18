@@ -50,7 +50,8 @@ func (s *relaysSuite) initFundingAccount(fundingAccountKeyName string) {
 // sendFundAvailableActorsMsgs uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
 func (s *relaysSuite) sendFundAvailableActorsMsgs() (suppliers, gateways, applications []*accountInfo) {
-	for keyName := range s.suppliersUrls {
+	for i := int64(0); i < s.supplierInitialCount; i++ {
+		keyName := fmt.Sprintf("supplier%d", i+1)
 		supplier := s.addSupplier(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
@@ -65,7 +66,8 @@ func (s *relaysSuite) sendFundAvailableActorsMsgs() (suppliers, gateways, applic
 	}
 
 	// Gateway accounts already exist in the provisioned gateways slice.
-	for keyName := range s.gatewayUrls {
+	for i := int64(0); i < s.gatewayInitialCount; i++ {
+		keyName := fmt.Sprintf("gateway%d", i+1)
 		gateway := s.addGateway(keyName)
 		s.fundingAccountInfo.pendingMsgs = append(
 			s.fundingAccountInfo.pendingMsgs,
@@ -297,7 +299,7 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	height := s.blocksReplayObs.Last(s.ctx, 1)[0].Height()
+	height := s.blockClient.LastNBlocks(s.ctx, 1)[0].Height()
 	txBuilder.SetTimeoutHeight(uint64(height + 2))
 	txBuilder.SetGasLimit(690000042)
 
@@ -314,10 +316,11 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 
 	// txContext.BroadcastTx uses the async mode, if this method changes in the future
 	// to be synchronous, make sure to keep this async to avoid blocking the test.
-	r, err := s.txContext.BroadcastTx(txBz)
-	require.NoError(s, err)
-	require.NotNil(s, r)
-	fmt.Printf("tx sent: %v+\n", r)
+	go func() {
+		r, err := s.txContext.BroadcastTx(txBz)
+		require.NoError(s, err)
+		require.NotNil(s, r)
+	}()
 	actor.pendingMsgs = []sdk.Msg{}
 }
 
@@ -326,6 +329,7 @@ func (s *relaysSuite) sendTx(actor *accountInfo) {
 func (s *relaysSuite) waitForNextTxs(numTxs int) []*types.TxResult {
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
+
 	txResults := []*types.TxResult{}
 	ch := s.newBlocksEventsClient.Subscribe(ctx).Ch()
 	for i := 0; i < numTxs; i++ {
@@ -378,6 +382,22 @@ func (s *relaysSuite) shouldIncrementActor(
 	// Only increment the actor if the session has started, the session number is a multiple
 	// of the actorSessionIncRate, and the maxActorNum has not been reached.
 	return isSessionStartHeight && nextSessionNumber%actorSessionIncRate == 0 && !maxActorNumReached
+}
+
+func (s *relaysSuite) shouldIncrementSupplier(
+	sessionInfo *sessionInfoNotif,
+	supplierBlockIncRate, supplierInc, maxSupplierNum int64,
+) bool {
+	// TODO_TECHDEBT(#21): replace with gov param query when available.
+	actorSessionIncRate := supplierBlockIncRate / keeper.NumBlocksPerSession
+	nextSessionNumber := sessionInfo.sessionNumber + 1
+	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
+	maxActorNumReached := supplierInc == maxSupplierNum
+
+	// Only increment the supplier if the session is at its last block,
+	// the next session number is a multiple of the actorSessionIncRate
+	// and the maxActorNum has not been reached.
+	return isSessionEndHeight && nextSessionNumber%actorSessionIncRate == 0 && !maxActorNumReached
 }
 
 func (s *relaysSuite) initializeProvisionedActors() {
@@ -446,7 +466,10 @@ func (s *relaysSuite) ensureFundedActors(
 			}
 		}
 
-		require.Truef(s, actorFunded, "actor not funded")
+		if !actorFunded {
+			s.Fatal("actor not funded")
+			return
+		}
 	}
 }
 
@@ -476,7 +499,15 @@ func (s *relaysSuite) ensureStakedActors(
 			}
 		}
 
-		require.Truef(s, actorStaked, "actor not staked")
+		if !actorStaked {
+			s.Fatalf("actor %s not staked", actor.keyName)
+			for _, txResult := range txResults {
+				if txResult.Result.Log != "" {
+					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
+				}
+			}
+			return
+		}
 	}
 }
 
@@ -508,7 +539,10 @@ func (s *relaysSuite) ensureDelegatedApps(
 			}
 		}
 
-		require.Truef(s, numDelegatees == len(gateways), "app not delegated to all gateways")
+		if numDelegatees != len(gateways) {
+			s.Fatal("applications not delegated to all gateways")
+			return
+		}
 	}
 }
 
@@ -529,6 +563,9 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 	if notif.blockHeight == notif.sessionStartBlockHeight {
 		logger.Debug().
 			Int64("session_num", notif.sessionNumber).
+			Int64("block_height", notif.blockHeight).
+			Int64("prepared_apps", int64(len(s.preparedApplications))).
+			Int64("prepared_gws", int64(len(s.preparedGateways))).
 			Msg("activating prepared actors")
 
 		// Activate teh prepared actors and prune the prepared lists.
@@ -549,4 +586,170 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 	}
 
 	return false
+}
+
+// stakeGateways stakes the next gatewayInc number of gateways, picks their keyName
+// from the provisioned gateways list and sends the corresponding stake transactions.
+func (s *relaysSuite) stakeGateways(
+	sessionInfo *sessionInfoNotif,
+	gatewayInc,
+	maxGateways int64,
+) (newGateways []*accountInfo) {
+	gatewayCount := int64(len(s.activeGateways) + len(s.preparedGateways))
+
+	gatewaysToStake := gatewayInc
+	if gatewayCount+gatewaysToStake > maxGateways {
+		gatewaysToStake = maxGateways - gatewayCount
+	}
+
+	if gatewaysToStake == 0 {
+		return newGateways
+	}
+
+	logger.Debug().
+		Int64("session_num", sessionInfo.sessionNumber).
+		Int64("block_height", sessionInfo.blockHeight).
+		Msgf(
+			"staking gateways for next session %d (%d->%d)",
+			sessionInfo.sessionNumber+1,
+			gatewayCount,
+			gatewayCount+gatewaysToStake,
+		)
+
+	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
+		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
+		gateway := s.addGateway(keyName)
+		s.generateStakeGatewayMsg(gateway)
+		s.sendTx(gateway)
+		newGateways = append(newGateways, gateway)
+	}
+
+	// The new gateways are returned so the caller can construct delegation messages
+	// given the existing applications.
+	return newGateways
+}
+
+// fundNewApps creates the applications given the next appIncAmt and sends the corresponding
+// fund transaction.
+func (s *relaysSuite) fundNewApps(
+	sessionInfo *sessionInfoNotif,
+	appIncAmt,
+	maxApps int64,
+) (newApps []*accountInfo) {
+	appCount := int64(len(s.activeApplications) + len(s.preparedApplications))
+
+	appsToFund := appIncAmt
+	if appCount+appsToFund > maxApps {
+		appsToFund = maxApps - appCount
+	}
+
+	if appsToFund == 0 {
+		return newApps
+	}
+
+	logger.Debug().
+		Int64("session_num", sessionInfo.sessionNumber).
+		Int64("block_height", sessionInfo.blockHeight).
+		Msgf(
+			"funding applications for next session %d (%d->%d)",
+			sessionInfo.sessionNumber+1,
+			appCount,
+			appCount+appsToFund,
+		)
+
+	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
+	for appIdx := int64(0); appIdx < appsToFund; appIdx++ {
+		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
+		s.generateFundApplicationMsg(app)
+		newApps = append(newApps, app)
+	}
+	s.sendTx(s.fundingAccountInfo)
+
+	// Then new applications are returned so the caller can construct delegation messages
+	// given the existing gateways.
+	return newApps
+}
+
+// stakeAndDelegateApps stakes the new applications and delegates them to both
+// the active and new gateways.
+// It also ensures that new gateways are delegated to the existing applications.
+// It waits for the stake delegate messages to be committed before adding the new
+// actors to their corresponding prepared lists.
+func (s *relaysSuite) stakeAndDelegateApps(
+	sessionInfo *sessionInfoNotif,
+	newApps, newGateways []*accountInfo,
+) int {
+
+	// TODO_IN_THIS_COMMIT: send an UpdateParams message to the application
+	// module to set `max_delegated_gateways` accordingly.
+
+	logger.Debug().
+		Int64("session_num", sessionInfo.sessionNumber).
+		Int64("block_height", sessionInfo.blockHeight).
+		Msgf(
+			"delegating apps for next session %d",
+			sessionInfo.sessionNumber+1,
+		)
+
+	for _, app := range s.activeApplications {
+		for _, gateway := range newGateways {
+			s.generateDelegateToGatewayMsg(app, gateway)
+		}
+		s.sendTx(app)
+	}
+
+	for _, app := range newApps {
+		// Stake and delegate messages for a new application are sent in a single
+		// transaction to avoid waiting for an additional block.
+		s.generateStakeApplicationMsg(app)
+		for _, gateway := range s.activeGateways {
+			s.generateDelegateToGatewayMsg(app, gateway)
+		}
+		for _, gateway := range newGateways {
+			s.generateDelegateToGatewayMsg(app, gateway)
+		}
+		s.sendTx(app)
+	}
+
+	return len(s.activeApplications) + len(newApps)
+}
+
+// stakeSuppliers increments the number of suppliers to be staked.
+// Staking new suppliers can run concurrently since it doesn't need to be
+// synchronized with other actors.
+func (s *relaysSuite) stakeSuppliers(
+	sessionInfo *sessionInfoNotif,
+	supplierInc,
+	maxSuppliers int64,
+) (newSuppliers []*accountInfo) {
+	supplierCount := int64(len(s.stakedSuppliers))
+
+	suppliersToStake := supplierInc
+	if supplierCount+suppliersToStake > maxSuppliers {
+		suppliersToStake = maxSuppliers - supplierCount
+	}
+
+	if suppliersToStake == 0 {
+		return newSuppliers
+	}
+
+	logger.Debug().
+		Int64("session_num", sessionInfo.sessionNumber).
+		Int64("block_height", sessionInfo.blockHeight).
+		Msgf(
+			"staking suppliers for next session %d (%d->%d)",
+			sessionInfo.sessionNumber+1,
+			supplierCount,
+			supplierCount+suppliersToStake,
+		)
+
+	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
+		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
+		supplier := s.addSupplier(keyName)
+		s.generateStakeSupplierMsg(supplier)
+		s.sendTx(supplier)
+		newSuppliers = append(newSuppliers, supplier)
+	}
+
+	return newSuppliers
 }
