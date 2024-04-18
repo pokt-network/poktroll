@@ -193,7 +193,6 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
 	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
-	s.Log(configContent)
 	_, err = configFile.Write([]byte(configContent))
 	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
@@ -225,7 +224,6 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
 	configContent := fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
-	s.Log(configContent)
 	_, err = configFile.Write([]byte(configContent))
 	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
