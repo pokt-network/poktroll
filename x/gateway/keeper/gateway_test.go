@@ -32,7 +32,9 @@ func createNGateways(keeper keeper.Keeper, ctx context.Context, n int) []types.G
 	return gateway
 }
 
-func TestGatewayModuleAddress(t *testing.T) {
+// The module address is derived off of its semantic name.
+// This test is a helper for us to easily identify the underlying address.
+func TestModuleAddressGateway(t *testing.T) {
 	moduleAddress := authtypes.NewModuleAddress(types.ModuleName)
 	require.Equal(t, "pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl", moduleAddress.String())
 }

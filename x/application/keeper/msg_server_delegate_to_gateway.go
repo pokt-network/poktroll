@@ -6,10 +6,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/application/types"
 )
 
 func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegateToGateway) (*types.MsgDelegateToGatewayResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"delegate_to_gateway",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "DelegateToGateway")
 	logger.Info(fmt.Sprintf("About to delegate application to gateway with msg: %v", msg))
 
@@ -65,5 +73,6 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 		return nil, err
 	}
 
+	isSuccessful = true
 	return &types.MsgDelegateToGatewayResponse{}, nil
 }

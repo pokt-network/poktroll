@@ -15,6 +15,8 @@ import (
 func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	logger := k.Logger().With("method", "UpsertProof")
 
+	// TODO_IMPROVE(#427): Use the marshal method on the SparseCompactClosestProof
+	// type here instead in order to reduce space stored on chain.
 	proofBz := k.cdc.MustMarshal(&proof)
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 
@@ -23,7 +25,9 @@ func (k Keeper) UpsertProof(ctx context.Context, proof types.Proof) {
 	primaryKey := types.ProofPrimaryKey(sessionId, proof.GetSupplierAddress())
 	primaryStore.Set(primaryKey, proofBz)
 
-	logger.Info(fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey))
+	logger.Info(
+		fmt.Sprintf("upserted proof for supplier %s with primaryKey %s", proof.GetSupplierAddress(), primaryKey),
+	)
 
 	// Update the address index: supplierAddress -> [ProofPrimaryKey]
 	supplierAddrStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofSupplierAddressPrefix))
@@ -46,7 +50,7 @@ func (k Keeper) GetProof(ctx context.Context, sessionId, supplierAddr string) (_
 
 // RemoveProof removes a proof from the store
 func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string) {
-	logger := k.Logger().With("method", "RemoveClaim")
+	logger := k.Logger().With("method", "RemoveProof")
 
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	primaryStore := prefix.NewStore(storeAdapter, types.KeyPrefix(types.ProofPrimaryKeyPrefix))
@@ -55,7 +59,14 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 	primaryKey := types.ProofPrimaryKey(sessionId, supplierAddr)
 	foundProof, isProofFound := k.getProofByPrimaryKey(ctx, primaryKey)
 	if !isProofFound {
-		logger.Error(fmt.Sprintf("trying to delete non-existent proof with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
+		logger.Error(
+			fmt.Sprintf(
+				"trying to delete non-existent proof with primary key %s for supplier %s and session %s",
+				primaryKey,
+				supplierAddr,
+				sessionId,
+			),
+		)
 		return
 	}
 
@@ -72,7 +83,14 @@ func (k Keeper) RemoveProof(ctx context.Context, sessionId, supplierAddr string)
 	supplierAddrStore.Delete(supplierAddrKey)
 	sessionEndHeightStore.Delete(sessionEndHeightKey)
 
-	logger.Info(fmt.Sprintf("deleted proof with primary key %s for supplier %s and session %s", primaryKey, supplierAddr, sessionId))
+	logger.Info(
+		fmt.Sprintf(
+			"deleted proof with primary key %s for supplier %s and session %s",
+			primaryKey,
+			supplierAddr,
+			sessionId,
+		),
+	)
 }
 
 // GetAllProofs returns all proof

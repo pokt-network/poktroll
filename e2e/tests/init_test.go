@@ -5,9 +5,10 @@ package e2e
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"math"
 	"os"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	sdklog "cosmossdk.io/log"
-	tmcli "github.com/cometbft/cometbft/libs/cli"
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
@@ -31,8 +32,9 @@ import (
 )
 
 var (
-	addrRe   *regexp.Regexp
-	amountRe *regexp.Regexp
+	addrRe          *regexp.Regexp
+	amountRe        *regexp.Regexp
+	addrAndAmountRe *regexp.Regexp
 
 	accNameToAddrMap     = make(map[string]string)
 	accAddrToNameMap     = make(map[string]string)
@@ -48,6 +50,7 @@ var (
 func init() {
 	addrRe = regexp.MustCompile(`address:\s+(\S+)\s+name:\s+(\S+)`)
 	amountRe = regexp.MustCompile(`amount:\s+"(.+?)"\s+denom:\s+upokt`)
+	addrAndAmountRe = regexp.MustCompile(`(?s)address: ([\w\d]+).*?stake:\s*amount: "(\d+)"`)
 
 	flag.StringVar(&flagFeaturesPath, "features-path", "*.feature", "Specifies glob paths for the runner to look up .feature files")
 
@@ -59,7 +62,7 @@ func init() {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	log.Printf("features path: %s", flagFeaturesPath)
+	log.Printf("Running features matching %q", path.Join("e2e", "tests", flagFeaturesPath))
 	m.Run()
 }
 
@@ -110,16 +113,12 @@ func (s *suite) ThePocketdBinaryShouldExitWithoutError() {
 func (s *suite) TheUserRunsTheCommand(cmd string) {
 	cmds := strings.Split(cmd, " ")
 	res, err := s.pocketd.RunCommand(cmds...)
+	require.NoError(s, err, "error running command %s", cmd)
 	s.pocketd.result = res
-	if err != nil {
-		s.Fatalf("error running command %s: %s", cmd, err)
-	}
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
-	if !strings.Contains(s.pocketd.result.Stdout, arg1) {
-		s.Fatalf("stdout must contain %s", arg1)
-	}
+	require.Contains(s, s.pocketd.result.Stdout, arg1)
 }
 
 func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, accName2 string) {
@@ -135,44 +134,52 @@ func (s *suite) TheUserSendsUpoktFromAccountToAccount(amount int64, accName1, ac
 		"-y",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error sending upokt: %s", err)
-	}
+	require.NoError(s, err, "error sending upokt from %q to %q", accName1, accName2)
 	s.pocketd.result = res
 }
 
 func (s *suite) TheAccountHasABalanceGreaterThanUpokt(accName string, amount int64) {
 	bal := s.getAccBalance(accName)
-	if int64(bal) < amount {
-		s.Fatalf("account %s does not have enough upokt: %d < %d", accName, bal, amount)
-	}
-	s.scenarioState[accName] = bal // save the balance for later
+	require.Greaterf(s, bal, int(amount), "account %s does not have enough upokt", accName)
+	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
 func (s *suite) AnAccountExistsFor(accName string) {
 	bal := s.getAccBalance(accName)
-	s.scenarioState[accName] = bal // save the balance for later
+	s.scenarioState[accBalanceKey(accName)] = bal // save the balance for later
 }
 
-func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, amount int64, condition string) {
-	prev, ok := s.scenarioState[accName]
-	if !ok {
-		s.Fatalf("no previous balance found for %s", accName)
-	}
+func (s *suite) TheStakeOfShouldBeUpoktThanBefore(actorType string, accName string, expectedStakeChange int64, condition string) {
+	// Get previous stake
+	stakeKey := accStakeKey(actorType, accName)
+	prevStakeAny, ok := s.scenarioState[stakeKey]
+	require.True(s, ok, "no previous stake found for %s", accName)
+	prevStake, ok := prevStakeAny.(int)
+	require.True(s, ok, "previous stake for %s is not an int", accName)
 
-	bal := s.getAccBalance(accName)
-	switch condition {
-	case "more":
-		if bal <= prev.(int) {
-			s.Fatalf("account %s expected to have more upokt but: %d <= %d", accName, bal, prev)
-		}
-	case "less":
-		if bal >= prev.(int) {
-			s.Fatalf("account %s expected to have less upokt but: %d >= %d", accName, bal, prev)
-		}
-	default:
-		s.Fatalf("unknown condition %s", condition)
-	}
+	// Get current stake
+	currStake, ok := s.getStakedAmount(actorType, accName)
+	require.True(s, ok, "no current stake found for %s", accName)
+	s.scenarioState[stakeKey] = currStake // save the stake for later
+
+	// Validate the change in stake
+	s.validateAmountChange(prevStake, currStake, expectedStakeChange, accName, condition, "stake")
+}
+
+func (s *suite) TheAccountBalanceOfShouldBeUpoktThanBefore(accName string, expectedStakeChange int64, condition string) {
+	// Get previous balance
+	balanceKey := accBalanceKey(accName)
+	prevBalanceAny, ok := s.scenarioState[balanceKey]
+	require.True(s, ok, "no previous balance found for %s", accName)
+	prevBalance, ok := prevBalanceAny.(int)
+	require.True(s, ok, "previous balance for %s is not an int", accName)
+
+	// Get current balance
+	currBalance := s.getAccBalance(accName)
+	s.scenarioState[balanceKey] = currBalance // save the balance for later
+
+	// Validate the change in stake
+	s.validateAmountChange(prevBalance, currBalance, expectedStakeChange, accName, condition, "balance")
 }
 
 func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
@@ -182,14 +189,12 @@ func (s *suite) TheUserShouldWaitForSeconds(dur int64) {
 func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount int64, accName string) {
 	// Create a temporary config file
 	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configFile, err := os.CreateTemp("", configPathPattern)
+	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
+
 	configContent := fmt.Sprintf(`stake_amount: %d upokt`, amount)
-	configFile, err := ioutil.TempFile("", configPathPattern)
-	if err != nil {
-		s.Fatalf("error creating config file: %q", err)
-	}
-	if _, err = configFile.Write([]byte(configContent)); err != nil {
-		s.Fatalf("error writing config file: %q", err)
-	}
+	_, err = configFile.Write([]byte(configContent))
+	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
 	args := []string{
 		"tx",
@@ -207,13 +212,39 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 
 	// Remove the temporary config file
 	err = os.Remove(configFile.Name())
-	if err != nil {
-		s.Fatalf("error removing config file: %q", err)
-	}
+	require.NoError(s, err, "error removing config file %q", configFile.Name())
 
-	if err != nil {
-		s.Fatalf("error staking %s: %s", actorType, err)
+	s.pocketd.result = res
+}
+
+func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string, amount int64, serviceId, accName string) {
+	// Create a temporary config file
+	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configFile, err := os.CreateTemp("", configPathPattern)
+	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
+
+	configContent := fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
+	_, err = configFile.Write([]byte(configContent))
+	require.NoError(s, err, "error writing config file %q", configFile.Name())
+
+	args := []string{
+		"tx",
+		actorType,
+		fmt.Sprintf("stake-%s", actorType),
+		"--config",
+		configFile.Name(),
+		"--from",
+		accName,
+		keyRingFlag,
+		chainIdFlag,
+		"-y",
 	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+
+	// Remove the temporary config file
+	err = os.Remove(configFile.Name())
+	require.NoError(s, err, "error removing config file %q", configFile.Name())
+
 	s.pocketd.result = res
 }
 
@@ -228,28 +259,29 @@ func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string)
 		chainIdFlag,
 		"-y",
 	}
+
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error unstaking %s: %s", actorType, err)
-	}
+	require.NoError(s, err, "error unstaking %s", actorType)
+
 	s.pocketd.result = res
 }
 
+func (s *suite) TheAccountForIsStaked(actorType, accName string) {
+	stakeAmount, ok := s.getStakedAmount(actorType, accName)
+	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
+	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
+}
+
 func (s *suite) TheForAccountIsNotStaked(actorType, accName string) {
-	found, _ := s.getStakedAmount(actorType, accName)
-	if found {
-		s.Fatalf("account %s should not be staked", accName)
-	}
+	_, ok := s.getStakedAmount(actorType, accName)
+	require.Falsef(s, ok, "account %s of type %s SHOULD NOT be staked", accName, actorType)
 }
 
 func (s *suite) TheForAccountIsStakedWithUpokt(actorType, accName string, amount int64) {
-	found, stakeAmount := s.getStakedAmount(actorType, accName)
-	if !found {
-		s.Fatalf("account %s should be staked", accName)
-	}
-	if int64(stakeAmount) != amount {
-		s.Fatalf("account %s stake amount is not %d", accName, amount)
-	}
+	stakeAmount, ok := s.getStakedAmount(actorType, accName)
+	require.Truef(s, ok, "account %s of type %s SHOULD be staked", accName, actorType)
+	require.Equalf(s, int64(stakeAmount), amount, "account %s stake amount is not %d", accName, amount)
+	s.scenarioState[accStakeKey(actorType, accName)] = stakeAmount // save the stakeAmount for later
 }
 
 func (s *suite) TheApplicationIsStakedForService(appName string, serviceId string) {
@@ -271,26 +303,23 @@ func (s *suite) TheSupplierIsStakedForService(supplierName string, serviceId str
 }
 
 func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName string, serviceId string, supplierName string) {
-	app, found := accNameToAppMap[appName]
-	if !found {
-		s.Fatalf("application %s not found", appName)
-	}
-	expectedSupplier, found := accNameToSupplierMap[supplierName]
-	if !found {
-		s.Fatalf("supplier %s not found", supplierName)
-	}
+	app, ok := accNameToAppMap[appName]
+	require.True(s, ok, "application %s not found", appName)
+
+	expectedSupplier, ok := accNameToSupplierMap[supplierName]
+	require.True(s, ok, "supplier %s not found", supplierName)
+
 	argsAndFlags := []string{
 		"query",
 		"session",
 		"get-session",
 		app.Address,
 		serviceId,
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("error getting session for app %s and service %s: %s", appName, serviceId, err)
-	}
+	require.NoError(s, err, "error getting session for app %s and service %q", appName, serviceId)
+
 	var resp sessiontypes.QueryGetSessionResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
 	s.cdc.MustUnmarshalJSON(responseBz, &resp)
@@ -303,24 +332,29 @@ func (s *suite) TheSessionForApplicationAndServiceContainsTheSupplier(appName st
 }
 
 func (s *suite) TheApplicationSendsTheSupplierARequestForServiceWithData(appName, supplierName, serviceId, requestData string) {
+	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
+	// that allows any application to send a relay in LocalNet and our E2E Tests.
+	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
+
 	res, err := s.pocketd.RunCurl(appGateServerUrl, serviceId, requestData)
-	if err != nil {
-		s.Fatalf("error sending relay request from app %s to supplier %s for service %s: %v", appName, supplierName, serviceId, err)
-	}
+	require.NoError(s, err, "error sending relay request from app %q to supplier %q for service %q", appName, supplierName, serviceId)
 
 	relayKey := relayReferenceKey(appName, supplierName)
 	s.scenarioState[relayKey] = res.Stdout
 }
 
 func (s *suite) TheApplicationReceivesASuccessfulRelayResponseSignedBy(appName string, supplierName string) {
+	// TODO_HACK: We need to support a non self_signing LocalNet AppGateServer
+	// that allows any application to send a relay in LocalNet and our E2E Tests.
+	require.Equal(s, "app1", appName, "TODO_HACK: The LocalNet AppGateServer is self_signing and only supports app1.")
+
 	relayKey := relayReferenceKey(appName, supplierName)
 	stdout, ok := s.scenarioState[relayKey]
-
 	require.Truef(s, ok, "no relay response found for %s", relayKey)
 	require.Contains(s, stdout, `"result":"0x`)
 }
 
-func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
+func (s *suite) getStakedAmount(actorType, accName string) (int, bool) {
 	s.Helper()
 	args := []string{
 		"query",
@@ -328,23 +362,25 @@ func (s *suite) getStakedAmount(actorType, accName string) (bool, int) {
 		fmt.Sprintf("list-%s", actorType),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error getting %s: %s", actorType, err)
-	}
+	require.NoError(s, err, "error getting %s", actorType)
 	s.pocketd.result = res
-	found := strings.Contains(res.Stdout, accNameToAddrMap[accName])
+
+	escapedAddress := accNameToAddrMap[accName]
 	amount := 0
-	if found {
-		escapedAddress := regexp.QuoteMeta(accNameToAddrMap[accName])
-		stakedAmountRe := regexp.MustCompile(`address: ` + escapedAddress + `\s+stake:\s+amount: "(\d+)"`)
-		matches := stakedAmountRe.FindStringSubmatch(res.Stdout)
-		if len(matches) < 2 {
-			s.Fatalf("no stake amount found for %s", accName)
+	if strings.Contains(res.Stdout, escapedAddress) {
+		matches := addrAndAmountRe.FindAllStringSubmatch(res.Stdout, -1)
+		if len(matches) < 1 {
+			return 0, false
 		}
-		amount, err = strconv.Atoi(matches[1])
-		require.NoError(s, err)
+		for _, match := range matches {
+			if match[1] == escapedAddress {
+				amount, err = strconv.Atoi(match[2])
+				require.NoError(s, err)
+				return amount, true
+			}
+		}
 	}
-	return found, amount
+	return 0, false
 }
 
 func (s *suite) buildAddrMap() {
@@ -352,9 +388,7 @@ func (s *suite) buildAddrMap() {
 	res, err := s.pocketd.RunCommand(
 		"keys", "list", keyRingFlag,
 	)
-	if err != nil {
-		s.Fatalf("error getting keys: %s", err)
-	}
+	require.NoError(s, err, "error getting keys")
 	s.pocketd.result = res
 	matches := addrRe.FindAllStringSubmatch(res.Stdout, -1)
 	for _, match := range matches {
@@ -371,12 +405,10 @@ func (s *suite) buildAppMap() {
 		"query",
 		"application",
 		"list-application",
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("error getting application list: %s", err)
-	}
+	require.NoError(s, err, "error getting application list")
 	s.pocketd.result = res
 	var resp apptypes.QueryAllApplicationsResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -392,12 +424,10 @@ func (s *suite) buildSupplierMap() {
 		"query",
 		"supplier",
 		"list-supplier",
-		fmt.Sprintf("--%s=json", tmcli.OutputFlag),
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
 	}
 	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
-	if err != nil {
-		s.Fatalf("error getting supplier list: %s", err)
-	}
+	require.NoError(s, err, "error getting supplier list")
 	s.pocketd.result = res
 	var resp suppliertypes.QueryAllSuppliersResponse
 	responseBz := []byte(strings.TrimSpace(res.Stdout))
@@ -407,8 +437,11 @@ func (s *suite) buildSupplierMap() {
 	}
 }
 
+// TODO_TECHDEBT(@bryanchriswhite): Cleanup & deduplicate the code related
+// to this accessors. Ref: https://github.com/pokt-network/poktroll/pull/448/files#r1547930911
 func (s *suite) getAccBalance(accName string) int {
 	s.Helper()
+
 	args := []string{
 		"query",
 		"bank",
@@ -416,21 +449,49 @@ func (s *suite) getAccBalance(accName string) int {
 		accNameToAddrMap[accName],
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
-	if err != nil {
-		s.Fatalf("error getting balance: %s", err)
-	}
+	require.NoError(s, err, "error getting balance")
 	s.pocketd.result = res
+
 	match := amountRe.FindStringSubmatch(res.Stdout)
-	if len(match) < 2 {
-		s.Fatalf("no balance found for %s", accName)
-	}
-	found, err := strconv.Atoi(match[1])
+	require.GreaterOrEqual(s, len(match), 2, "no balance found for %s", accName)
+
+	accBalance, err := strconv.Atoi(match[1])
 	require.NoError(s, err)
-	return found
+
+	return accBalance
+}
+
+// validateAmountChange validates if the balance of an account has increased or decreased by the expected amount
+func (s *suite) validateAmountChange(prevAmount, currAmount int, expectedAmountChange int64, accName, condition, balanceType string) {
+	deltaAmount := int64(math.Abs(float64(currAmount - prevAmount)))
+	// Verify if balance is more or less than before
+	switch condition {
+	case "more":
+		require.GreaterOrEqual(s, currAmount, prevAmount, "%s %s expected to have more upokt but actually had less", accName, balanceType)
+		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected increase in upokt was incorrect", accName, balanceType)
+	case "less":
+		require.LessOrEqual(s, currAmount, prevAmount, "%s %s expected to have less upokt but actually had more", accName, balanceType)
+		require.Equal(s, expectedAmountChange, deltaAmount, "%s %s expected) decrease in upokt was incorrect", accName, balanceType)
+	default:
+		s.Fatalf("unknown condition %s", condition)
+	}
+
 }
 
 // TODO_IMPROVE: use `sessionId` and `supplierName` since those are the two values
 // used to create the primary composite key on-chain to uniquely distinguish relays.
 func relayReferenceKey(appName, supplierName string) string {
 	return fmt.Sprintf("%s/%s", appName, supplierName)
+}
+
+// accBalanceKey is a helper function to create a key to store the balance
+// for accName in the context of a scenario state.
+func accBalanceKey(accName string) string {
+	return fmt.Sprintf("balance/%s", accName)
+}
+
+// accStakeKey is a helper function to create a key to store the stake
+// for accName of type actorType in the context of a scenario state.
+func accStakeKey(actorType, accName string) string {
+	return fmt.Sprintf("stake/%s/%s", actorType, accName)
 }

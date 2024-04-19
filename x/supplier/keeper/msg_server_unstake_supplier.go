@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
@@ -14,6 +15,13 @@ func (k msgServer) UnstakeSupplier(
 	ctx context.Context,
 	msg *types.MsgUnstakeSupplier,
 ) (*types.MsgUnstakeSupplierResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"unstake_supplier",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "UnstakeSupplier")
 	logger.Info(fmt.Sprintf("About to unstake supplier with msg: %v", msg))
 
@@ -37,7 +45,7 @@ func (k msgServer) UnstakeSupplier(
 	}
 
 	// Send the coins from the supplier pool back to the supplier
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, supplierAddress, []sdk.Coin{*supplier.Stake})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", supplier.Stake, supplierAddress, types.ModuleName, err))
 		return nil, err
@@ -46,6 +54,7 @@ func (k msgServer) UnstakeSupplier(
 	// Update the Supplier in the store
 	k.RemoveSupplier(ctx, supplierAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the supplier: %+v", supplier))
-	return &types.MsgUnstakeSupplierResponse{}, nil
 
+	isSuccessful = true
+	return &types.MsgUnstakeSupplierResponse{}, nil
 }

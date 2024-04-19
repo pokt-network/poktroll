@@ -45,7 +45,7 @@ func NewBlockClient(
 		ctx,
 		deps,
 		committedBlocksQuery,
-		newCometBlockEvent,
+		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
 	)
 	if err != nil {

@@ -7,6 +7,13 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+# On-chain module account addresses. Search for `func TestModuleAddress` in the
+# codebase to get an understanding of how we got these values.
+APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
+SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
+GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
+SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
+
 # Detect operating system
 OS := $(shell uname -s)
 
@@ -122,6 +129,32 @@ check_docker:
 		exit 1; \
 	fi; \
 	}
+.PHONY: check_kind
+# Internal helper target - check if kind is installed
+check_kind:
+	@if ! command -v kind >/dev/null 2>&1; then \
+		echo "kind is not installed. Make sure you review build/localnet/README.md and docs/development/README.md  before continuing"; \
+		exit 1; \
+	fi
+
+.PHONY: check_docker_ps
+ ## Internal helper target - checks if Docker is running
+check_docker_ps: check_docker
+	@echo "Checking if Docker is running..."
+	@docker ps > /dev/null 2>&1 || (echo "Docker is not running. Please start Docker and try again."; exit 1)
+
+.PHONY: check_kind_context
+## Internal helper target - checks if the kind-kind context exists and is set
+check_kind_context: check_kind
+	@if ! kubectl config get-contexts | grep -q 'kind-kind'; then \
+		echo "kind-kind context does not exist. Please create it or switch to it."; \
+		exit 1; \
+	fi
+	@if ! kubectl config current-context | grep -q 'kind-kind'; then \
+		echo "kind-kind context is not currently set. Use 'kubectl config use-context kind-kind' to set it."; \
+		exit 1; \
+	fi
+
 
 .PHONY: check_godoc
 # Internal helper target - check if godoc is installed
@@ -186,17 +219,21 @@ warn_destructive: ## Print WARNING to the user
 proto_ignite_gen: ## Generate protobuf artifacts using ignite
 	ignite generate proto-go --yes
 
-.PHONY: proto_fix_self_import
 proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanation for this make target explaining why it's necessary
+	@echo "Updating all instances of cosmossdk.io/api/poktroll to github.com/pokt-network/poktroll/api/poktroll..."
+	@find ./api/poktroll/ -type f | while read -r file; do \
+		$(SED) -i 's,cosmossdk.io/api/poktroll,github.com/pokt-network/poktroll/api/poktroll,g' "$$file"; \
+	done
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
-			echo "Processing module $$module"; \
+			echo "Further processing module $$module"; \
 			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
 					echo "Modifying file: $$file"; \
 					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
+
 
 .PHONY: proto_clean
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
@@ -229,7 +266,7 @@ docker_wipe: check_docker warn_destructive prompt_user ## [WARNING] Remove all t
 ########################
 
 .PHONY: localnet_up
-localnet_up: proto_regen localnet_regenesis ## Starts localnet
+localnet_up: check_docker_ps check_kind_context proto_regen localnet_regenesis ## Starts localnet
 	tilt up
 
 .PHONY: localnet_down
@@ -271,12 +308,35 @@ go_imports: check_go_version ## Run goimports on all go files
 ### Tests ###
 #############
 
-.PHONY: test_e2e
-test_e2e: acc_initialize_pubkeys_warn_message ## Run all E2E tests
+.PHONY: test_e2e_env
+test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars for E2E tests
 	export POCKET_NODE=$(POCKET_NODE) && \
 	export APPGATE_SERVER=$(APPGATE_SERVER) && \
-	POKTROLLD_HOME=../../$(POKTROLLD_HOME) && \
+	export POKTROLLD_HOME=../../$(POKTROLLD_HOME)
+
+.PHONY: test_e2e
+test_e2e: test_e2e_env ## Run all E2E tests
 	go test -v ./e2e/tests/... -tags=e2e,test
+
+.PHONY: test_e2e_app
+test_e2e_app:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
+
+.PHONY: test_e2e_gateway
+test_e2e_gateway:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
+
+.PHONY: test_e2e_session
+test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
+
+.PHONY: test_e2e_settlement
+test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the session & tokenomics settlement
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=0_settlement.feature
+
+.PHONY: test_load_relays_stress
+test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
+	go test -v ./load-testing/tests/... -tags=e2e,test --features-path=relays_stress.feature
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
@@ -337,7 +397,7 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # 	e.g. TODO_HACK: This is a hack, we need to fix it later
 # 2. If there's a specific issue, or specific person, add that in paranthesiss
 #   e.g. TODO(@Olshansk): Automatically link to the Github user https://github.com/olshansk
-#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/pocket/issues/420
+#   e.g. TODO_INVESTIGATE(#420): Automatically link this to github issue https://github.com/pokt-network/poktroll/issues/420
 #   e.g. TODO_DISCUSS(@Olshansk, #420): Specific individual should tend to the action item in the specific ticket
 #   e.g. TODO_CLEANUP(core): This is not tied to an issue, or a person, but should only be done by the core team.
 #   e.g. TODO_CLEANUP: This is not tied to an issue, or a person, and can be done by the core team or external contributors.
@@ -359,7 +419,8 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # TODO_REFACTOR               - Similar to TECHDEBT, but will require a substantial rewrite and change across the codebase
 # TODO_CONSIDERATION          - A comment that involves extra work but was thoughts / considered as part of some implementation
 # TODO_CONSOLIDATE            - We likely have similar implementations/types of the same thing, and we should consolidate them.
-# TODO_ADDTEST                - Add more tests for a specific code section
+# TODO_ADDTEST / TODO_TEST    - Add more tests for a specific code section
+# TODO_FLAKY                  - Signals that the test is flaky and we are aware of it. Provide an explanation if you know why.
 # TODO_DEPRECATE              - Code that should be removed in the future
 # TODO_RESEARCH               - A non-trivial action item that requires deep research and investigation being next steps can be taken
 # TODO_DOCUMENT		          - A comment that involves the creation of a README or other documentation
@@ -390,7 +451,7 @@ gateway_list: ## List all the staked gateways
 
 .PHONY: gateway_stake
 gateway_stake: ## Stake tokens for the gateway specified (must specify the gateway env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway stake-gateway -y --config $(POKTROLLD_HOME)/config/$(STAKE) --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_stake
 gateway1_stake: ## Stake gateway1
@@ -430,7 +491,7 @@ app_list: ## List all the staked applications
 
 .PHONY: app_stake
 app_stake: ## Stake tokens for the application specified (must specify the APP and SERVICES env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application stake-application -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_stake
 app1_stake: ## Stake app1 (also staked in genesis)
@@ -508,7 +569,7 @@ supplier_list: ## List all the staked supplier
 
 .PHONY: supplier_stake
 supplier_stake: ## Stake tokens for the supplier specified (must specify the SUPPLIER and SUPPLIER_CONFIG env vars)
-	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx supplier stake-supplier -y --config $(POKTROLLD_HOME)/config/$(SERVICES) --keyring-backend test --from $(SUPPLIER) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: supplier1_stake
 supplier1_stake: ## Stake supplier1 (also staked in genesis)
@@ -567,20 +628,22 @@ get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 
 .PHONY: acc_balance_query
 acc_balance_query: ## Query the balance of the account specified (make acc_balance_query ACC=pokt...)
-	@echo "~~~ Balances ~~~"
+	@echo "~ Balances ~"
 	poktrolld --home=$(POKTROLLD_HOME) q bank balances $(ACC) --node $(POCKET_NODE)
-	@echo "~~~ Spendable Balances ~~~"
+	@echo "~ Spendable Balances ~"
 	@echo "Querying spendable balance for $(ACC)"
 	poktrolld --home=$(POKTROLLD_HOME) q bank spendable-balances $(ACC) --node $(POCKET_NODE)
 
-.PHONY: acc_balance_query_module_app
-acc_balance_query_module_app: ## Query the balance of the network level "application" module
-	make acc_balance_query ACC=pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
-
-.PHONY: acc_balance_query_module_supplier
-acc_balance_query_module_supplier: ## Query the balance of the network level "supplier" module
-	SUPPLIER1=$(make poktrolld_addr ACC_NAME=supplier1)
-	make acc_balance_query ACC=SUPPLIER1
+.PHONY: acc_balance_query_modules
+acc_balance_query_modules: ## Query the balance of the network level module accounts
+	@echo "### Application ###"
+	make acc_balance_query ACC=$(APPLICATION_MODULE_ADDRESS)
+	@echo "### Supplier ###"
+	make acc_balance_query ACC=$(SUPPLIER_MODULE_ADDRESS)
+	@echo "### Gateway ###"
+	make acc_balance_query ACC=$(GATEWAY_MODULE_ADDRESS)
+	@echo "### Service ###"
+	make acc_balance_query ACC=$(SERVICE_MODULE_ADDRESS)
 
 .PHONY: acc_balance_query_app1
 acc_balance_query_app1: ## Query the balance of app1
@@ -604,7 +667,6 @@ acc_balance_total_supply: ## Query the total supply of the network
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
 	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
-	# @printf "Addresses: ${ADDRESSES}"
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \

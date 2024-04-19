@@ -7,6 +7,7 @@ import (
 	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -18,6 +19,13 @@ func (k msgServer) AddService(
 	goCtx context.Context,
 	msg *types.MsgAddService,
 ) (*types.MsgAddServiceResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"add_service",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "AddService")
@@ -80,5 +88,6 @@ func (k msgServer) AddService(
 	logger.Info(fmt.Sprintf("Adding service: %v", msg.Service))
 	k.SetService(ctx, msg.Service)
 
+	isSuccessful = true
 	return &types.MsgAddServiceResponse{}, nil
 }

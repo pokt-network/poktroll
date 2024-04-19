@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
@@ -15,6 +16,13 @@ func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,
 ) (*types.MsgUnstakeGatewayResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"unstake_gateway",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "UnstakeGateway")
@@ -41,7 +49,7 @@ func (k msgServer) UnstakeGateway(
 	}
 
 	// Send the coins from the gateway pool back to the gateway
-	err = k.bankKeeper.UndelegateCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
+	err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, gatewayAddress, []sdk.Coin{*gateway.Stake})
 	if err != nil {
 		logger.Error(fmt.Sprintf("could not send %v coins from %s module to %s account due to %v", gateway.Stake, gatewayAddress, types.ModuleName, err))
 		return nil, err
@@ -50,5 +58,7 @@ func (k msgServer) UnstakeGateway(
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+
+	isSuccessful = true
 	return &types.MsgUnstakeGatewayResponse{}, nil
 }

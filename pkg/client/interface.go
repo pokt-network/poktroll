@@ -47,6 +47,8 @@ type SupplierClient interface {
 	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
 	// for the same session. The proof is validated on-chain as part of the pocket
 	// protocol.
+	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
+	// the amount of data stored on-chain.
 	SubmitProof(
 		ctx context.Context,
 		sessionHeader sessiontypes.SessionHeader,
@@ -112,7 +114,7 @@ type Block interface {
 
 // Redelegation is an interface which wraps the EventRedelegation event
 // emitted by the application module.
-// See: proto/pocket/application/types/event.proto#EventRedelegation
+// See: proto/poktroll/application/types/event.proto#EventRedelegation
 type Redelegation interface {
 	GetAppAddress() string
 	GetGatewayAddress() string

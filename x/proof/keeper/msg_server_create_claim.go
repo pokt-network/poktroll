@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
@@ -13,29 +14,36 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// TODO_BLOCKER: Prevent Claim upserts after the ClaimWindow is closed.
 	// TODO_BLOCKER: Validate the signature on the Claim message corresponds to the supplier before Upserting.
 
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"create_claim",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	logger := k.Logger().With("method", "CreateClaim")
-	logger.Debug("creating claim")
+	logger.Info("creating claim")
 
 	if err := msg.ValidateBasic(); err != nil {
 		return nil, err
 	}
 
+	sessionHeader := msg.GetSessionHeader()
 	session, err := k.queryAndValidateSessionHeader(
 		ctx,
-		msg.GetSessionHeader(),
+		sessionHeader,
 		msg.GetSupplierAddress(),
 	)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	logger.
+	logger = logger.
 		With(
 			"session_id", session.GetSessionId(),
-			"session_end_height", msg.GetSessionHeader().GetSessionEndBlockHeight(),
+			"session_end_height", sessionHeader.GetSessionEndBlockHeight(),
 			"supplier", msg.GetSupplierAddress(),
-		).
-		Debug("validated claim")
+		)
 
 	/*
 		TODO_INCOMPLETE:
@@ -49,10 +57,12 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 		2. [ ] msg distribution validation
 	*/
 
+	logger.Info("validated claim")
+
 	// Construct and upsert claim after all validation.
 	claim := types.Claim{
 		SupplierAddress: msg.GetSupplierAddress(),
-		SessionHeader:   msg.GetSessionHeader(),
+		SessionHeader:   sessionHeader,
 		RootHash:        msg.GetRootHash(),
 	}
 
@@ -60,14 +70,9 @@ func (k msgServer) CreateClaim(ctx context.Context, msg *types.MsgCreateClaim) (
 	// in any case where the supplier should no longer be able to update the given proof.
 	k.Keeper.UpsertClaim(ctx, claim)
 
-	logger.
-		With(
-			"session_id", claim.GetSessionHeader().GetSessionId(),
-			"session_end_height", claim.GetSessionHeader().GetSessionEndBlockHeight(),
-			"supplier", claim.GetSupplierAddress(),
-		).
-		Debug("created claim")
+	logger.Info("created new claim")
 
+	isSuccessful = true
 	// TODO: return the claim in the response.
 	return &types.MsgCreateClaimResponse{}, nil
 }
