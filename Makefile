@@ -7,6 +7,9 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
+GROVE_GATEWAY = https://eth-mainnet.rpc.grove.town
+GROVE_TEST_RELAY = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
 APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
@@ -807,3 +810,11 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+#############################
+### Grove Gateway Helpers ###
+#############################
+
+.PHONY: grove_eth_balance
+grove_eth_balance: # Must have GROVE_PORTAL_APP_ID environment variable set
+	curl $(GROVE_GATEWAY)/v1/$(GROVE_PORTAL_APP_ID) -H 'Content-Type: application/json' --data $(GROVE_TEST_RELAY)
