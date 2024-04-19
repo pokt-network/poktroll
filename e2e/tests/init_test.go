@@ -217,6 +217,37 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 	s.pocketd.result = res
 }
 
+func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string, amount int64, serviceId, accName string) {
+	// Create a temporary config file
+	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configFile, err := os.CreateTemp("", configPathPattern)
+	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
+
+	configContent := fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
+	_, err = configFile.Write([]byte(configContent))
+	require.NoError(s, err, "error writing config file %q", configFile.Name())
+
+	args := []string{
+		"tx",
+		actorType,
+		fmt.Sprintf("stake-%s", actorType),
+		"--config",
+		configFile.Name(),
+		"--from",
+		accName,
+		keyRingFlag,
+		chainIdFlag,
+		"-y",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+
+	// Remove the temporary config file
+	err = os.Remove(configFile.Name())
+	require.NoError(s, err, "error removing config file %q", configFile.Name())
+
+	s.pocketd.result = res
+}
+
 func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string) {
 	args := []string{
 		"tx",
