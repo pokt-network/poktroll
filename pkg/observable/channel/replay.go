@@ -115,10 +115,10 @@ func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observe
 	ctx, cancel := context.WithCancel(ctx)
 
 	go func() {
-		// Replay the values stored in the buffer.
+		// Replay the values stored in the buffer form the oldest to the newest.
 		ro.replayBufferMu.RLock()
-		for _, value := range ro.replayBuffer {
-			ch <- value
+		for i := len(ro.replayBuffer) - 1; i >= 0; i-- {
+			ch <- ro.replayBuffer[i]
 		}
 
 		bufferedValuesCh := ro.bufferingObsvbl.Subscribe(ctx).Ch()
