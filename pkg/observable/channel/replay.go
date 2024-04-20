@@ -2,7 +2,6 @@ package channel
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -15,11 +14,6 @@ var (
 )
 
 type replayObservable[V any] struct {
-	// embed observerManager to encapsulate concurrent-safe read/write access to
-	// observers. This also allows higher-level objects to wrap this observable
-	// without knowing its specific type by asserting that it implements the
-	// observerManager interface.
-	observerManager[V]
 	// replayBufferSize is the number of notifications to buffer so that they
 	// can be replayed to new observers.
 	replayBufferSize int
@@ -29,6 +23,9 @@ type replayObservable[V any] struct {
 	// by this observable. This buffer is replayed to new observers, on subscribing,
 	// prior to any new notifications being propagated.
 	replayBuffer []V
+	// bufferingObsvbl is an observable that emits all buffered values in one
+	// notification.
+	bufferingObsvbl observable.Observable[[]V]
 }
 
 // NewReplayObservable returns a new ReplayObservable with the given replay buffer
@@ -39,45 +36,29 @@ func NewReplayObservable[V any](
 	opts ...option[V],
 ) (observable.ReplayObservable[V], chan<- V) {
 	obsvbl, publishCh := NewObservable[V](opts...)
-	return ToReplayObservable[V](ctx, replayBufferSize, obsvbl), publishCh
+
+	return ToReplayObservable(ctx, replayBufferSize, obsvbl), publishCh
 }
 
-// ToReplayObservable returns an observable which replays the last replayBufferSize
-// number of values published to the source observable to new observers, before
-// publishing new values.
-// It panics if srcObservable does not implement the observerManager interface.
-// It should only be used with a srcObservable which contains channelObservers
-// (i.e. channelObservable or similar).
 func ToReplayObservable[V any](
 	ctx context.Context,
 	replayBufferSize int,
 	srcObsvbl observable.Observable[V],
 ) observable.ReplayObservable[V] {
-	// Assert that the source observable implements the observerMngr required
-	// to embed and wrap it.
-	observerMngr := srcObsvbl.(observerManager[V])
-
 	replayObsvbl := &replayObservable[V]{
-		observerManager:  observerMngr,
 		replayBufferSize: replayBufferSize,
-		replayBuffer:     make([]V, 0, replayBufferSize),
+		replayBuffer:     []V{},
 	}
 
-	srcObserver := replayObsvbl.Subscribe(ctx)
-	go replayObsvbl.goBufferReplayNotifications(srcObserver)
-
+	replayObsvbl.bufferingObsvbl = replayObsvbl.initBufferingObservable(ctx, srcObsvbl)
 	return replayObsvbl
 }
 
-// Last synchronously returns the last n values from the replay buffer. It blocks
-// until at least 1 notification has been accumulated, then waits replayPartialBufferTimeout
-// duration before returning all notifications accumulated notifications by that time.
-// If the replay buffer contains at least n notifications, this function will only
-// block as long as it takes to accumulate and return them.
-// If n is greater than the replay buffer size, the entire replay buffer is returned.
+// Last synchronously returns the last n values from the replay buffer.
+// It blocks until n values have been accumulated or its context is canceled,
+// in which case it returns the values accumulated so far.
+// The values returned are ordered from newest to oldest.
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
-	ro.replayBufferMu.RLock()
-	defer ro.replayBufferMu.RUnlock()
 	logger := polylog.Ctx(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -87,101 +68,108 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 		n = ro.replayBufferSize
 		logger.Warn().
 			Int("requested_replay_buffer_size", n).
-			Int("replay_buffer_capacity", cap(ro.replayBuffer)).
+			Int("replay_buffer_capacity", ro.replayBufferSize).
 			Msg("requested replay buffer size is greater than replay buffer capacity; returning entire replay buffer")
 	}
 
-	// accumulateReplayValues works concurrently and returns a context and cancellation
-	// function for signaling completion.
-	var accValues []V
-	copySize := n
-	if len(ro.replayBuffer) < n {
-		copySize = len(ro.replayBuffer)
-	}
-	logger.Debug().Msgf("replayBuffer %v", ro.replayBuffer)
-	for i := len(ro.replayBuffer) - copySize; i < len(ro.replayBuffer); i++ {
-		accValues = append(accValues, ro.replayBuffer[i])
+	// Lock any concurrent updates to the replay buffer.
+	ro.replayBufferMu.RLock()
+
+	// If the replay buffer has enough values, return the most recent n values.
+	if len(ro.replayBuffer) >= n {
+		values := ro.replayBuffer[:n]
+		ro.replayBufferMu.RUnlock()
+		return values
 	}
 
-	if len(accValues) < n {
-		sub := ro.Subscribe(ctx)
-		for value := range sub.Ch() {
-			logger.Debug().
-				Int("len", len(accValues)).
-				Msgf("replayObservable.Last: received value: %v", value)
-			accValues = append(accValues, value)
-			if len(accValues) >= n {
-				break
-			}
+	// If the replay buffer does not have enough values, wait for the source observable
+	// to emit enough values to satisfy the request.
+	ch := ro.bufferingObsvbl.Subscribe(ctx).Ch()
+	// Initialize latestValues with the values in the replay buffer in case the
+	// source observable is closed or the context is canceled before it has a chance
+	// to emit any values.
+	latestValues := ro.replayBuffer[:]
+	// Unlock the replay buffer to allow new values to be added.
+	// These new values will be collected in the loop below instead of the replay buffer.
+	ro.replayBufferMu.RUnlock()
+	for values := range ch {
+		// Since bufferingObsvbl emits all buffered values in one notification.
+		// If n smaller than the number of values emitted, return the most recent n values.
+		if len(values) >= n {
+			latestValues = values[:n]
+			break
 		}
+		// If n is greater than the number of values emitted, update latestValues with
+		// the most recent values emitted so far so it could be returned if the context
+		// is canceled or the source observable is closed.
 	}
 
-	return accValues
+	return latestValues
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
+// It replays the values stored in the replay buffer before emitting new values.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
-	//fmt.Println("Subscribing before locking")
-	//ro.replayBufferMu.RLock()
-	//fmt.Println("Subscribing locked")
-	//defer ro.replayBufferMu.RUnlock()
-
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
-	// caller can cancel context or close the publish channel to unsubscribe active observers
+	obs, ch := NewObservable[V]()
 	ctx, cancel := context.WithCancel(ctx)
-	removeAndCancel := func(toRemove observable.Observer[V]) {
-		ro.observerManager.remove(toRemove)
-		cancel()
-	}
 
-	observer := NewObserver[V](ctx, removeAndCancel)
-
-	// Replay all buffered replayBuffer to the observer channel buffer before
-	// any new values have an opportunity to send on observerCh (i.e. appending
-	// observer to ro.observers).
-	//
-	// TODO_IMPROVE: this assumes that the observer channel buffer is large enough
-	// to hold all replay (buffered) notifications.
-	for _, notification := range ro.replayBuffer {
-		observer.notify(notification)
-	}
-
-	fmt.Println("before adding observer")
-	ro.observerManager.add(observer)
-	fmt.Println("afeter adding observer")
-
-	// asynchronously wait for the context to be done and then unsubscribe
-	// this observer.
-	go ro.observerManager.goUnsubscribeOnDone(ctx, observer)
-
-	return observer
-}
-
-// UnsubscribeAll unsubscribes and removes all observers from the observable.
-func (ro *replayObservable[V]) UnsubscribeAll() {
-	ro.observerManager.removeAll()
-}
-
-// goBufferReplayNotifications buffers the last n notifications from a source
-// observer. It is intended to be run in a goroutine.
-func (ro *replayObservable[V]) goBufferReplayNotifications(srcObserver observable.Observer[V]) {
-	for notification := range srcObserver.Ch() {
-		fmt.Println("buffer got value, locking")
-		ro.replayBufferMu.Lock()
-		fmt.Println("buffer locked")
-		// Add the notification to the buffer.
-		if len(ro.replayBuffer) < ro.replayBufferSize {
-			ro.replayBuffer = append(ro.replayBuffer, notification)
-		} else {
-			// buffer full, make room for the new notification by removing the
-			// oldest notification.
-			ro.replayBuffer = append(ro.replayBuffer[1:], notification)
+	go func() {
+		// Replay the values stored in the buffer.
+		ro.replayBufferMu.RLock()
+		for _, value := range ro.replayBuffer {
+			ch <- value
 		}
-		fmt.Println("filling buffer")
-		ro.replayBufferMu.Unlock()
-	}
+
+		bufferedValuesCh := ro.bufferingObsvbl.Subscribe(ctx).Ch()
+		ro.replayBufferMu.RUnlock()
+		// Since bufferingObsvbl emits all buffered values in one notification
+		// and the replay buffer has already been replayed, only the most recent
+		// value needs to be published
+		for values := range bufferedValuesCh {
+			ch <- values[0]
+		}
+		// Cancel the context to stop the observer when the source observable is closed.
+		cancel()
+	}()
+
+	return obs.Subscribe(ctx)
+}
+
+// UnsubscribeAll unsubscribes all observers from the replay observable.
+func (ro *replayObservable[V]) UnsubscribeAll() {
+	ro.bufferingObsvbl.UnsubscribeAll()
+}
+
+// initBufferingObservable receives and buffers the last n notifications from
+// the a source observable and emits all buffered values at once.
+func (ro *replayObservable[V]) initBufferingObservable(
+	ctx context.Context,
+	srcObsvbl observable.Observable[V],
+) observable.Observable[[]V] {
+	bufferedObsvbl, bufferedObsvblCh := NewObservable[[]V]()
+	ch := srcObsvbl.Subscribe(ctx).Ch()
+	subscriptionReady := make(chan struct{})
+
+	go func() {
+		subscriptionReady <- struct{}{}
+		for value := range ch {
+			ro.replayBufferMu.Lock()
+			// The newest value is always at the beginning of the replay buffer.
+			if len(ro.replayBuffer) < ro.replayBufferSize {
+				ro.replayBuffer = append([]V{value}, ro.replayBuffer...)
+			} else {
+				ro.replayBuffer = append([]V{value}, ro.replayBuffer[:ro.replayBufferSize-1]...)
+			}
+			// Emit all buffered values at once.
+			bufferedObsvblCh <- ro.replayBuffer
+			ro.replayBufferMu.Unlock()
+		}
+	}()
+
+	// Ensure that the source observable has been subscribed to before allowing
+	// the replay observable to be subscribed to.
+	// It is needed to ensure that no values are missed by the replay observable
+	<-subscriptionReady
+	return bufferedObsvbl
 }

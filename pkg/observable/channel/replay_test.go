@@ -2,6 +2,7 @@ package channel_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -16,60 +17,47 @@ func TestReplayObservable_Overflow(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	replayObs, replayPublishCh := channel.NewReplayObservable[int](context.Background(), 3)
+	replayObs, replayPublishCh := channel.NewReplayObservable[int](context.Background(), 6)
 
-	//go func() {
-	//    time.Sleep(100 * time.Millisecond)
+	// Ensure that the replay observable can handle synchronous publishing
+	replayPublishCh <- 0
+	replayPublishCh <- 1
+	replayPublishCh <- 2
 
-	//    t.Log("starting loop")
-	//    for i := 0; i < 4; i++ {
-	//        replayPublishCh <- i
-	//        t.Logf("completed iteration: %d", i)
-	//    }
-	//}()
-
-	//time.Sleep(100 * time.Millisecond)
-
-	// This is what we want to have working
-	// Not because we're sending to early, but because we're losing values before
-	// the observer is added to the observer slice
-	//replayPublishCh <- 0
-	//replayPublishCh <- 1
-	//replayPublishCh <- 2
-
+	// Publish values asynchronously at different intervals
 	go func() {
-		time.Sleep(10 * time.Millisecond)
-		replayPublishCh <- 0
-		replayPublishCh <- 1
-		replayPublishCh <- 2
-	}()
-
-	go func() {
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(time.Millisecond)
 		replayPublishCh <- 3
 	}()
 
 	go func() {
-		select {
-		case <-time.After(550 * time.Millisecond):
-			t.FailNow()
-		case <-ctx.Done():
-		}
+		time.Sleep(20 * time.Millisecond)
+		replayPublishCh <- 4
 	}()
 
-	t.Log("calling #Last()")
+	go func() {
+		time.Sleep(40 * time.Millisecond)
+		replayPublishCh <- 5
+	}()
+
+	// Assert that calling last synchronously returns the synchronously published values.
 	actualValues := replayObs.Last(ctx, 3)
+	require.ElementsMatch(t, []int{2, 1, 0}, actualValues)
 
-	t.Log("asserting...")
-	require.ElementsMatch(t, []int{0, 1, 2}, actualValues)
-	time.Sleep(500 * time.Millisecond)
+	// Assert that the items returned by Last are the expected ones according to
+	// when they were published.
 
-	//t.Log("calling #Last()")
-	//time.Sleep(60 * time.Millisecond)
-	//actualValues = replayObs.Last(ctx, 3)
+	time.Sleep(10 * time.Millisecond)
+	actualValues = replayObs.Last(ctx, 3)
+	require.ElementsMatch(t, []int{3, 2, 1}, actualValues)
 
-	//t.Log("asserting...")
-	//require.ElementsMatch(t, []int{1, 2, 3}, actualValues)
+	time.Sleep(20 * time.Millisecond)
+	actualValues = replayObs.Last(ctx, 3)
+	require.ElementsMatch(t, []int{4, 3, 2}, actualValues)
+
+	time.Sleep(20 * time.Millisecond)
+	actualValues = replayObs.Last(ctx, 3)
+	require.ElementsMatch(t, []int{5, 4, 3}, actualValues)
 }
 
 func TestReplayObservable(t *testing.T) {
@@ -156,6 +144,10 @@ func TestReplayObservable(t *testing.T) {
 
 func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 	values := []int{1, 2, 3, 4, 5}
+	expectedValues := values
+	// Reverse the expected values to have the most recent values first.
+	slices.Reverse(expectedValues)
+
 	tests := []struct {
 		name             string
 		replayBufferSize int
@@ -167,9 +159,11 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 			name:             "n < replayBufferSize",
 			replayBufferSize: 5,
 			lastN:            3,
-			// the replay buffer is not full so Last should return values
-			// starting from the first published value.
-			expectedValues: values[:3], // []int{1, 2, 3},
+			// the replay buffer has enough values to return to Last, it should return
+			// the last n values in the replay buffer.
+			// TODO_DISCUSS: Shouldn't Last order the values by having the most recent
+			// value first?
+			expectedValues: values[2:], // []int{3, 4, 5},
 		},
 		{
 			name:             "n = replayBufferSize",
@@ -224,23 +218,30 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	getLastValues := func() chan []int {
 		lastValuesCh := make(chan []int, 1)
 		go func() {
+			// The replay observable's Last method does not timeout if there is less
+			// than lastN values in the replay buffer.
+			// Have a timeout to ensure that Last doesn't block indefinitely and return
+			// whatever values are available in the replay buffer.
+			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 			// Last should block until lastN values have been published.
 			// NOTE: this will produce a warning log which can safely be ignored:
 			// > WARN: requested replay buffer size 3 is greater than replay buffer
 			// > 	   capacity 3; returning entire replay buffer
 			lastValuesCh <- replayObsvbl.Last(ctx, lastN)
+			cancel()
 		}()
 		return lastValuesCh
 	}
 
-	// Ensure that last blocks when the replay buffer is empty
+	// Ensure that Last blocks when the replay buffer is empty
 	select {
 	case actualValues := <-getLastValues():
 		t.Fatalf(
-			"Last should block until at lest 1 value has been published; actualValues: %v",
+			"Last should block until it gets %d values; actualValues: %v",
+			lastN,
 			actualValues,
 		)
-	case <-time.After(10 * time.Millisecond):
+	case <-time.After(50 * time.Millisecond):
 	}
 
 	// Publish some values (up to splitIdx).
@@ -250,16 +251,17 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	}
 
 	// Ensure Last works as expected when n <= len(published_values).
-	require.ElementsMatch(t, []int{1}, replayObsvbl.Last(ctx, 1))
-	require.ElementsMatch(t, []int{1, 2}, replayObsvbl.Last(ctx, 2))
-	require.ElementsMatch(t, []int{1, 2, 3}, replayObsvbl.Last(ctx, 3))
+	require.ElementsMatch(t, []int{3}, replayObsvbl.Last(ctx, 1))
+	require.ElementsMatch(t, []int{3, 2}, replayObsvbl.Last(ctx, 2))
+	require.ElementsMatch(t, []int{3, 2, 1}, replayObsvbl.Last(ctx, 3))
 
 	// Ensure that Last blocks when n > len(published_values) and the replay
 	// buffer is not full.
 	select {
 	case actualValues := <-getLastValues():
 		t.Fatalf(
-			"Last should block until replayPartialBufferTimeout has elapsed; received values: %v",
+			"Last should block until %d items are published; received values: %v",
+			lastN,
 			actualValues,
 		)
 	default:
@@ -292,9 +294,9 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	}
 
 	// Ensure that Last still works as expected when n <= len(published_values).
-	require.ElementsMatch(t, []int{1}, replayObsvbl.Last(ctx, 1))
-	require.ElementsMatch(t, []int{1, 2}, replayObsvbl.Last(ctx, 2))
-	require.ElementsMatch(t, []int{1, 2, 3}, replayObsvbl.Last(ctx, 3))
-	require.ElementsMatch(t, []int{1, 2, 3, 4}, replayObsvbl.Last(ctx, 4))
-	require.ElementsMatch(t, []int{1, 2, 3, 4, 5}, replayObsvbl.Last(ctx, 5))
+	require.ElementsMatch(t, []int{5}, replayObsvbl.Last(ctx, 1))
+	require.ElementsMatch(t, []int{5, 4}, replayObsvbl.Last(ctx, 2))
+	require.ElementsMatch(t, []int{5, 4, 3}, replayObsvbl.Last(ctx, 3))
+	require.ElementsMatch(t, []int{5, 4, 3, 2}, replayObsvbl.Last(ctx, 4))
+	require.ElementsMatch(t, []int{5, 4, 3, 2, 1}, replayObsvbl.Last(ctx, 5))
 }

@@ -5,8 +5,8 @@ import (
 )
 
 // cometBlockResult is a non-alias of the comet ResultBlock type that implements
-// the client.Block interface used across the code base which unifies the access
-// to height and hash of a block across different block clients.
+// the client.Block interface used across the codebase which unifies the access
+// to a block's height and hash across different block clients.
 type cometBlockResult coretypes.ResultBlock
 
 func (cbr *cometBlockResult) Height() int64 {

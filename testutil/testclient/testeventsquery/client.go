@@ -43,9 +43,10 @@ func NewOneTimeEventsQuery(
 ) *mockclient.MockEventsQueryClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
+	ctx, _ = context.WithCancel(ctx)
 
 	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
-	eventsQueryClient.EXPECT().EventsBytes(gomock.Eq(ctx), gomock.Eq(query)).
+	eventsQueryClient.EXPECT().EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.Eq(query)).
 		DoAndReturn(func(
 			ctx context.Context,
 			query string,

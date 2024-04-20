@@ -66,7 +66,7 @@ func NewBlockClient(
 		return nil, err
 	}
 
-	blockClient.forEachBlockEvent(ctx, latestBlockPublishCh)
+	blockClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
 	if err := blockClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func NewBlockClient(
 // BlockClient interface for use with cosmos-sdk networks.
 type blockReplayClient struct {
 	// onStartQueryClient is the RPC client that is used to query for the initial block
-	// upon blockClient construction. The result of this query is only used if it
+	// upon blockReplayClient construction. The result of this query is only used if it
 	// returns before the eventsReplayClient receives its first event.
 	onStartQueryClient cometclient.CometRPC
 
@@ -114,13 +114,12 @@ func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) 
 // and closes all downstream connections.
 func (b *blockReplayClient) Close() {
 	b.eventsReplayClient.Close()
-	//close(b.latestBlockPublishCh)
 	b.close()
 }
 
-// forEachBlockEvent asynchronously observes block event notifications from the
+// asyncForwardBlockEvent asynchronously observes block event notifications from the
 // EventsReplayClient's EventsSequence observable & publishes each to latestBlockPublishCh.
-func (b *blockReplayClient) forEachBlockEvent(
+func (b *blockReplayClient) asyncForwardBlockEvent(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
 ) {
@@ -149,9 +148,6 @@ func (b *blockReplayClient) getInitialBlock(
 
 	// Wait for either the latest block query response, error, or the first block
 	// event to arrive & use whichever occurs first or return an error.
-	//
-	// NB: #latestBlockReplayObs is a proxy for the events sequence observable
-	// because it is guaranteed to be notified on block events in #goForEachBLockEvent().
 	var initialBlock client.Block
 	select {
 	case initialBlock = <-blockQueryResultCh:
@@ -166,10 +162,13 @@ func (b *blockReplayClient) getInitialBlock(
 	return nil
 }
 
-// queryLatestBlock constructs a comet RPC block client & asynchronously queries for
+// queryLatestBlock uses comet RPC block client to asynchronously query for
 // the latest block. It returns an error channel which may be sent a block query error.
 // It is *NOT* intended to be called in a goroutine.
-func (b *blockReplayClient) queryLatestBlock(ctx context.Context, blockQueryResultCh chan<- client.Block) <-chan error {
+func (b *blockReplayClient) queryLatestBlock(
+	ctx context.Context,
+	blockQueryResultCh chan<- client.Block,
+) <-chan error {
 	errCh := make(chan error)
 
 	go func() {

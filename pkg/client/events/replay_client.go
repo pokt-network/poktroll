@@ -78,6 +78,10 @@ type replayClient[T any] struct {
 	replayObsCachePublishCh chan<- observable.ReplayObservable[T]
 	// eventTypeObs is the replay observable for the generic type T.
 	eventTypeObs observable.ReplayObservable[T]
+	// cancelCtx is the function to cancel the context of the replay client.
+	// It is called when the replay client is closed.
+	// NB: This is not the context of the events query client.
+	cancelCtx func()
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -96,11 +100,14 @@ func NewEventsReplayClient[T any](
 	newEventFn NewEventsFn[T],
 	replayObsBufferSize int,
 ) (client.EventsReplayClient[T], error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	// Initialize the replay client
 	rClient := &replayClient[T]{
 		queryString:         queryString,
 		eventDecoder:        newEventFn,
 		replayObsBufferSize: replayObsBufferSize,
+		cancelCtx:           cancel,
 	}
 	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
 	// we may no longer depend on it being replayable.
@@ -176,7 +183,8 @@ func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
 func (rClient *replayClient[T]) Close() {
 	// Closing eventsClient will cascade unsubscribe and close downstream observers.
 	rClient.eventsClient.Close()
-	close(rClient.replayObsCachePublishCh)
+	// Close all the downstream observers of the replay client.
+	rClient.cancelCtx()
 }
 
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,
