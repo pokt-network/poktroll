@@ -40,6 +40,11 @@ func NewReplayObservable[V any](
 	return ToReplayObservable(ctx, replayBufferSize, obsvbl), publishCh
 }
 
+// ToReplayObservable returns an observable which replays the last replayBufferSize
+// number of values published to the source observable to new observers, before
+// publishing new values.
+// It should only be used with a srcObservable which contains channelObservers
+// (i.e. channelObservable or similar).
 func ToReplayObservable[V any](
 	ctx context.Context,
 	replayBufferSize int,
