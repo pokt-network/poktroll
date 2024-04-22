@@ -13,6 +13,7 @@ APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
 SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
+DAO_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
 
 # Detect operating system
 OS := $(shell uname -s)
@@ -277,10 +278,13 @@ localnet_down: ## Delete resources created by localnet
 localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
-	@set -e ;\
-	ignite chain init --skip-proto ;\
-	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
+	@set -e
+	@ignite chain init --skip-proto
+	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
+	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
+
+	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
+	sed -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' $(POKTROLLD_HOME)/config/genesis.json;
 
 .PHONY: send_relay
 send_relay:
