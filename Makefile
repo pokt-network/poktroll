@@ -734,12 +734,22 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 ### Params ###
 ##############
 
-MODULES := application gateway pocket service session supplier tokenomics
+MODULES := application gateway pocket service session supplier proof tokenomics
 
-# TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
-.PHONY: update_tokenomics_params
-update_tokenomics_params: ## Update the tokenomics module params
-	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+# TODO_CONSIDERATION: additional factoring (e.g. POKTROLLD_FLAGS).
+PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(DAO_ADDRESS) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+
+.PHONY: update_tokenomics_params_all
+update_tokenomics_params_all: ## Update the tokenomics module params
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
+
+.PHONY: update_proof_params_all
+update_proof_params_all: ## Update the proof module params
+	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
+
+.PHONY: update_proof_param_min_relay_difficulty_bits
+update_proof_param_min_relay_difficulty_bits: ## Update the proof module params
+	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
 .PHONY: query_all_params
 query_all_params: check_jq ## Query the params from all available modules
