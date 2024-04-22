@@ -55,7 +55,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 			// Iterate over the server configs and check if `endpointUrl` is present
 			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
 			for _, serverConfig := range rp.serverConfigs {
-				supplierService, ok := serverConfig.Suppliers[service.Service.Id]
+				supplierService, ok := serverConfig.SupplierConfigs[service.Service.Id]
 				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
 					found = true
 					break
@@ -101,7 +101,7 @@ func (rp *relayerProxy) initializeProxyServers(
 		// to create the appropriate RelayServer.
 		// Initialize the server according to the server type defined in the config file
 		switch serverConfig.ServerType {
-		case config.ServerTypeHTTP:
+		case config.RelayMinerServerTypeHTTP:
 			servers[serverConfig.ListenAddress] = NewSynchronousServer(
 				rp.logger,
 				serverConfig,

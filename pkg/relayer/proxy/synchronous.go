@@ -156,7 +156,7 @@ func (sync *synchronousRPCServer) ServeHTTP(writer http.ResponseWriter, request 
 	// is present in any of the supplier's service's hosts. We could improve this
 	// by building a map at the server initialization level with originHost as the
 	// key so that we can get the service and serviceUrl in O(1) time.
-	for _, supplierServiceConfig := range sync.serverConfig.Suppliers {
+	for _, supplierServiceConfig := range sync.serverConfig.SupplierConfigs {
 		for _, host := range supplierServiceConfig.PubliclyExposedEndpoints {
 			if host == originHostUrl.Hostname() && supplierService.Id == supplierServiceConfig.ServiceId {
 				serviceConfig = supplierServiceConfig.ServiceConfig

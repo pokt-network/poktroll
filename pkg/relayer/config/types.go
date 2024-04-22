@@ -2,16 +2,21 @@ package config
 
 import "net/url"
 
-type ServerType int
+type RelayMinerServerType int
 
 const (
-	ServerTypeHTTP ServerType = iota
-	// TODO: Support other relay miner server types: HTTPS, TCP, UNIX socket, UDP, QUIC, WebRTC ...
+	RelayMinerServerTypeHTTP RelayMinerServerType = iota
+	// TODO: Support other RelayMinerServerType:
+	// RelayMinerServerTypeHTTPS
+	// RelayMinerServerTypeTCP
+	// RelayMinerServerTypeUDP
+	// RelayMinerServerTypeQUIC
+	// RelayMinerServerTypeWebRTC
+	// RelayMinerServerTypeUNIXSocket
+	// Etc...
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
-// TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files
-// and update inline comments accordingly.
 type YAMLRelayMinerConfig struct {
 	PocketNode     YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	SigningKeyName string                         `yaml:"signing_key_name"`
@@ -21,7 +26,7 @@ type YAMLRelayMinerConfig struct {
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
-// node URLs section of the RelayMiner config file
+// node URLs section of the RelayMiner config file.
 type YAMLRelayMinerPocketNodeConfig struct {
 	QueryNodeRPCUrl  string `yaml:"query_node_rpc_url"`
 	QueryNodeGRPCUrl string `yaml:"query_node_grpc_url"`
@@ -29,7 +34,7 @@ type YAMLRelayMinerPocketNodeConfig struct {
 }
 
 // YAMLRelayMinerMetricsConfig is the structure used to unmarshal the metrics
-// section of the RelayMiner config file
+// section of the RelayMiner config file.
 type YAMLRelayMinerMetricsConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Addr    string `yaml:"addr"`
@@ -45,7 +50,7 @@ type YAMLRelayMinerSupplierConfig struct {
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
-// service sub-section of the RelayMiner config file
+// service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
 	BackendUrl               string                                      `yaml:"backend_url"`
 	Authentication           YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
@@ -78,14 +83,15 @@ type RelayMinerPocketNodeConfig struct {
 	TxNodeRPCUrl     *url.URL
 }
 
-// RelayMinerServerConfig is the structure resulting from parsing the supplier
-// section of the RelayMiner config file.
+// RelayMinerServerConfig is the structure resulting from parsing the supplier's
+// server section of the RelayMiner config file.
 // Each server section embeds a map of supplier configs that are associated with it.
-// Other server types may embed other fields in the future. eg. "https" may
-// embed a TLS config.
+// TODO_IMPROVE: Other server types may embed other fields in the future.
+//
+//	eg. "https" may embed a TLS config.
 type RelayMinerServerConfig struct {
 	// ServerType is the transport protocol used by the server like (http, https, etc.)
-	ServerType ServerType
+	ServerType RelayMinerServerType
 	// ListenAddress is the host on which the relay miner server will listen
 	// for incoming relay requests
 	ListenAddress string
@@ -93,8 +99,8 @@ type RelayMinerServerConfig struct {
 	// should lookup the host from the X-Forwarded-Host header before falling
 	// back to the Host header.
 	XForwardedHostLookup bool
-	// Suppliers is a map of serviceIds -> RelayMinerSupplierConfig
-	Suppliers map[string]*RelayMinerSupplierConfig
+	// SupplierConfigs is a map of serviceIds -> RelayMinerSupplierConfig
+	SupplierConfigs map[string]*RelayMinerSupplierConfig
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics
@@ -111,7 +117,7 @@ type RelayMinerSupplierConfig struct {
 	ServiceId string
 	// ServerType is the transport protocol used by the supplier, it must match the
 	// type of the relay miner server it is associated with.
-	ServerType ServerType
+	ServerType RelayMinerServerType
 	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier,
 	// the corresponding relay miner server will accept relay requests for these hosts.
 	PubliclyExposedEndpoints []string

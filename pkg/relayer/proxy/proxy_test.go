@@ -46,8 +46,9 @@ var (
 	// application.
 	appPrivateKey *secp256k1.PrivKey
 
-	// proxiedServices is the parsed configuration of the RelayMinerServerConfig
-	proxiedServices map[string]*config.RelayMinerServerConfig
+	// proxiedServiceConfigs is a map from proxied server endpoint to their
+	// parsed corresponding configurations.
+	proxiedServiceConfigs map[string]*config.RelayMinerServerConfig
 
 	// defaultRelayerServerBehavior is the list of functions that are used to
 	// define the behavior of the RelayerProxy in the tests.
@@ -80,14 +81,14 @@ func init() {
 		},
 	}
 
-	proxiedServices = map[string]*config.RelayMinerServerConfig{
+	proxiedServiceConfigs = map[string]*config.RelayMinerServerConfig{
 		defaultRelayMinerServer: {
-			ServerType:    config.ServerTypeHTTP,
+			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: defaultRelayMinerServer,
-			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId:                defaultService,
-					ServerType:               config.ServerTypeHTTP,
+					ServerType:               config.RelayMinerServerTypeHTTP,
 					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
@@ -95,7 +96,7 @@ func init() {
 				},
 				secondaryService: {
 					ServiceId:                secondaryService,
-					ServerType:               config.ServerTypeHTTP,
+					ServerType:               config.RelayMinerServerTypeHTTP,
 					PubliclyExposedEndpoints: []string{"supplier1"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8546", Path: "/"},
@@ -104,12 +105,12 @@ func init() {
 			},
 		},
 		secondaryRelayMinerServer: {
-			ServerType:    config.ServerTypeHTTP,
+			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: secondaryRelayMinerServer,
-			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 				thirdService: {
 					ServiceId:                thirdService,
-					ServerType:               config.ServerTypeHTTP,
+					ServerType:               config.RelayMinerServerTypeHTTP,
 					PubliclyExposedEndpoints: []string{"supplier2"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8547", Path: "/"},
@@ -121,7 +122,7 @@ func init() {
 
 	defaultRelayerProxyBehavior = []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierKeyName, blockHeight),
-		testproxy.WithRelayerProxiedServices(proxiedServices),
+		testproxy.WithRelayerProxiedServices(proxiedServiceConfigs),
 		testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 		testproxy.WithDefaultApplication(appPrivateKey),
 		testproxy.WithDefaultSessionSupplier(supplierKeyName, defaultService, appPrivateKey),
@@ -138,7 +139,7 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName(supplierKeyName),
-		proxy.WithProxiedServicesEndpoints(proxiedServices),
+		proxy.WithProxiedServicesEndpoints(proxiedServiceConfigs),
 	)
 	require.NoError(t, err)
 
@@ -148,12 +149,12 @@ func TestRelayerProxy_StartAndStop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Test that RelayerProxy is handling requests (ignoring the actual response content)
-	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[defaultRelayMinerServer].ListenAddress))
+	res, err := http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServiceConfigs[defaultRelayMinerServer].ListenAddress))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
 	// Test that RelayerProxy is handling requests from the other server
-	res, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServices[secondaryRelayMinerServer].ListenAddress))
+	res, err = http.DefaultClient.Get(fmt.Sprintf("http://%s/", proxiedServiceConfigs[secondaryRelayMinerServer].ListenAddress))
 	require.NoError(t, err)
 	require.NotNil(t, res)
 
@@ -170,7 +171,7 @@ func TestRelayerProxy_InvalidSupplierKeyName(t *testing.T) {
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName("wrongKeyName"),
-		proxy.WithProxiedServicesEndpoints(proxiedServices),
+		proxy.WithProxiedServicesEndpoints(proxiedServiceConfigs),
 	)
 	require.NoError(t, err)
 
@@ -186,7 +187,7 @@ func TestRelayerProxy_MissingSupplierKeyName(t *testing.T) {
 	_, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName(""),
-		proxy.WithProxiedServicesEndpoints(proxiedServices),
+		proxy.WithProxiedServicesEndpoints(proxiedServiceConfigs),
 	)
 	require.Error(t, err)
 }
@@ -222,7 +223,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 
 	unsupportedRPCTypeBehavior := []func(*testproxy.TestBehavior){
 		testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierKeyName, blockHeight),
-		testproxy.WithRelayerProxiedServices(proxiedServices),
+		testproxy.WithRelayerProxiedServices(proxiedServiceConfigs),
 
 		// The supplier is staked on-chain but the service it provides is not supported by the proxy
 		testproxy.WithDefaultSupplier(supplierKeyName, unsupportedSupplierEndpoint),
@@ -235,7 +236,7 @@ func TestRelayerProxy_UnsupportedRpcType(t *testing.T) {
 	rp, err := proxy.NewRelayerProxy(
 		test.Deps,
 		proxy.WithSigningKeyName(supplierKeyName),
-		proxy.WithProxiedServicesEndpoints(proxiedServices),
+		proxy.WithProxiedServicesEndpoints(proxiedServiceConfigs),
 	)
 	require.NoError(t, err)
 
@@ -258,13 +259,13 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 	unsupportedTransportProxy := map[string]*config.RelayMinerServerConfig{
 		defaultRelayMinerServer: {
 			// The proxy is configured with an unsupported transport type
-			ServerType:    config.ServerType(100),
+			ServerType:    config.RelayMinerServerType(100),
 			ListenAddress: defaultRelayMinerServer,
-			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
-					ServerType:               config.ServerType(100),
+					ServerType:               config.RelayMinerServerType(100),
 					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
@@ -302,12 +303,12 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 
 	missingServicesProxy := map[string]*config.RelayMinerServerConfig{
 		defaultRelayMinerServer: {
-			ServerType:    config.ServerTypeHTTP,
+			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: defaultRelayMinerServer,
-			Suppliers: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId:                defaultService,
-					ServerType:               config.ServerTypeHTTP,
+					ServerType:               config.RelayMinerServerTypeHTTP,
 					PubliclyExposedEndpoints: []string{"supplier"},
 					ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 						BackendUrl: &url.URL{Scheme: "http", Host: "127.0.0.1:8545", Path: "/"},
@@ -439,7 +440,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 
 			relayerProxyBehavior: []func(*testproxy.TestBehavior){
 				testproxy.WithRelayerProxyDependenciesForBlockHeight(supplierKeyName, blockHeight),
-				testproxy.WithRelayerProxiedServices(proxiedServices),
+				testproxy.WithRelayerProxiedServices(proxiedServiceConfigs),
 				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 				testproxy.WithDefaultApplication(appPrivateKey),
 				// Missing session supplier
@@ -477,7 +478,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 					supplierKeyName,
 					blockWithinSessionGracePeriod,
 				),
-				testproxy.WithRelayerProxiedServices(proxiedServices),
+				testproxy.WithRelayerProxiedServices(proxiedServiceConfigs),
 				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 				testproxy.WithDefaultApplication(appPrivateKey),
 				// Add 2 sessions, with the first one being within the withing grace period
@@ -499,7 +500,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 					// Set the current block height value returned by the block provider
 					blockOutsideSessionGracePeriod,
 				),
-				testproxy.WithRelayerProxiedServices(proxiedServices),
+				testproxy.WithRelayerProxiedServices(proxiedServiceConfigs),
 				testproxy.WithDefaultSupplier(supplierKeyName, supplierEndpoints),
 				testproxy.WithDefaultApplication(appPrivateKey),
 				// Add 3 sessions, with the first one that is no longer within its
@@ -523,7 +524,7 @@ func TestRelayerProxy_Relays(t *testing.T) {
 			rp, err := proxy.NewRelayerProxy(
 				testBehavior.Deps,
 				proxy.WithSigningKeyName(supplierKeyName),
-				proxy.WithProxiedServicesEndpoints(proxiedServices),
+				proxy.WithProxiedServicesEndpoints(proxiedServiceConfigs),
 			)
 			require.NoError(t, err)
 
@@ -548,7 +549,7 @@ func sendRequestWithUnparsableBody(
 	reader := io.NopCloser(bytes.NewReader([]byte("invalid request")))
 
 	res, err := http.DefaultClient.Post(
-		fmt.Sprintf("http://%s", proxiedServices[defaultRelayMinerServer].ListenAddress),
+		fmt.Sprintf("http://%s", proxiedServiceConfigs[defaultRelayMinerServer].ListenAddress),
 		"application/json",
 		reader,
 	)
@@ -570,7 +571,7 @@ func sendRequestWithMissingSignature(
 		testproxy.PrepareJsonRPCRequestPayload(),
 	)
 	req.Meta.Signature = nil
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithInvalidSignature(
@@ -586,7 +587,7 @@ func sendRequestWithInvalidSignature(
 	)
 	req.Meta.Signature = []byte("invalid signature")
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithMissingSessionHeaderApplicationAddress(
@@ -609,7 +610,7 @@ func sendRequestWithMissingSessionHeaderApplicationAddress(
 	// before looking at the application address
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithNonStakedApplicationAddress(
@@ -628,7 +629,7 @@ func sendRequestWithNonStakedApplicationAddress(
 	// Have a valid signature from the non staked key
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithRingSignatureMismatch(
@@ -647,7 +648,7 @@ func sendRequestWithRingSignatureMismatch(
 	randomPrivKey := secp256k1.GenPrivKey()
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, randomPrivKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithDifferentSession(
@@ -665,7 +666,7 @@ func sendRequestWithDifferentSession(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithInvalidRelaySupplier(
@@ -681,7 +682,7 @@ func sendRequestWithInvalidRelaySupplier(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithSignatureForDifferentPayload(
@@ -699,7 +700,7 @@ func sendRequestWithSignatureForDifferentPayload(
 	// Alter the request payload so the hash doesn't match the one used by the signature
 	req.Payload = []byte(`{"method":"someMethod","id":1,"jsonrpc":"2.0","params":["alteredParam"]}`)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 func sendRequestWithSuccessfulReply(
@@ -715,7 +716,7 @@ func sendRequestWithSuccessfulReply(
 	)
 	req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-	return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+	return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 }
 
 // sendRequestWithCustomSessionHeight is a helper function that generates a `RelayRequest`
@@ -734,6 +735,6 @@ func sendRequestWithCustomSessionHeight(
 		)
 		req.Meta.Signature = testproxy.GetApplicationRingSignature(t, req, appPrivateKey)
 
-		return testproxy.MarshalAndSend(test, proxiedServices, defaultRelayMinerServer, defaultService, req)
+		return testproxy.MarshalAndSend(test, proxiedServiceConfigs, defaultRelayMinerServer, defaultService, req)
 	}
 }

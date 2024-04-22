@@ -44,10 +44,13 @@ import (
 type TestBehavior struct {
 	ctx context.Context
 	t   *testing.T
+
 	// Deps is exported so it can be used by the dependency injection framework
 	// from the pkg/relayer/proxy/proxy_test.go
 	Deps depinject.Config
 
+	// proxiedServices is a map from ServiceId to the backend server that handles
+	// processing the RPC request send to the supplier.
 	proxiedServices map[string]*http.Server
 }
 
@@ -131,7 +134,7 @@ func WithRelayerProxiedServices(
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		for _, proxy := range proxiedServices {
-			for serviceId, service := range proxy.Suppliers {
+			for serviceId, service := range proxy.SupplierConfigs {
 				server := &http.Server{Addr: service.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Write(prepareJsonRPCResponsePayload())
@@ -292,7 +295,7 @@ func MarshalAndSend(
 
 	var scheme string
 	switch proxiedServices[proxyServerName].ServerType {
-	case config.ServerTypeHTTP:
+	case config.RelayMinerServerTypeHTTP:
 		scheme = "http"
 	default:
 		require.FailNow(test.t, "unsupported server type")
@@ -307,7 +310,7 @@ func MarshalAndSend(
 	// In a real-world scenario, the publicly exposed endpoint would reach a load
 	// balancer or a reverse proxy that would route the request to the address
 	// specified by ListenAddress.
-	originHost := proxiedServices[proxyServerName].Suppliers[serviceId].PubliclyExposedEndpoints[0]
+	originHost := proxiedServices[proxyServerName].SupplierConfigs[serviceId].PubliclyExposedEndpoints[0]
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
 		Method: http.MethodPost,

@@ -24,22 +24,27 @@ func (sync *synchronousRPCServer) replyWithError(
 
 	responseBz, err := partials.GetErrorReply(ctx, payloadBz, err)
 	if err != nil {
-		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("listen_address", listenAddress).Msg(
+		sync.logger.Error().Err(err).
+			Str("service_id", serviceId).
+			Str("listen_address", listenAddress).Msg(
 			"failed getting error reply")
 		return
 	}
 
 	relayResponse := &types.RelayResponse{Payload: responseBz}
-
 	relayResponseBz, err := relayResponse.Marshal()
 	if err != nil {
-		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("listen_address", listenAddress).Msg(
+		sync.logger.Error().Err(err).
+			Str("service_id", serviceId).
+			Str("listen_address", listenAddress).Msg(
 			"failed marshaling relay response")
 		return
 	}
 
 	if _, err = writer.Write(relayResponseBz); err != nil {
-		sync.logger.Error().Err(err).Str("service_id", serviceId).Str("listen_address", listenAddress).Msg(
+		sync.logger.Error().Err(err).
+			Str("service_id", serviceId).
+			Str("listen_address", listenAddress).Msg(
 			"failed writing relay response")
 		return
 	}

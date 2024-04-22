@@ -3,13 +3,15 @@ title: RelayMiner config
 sidebar_position: 1
 ---
 
-# `relayer/config/relayminer_configs_reader` <!-- omit in toc -->
+# RelayMiner config <!-- omit in toc -->
 
 _This document describes the configuration options available through the
-`relayminer_config.yaml` file. It drives how the `RelayMiner` is setup in terms
-of Pocket network connectivity, the servers it starts, which domains it accepts
-queries from and which services it forwards requests to._
+`relayminer_config.yaml` file. It configures how the `RelayMiner` is setup in terms
+of Pocket network connectivity, starting up backend servers, querying requests
+and which domains to accept queries from._
 
+- [RelayMiner (off-chain) config -\> Supplier (on-chain) configs](#relayminer-off-chain-config---supplier-on-chain-configs)
+- [Full config example](#full-config-example)
 - [Usage](#usage)
 - [Structure](#structure)
 - [Global options](#global-options)
@@ -29,9 +31,60 @@ queries from and which services it forwards requests to._
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
       - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
   - [`listen_url`](#listen_url)
-- [RelayMiner config -\> On-chain service relationship](#relayminer-config---on-chain-service-relationship)
-- [Full config example](#full-config-example)
 - [Supported server types](#supported-server-types)
+
+## RelayMiner (off-chain) config -> Supplier (on-chain) configs
+
+The following diagram illustrates how the _off-chain_ `RelayMiner` operator
+config (yaml) MUST match the _on-chain_ `Supplier` actor service endpoints
+for correct and deterministic behavior.
+
+If these do not match, the behavior is non-deterministic and could result in
+a variety of errors such as bad QoS, incorrect proxying, burning of the actor, etc...
+
+_Assuming that the on-chain endpoints 1 and 2 have different hosts_
+
+```mermaid
+flowchart LR
+
+subgraph "Supplier Actor (On-Chain)"
+  subgraph "SupplierServiceConfig (protobuf)"
+    subgraph svc1["Service1 (protobuf)"]
+      svc1Id[Service1.Id]
+      subgraph SupplierEndpoint
+        EP1[Endpoint1]
+        EP2[Endpoint2]
+      end
+    end
+    subgraph svc2 ["Service2 (protobuf)"]
+      svc2Id[Service2.Id]
+    end
+  end
+end
+
+subgraph "RelayMiner Operator (Off-Chain)"
+  subgraph "DevOps Operator Configs (yaml)"
+    subgraph svc1Config ["Service1 Config (yaml)"]
+      svc1IdConfig[service_id=Service1.Id]-->svc1Id
+      subgraph Hosts
+        H1[Endpoint1.Host]-->EP1
+        H2[Endpoint2.Host]-->EP2
+        H3[Internal Host]
+      end
+    end
+    subgraph svc2Config ["Service2 Config (yaml)"]
+      svc2IdConfig[Service2.Id]
+    end
+  end
+end
+
+svc2Config-->svc2
+```
+
+## Full config example
+
+A full and commented example of a `RelayMiner` configuration file can be found
+at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
 
 ## Usage
 
@@ -141,6 +194,7 @@ At least one supplier is required for the `RelayMiner` to be functional.
 ```yaml
 suppliers:
   - service_id: <string>
+    listen_url: <enum{http}>://<host>
     service_config:
       backend_url: <url>
       authentication:
@@ -150,7 +204,6 @@ suppliers:
         <key>: <value>
       publicly_exposed_endpoints:
         - <host>
-    listen_url: <enum{http}>://<host>
 ```
 
 ### `service_id`
@@ -241,59 +294,6 @@ The same `listen_url` can be used for multiple suppliers and/or different
 `publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
 to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
 it received a request form.
-
-## RelayMiner config -> On-chain service relationship
-
-The following diagram illustrates how the _off-chain_ `RelayMiner` operator
-config (yaml) MUST match the _on-chain_ `Supplier` actor service endpoints
-for correct and deterministic behavior.
-
-If these do not match, the behavior is non-deterministic and could result in
-a variety of errors such as bad QoS, incorrect proxying, burning of the actor, etc...
-
-_Assuming that the on-chain endpoints 1 and 2 have different hosts_
-
-```mermaid
-flowchart LR
-
-subgraph "Supplier Actor (On-Chain)"
-  subgraph "SupplierServiceConfig (protobuf)"
-    subgraph svc1["Service1 (protobuf)"]
-      svc1Id[Service1.Id]
-      subgraph SupplierEndpoint
-        EP1[Endpoint1]
-        EP2[Endpoint2]
-      end
-    end
-    subgraph svc2 ["Service2 (protobuf)"]
-      svc2Id[Service2.Id]
-    end
-  end
-end
-
-subgraph "RelayMiner Operator (Off-Chain)"
-  subgraph "DevOps Operator Configs (yaml)"
-    subgraph svc1Config ["Service1 Config (yaml)"]
-      svc1IdConfig[service_id=Service1.Id]-->svc1Id
-      subgraph Hosts
-        H1[Endpoint1.Host]-->EP1
-        H2[Endpoint2.Host]-->EP2
-        H3[Internal Host]
-      end
-    end
-    subgraph svc2Config ["Service2 Config (yaml)"]
-      svc2IdConfig[Service2.Id]
-    end
-  end
-end
-
-svc2Config-->svc2
-```
-
-## Full config example
-
-A full and commented example of a `RelayMiner` configuration file can be found
-at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
 
 ---
 

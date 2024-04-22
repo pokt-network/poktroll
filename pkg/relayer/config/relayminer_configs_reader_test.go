@@ -34,6 +34,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
 				      authentication:
@@ -43,7 +44,6 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							publicly_exposed_endpoints:
 								- ethereum.devnet1.poktroll.com
 								- ethereum
-				    listen_url: http://127.0.0.1:8080
 				`,
 
 			expectedErr: nil,
@@ -58,12 +58,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
-						ServerType:           config.ServerTypeHTTP,
+						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
-								ServerType: config.ServerTypeHTTP,
+								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
@@ -124,12 +124,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
-						ServerType:           config.ServerTypeHTTP,
+						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
-								ServerType: config.ServerTypeHTTP,
+								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 									Authentication: &config.RelayMinerSupplierServiceAuthentication{
@@ -145,7 +145,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 							},
 							"7b-llm-model": {
 								ServiceId:  "7b-llm-model",
-								ServerType: config.ServerTypeHTTP,
+								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "llama-endpoint"},
 								},
@@ -190,12 +190,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
-						ServerType:           config.ServerTypeHTTP,
+						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
-								ServerType: config.ServerTypeHTTP,
+								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -241,12 +241,12 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				Servers: map[string]*config.RelayMinerServerConfig{
 					"http://127.0.0.1:8080": {
 						ListenAddress:        "127.0.0.1:8080",
-						ServerType:           config.ServerTypeHTTP,
+						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: true,
-						Suppliers: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
-								ServerType: config.ServerTypeHTTP,
+								ServerType: config.RelayMinerServerTypeHTTP,
 								ServiceConfig: &config.RelayMinerSupplierServiceConfig{
 									BackendUrl: &url.URL{Scheme: "http", Host: "anvil.servicer:8545"},
 								},
@@ -273,11 +273,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
 							publicly_exposed_endpoints:
 								- ethereum.devnet1.poktroll.com
-				    listen_url: http://127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -294,11 +294,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
+				    listen_url: http://127.0.0.1:8080
 				    service_config:
 				      backend_url: http://anvil.servicer:8545
 							publicly_exposed_endpoints:
 								- ethereum.devnet1.poktroll.com
-				    listen_url: http://127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidNodeUrl,
@@ -588,11 +588,11 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 				smt_store_path: smt_stores
 				suppliers:
 				  - service_id: ethereum
-				    service_config:
+					listen_url: http://127.0.0.1:8080
+				 	service_config:
 				      backend_url: http://anvil.servicer:8545
 							publicly_exposed_endpoints:
 								- # explicitly blank supplier host
-				    listen_url: http://127.0.0.1:8080
 				`,
 
 			expectedErr: config.ErrRelayMinerConfigInvalidSupplier,
@@ -668,41 +668,41 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					config.Servers[listenAddress].ServerType,
 				)
 
-				for supplierName, supplier := range server.Suppliers {
+				for supplierName, supplier := range server.SupplierConfigs {
 					require.Equal(
 						t,
 						supplier.ServiceId,
-						config.Servers[listenAddress].Suppliers[supplierName].ServiceId,
+						config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceId,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServerType,
-						config.Servers[listenAddress].Suppliers[supplierName].ServerType,
+						config.Servers[listenAddress].SupplierConfigs[supplierName].ServerType,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServiceConfig.BackendUrl.String(),
-						config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.BackendUrl.String(),
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication,
+							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Username,
-							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Password,
-							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication.Password,
 						)
 					}
 
@@ -710,7 +710,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Equal(
 							t,
 							headerValue,
-							config.Servers[listenAddress].Suppliers[supplierName].ServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Headers[headerKey],
 						)
 					}
 
@@ -718,7 +718,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Contains(
 							t,
 							host,
-							config.Servers[listenAddress].Suppliers[supplierName].PubliclyExposedEndpoints[i],
+							config.Servers[listenAddress].SupplierConfigs[supplierName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

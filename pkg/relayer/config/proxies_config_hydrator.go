@@ -35,7 +35,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 
 		serverConfig := &RelayMinerServerConfig{
 			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
-			Suppliers:            make(map[string]*RelayMinerSupplierConfig),
+			SupplierConfigs:      make(map[string]*RelayMinerSupplierConfig),
 		}
 
 		// Populate the server fields that are relevant to each supported server type
@@ -44,7 +44,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 			if err := serverConfig.parseHTTPServerConfig(yamlSupplierConfig); err != nil {
 				return err
 			}
-			serverConfig.ServerType = ServerTypeHTTP
+			serverConfig.ServerType = RelayMinerServerTypeHTTP
 		default:
 			// Fail if the relay miner server type is not supported
 			return ErrRelayMinerConfigInvalidServer.Wrapf(

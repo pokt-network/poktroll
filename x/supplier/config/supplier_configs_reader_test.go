@@ -14,16 +14,17 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/config"
 )
 
-func Test_ParseSupplierConfigs(t *testing.T) {
+func Test_ParseSupplierConfigs_Services(t *testing.T) {
 	tests := []struct {
-		desc           string
+		desc        string
+		inputConfig string
+
 		expectedError  *sdkerrors.Error
 		expectedConfig *config.SupplierStakeConfig
-		inputConfig    string
 	}{
 		// Valid Configs
 		{
-			desc: "services_test: valid full service config",
+			desc: "valid full service config",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -57,7 +58,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 			},
 		},
 		{
-			desc: "services_test: valid service config without endpoint config",
+			desc: "valid service config without endpoint specific config",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -83,7 +84,7 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 			},
 		},
 		{
-			desc: "services_test: valid service config with empty endpoint config",
+			desc: "valid service config with empty endpoint specific config",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -385,21 +386,20 @@ func Test_ParseSupplierConfigs(t *testing.T) {
 			require.Equal(t, tt.expectedConfig.StakeAmount.Denom, supplierServiceConfig.StakeAmount.Denom)
 
 			require.Equal(t, len(tt.expectedConfig.Services), len(supplierServiceConfig.Services))
-			for i, expected := range tt.expectedConfig.Services {
+			for svcIdx, expectedService := range tt.expectedConfig.Services {
+				require.Equal(t, expectedService.Service.Id, supplierServiceConfig.Services[svcIdx].Service.Id)
 
-				require.Equal(t, expected.Service.Id, supplierServiceConfig.Services[i].Service.Id)
+				require.Equal(t, len(expectedService.Endpoints), len(supplierServiceConfig.Services[svcIdx].Endpoints))
+				for endpointIdx, expectedEndpoint := range expectedService.Endpoints {
 
-				require.Equal(t, len(expected.Endpoints), len(supplierServiceConfig.Services[i].Endpoints))
-				for j, expectedEndpoint := range expected.Endpoints {
+					require.Equal(t, expectedEndpoint.Url, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Url)
+					require.Equal(t, expectedEndpoint.RpcType, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].RpcType)
 
-					require.Equal(t, expectedEndpoint.Url, supplierServiceConfig.Services[i].Endpoints[j].Url)
-					require.Equal(t, expectedEndpoint.RpcType, supplierServiceConfig.Services[i].Endpoints[j].RpcType)
-
-					require.Equal(t, len(expectedEndpoint.Configs), len(supplierServiceConfig.Services[i].Endpoints[j].Configs))
+					require.Equal(t, len(expectedEndpoint.Configs), len(supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs))
 					for k, expectedConfig := range expectedEndpoint.Configs {
 
-						require.Equal(t, expectedConfig.Key, supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Key)
-						require.Equal(t, expectedConfig.Value, supplierServiceConfig.Services[i].Endpoints[j].Configs[k].Value)
+						require.Equal(t, expectedConfig.Key, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs[k].Key)
+						require.Equal(t, expectedConfig.Value, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs[k].Value)
 					}
 				}
 			}

@@ -69,7 +69,7 @@ func (supplierConfig *RelayMinerSupplierConfig) HydrateSupplier(
 	supplierConfig.ServiceConfig = &RelayMinerSupplierServiceConfig{}
 	switch backendUrl.Scheme {
 	case "http":
-		supplierConfig.ServerType = ServerTypeHTTP
+		supplierConfig.ServerType = RelayMinerServerTypeHTTP
 		if err := supplierConfig.ServiceConfig.
 			parseHTTPSupplierConfig(yamlSupplierConfig.ServiceConfig); err != nil {
 			return err
