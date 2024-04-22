@@ -19,7 +19,7 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 		return nil, ErrRelayMinerConfigUnmarshalYAML.Wrap(err.Error())
 	}
 
-	// Top level section
+	// Global section
 	// SigningKeyName is required
 	if len(yamlRelayMinerConfig.SigningKeyName) == 0 {
 		return nil, ErrRelayMinerConfigInvalidSigningKeyName
