@@ -17,14 +17,14 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 		listenUrl, err := url.Parse(yamlSupplierConfig.ListenUrl)
 		if err != nil {
 			return ErrRelayMinerConfigInvalidServer.Wrapf(
-				"invalid listen url %s",
+				"invalid listen url %q",
 				yamlSupplierConfig.ListenUrl,
 			)
 		}
 
 		if listenUrl.Scheme == "" {
 			return ErrRelayMinerConfigInvalidServer.Wrapf(
-				"missing scheme in listen url %s",
+				"missing scheme in listen url %q",
 				yamlSupplierConfig.ListenUrl,
 			)
 		}
@@ -48,7 +48,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 		default:
 			// Fail if the relay miner server type is not supported
 			return ErrRelayMinerConfigInvalidServer.Wrapf(
-				"invalid relay miner server type %s",
+				"invalid relay miner server type %q",
 				listenUrl.Scheme,
 			)
 		}

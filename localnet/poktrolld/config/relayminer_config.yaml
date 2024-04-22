@@ -9,8 +9,8 @@ pocket_node:
   tx_node_rpc_url: tcp://poktroll-validator:36657
 suppliers:
   - service_id: anvil
+    listen_url: http://0.0.0.0:8545
     service_config:
       backend_url: http://anvil:8547/
       publicly_exposed_endpoints:
         - relayminers
-    listen_url: http://0.0.0.0:8545

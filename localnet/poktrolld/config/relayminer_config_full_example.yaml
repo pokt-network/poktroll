@@ -29,6 +29,7 @@ suppliers:
   # Must be unique in the `suppliers` array.
   # Required.
   - service_id: ethereum
+    listen_url: http://0.0.0.0:80
     # Configuration of the service offered through RelayMiner.
     service_config:
       # Backend URL is the endpoint that the RelayMiner proxies the requests to.
@@ -70,12 +71,11 @@ suppliers:
     # The scheme in the URL is required in order to infer the server type.
     # Multiple suppliers can share one listen address.
     # Required.
-    listen_url: http://0.0.0.0:80
 
   # Example of exposing an ollama LLM endpoint.
   - service_id: ollama:mistral:7b
+    listen_url: http://0.0.0.0:80
     service_config:
       backend_url: http://localhost:11434
       publicly_exposed_endpoints:
         - mistral-7b.devnet1.poktroll.com
-    listen_url: http://0.0.0.0:80

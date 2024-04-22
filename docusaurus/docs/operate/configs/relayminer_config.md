@@ -24,13 +24,13 @@ and which domains to accept queries from._
   - [`tx_node_rpc_url`](#tx_node_rpc_url)
 - [Suppliers](#suppliers)
   - [`service_id`](#service_id)
+  - [`listen_url`](#listen_url)
   - [`service_config`](#service_config)
     - [`backend_url`](#backend_url)
     - [`authentication`](#authentication)
     - [`headers`](#headers)
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
       - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
-  - [`listen_url`](#listen_url)
 - [Supported server types](#supported-server-types)
 
 ## RelayMiner (off-chain) config -> Supplier (on-chain) configs
@@ -216,6 +216,18 @@ a service provided by the `Supplier` and served by the `RelayMiner` instance.
 It MUST match the `Service.Id` specified by the supplier when staking for the
 service.
 
+### `listen_url`
+
+_`Required`_
+
+The address on which the `RelayMiner` will start a server to listen for incoming
+requests. The server type is inferred from the URL scheme (http, https, etc...).
+
+The same `listen_url` can be used for multiple suppliers and/or different
+`publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
+to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
+it received a request form.
+
 ### `service_config`
 
 _`Required`_
@@ -282,18 +294,6 @@ The `service_id` of the supplier is automatically added to the
 and/or send requests internally from a k8s cluster for example.
 
 :::
-
-### `listen_url`
-
-_`Required`_
-
-The address on which the `RelayMiner` will start a server to listen for incoming
-requests. The server type is inferred from the URL scheme (http, https, etc...).
-
-The same `listen_url` can be used for multiple suppliers and/or different
-`publicly_exposed_endpoints`, the `RelayMiner` takes care of routing the requests
-to the correct `backend_url` based on the `service_id` and the `publicly_exposed_endpoints`
-it received a request form.
 
 ---
 
