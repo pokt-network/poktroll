@@ -15,5 +15,5 @@ message Params {
   // The amount of uPOKT required to add a new service.
   // This will be deducted from the signer's account balance,
   // and transferred to the pocket network foundation.
-  uint64 add_service_fee = 1 [(gogoproto.moretags) = "yaml:\"add_service_fee\""];
+  uint64 add_service_fee = 1 [(gogoproto.jsontag) = "add_service_fee", (gogoproto.moretags) = "yaml:\"add_service_fee\""];
 }

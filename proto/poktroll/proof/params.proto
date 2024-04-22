@@ -12,5 +12,5 @@ message Params {
   option (gogoproto.equal) = true;
 
   // The minimum difficulty in bits for a relay to be included in a Merkle proof.
-  uint64 min_relay_difficulty_bits = 1;
+  uint64 min_relay_difficulty_bits = 1 [(gogoproto.jsontag) = "min_relay_difficulty_bits"];
 }
