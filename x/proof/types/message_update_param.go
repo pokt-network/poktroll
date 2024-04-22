@@ -8,7 +8,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &MsgUpdateParam{}
+var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
 func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdateParam, error) {
 	var valueAsType isMsgUpdateParam_AsType
