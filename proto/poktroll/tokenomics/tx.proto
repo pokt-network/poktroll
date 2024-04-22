@@ -51,6 +51,6 @@ message MsgUpdateParam {
 }
 
 message MsgUpdateParamResponse {
-  string params = 1;
+  Params params = 1;
 }
 
