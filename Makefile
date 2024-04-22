@@ -743,6 +743,10 @@ PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(DAO_ADDRE
 update_tokenomics_params_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
+.PHONY: update_tokenomics_param_compute_units_to_tokens_multiplier
+update_tokenomics_param_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
+
 .PHONY: update_proof_params_all
 update_proof_params_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
