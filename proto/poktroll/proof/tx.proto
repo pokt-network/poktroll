@@ -69,8 +69,12 @@ message MsgSubmitProofResponse {}
 message MsgUpdateParam {
   option (cosmos.msg.v1.signer) = "authority";
   string authority = 1;
-  string paramName = 2;
-  string paramBz   = 3;
+  string name = 2;
+  oneof as_type {
+    string as_string = 3 [(gogoproto.jsontag) = "as_string"];
+    int64 as_int64 = 6 [(gogoproto.jsontag) = "as_int64"];
+    bytes as_bytes = 7 [(gogoproto.jsontag) = "as_bytes"];
+  }
 }
 
 message MsgUpdateParamResponse {
