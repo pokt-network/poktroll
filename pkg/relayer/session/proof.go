@@ -103,7 +103,8 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
 
-		// TODO_IN_THIS_PR: Remove this log statement after debugging.
+		// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
+		// error that may occur due to latestBlock height differing.
 		fmt.Println("E2E_DEBUG: height for block hash when generating the path", latestBlock.Height(), session.GetSessionHeader().GetSessionId())
 		path := proofkeeper.GetPathForProof(latestBlock.Hash(), session.GetSessionHeader().GetSessionId())
 		proof, err := session.ProveClosest(path)
