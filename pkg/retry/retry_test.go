@@ -371,7 +371,8 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 
 		errCh := make(chan error, 1)
 
-		count := atomic.LoadInt32(&testFnCallCount)
+		// Increment the invocation count atomically
+		count := atomic.AddInt32(&testFnCallCount, 1) - 1
 		if count == int32(retryLimit) {
 			go func() {
 				time.Sleep(retryResetTimeout)
@@ -380,9 +381,6 @@ func TestOnError_NegativeRetryLimit(t *testing.T) {
 		} else {
 			errCh <- testErr
 		}
-
-		// Increment the invocation count atomically
-		atomic.AddInt32(&testFnCallCount, 1)
 		return errCh
 	}
 
