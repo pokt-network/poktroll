@@ -229,7 +229,7 @@ type TxClientOption func(TxClient)
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
 
-// DelegationClientOption defines a function type that modifies the BlockClient.
+// DelegationClientOption defines a function type that modifies the DelegationClient.
 type DelegationClientOption func(DelegationClient)
 
 // BlockClientOption defines a function type that modifies the BlockClient.
