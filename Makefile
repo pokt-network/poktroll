@@ -753,6 +753,10 @@ query_all_params: check_jq ## Query the params from all available modules
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
+.PHONY: ignite_poktrolld_build
+ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
+	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+
 ##################
 ### CI Helpers ###
 ##################
