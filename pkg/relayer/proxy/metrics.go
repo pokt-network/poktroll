@@ -1,9 +1,8 @@
 package proxy
 
 import (
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
-
 	"github.com/go-kit/kit/metrics/prometheus"
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
 const (
@@ -20,7 +19,7 @@ const (
 
 var (
 	// relaysTotal is a Counter metric for the total requests processed by the relay miner.
-	// It increments to track proxy requests and is labeled by 'proxy_name' and 'service_id',
+	// It increments to track proxy requests and is labeled by 'service_id',
 	// essential for monitoring load and traffic on different proxies and services.
 	//
 	// Usage:
@@ -29,11 +28,11 @@ var (
 	relaysTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
 		Name:      requestsTotal,
-		Help:      "Total number of requests processed, labeled by proxy name and service ID.",
+		Help:      "Total number of requests processed, labeled by service ID.",
 	}, []string{"service_id"})
 
 	// relaysErrorsTotal is a Counter for total error events in the relay miner.
-	// It increments with each error, labeled by 'proxy_name' and 'service_id',
+	// It increments with each error, labeled by 'service_id',
 	// crucial for pinpointing error-prone areas for reliability improvement.
 	//
 	// Usage:
@@ -46,15 +45,15 @@ var (
 	}, []string{"service_id"})
 
 	// relaysSuccessTotal is a Counter metric for successful requests in the relay miner.
-	// It increments with each successful request, labeled by 'proxy_name' and 'service_id'.
+	// It increments with each successful request, labeled by ''service_id'.
 	relaysSuccessTotal = prometheus.NewCounterFrom(stdprometheus.CounterOpts{
 		Subsystem: relayMinerProcess,
 		Name:      requestsSuccessTotal,
-		Help:      "Total number of successful requests processed, labeled by proxy name and service ID.",
+		Help:      "Total number of successful requests processed, labeled by service ID.",
 	}, []string{"service_id"})
 
 	// relaysDurationSeconds observes request durations in the relay miner.
-	// This histogram, labeled by 'proxy_name' and 'service_id', measures response times,
+	// This histogram, labeled by 'service_id', measures response times,
 	// vital for performance analysis under different loads.
 	//
 	// Buckets:
@@ -70,7 +69,7 @@ var (
 		Buckets:   []float64{0.1, 0.5, 1, 2, 5, 15},
 	}, []string{"service_id"})
 
-	// relayResponseSizeBytes is a histogram metric for observing proxy response size distribution.
+	// relayResponseSizeBytes is a histogram metric for observing response size distribution.
 	// It counts responses in bytes, with buckets:
 	// - 100 bytes to 50,000 bytes, capturing a range from small to large responses.
 	// This data helps in accurately representing response size distribution and is vital
@@ -85,7 +84,7 @@ var (
 		Buckets:   []float64{100, 500, 1000, 5000, 10000, 50000},
 	}, []string{"service_id"})
 
-	// relayRequestSizeBytes is a histogram metric for observing proxy request size distribution.
+	// relayRequestSizeBytes is a histogram metric for observing request size distribution.
 	// It counts requests in bytes, with buckets:
 	// - 100 bytes to 50,000 bytes, capturing a range from small to large requests.
 	// This data helps in accurately representing request size distribution and is vital
