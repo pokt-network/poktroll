@@ -24,7 +24,7 @@ func TestMsgServer_CreateClaim_Success(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	srv := keeper.NewMsgServerImpl(keepers.Keeper)
 
 	service := &sharedtypes.Service{Id: testServiceId}
 	supplierAddr := sample.AccAddress()
@@ -80,7 +80,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	// Set block height to 1 so there is a valid session on-chain.
 	blockHeightOpt := keepertest.WithBlockHeight(1)
 	keepers, ctx := keepertest.NewProofModuleKeepers(t, blockHeightOpt)
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	srv := keeper.NewMsgServerImpl(keepers.Keeper)
 
 	// service is the only service for which a session should exist.
 	service := &sharedtypes.Service{Id: testServiceId}
@@ -99,7 +99,7 @@ func TestMsgServer_CreateClaim_Error(t *testing.T) {
 	randAppAddr := sample.AccAddress()
 
 	supplierKeeper := keepers.SupplierKeeper
-	appKeeper := keepers.ApplicationKeeper
+	appKeeper := keepers.AppKeeper
 
 	// Add a supplier that is expected to be in the session.
 	supplierKeeper.SetSupplier(ctx, sharedtypes.Supplier{

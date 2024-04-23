@@ -88,12 +88,12 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 	sessionHeader := keepers.GetSessionHeader(ctx, t, appAddr, service, 1)
 
 	// Construct a proof message server from the proof keeper.
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	srv := keeper.NewMsgServerImpl(keepers.Keeper)
 
 	// Prepare a ring client to sign & validate relays.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
-		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+		types.NewAppKeeperQueryClient(keepers.AppKeeper),
 		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
 	))
 	require.NoError(t, err)
@@ -201,13 +201,13 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// & late session end block heights.
 
 	// Construct a proof message server from the proof keeper.
-	srv := keeper.NewMsgServerImpl(*keepers.Keeper)
+	srv := keeper.NewMsgServerImpl(keepers.Keeper)
 
 	// Construct a ringClient to get the application's ring & verify the relay
 	// request signature.
 	ringClient, err := rings.NewRingClient(depinject.Supply(
 		polyzero.NewLogger(),
-		types.NewAppKeeperQueryClient(keepers.ApplicationKeeper),
+		types.NewAppKeeperQueryClient(keepers.AppKeeper),
 		types.NewAccountKeeperQueryClient(keepers.AccountKeeper),
 	))
 	require.NoError(t, err)

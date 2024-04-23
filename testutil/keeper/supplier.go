@@ -24,7 +24,7 @@ import (
 	"github.com/pokt-network/poktroll/x/supplier/types"
 )
 
-func SupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+func NewSupplierKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)

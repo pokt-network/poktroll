@@ -113,7 +113,7 @@ var (
 	}
 )
 
-func SessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
+func NewSessionKeeper(t testing.TB) (keeper.Keeper, context.Context) {
 	t.Helper()
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
