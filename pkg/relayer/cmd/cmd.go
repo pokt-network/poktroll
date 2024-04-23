@@ -177,7 +177,7 @@ func setupRelayerDependencies(
 	}
 
 	signingKeyName := relayMinerConfig.SigningKeyName
-	proxiedServiceEndpoints := relayMinerConfig.Servers
+	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
@@ -197,7 +197,7 @@ func setupRelayerDependencies(
 		supplyTxContext,
 		newSupplyTxClientFn(signingKeyName),
 		newSupplySupplierClientFn(signingKeyName),
-		newSupplyRelayerProxyFn(signingKeyName, proxiedServiceEndpoints),
+		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -304,7 +304,7 @@ func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
 	signingKeyName string,
-	proxiedServiceEndpoints map[string]*relayerconfig.RelayMinerServerConfig,
+	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
 		_ context.Context,
@@ -314,7 +314,7 @@ func newSupplyRelayerProxyFn(
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
 			proxy.WithSigningKeyName(signingKeyName),
-			proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
+			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {
 			return nil, err

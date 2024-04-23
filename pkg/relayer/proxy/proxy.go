@@ -18,11 +18,10 @@ import (
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 
-// relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
-// and proxies them to the supported proxied services.
-// It is responsible for notifying the miner about the relays that have been served so they can be counted
-// when the miner enters the claim/proof phase.
-// TODO_TEST: Have tests for the relayer proxy.
+// relayerProxy is the main relayer proxy that takes relay requests of supported
+// services from the client and proxies them to the supported backend services.
+// It is responsible for notifying the miner about the relays that have been
+// served so they can be counted when the miner enters the claim/proof phase.
 type relayerProxy struct {
 	logger polylog.Logger
 
@@ -76,7 +75,7 @@ type relayerProxy struct {
 //
 // Available options:
 //   - WithSigningKeyName
-//   - WithProxiedServicesEndpoints
+//   - WithServicesConfigMap
 func NewRelayerProxy(
 	deps depinject.Config,
 	opts ...relayer.RelayerProxyOption,
@@ -113,7 +112,7 @@ func NewRelayerProxy(
 
 // Start concurrently starts all advertised relay services and returns an error
 // if any of them errors.
-// This method IS BLOCKING until all RelayServers are stopped.
+// NB: This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
@@ -165,7 +164,7 @@ func (rp *relayerProxy) validateConfig() error {
 	}
 
 	if rp.serverConfigs == nil || len(rp.serverConfigs) == 0 {
-		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
+		return ErrRelayerServicesConfigsUndefined
 	}
 
 	return nil
