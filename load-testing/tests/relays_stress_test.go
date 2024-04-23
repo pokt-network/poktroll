@@ -185,6 +185,13 @@ type batchInfoNotif struct {
 	gateways      []*accountInfo
 }
 
+type stakingInfo struct {
+	sessionInfoNotif
+	newApps      []*accountInfo
+	newGateways  []*accountInfo
+	newSuppliers []*accountInfo
+}
+
 func TestLoadRelays(t *testing.T) {
 	gocuke.NewRunner(t, &relaysSuite{}).Path(filepath.Join(".", "relays_stress.feature")).Run()
 }
@@ -450,8 +457,8 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	// When the test starts, each block is processed to determine if any new actors
 	// need to be staked or activated.
-	channel.ForEach(s.ctx, s.sessionInfoObs,
-		func(ctx context.Context, notif *sessionInfoNotif) {
+	stakingObs := channel.Map(s.ctx, s.sessionInfoObs,
+		func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfo, bool) {
 			// Check if any new actors need to be staked **for use in the next session**.
 			var newSuppliers []*accountInfo
 			stakedSuppliers := int64(len(s.stakedSuppliers))
@@ -473,43 +480,58 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 			// If no need to be processed in this block, skip the rest of the process.
 			if len(newApps) == 0 && len(newGateways) == 0 && len(newSuppliers) == 0 {
-				return
+				return nil, true
 			}
 
-			go func() {
-				// Ensure that new gateways and suppliers are staked.
-				// Ensure that new applications are funded and have an account entry on-chain
-				// so that they can stake and delegate in the next block.
-				// The number of transactions to be committed is the sum of the number of new
-				// gateways, suppliers and a single transaction to fund all new applications.
-				txResults = s.waitForTxsToBeCommitted()
-				s.ensureFundedActors(txResults, newApps)
-				s.ensureStakedActors(txResults, MsgStakeGateway, newGateways)
-				s.ensureStakedActors(txResults, MsgStakeSupplier, newSuppliers)
+			return &stakingInfo{
+				sessionInfoNotif: *notif,
+				newApps:          newApps,
+				newGateways:      newGateways,
+				newSuppliers:     newSuppliers,
+			}, false
+		},
+	)
 
-				// Update the list of staked suppliers.
-				s.stakedSuppliers = append(s.stakedSuppliers, newSuppliers...)
+	stakedAndDelegatingObs := channel.Map(s.ctx, stakingObs,
+		func(ctx context.Context, notif *stakingInfo) (*stakingInfo, bool) {
+			// Ensure that new gateways and suppliers are staked.
+			// Ensure that new applications are funded and have an account entry on-chain
+			// so that they can stake and delegate in the next block.
+			// The number of transactions to be committed is the sum of the number of new
+			// gateways, suppliers and a single transaction to fund all new applications.
+			txResults = s.waitForTxsToBeCommitted()
+			s.ensureFundedActors(txResults, notif.newApps)
+			s.ensureStakedActors(txResults, MsgStakeGateway, notif.newGateways)
+			s.ensureStakedActors(txResults, MsgStakeSupplier, notif.newSuppliers)
 
-				// If no apps or gateways are to be staked, skip the rest of the process.
-				if len(newApps) == 0 && len(newGateways) == 0 {
-					return
-				}
+			// Update the list of staked suppliers.
+			s.stakedSuppliers = append(s.stakedSuppliers, notif.newSuppliers...)
 
-				s.sendStakeAndDelegateAppsTxs(notif, newApps, newGateways)
+			// If no apps or gateways are to be staked, skip the rest of the process.
+			if len(notif.newApps) == 0 && len(notif.newGateways) == 0 {
+				return nil, true
+			}
 
-				// Wait for the next block to commit staking and delegation transactions
-				// and be able to send relay requests evenly distributed across all gateways.
-				txResults = s.waitForTxsToBeCommitted()
-				s.ensureStakedActors(txResults, MsgStakeApplication, newApps)
-				s.ensureDelegatedApps(txResults, s.activeApplications, newGateways)
-				s.ensureDelegatedApps(txResults, newApps, newGateways)
-				s.ensureDelegatedApps(txResults, newApps, s.activeGateways)
+			s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotif, notif.newApps, notif.newGateways)
 
-				// Add the new actors to the list of prepared actors to be activated in
-				// the next session.
-				s.preparedApplications = append(s.preparedApplications, newApps...)
-				s.preparedGateways = append(s.preparedGateways, newGateways...)
-			}()
+			return notif, false
+		},
+	)
+
+	channel.ForEach(s.ctx, stakedAndDelegatingObs,
+		func(ctx context.Context, notif *stakingInfo) {
+			// Wait for the next block to commit staking and delegation transactions
+			// and be able to send relay requests evenly distributed across all gateways.
+			txResults = s.waitForTxsToBeCommitted()
+			s.ensureStakedActors(txResults, MsgStakeApplication, notif.newApps)
+			s.ensureDelegatedApps(txResults, s.activeApplications, notif.newGateways)
+			s.ensureDelegatedApps(txResults, notif.newApps, notif.newGateways)
+			s.ensureDelegatedApps(txResults, notif.newApps, s.activeGateways)
+
+			// Add the new actors to the list of prepared actors to be activated in
+			// the next session.
+			s.preparedApplications = append(s.preparedApplications, notif.newApps...)
+			s.preparedGateways = append(s.preparedGateways, notif.newGateways...)
 		},
 	)
 }
@@ -535,17 +557,17 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 					relaysSent := s.relaysSent.Add(1) - 1
 
 					// Send the relay request.
-					appKeyName, gwKeyName := s.sendRelay(relaysSent)
+					s.sendRelay(relaysSent)
 
-					logger.Debug().
-						Int64("session_num", batchInfo.sessionNumber).
-						Int64("block_height", batchInfo.blockHeight).
-						Str("app", appKeyName).
-						Str("gw", gwKeyName).
-						Int("total_apps", len(batchInfo.appAccounts)).
-						Int("total_gws", len(batchInfo.gateways)).
-						Str("time", time.Now().Format(time.RFC3339Nano)).
-						Msgf("sending relay #%d", relaysSent)
+					//logger.Debug().
+					//	Int64("session_num", batchInfo.sessionNumber).
+					//	Int64("block_height", batchInfo.blockHeight).
+					//	Str("app", appKeyName).
+					//	Str("gw", gwKeyName).
+					//	Int("total_apps", len(batchInfo.appAccounts)).
+					//	Int("total_gws", len(batchInfo.gateways)).
+					//	Str("time", time.Now().Format(time.RFC3339Nano)).
+					//	Msgf("sending relay #%d", relaysSent)
 
 					batchWaitGroup.Done()
 				})

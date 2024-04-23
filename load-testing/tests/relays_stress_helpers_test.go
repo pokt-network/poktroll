@@ -599,6 +599,9 @@ func (s *relaysSuite) waitForTxsToBeCommitted() []*types.TxResult {
 		for {
 			// LstNBlocks returns a client.Block interface, so it needs to be casted
 			// to the CometNewBlockEvent type to access the block's transactions.
+			if s.latestBlock.Height() > txResult.Height {
+				return txResults
+			}
 			if s.latestBlock.Height() == txResult.Height {
 				numTxs = len(s.latestBlock.Data.Value.Block.Data.Txs)
 				break
