@@ -6,8 +6,9 @@ sidebar_position: 3
 # Supplier staking config <!-- omit in toc -->
 
 _This document describes the configuration file used by the `Supplier` to submit
-a stake transaction required to provide RPC services on the Pocket Network._
+a stake transaction required to provide RPC services on Pocket Network._
 
+- [Reference Example](#reference-example)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
@@ -16,23 +17,20 @@ a stake transaction required to provide RPC services on the Pocket Network._
     - [`endpoints`](#endpoints)
       - [`publicly_exposed_url`](#publicly_exposed_url)
       - [`rpc_type`](#rpc_type)
-- [Example](#example)
+
+## Reference Example
+
+A full example of the configuration file could be found at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml).
 
 ## Usage
 
 The `stake-supplier` transaction submission command accepts a `--config` flag
 that points to a `yaml` configuration file that defines their staking
-configuration. This includes, but is not limited to things like `stake_amount`, the `service`s, their respective advertised `endpoints`, etc.
+configuration. This includes, but is not limited to, things like `stake_amount`,
+provided `service`s, their respective advertised `endpoints`, etc.
 
 The following is an example command of how to stake a supplier
 in a LocalNet environment.
-
-:::warning
-
-TestNet is not ready as of writing this documentation, so you may
-need to adjust the command below appropriately.
-
-:::
 
 ```bash
 poktrolld tx supplier stake-supplier \
@@ -59,10 +57,13 @@ This amount covers all the `service`s defined in the `services` section.
 :::note
 
 If the `Supplier` account already has a stake and wishes to change or add
-to the `service`s that it provides, then it MUST to increase the current
+to the `service`s that it provides, then it MUST increase the current
 `stake_amount` by at least `1upokt`.
 
-For example, if the current stake is `1000upokt` and the `Supplier` wants to add a new `service` then `stake_amount: 1001upokt` should be specified in the configuration file. This will increase the stake by `1upokt` and deduct `1upokt` from the `Supplier`'s account balance.
+For example, if the current stake is `1000upokt` and the `Supplier` wants to add
+a new `service`, then `stake_amount: 1001upokt` should be specified in the
+configuration file. This will increase the stake by `1upokt` and deduct `1upokt`
+from the `Supplier`'s account balance.
 
 :::
 
@@ -81,7 +82,7 @@ services:
 `services` define the list of services that the `Supplier` wants to provide.
 It takes the form of a list of `service` objects. Each `service` object
 consists of a `service_id` and a list of `endpoints` that the `Supplier` will
-advertise on the Pocket Network.
+advertise on Pocket Network.
 
 #### `service_id`
 
@@ -111,19 +112,14 @@ the `Supplier` when staking, and is meant to point to (or route requests to)
 the `Supplier`'s `RelayMiner` which in turn forwards these requests to the service node.
 
 - **Example**: When a `Supplier` stakes with a config file that contains
-`https://ethereum-relayminer1.relayminers.com:443` as a `publicly_exposed_url`,
-this endpoint will be discoverable on the Pocket Network by `Gateways` and
-`Applications` which can send it Ethereum `RelayRequests` to be processed by the
-`Supplier`'s `RelayMiner`.
-
+  `https://ethereum-relayminer1.relayminers.com:443` as a `publicly_exposed_url`,
+  this endpoint will be discoverable on the Pocket Network by `Gateways` and
+  `Applications`, which can send it Ethereum `RelayRequests` to be processed by the
+  `Supplier`'s `RelayMiner`.
 
 ##### `rpc_type`
 
 _`Required`_
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
-is providing. The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8)
-
-## Example
-
-A full example of the configuration file could be found at [supplier_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/supplier1_stake_config.yaml)
+is providing. The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).

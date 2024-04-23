@@ -47,10 +47,10 @@ var (
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
-		Short: "Run a relay miner",
-		Long: `Run a relay miner. The relay miner process configures and starts
-relay servers for each service the supplier actor identified by --signing-key is
-staked for (configured on-chain).
+		Short: "Start a RelayMiner",
+		Long: `Run a RelayMiner. A RelayMiner is the off-chain complementary
+middleware that handles incoming requests for all the services a Supplier staked
+for on-chain.
 
 Relay requests received by the relay servers are validated and proxied to their
 respective service endpoints, maintained by the relayer off-chain. The responses
