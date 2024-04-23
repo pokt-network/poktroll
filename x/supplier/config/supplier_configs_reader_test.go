@@ -112,7 +112,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			},
 		},
 		{
-			desc: "services_test: valid service config with multiple endpoints",
+			desc: "valid service config with multiple endpoints",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -160,7 +160,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			},
 		},
 		{
-			desc:          "services_test: valid service config with multiple services",
+			desc:          "valid service config with multiple services",
 			expectedError: nil,
 			inputConfig: `
 				stake_amount: 1000upokt
@@ -216,7 +216,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 		},
 		// Invalid Configs
 		{
-			desc: "services_test: invalid service config without service ID",
+			desc: "invalid service config without service ID",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -229,7 +229,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidServiceId,
 		},
 		{
-			desc: "services_test: invalid service config with empty service ID",
+			desc: "invalid service config with empty service ID",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -243,7 +243,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidServiceId,
 		},
 		{
-			desc: "services_test: invalid service config without endpoints",
+			desc: "invalid service config without endpoints",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -252,7 +252,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigNoEndpoints,
 		},
 		{
-			desc: "services_test: invalid service config with empty endpoints",
+			desc: "invalid service config with empty endpoints",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -262,7 +262,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigNoEndpoints,
 		},
 		{
-			desc: "services_test: invalid service config with unknown endpoint config key",
+			desc: "invalid service config with unknown endpoint config key",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -276,7 +276,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidEndpointConfig,
 		},
 		{
-			desc: "services_test: invalid service config with unknown endpoint rpc type",
+			desc: "invalid service config with unknown endpoint rpc type",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -290,7 +290,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidRPCType,
 		},
 		{
-			desc: "services_test: invalid service config with invalid endpoint url",
+			desc: "invalid service config with invalid endpoint url",
 			inputConfig: `
 				stake_amount: 1000upokt
 				services:
@@ -304,12 +304,12 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidURL,
 		},
 		{
-			desc:          "services_test: invalid service config with empty content",
+			desc:          "invalid service config with empty content",
 			expectedError: config.ErrSupplierConfigEmptyContent,
 			inputConfig:   ``,
 		},
 		{
-			desc: "services_test: missing stake amount",
+			desc: "missing stake amount",
 			inputConfig: `
 				services:
 				  - service_id: svc
@@ -322,7 +322,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
-			desc: "services_test: invalid stake denom",
+			desc: "invalid stake denom",
 			inputConfig: `
 				stake_amount: 1000invalid
 				services:
@@ -336,7 +336,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
-			desc: "services_test: negative stake amount",
+			desc: "negative stake amount",
 			inputConfig: `
 				stake_amount: -1000upokt
 				services:
@@ -350,7 +350,7 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 			expectedError: config.ErrSupplierConfigInvalidStake,
 		},
 		{
-			desc: "services_test: zero stake amount",
+			desc: "zero stake amount",
 			inputConfig: `
 				stake_amount: 0upokt
 				services:
@@ -387,19 +387,23 @@ func Test_ParseSupplierConfigs_Services(t *testing.T) {
 
 			require.Equal(t, len(tt.expectedConfig.Services), len(supplierServiceConfig.Services))
 			for svcIdx, expectedService := range tt.expectedConfig.Services {
-				require.Equal(t, expectedService.Service.Id, supplierServiceConfig.Services[svcIdx].Service.Id)
+				service := supplierServiceConfig.Services[svcIdx]
 
-				require.Equal(t, len(expectedService.Endpoints), len(supplierServiceConfig.Services[svcIdx].Endpoints))
+				require.Equal(t, expectedService.Service.Id, service.Service.Id)
+
+				require.Equal(t, len(expectedService.Endpoints), len(service.Endpoints))
 				for endpointIdx, expectedEndpoint := range expectedService.Endpoints {
+					endpoint := service.Endpoints[endpointIdx]
 
-					require.Equal(t, expectedEndpoint.Url, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Url)
-					require.Equal(t, expectedEndpoint.RpcType, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].RpcType)
+					require.Equal(t, expectedEndpoint.Url, endpoint.Url)
+					require.Equal(t, expectedEndpoint.RpcType, endpoint.RpcType)
 
-					require.Equal(t, len(expectedEndpoint.Configs), len(supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs))
-					for k, expectedConfig := range expectedEndpoint.Configs {
+					require.Equal(t, len(expectedEndpoint.Configs), len(endpoint.Configs))
+					for configIdx, expectedConfig := range expectedEndpoint.Configs {
+						config := endpoint.Configs[configIdx]
 
-						require.Equal(t, expectedConfig.Key, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs[k].Key)
-						require.Equal(t, expectedConfig.Value, supplierServiceConfig.Services[svcIdx].Endpoints[endpointIdx].Configs[k].Value)
+						require.Equal(t, expectedConfig.Key, config.Key)
+						require.Equal(t, expectedConfig.Value, config.Value)
 					}
 				}
 			}
