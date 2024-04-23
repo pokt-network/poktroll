@@ -5,16 +5,16 @@ sidebar_position: 2
 
 # Recovering an Account from a Mnemonic Seed Phrase <!-- omit in toc -->
 
-Losing access to your wallet can be stressful, but if you've backed up your mnemonic
-seed phrase, recovering your account is straightforward!
+:::warning Security Notice
 
-:::warning
-
-**Security Notice:** Recovering your wallet with a mnemonic seed phrase requires
+Recovering your wallet with a mnemonic seed phrase requires
 you to enter sensitive information. Ensure you are in a secure and private environment
 before proceeding.
 
 :::
+
+Losing access to your wallet can be stressful, but if you've backed up your mnemonic
+seed phrase, recovering your account is straightforward!
 
 - [Pre-requisites](#pre-requisites)
 - [Step 1: Prepare to Recover Your Wallet](#step-1-prepare-to-recover-your-wallet)
@@ -23,8 +23,8 @@ before proceeding.
 
 ## Pre-requisites
 
-- The mnemonic seed phrase of the wallet you wish to recover
-- `poktrolld` is installed on your system; see the instructions in the [installation guide](./install-poktrolld)
+- You have the mnemonic seed phrase of the wallet you wish to recover
+- `poktrolld` is installed on your system; see the [installation guide](./install-poktrolld) for more details
 
 ## Step 1: Prepare to Recover Your Wallet
 

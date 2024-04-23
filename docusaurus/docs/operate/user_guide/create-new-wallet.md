@@ -5,15 +5,15 @@ sidebar_position: 1
 
 # Creating a New Wallet <!-- omit in toc -->
 
-This guide will walk you through creating a new wallet on the Pocket Network.
+:::warning Security Notice
 
-:::warning
-
-**Security Notice:** Always back up your key/mnemonic. Store it in a secure
+**ALWAYS back up your key and/or mnemonic**. Store it in a secure
 location accessible only to you, such as a password manager, or written down
 in a safe place. Under your 🛏️ does not count!
 
 :::
+
+This guide will walk you through creating a new wallet on the Pocket Network.
 
 - [What is a keyring backend?](#what-is-a-keyring-backend)
 - [Step 1: Install poktrolld](#step-1-install-poktrolld)

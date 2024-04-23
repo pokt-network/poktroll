@@ -5,15 +5,8 @@ sidebar_position: 4
 
 # Sending Tokens <!-- omit in toc -->
 
-This guide covers the process of sending tokens from one account to another on Pocket Network
-using the `poktrolld` command-line interface (CLI).
-
-:::note
-
-Ensure your `poktrolld` client is correctly configured and that you have sufficient
-funds in your account for the transaction and fees.
-
-:::
+This guide covers the process of sending tokens from one account to another on
+Pocket Network using the `poktrolld` command-line interface (CLI).
 
 - [Pre-requisites](#pre-requisites)
 - [Step 1: Preparing a Node Endpoint](#step-1-preparing-a-node-endpoint)
@@ -24,22 +17,21 @@ funds in your account for the transaction and fees.
 
 ## Pre-requisites
 
-- `poktrolld` is installed on your system; see the instructions in the [installation guide](./install-poktrolld)
-- You have access to your wallet with sufficient tokens for the transaction and fees
-- You have the recipient's address
+1. `poktrolld` is installed on your system; see the [installation guide](./install-poktrolld) for more details
+2. You have access to your wallet with sufficient tokens for the transaction and fees
+3. You have the recipient's address
 
 ## Step 1: Preparing a Node Endpoint
 
 Before initiating the transaction, you must specify the node endpoint you'll be interacting with.
 
-For testing purposes, you can use the provided testnet node, but on MainNet, ensure
-you're connected to a trusted full node, validator, or other client on the network.
+For testing purposes, you can use the provided TestNet node:
 
 ```bash
 --node=https://testnet-validated-validator-rpc.poktroll.com/
 ```
 
-Replace the URL with the endpoint of your choice if you're not using the provided testnet node.
+On MainNet, ensure you're connected to a trusted full node, validator, or other client on the network.
 
 ## Step 2: Sending Tokens
 
@@ -47,18 +39,20 @@ To send tokens, you'll use the `poktrolld tx bank send` command followed by the
 sender's address or key name, the recipient's address, and the amount to send.
 
 ```sh
-poktrolld tx bank send [from_key_or_address] [to_address] [amount] --node=<node_endpoint> [additional_flags]
+poktrolld tx bank send [from_key_or_address] [to_address] [amount] \
+    --node=<node_endpoint> [additional_flags]
 ```
 
-- Replace `[from_key_or_address]` with your wallet name or address.
-- Replace `[to_address]` with the recipient's address.
-- Replace `[amount]` with the amount you wish to send, including the denomination (e.g., 1000upokt).
-- Replace `<node_endpoint>` with the node endpoint URL.
+- Replace `[from_key_or_address]` with your wallet name or address
+- Replace `[to_address]` with the recipient's address
+- Replace `[amount]` with the amount you wish to send, including the denomination (e.g., 1000upokt)
+- Replace `<node_endpoint>` with the node endpoint URL
 
-For example, the following command sends `1000upokt` from `myWallet` to `pokt1recipientaddress123`:
+For example, the following command sends `1000upokt` from `myWallet` to `pokt1recipientaddress420`:
 
 ```bash
-poktrolld tx bank send myWallet pokt1recipientaddress123 1000upokt --node=https://testnet-validated-validator-rpc.poktroll.com/
+poktrolld tx bank send myWallet pokt1recipientaddress420 1000upokt \
+    --node=https://testnet-validated-validator-rpc.poktroll.com/
 ```
 
 ## Step 3: Confirming the Transaction
@@ -66,7 +60,7 @@ poktrolld tx bank send myWallet pokt1recipientaddress123 1000upokt --node=https:
 After executing the send command, you'll receive a prompt to confirm the transaction details.
 Review the information carefully. If everything looks correct, proceed by confirming the transaction.
 
-:::caution
+:::caution Check Recipient
 
 Double-check the recipient's address and the amount being sent.
 Transactions on the blockchain are irreversible.

@@ -5,19 +5,19 @@ sidebar_position: 3
 
 # Checking Your Wallet Balance <!-- omit in toc -->
 
-Knowing your account's balance is crucial for effective transaction management
-on the Pocket Network blockchain. This guide provides the necessary steps to
-check your wallet's balance using the `poktrolld` command-line interface (CLI).
+:::note Usage requirements
 
-:::note
-
-You'll need access to your wallet address and the denomination of the token you
+You will need access to your wallet address and the denomination of the token you
 wish to query (i.e. `upokt`).
 
 The default node is set to interact with a local instance. For network-specific
 queries (i.e. accessing TestNet or MainNet), you will need an RPC endpoint.
 
 :::
+
+Knowing your account's balance is crucial for effective transaction management
+on Pocket Network. This guide provides the necessary steps to check your wallet's
+balance using the `poktrolld` command-line interface (CLI).
 
 - [Pre-requisites](#pre-requisites)
 - [Step 1: Preparing the Query](#step-1-preparing-the-query)
@@ -26,9 +26,17 @@ queries (i.e. accessing TestNet or MainNet), you will need an RPC endpoint.
 
 ## Pre-requisites
 
-1. `poktrolld` is installed on your system
+1. `poktrolld` is installed on your system; see the [installation guide](./install-poktrolld) for more details
 2. You have the address of the wallet you wish to check
-3. You know the token denomination you wish to check: `upokt` for POKT tokens.
+3. You know the token denomination you wish to check; `upokt` for POKT tokens
+
+:::info What is a upokt?
+
+1 POKT = 1,000,000 upokt
+
+1 upokt = 1 micro POKT = 10^-6 POKT = 0.000001 POKT
+
+:::
 
 ## Step 1: Preparing the Query
 
@@ -63,5 +71,6 @@ You must provide the `--node` flag to access non LocalNet environments.
 For example, to check a balance on TestNet, you would use the following command:
 
 ```sh
-poktrolld query bank balance [address] upokt --node=https://testnet-validated-validator-rpc.poktroll.com
+poktrolld query bank balance [address] upokt \
+  --node=https://testnet-validated-validator-rpc.poktroll.com
 ```
