@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	"github.com/pokt-network/poktroll/x/gateway/types"
 )
 
@@ -15,6 +16,13 @@ func (k msgServer) UnstakeGateway(
 	goCtx context.Context,
 	msg *types.MsgUnstakeGateway,
 ) (*types.MsgUnstakeGatewayResponse, error) {
+	isSuccessful := false
+	defer telemetry.EventSuccessCounter(
+		"unstake_gateway",
+		telemetry.DefaultCounterFn,
+		func() bool { return isSuccessful },
+	)
+
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
 	logger := k.Logger().With("method", "UnstakeGateway")
@@ -50,5 +58,7 @@ func (k msgServer) UnstakeGateway(
 	// Update the Gateway in the store
 	k.RemoveGateway(ctx, gatewayAddress.String())
 	logger.Info(fmt.Sprintf("Successfully removed the gateway: %+v", gateway))
+
+	isSuccessful = true
 	return &types.MsgUnstakeGatewayResponse{}, nil
 }
