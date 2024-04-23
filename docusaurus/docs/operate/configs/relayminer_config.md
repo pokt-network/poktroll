@@ -10,8 +10,8 @@ _This document describes the configuration options available through the
 of Pocket network connectivity, starting up backend servers, querying requests
 and which domains to accept queries from._
 
+- [Full config reference example](#full-config-reference-example)
 - [RelayMiner (off-chain) config -\> Supplier (on-chain) configs](#relayminer-off-chain-config---supplier-on-chain-configs)
-- [Full config example](#full-config-example)
 - [Usage](#usage)
 - [Structure](#structure)
 - [Global options](#global-options)
@@ -32,6 +32,11 @@ and which domains to accept queries from._
     - [`publicly_exposed_endpoints`](#publicly_exposed_endpoints)
       - [Why should one supplier have multiple `publicly_exposed_endpoints`?](#why-should-one-supplier-have-multiple-publicly_exposed_endpoints)
 - [Supported server types](#supported-server-types)
+
+## Full config reference example
+
+A full and commented example of a `RelayMiner` configuration file can be found
+at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
 
 ## RelayMiner (off-chain) config -> Supplier (on-chain) configs
 
@@ -80,11 +85,6 @@ end
 
 svc2Config-->svc2
 ```
-
-## Full config example
-
-A full and commented example of a `RelayMiner` configuration file can be found
-at [localnet/poktrolld/config/relayminer_config_full_example.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/relayminer_config_full_example.yaml)
 
 ## Usage
 

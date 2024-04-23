@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"net/url"
+	"os"
 	"testing"
 
 	sdkerrors "cosmossdk.io/errors"
@@ -11,6 +12,14 @@ import (
 	"github.com/pokt-network/poktroll/pkg/relayer/config"
 	"github.com/pokt-network/poktroll/testutil/yaml"
 )
+
+func Test_ParseRelayMinerConfig_ReferenceExample(t *testing.T) {
+	configContent, err := os.ReadFile("../../../localnet/poktrolld/config/relayminer_config_full_example.yaml")
+	require.NoError(t, err)
+
+	_, err = config.ParseRelayMinerConfigs(configContent)
+	require.NoError(t, err)
+}
 
 func Test_ParseRelayMinerConfigs(t *testing.T) {
 	tests := []struct {
@@ -59,7 +68,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
@@ -126,7 +135,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
@@ -193,7 +202,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: false,
-						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
@@ -244,7 +253,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						ListenAddress:        "127.0.0.1:8080",
 						ServerType:           config.RelayMinerServerTypeHTTP,
 						XForwardedHostLookup: true,
-						SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+						SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 							"ethereum": {
 								ServiceId:  "ethereum",
 								ServerType: config.RelayMinerServerTypeHTTP,
@@ -658,41 +667,41 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 					config.Servers[listenAddress].ServerType,
 				)
 
-				for supplierName, supplier := range server.SupplierConfigs {
+				for supplierName, supplier := range server.SupplierConfigsMap {
 					require.Equal(
 						t,
 						supplier.ServiceId,
-						config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceId,
+						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceId,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServerType,
-						config.Servers[listenAddress].SupplierConfigs[supplierName].ServerType,
+						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServerType,
 					)
 
 					require.Equal(
 						t,
 						supplier.ServiceConfig.BackendUrl.String(),
-						config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.BackendUrl.String(),
+						config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.BackendUrl.String(),
 					)
 
 					if supplier.ServiceConfig.Authentication != nil {
 						require.NotNil(
 							t,
-							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Username,
-							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication.Username,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication.Username,
 						)
 
 						require.Equal(
 							t,
 							supplier.ServiceConfig.Authentication.Password,
-							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Authentication.Password,
+							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Authentication.Password,
 						)
 					}
 
@@ -700,7 +709,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Equal(
 							t,
 							headerValue,
-							config.Servers[listenAddress].SupplierConfigs[supplierName].ServiceConfig.Headers[headerKey],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierName].ServiceConfig.Headers[headerKey],
 						)
 					}
 
@@ -708,7 +717,7 @@ func Test_ParseRelayMinerConfigs(t *testing.T) {
 						require.Contains(
 							t,
 							host,
-							config.Servers[listenAddress].SupplierConfigs[supplierName].PubliclyExposedEndpoints[i],
+							config.Servers[listenAddress].SupplierConfigsMap[supplierName].PubliclyExposedEndpoints[i],
 						)
 					}
 				}

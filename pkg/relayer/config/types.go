@@ -86,9 +86,7 @@ type RelayMinerPocketNodeConfig struct {
 // RelayMinerServerConfig is the structure resulting from parsing the supplier's
 // server section of the RelayMiner config file.
 // Each server section embeds a map of supplier configs that are associated with it.
-// TODO_IMPROVE: Other server types may embed other fields in the future.
-//
-//	eg. "https" may embed a TLS config.
+// TODO_IMPROVE: Other server types may embed other fields in the future; eg. "https" may embed a TLS config.
 type RelayMinerServerConfig struct {
 	// ServerType is the transport protocol used by the server like (http, https, etc.)
 	ServerType RelayMinerServerType
@@ -99,8 +97,8 @@ type RelayMinerServerConfig struct {
 	// should lookup the host from the X-Forwarded-Host header before falling
 	// back to the Host header.
 	XForwardedHostLookup bool
-	// SupplierConfigs is a map of serviceIds -> RelayMinerSupplierConfig
-	SupplierConfigs map[string]*RelayMinerSupplierConfig
+	// SupplierConfigsMap is a map of serviceIds -> RelayMinerSupplierConfig
+	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics

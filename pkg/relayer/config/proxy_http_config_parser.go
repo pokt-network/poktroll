@@ -27,7 +27,7 @@ func (serverConfig *RelayMinerServerConfig) parseHTTPServerConfig(
 }
 
 // parseHTTPSupplierConfig populates the supplier fields of the target structure
-// that are relevant to the "http".
+// that are relevant to "http" specific service configurations.
 // This function alters the target RelayMinerSupplierServiceConfig structure
 // as a side effect.
 func (supplierServiceConfig *RelayMinerSupplierServiceConfig) parseHTTPSupplierConfig(

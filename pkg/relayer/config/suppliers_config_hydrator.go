@@ -25,7 +25,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateSuppliers(
 
 		relayMinerConfig.
 			Servers[yamlSupplierConfig.ListenUrl].
-			SupplierConfigs[supplierConfig.ServiceId] = supplierConfig
+			SupplierConfigsMap[supplierConfig.ServiceId] = supplierConfig
 	}
 
 	return nil

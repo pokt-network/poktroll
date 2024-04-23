@@ -2,7 +2,7 @@
 signing_key_name: supplier1
 
 # Relative path (on the relayminer's machine) to the SMT KV store data on disk.
-smt_store_path: smt_stores
+smt_store_path: ./path/to/smt_stores
 
 # Prometheus exporter configuration
 metrics:

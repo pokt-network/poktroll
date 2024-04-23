@@ -35,7 +35,7 @@ func (relayMinerConfig *RelayMinerConfig) HydrateServers(
 
 		serverConfig := &RelayMinerServerConfig{
 			XForwardedHostLookup: yamlSupplierConfig.XForwardedHostLookup,
-			SupplierConfigs:      make(map[string]*RelayMinerSupplierConfig),
+			SupplierConfigsMap:   make(map[string]*RelayMinerSupplierConfig),
 		}
 
 		// Populate the server fields that are relevant to each supported server type

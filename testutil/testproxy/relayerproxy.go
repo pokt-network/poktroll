@@ -134,7 +134,7 @@ func WithServicesConfigMap(
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
 		for _, serviceConfig := range servicesConfigMap {
-			for serviceId, supplierConfig := range serviceConfig.SupplierConfigs {
+			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
 				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Write(prepareJsonRPCResponsePayload())
@@ -303,7 +303,7 @@ func MarshalAndSend(
 	// In the current test setup, we only have one endpoint per supplier, which is why we are accessing `[0]`.
 	// In a real-world scenario, the publicly exposed endpoint would reach a load balancer
 	// or a reverse proxy that would route the request to the address specified by ListenAddress.
-	originHost := servicesConfigMap[serviceEndpoint].SupplierConfigs[serviceId].PubliclyExposedEndpoints[0]
+	originHost := servicesConfigMap[serviceEndpoint].SupplierConfigsMap[serviceId].PubliclyExposedEndpoints[0]
 
 	reqBz, err := request.Marshal()
 	require.NoError(test.t, err)

@@ -85,7 +85,7 @@ func init() {
 		defaultRelayMinerServer: {
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: defaultRelayMinerServer,
-			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId:                defaultService,
 					ServerType:               config.RelayMinerServerTypeHTTP,
@@ -107,7 +107,7 @@ func init() {
 		secondaryRelayMinerServer: {
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: secondaryRelayMinerServer,
-			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				thirdService: {
 					ServiceId:                thirdService,
 					ServerType:               config.RelayMinerServerTypeHTTP,
@@ -261,7 +261,7 @@ func TestRelayerProxy_UnsupportedTransportType(t *testing.T) {
 			// The proxy is configured with an unsupported transport type
 			ServerType:    config.RelayMinerServerType(100),
 			ListenAddress: defaultRelayMinerServer,
-			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId: defaultService,
 					// The proxy is configured with an unsupported transport type
@@ -305,7 +305,7 @@ func TestRelayerProxy_NonConfiguredSupplierServices(t *testing.T) {
 		defaultRelayMinerServer: {
 			ServerType:    config.RelayMinerServerTypeHTTP,
 			ListenAddress: defaultRelayMinerServer,
-			SupplierConfigs: map[string]*config.RelayMinerSupplierConfig{
+			SupplierConfigsMap: map[string]*config.RelayMinerSupplierConfig{
 				defaultService: {
 					ServiceId:                defaultService,
 					ServerType:               config.RelayMinerServerTypeHTTP,
