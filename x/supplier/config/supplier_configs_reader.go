@@ -10,32 +10,34 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
-// YAMLStakeConfig is the structure describing the supplier stake config file
+// YAMLStakeConfig is the structure describing the supplier stake config file.
 type YAMLStakeConfig struct {
 	StakeAmount string              `yaml:"stake_amount"`
 	Services    []*YAMLStakeService `yaml:"services"`
 }
 
-// YAMLStakeService is the structure describing a single service stake entry in the stake config file
+// YAMLStakeService is the structure describing a single service entry in the
+// stake config file.
 type YAMLStakeService struct {
 	ServiceId string                `yaml:"service_id"`
 	Endpoints []YAMLServiceEndpoint `yaml:"endpoints"`
 }
 
-// YAMLServiceEndpoint is the structure describing a single service endpoint in the stake config file
+// YAMLServiceEndpoint is the structure describing a single service endpoint in
+// the service section of the stake config file.
 type YAMLServiceEndpoint struct {
-	Url     string            `yaml:"url"`
-	RPCType string            `yaml:"rpc_type"`
-	Config  map[string]string `yaml:"config,omitempty"`
+	PubliclyExposedUrl string            `yaml:"publicly_exposed_url"`
+	RPCType            string            `yaml:"rpc_type"`
+	Config             map[string]string `yaml:"config,omitempty"`
 }
 
-// SupplierStakeConfig is the structure describing the parsed supplier stake config
+// SupplierStakeConfig is the structure describing the parsed supplier stake config.
 type SupplierStakeConfig struct {
 	StakeAmount sdk.Coin
 	Services    []*sharedtypes.SupplierServiceConfig
 }
 
-// ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig
+// ParseSupplierServiceConfig parses the stake config file into a SupplierServiceConfig.
 func ParseSupplierConfigs(configContent []byte) (*SupplierStakeConfig, error) {
 	var stakeConfig *YAMLStakeConfig
 
@@ -137,18 +139,8 @@ func parseEndpointEntry(endpoint YAMLServiceEndpoint) (*sharedtypes.SupplierEndp
 	return endpointEntry, nil
 }
 
-// validateEndpointURL validates the endpoint URL, making sure that the string provided is a valid URL
-func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
-	// Validate the endpoint URL
-	if _, err := url.Parse(endpoint.Url); err != nil {
-		return "", ErrSupplierConfigInvalidURL.Wrapf("%s", err)
-	}
-
-	return endpoint.Url, nil
-}
-
-// parseEndpointConfigs parses the endpoint config entries into a slice of ConfigOption
-// compatible with the SupplierEndpointConfig.
+// parseEndpointConfigs parses the endpoint config entries into a slice of
+// ConfigOption compatible with the SupplierEndpointConfig.
 // It accepts a nil config entry or a map of valid config keys.
 func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOption, error) {
 	// Prepare the endpoint configs slice
@@ -189,4 +181,14 @@ func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, er
 	default:
 		return sharedtypes.RPCType_UNKNOWN_RPC, ErrSupplierConfigInvalidRPCType.Wrapf("%s", endpoint.RPCType)
 	}
+}
+
+// validateEndpointURL validates the endpoint URL, making sure that the string provided is a valid URL
+func validateEndpointURL(endpoint YAMLServiceEndpoint) (string, error) {
+	// Validate the endpoint URL
+	if _, err := url.Parse(endpoint.PubliclyExposedUrl); err != nil {
+		return "", ErrSupplierConfigInvalidURL.Wrapf("%s", err)
+	}
+
+	return endpoint.PubliclyExposedUrl, nil
 }
