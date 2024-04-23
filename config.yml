@@ -128,7 +128,7 @@ genesis:
         # TODO_HACK: Have a sufficient amount of delegated gateways to comply with
         # the load testing plan requirements.
         # TODO_BLOCKER: Be able to change this value from the load testing plan.
-        max_delegated_gateways: "100"
+        max_delegated_gateways: "7"
       applicationList:
         - address: pokt1mrqt5f7qh8uxs27cjm9t7v9e74a9vvdnq5jva4
           delegatee_gateway_addresses: []
