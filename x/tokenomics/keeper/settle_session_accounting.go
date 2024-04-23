@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 
+	"github.com/pokt-network/poktroll/telemetry"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
@@ -34,6 +35,15 @@ func (k Keeper) SettleSessionAccounting(
 	claim *prooftypes.Claim,
 ) error {
 	logger := k.Logger().With("method", "SettleSessionAccounting")
+
+	settlementAmt := sdk.NewCoin("upokt", math.NewInt(0))
+	isSuccessful := false
+	// This is emitted only when the function returns.
+	defer telemetry.EventSuccessCounter(
+		"settle_session_accounting",
+		func() float32 { return float32(settlementAmt.Amount.Int64()) },
+		func() bool { return isSuccessful },
+	)
 
 	// Make sure the claim is not nil
 	if claim == nil {
@@ -93,7 +103,7 @@ func (k Keeper) SettleSessionAccounting(
 	logger.Info(fmt.Sprintf("About to start settling claim for %d compute units", claimComputeUnits))
 
 	// Calculate the amount of tokens to mint & burn
-	settlementAmt := k.getCoinFromComputeUnits(ctx, root)
+	settlementAmt = k.getCoinFromComputeUnits(ctx, root)
 	settlementAmtuPOKT := sdk.NewCoins(settlementAmt)
 
 	logger.Info(fmt.Sprintf(
@@ -168,6 +178,7 @@ func (k Keeper) SettleSessionAccounting(
 	k.applicationKeeper.SetApplication(ctx, application)
 	logger.Info(fmt.Sprintf("updated stake for application with address %q to %s", applicationAddress, newAppStake))
 
+	isSuccessful = true
 	return nil
 }
 

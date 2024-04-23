@@ -1076,7 +1076,7 @@ func getClosestRelayDifficultyBits(
 
 	// Extract the Relay (containing the RelayResponse & RelayRequest) from the merkle proof.
 	relay := new(servicetypes.Relay)
-	relayBz := closestMerkleProof.GetValueHash(keeper.SmtSpec)
+	relayBz := closestMerkleProof.GetValueHash(&keeper.SmtSpec)
 	err = relay.Unmarshal(relayBz)
 	require.NoError(t, err)
 
@@ -1085,7 +1085,7 @@ func getClosestRelayDifficultyBits(
 	require.NoError(t, err)
 
 	// Count the number of leading 0s in the relay hash to determine its difficulty.
-	relayDifficultyBits, err := protocol.CountDifficultyBits(relayHash[:])
+	relayDifficultyBits, err := protocol.CountHashDifficultyBits(relayHash[:])
 	require.NoError(t, err)
 
 	return uint64(relayDifficultyBits)
