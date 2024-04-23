@@ -7,8 +7,10 @@ APPGATE_SERVER ?= http://localhost:42069
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
-GROVE_GATEWAY = https://eth-mainnet.rpc.grove.town
-GROVE_TEST_RELAY = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+# The domain ending in ".town" is staging, ".city" is production
+GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+# The "protocol" field here instructs the gateway which network to use
+SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -815,6 +817,6 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 ### Grove Gateway Helpers ###
 #############################
 
-.PHONY: grove_eth_balance
-grove_eth_balance: # Must have GROVE_PORTAL_APP_ID environment variable set
-	curl $(GROVE_GATEWAY)/v1/$(GROVE_PORTAL_APP_ID) -H 'Content-Type: application/json' --data $(GROVE_TEST_RELAY)
+.PHONY: grove_staging_eth_balance
+grove_staging_eth_balance: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set
+	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) -H 'Content-Type: application/json' --data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
