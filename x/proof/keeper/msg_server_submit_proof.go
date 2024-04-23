@@ -444,6 +444,9 @@ func (k msgServer) validateClosestPath(
 		sessionkeeper.GetSessionGracePeriodBlockCount()
 	blockHash := k.sessionKeeper.GetBlockHash(ctx, sessionEndBlockHeightWithGracePeriod)
 
+	// TODO_IN_THIS_PR: Remove this log statement after debugging.
+	fmt.Println("E2E_DEBUG: height for block hash when verifying the proof", sessionEndBlockHeightWithGracePeriod, sessionHeader.GetSessionId())
+
 	expectedProofPath := GetPathForProof(blockHash, sessionHeader.GetSessionId())
 	if !bytes.Equal(proof.Path, expectedProofPath) {
 		return types.ErrProofInvalidProof.Wrapf(

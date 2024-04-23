@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -101,6 +102,9 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
 		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
+
+		// TODO_IN_THIS_PR: Remove this log statement after debugging.
+		fmt.Println("E2E_DEBUG: height for block hash when generating the path", latestBlock.Height(), session.GetSessionHeader().GetSessionId())
 		path := proofkeeper.GetPathForProof(latestBlock.Hash(), session.GetSessionHeader().GetSessionId())
 		proof, err := session.ProveClosest(path)
 		if err != nil {
