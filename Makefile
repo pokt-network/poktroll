@@ -318,6 +318,14 @@ test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars 
 test_e2e: test_e2e_env ## Run all E2E tests
 	go test -v ./e2e/tests/... -tags=e2e,test
 
+.PHONY: test_e2e_app
+test_e2e_app:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
+
+.PHONY: test_e2e_gateway
+test_e2e_gateway:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
+
 .PHONY: test_e2e_session
 test_e2e_session: test_e2e_env ## Run only the E2E suite that exercises the session (i.e. claim/proof) life-cycle
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=session.feature
