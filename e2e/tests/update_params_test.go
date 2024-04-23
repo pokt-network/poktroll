@@ -3,11 +3,15 @@
 package e2e
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
+	"text/template"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +19,25 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
+var updateParamsTxJSONTemplate = template.Must(
+	template.
+		New("txJSON").
+		Parse(`{
+	"body": {
+	  "messages": [
+		  {
+			"@type": "{{.Type}}",
+			"authority": "{{.Authority}}",
+			"params": {{.Params}}
+		  }
+	  ]
+	}
+}
+`))
+
 func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
+	s.Skip("TODO_TEST: complete step definitions for update_params.feature scenarios")
+
 	args := strings.Split(fmt.Sprintf("query %s params", moduleName), " ")
 	args = append(args, "--output", "json")
 	res, err := s.pocketd.RunCommandOnHost("", args...)
@@ -98,22 +120,130 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(granterName,
 		}
 	}
 	require.True(s, grantFound)
+
+	s.granterName = granterName
+	s.granteeName = granteeName
 }
 
 func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName string, table gocuke.DataTable) {
-	//panic("PENDING")
+	paramsMap := make(map[string]struct {
+		paramType  string
+		paramValue any
+	})
+
+	// NB: skip the header row.
+	for rowIdx := 1; rowIdx < table.NumRows()-1; rowIdx++ {
+		var paramValue any
+		paramName := table.Cell(rowIdx, 0).String()
+		paramType := table.Cell(rowIdx, 2).String()
+
+		switch paramType {
+		case "string":
+			paramValue = table.Cell(rowIdx, 1).String()
+		case "int64":
+			paramValue = table.Cell(rowIdx, 1).Int64()
+		case "bytes":
+			paramValue = []byte(table.Cell(rowIdx, 1).String())
+		default:
+			s.Fatalf("unexpected param type %q", paramType)
+		}
+
+		paramsMap[paramName] = struct {
+			paramType  string
+			paramValue any
+		}{
+			paramType:  paramType,
+			paramValue: paramValue,
+		}
+	}
+
+	tempFile, err := os.CreateTemp("", "exec.json")
+	require.NoError(s, err)
+	s.Cleanup(func() {
+		os.Remove(tempFile.Name())
+	})
+
+	var (
+		msg proto.Message
+		//	msgAnys  []*codectypes.Any
+		//	msgJSONs [][]byte
+		paramsJSON []byte
+	)
+
+	switch moduleName {
+	case tokenomicstypes.ModuleName:
+		msg = &tokenomicstypes.MsgUpdateParams{Params: tokenomicstypes.Params{}}
+		for paramName, param := range paramsMap {
+			switch paramName {
+			case "compute_units_to_tokens_multipler":
+				msg.(*tokenomicstypes.MsgUpdateParams).Params.
+					ComputeUnitsToTokensMultiplier = uint64(param.paramValue.(int64))
+			default:
+				s.Fatalf("unexpected %q type param name %q", param.paramType, paramName)
+			}
+		}
+		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*tokenomicstypes.MsgUpdateParams).Params)
+	case prooftypes.ModuleName:
+		msg = &prooftypes.MsgUpdateParams{Params: prooftypes.Params{}}
+		for paramName, param := range paramsMap {
+			switch paramName {
+			case "min_relay_difficulty_bits":
+				msg.(*prooftypes.MsgUpdateParams).Params.
+					MinRelayDifficultyBits = uint64(param.paramValue.(int64))
+			default:
+				s.Fatalf("unexpected %q type param name %q", param.paramType, paramName)
+			}
+		}
+		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*prooftypes.MsgUpdateParams).Params)
+	default:
+		s.Fatalf("unexpected module name %q", moduleName)
+	}
+
+	locals := struct{ Type, Authority, Params string }{
+		Type:      proto.MessageName(msg),
+		Authority: authtypes.NewModuleAddress(s.granterName).String(),
+		Params:    string(paramsJSON),
+	}
+	buf := new(bytes.Buffer)
+	err = updateParamsTxJSONTemplate.Execute(buf, locals)
+	require.NoError(s, err)
+
+	// TODO_IMPROVE: find a better and/or more conventional way to programmatically generate tx JSON containing pb.Any messages.
+
+	replacedJSON := bytes.Replace(buf.Bytes(), []byte(`"@type": "`), []byte(`"@type": "/`), 1)
+	_, err = tempFile.Write(replacedJSON)
+	require.NoError(s, err)
+
+	s.Log("tempfile:")
+	fileOut, err := os.ReadFile(tempFile.Name())
+	require.NoError(s, err)
+
+	s.Log(string(fileOut))
+
+	cmd := strings.Split(
+		fmt.Sprintf(
+			"tx authz exec %s --from %s --keyring-backend test --output json",
+			tempFile.Name(), s.granteeName,
+		), " ",
+	)
+
+	res, err := s.pocketd.RunCommandOnHost("", cmd...)
+
+	require.NoError(s, err)
+
+	s.Log(res.Stdout)
 }
 
 func (s *suite) AllModuleParamsShouldBeUpdated(moduleName string, table gocuke.DataTable) {
-	//panic("PENDING")
+	panic("PENDING")
 }
 
 func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateModuleParam(moduleName, paramName string, table gocuke.DataTable) {
-	//panic("PENDING")
+	panic("PENDING")
 }
 
 func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string, table gocuke.DataTable) {
-	//panic("PENDING")
+	panic("PENDING")
 }
 
 func (s *suite) getKeyAddress(keyName string) string {

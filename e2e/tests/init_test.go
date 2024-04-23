@@ -73,6 +73,9 @@ type suite struct {
 	scenarioState    map[string]any // temporary state for each scenario
 	cdc              codec.Codec
 	proofQueryClient prooftypes.QueryClient
+
+	granterName string
+	granteeName string
 }
 
 func (s *suite) Before() {
