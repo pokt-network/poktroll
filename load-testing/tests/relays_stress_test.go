@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -125,7 +124,7 @@ type relaysSuite struct {
 	// from this list.
 	// The max gateways used in the test must be less than or equal to the number of
 	// provisioned gateways.
-	gatewayUrls map[string]*url.URL
+	gatewayUrls map[string]string
 	// suppliersUrls is a map of supplierKeyName->URL representing the provisioned suppliers.
 	// These suppliers are not staked yet but have their off-chain instance running
 	// and ready to be staked and used in the test.
@@ -133,7 +132,7 @@ type relaysSuite struct {
 	// and an URL, the test suite does not create new ones but picks from this list.
 	// The max suppliers used in the test must be less than or equal to the number of
 	// provisioned suppliers.
-	suppliersUrls map[string]*url.URL
+	suppliersUrls map[string]string
 
 	// fundingAccountInfo is the account entry corresponding to the fundingAccountKeyName.
 	// It is used to send transactions to fund other accounts.
@@ -224,8 +223,8 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 	// Initialize the provisioned gateway and suppliers keyName->URL map that will
 	// be populated from the load test manifest.
-	s.gatewayUrls = make(map[string]*url.URL)
-	s.suppliersUrls = make(map[string]*url.URL)
+	s.gatewayUrls = make(map[string]string)
+	s.suppliersUrls = make(map[string]string)
 
 	// Set up the blockClient that will be notifying the suite about the committed blocks.
 	s.blockClient = testblock.NewLocalnetClient(s.ctx, s.TestingT.(*testing.T))
@@ -456,7 +455,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 
 	// When the test starts, each block is processed to determine if any new actors
-	// need to be staked or activated.
+	// need to be staked.
 	stakingObs := channel.Map(s.ctx, s.sessionInfoObs,
 		func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfo, bool) {
 			// Check if any new actors need to be staked **for use in the next session**.
@@ -492,13 +491,13 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		},
 	)
 
+	// When stake and fund transactions are sent, wait for them to be committed
+	// before sending delegation transactions.
 	stakedAndDelegatingObs := channel.Map(s.ctx, stakingObs,
 		func(ctx context.Context, notif *stakingInfo) (*stakingInfo, bool) {
 			// Ensure that new gateways and suppliers are staked.
 			// Ensure that new applications are funded and have an account entry on-chain
 			// so that they can stake and delegate in the next block.
-			// The number of transactions to be committed is the sum of the number of new
-			// gateways, suppliers and a single transaction to fund all new applications.
 			txResults = s.waitForTxsToBeCommitted()
 			s.ensureFundedActors(txResults, notif.newApps)
 			s.ensureStakedActors(txResults, MsgStakeGateway, notif.newGateways)
@@ -518,6 +517,9 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 		},
 	)
 
+	// When staking and delegation transactions are sent, wait for them to be committed
+	// before adding the new actors to the list of prepared actors to be activated in
+	// the next session.
 	channel.ForEach(s.ctx, stakedAndDelegatingObs,
 		func(ctx context.Context, notif *stakingInfo) {
 			// Wait for the next block to commit staking and delegation transactions

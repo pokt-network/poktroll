@@ -84,15 +84,11 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	require.NoError(s, err)
 
 	for _, gateway := range provisionedActors.Gateways {
-		exposedUrl, err := url.Parse(gateway.ExposedUrl)
-		require.NoError(s, err)
-		s.gatewayUrls[gateway.KeyName] = exposedUrl
+		s.gatewayUrls[gateway.KeyName] = gateway.ExposedUrl
 	}
 
 	for _, supplier := range provisionedActors.Suppliers {
-		exposedUrl, err := url.Parse(supplier.ExposedUrl)
-		require.NoError(s, err)
-		s.suppliersUrls[supplier.KeyName] = exposedUrl
+		s.suppliersUrls[supplier.KeyName] = supplier.ExposedUrl
 	}
 }
 
@@ -401,7 +397,7 @@ func (s *relaysSuite) generateStakeSupplierMsg(supplier *accountInfo) {
 				Service: usedService,
 				Endpoints: []*sharedtypes.SupplierEndpoint{
 					{
-						Url:     s.suppliersUrls[supplier.keyName].String(),
+						Url:     s.suppliersUrls[supplier.keyName],
 						RpcType: sharedtypes.RPCType_JSON_RPC,
 					},
 				},
@@ -625,7 +621,8 @@ func (s *relaysSuite) sendRelay(iteration uint64) (appKeyName, gwKeyName string)
 	gateway := s.activeGateways[iteration%uint64(len(s.activeGateways))]
 	application := s.activeApplications[iteration%uint64(len(s.activeApplications))]
 
-	gatewayUrl := s.gatewayUrls[gateway.keyName]
+	gatewayUrl, err := url.Parse(s.gatewayUrls[gateway.keyName])
+	require.NoError(s, err)
 
 	// Include the application address in the query to the gateway.
 	query := gatewayUrl.Query()
@@ -636,7 +633,7 @@ func (s *relaysSuite) sendRelay(iteration uint64) (appKeyName, gwKeyName string)
 	gatewayUrl.Path = usedService.Id
 
 	// TODO_TECHDEBT: Capture the relay response to check for failing relays.
-	_, err := http.DefaultClient.Post(
+	_, err = http.DefaultClient.Post(
 		gatewayUrl.String(),
 		"application/json",
 		strings.NewReader(relayPayload),
