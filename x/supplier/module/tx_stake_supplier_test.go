@@ -47,7 +47,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 		services:
 		  - service_id: svc1
 		    endpoints:
-		    - url: http://pokt.network:8081
+		    - publicly_exposed_url: http://pokt.network:8081
 		      rpc_type: json_rpc
 		`
 
@@ -88,7 +88,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network:8081
+				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				`,
 		},
@@ -101,7 +101,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network:8081
+				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				`,
 		},
@@ -114,7 +114,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network:8081
+				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				`,
 		},
@@ -127,7 +127,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network:8081
+				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				`,
 		},
@@ -141,11 +141,11 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network:8081
+				    - publicly_exposed_url: http://pokt.network:8081
 				      rpc_type: json_rpc
 				  - service_id: svc2
 				    endpoints:
-				    - url: http://pokt.network:8082
+				    - publicly_exposed_url: http://pokt.network:8082
 				      rpc_type: json_rpc
 				`,
 		},
@@ -157,7 +157,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://127.0.0.1:8082
+				    - publicly_exposed_url: http://127.0.0.1:8082
 				      rpc_type: json_rpc
 				`,
 		},
@@ -169,19 +169,19 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://localhost:8082
+				    - publicly_exposed_url: http://localhost:8082
 				      rpc_type: json_rpc
 				`,
 		},
 		{
-			desc:    "services_test: valid without a pork",
+			desc:    "services_test: valid without a port",
 			address: supplierAccount.Address.String(),
 			config: `
 				stake_amount: 1000upokt
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: http://pokt.network
+				    - publicly_exposed_url: http://pokt.network
 				      rpc_type: json_rpc
 				`,
 		},
@@ -214,7 +214,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: bad_url
+				    - publicly_exposed_url: bad_url
 				      rpc_type: json_rpc
 				`,
 		},
@@ -237,10 +237,10 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				stake_amount: 1000upokt
 				services:
 				  - endpoints:
-				    - url: localhost:8081
+				    - publicly_exposed_url: localhost:8081
 				      rpc_type: json_rpc
 				  - endpoints:
-				    - url: localhost:8082
+				    - publicly_exposed_url: localhost:8082
 				      rpc_type: json_rpc
 				`,
 		},
@@ -253,7 +253,7 @@ func TestCLI_StakeSupplier(t *testing.T) {
 				services:
 				  - service_id: svc1
 				    endpoints:
-				    - url: localhost:8082
+				    - publicly_exposed_url: localhost:8082
 				`,
 		},
 	}
