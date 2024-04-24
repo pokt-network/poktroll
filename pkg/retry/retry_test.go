@@ -345,7 +345,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 
 // assert that a negative retry limit continually calls workFn
 func TestOnError_NegativeRetryLimit(t *testing.T) {
-	t.Skip("TODO_TECHDEBT: this test should pass but contains a race condition around the logOutput buffer")
+	t.Skip("TODO_TECHDEBT(@bryanchriswhite): this test should pass but contains a race condition around the logOutput buffer")
 
 	// Setup test variables and log capture
 	var (
