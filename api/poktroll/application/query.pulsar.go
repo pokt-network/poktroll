@@ -2859,8 +2859,8 @@ type QueryAllApplicationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Applications []*Application        `protobuf:"bytes,1,rep,name=applications,proto3" json:"applications,omitempty"`
-	Pagination   *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	Applications []*Application `protobuf:"bytes,1,rep,name=applications,proto3" json:"applications,omitempty"`
+	Pagination   *v1beta1.PageResponse      `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
 func (x *QueryAllApplicationsResponse) Reset() {
@@ -3021,7 +3021,7 @@ var file_poktroll_application_query_proto_goTypes = []interface{}{
 	(*QueryAllApplicationsRequest)(nil),  // 4: poktroll.QueryAllApplicationsRequest
 	(*QueryAllApplicationsResponse)(nil), // 5: poktroll.QueryAllApplicationsResponse
 	(*Params)(nil),                       // 6: poktroll.Params
-	(*Application)(nil),                  // 7: poktroll.Application
+	(*Application)(nil),      // 7: poktroll.Application
 	(*v1beta1.PageRequest)(nil),          // 8: cosmos.base.query.v1beta1.PageRequest
 	(*v1beta1.PageResponse)(nil),         // 9: cosmos.base.query.v1beta1.PageResponse
 }

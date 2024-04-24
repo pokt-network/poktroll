@@ -608,7 +608,7 @@ type GenesisState struct {
 	unknownFields protoimpl.UnknownFields
 
 	// params defines all the parameters of the module.
-	Params          *Params        `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+	Params          *Params                    `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	ApplicationList []*Application `protobuf:"bytes,2,rep,name=application_list,json=applicationList,proto3" json:"application_list,omitempty"`
 }
 
@@ -699,9 +699,9 @@ func file_poktroll_application_genesis_proto_rawDescGZIP() []byte {
 
 var file_poktroll_application_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_poktroll_application_genesis_proto_goTypes = []interface{}{
-	(*GenesisState)(nil), // 0: poktroll.GenesisState
-	(*Params)(nil),       // 1: poktroll.Params
-	(*Application)(nil),  // 2: poktroll.Application
+	(*GenesisState)(nil),            // 0: poktroll.GenesisState
+	(*Params)(nil),                  // 1: poktroll.Params
+	(*Application)(nil), // 2: poktroll.Application
 }
 var file_poktroll_application_genesis_proto_depIdxs = []int32{
 	1, // 0: poktroll.GenesisState.params:type_name -> poktroll.Params
