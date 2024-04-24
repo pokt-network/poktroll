@@ -826,5 +826,5 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 #############################
 
 .PHONY: grove_staging_eth_block_height
-grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set
+grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
 	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) -H 'Content-Type: application/json' --data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
