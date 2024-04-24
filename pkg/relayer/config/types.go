@@ -157,14 +157,14 @@ type RelayMinerSupplierServiceConfig struct {
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
 // the supplier service basic auth of the RelayMiner config file when the
-// supplier is of type "http"
+// supplier is of type "http".
 type RelayMinerSupplierServiceAuthentication struct {
 	Username string
 	Password string
 }
 
-// RelayMinerPprofConfig is the structure used to unmarshal the config
-// for `pprof`.
+// RelayMinerPprofConfig is the structure resulting from parsing the pprof config
+// section of a RelayMiner config.
 type RelayMinerPprofConfig struct {
 	Enabled bool
 	Addr    string

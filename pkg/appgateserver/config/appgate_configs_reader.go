@@ -44,14 +44,14 @@ type AppGateServerConfig struct {
 }
 
 // AppGateServerMetricsConfig is the structure resulting from parsing the metrics
-// section of the AppGateServer config file
+// section of the AppGateServer config file.
 type AppGateServerMetricsConfig struct {
 	Enabled bool
 	Addr    string
 }
 
-// AppGateServerPprofConfig is the structure used to unmarshal the config
-// for `pprof`.
+// AppGateServerPprofConfig is the structure resulting from parsing the pprof
+// section of the AppGateServer config file.
 type AppGateServerPprofConfig struct {
 	Enabled bool
 	Addr    string
