@@ -35,7 +35,7 @@ func NewLocalnetClient(t *testing.T, opts ...client.EventsQueryClientOption) cli
 // of which is set to the publish channel of the events bytes observable publish
 // channel.
 func NewOneTimeEventsQuery(
-	ctx context.Context,
+	cancellableCtx context.Context,
 	t *testing.T,
 	query string,
 	publishChMu *sync.Mutex,
@@ -43,10 +43,10 @@ func NewOneTimeEventsQuery(
 ) *mockclient.MockEventsQueryClient {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	ctx, _ = context.WithCancel(ctx)
+	cancellableCtx, _ = context.WithCancel(cancellableCtx)
 
 	eventsQueryClient := mockclient.NewMockEventsQueryClient(ctrl)
-	eventsQueryClient.EXPECT().EventsBytes(gomock.AssignableToTypeOf(ctx), gomock.Eq(query)).
+	eventsQueryClient.EXPECT().EventsBytes(gomock.AssignableToTypeOf(cancellableCtx), gomock.Eq(query)).
 		DoAndReturn(func(
 			ctx context.Context,
 			query string,

@@ -61,8 +61,9 @@ func ToReplayObservable[V any](
 
 // Last synchronously returns the last n values from the replay buffer.
 // It blocks until n values have been accumulated or its context is canceled,
-// in which case it returns the values accumulated so far.
-// The values returned are ordered from newest to oldest.
+// If it is cancelled before n values are accumulated, it returns all the available
+// items at the time of cancellation.
+// The values returned are ordered from newest to oldest (i.e. LIFO)
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 	logger := polylog.Ctx(ctx)
 	ctx, cancel := context.WithCancel(ctx)
@@ -89,32 +90,37 @@ func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
 
 	// If the replay buffer does not have enough values, wait for the source observable
 	// to emit enough values to satisfy the request.
-	ch := ro.bufferingObsvbl.Subscribe(ctx).Ch()
+	bufferedValuesCh := ro.bufferingObsvbl.Subscribe(ctx).Ch()
 	// Initialize latestValues with the values in the replay buffer in case the
 	// source observable is closed or the context is canceled before it has a chance
-	// to emit any values.
+	// to emit an updated buffer of values.
 	latestValues := ro.replayBuffer[:]
 	// Unlock the replay buffer to allow new values to be added.
 	// These new values will be collected in the loop below instead of the replay buffer.
 	ro.replayBufferMu.RUnlock()
-	for values := range ch {
-		// Since bufferingObsvbl emits all buffered values in one notification.
-		// If n smaller than the number of values emitted, return the most recent n values.
+	// bufferValuesCh emits all buffered values in one notification.
+	for values := range bufferedValuesCh {
+		// If n is greater than the number of values emitted, update latestValues with
+		// the most recent values emitted so far so it could be returned if the context
+		// is canceled or the source observable is closed.
 		if len(values) >= n {
 			latestValues = values[:n]
 			break
 		}
-		// If n is greater than the number of values emitted, update latestValues with
-		// the most recent values emitted so far so it could be returned if the context
-		// is canceled or the source observable is closed.
+
+		// Update latestValues with the most recent values emitted so far.
+		latestValues = values[:]
 	}
 
+	// Return the most recent n values or all available values if the context is canceled
+	// before n values are accumulated.
 	return latestValues
 }
 
 // Subscribe returns an observer which is notified when the publishCh channel
 // receives a value.
-// It replays the values stored in the replay buffer before emitting new values.
+// It replays the values stored in the replay buffer in the order of their arrival
+// before emitting new values.
 func (ro *replayObservable[V]) Subscribe(ctx context.Context) observable.Observer[V] {
 	obs, ch := NewObservable[V]()
 	ctx, cancel := context.WithCancel(ctx)

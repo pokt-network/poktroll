@@ -21,7 +21,7 @@ const (
 
 	// defaultBlocksReplayLimit is the number of blocks that the replay
 	// observable returned by LastNBlocks() will be able to replay.
-	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockClient
+	// TODO_TECHDEBT/TODO_FUTURE: add a `blocksReplayLimit` field to the blockReplayClient
 	// struct that defaults to this but can be overridden via an option.
 	defaultBlocksReplayLimit = 100
 )
@@ -56,27 +56,29 @@ func NewBlockClient(
 	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
 	// new block, whether it comes from a direct query or an event subscription query.
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
-	blockClient := &blockReplayClient{
+	blockReplayClient := &blockReplayClient{
 		eventsReplayClient:   eventsReplayClient,
 		latestBlockReplayObs: latestBlockReplayObs,
 		close:                close,
 	}
 
-	if err := depinject.Inject(deps, &blockClient.onStartQueryClient); err != nil {
+	if err := depinject.Inject(deps, &blockReplayClient.onStartQueryClient); err != nil {
 		return nil, err
 	}
 
-	blockClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
+	blockReplayClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := blockClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	if err := blockReplayClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
-	return blockClient, nil
+	return blockReplayClient, nil
 }
 
-// blockReplayClient is a wrapper around an EventsReplayClient that implements the
-// BlockClient interface for use with cosmos-sdk networks.
+// blockReplayClient is BlockClient implementation that combines a CometRPC client
+// to get the its first block at start up and an EventsReplayClient that subscribes
+// to new committed block events.
+// It uses a ReplayObservable to retain and replay past observed blocks.
 type blockReplayClient struct {
 	// onStartQueryClient is the RPC client that is used to query for the initial block
 	// upon blockReplayClient construction. The result of this query is only used if it
@@ -92,10 +94,10 @@ type blockReplayClient struct {
 
 	// latestBlockReplayObs is a replay observable that combines blocks observed by
 	// the block query client & the events replay client. It is the "canonical"
-	// source of block notifications for blockClient.
+	// source of block notifications for the blockReplayClient.
 	latestBlockReplayObs observable.ReplayObservable[client.Block]
 
-	// close is a function that cancels the context of the blockClient.
+	// close is a function that cancels the context of the blockReplayClient.
 	close context.CancelFunc
 }
 
@@ -104,9 +106,11 @@ func (b *blockReplayClient) CommittedBlocksSequence(ctx context.Context) client.
 	return b.latestBlockReplayObs
 }
 
-// LastBlock returns the last blocks observed by the BlockClient.
+// LastBlock returns the last blocks observed by the blockReplayClient.
 func (b *blockReplayClient) LastBlock(ctx context.Context) (block client.Block) {
-	// ReplayObservable#Last() is guaranteed to return at least one element.
+	// ReplayObservable#Last() is guaranteed to return at least one element since
+	// it fetches the latest block using the onStartQueryClient if no blocks have
+	// been received yet from the eventsReplayClient.
 	return b.latestBlockReplayObs.Last(ctx, 1)[0]
 }
 
@@ -134,16 +138,16 @@ func (b *blockReplayClient) asyncForwardBlockEvent(
 // client starts up, while concurrently waiting for the next block event,
 // publishing whichever occurs first to latestBlockPublishCh.
 // This is necessary to ensure that the most recent block is available to the
-// blockClient when it is first created.
+// blockReplayClient when it is first created.
 func (b *blockReplayClient) getInitialBlock(
 	ctx context.Context,
 	latestBlockPublishCh chan<- client.Block,
 ) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	blockQueryResultCh := make(chan client.Block)
 
 	// Query the latest block asynchronously.
+	blockQueryResultCh := make(chan client.Block)
 	queryErrCh := b.queryLatestBlock(ctx, blockQueryResultCh)
 
 	// Wait for either the latest block query response, error, or the first block
@@ -157,7 +161,8 @@ func (b *blockReplayClient) getInitialBlock(
 		return err
 	}
 
-	// Publish the fastest result as the initial block.
+	// At this point blockQueryResultCh was the first to receive the first block.
+	// Publish the initialBlock to the latestBlockPublishCh.
 	latestBlockPublishCh <- initialBlock
 	return nil
 }

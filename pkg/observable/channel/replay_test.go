@@ -161,9 +161,7 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 			lastN:            3,
 			// the replay buffer has enough values to return to Last, it should return
 			// the last n values in the replay buffer.
-			// TODO_DISCUSS: Shouldn't Last order the values by having the most recent
-			// value first?
-			expectedValues: values[2:], // []int{3, 4, 5},
+			expectedValues: values[2:], // []int{5, 4, 3},
 		},
 		{
 			name:             "n = replayBufferSize",
@@ -177,7 +175,7 @@ func TestReplayObservable_Last_Full_ReplayBuffer(t *testing.T) {
 			lastN:            5,
 			// the replay buffer is full so Last should return values starting
 			// from lastN - replayBufferSize.
-			expectedValues: values[2:], // []int{3, 4, 5},
+			expectedValues: values[2:], // []int{5, 4, 3},
 		},
 	}
 
@@ -220,10 +218,11 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 		go func() {
 			// The replay observable's Last method does not timeout if there is less
 			// than lastN values in the replay buffer.
-			// Have a timeout to ensure that Last doesn't block indefinitely and return
+			// Add a timeout to ensure that Last doesn't block indefinitely and return
 			// whatever values are available in the replay buffer.
 			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-			// Last should block until lastN values have been published.
+			// Last should block until lastN values have been published or the timeout
+			// specified above is reached.
 			// NOTE: this will produce a warning log which can safely be ignored:
 			// > WARN: requested replay buffer size 3 is greater than replay buffer
 			// > 	   capacity 3; returning entire replay buffer
@@ -294,6 +293,7 @@ func TestReplayObservable_Last_Blocks_And_Times_Out(t *testing.T) {
 	}
 
 	// Ensure that Last still works as expected when n <= len(published_values).
+	// The values are ordered from most recent to least recent.
 	require.ElementsMatch(t, []int{5}, replayObsvbl.Last(ctx, 1))
 	require.ElementsMatch(t, []int{5, 4}, replayObsvbl.Last(ctx, 2))
 	require.ElementsMatch(t, []int{5, 4, 3}, replayObsvbl.Last(ctx, 3))

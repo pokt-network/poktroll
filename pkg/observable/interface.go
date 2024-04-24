@@ -11,7 +11,8 @@ import "context"
 // to new observers, before publishing new values to observers.
 type ReplayObservable[V any] interface {
 	Observable[V]
-	// Last synchronously returns the last n values from the replay buffer.
+	// Last synchronously returns the last n values from the replay buffer ordered
+	// from the most recent to the oldest.
 	Last(ctx context.Context, n int) []V
 }
 
