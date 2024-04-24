@@ -11,5 +11,5 @@ services:
   # This setup allows for flexible and dynamic service provisioning within the network.
   - service_id: anvil
     endpoints:
-      - url: http://relayminer1:8545
+      - publicly_exposed_url: http://relayminer1:8545
         rpc_type: json_rpc

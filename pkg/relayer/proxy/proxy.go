@@ -18,11 +18,10 @@ import (
 
 var _ relayer.RelayerProxy = (*relayerProxy)(nil)
 
-// relayerProxy is the main relayer proxy that takes relay requests of supported services from the client
-// and proxies them to the supported proxied services.
-// It is responsible for notifying the miner about the relays that have been served so they can be counted
-// when the miner enters the claim/proof phase.
-// TODO_TEST: Have tests for the relayer proxy.
+// relayerProxy is the main relayer proxy that takes relay requests of supported
+// services from the client and proxies them to the supported backend services.
+// It is responsible for notifying the miner about the relays that have been
+// served so they can be counted when the miner enters the claim/proof phase.
 type relayerProxy struct {
 	logger polylog.Logger
 
@@ -43,15 +42,15 @@ type relayerProxy struct {
 	// which is needed to check if the relay proxy should be serving an incoming relay request.
 	sessionQuerier client.SessionQueryClient
 
-	// proxyServers is a map of proxyName -> RelayServer provided by the relayer proxy,
-	// where proxyName is the name of the proxy defined in the config file and
+	// servers is a map of listenAddress -> RelayServer provided by the relayer proxy,
+	// where listenAddress is the address of the server defined in the config file and
 	// RelayServer is the server that listens for incoming relay requests.
-	proxyServers map[string]relayer.RelayServer
+	servers map[string]relayer.RelayServer
 
-	// proxyConfigs is a map of proxyName -> RelayMinerProxyConfig where proxyName
-	// is the name of the proxy defined in the config file and RelayMinerProxyConfig
-	// is the configuration of the proxy.
-	proxyConfigs map[string]*config.RelayMinerProxyConfig
+	// serverConfigs is a map of listenAddress -> RelayMinerServerConfig where listenAddress
+	// is the address of the server defined in the config file and RelayMinerServerConfig
+	// is its configuration.
+	serverConfigs map[string]*config.RelayMinerServerConfig
 
 	// servedRelays is an observable that notifies the miner about the relays that have been served.
 	servedRelays relayer.RelaysObservable
@@ -76,7 +75,7 @@ type relayerProxy struct {
 //
 // Available options:
 //   - WithSigningKeyName
-//   - WithProxiedServicesEndpoints
+//   - WithServicesConfigMap
 func NewRelayerProxy(
 	deps depinject.Config,
 	opts ...relayer.RelayerProxyOption,
@@ -113,7 +112,7 @@ func NewRelayerProxy(
 
 // Start concurrently starts all advertised relay services and returns an error
 // if any of them errors.
-// This method IS BLOCKING until all RelayServers are stopped.
+// NB: This method IS BLOCKING until all RelayServers are stopped.
 func (rp *relayerProxy) Start(ctx context.Context) error {
 	// The provided services map is built from the supplier's on-chain advertised information,
 	// which is a runtime parameter that can be changed by the supplier.
@@ -128,7 +127,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 
 	startGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, relayServer := range rp.proxyServers {
+	for _, relayServer := range rp.servers {
 		server := relayServer // create a new variable scoped to the anonymous function
 		startGroup.Go(func() error { return server.Start(ctx) })
 	}
@@ -141,7 +140,7 @@ func (rp *relayerProxy) Start(ctx context.Context) error {
 func (rp *relayerProxy) Stop(ctx context.Context) error {
 	stopGroup, ctx := errgroup.WithContext(ctx)
 
-	for _, relayServer := range rp.proxyServers {
+	for _, relayServer := range rp.servers {
 		// Create a new object (i.e. deep copy) variable scoped to the anonymous function below
 		server := relayServer
 		stopGroup.Go(func() error { return server.Stop(ctx) })
@@ -164,8 +163,8 @@ func (rp *relayerProxy) validateConfig() error {
 		return ErrRelayerProxyUndefinedSigningKeyName
 	}
 
-	if rp.proxyConfigs == nil || len(rp.proxyConfigs) == 0 {
-		return ErrRelayerProxyUndefinedProxiedServicesEndpoints
+	if rp.serverConfigs == nil || len(rp.serverConfigs) == 0 {
+		return ErrRelayerServicesConfigsUndefined
 	}
 
 	return nil
