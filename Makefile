@@ -9,8 +9,8 @@ CHAIN_ID = poktroll
 
 # The domain ending in ".town" is staging, ".city" is production
 GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
-# The "protocol" field here instructs the gateway which network to use
-SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
+# The "protocol" field here instructs the Grove gateway which network to use
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
