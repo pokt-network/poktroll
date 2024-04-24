@@ -2,11 +2,15 @@ package websocket
 
 import (
 	"context"
+	"crypto/tls"
+	"strings"
 
 	"github.com/gorilla/websocket"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 )
+
+const wssPrefix = "wss://"
 
 var _ client.Dialer = (*websocketDialer)(nil)
 
@@ -25,9 +29,15 @@ func (wsDialer *websocketDialer) DialContext(
 	ctx context.Context,
 	urlString string,
 ) (client.Connection, error) {
+	dialer := websocket.DefaultDialer
+
+	if strings.HasPrefix(urlString, wssPrefix) {
+		dialer.TLSClientConfig = &tls.Config{}
+	}
+
 	// TODO_IMPROVE: check http response status and potential err
 	// TODO_TECHDEBT: add test coverage and ensure support for a 3xx responses
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, urlString, nil)
+	conn, _, err := dialer.DialContext(ctx, urlString, nil)
 	if err != nil {
 		return nil, err
 	}

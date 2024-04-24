@@ -27,6 +27,20 @@
             "includeVars": false,
             "keepTime": false,
             "tags": [
+                "application_logs"
+            ],
+            "targetBlank": false,
+            "title": "Application Logs",
+            "tooltip": "",
+            "type": "dashboards",
+            "url": ""
+        },
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [
                 "claim_proof_settlement_logs"
             ],
             "targetBlank": false,
