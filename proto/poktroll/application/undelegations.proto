@@ -1,0 +1,11 @@
+syntax = "proto3";
+package poktroll.application;
+
+option go_package = "github.com/pokt-network/poktroll/x/application/types";
+
+import "cosmos_proto/cosmos.proto";
+
+message Undelegation {
+  string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}

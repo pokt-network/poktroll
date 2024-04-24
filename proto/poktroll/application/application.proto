@@ -15,4 +15,14 @@ message Application {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   repeated poktroll.shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
   repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+  repeated ArchivedDelegation archived_delegations = 5 [(gogoproto.nullable) = false];
+}
+
+message ArchivedDelegation {
+  uint64 sessionNumber = 1;
+  repeated string delegatee_gateway_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
+}
+
+message ApplicationsWithArchivedDelegations {
+  repeated string app_addresses = 1 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
 }
