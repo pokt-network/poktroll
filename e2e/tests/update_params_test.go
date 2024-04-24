@@ -164,9 +164,7 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 	})
 
 	var (
-		msg proto.Message
-		//	msgAnys  []*codectypes.Any
-		//	msgJSONs [][]byte
+		msg        proto.Message
 		paramsJSON []byte
 	)
 
@@ -183,6 +181,7 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 			}
 		}
 		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*tokenomicstypes.MsgUpdateParams).Params)
+		require.NoError(s, err)
 	case prooftypes.ModuleName:
 		msg = &prooftypes.MsgUpdateParams{Params: prooftypes.Params{}}
 		for paramName, param := range paramsMap {
@@ -195,6 +194,7 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 			}
 		}
 		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*prooftypes.MsgUpdateParams).Params)
+		require.NoError(s, err)
 	default:
 		s.Fatalf("unexpected module name %q", moduleName)
 	}
@@ -208,7 +208,17 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 	err = updateParamsTxJSONTemplate.Execute(buf, locals)
 	require.NoError(s, err)
 
-	// TODO_IMPROVE: find a better and/or more conventional way to programmatically generate tx JSON containing pb.Any messages.
+	// TODO_IMPROVE: reset the module params to their default values using t.Cleanup()
+	// here so that the test can be run multiple times per localnet boot
+	// (i.e. doesn't require localnet restart).
+
+	// TODO_IN_THIS_COMMIT: find a better and/or more conventional way to programmatically generate tx JSON containing pb.Any messages.
+	// - 👍 s.cdc.MarshalJSON() converts the pb.Any message to a JSON object with a "@type" field.
+	// - 👎 s.cdc.MarshalJSON() the value of the "@type" field is missing a preceeding "/" that authz exec CLI is expecting.
+	// - 👎 EOF error currently when calling authz exec CLI with the generated JSON.
+	// - 👎 s.cdc.MarshalJSON() can only be applied to proto.Message implementations (i.e. protobuf types).
+	// - ? is there a tx-level object that can be used to serialize & which can be constructed in this scope?
+	// - 👎 otherwise, must use a template for the tx JSON structure (s.cdc.MarshalJSON() can't be used on a tx.Tx object).
 
 	replacedJSON := bytes.Replace(buf.Bytes(), []byte(`"@type": "`), []byte(`"@type": "/`), 1)
 	_, err = tempFile.Write(replacedJSON)
