@@ -122,7 +122,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
 
-	// Get the ring for the application address of the relay request.
+	// Get the applicable ring for the application address at sessionEndHeight.
 	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
