@@ -22,7 +22,7 @@ message Application {
 // for an application in addition to the last block height where the delegation
 // was active.
 message ArchivedDelegations {
-  int64 lastActiveBlockHeight = 1;
+  int64 last_active_block_height = 1;
   repeated string gateway_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
 }
 
@@ -32,6 +32,6 @@ message ArchivedDelegations {
 // delegations removed from the application and avoid the need to iterate over
 // all applications to find the ones concerned.
 message ApplicationsWithArchivedDelegations {
-  int64 lastActiveBlockHeight = 1;
+  int64 last_active_block_height = 1;
   repeated string app_addresses = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
 }
