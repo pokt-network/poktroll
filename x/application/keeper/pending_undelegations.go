@@ -18,7 +18,7 @@ import (
 // scheduled to be effective at the beginning of the next session.
 // It updates the applications that are undelegating from gateways and removes
 // the undelegations from the pending undelegations store.
-// It aloso updates the applications' archived delegations by appending the
+// It also updates the applications' archived delegations by appending the
 // previously active ones to the archived delegations.
 // Applications that have their archived delegations updated are referenced
 // in the ApplicationsWithArchivedDelegations store.
@@ -81,7 +81,7 @@ func (k Keeper) EndBlockerProcessPendingUndelegations(ctx sdk.Context) error {
 		LastActiveBlockHeight: sessionEndBlockHeight,
 	}
 
-	// Iterate ever the applications with pending undelegations and process them
+	// Iterate over the applications with pending undelegations and process them
 	// by effectively undelegating from the gateways.
 	for appAddr, undelegations := range appsPendingUndelegations {
 		if err := k.undelegateFromGateways(ctx, appAddr, undelegations, sessionEndBlockHeight); err != nil {
@@ -127,11 +127,11 @@ func (k Keeper) undelegateFromGateways(
 	}
 
 	// Update the application's archived delegations before undelegating.
-	archivedDelegation := types.ArchivedDelegations{
+	archivedDelegations := types.ArchivedDelegations{
 		LastActiveBlockHeight: lastActiveBlockHeight,
 		GatewayAddresses:      foundApp.DelegateeGatewayAddresses,
 	}
-	foundApp.ArchivedDelegations = append(foundApp.ArchivedDelegations, archivedDelegation)
+	foundApp.ArchivedDelegations = append(foundApp.ArchivedDelegations, archivedDelegations)
 
 	for _, undelegation := range undelegations {
 		// Check if the application is already delegated to the gateway

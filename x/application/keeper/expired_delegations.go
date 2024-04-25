@@ -18,15 +18,15 @@ import (
 // but it could be a governance parameter too.
 var archivedDelegationsRetentionBlocks = 3 * sessionkeeper.GetSessionGracePeriodBlockCount()
 
-// EndBlockerPruneExpiredDelegateeSets prunes expired delegations from applications
-// at the end of each session by removing archived delegations that are older
+// EndBlockerPruneExpiredDelegations prunes expired delegations from applications
+// at the end of each session by removing the archived delegations that are older
 // than the retention period.
 func (k Keeper) EndBlockerPruneExpiredDelegations(ctx sdk.Context) error {
 	logger := k.Logger().With("method", "EndBlockerPruneExpiredDelegations")
 
 	// Since archiving delegations is done when an application is undelegated
 	// from a gateway and this only happens at the end of a session, we can prune
-	// expired delegatee sets at the end of a session without missing any.
+	// expired delegations at the end of a session without creating any inconsistency.
 	currentBlockHeight := ctx.BlockHeight()
 	sessionEndBlockHeight := sessionkeeper.GetSessionEndBlockHeight(currentBlockHeight)
 	if currentBlockHeight != sessionEndBlockHeight {
@@ -100,6 +100,8 @@ func (k Keeper) EndBlockerPruneExpiredDelegations(ctx sdk.Context) error {
 // that have been effectively undelegating in the current session's end block.
 // This reference is used to avoid iterating over all applications to find the
 // the ones with archived delegations to prune.
+// It is called from EndBlockerProcessPendingUndelegations after collecting all
+// the application addresses that have been effectively undelegated from the gateways.
 func (k Keeper) referenceAppsWithArchivedDelegations(
 	ctx sdk.Context,
 	appsWithArchivedDelegations *types.ApplicationsWithArchivedDelegations,

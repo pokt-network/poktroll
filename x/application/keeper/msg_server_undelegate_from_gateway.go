@@ -73,8 +73,7 @@ func (k Keeper) addPendingUndelegation(
 	)
 
 	// If the undelegation is already in the pending undelegations store, do not add it again.
-	hasPendingUndelegation := store.Has(types.PendingUndelegationKey(pendingUndelegation))
-	if !hasPendingUndelegation {
+	if !store.Has(types.PendingUndelegationKey(pendingUndelegation)) {
 		pendingUndelegationKey := types.PendingUndelegationKey(pendingUndelegation)
 		pendingUndelegationBz := k.cdc.MustMarshal(pendingUndelegation)
 		store.Set(pendingUndelegationKey, pendingUndelegationBz)
