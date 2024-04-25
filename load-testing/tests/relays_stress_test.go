@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,10 +20,13 @@ import (
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
 	blocktypes "github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/pkg/client/events"
+	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
+	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -32,6 +35,8 @@ const (
 	MsgStakeApplication = "/poktroll.application.MsgStakeApplication"
 	MsgStakeGateway     = "/poktroll.gateway.MsgStakeGateway"
 	MsgStakeSupplier    = "/poktroll.supplier.MsgStakeSupplier"
+	MsgCreateClaim      = "/poktroll.proof.MsgCreateClaim"
+	MsgSubmitProof      = "/poktroll.proof.MsgSubmitProof"
 	AppMsgUpdateParams  = "/poktroll.application.MsgUpdateParams"
 	EventRedelegation   = "poktroll.application.EventRedelegation"
 )
@@ -281,23 +286,26 @@ func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable)
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	plan := actorPlans{
 		gateways: actorPlan{
+			initialAmount:   s.gatewayInitialCount,
 			incrementAmount: table.Cell(1, 1).Int64(),
 			incrementRate:   table.Cell(1, 2).Int64(),
 			maxAmount:       table.Cell(1, 3).Int64(),
 		},
 		apps: actorPlan{
+			initialAmount:   s.appInitialCount,
 			incrementAmount: table.Cell(2, 1).Int64(),
 			incrementRate:   table.Cell(2, 2).Int64(),
 			maxAmount:       table.Cell(2, 3).Int64(),
 		},
 		suppliers: actorPlan{
+			initialAmount:   s.supplierInitialCount,
 			incrementAmount: table.Cell(3, 1).Int64(),
 			incrementRate:   table.Cell(3, 2).Int64(),
 			maxAmount:       table.Cell(3, 3).Int64(),
 		},
 	}
 
-	s.validateStakeSchedule(&plan)
+	s.validateActorPlans(&plan)
 
 	// The test duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
@@ -427,49 +435,45 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	// Limit the number of concurrent requests to maxConcurrentRequestLimit.
 	batchLimiter := sync2.NewLimiter(maxConcurrentRequestLimit)
 
-	channel.ForEach(s.ctx, s.batchInfoObs,
-		func(ctx context.Context, batchInfo *batchInfoNotif) {
-			// Calculate the relays per second as the number of active applications
-			// each sending relayRatePerApp relays per second.
-			relaysPerSec := len(batchInfo.appAccounts) * int(s.relayRatePerApp)
-			// Determine the interval between each relay request.
-			relayInterval := time.Second / time.Duration(relaysPerSec)
-
-			batchWaitGroup := new(sync.WaitGroup)
-			batchWaitGroup.Add(relaysPerSec * int(blockDuration))
-
-			for i := 0; i < relaysPerSec*int(blockDuration); i++ {
-				batchLimiter.Go(s.ctx, func() {
-
-					relaysSent := s.relaysSent.Add(1) - 1
-
-					// Send the relay request.
-					s.sendRelay(relaysSent)
-
-					//logger.Debug().
-					//	Int64("session_num", batchInfo.sessionNumber).
-					//	Int64("block_height", batchInfo.blockHeight).
-					//	Str("app", appKeyName).
-					//	Str("gw", gwKeyName).
-					//	Int("total_apps", len(batchInfo.appAccounts)).
-					//	Int("total_gws", len(batchInfo.gateways)).
-					//	Str("time", time.Now().Format(time.RFC3339Nano)).
-					//	Msgf("sending relay #%d", relaysSent)
-
-					batchWaitGroup.Done()
-				})
-
-				// Sleep for the interval between each relay request.
-				time.Sleep(relayInterval)
-			}
-
-			// Wait until all relay requests in the batch are sent.
-			batchWaitGroup.Wait()
-		},
-	)
+	channel.ForEach(s.ctx, s.batchInfoObs, s.sendRelayBatchFn(batchLimiter))
 
 	// Block the feature step until the test is done.
 	<-s.ctx.Done()
+}
+
+func (s *relaysSuite) PairsOfClaimAndProofMessagesShouldBeCommittedOnchain(a string) {
+	txEventsCtx, cancelTxEvents := context.WithCancel(s.ctx)
+	_ = cancelTxEvents
+
+	deps := depinject.Supply(testeventsquery.NewLocalnetClient(s))
+	replayClient, err := events.NewEventsReplayClient(
+		txEventsCtx,
+		deps,
+		"tm.event='Tx'",
+		tx.UnmarshalTxResult,
+		eventsReplayClientBufferSize,
+	)
+	require.NoError(s, err)
+
+	txEventsCh := replayClient.
+		EventsSequence(txEventsCtx).
+		Subscribe(txEventsCtx).Ch()
+	for txEvent := range txEventsCh {
+		// TODO_IMPROVE: refactor this and other similar loops over events.
+		for _, event := range txEvent.Result.Events {
+			if event.Type != "message" {
+				continue
+			}
+
+			if hasEventAttr(event.Attributes, "action", MsgCreateClaim) {
+				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
+			}
+
+			if hasEventAttr(event.Attributes, "action", MsgSubmitProof) {
+				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
+			}
+		}
+	}
 }
 
 func (ai *accountInfo) addPendingMsg(msg sdk.Msg) {

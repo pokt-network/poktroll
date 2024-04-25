@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
@@ -24,6 +26,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/sync2"
 	"github.com/pokt-network/poktroll/testutil/testclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
@@ -32,6 +35,21 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+type actorPlans struct {
+	apps      actorPlan
+	gateways  actorPlan
+	suppliers actorPlan
+}
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+type actorPlan struct {
+	initialAmount   int64
+	incrementRate   int64
+	incrementAmount int64
+	maxAmount       int64
+}
 
 // setupTxEventListeners sets up the transaction event listeners to observe the
 // transactions committed on-chain.
@@ -181,55 +199,95 @@ func (s *relaysSuite) mapSessionInfoFn(
 	}
 }
 
-// TODO_IN_THIS_COMMIT: move
-type actorPlans struct {
-	apps      actorPlan
-	gateways  actorPlan
-	suppliers actorPlan
-}
-
-// TODO_IN_THIS_COMMIT: move
-type actorPlan struct {
-	incrementRate   int64
-	incrementAmount int64
-	maxAmount       int64
-}
-
-// TODO_IN_THIS_COMMIT: godoc comment.
-func (ss *actorPlans) maxDurationBlocks() int64 {
-	return math.Max(
-		ss.gateways.durationBlocks(),
-		ss.apps.durationBlocks(),
-		ss.suppliers.durationBlocks(),
-	)
-}
-
 // TODO_TECHDEBT: godoc comment.
-func (s *relaysSuite) validateStakeSchedule(plans *actorPlans) {
-	require.Truef(s,
-		plans.gateways.incrementRate%keeper.NumBlocksPerSession == 0,
-		"gateway increment rate must be a multiple of the session length",
-	)
+func (s *relaysSuite) validateActorPlans(plans *actorPlans) {
+	plans.validateAppSupplierPermutations(s)
+	plans.validateIncrementRates(s)
+	plans.validateMaxAmounts(s)
+
 	require.Truef(s,
 		len(s.gatewayUrls) >= int(plans.gateways.maxAmount),
 		"provisioned gateways must be greater or equal than the max gateways to be staked",
 	)
 	require.Truef(s,
-		plans.suppliers.incrementRate%keeper.NumBlocksPerSession == 0,
-		"supplier increment rate must be a multiple of the session length",
-	)
-	require.Truef(s,
 		len(s.suppliersUrls) >= int(plans.suppliers.maxAmount),
 		"provisioned suppliers must be greater or equal than the max suppliers to be staked",
 	)
-	require.Truef(s,
+}
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+func (plans *actorPlans) maxDurationBlocks() int64 {
+	return math.Max(
+		plans.gateways.durationBlocks(),
+		plans.apps.durationBlocks(),
+		plans.suppliers.durationBlocks(),
+	)
+}
+
+func (plans *actorPlans) validateAppSupplierPermutations(t gocuke.TestingT) {
+	// Ensure that the number of suppliers never goes above the number of applications.
+	// Otherwise, we can't guarantee that each supplier will have a session with each
+	// application per session height, impacting our claim & proof expectations.
+
+	require.LessOrEqualf(t,
+		plans.suppliers.initialAmount, plans.apps.initialAmount,
+		"initial app:supplier ratio cannot guarantee all possible sessions exist (app:supplier permutations)",
+	)
+
+	require.LessOrEqualf(t,
+		plans.suppliers.incrementAmount/plans.suppliers.incrementRate,
+		plans.apps.incrementAmount/plans.apps.incrementRate,
+		"app:supplier scaling ratio cannot guarantee all possible sessions exist (app:supplier permutations)",
+	)
+
+	require.LessOrEqualf(t,
+		plans.suppliers.maxAmount, plans.apps.maxAmount,
+		"max app:supplier ratio cannot guarantee all possible sessions exist (app:supplier permutations)",
+	)
+}
+
+func (plans *actorPlans) validateIncrementRates(t gocuke.TestingT) {
+	require.Truef(t,
+		plans.gateways.incrementRate%keeper.NumBlocksPerSession == 0,
+		"gateway increment rate must be a multiple of the session length",
+	)
+	require.Truef(t,
+		plans.suppliers.incrementRate%keeper.NumBlocksPerSession == 0,
+		"supplier increment rate must be a multiple of the session length",
+	)
+	require.Truef(t,
 		plans.apps.incrementRate%keeper.NumBlocksPerSession == 0,
 		"app increment rate must be a multiple of the session length",
 	)
 }
+func (plans *actorPlans) validateMaxAmounts(t gocuke.TestingT) {
+	// This constraint is similar to that of actor increment rates, such that
+	// the maxAmount should be a multiple of the incrementAmount. If the last iteration
+	// does not linearly increment any actors, the results may be skewed.
 
-func (aso *actorPlan) durationBlocks() int64 {
-	return aso.maxAmount / aso.incrementAmount * aso.incrementRate
+	require.True(t,
+		plans.gateways.maxAmount%plans.gateways.incrementAmount == 0,
+		"gateway max amount must be a multiple of the gateway increment amount",
+	)
+	require.True(t,
+		plans.apps.maxAmount%plans.apps.incrementAmount == 0,
+		"app max amount must be a multiple of the app increment amount",
+	)
+	require.True(t,
+		plans.suppliers.maxAmount%plans.suppliers.incrementAmount == 0,
+		"supplier max amount must be a multiple of the supplier increment amount",
+	)
+}
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+func (plan *actorPlan) durationBlocks() int64 {
+	blocksToLastRelaySent := plan.maxAmount / plan.incrementAmount * plan.incrementRate
+	blocksToLastSessionEnd := blocksToLastRelaySent
+
+	sessionGracePeriodBlocks := keeper.GetSessionGracePeriodBlockCount()
+	blocksToLastProofWindowEnd := blocksToLastSessionEnd + sessionGracePeriodBlocks
+
+	return blocksToLastProofWindowEnd + keeper.NumBlocksPerSession
 }
 
 // TODO_IN_THIS_COMMIT: godoc comment.
@@ -1025,5 +1083,46 @@ func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {
 		s.cancelCtx()
 		s.Fatal("gateways not delegated to all applications")
+	}
+}
+
+func (s *relaysSuite) sendRelayBatchFn(batchLimiter *sync2.Limiter) channel.ForEachFn[*batchInfoNotif] {
+	return func(ctx context.Context, batchInfo *batchInfoNotif) {
+		// Calculate the relays per second as the number of active applications
+		// each sending relayRatePerApp relays per second.
+		relaysPerSec := len(batchInfo.appAccounts) * int(s.relayRatePerApp)
+		// Determine the interval between each relay request.
+		relayInterval := time.Second / time.Duration(relaysPerSec)
+
+		batchWaitGroup := new(sync.WaitGroup)
+		batchWaitGroup.Add(relaysPerSec * int(blockDuration))
+
+		for i := 0; i < relaysPerSec*int(blockDuration); i++ {
+			batchLimiter.Go(s.ctx, func() {
+
+				relaysSent := s.relaysSent.Add(1) - 1
+
+				// Send the relay request.
+				s.sendRelay(relaysSent)
+
+				//logger.Debug().
+				//	Int64("session_num", batchInfo.sessionNumber).
+				//	Int64("block_height", batchInfo.blockHeight).
+				//	Str("app", appKeyName).
+				//	Str("gw", gwKeyName).
+				//	Int("total_apps", len(batchInfo.appAccounts)).
+				//	Int("total_gws", len(batchInfo.gateways)).
+				//	Str("time", time.Now().Format(time.RFC3339Nano)).
+				//	Msgf("sending relay #%d", relaysSent)
+
+				batchWaitGroup.Done()
+			})
+
+			// Sleep for the interval between each relay request.
+			time.Sleep(relayInterval)
+		}
+
+		// Wait until all relay requests in the batch are sent.
+		batchWaitGroup.Wait()
 	}
 }
