@@ -42,7 +42,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 	}
 
 	// Check that the supplier's advertised services' endpoints are present in
-	// the proxy config and handled by a proxy host
+	// the server config and handled by a server
 	// Iterate over the supplier's advertised services then iterate over each
 	// service's endpoint
 	for _, service := range supplier.Services {
@@ -52,11 +52,11 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 				return err
 			}
 			found := false
-			// Iterate over the proxy configs and check if `endpointUrl` is present
-			// in any of the proxy config's suppliers' service's hosts
-			for _, proxyConfig := range rp.proxyConfigs {
-				supplierService, ok := proxyConfig.Suppliers[service.Service.Id]
-				if ok && slices.Contains(supplierService.Hosts, endpointUrl.Host) {
+			// Iterate over the server configs and check if `endpointUrl` is present
+			// in any of the server config's suppliers' service's PubliclyExposedEndpoints
+			for _, serverConfig := range rp.serverConfigs {
+				supplierService, ok := serverConfig.SupplierConfigsMap[service.Service.Id]
+				if ok && slices.Contains(supplierService.PubliclyExposedEndpoints, endpointUrl.Hostname()) {
 					found = true
 					break
 				}
@@ -64,7 +64,7 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 			if !found {
 				return ErrRelayerProxyServiceEndpointNotHandled.Wrapf(
-					"service endpoint %s not handled by proxy",
+					"service endpoint %s not handled by the relay miner",
 					endpoint.Url,
 				)
 			}
@@ -73,14 +73,14 @@ func (rp *relayerProxy) BuildProvidedServices(ctx context.Context) error {
 
 	rp.supplierAddress = supplier.Address
 
-	if rp.proxyServers, err = rp.initializeProxyServers(supplier.Services); err != nil {
+	if rp.servers, err = rp.initializeProxyServers(supplier.Services); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// initializeProxyServers initializes the proxy servers for each proxy config.
+// initializeProxyServers initializes the proxy servers for each server config.
 func (rp *relayerProxy) initializeProxyServers(
 	supplierServices []*sharedtypes.SupplierServiceConfig,
 ) (proxyServerMap map[string]relayer.RelayServer, err error) {
@@ -90,21 +90,21 @@ func (rp *relayerProxy) initializeProxyServers(
 		supplierServiceMap[service.Service.Id] = service.Service
 	}
 
-	// Build a map of proxyName -> RelayServer for each proxy defined in the config file
-	proxyServers := make(map[string]relayer.RelayServer)
+	// Build a map of listenAddress -> RelayServer for each server defined in the config file
+	servers := make(map[string]relayer.RelayServer)
 
-	for _, proxyConfig := range rp.proxyConfigs {
-		rp.logger.Info().Str("proxy host", proxyConfig.Host).Msg("starting relay proxy server")
+	for _, serverConfig := range rp.serverConfigs {
+		rp.logger.Info().Str("server host", serverConfig.ListenAddress).Msg("starting relay proxy server")
 
 		// TODO(@h5law): Implement a switch that handles all synchronous
 		// RPC types in one server type and asynchronous RPC types in another
 		// to create the appropriate RelayServer.
-		// Initialize the proxy server according to the proxy type defined in the config file
-		switch proxyConfig.Type {
-		case config.ProxyTypeHTTP:
-			proxyServers[proxyConfig.ProxyName] = NewSynchronousServer(
+		// Initialize the server according to the server type defined in the config file
+		switch serverConfig.ServerType {
+		case config.RelayMinerServerTypeHTTP:
+			servers[serverConfig.ListenAddress] = NewSynchronousServer(
 				rp.logger,
-				proxyConfig,
+				serverConfig,
 				supplierServiceMap,
 				rp.servedRelaysPublishCh,
 				rp,
@@ -114,7 +114,7 @@ func (rp *relayerProxy) initializeProxyServers(
 		}
 	}
 
-	return proxyServers, nil
+	return servers, nil
 }
 
 // waitForSupplierToStake waits in a loop until it gets the on-chain supplier's

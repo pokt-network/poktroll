@@ -67,7 +67,7 @@ service_ids:
 
 Defines the list of services the `Application` is willing to consume on the
 Pocket network. Each entry in the list is a `service_id` that identifies a service
-that is available on the Pocket network.
+that is available on Pocket network.
 
 It MUST be a string of 8 or fewer alphanumeric characters, underscores, and
 dashes (i.e. matching the regex `^[a-zA-Z0-9_-]{1,8}$`).

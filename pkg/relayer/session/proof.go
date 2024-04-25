@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -112,6 +113,9 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
 		blockHash := pathBlock.BlockID.Hash
 
+		// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
+		// error that may occur due to latestBlock height differing.
+		fmt.Println("E2E_DEBUG: height for block hash when generating the path", pathBlockHeight, session.GetSessionHeader().GetSessionId())
 		path := proofkeeper.GetPathForProof(blockHash, session.GetSessionHeader().GetSessionId())
 		proof, err := session.ProveClosest(path)
 		if err != nil {

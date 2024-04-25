@@ -7,13 +7,15 @@ import (
 
 	"cosmossdk.io/depinject"
 	"github.com/cometbft/cometbft/libs/json"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	rpctypes "github.com/cometbft/cometbft/rpc/jsonrpc/types"
 	"github.com/cometbft/cometbft/types"
-	comettypes "github.com/cometbft/cometbft/types"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 )
 
@@ -33,7 +35,7 @@ func TestBlockClient(t *testing.T) {
 			Data: testBlockEventDataStruct{
 				Value: testBlockEventValueStruct{
 					Block: &types.Block{
-						Header: comettypes.Header{
+						Header: types.Header{
 							Height: 1,
 							Time:   time.Now(),
 						},
@@ -63,7 +65,25 @@ func TestBlockClient(t *testing.T) {
 		expectedRPCResponseBz,
 	)
 
-	deps := depinject.Supply(eventsQueryClient)
+	ctrl := gomock.NewController(t)
+	cometClientMock := mockclient.NewMockCometRPC(ctrl)
+
+	cometClientMock.EXPECT().
+		Block(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
+			return &coretypes.ResultBlock{
+				Block: &types.Block{
+					Header: types.Header{
+						Height: expectedHeight,
+					},
+				},
+				BlockID: types.BlockID{
+					Hash: expectedHash,
+				},
+			}, nil
+		})
+
+	deps := depinject.Supply(eventsQueryClient, cometClientMock)
 
 	// Set up block client.
 	blockClient, err := block.NewBlockClient(ctx, deps)
@@ -75,9 +95,16 @@ func TestBlockClient(t *testing.T) {
 		fn   func() client.Block
 	}{
 		{
-			name: "LastNBlocks(1) successfully returns latest block",
+			name: "LastBlock successfully returns latest block",
 			fn: func() client.Block {
-				lastBlock := blockClient.LastNBlocks(ctx, 1)[0]
+				lastBlock := blockClient.LastBlock(ctx)
+				return lastBlock
+			},
+		},
+		{
+			name: "LastBlock successfully returns latest block",
+			fn: func() client.Block {
+				lastBlock := blockClient.LastBlock(ctx)
 				return lastBlock
 			},
 		},

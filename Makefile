@@ -316,7 +316,7 @@ test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars 
 
 .PHONY: test_e2e
 test_e2e: test_e2e_env ## Run all E2E tests
-	go test -v ./e2e/tests/... -tags=e2e,test
+	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
 .PHONY: test_e2e_app
 test_e2e_app:
@@ -752,6 +752,10 @@ query_all_params: check_jq ## Query the params from all available modules
 .PHONY: ignite_acc_list
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
+
+.PHONY: ignite_poktrolld_build
+ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
+	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
 
 ##################
 ### CI Helpers ###
