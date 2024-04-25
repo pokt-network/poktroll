@@ -61,7 +61,7 @@ func ToReplayObservable[V any](
 
 // Last synchronously returns the last n values from the replay buffer.
 // It blocks until n values have been accumulated or its context is canceled,
-// If it is cancelled before n values are accumulated, it returns all the available
+// If it is canceled before n values are accumulated, it returns all the available
 // items at the time of cancellation.
 // The values returned are ordered from newest to oldest (i.e. LIFO)
 func (ro *replayObservable[V]) Last(ctx context.Context, n int) []V {
