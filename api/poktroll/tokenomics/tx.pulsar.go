@@ -2040,7 +2040,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MsgUpdateParams is the Msg/UpdateParams request type.
+// MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
 type MsgUpdateParams struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2087,7 +2087,8 @@ func (x *MsgUpdateParams) GetParams() *Params {
 	return nil
 }
 
-// MsgUpdateParamsResponse defines the response structure for executing a MsgUpdateParams message.
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
 type MsgUpdateParamsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2114,6 +2115,7 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_tokenomics_tx_proto_rawDescGZIP(), []int{1}
 }
 
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
 type MsgUpdateParam struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2213,6 +2215,8 @@ func (*MsgUpdateParam_AsInt64) isMsgUpdateParam_AsType() {}
 
 func (*MsgUpdateParam_AsBytes) isMsgUpdateParam_AsType() {}
 
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
 type MsgUpdateParamResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

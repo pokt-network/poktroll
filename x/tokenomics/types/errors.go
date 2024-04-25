@@ -20,4 +20,5 @@ var (
 	ErrTokenomicsParamsInvalid              = sdkerrors.Register(ModuleName, 1113, "provided params are invalid")
 	ErrTokenomicsRootHashInvalid            = sdkerrors.Register(ModuleName, 1114, "the root hash in the claim is invalid")
 	ErrTokenomicsApplicationNewStakeInvalid = sdkerrors.Register(ModuleName, 1115, "application stake cannot be reduce to a -ve amount")
+	ErrTokenomicsParamNameInvalid           = sdkerrors.Register(ModuleName, 1116, "the provided param name is invalid")
 )

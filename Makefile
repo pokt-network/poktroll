@@ -13,7 +13,11 @@ APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
 SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
-DAO_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
+AUTHZ_ADDRESS = pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t
+# PNF acts on behalf of the DAO and who AUTHZ must delegate to
+PNF_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
+
+MODULES := application gateway pocket service session supplier proof tokenomics
 
 # Detect operating system
 OS := $(shell uname -s)
@@ -670,7 +674,6 @@ acc_balance_total_supply: ## Query the total supply of the network
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
-	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
@@ -734,29 +737,27 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 ### Params ###
 ##############
 
-MODULES := application gateway pocket service session supplier proof tokenomics
-
 # TODO_CONSIDERATION: additional factoring (e.g. POKTROLLD_FLAGS).
-PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(DAO_ADDRESS) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: update_tokenomics_params_all
-update_tokenomics_params_all: ## Update the tokenomics module params
+params_update_tokenomics_all: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
-.PHONY: update_tokenomics_param_compute_units_to_tokens_multiplier
-update_tokenomics_param_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+.PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
+params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
 	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
 
-.PHONY: update_proof_params_all
-update_proof_params_all: ## Update the proof module params
+.PHONY: params_update_proof_all
+params_update_proof_all: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
 
-.PHONY: update_proof_param_min_relay_difficulty_bits
-update_proof_param_min_relay_difficulty_bits: ## Update the proof module params
+.PHONY: params_update_proof_min_relay_difficulty_bits
+params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
 	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
 
-.PHONY: query_all_params
-query_all_params: check_jq ## Query the params from all available modules
+.PHONY: params_query_all
+params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
 	    echo "~~~ Querying $$module module params ~~~"; \
 	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \

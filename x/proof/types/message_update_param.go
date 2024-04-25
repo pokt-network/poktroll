@@ -3,13 +3,13 @@ package types
 import (
 	"fmt"
 
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var _ sdk.Msg = (*MsgUpdateParam)(nil)
 
+// NewMsgUpdateParam creates a new MsgUpdateParam instance for a single
+// governance parameter update.
 func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdateParam, error) {
 	var valueAsType isMsgUpdateParam_AsType
 
@@ -31,10 +31,19 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 	}, nil
 }
 
+// ValidateBasic performs a basic validation of the MsgUpdateParam fields.
 func (msg *MsgUpdateParam) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Authority)
-	if err != nil {
-		return errorsmod.Wrapf(sdkerrors.ErrInvalidAddress, "invalid authority address (%s)", err)
+	// Validate the address
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return ErrProofInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
-	return nil
+
+	// ValidateBasic only checks that the name of the parameter being update is valid
+	// but does not check its type or value.
+	switch msg.Name {
+	case NameDefaultMinRelayDifficultyBits:
+		return nil
+	default:
+		return ErrProofParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)
+	}
 }

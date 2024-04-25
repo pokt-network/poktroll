@@ -7,7 +7,16 @@ import (
 	"github.com/pokt-network/poktroll/x/proof/types"
 )
 
-func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (*types.MsgUpdateParamResponse, error) {
+// UpdateParam updates a single parameter in the proof module and returns
+// all active parameters.
+func (k msgServer) UpdateParam(
+	ctx context.Context,
+	msg *types.MsgUpdateParam,
+) (*types.MsgUpdateParamResponse, error) {
+	if err := msg.ValidateBasic(); err != nil {
+		return nil, err
+	}
+
 	if k.GetAuthority() != msg.Authority {
 		return nil, types.ErrProofInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), msg.Authority)
 	}
@@ -15,13 +24,18 @@ func (k msgServer) UpdateParam(ctx context.Context, msg *types.MsgUpdateParam) (
 	params := k.GetParams(ctx)
 
 	switch msg.Name {
-	case "min_relay_difficulty_bits":
+	case types.NameDefaultMinRelayDifficultyBits:
 		value, ok := msg.AsType.(*types.MsgUpdateParam_AsInt64)
 		if !ok {
 			return nil, fmt.Errorf("unsupported value type for %s param: %T", msg.Name, msg.AsType)
 		}
+		minRelayDifficultyBits := uint64(value.AsInt64)
 
-		params.MinRelayDifficultyBits = uint64(value.AsInt64)
+		if err := types.ValidateMinRelayDifficultyBits(minRelayDifficultyBits); err != nil {
+			return nil, err
+		}
+
+		params.MinRelayDifficultyBits = minRelayDifficultyBits
 	default:
 		return nil, fmt.Errorf("unsupported param %q", msg.Name)
 	}

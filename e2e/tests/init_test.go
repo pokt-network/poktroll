@@ -74,6 +74,8 @@ type suite struct {
 	cdc              codec.Codec
 	proofQueryClient prooftypes.QueryClient
 
+	// See the Cosmo SDK authz module for references related to `granter` and `grantee`
+	// https://docs.cosmos.network/main/build/modules/authz
 	granterName string
 	granteeName string
 }

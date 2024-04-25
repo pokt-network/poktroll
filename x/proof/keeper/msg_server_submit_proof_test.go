@@ -56,6 +56,7 @@ func init() {
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
+
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
@@ -158,6 +159,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(keepers.Codec)
+
+	// The base session start height used for testing
+	sessionStartHeight := int64(1)
 
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
@@ -405,7 +409,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -454,7 +459,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -504,7 +510,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -559,7 +566,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay request signature.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -620,7 +628,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -670,7 +679,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Create a valid claim with the expected merkle root.
-				claimMsg := newTestClaimMsg(t, 1,
+				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -839,7 +849,8 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				require.NoError(t, err)
 
 				// Create a claim with the incorrect Merkle root.
-				wrongMerkleRootClaimMsg := newTestClaimMsg(t, 1,
+				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
