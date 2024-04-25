@@ -253,7 +253,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	mangledRelay := newEmptyRelay(validSessionHeader, validSessionHeader)
 
 	// Ensure valid relay request and response signatures.
-	signRelayRequest(ctx, t, mangledRelay, appAddr, keyRing, ringClient)
+	signRelayRequest(ctx, t, mangledRelay, validSessionHeader, keyRing, ringClient)
 	signRelayResponse(ctx, t, mangledRelay, supplierUid, supplierAddr, keyRing)
 
 	// Serialize the relay so that it can be mangled.
@@ -601,7 +601,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				relay.Res.Meta.SupplierSignature = invalidSignatureBz
 
 				// Ensure a valid relay request signature
-				signRelayRequest(ctx, t, relay, appAddr, keyRing, ringClient)
+				signRelayRequest(ctx, t, relay, validSessionHeader, keyRing, ringClient)
 
 				relayBz, err := relay.Marshal()
 				require.NoError(t, err)
@@ -1152,7 +1152,7 @@ func newSignedEmptyRelay(
 	t.Helper()
 
 	relay := newEmptyRelay(reqHeader, resHeader)
-	signRelayRequest(ctx, t, relay, reqHeader.GetApplicationAddress(), keyRing, ringClient)
+	signRelayRequest(ctx, t, relay, reqHeader, keyRing, ringClient)
 	signRelayResponse(ctx, t, relay, supplierKeyUid, supplierAddr, keyRing)
 
 	return relay
@@ -1186,14 +1186,17 @@ func signRelayRequest(
 	ctx context.Context,
 	t *testing.T,
 	relay *servicetypes.Relay,
-	appAddr string,
+	reqHeader *sessiontypes.SessionHeader,
 	keyRing keyring.Keyring,
 	ringClient crypto.RingClient,
 ) {
 	t.Helper()
 
+	appAddr := reqHeader.GetApplicationAddress()
+	sessionEndBlockHeight := reqHeader.GetSessionEndBlockHeight()
+
 	// Retrieve the signing ring associated with the application address.
-	appRing, err := ringClient.GetRingForAddress(ctx, appAddr)
+	appRing, err := ringClient.GetRingForAddress(ctx, appAddr, sessionEndBlockHeight)
 	require.NoError(t, err)
 
 	// Retrieve the signing key associated with the application address.

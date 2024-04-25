@@ -5,6 +5,8 @@ option go_package = "github.com/pokt-network/poktroll/x/application/types";
 
 import "cosmos_proto/cosmos.proto";
 
+// Undelegation is a message type used to schedule undelegating an application
+// from a gateway.
 message Undelegation {
   string app_address = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
   string gateway_address = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];

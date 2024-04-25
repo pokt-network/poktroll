@@ -12,6 +12,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
 )
 
@@ -53,15 +54,19 @@ func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	return rc, nil
 }
 
-// GetRingForAddress returns the ring for the address provided.
+// GetRingForAddress returns the ring for the address and the block height provided.
+// The block height provided is used to determine the appropriate delegated gateways
+// to use at that height since signature verification may be performed for
+// delegations that are no longer active.
 // The ring is created by querying for the application's and its delegated
 // gateways public keys. These keys are converted to secp256k1 curve points
 // before forming the ring.
 func (rc *ringClient) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
+	blockHeight int64,
 ) (*ring.Ring, error) {
-	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
+	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress, blockHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +117,13 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 		)
 	}
 
-	// Get the ring for the application address of the relay request.
+	// Get the session end block height from the relay request's session header to
+	// determine the ring to use for signature verification.
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress)
+
+	// Get the ring for the application address of the relay request.
+	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
@@ -147,6 +156,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 func (rc *ringClient) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
+	blockHeight int64,
 ) ([]cryptotypes.PubKey, error) {
 	// Get the application's on chain state.
 	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
@@ -166,8 +176,10 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 		// be investigated in the future.
 		ringAddresses = append(ringAddresses, appAddress)
 	} else {
-		// add the delegatee gateway addresses
-		ringAddresses = append(ringAddresses, app.DelegateeGatewayAddresses...)
+		// Chose the appropriate delegated gateway addresses based on the provided
+		// block height and add them to the ring addresses.
+		delegateeGatewayAddresses := getDelegationsAtBlock(&app, blockHeight)
+		ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
 	}
 
 	rc.logger.Debug().
@@ -193,4 +205,63 @@ func (rc *ringClient) addressesToPubKeys(
 		pubKeys[i] = acc
 	}
 	return pubKeys, nil
+}
+
+// getDelegationsAtBlock returns the appropriate delegations for the given
+// application and target block height.
+// The delegations selection is determined by the following:
+// - The delegations must be archived AFTER the provided block height.
+// - Among the delegations that meet the above criteria, the oldest one is chosen.
+// - If no suitable archived delegation is found, the active one is used.
+//
+// The illustration below shows the selection process:
+//
+// Legend:
+// x : Delegations archival
+// > : Active delegations
+// - : Activity time for a delegation set prior to its archival "x"
+// | : Target block height for which the delegations are requested
+// ^ : Selected delegations, archived "x" or active ">"
+//
+// Case: Picking an archived delegation
+// -----x---x-----x---x---->
+// -----------|---^
+//
+// Case: Picking the currently active delegation
+// -----x---x-----x---x---->
+// ---------------------|--^
+func getDelegationsAtBlock(
+	app *apptypes.Application,
+	blockHeight int64,
+) []string {
+	// neoProximateArchivedDelegations will hold the appropriate archived delegations
+	// for the provided block height or nil if no suitable one is found.
+	// It will be the oldest archived delegations among the ones that are past the
+	// provided block height.
+	var neoProximateArchivedDelegations []string
+	// neoProximateArchivalHeight will hold the block height of the appropriate
+	// archived delegation or 0 if no suitable one is found.
+	neoProximateArchivalHeight := int64(0)
+
+	// The chronological order of the archived delegations may not be guaranteed
+	// and iterating through all of them is necessary to find the appropriate one.
+	for _, archivedDelegateeSet := range app.ArchivedDelegations {
+		// A valid archived delegation is one that is archived AFTER the provided height.
+		isArchivedAfterHeight := archivedDelegateeSet.LastActiveBlockHeight >= blockHeight
+		// And is the oldest archived set found so far.
+		isNeoProximate := archivedDelegateeSet.LastActiveBlockHeight < neoProximateArchivalHeight
+
+		if isArchivedAfterHeight && isNeoProximate {
+			neoProximateArchivalHeight = archivedDelegateeSet.LastActiveBlockHeight
+			neoProximateArchivedDelegations = archivedDelegateeSet.GatewayAddresses
+		}
+	}
+
+	// Return the archived delegations if one is found.
+	if neoProximateArchivedDelegations != nil {
+		return neoProximateArchivedDelegations
+	}
+
+	// Use the active one otherwise.
+	return app.DelegateeGatewayAddresses
 }

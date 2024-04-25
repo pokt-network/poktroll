@@ -116,7 +116,7 @@ func (x *_Application_4_list) IsValid() bool {
 var _ protoreflect.List = (*_Application_5_list)(nil)
 
 type _Application_5_list struct {
-	list *[]*ArchivedDelegation
+	list *[]*ArchivedDelegations
 }
 
 func (x *_Application_5_list) Len() int {
@@ -132,18 +132,18 @@ func (x *_Application_5_list) Get(i int) protoreflect.Value {
 
 func (x *_Application_5_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ArchivedDelegation)
+	concreteValue := valueUnwrapped.Interface().(*ArchivedDelegations)
 	(*x.list)[i] = concreteValue
 }
 
 func (x *_Application_5_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*ArchivedDelegation)
+	concreteValue := valueUnwrapped.Interface().(*ArchivedDelegations)
 	*x.list = append(*x.list, concreteValue)
 }
 
 func (x *_Application_5_list) AppendMutable() protoreflect.Value {
-	v := new(ArchivedDelegation)
+	v := new(ArchivedDelegations)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
@@ -156,7 +156,7 @@ func (x *_Application_5_list) Truncate(n int) {
 }
 
 func (x *_Application_5_list) NewElement() protoreflect.Value {
-	v := new(ArchivedDelegation)
+	v := new(ArchivedDelegations)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -444,7 +444,7 @@ func (x *fastReflection_Application) Mutable(fd protoreflect.FieldDescriptor) pr
 		return protoreflect.ValueOfList(value)
 	case "poktroll.application.Application.archived_delegations":
 		if x.ArchivedDelegations == nil {
-			x.ArchivedDelegations = []*ArchivedDelegation{}
+			x.ArchivedDelegations = []*ArchivedDelegations{}
 		}
 		value := &_Application_5_list{list: &x.ArchivedDelegations}
 		return protoreflect.ValueOfList(value)
@@ -475,7 +475,7 @@ func (x *fastReflection_Application) NewField(fd protoreflect.FieldDescriptor) p
 		list := []string{}
 		return protoreflect.ValueOfList(&_Application_4_list{list: &list})
 	case "poktroll.application.Application.archived_delegations":
-		list := []*ArchivedDelegation{}
+		list := []*ArchivedDelegations{}
 		return protoreflect.ValueOfList(&_Application_5_list{list: &list})
 	default:
 		if fd.IsExtension() {
@@ -875,7 +875,7 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.ArchivedDelegations = append(x.ArchivedDelegations, &ArchivedDelegation{})
+				x.ArchivedDelegations = append(x.ArchivedDelegations, &ArchivedDelegations{})
 				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.ArchivedDelegations[len(x.ArchivedDelegations)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
@@ -915,74 +915,74 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_ArchivedDelegation_2_list)(nil)
+var _ protoreflect.List = (*_ArchivedDelegations_2_list)(nil)
 
-type _ArchivedDelegation_2_list struct {
+type _ArchivedDelegations_2_list struct {
 	list *[]string
 }
 
-func (x *_ArchivedDelegation_2_list) Len() int {
+func (x *_ArchivedDelegations_2_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_ArchivedDelegation_2_list) Get(i int) protoreflect.Value {
+func (x *_ArchivedDelegations_2_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_ArchivedDelegation_2_list) Set(i int, value protoreflect.Value) {
+func (x *_ArchivedDelegations_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_ArchivedDelegation_2_list) Append(value protoreflect.Value) {
+func (x *_ArchivedDelegations_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_ArchivedDelegation_2_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message ArchivedDelegation at list field DelegateeGatewayAddresses as it is not of Message kind"))
+func (x *_ArchivedDelegations_2_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message ArchivedDelegations at list field GatewayAddresses as it is not of Message kind"))
 }
 
-func (x *_ArchivedDelegation_2_list) Truncate(n int) {
+func (x *_ArchivedDelegations_2_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_ArchivedDelegation_2_list) NewElement() protoreflect.Value {
+func (x *_ArchivedDelegations_2_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_ArchivedDelegation_2_list) IsValid() bool {
+func (x *_ArchivedDelegations_2_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_ArchivedDelegation                             protoreflect.MessageDescriptor
-	fd_ArchivedDelegation_sessionNumber               protoreflect.FieldDescriptor
-	fd_ArchivedDelegation_delegatee_gateway_addresses protoreflect.FieldDescriptor
+	md_ArchivedDelegations                       protoreflect.MessageDescriptor
+	fd_ArchivedDelegations_lastActiveBlockHeight protoreflect.FieldDescriptor
+	fd_ArchivedDelegations_gateway_addresses     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_application_proto_init()
-	md_ArchivedDelegation = File_poktroll_application_application_proto.Messages().ByName("ArchivedDelegation")
-	fd_ArchivedDelegation_sessionNumber = md_ArchivedDelegation.Fields().ByName("sessionNumber")
-	fd_ArchivedDelegation_delegatee_gateway_addresses = md_ArchivedDelegation.Fields().ByName("delegatee_gateway_addresses")
+	md_ArchivedDelegations = File_poktroll_application_application_proto.Messages().ByName("ArchivedDelegations")
+	fd_ArchivedDelegations_lastActiveBlockHeight = md_ArchivedDelegations.Fields().ByName("lastActiveBlockHeight")
+	fd_ArchivedDelegations_gateway_addresses = md_ArchivedDelegations.Fields().ByName("gateway_addresses")
 }
 
-var _ protoreflect.Message = (*fastReflection_ArchivedDelegation)(nil)
+var _ protoreflect.Message = (*fastReflection_ArchivedDelegations)(nil)
 
-type fastReflection_ArchivedDelegation ArchivedDelegation
+type fastReflection_ArchivedDelegations ArchivedDelegations
 
-func (x *ArchivedDelegation) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_ArchivedDelegation)(x)
+func (x *ArchivedDelegations) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_ArchivedDelegations)(x)
 }
 
-func (x *ArchivedDelegation) slowProtoReflect() protoreflect.Message {
+func (x *ArchivedDelegations) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_application_application_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -994,43 +994,43 @@ func (x *ArchivedDelegation) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_ArchivedDelegation_messageType fastReflection_ArchivedDelegation_messageType
-var _ protoreflect.MessageType = fastReflection_ArchivedDelegation_messageType{}
+var _fastReflection_ArchivedDelegations_messageType fastReflection_ArchivedDelegations_messageType
+var _ protoreflect.MessageType = fastReflection_ArchivedDelegations_messageType{}
 
-type fastReflection_ArchivedDelegation_messageType struct{}
+type fastReflection_ArchivedDelegations_messageType struct{}
 
-func (x fastReflection_ArchivedDelegation_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_ArchivedDelegation)(nil)
+func (x fastReflection_ArchivedDelegations_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_ArchivedDelegations)(nil)
 }
-func (x fastReflection_ArchivedDelegation_messageType) New() protoreflect.Message {
-	return new(fastReflection_ArchivedDelegation)
+func (x fastReflection_ArchivedDelegations_messageType) New() protoreflect.Message {
+	return new(fastReflection_ArchivedDelegations)
 }
-func (x fastReflection_ArchivedDelegation_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_ArchivedDelegation
+func (x fastReflection_ArchivedDelegations_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_ArchivedDelegations
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_ArchivedDelegation) Descriptor() protoreflect.MessageDescriptor {
-	return md_ArchivedDelegation
+func (x *fastReflection_ArchivedDelegations) Descriptor() protoreflect.MessageDescriptor {
+	return md_ArchivedDelegations
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_ArchivedDelegation) Type() protoreflect.MessageType {
-	return _fastReflection_ArchivedDelegation_messageType
+func (x *fastReflection_ArchivedDelegations) Type() protoreflect.MessageType {
+	return _fastReflection_ArchivedDelegations_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_ArchivedDelegation) New() protoreflect.Message {
-	return new(fastReflection_ArchivedDelegation)
+func (x *fastReflection_ArchivedDelegations) New() protoreflect.Message {
+	return new(fastReflection_ArchivedDelegations)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_ArchivedDelegation) Interface() protoreflect.ProtoMessage {
-	return (*ArchivedDelegation)(x)
+func (x *fastReflection_ArchivedDelegations) Interface() protoreflect.ProtoMessage {
+	return (*ArchivedDelegations)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1038,16 +1038,16 @@ func (x *fastReflection_ArchivedDelegation) Interface() protoreflect.ProtoMessag
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_ArchivedDelegation) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.SessionNumber != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.SessionNumber)
-		if !f(fd_ArchivedDelegation_sessionNumber, value) {
+func (x *fastReflection_ArchivedDelegations) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.LastActiveBlockHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.LastActiveBlockHeight)
+		if !f(fd_ArchivedDelegations_lastActiveBlockHeight, value) {
 			return
 		}
 	}
-	if len(x.DelegateeGatewayAddresses) != 0 {
-		value := protoreflect.ValueOfList(&_ArchivedDelegation_2_list{list: &x.DelegateeGatewayAddresses})
-		if !f(fd_ArchivedDelegation_delegatee_gateway_addresses, value) {
+	if len(x.GatewayAddresses) != 0 {
+		value := protoreflect.ValueOfList(&_ArchivedDelegations_2_list{list: &x.GatewayAddresses})
+		if !f(fd_ArchivedDelegations_gateway_addresses, value) {
 			return
 		}
 	}
@@ -1064,17 +1064,17 @@ func (x *fastReflection_ArchivedDelegation) Range(f func(protoreflect.FieldDescr
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_ArchivedDelegation) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_ArchivedDelegations) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		return x.SessionNumber != uint64(0)
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
-		return len(x.DelegateeGatewayAddresses) != 0
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		return x.LastActiveBlockHeight != int64(0)
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
+		return len(x.GatewayAddresses) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1084,17 +1084,17 @@ func (x *fastReflection_ArchivedDelegation) Has(fd protoreflect.FieldDescriptor)
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ArchivedDelegation) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_ArchivedDelegations) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		x.SessionNumber = uint64(0)
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
-		x.DelegateeGatewayAddresses = nil
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		x.LastActiveBlockHeight = int64(0)
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
+		x.GatewayAddresses = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1104,22 +1104,22 @@ func (x *fastReflection_ArchivedDelegation) Clear(fd protoreflect.FieldDescripto
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_ArchivedDelegation) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ArchivedDelegations) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		value := x.SessionNumber
-		return protoreflect.ValueOfUint64(value)
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
-		if len(x.DelegateeGatewayAddresses) == 0 {
-			return protoreflect.ValueOfList(&_ArchivedDelegation_2_list{})
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		value := x.LastActiveBlockHeight
+		return protoreflect.ValueOfInt64(value)
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
+		if len(x.GatewayAddresses) == 0 {
+			return protoreflect.ValueOfList(&_ArchivedDelegations_2_list{})
 		}
-		listValue := &_ArchivedDelegation_2_list{list: &x.DelegateeGatewayAddresses}
+		listValue := &_ArchivedDelegations_2_list{list: &x.GatewayAddresses}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1133,19 +1133,19 @@ func (x *fastReflection_ArchivedDelegation) Get(descriptor protoreflect.FieldDes
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ArchivedDelegation) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_ArchivedDelegations) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		x.SessionNumber = value.Uint()
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		x.LastActiveBlockHeight = value.Int()
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
 		lv := value.List()
-		clv := lv.(*_ArchivedDelegation_2_list)
-		x.DelegateeGatewayAddresses = *clv.list
+		clv := lv.(*_ArchivedDelegations_2_list)
+		x.GatewayAddresses = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1159,49 +1159,49 @@ func (x *fastReflection_ArchivedDelegation) Set(fd protoreflect.FieldDescriptor,
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ArchivedDelegation) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ArchivedDelegations) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
-		if x.DelegateeGatewayAddresses == nil {
-			x.DelegateeGatewayAddresses = []string{}
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
+		if x.GatewayAddresses == nil {
+			x.GatewayAddresses = []string{}
 		}
-		value := &_ArchivedDelegation_2_list{list: &x.DelegateeGatewayAddresses}
+		value := &_ArchivedDelegations_2_list{list: &x.GatewayAddresses}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		panic(fmt.Errorf("field sessionNumber of message poktroll.application.ArchivedDelegation is not mutable"))
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		panic(fmt.Errorf("field lastActiveBlockHeight of message poktroll.application.ArchivedDelegations is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_ArchivedDelegation) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_ArchivedDelegations) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.ArchivedDelegation.sessionNumber":
-		return protoreflect.ValueOfUint64(uint64(0))
-	case "poktroll.application.ArchivedDelegation.delegatee_gateway_addresses":
+	case "poktroll.application.ArchivedDelegations.lastActiveBlockHeight":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.application.ArchivedDelegations.gateway_addresses":
 		list := []string{}
-		return protoreflect.ValueOfList(&_ArchivedDelegation_2_list{list: &list})
+		return protoreflect.ValueOfList(&_ArchivedDelegations_2_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegation"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ArchivedDelegations"))
 		}
-		panic(fmt.Errorf("message poktroll.application.ArchivedDelegation does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.ArchivedDelegations does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_ArchivedDelegation) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_ArchivedDelegations) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.ArchivedDelegation", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.ArchivedDelegations", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1209,7 +1209,7 @@ func (x *fastReflection_ArchivedDelegation) WhichOneof(d protoreflect.OneofDescr
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_ArchivedDelegation) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_ArchivedDelegations) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1220,7 +1220,7 @@ func (x *fastReflection_ArchivedDelegation) GetUnknown() protoreflect.RawFields 
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_ArchivedDelegation) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_ArchivedDelegations) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1232,7 +1232,7 @@ func (x *fastReflection_ArchivedDelegation) SetUnknown(fields protoreflect.RawFi
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_ArchivedDelegation) IsValid() bool {
+func (x *fastReflection_ArchivedDelegations) IsValid() bool {
 	return x != nil
 }
 
@@ -1242,9 +1242,9 @@ func (x *fastReflection_ArchivedDelegation) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_ArchivedDelegations) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*ArchivedDelegation)
+		x := input.Message.Interface().(*ArchivedDelegations)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1256,11 +1256,11 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 		var n int
 		var l int
 		_ = l
-		if x.SessionNumber != 0 {
-			n += 1 + runtime.Sov(uint64(x.SessionNumber))
+		if x.LastActiveBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.LastActiveBlockHeight))
 		}
-		if len(x.DelegateeGatewayAddresses) > 0 {
-			for _, s := range x.DelegateeGatewayAddresses {
+		if len(x.GatewayAddresses) > 0 {
+			for _, s := range x.GatewayAddresses {
 				l = len(s)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -1275,7 +1275,7 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*ArchivedDelegation)
+		x := input.Message.Interface().(*ArchivedDelegations)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1294,17 +1294,17 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.DelegateeGatewayAddresses) > 0 {
-			for iNdEx := len(x.DelegateeGatewayAddresses) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.DelegateeGatewayAddresses[iNdEx])
-				copy(dAtA[i:], x.DelegateeGatewayAddresses[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.DelegateeGatewayAddresses[iNdEx])))
+		if len(x.GatewayAddresses) > 0 {
+			for iNdEx := len(x.GatewayAddresses) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.GatewayAddresses[iNdEx])
+				copy(dAtA[i:], x.GatewayAddresses[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.GatewayAddresses[iNdEx])))
 				i--
 				dAtA[i] = 0x12
 			}
 		}
-		if x.SessionNumber != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.SessionNumber))
+		if x.LastActiveBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.LastActiveBlockHeight))
 			i--
 			dAtA[i] = 0x8
 		}
@@ -1319,7 +1319,7 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*ArchivedDelegation)
+		x := input.Message.Interface().(*ArchivedDelegations)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1351,17 +1351,17 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ArchivedDelegation: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ArchivedDelegations: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ArchivedDelegation: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: ArchivedDelegations: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field SessionNumber", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LastActiveBlockHeight", wireType)
 				}
-				x.SessionNumber = 0
+				x.LastActiveBlockHeight = 0
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1371,14 +1371,14 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					x.SessionNumber |= uint64(b&0x7F) << shift
+					x.LastActiveBlockHeight |= int64(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field DelegateeGatewayAddresses", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GatewayAddresses", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1406,7 +1406,7 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.DelegateeGatewayAddresses = append(x.DelegateeGatewayAddresses, string(dAtA[iNdEx:postIndex]))
+				x.GatewayAddresses = append(x.GatewayAddresses, string(dAtA[iNdEx:postIndex]))
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1443,60 +1443,62 @@ func (x *fastReflection_ArchivedDelegation) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_ApplicationsWithArchivedDelegations_1_list)(nil)
+var _ protoreflect.List = (*_ApplicationsWithArchivedDelegations_2_list)(nil)
 
-type _ApplicationsWithArchivedDelegations_1_list struct {
+type _ApplicationsWithArchivedDelegations_2_list struct {
 	list *[]string
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) Len() int {
+func (x *_ApplicationsWithArchivedDelegations_2_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) Get(i int) protoreflect.Value {
+func (x *_ApplicationsWithArchivedDelegations_2_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) Set(i int, value protoreflect.Value) {
+func (x *_ApplicationsWithArchivedDelegations_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) Append(value protoreflect.Value) {
+func (x *_ApplicationsWithArchivedDelegations_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) AppendMutable() protoreflect.Value {
+func (x *_ApplicationsWithArchivedDelegations_2_list) AppendMutable() protoreflect.Value {
 	panic(fmt.Errorf("AppendMutable can not be called on message ApplicationsWithArchivedDelegations at list field AppAddresses as it is not of Message kind"))
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) Truncate(n int) {
+func (x *_ApplicationsWithArchivedDelegations_2_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) NewElement() protoreflect.Value {
+func (x *_ApplicationsWithArchivedDelegations_2_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_ApplicationsWithArchivedDelegations_1_list) IsValid() bool {
+func (x *_ApplicationsWithArchivedDelegations_2_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_ApplicationsWithArchivedDelegations               protoreflect.MessageDescriptor
-	fd_ApplicationsWithArchivedDelegations_app_addresses protoreflect.FieldDescriptor
+	md_ApplicationsWithArchivedDelegations                       protoreflect.MessageDescriptor
+	fd_ApplicationsWithArchivedDelegations_lastActiveBlockHeight protoreflect.FieldDescriptor
+	fd_ApplicationsWithArchivedDelegations_app_addresses         protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_application_proto_init()
 	md_ApplicationsWithArchivedDelegations = File_poktroll_application_application_proto.Messages().ByName("ApplicationsWithArchivedDelegations")
+	fd_ApplicationsWithArchivedDelegations_lastActiveBlockHeight = md_ApplicationsWithArchivedDelegations.Fields().ByName("lastActiveBlockHeight")
 	fd_ApplicationsWithArchivedDelegations_app_addresses = md_ApplicationsWithArchivedDelegations.Fields().ByName("app_addresses")
 }
 
@@ -1565,8 +1567,14 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Interface() protore
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.LastActiveBlockHeight != int64(0) {
+		value := protoreflect.ValueOfInt64(x.LastActiveBlockHeight)
+		if !f(fd_ApplicationsWithArchivedDelegations_lastActiveBlockHeight, value) {
+			return
+		}
+	}
 	if len(x.AppAddresses) != 0 {
-		value := protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_1_list{list: &x.AppAddresses})
+		value := protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_2_list{list: &x.AppAddresses})
 		if !f(fd_ApplicationsWithArchivedDelegations_app_addresses, value) {
 			return
 		}
@@ -1586,6 +1594,8 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Range(f func(protor
 // a repeated field is populated if it is non-empty.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		return x.LastActiveBlockHeight != int64(0)
 	case "poktroll.application.ApplicationsWithArchivedDelegations.app_addresses":
 		return len(x.AppAddresses) != 0
 	default:
@@ -1604,6 +1614,8 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Has(fd protoreflect
 // Clear is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		x.LastActiveBlockHeight = int64(0)
 	case "poktroll.application.ApplicationsWithArchivedDelegations.app_addresses":
 		x.AppAddresses = nil
 	default:
@@ -1622,11 +1634,14 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Clear(fd protorefle
 // of the value; to obtain a mutable reference, use Mutable.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		value := x.LastActiveBlockHeight
+		return protoreflect.ValueOfInt64(value)
 	case "poktroll.application.ApplicationsWithArchivedDelegations.app_addresses":
 		if len(x.AppAddresses) == 0 {
-			return protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_1_list{})
+			return protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_2_list{})
 		}
-		listValue := &_ApplicationsWithArchivedDelegations_1_list{list: &x.AppAddresses}
+		listValue := &_ApplicationsWithArchivedDelegations_2_list{list: &x.AppAddresses}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
@@ -1648,9 +1663,11 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Get(descriptor prot
 // Set is a mutating operation and unsafe for concurrent use.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		x.LastActiveBlockHeight = value.Int()
 	case "poktroll.application.ApplicationsWithArchivedDelegations.app_addresses":
 		lv := value.List()
-		clv := lv.(*_ApplicationsWithArchivedDelegations_1_list)
+		clv := lv.(*_ApplicationsWithArchivedDelegations_2_list)
 		x.AppAddresses = *clv.list
 	default:
 		if fd.IsExtension() {
@@ -1676,8 +1693,10 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Mutable(fd protoref
 		if x.AppAddresses == nil {
 			x.AppAddresses = []string{}
 		}
-		value := &_ApplicationsWithArchivedDelegations_1_list{list: &x.AppAddresses}
+		value := &_ApplicationsWithArchivedDelegations_2_list{list: &x.AppAddresses}
 		return protoreflect.ValueOfList(value)
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		panic(fmt.Errorf("field lastActiveBlockHeight of message poktroll.application.ApplicationsWithArchivedDelegations is not mutable"))
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ApplicationsWithArchivedDelegations"))
@@ -1691,9 +1710,11 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) Mutable(fd protoref
 // For lists, maps, and messages, this returns a new, empty, mutable value.
 func (x *fastReflection_ApplicationsWithArchivedDelegations) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
+	case "poktroll.application.ApplicationsWithArchivedDelegations.lastActiveBlockHeight":
+		return protoreflect.ValueOfInt64(int64(0))
 	case "poktroll.application.ApplicationsWithArchivedDelegations.app_addresses":
 		list := []string{}
-		return protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_1_list{list: &list})
+		return protoreflect.ValueOfList(&_ApplicationsWithArchivedDelegations_2_list{list: &list})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.ApplicationsWithArchivedDelegations"))
@@ -1763,6 +1784,9 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) ProtoMethods() *pro
 		var n int
 		var l int
 		_ = l
+		if x.LastActiveBlockHeight != 0 {
+			n += 1 + runtime.Sov(uint64(x.LastActiveBlockHeight))
+		}
 		if len(x.AppAddresses) > 0 {
 			for _, s := range x.AppAddresses {
 				l = len(s)
@@ -1804,8 +1828,13 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) ProtoMethods() *pro
 				copy(dAtA[i:], x.AppAddresses[iNdEx])
 				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AppAddresses[iNdEx])))
 				i--
-				dAtA[i] = 0xa
+				dAtA[i] = 0x12
 			}
+		}
+		if x.LastActiveBlockHeight != 0 {
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.LastActiveBlockHeight))
+			i--
+			dAtA[i] = 0x8
 		}
 		if input.Buf != nil {
 			input.Buf = append(input.Buf, dAtA...)
@@ -1857,6 +1886,25 @@ func (x *fastReflection_ApplicationsWithArchivedDelegations) ProtoMethods() *pro
 			}
 			switch fieldNum {
 			case 1:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field LastActiveBlockHeight", wireType)
+				}
+				x.LastActiveBlockHeight = 0
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					x.LastActiveBlockHeight |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+			case 2:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AppAddresses", wireType)
 				}
@@ -1946,7 +1994,7 @@ type Application struct {
 	Stake                     *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                                                            // The total amount of uPOKT the application has staked
 	ServiceConfigs            []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`                                    // The list of services this appliccation is configured to request service for
 	DelegateeGatewayAddresses []string                           `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"` // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
-	ArchivedDelegations       []*ArchivedDelegation              `protobuf:"bytes,5,rep,name=archived_delegations,json=archivedDelegations,proto3" json:"archived_delegations,omitempty"`
+	ArchivedDelegations       []*ArchivedDelegations             `protobuf:"bytes,5,rep,name=archived_delegations,json=archivedDelegations,proto3" json:"archived_delegations,omitempty"`
 }
 
 func (x *Application) Reset() {
@@ -1997,24 +2045,27 @@ func (x *Application) GetDelegateeGatewayAddresses() []string {
 	return nil
 }
 
-func (x *Application) GetArchivedDelegations() []*ArchivedDelegation {
+func (x *Application) GetArchivedDelegations() []*ArchivedDelegations {
 	if x != nil {
 		return x.ArchivedDelegations
 	}
 	return nil
 }
 
-type ArchivedDelegation struct {
+// ArchivedDelegations defines the type used to store the archived delegations
+// for an application in addition to the last block height where the delegation
+// was active.
+type ArchivedDelegations struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SessionNumber             uint64   `protobuf:"varint,1,opt,name=sessionNumber,proto3" json:"sessionNumber,omitempty"`
-	DelegateeGatewayAddresses []string `protobuf:"bytes,2,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`
+	LastActiveBlockHeight int64    `protobuf:"varint,1,opt,name=lastActiveBlockHeight,proto3" json:"lastActiveBlockHeight,omitempty"`
+	GatewayAddresses      []string `protobuf:"bytes,2,rep,name=gateway_addresses,json=gatewayAddresses,proto3" json:"gateway_addresses,omitempty"`
 }
 
-func (x *ArchivedDelegation) Reset() {
-	*x = ArchivedDelegation{}
+func (x *ArchivedDelegations) Reset() {
+	*x = ArchivedDelegations{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_application_application_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2022,37 +2073,43 @@ func (x *ArchivedDelegation) Reset() {
 	}
 }
 
-func (x *ArchivedDelegation) String() string {
+func (x *ArchivedDelegations) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ArchivedDelegation) ProtoMessage() {}
+func (*ArchivedDelegations) ProtoMessage() {}
 
-// Deprecated: Use ArchivedDelegation.ProtoReflect.Descriptor instead.
-func (*ArchivedDelegation) Descriptor() ([]byte, []int) {
+// Deprecated: Use ArchivedDelegations.ProtoReflect.Descriptor instead.
+func (*ArchivedDelegations) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_application_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ArchivedDelegation) GetSessionNumber() uint64 {
+func (x *ArchivedDelegations) GetLastActiveBlockHeight() int64 {
 	if x != nil {
-		return x.SessionNumber
+		return x.LastActiveBlockHeight
 	}
 	return 0
 }
 
-func (x *ArchivedDelegation) GetDelegateeGatewayAddresses() []string {
+func (x *ArchivedDelegations) GetGatewayAddresses() []string {
 	if x != nil {
-		return x.DelegateeGatewayAddresses
+		return x.GatewayAddresses
 	}
 	return nil
 }
 
+// ApplicationsWithArchivedDelegations defines the type used to store the addresses
+// of applications that have delegations being archived at lastActiveBlockHeight.
+// It is used to retrieve the applications that need to have their archived
+// delegations removed from the application and avoid the need to iterate over
+// all applications to find the ones concerned.
 type ApplicationsWithArchivedDelegations struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AppAddresses []string `protobuf:"bytes,1,rep,name=app_addresses,json=appAddresses,proto3" json:"app_addresses,omitempty"`
+	LastActiveBlockHeight int64    `protobuf:"varint,1,opt,name=lastActiveBlockHeight,proto3" json:"lastActiveBlockHeight,omitempty"`
+	AppAddresses          []string `protobuf:"bytes,2,rep,name=app_addresses,json=appAddresses,proto3" json:"app_addresses,omitempty"`
 }
 
 func (x *ApplicationsWithArchivedDelegations) Reset() {
@@ -2075,6 +2132,13 @@ func (*ApplicationsWithArchivedDelegations) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_application_proto_rawDescGZIP(), []int{2}
 }
 
+func (x *ApplicationsWithArchivedDelegations) GetLastActiveBlockHeight() int64 {
+	if x != nil {
+		return x.LastActiveBlockHeight
+	}
+	return 0
+}
+
 func (x *ApplicationsWithArchivedDelegations) GetAppAddresses() []string {
 	if x != nil {
 		return x.AppAddresses
@@ -2095,7 +2159,7 @@ var file_poktroll_application_application_proto_rawDesc = []byte{
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1d, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
-	0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x87,
+	0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x88,
 	0x03, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x32,
 	0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
 	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
@@ -2114,42 +2178,46 @@ var file_poktroll_application_application_proto_rawDesc = []byte{
 	0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x19, 0x64, 0x65, 0x6c, 0x65,
 	0x67, 0x61, 0x74, 0x65, 0x65, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x61, 0x0a, 0x14, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65,
+	0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x62, 0x0a, 0x14, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65,
 	0x64, 0x5f, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x05, 0x20,
-	0x03, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
+	0x03, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
 	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x72, 0x63, 0x68, 0x69,
-	0x76, 0x65, 0x64, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x04, 0xc8,
-	0xde, 0x1f, 0x00, 0x52, 0x13, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x64, 0x44, 0x65, 0x6c,
-	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x98, 0x01, 0x0a, 0x12, 0x41, 0x72, 0x63,
-	0x68, 0x69, 0x76, 0x65, 0x64, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12,
-	0x24, 0x0a, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x4e,
-	0x75, 0x6d, 0x62, 0x65, 0x72, 0x12, 0x5c, 0x0a, 0x1b, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74,
-	0x65, 0x65, 0x5f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00,
-	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
-	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x19, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61,
-	0x74, 0x65, 0x65, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x65, 0x73, 0x22, 0x68, 0x0a, 0x23, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x76, 0x65, 0x64, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x42, 0x04,
+	0xc8, 0xde, 0x1f, 0x00, 0x52, 0x13, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x64, 0x44, 0x65,
+	0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x22, 0x96, 0x01, 0x0a, 0x13, 0x41, 0x72,
+	0x63, 0x68, 0x69, 0x76, 0x65, 0x64, 0x44, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x73, 0x12, 0x34, 0x0a, 0x15, 0x6c, 0x61, 0x73, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x42,
+	0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x15, 0x6c, 0x61, 0x73, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x42, 0x6c, 0x6f, 0x63,
+	0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0x12, 0x49, 0x0a, 0x11, 0x67, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03,
+	0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
+	0x52, 0x10, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x65, 0x73, 0x22, 0x9e, 0x01, 0x0a, 0x23, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x73, 0x57, 0x69, 0x74, 0x68, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x64, 0x44,
-	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x41, 0x0a, 0x0d, 0x61, 0x70,
-	0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52,
-	0x0c, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x42, 0xc4, 0x01,
-	0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61,
-	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x10, 0x41, 0x70, 0x70, 0x6c,
-	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69,
-	0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70,
-	0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x50,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x12, 0x34, 0x0a, 0x15, 0x6c, 0x61,
+	0x73, 0x74, 0x41, 0x63, 0x74, 0x69, 0x76, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69,
+	0x67, 0x68, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x15, 0x6c, 0x61, 0x73, 0x74, 0x41,
+	0x63, 0x74, 0x69, 0x76, 0x65, 0x42, 0x6c, 0x6f, 0x63, 0x6b, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74,
+	0x12, 0x41, 0x0a, 0x0d, 0x61, 0x70, 0x70, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65,
+	0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d,
+	0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0c, 0x61, 0x70, 0x70, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x73, 0x65, 0x73, 0x42, 0xc4, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x42, 0x10, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f,
+	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
+	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f,
+	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41,
+	0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72,
+	0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2,
+	0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69,
+	0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41,
+	0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -2167,7 +2235,7 @@ func file_poktroll_application_application_proto_rawDescGZIP() []byte {
 var file_poktroll_application_application_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_poktroll_application_application_proto_goTypes = []interface{}{
 	(*Application)(nil),                         // 0: poktroll.application.Application
-	(*ArchivedDelegation)(nil),                  // 1: poktroll.application.ArchivedDelegation
+	(*ArchivedDelegations)(nil),                 // 1: poktroll.application.ArchivedDelegations
 	(*ApplicationsWithArchivedDelegations)(nil), // 2: poktroll.application.ApplicationsWithArchivedDelegations
 	(*v1beta1.Coin)(nil),                        // 3: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil),     // 4: poktroll.shared.ApplicationServiceConfig
@@ -2175,7 +2243,7 @@ var file_poktroll_application_application_proto_goTypes = []interface{}{
 var file_poktroll_application_application_proto_depIdxs = []int32{
 	3, // 0: poktroll.application.Application.stake:type_name -> cosmos.base.v1beta1.Coin
 	4, // 1: poktroll.application.Application.service_configs:type_name -> poktroll.shared.ApplicationServiceConfig
-	1, // 2: poktroll.application.Application.archived_delegations:type_name -> poktroll.application.ArchivedDelegation
+	1, // 2: poktroll.application.Application.archived_delegations:type_name -> poktroll.application.ArchivedDelegations
 	3, // [3:3] is the sub-list for method output_type
 	3, // [3:3] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -2202,7 +2270,7 @@ func file_poktroll_application_application_proto_init() {
 			}
 		}
 		file_poktroll_application_application_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ArchivedDelegation); i {
+			switch v := v.(*ArchivedDelegations); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -26,6 +27,26 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 		return nil, err
 	}
 
+	// Retrieve the application from the store
+	foundApp, isAppFound := k.GetApplication(ctx, msg.AppAddress)
+	if !isAppFound {
+		return nil, types.ErrAppNotFound.Wrapf(
+			"application not found with address %q",
+			msg.AppAddress,
+		)
+	}
+
+	// Check if the application is already delegated to the gateway
+	gatewayIdx := slices.Index(foundApp.DelegateeGatewayAddresses, msg.GatewayAddress)
+	if gatewayIdx == -1 {
+		return nil, types.ErrAppNotDelegated.Wrapf(
+			"application not delegated to gateway with address %q",
+			msg.GatewayAddress,
+		)
+	}
+
+	// The requested undelegation is not immediate, but scheduled to be active
+	// at the start of the next session.
 	k.addPendingUndelegation(ctx, &types.Undelegation{
 		AppAddress:     msg.AppAddress,
 		GatewayAddress: msg.GatewayAddress,
@@ -35,6 +56,9 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	return &types.MsgUndelegateFromGatewayResponse{}, nil
 }
 
+// addPendingUndelegation adds a undelegation to the pending undelegations store.
+// The undelegation will be then processed by EndBlockerProcessPendingUndelegations
+// at the end of the session.
 func (k Keeper) addPendingUndelegation(
 	ctx context.Context,
 	pendingUndelegation *types.Undelegation,
@@ -48,11 +72,11 @@ func (k Keeper) addPendingUndelegation(
 		types.KeyPrefix(types.PendingUndelegationsKeyPrefix),
 	)
 
-	hasPendingUndelegation := store.Has(types.PendingUndelegationsKey(pendingUndelegation))
+	// If the undelegation is already in the pending undelegations store, do not add it again.
+	hasPendingUndelegation := store.Has(types.PendingUndelegationKey(pendingUndelegation))
 	if !hasPendingUndelegation {
-		store.Set(
-			types.PendingUndelegationsKey(pendingUndelegation),
-			k.cdc.MustMarshal(pendingUndelegation),
-		)
+		pendingUndelegationKey := types.PendingUndelegationKey(pendingUndelegation)
+		pendingUndelegationBz := k.cdc.MustMarshal(pendingUndelegation)
+		store.Set(pendingUndelegationKey, pendingUndelegationBz)
 	}
 }

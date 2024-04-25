@@ -73,7 +73,9 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 		}
 	}
 
-	k.deletePendingUndelegation(ctx, &types.Undelegation{
+	// If the application undelegates then re-delegates to the same gateway before
+	// the undelegation becomes effective, the pending undelegation should be discarded.
+	k.removePendingUndelegation(ctx, &types.Undelegation{
 		AppAddress:     msg.AppAddress,
 		GatewayAddress: msg.GatewayAddress,
 	})

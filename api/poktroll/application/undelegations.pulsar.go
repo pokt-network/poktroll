@@ -510,6 +510,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Undelegation is a message type used to schedule undelegating an application
+// from a gateway.
 type Undelegation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
