@@ -6,7 +6,7 @@ import (
 )
 
 // EndBlocker called at every block to process pending undelegations and prune
-// expired delegatee sets.
+// expired delegations.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
 	// Process pending undelegations before pruning expired delegations since
 	// undelegations involve archiving old delegations records which, depending on
