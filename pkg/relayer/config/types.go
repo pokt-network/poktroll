@@ -2,44 +2,40 @@ package config
 
 import "net/url"
 
-type ProxyType int
+type RelayMinerServerType int
 
 const (
-	ProxyTypeHTTP ProxyType = iota
-	// TODO: Support other proxy types: HTTPS, TCP, UNIX socket, UDP, QUIC, WebRTC ...
+	RelayMinerServerTypeHTTP RelayMinerServerType = iota
+	// TODO: Support other RelayMinerServerType:
+	// RelayMinerServerTypeHTTPS
+	// RelayMinerServerTypeTCP
+	// RelayMinerServerTypeUDP
+	// RelayMinerServerTypeQUIC
+	// RelayMinerServerTypeWebRTC
+	// RelayMinerServerTypeUNIXSocket
+	// Etc...
 )
 
 // YAMLRelayMinerConfig is the structure used to unmarshal the RelayMiner config file
-// TODO_DOCUMENT(@red-0ne): Add proper README documentation for yaml config files
-// and update inline comments accordingly.
 type YAMLRelayMinerConfig struct {
 	PocketNode     YAMLRelayMinerPocketNodeConfig `yaml:"pocket_node"`
 	SigningKeyName string                         `yaml:"signing_key_name"`
 	SmtStorePath   string                         `yaml:"smt_store_path"`
 	Metrics        YAMLRelayMinerMetricsConfig    `yaml:"metrics"`
-	Proxies        []YAMLRelayMinerProxyConfig    `yaml:"proxies"`
 	Suppliers      []YAMLRelayMinerSupplierConfig `yaml:"suppliers"`
+	Pprof          YAMLRelayMinerPprofConfig      `yaml:"pprof"`
 }
 
 // YAMLRelayMinerPocketNodeConfig is the structure used to unmarshal the pocket
-// node URLs section of the RelayMiner config file
+// node URLs section of the RelayMiner config file.
 type YAMLRelayMinerPocketNodeConfig struct {
 	QueryNodeRPCUrl  string `yaml:"query_node_rpc_url"`
 	QueryNodeGRPCUrl string `yaml:"query_node_grpc_url"`
 	TxNodeRPCUrl     string `yaml:"tx_node_rpc_url"`
 }
 
-// YAMLRelayMinerProxyConfig is the structure used to unmarshal the proxy
-// section of the RelayMiner config file
-type YAMLRelayMinerProxyConfig struct {
-	ProxyName            string `yaml:"proxy_name"`
-	Type                 string `yaml:"type"`
-	Host                 string `yaml:"host"`
-	XForwardedHostLookup bool   `yaml:"x_forwarded_host_lookup"`
-}
-
 // YAMLRelayMinerMetricsConfig is the structure used to unmarshal the metrics
-// section of the RelayMiner config file
+// section of the RelayMiner config file.
 type YAMLRelayMinerMetricsConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Addr    string `yaml:"addr"`
@@ -48,19 +44,19 @@ type YAMLRelayMinerMetricsConfig struct {
 // YAMLRelayMinerSupplierConfig is the structure used to unmarshal the supplier
 // section of the RelayMiner config file
 type YAMLRelayMinerSupplierConfig struct {
-	ServiceId     string                              `yaml:"service_id"`
-	Type          string                              `yaml:"type"`
-	Hosts         []string                            `yaml:"hosts"`
-	ServiceConfig YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
-	ProxyNames    []string                            `yaml:"proxy_names"`
+	ServiceId            string                              `yaml:"service_id"`
+	ListenUrl            string                              `yaml:"listen_url"`
+	XForwardedHostLookup bool                                `yaml:"x_forwarded_host_lookup"`
+	ServiceConfig        YAMLRelayMinerSupplierServiceConfig `yaml:"service_config"`
 }
 
 // YAMLRelayMinerSupplierServiceConfig is the structure used to unmarshal the supplier
-// service sub-section of the RelayMiner config file
+// service sub-section of the RelayMiner config file.
 type YAMLRelayMinerSupplierServiceConfig struct {
-	Url            string                                      `yaml:"url"`
-	Authentication YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
-	Headers        map[string]string                           `yaml:"headers,omitempty"`
+	BackendUrl               string                                      `yaml:"backend_url"`
+	Authentication           YAMLRelayMinerSupplierServiceAuthentication `yaml:"authentication,omitempty"`
+	Headers                  map[string]string                           `yaml:"headers,omitempty"`
+	PubliclyExposedEndpoints []string                                    `yaml:"publicly_exposed_endpoints"`
 }
 
 // YAMLRelayMinerSupplierServiceAuthentication is the structure used to unmarshal
@@ -71,13 +67,21 @@ type YAMLRelayMinerSupplierServiceAuthentication struct {
 	Password string `yaml:"password,omitempty"`
 }
 
+// YAMLRelayMinerPprofConfig is the structure used to unmarshal the config
+// for `pprof`.
+type YAMLRelayMinerPprofConfig struct {
+	Enabled bool   `yaml:"enabled,omitempty"`
+	Addr    string `yaml:"addr,omitempty"`
+}
+
 // RelayMinerConfig is the structure describing the RelayMiner config
 type RelayMinerConfig struct {
 	PocketNode     *RelayMinerPocketNodeConfig
-	Proxies        map[string]*RelayMinerProxyConfig
+	Servers        map[string]*RelayMinerServerConfig
 	Metrics        *RelayMinerMetricsConfig
 	SigningKeyName string
 	SmtStorePath   string
+	Pprof          *RelayMinerPprofConfig
 }
 
 // RelayMinerPocketNodeConfig is the structure resulting from parsing the pocket
@@ -88,25 +92,22 @@ type RelayMinerPocketNodeConfig struct {
 	TxNodeRPCUrl     *url.URL
 }
 
-// RelayMinerProxyConfig is the structure resulting from parsing the proxy
-// section of the RelayMiner config file.
-// Each proxy embeds a map of supplier configs that are associated with it.
-// Other proxy types may embed other fields in the future. eg. "https" may
-// embed a TLS config.
-type RelayMinerProxyConfig struct {
-	// ProxyName is the name of the proxy server, used to identify it in the config
-	ProxyName string
-	// Type is the transport protocol used by the proxy server like (http, https, etc.)
-	Type ProxyType
-	// Host is the host on which the proxy server will listen for incoming
-	// relay requests
-	Host string
-	// XForwardedHostLookup is a flag that indicates whether the proxy server
+// RelayMinerServerConfig is the structure resulting from parsing the supplier's
+// server section of the RelayMiner config file.
+// Each server section embeds a map of supplier configs that are associated with it.
+// TODO_IMPROVE: Other server types may embed other fields in the future; eg. "https" may embed a TLS config.
+type RelayMinerServerConfig struct {
+	// ServerType is the transport protocol used by the server like (http, https, etc.)
+	ServerType RelayMinerServerType
+	// ListenAddress is the host on which the relay miner server will listen
+	// for incoming relay requests
+	ListenAddress string
+	// XForwardedHostLookup is a flag that indicates whether the relay miner server
 	// should lookup the host from the X-Forwarded-Host header before falling
 	// back to the Host header.
 	XForwardedHostLookup bool
-	// Suppliers is a map of serviceIds -> RelayMinerSupplierConfig
-	Suppliers map[string]*RelayMinerSupplierConfig
+	// SupplierConfigsMap is a map of serviceIds -> RelayMinerSupplierConfig
+	SupplierConfigsMap map[string]*RelayMinerSupplierConfig
 }
 
 // RelayMinerMetricsConfig is the structure resulting from parsing the metrics
@@ -121,12 +122,12 @@ type RelayMinerMetricsConfig struct {
 type RelayMinerSupplierConfig struct {
 	// ServiceId is the serviceId corresponding to the current configuration.
 	ServiceId string
-	// Type is the transport protocol used by the supplier, it must match the
-	// type of the proxy it is associated with.
-	Type ProxyType
-	// Hosts is a list of hosts advertised on-chain by the supplier, the corresponding
-	// proxy server will accept relay requests for these hosts.
-	Hosts []string
+	// ServerType is the transport protocol used by the supplier, it must match the
+	// type of the relay miner server it is associated with.
+	ServerType RelayMinerServerType
+	// PubliclyExposedEndpoints is a list of hosts advertised on-chain by the supplier,
+	// the corresponding relay miner server will accept relay requests for these hosts.
+	PubliclyExposedEndpoints []string
 	// ServiceConfig is the config of the service that relays will be proxied to.
 	// Other supplier types may embed other fields in the future. eg. "https" may
 	// embed a TLS config.
@@ -136,10 +137,10 @@ type RelayMinerSupplierConfig struct {
 // RelayMinerSupplierServiceConfig is the structure resulting from parsing the supplier
 // service sub-section of the RelayMiner config file.
 type RelayMinerSupplierServiceConfig struct {
-	// Url is the URL of the service that relays will be proxied to.
-	Url *url.URL
+	// BackendUrl is the URL of the service that relays will be proxied to.
+	BackendUrl *url.URL
 	// Authentication is the basic auth structure used to authenticate to the
-	// request being proxied from the current proxy server.
+	// request being proxied from the current relay miner server.
 	// If the service the relay requests are forwarded to requires basic auth
 	// then this field must be populated.
 	// TODO_TECHDEBT(@red-0ne): Pass the authentication to the service instance
@@ -156,8 +157,15 @@ type RelayMinerSupplierServiceConfig struct {
 
 // RelayMinerSupplierServiceAuthentication is the structure resulting from parsing
 // the supplier service basic auth of the RelayMiner config file when the
-// supplier is of type "http"
+// supplier is of type "http".
 type RelayMinerSupplierServiceAuthentication struct {
 	Username string
 	Password string
+}
+
+// RelayMinerPprofConfig is the structure resulting from parsing the pprof config
+// section of a RelayMiner config.
+type RelayMinerPprofConfig struct {
+	Enabled bool
+	Addr    string
 }

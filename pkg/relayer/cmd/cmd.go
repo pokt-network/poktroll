@@ -47,10 +47,10 @@ var (
 func RelayerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "relayminer",
-		Short: "Run a relay miner",
-		Long: `Run a relay miner. The relay miner process configures and starts
-relay servers for each service the supplier actor identified by --signing-key is
-staked for (configured on-chain).
+		Short: "Start a RelayMiner",
+		Long: `Run a RelayMiner. A RelayMiner is the off-chain complementary
+middleware that handles incoming requests for all the services a Supplier staked
+for on-chain.
 
 Relay requests received by the relay servers are validated and proxied to their
 respective service endpoints, maintained by the relayer off-chain. The responses
@@ -129,6 +129,13 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if relayMinerConfig.Pprof.Enabled {
+		err = relayMiner.ServePprof(relayMinerConfig.Pprof.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start pprof endpoint: %w", err)
+		}
+	}
+
 	// Start the relay miner
 	logger.Info().Msg("Starting relay miner...")
 	if err := relayMiner.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -177,13 +184,13 @@ func setupRelayerDependencies(
 	}
 
 	signingKeyName := relayMinerConfig.SigningKeyName
-	proxiedServiceEndpoints := relayMinerConfig.Proxies
+	servicesConfigMap := relayMinerConfig.Servers
 	smtStorePath := relayMinerConfig.SmtStorePath
 
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
-		config.NewSupplyBlockClientFn(),                        // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
@@ -197,7 +204,7 @@ func setupRelayerDependencies(
 		supplyTxContext,
 		newSupplyTxClientFn(signingKeyName),
 		newSupplySupplierClientFn(signingKeyName),
-		newSupplyRelayerProxyFn(signingKeyName, proxiedServiceEndpoints),
+		newSupplyRelayerProxyFn(signingKeyName, servicesConfigMap),
 		newSupplyRelayerSessionsManagerFn(smtStorePath),
 	}
 
@@ -304,7 +311,7 @@ func newSupplySupplierClientFn(signingKeyName string) config.SupplierFn {
 // is supplied with the given deps and the new RelayerProxy.
 func newSupplyRelayerProxyFn(
 	signingKeyName string,
-	proxiedServiceEndpoints map[string]*relayerconfig.RelayMinerProxyConfig,
+	servicesConfigMap map[string]*relayerconfig.RelayMinerServerConfig,
 ) config.SupplierFn {
 	return func(
 		_ context.Context,
@@ -314,7 +321,7 @@ func newSupplyRelayerProxyFn(
 		relayerProxy, err := proxy.NewRelayerProxy(
 			deps,
 			proxy.WithSigningKeyName(signingKeyName),
-			proxy.WithProxiedServicesEndpoints(proxiedServiceEndpoints),
+			proxy.WithServicesConfigMap(servicesConfigMap),
 		)
 		if err != nil {
 			return nil, err

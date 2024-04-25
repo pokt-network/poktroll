@@ -44,11 +44,14 @@ import (
 type TestBehavior struct {
 	ctx context.Context
 	t   *testing.T
+
 	// Deps is exported so it can be used by the dependency injection framework
 	// from the pkg/relayer/proxy/proxy_test.go
 	Deps depinject.Config
 
-	proxiedServices map[string]*http.Server
+	// proxyServersMap is a map from ServiceId to the actual Server that handles
+	// processing of incoming RPC requests.
+	proxyServersMap map[string]*http.Server
 }
 
 // blockHeight is the default block height used in the tests.
@@ -75,7 +78,7 @@ func NewRelayerProxyTestBehavior(
 	test := &TestBehavior{
 		ctx:             ctx,
 		t:               t,
-		proxiedServices: make(map[string]*http.Server),
+		proxyServersMap: make(map[string]*http.Server),
 	}
 
 	for _, behavior := range behaviors {
@@ -101,7 +104,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
 
-		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, blockHeight)
+		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)
@@ -122,17 +125,17 @@ func WithRelayerProxyDependenciesForBlockHeight(
 	}
 }
 
-// WithRelayerProxiedServices creates the services that the relayer proxy will
+// WithServicesConfigMap creates the services that the relayer proxy will
 // proxy requests to.
 // It creates an HTTP server for each service and starts listening on the
 // provided host.
-func WithRelayerProxiedServices(
-	proxiedServices map[string]*config.RelayMinerProxyConfig,
+func WithServicesConfigMap(
+	servicesConfigMap map[string]*config.RelayMinerServerConfig,
 ) func(*TestBehavior) {
 	return func(test *TestBehavior) {
-		for _, proxy := range proxiedServices {
-			for serviceId, service := range proxy.Suppliers {
-				server := &http.Server{Addr: service.ServiceConfig.Url.Host}
+		for _, serviceConfig := range servicesConfigMap {
+			for serviceId, supplierConfig := range serviceConfig.SupplierConfigsMap {
+				server := &http.Server{Addr: supplierConfig.ServiceConfig.BackendUrl.Host}
 				server.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Write(prepareJsonRPCResponsePayload())
 				})
@@ -142,7 +145,7 @@ func WithRelayerProxiedServices(
 					server.Shutdown(test.ctx)
 				}()
 
-				test.proxiedServices[serviceId] = server
+				test.proxyServersMap[serviceId] = server
 			}
 		}
 	}
@@ -282,30 +285,37 @@ func WithSuccessiveSessions(
 // MarshalAndSend marshals the request and sends it to the provided service.
 func MarshalAndSend(
 	test *TestBehavior,
-	proxiedServices map[string]*config.RelayMinerProxyConfig,
-	proxyServeName string,
+	servicesConfigMap map[string]*config.RelayMinerServerConfig,
+	serviceEndpoint string,
 	serviceId string,
 	request *servicetypes.RelayRequest,
 ) (errCode int32, errorMessage string) {
-	reqBz, err := request.Marshal()
-	require.NoError(test.t, err)
-
 	var scheme string
-	switch proxiedServices[proxyServeName].Type {
-	case config.ProxyTypeHTTP:
+	switch servicesConfigMap[serviceEndpoint].ServerType {
+	case config.RelayMinerServerTypeHTTP:
 		scheme = "http"
 	default:
-		require.FailNow(test.t, "unsupported proxy type")
+		require.FailNow(test.t, "unsupported server type")
 	}
 
+	// originHost is the endpoint that the client will retrieve from the on-chain supplier record.
+	// The supplier may have multiple endpoints (e.g. for load geo-balancing, host failover, etc.).
+	// In the current test setup, we only have one endpoint per supplier, which is why we are accessing `[0]`.
+	// In a real-world scenario, the publicly exposed endpoint would reach a load balancer
+	// or a reverse proxy that would route the request to the address specified by ListenAddress.
+	originHost := servicesConfigMap[serviceEndpoint].SupplierConfigsMap[serviceId].PubliclyExposedEndpoints[0]
+
+	reqBz, err := request.Marshal()
+	require.NoError(test.t, err)
 	reader := io.NopCloser(bytes.NewReader(reqBz))
 	req := &http.Request{
+
 		Method: http.MethodPost,
 		Header: http.Header{
 			"Content-Type": []string{"application/json"},
 		},
-		URL:  &url.URL{Scheme: scheme, Host: proxiedServices[proxyServeName].Host},
-		Host: proxiedServices[proxyServeName].Suppliers[serviceId].Hosts[0],
+		URL:  &url.URL{Scheme: scheme, Host: servicesConfigMap[serviceEndpoint].ListenAddress},
+		Host: originHost,
 		Body: reader,
 	}
 	res, err := http.DefaultClient.Do(req)

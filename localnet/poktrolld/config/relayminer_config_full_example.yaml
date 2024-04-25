@@ -1,133 +1,87 @@
-# TODO_CONSIDERATION: We don't need this now, but it would be beneficial if the
-# logic handling this config file could be designed in such a way that it allows for
-# "hot" config changes in the future, meaning changes without restarting a process.
-# This would be useful for adding a proxy or a supplier without interrupting the service.
-
-# Name of the key (in the keyring) to sign transactions.
+# Name of the key (in the keyring) used to sign transactions.
 signing_key_name: supplier1
-# Relative path (on the relayminer's machine) to where the data backing
-# SMT KV store exists on disk.
-smt_store_path: smt_stores
+
+# Relative path (on the relayminer's machine) to the SMT KV store data on disk.
+smt_store_path: ./path/to/smt_stores
 
 # Prometheus exporter configuration
 metrics:
-  # Turn the metrics exporter on/off
+  # Enable or disable the metrics exporter
   enabled: true
-  # The address that the metrics exporter will listen on. Can be just a port, or host:port
+  # The address (host:port or just port) for the metrics exporter to listen on.
   addr: :9090
 
+# Pprof endpoint configuration. More information:
+# https://pkg.go.dev/github.com/google/pprof#section-readme
+pprof:
+  enabled: false
+  addr: localhost:6060
+
 pocket_node:
-  # Pocket node URL that exposes CometBFT JSON-RPC API.
-  # This can be used by the Cosmos client SDK, event subscriptions, etc...
+  # Pocket node URL exposing the CometBFT JSON-RPC API.
+  # Used by the Cosmos client SDK, event subscriptions, etc.
   # If unspecified, defaults to `tx_node_rpc_url`.
   query_node_rpc_url: tcp://poktroll-validator:36657
-  # Pocket node URL that exposes the Cosmos gRPC service, dedicated to querying purposes.
+  # Pocket node URL exposing the Cosmos gRPC service for querying purposes.
   query_node_grpc_url: tcp://poktroll-validator:36658
-  # Pocket node URL that exposes the TendermintRPC service.
+  # Pocket node URL exposing the CometRPC service.
   tx_node_rpc_url: tcp://poktroll-validator:36658
 
-# Proxies are endpoints that expose different suppliers to the internet.
-proxies:
-  # Name of the proxy. It will be used to reference in a supplier.
-  # Must be unique.
-  # Required.
-  # TODO_CONSIDERATION: if we enforce DNS compliant names, it can potentially
-  # become handy in the future.
-  # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-  - proxy_name: http-example
-    # Type of proxy: currently only http is supported but will support more
-    # (https, tcp, quic ...) in the future.
-    # MUST match the type of the supplier.
-    # Required.
-    type: http
-    # Hostname to open port on.
-    # Use 0.0.0.0 in containerized environments.
-    # 127.0.0.1 with a reverse proxy when there's another process on localhost
-    # that can be used as a reverse proxy (nginx, apache, traefik, etc.).
-    # Required.
-    host: 127.0.0.1:8080
-
-  # TODO_IMPROVE: https is not currently supported, but this is how it could potentially look.
-  # - name: example-how-we-can-support-https
-  #   type: https
-  #   host: 0.0.0.0:8443
-  #   tls:
-  #     enabled: true
-  #     certificate: /path/to/crt
-  #     key: /path/to/key
-
-# Suppliers are different services that can be offered through RelayMiner.
-# When a supplier is configured to use a proxy and staked appropriately,
-# the relays will start flowing through RelayMiner.
+# Suppliers are different services offered on Pocket Network,
+# proxied through Relay Miner.
 suppliers:
-  # The serviceId the supplier is offering on the network .
-  # It must match the Service.Id of the service that has been staked for.
-  # Must be unique.
+  # The `service_id` of the service offered on the network.
+  # Must match the Service.Id of the staked service.
+  # Must be unique in the `suppliers` array.
   # Required.
   - service_id: ethereum
-    # Type of how the supplier offers service through the network.
-    # Must match the type of the proxy the supplier is connected to.
-    # Required.
-    type: http
+    listen_url: http://0.0.0.0:80
     # Configuration of the service offered through RelayMiner.
     service_config:
-      # URL RelayMiner proxies the requests to.
-      # Also known as the data node, or service node in some cases.
+      # Backend URL is the endpoint that the RelayMiner proxies the requests to.
+      # Also known as the data node or service node.
       # Required.
-      url: http://anvil.servicer:8545
-      # Authentication for the service.
-      # HTTP Basic Auth: https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication
+      backend_url: http://anvil.servicer:8545
+
+      # Authentication for the service (HTTP Basic Auth).
       # Optional.
       authentication:
         username: user
         password: pwd
 
-      # TODO_IMPROVE: This is not supported in code yet,
-      # but some services authenticate via a header.
-      # Example, if the service requires a header like `Authorization: Bearer <PASSWORD>`
-      # Authorization: Bearer <PASSWORD>
+      # TODO_IMPROVE: This is not implemented in code yet.
+      # Authentication via a static header might be desirable for high-traffic services.
+      # Example: If the service requires a header like `Authorization: Bearer <PASSWORD>`
       # Optional.
       headers: {}
 
-    # A list of hosts the proxy is accepting requests from.
-    # When linked to the proxy, each host is going to be used to lookup the
-    # the Supplier.Service in Pocket Network.
-    # Each host in the list must match a Supplier.Service.Endpoint that the Supplier
-    # has advertised on-chain when staking for that Service.
-    # There are various reasons to having multiple hosts for the same supplier services,
-    # - The on-chain Supplier may provide the same Service on multiple domains
-    #   (e.g. for different regions).
-    # - The operator may want to route requests of different RPC types to
-    #   the same proxy.
-    # - Migrating from one domain to another. Where the operator could still
-    #   accept requests on the old domain while the new domain is being propagated.
-    # - The operator may want to have a different domain for internal requests.
-    # - The on-chain Service configuration accepts multiple endpoints.
-    # Must be unique within the proxy it is referenced in.
-    # Required.
-    hosts:
-      - ethereum.devnet1.poktroll.com
-      # The `service_id` of the supplier is automatically added to the hosts section
-      # for potential troubleshooting/debugging purposes such as:
-      # Having internal requests coming from non-FQDNs because of complex routing.
-      # Sending requests from k8s pods.
-      # Specify the `host` in curl requests when testing `curl -H "Host: ethereum" ...`
-      # and make the proxy server process the request without the need for an
-      # on-chain Endpoint entry.
-      # - ethereum # <- this part is added automatically.
+      # A list of addresses that the RelayMiner accepts requests from.
+      #
+      # 1. Multiple hosts can be configured per supplier.
+      # 2. Must be unique per listen_address to avoid conflicts.
+      # 3. Host must be reachable from the internet if staked on the network.
+      # 4. A supplier must be staked on this endpoint for traffic to be routed.
+      #
+      # In most scenarios, only one host is specified. Multiple hosts might be useful for:
+      # - Migrating from one domain to another (accepting requests on both old and new domains).
+      # - Having a different domain for internal requests.
+      #
+      # Required.
+      publicly_exposed_endpoints:
+        # Note: No schema or port is specified.
+        # - HTTPS/TLS termination can be handled by a separate layer (e.g., nginx or HAproxy).
+        # - Port can differ from the staked port (e.g., Relay Miner on port 80, TLS on port 443).
+        - ethereum.devnet1.relayminer.com
 
-    # Names of proxies that this supplier is connected to.
-    # This MUST correspond to the `proxy_name` entry in the `proxies` section
-    # in order for the supplier to be available to the external network.
+    # Listen url, usually `http://0.0.0.0:80` (all network interfaces, port `80`).
+    # The scheme in the URL is required in order to infer the server type.
+    # Multiple suppliers can share one listen address.
     # Required.
-    proxy_names:
-      - http-example # when the RelayMiner server builder runs.
-  - service_id: 7b-llm-model
-    type: http
+
+  # Example of exposing an ollama LLM endpoint.
+  - service_id: ollama:mistral:7b
+    listen_url: http://0.0.0.0:80
     service_config:
-      url: http://llama-endpoint
-    hosts:
-      - 7b-llm-model.devnet1.poktroll.com
-      # - 7b-llm-model # <- this part is added automatically.
-    proxy_names:
-      - http-example
+      backend_url: http://localhost:11434
+      publicly_exposed_endpoints:
+        - mistral-7b.devnet1.poktroll.com
