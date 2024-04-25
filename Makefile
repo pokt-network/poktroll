@@ -316,7 +316,7 @@ test_e2e_env: acc_initialize_pubkeys_warn_message ## Setup the default env vars 
 
 .PHONY: test_e2e
 test_e2e: test_e2e_env ## Run all E2E tests
-	go test -v ./e2e/tests/... -tags=e2e,test
+	go test -count=1 -v ./e2e/tests/... -tags=e2e,test
 
 .PHONY: test_e2e_app
 test_e2e_app:

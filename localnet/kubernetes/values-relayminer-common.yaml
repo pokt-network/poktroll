@@ -7,8 +7,4 @@ config:
     query_node_rpc_url: tcp://validator-poktroll-validator:36657
     query_node_grpc_url: tcp://validator-poktroll-validator:36658
     tx_node_rpc_url: tcp://validator-poktroll-validator:36657
-  proxies:
-    - proxy_name: http-proxy
-      type: http
-      host: 0.0.0.0:8545
   suppliers: []
