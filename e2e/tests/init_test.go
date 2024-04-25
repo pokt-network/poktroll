@@ -118,6 +118,7 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
+	fmt.Println(s.pocketd.result.Stdout, "~~~", arg1)
 	require.Contains(s, s.pocketd.result.Stdout, arg1)
 }
 
@@ -219,14 +220,31 @@ func (s *suite) TheUserStakesAWithUpoktFromTheAccount(actorType string, amount i
 
 func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string, amount int64, serviceId, accName string) {
 	// Create a temporary config file
-	configPathPattern := fmt.Sprintf("%s_stake_config_*.yaml", accName)
+	configPathPattern := fmt.Sprintf("%s_stake_config.yaml", accName)
 	configFile, err := os.CreateTemp("", configPathPattern)
 	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
-	configContent := fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
+	// Prepare the config content based on the actor type
+	var configContent string
+	switch actorType {
+	case "application":
+		configContent = fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
+	case "supplier":
+		configContent = fmt.Sprintf(`stake_amount: %dupokt
+services:
+  - service_id: %s
+    endpoints:
+      - publicly_exposed_url: http://relayminer:8545
+        rpc_type: json_rpc`, amount, serviceId)
+	default:
+		s.Fatalf("unknown actor type %s", actorType)
+	}
+
+	// Write the config content to the file
 	_, err = configFile.Write([]byte(configContent))
 	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
+	// Prepare the command arguments
 	args := []string{
 		"tx",
 		actorType,
