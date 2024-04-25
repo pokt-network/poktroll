@@ -11,7 +11,8 @@ import "context"
 // to new observers, before publishing new values to observers.
 type ReplayObservable[V any] interface {
 	Observable[V]
-	// Last synchronously returns the last n values from the replay buffer.
+	// Last synchronously returns the last n values from the replay buffer with
+	// LIFO ordering
 	Last(ctx context.Context, n int) []V
 }
 
@@ -21,6 +22,7 @@ type ReplayObservable[V any] interface {
 type Observable[V any] interface {
 	// Subscribe returns an observer which is notified when the publishCh channel
 	// receives a value.
+	// The order the values published by the subscription is FIFO.
 	Subscribe(context.Context) Observer[V]
 	// UnsubscribeAll unsubscribes and removes all observers from the observable.
 	UnsubscribeAll()

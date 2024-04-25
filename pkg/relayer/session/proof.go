@@ -99,7 +99,7 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
-		latestBlock := rs.blockClient.LastNBlocks(ctx, 1)[0]
+		latestBlock := rs.blockClient.LastBlock(ctx)
 		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
 		// from `BlockHash` to `Foo(BlockHash, SessionId)`
 

@@ -104,7 +104,7 @@ func WithRelayerProxyDependenciesForBlockHeight(
 		sessionQueryClient := testqueryclients.NewTestSessionQueryClient(test.t)
 		supplierQueryClient := testqueryclients.NewTestSupplierQueryClient(test.t)
 
-		blockClient := testblock.NewAnyTimeLastNBlocksBlockClient(test.t, []byte{}, blockHeight)
+		blockClient := testblock.NewAnyTimeLastBlockBlockClient(test.t, []byte{}, blockHeight)
 		keyring, _ := testkeyring.NewTestKeyringWithKey(test.t, keyName)
 
 		redelegationObs, _ := channel.NewReplayObservable[client.Redelegation](test.ctx, 1)

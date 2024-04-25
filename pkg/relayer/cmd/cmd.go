@@ -183,7 +183,7 @@ func setupRelayerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
-		config.NewSupplyBlockClientFn(),                        // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
