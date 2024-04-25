@@ -26,7 +26,7 @@ type ringCache struct {
 	ringsByAddrAndBlockMu *sync.RWMutex
 
 	// delegationClient is used to listen for on-chain delegation events and invalidate
-	// entries in ringsByAddrAndBlock if an associated updated has been made.
+	// entries in ringsByAddrAndBlock if an associated update has been made.
 	delegationClient client.DelegationClient
 
 	// ringClient is used to retrieve cached rings and verify relay requests.
@@ -141,15 +141,15 @@ func (rc *ringCache) GetRingForAddress(
 	defer rc.ringsByAddrAndBlockMu.Unlock()
 
 	// Check if the ring is in the cache.
-	ring, ok := rc.ringsByAddrAndBlock[appAddress][blockHeight]
+	if ringsByBlock, ok := rc.ringsByAddrAndBlock[appAddress]; ok {
+		// Use the existing ring if it's cached.
+		if ring, ok = ringsByBlock[blockHeight]; ok {
+			rc.logger.Debug().
+				Str("app_address", appAddress).
+				Msg("ring cache hit; using cached ring")
 
-	// Use the existing ring if it's cached.
-	if ok {
-		rc.logger.Debug().
-			Str("app_address", appAddress).
-			Msg("ring cache hit; using cached ring")
-
-		return ring, nil
+			return ring, nil
+		}
 	}
 
 	// If the ring is not in the cache, get it from the ring client.
