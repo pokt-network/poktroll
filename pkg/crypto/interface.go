@@ -34,8 +34,8 @@ type RingCache interface {
 // them into their corresponding public key points on the secp256k1 curve.
 type RingClient interface {
 	// GetRingForAddress returns the ring for the application address at a given
-	// session number if it exists.
-	GetRingForAddress(ctx context.Context, appAddress string, sessionNumber int64) (*ring.Ring, error)
+	// block height if it exists.
+	GetRingForAddress(ctx context.Context, appAddress string, blockHeight int64) (*ring.Ring, error)
 
 	// VerifyRelayRequestSignature verifies the relay request signature against
 	// the ring for the application address in the relay request.
