@@ -20,6 +20,7 @@ import (
 
 	"github.com/pokt-network/poktroll/api/poktroll/tokenomics"
 	"github.com/pokt-network/poktroll/load-testing/config"
+	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
@@ -92,46 +93,210 @@ func (s *relaysSuite) initializeProvisionedActors() {
 	}
 }
 
+// TODO_IN_THIS_COMMIT: godoc comment.
+func (s *relaysSuite) mapSessionInfoFn(
+	batchInfoPublishCh chan<- *batchInfoNotif,
+) channel.MapFn[client.Block, *sessionInfoNotif] {
+	var (
+		// The test suite is initially waiting for the next session to start.
+		waitingForFirstSession = true
+		prevBatchTime          time.Time
+	)
+
+	return func(
+		ctx context.Context,
+		block client.Block,
+	) (*sessionInfoNotif, bool) {
+		blockHeight := block.Height()
+		sessionInfo := &sessionInfoNotif{
+			blockHeight:             blockHeight,
+			sessionNumber:           keeper.GetSessionNumber(blockHeight),
+			sessionStartBlockHeight: keeper.GetSessionStartBlockHeight(blockHeight),
+			sessionEndBlockHeight:   keeper.GetSessionEndBlockHeight(blockHeight),
+		}
+
+		infoLogger := logger.Info().
+			Int64("session_num", sessionInfo.sessionNumber).
+			Int64("block_height", block.Height())
+
+		// If the test has not started and the current block is not the first block
+		// of the session, wait for the next session to start.
+		if waitingForFirstSession && blockHeight != sessionInfo.sessionStartBlockHeight {
+			countDownToTestStart := sessionInfo.sessionEndBlockHeight - blockHeight + 1
+			infoLogger.Msgf(
+				"waiting for next session to start: in %d blocks",
+				countDownToTestStart,
+			)
+
+			// The test is not to be started yet, skip the notification to the downstream
+			// observables until the first block of the next session is reached.
+			return nil, true
+		}
+
+		// If the test has not started, set the start block height to the current block height.
+		// As soon as the test start, s.startBlockHeight will no longer be updated.
+		// It is updated only once at the start of the test.
+		if waitingForFirstSession {
+			s.startBlockHeight = blockHeight
+		}
+
+		// Mark the test as started.
+		waitingForFirstSession = false
+
+		// Log the test progress.
+		infoLogger.Msgf(
+			"test progress blocks: %d/%d",
+			blockHeight-s.startBlockHeight, s.testDurationBlocks,
+		)
+
+		// If the test duration is reached, cancel the context to stop the test.
+		if blockHeight >= s.startBlockHeight+s.testDurationBlocks {
+			logger.Info().Msg("Test done, cancelling scenario context")
+			s.cancelCtx()
+
+			return nil, true
+		}
+
+		// If the current block is the start of any new session, activate the prepared
+		// actors to be used in the current session.
+		s.activatePreparedActors(sessionInfo)
+
+		now := time.Now()
+
+		// Inform the relay sending observable of the active applications that
+		// will be sending relays and the gateways that will be receiving them.
+		batchInfoPublishCh <- &batchInfoNotif{
+			sessionInfoNotif: *sessionInfo,
+			prevBatchTime:    prevBatchTime,
+			nextBatchTime:    now,
+			appAccounts:      s.activeApplications,
+			gateways:         s.activeGateways,
+		}
+
+		// Update prevBatchTime after this iteration completes.
+		prevBatchTime = now
+
+		// Forward the session info notification to the downstream observables.
+		return sessionInfo, false
+	}
+}
+
+// TODO_IN_THIS_COMMIT: move
+type actorPlans struct {
+	apps      actorPlan
+	gateways  actorPlan
+	suppliers actorPlan
+}
+
+// TODO_IN_THIS_COMMIT: move
+type actorPlan struct {
+	incrementRate   int64
+	incrementAmount int64
+	maxAmount       int64
+}
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+func (ss *actorPlans) maxDurationBlocks() int64 {
+	return math.Max(
+		ss.gateways.durationBlocks(),
+		ss.apps.durationBlocks(),
+		ss.suppliers.durationBlocks(),
+	)
+}
+
+// TODO_TECHDEBT: godoc comment.
+func (s *relaysSuite) validateStakeSchedule(plans *actorPlans) {
+	require.Truef(s,
+		plans.gateways.incrementRate%keeper.NumBlocksPerSession == 0,
+		"gateway increment rate must be a multiple of the session length",
+	)
+	require.Truef(s,
+		len(s.gatewayUrls) >= int(plans.gateways.maxAmount),
+		"provisioned gateways must be greater or equal than the max gateways to be staked",
+	)
+	require.Truef(s,
+		plans.suppliers.incrementRate%keeper.NumBlocksPerSession == 0,
+		"supplier increment rate must be a multiple of the session length",
+	)
+	require.Truef(s,
+		len(s.suppliersUrls) >= int(plans.suppliers.maxAmount),
+		"provisioned suppliers must be greater or equal than the max suppliers to be staked",
+	)
+	require.Truef(s,
+		plans.apps.incrementRate%keeper.NumBlocksPerSession == 0,
+		"app increment rate must be a multiple of the session length",
+	)
+}
+
+func (aso *actorPlan) durationBlocks() int64 {
+	return aso.maxAmount / aso.incrementAmount * aso.incrementRate
+}
+
+// TODO_IN_THIS_COMMIT: godoc comment.
+func (s *relaysSuite) mapStakingInfoFn(plans actorPlans) channel.MapFn[*sessionInfoNotif, *stakingInfoNotif] {
+	appsPlan := plans.apps
+	gatewaysPlan := plans.gateways
+	suppliersPlan := plans.suppliers
+
+	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
+		// Check if any new actors need to be staked **for use in the next session**.
+		var newSuppliers []*accountInfo
+		stakedSuppliers := int64(len(s.stakedSuppliers))
+		if s.shouldIncrementSupplier(notif, suppliersPlan.incrementRate, stakedSuppliers, suppliersPlan.maxAmount) {
+			newSuppliers = s.sendStakeSuppliersTxs(notif, suppliersPlan.incrementAmount, suppliersPlan.maxAmount)
+		}
+
+		var newGateways []*accountInfo
+		activeGateways := int64(len(s.activeGateways))
+		if s.shouldIncrementActor(notif, gatewaysPlan.incrementRate, activeGateways, gatewaysPlan.maxAmount) {
+			newGateways = s.sendStakeGatewaysTxs(notif, gatewaysPlan.incrementAmount, gatewaysPlan.maxAmount)
+		}
+
+		var newApps []*accountInfo
+		activeApps := int64(len(s.activeApplications))
+		if s.shouldIncrementActor(notif, appsPlan.incrementRate, activeApps, appsPlan.maxAmount) {
+			newApps = s.sendFundNewAppsTx(notif, appsPlan.incrementAmount, appsPlan.maxAmount)
+		}
+
+		// If no need to be processed in this block, skip the rest of the process.
+		if len(newApps) == 0 && len(newGateways) == 0 && len(newSuppliers) == 0 {
+			return nil, true
+		}
+
+		return &stakingInfoNotif{
+			sessionInfoNotif: *notif,
+			newApps:          newApps,
+			newGateways:      newGateways,
+			newSuppliers:     newSuppliers,
+		}, false
+	}
+}
+
 // sendFundAvailableActorsTx uses the funding account to generate bank.SendMsg
 // messages and sends a unique transaction to fund the initial actors.
 func (s *relaysSuite) sendFundAvailableActorsTx(
-	maxSuppliers,
-	maxGateways int64,
+	plans *actorPlans,
 ) (suppliers, gateways, applications []*accountInfo) {
-	for i := int64(0); i < maxSuppliers; i++ {
+	for i := int64(0); i < plans.suppliers.maxAmount; i++ {
 		// It is assumed that the suppliers keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "supplier%d".
 		keyName := fmt.Sprintf("supplier%d", i+1)
 		supplier := s.addSupplier(keyName)
 
 		// Add a bank.MsgSend message to fund the supplier.
-		s.fundingAccountInfo.pendingMsgs = append(
-			s.fundingAccountInfo.pendingMsgs,
-			banktypes.NewMsgSend(
-				s.fundingAccountInfo.accAddress,
-				supplier.accAddress,
-				sdk.NewCoins(stakeAmount),
-			),
-		)
+		s.addPendingFundMsg(supplier.accAddress, sdk.NewCoins(stakeAmount))
 
 		suppliers = append(suppliers, supplier)
 	}
 
-	for i := int64(0); i < maxGateways; i++ {
+	for i := int64(0); i < plans.gateways.maxAmount; i++ {
 		// It is assumed that the gateways keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "gateway%d".
 		keyName := fmt.Sprintf("gateway%d", i+1)
 		gateway := s.addGateway(keyName)
 
 		// Add a bank.MsgSend message to fund the gateway.
-		s.fundingAccountInfo.pendingMsgs = append(
-			s.fundingAccountInfo.pendingMsgs,
-			banktypes.NewMsgSend(
-				s.fundingAccountInfo.accAddress,
-				gateway.accAddress,
-				sdk.NewCoins(stakeAmount),
-			),
-		)
+		s.addPendingFundMsg(gateway.accAddress, sdk.NewCoins(stakeAmount))
 
 		gateways = append(gateways, gateway)
 	}
@@ -145,7 +310,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
 		// Add a bank.MsgSend message to fund the application.
-		s.generateFundApplicationMsg(application)
+		s.addPendingFundApplicationMsg(application)
 
 		applications = append(applications, application)
 	}
@@ -153,9 +318,16 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
-	s.sendTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
 
 	return suppliers, gateways, applications
+}
+
+// addPendingFundMsg appends a bank.MsgSend message into the funding account's pending messages accumulation.
+func (s *relaysSuite) addPendingFundMsg(addr sdk.AccAddress, coins sdk.Coins) {
+	s.fundingAccountInfo.addPendingMsg(
+		banktypes.NewMsgSend(s.fundingAccountInfo.accAddress, addr, coins),
+	)
 }
 
 // sendFundNewAppsTx creates the applications given the next appIncAmt and sends
@@ -189,10 +361,10 @@ func (s *relaysSuite) sendFundNewAppsTx(
 	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
 	for appIdx := int64(0); appIdx < appsToFund; appIdx++ {
 		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
-		s.generateFundApplicationMsg(app)
+		s.addPendingFundApplicationMsg(app)
 		newApps = append(newApps, app)
 	}
-	s.sendTx(sessionInfo.blockHeight, s.fundingAccountInfo)
+	s.sendPendingMsgsTx(sessionInfo.blockHeight, s.fundingAccountInfo)
 
 	// Then new applications are returned so the caller can construct delegation messages
 	// given the existing gateways.
@@ -236,45 +408,35 @@ func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
 
-// generateFundApplicationMsg generates a bank.MsgSend message to fund a given
+// addPendingFundApplicationMsg generates a bank.MsgSend message to fund a given
 // application and appends it to the funding account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single transaction.
-func (s *relaysSuite) generateFundApplicationMsg(application *accountInfo) {
-	fundAppMsg := banktypes.NewMsgSend(
-		s.fundingAccountInfo.accAddress,
-		application.accAddress,
-		sdk.NewCoins(application.amountToStake),
-	)
-
-	s.fundingAccountInfo.pendingMsgs = append(s.fundingAccountInfo.pendingMsgs, fundAppMsg)
+func (s *relaysSuite) addPendingFundApplicationMsg(application *accountInfo) {
+	s.addPendingFundMsg(application.accAddress, sdk.NewCoins(application.amountToStake))
 }
 
-// generateStakeApplicationMsg generates a MsgStakeApplication message to stake a given
+// addPendingStakeApplicationMsg generates a MsgStakeApplication message to stake a given
 // application then appends it to the application account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // application messages into a single transaction which is useful for staking
 // then delegating to multiple gateways in the same transaction.
-func (s *relaysSuite) generateStakeApplicationMsg(application *accountInfo) {
-	stakeAppMsg := apptypes.NewMsgStakeApplication(
+func (s *relaysSuite) addPendingStakeApplicationMsg(application *accountInfo) {
+	application.addPendingMsg(apptypes.NewMsgStakeApplication(
 		application.accAddress.String(),
 		application.amountToStake,
 		[]*sharedtypes.ApplicationServiceConfig{{Service: usedService}},
-	)
-
-	application.pendingMsgs = append(application.pendingMsgs, stakeAppMsg)
+	))
 }
 
-// generateDelegateToGatewayMsg generates a MsgDelegateToGateway message to delegate
+// addPendingDelegateToGatewayMsg generates a MsgDelegateToGateway message to delegate
 // a given application to a given gateway then appends it to the application account's
 // pending messages.
-func (s *relaysSuite) generateDelegateToGatewayMsg(application, gateway *accountInfo) {
-	delegateMsg := apptypes.NewMsgDelegateToGateway(
+func (s *relaysSuite) addPendingDelegateToGatewayMsg(application, gateway *accountInfo) {
+	application.addPendingMsg(apptypes.NewMsgDelegateToGateway(
 		application.accAddress.String(),
 		gateway.accAddress.String(),
-	)
-
-	application.pendingMsgs = append(application.pendingMsgs, delegateMsg)
+	))
 }
 
 // sendStakeAndDelegateAppsTxs stakes the new applications and delegates them to both
@@ -298,22 +460,22 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 
 	for _, app := range s.activeApplications {
 		for _, gateway := range newGateways {
-			s.generateDelegateToGatewayMsg(app, gateway)
+			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
 	}
 
 	for _, app := range newApps {
 		// Stake and delegate messages for a new application are sent in a single
 		// transaction to avoid waiting for an additional block.
-		s.generateStakeApplicationMsg(app)
+		s.addPendingStakeApplicationMsg(app)
 		for _, gateway := range s.activeGateways {
-			s.generateDelegateToGatewayMsg(app, gateway)
+			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
 		for _, gateway := range newGateways {
-			s.generateDelegateToGatewayMsg(app, gateway)
+			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
 	}
 }
 
@@ -323,10 +485,10 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(applications, gateways []*accou
 	for _, application := range applications {
 		// Accumulate the delegate messages for for all gateways given the application.
 		for _, gateway := range gateways {
-			s.generateDelegateToGatewayMsg(application, gateway)
+			s.addPendingDelegateToGatewayMsg(application, gateway)
 		}
 		// Send the application's delegate messages in a single transaction.
-		s.sendTx(s.latestBlock.Height(), application)
+		s.sendPendingMsgsTx(s.latestBlock.Height(), application)
 	}
 }
 
@@ -384,12 +546,12 @@ func (s *relaysSuite) addSupplier(keyName string) *accountInfo {
 	}
 }
 
-// generateStakeSupplierMsg generates a MsgStakeSupplier message to stake a given
+// addPendingStakeSupplierMsg generates a MsgStakeSupplier message to stake a given
 // supplier then appends it to the suppliers account's pending messages.
 // No transaction is sent to give flexibility to the caller to group multiple
 // messages in a single supplier transaction.
-func (s *relaysSuite) generateStakeSupplierMsg(supplier *accountInfo) {
-	stakeSupplierMsg := suppliertypes.NewMsgStakeSupplier(
+func (s *relaysSuite) addPendingStakeSupplierMsg(supplier *accountInfo) {
+	supplier.addPendingMsg(suppliertypes.NewMsgStakeSupplier(
 		supplier.accAddress.String(),
 		supplier.amountToStake,
 		[]*sharedtypes.SupplierServiceConfig{
@@ -403,9 +565,7 @@ func (s *relaysSuite) generateStakeSupplierMsg(supplier *accountInfo) {
 				},
 			},
 		},
-	)
-
-	supplier.pendingMsgs = append(supplier.pendingMsgs, stakeSupplierMsg)
+	))
 }
 
 // sendStakeSuppliersTxs increments the number of suppliers to be staked.
@@ -438,8 +598,8 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
 		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
 		supplier := s.addSupplier(keyName)
-		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(sessionInfo.blockHeight, supplier)
+		s.addPendingStakeSupplierMsg(supplier)
+		s.sendPendingMsgsTx(sessionInfo.blockHeight, supplier)
 		newSuppliers = append(newSuppliers, supplier)
 	}
 
@@ -463,15 +623,13 @@ func (s *relaysSuite) addGateway(keyName string) *accountInfo {
 	}
 }
 
-// generateStakeGatewayMsg generates a MsgStakeGateway message to stake a given
+// addPendingStakeGatewayMsg generates a MsgStakeGateway message to stake a given
 // gateway then appends it to the gateway account's pending messages.
-func (s *relaysSuite) generateStakeGatewayMsg(gateway *accountInfo) {
-	stakeGatewayMsg := gatewaytypes.NewMsgStakeGateway(
+func (s *relaysSuite) addPendingStakeGatewayMsg(gateway *accountInfo) {
+	gateway.addPendingMsg(gatewaytypes.NewMsgStakeGateway(
 		gateway.accAddress.String(),
 		gateway.amountToStake,
-	)
-
-	gateway.pendingMsgs = append(gateway.pendingMsgs, stakeGatewayMsg)
+	))
 }
 
 // sendInitialActorsStakeMsgs generates and sends StakeMsgs for the initial actors.
@@ -479,18 +637,18 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 	suppliers, gateways, applications []*accountInfo,
 ) {
 	for _, supplier := range suppliers {
-		s.generateStakeSupplierMsg(supplier)
-		s.sendTx(s.latestBlock.Height(), supplier)
+		s.addPendingStakeSupplierMsg(supplier)
+		s.sendPendingMsgsTx(s.latestBlock.Height(), supplier)
 	}
 
 	for _, gateway := range gateways {
-		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(s.latestBlock.Height(), gateway)
+		s.addPendingStakeGatewayMsg(gateway)
+		s.sendPendingMsgsTx(s.latestBlock.Height(), gateway)
 	}
 
 	for _, application := range applications {
-		s.generateStakeApplicationMsg(application)
-		s.sendTx(s.latestBlock.Height(), application)
+		s.addPendingStakeApplicationMsg(application)
+		s.sendPendingMsgsTx(s.latestBlock.Height(), application)
 	}
 }
 
@@ -525,8 +683,8 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
 		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
 		gateway := s.addGateway(keyName)
-		s.generateStakeGatewayMsg(gateway)
-		s.sendTx(sessionInfo.blockHeight, gateway)
+		s.addPendingStakeGatewayMsg(gateway)
+		s.sendPendingMsgsTx(sessionInfo.blockHeight, gateway)
 		newGateways = append(newGateways, gateway)
 	}
 
@@ -535,8 +693,8 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 	return newGateways
 }
 
-// sendTx sends a transaction with the provided messages using the keyName provided.
-func (s *relaysSuite) sendTx(height int64, actor *accountInfo) {
+// sendPendingMsgsTx sends a transaction with the provided messages using the keyName provided.
+func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
 	// Do not send empty message transactions as trying to do so will make SignTx to fail.
 	if len(actor.pendingMsgs) == 0 {
 		return
@@ -841,8 +999,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 	// Set the max_delegated_gateways parameter to the number of gateways
 	// that are currently used in the test.
 
-	s.fundingAccountInfo.pendingMsgs = append(
-		s.fundingAccountInfo.pendingMsgs,
+	s.fundingAccountInfo.addPendingMsg(
 		&apptypes.MsgUpdateParams{
 			Authority: s.fundingAccountInfo.accAddress.String(),
 			Params: apptypes.Params{
@@ -851,7 +1008,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 		},
 	)
 
-	s.sendTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
 }
 
 // ensureUpdatedMaxDelegations checks if the max_delegated_gateways parameter is updated
