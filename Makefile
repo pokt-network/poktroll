@@ -288,7 +288,7 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
 	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
-	sed -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' $(POKTROLLD_HOME)/config/genesis.json;
+	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' $(POKTROLLD_HOME)/config/genesis.json;
 
 .PHONY: send_relay
 send_relay:
@@ -677,7 +677,7 @@ acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all 
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
-			$(addr) $(PNF_ADDR) 1000upokt \
+			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE) \

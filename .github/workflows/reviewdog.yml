@@ -24,6 +24,21 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
+  # Prevent the use of `sed` in helper scripts. This ensures compatability across
+  # Darwin and Linux systems.
+  check_sed:
+    name: Check sed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pokt-network/action-fail-on-found@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          level: error
+          fail_on_error: true
+          pattern: sed -i .*
+
   # Ensure that we are using polylog (via logger.) instead of the golang's stdlib
   # log package.
   check_stdlog_in_off_chain_package:
@@ -69,5 +84,4 @@ jobs:
           reporter: github-check
           level: warning
           locale: "US"
-
 # TODO_IMPROVE: Enforce using k.Logger() when logging in the `x/` directory code.

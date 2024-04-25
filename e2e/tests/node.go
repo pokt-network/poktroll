@@ -64,12 +64,16 @@ func (p *pocketdBin) RunCommand(args ...string) (*commandResult, error) {
 	return p.runPocketCmd(args...)
 }
 
-// RunCommandOnHost runs a command on specified host with the given args
+// RunCommandOnHost runs a command on specified host with the given args.
+// If rpcUrl is an empty string, the defaultRPCURL is used.
+// If rpcUrl is "local", the command is run on the local machine and the `--node` flag is omitted.
 func (p *pocketdBin) RunCommandOnHost(rpcUrl string, args ...string) (*commandResult, error) {
 	if rpcUrl == "" {
 		rpcUrl = defaultRPCURL
 	}
-	args = append(args, "--node", rpcUrl)
+	if rpcUrl != "local" {
+		args = append(args, "--node", rpcUrl)
+	}
 	return p.runPocketCmd(args...)
 }
 

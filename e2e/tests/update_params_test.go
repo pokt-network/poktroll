@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/template"
 
+	cometcli "github.com/cometbft/cometbft/libs/cli"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
@@ -36,11 +37,13 @@ var updateParamsTxJSONTemplate = template.Must(
 `))
 
 func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
-	s.Skip("TODO_TEST: complete step definitions for update_params.feature scenarios")
-
-	args := strings.Split(fmt.Sprintf("query %s params", moduleName), " ")
-	args = append(args, "--output", "json")
-	res, err := s.pocketd.RunCommandOnHost("", args...)
+	argsAndFlags := []string{
+		"query",
+		moduleName,
+		"params",
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	require.NoError(s, err)
 
 	s.Log(res.Stdout)
@@ -48,18 +51,14 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
-		err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
-		require.NoError(s, err)
-		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
 
 	case prooftypes.ModuleName:
 		var proofParamsRes prooftypes.QueryParamsResponse
-		err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
-		require.NoError(s, err)
-		require.Equal(s, prooftypes.DefaultParams(), proofParamsRes.GetParams())
+		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
 
 	default:
-		s.Fatal("unexpected module name")
+		s.Fatalf("unexpected module name: (%v)", moduleName)
 	}
 }
 
@@ -86,16 +85,14 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(granterName,
 	}
 
 	// Query the authz module for grants with the expected granter & grantee (authz.QueryGrantsRequest).
-	args := strings.Split(
-		fmt.Sprintf(
-			"query authz grants %s %s %s --output json",
-			granterAddr, granteeAddr, msgType,
-		), " ",
-	)
-	res, err := s.pocketd.RunCommandOnHost("", args...)
+	argsAndFlags := []string{
+		"query", "authz", "grants",
+		granterAddr, granteeAddr, msgType,
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
 	require.NoError(s, err)
 
-	// TODO_IN_THIS_COMMIT: is there a better way to unmarshal this?
 	// Using s.cdc.UnmarshalJSON() with *authz.QueryGrantsResponse complains about
 	// the "type" field, expecting "@type" for the #Grants[n]#Authorization pb.Any.
 	var grantsRes struct {
@@ -109,11 +106,15 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(granterName,
 		} `json:"grants"`
 	}
 
-	err = json.Unmarshal([]byte(res.Stdout), &grantsRes)
+	// Unmarshal the JSON response into the grantsRes struct.
+	responseBz := []byte(strings.TrimSpace(res.Stdout))
+	err = json.Unmarshal(responseBz, &grantsRes)
 	require.NoError(s, err)
 
+	// Check if the expected grant is found in the response.
 	grantFound := false
 	for _, grant := range grantsRes.Grants {
+		s.Log(grant)
 		if grant.Authorization.Value.Msg == msgType {
 			grantFound = true
 			break
@@ -121,15 +122,103 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(granterName,
 	}
 	require.True(s, grantFound)
 
+	// Update the state of the suite with the granter & grantee names.
 	s.granterName = granterName
 	s.granteeName = granteeName
 }
 
 func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName string, table gocuke.DataTable) {
-	paramsMap := make(map[string]struct {
-		paramType  string
-		paramValue any
+	// Convert the text table to a map of param names to their types & values.
+	paramsMap := s.parseParamsTable(table)
+
+	// Convert the params map to a MsgUpdateParams message & JSON.
+	msgUpdateParams, paramsJSON := s.paramsMapToMsgUpdateParams(moduleName, paramsMap)
+
+	locals := struct{ Type, Authority, Params string }{
+		Type:      proto.MessageName(msgUpdateParams),
+		Authority: authtypes.NewModuleAddress(s.granterName).String(),
+		Params:    string(paramsJSON),
+	}
+	buf := new(bytes.Buffer)
+	require.NoError(s, updateParamsTxJSONTemplate.Execute(buf, locals))
+
+	tempFile, err := os.CreateTemp("", "exec.json")
+	require.NoError(s, err)
+	s.Cleanup(func() {
+		os.Remove(tempFile.Name())
 	})
+
+	// TODO_IN_THIS_PR: reset the module params to their default values using t.Cleanup()
+	// here so that the test can be run multiple times per localnet boot
+	// (i.e. doesn't require localnet restart).
+
+	// TODO_IN_THIS_PR: find a better and/or more conventional way to programmatically generate tx JSON containing pb.Any messages.
+	// - 👍 s.cdc.MarshalJSON() converts the pb.Any message to a JSON object with a "@type" field.
+	// - 👎 s.cdc.MarshalJSON() the value of the "@type" field is missing a preceding "/" that authz exec CLI is expecting.
+	// - 👎 EOF error currently when calling authz exec CLI with the generated JSON.
+	// - 👎 s.cdc.MarshalJSON() can only be applied to proto.Message implementations (i.e. protobuf types).
+	// - ? is there a tx-level object that can be used to serialize & which can be constructed in this scope?
+	// - 👎 otherwise, must use a template for the tx JSON structure (s.cdc.MarshalJSON() can't be used on a tx.Tx object).
+
+	replacedJSON := bytes.Replace(buf.Bytes(), []byte(`"@type": "`), []byte(`"@type": "/`), 1)
+	_, err = tempFile.Write(replacedJSON)
+	require.NoError(s, err)
+
+	s.Log("tempfile:")
+	fileOut, err := os.ReadFile(tempFile.Name())
+	require.NoError(s, err)
+	s.Log(string(fileOut))
+
+	argsAndFlags := []string{
+		"tx", "authz", "exec",
+		tempFile.Name(),
+		"--from", s.granteeName,
+		keyRingFlag,
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	require.NoError(s, err)
+
+	s.Log(res.Stdout)
+}
+
+func (s *suite) AllModuleParamsShouldBeUpdated(moduleName string, table gocuke.DataTable) {
+	panic("PENDING")
+}
+
+func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateModuleParam(moduleName, paramName string, table gocuke.DataTable) {
+	panic("PENDING")
+}
+
+func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string, table gocuke.DataTable) {
+	panic("PENDING")
+}
+
+func (s *suite) getKeyAddress(keyName string) string {
+	argsAndFlags := []string{
+		"keys",
+		"show",
+		keyName,
+		keyRingFlag,
+		fmt.Sprintf("--%s=json", cometcli.OutputFlag),
+	}
+	res, err := s.pocketd.RunCommandOnHost("local", argsAndFlags...)
+	require.NoError(s, err)
+
+	keyListRes := make(map[string]any)
+	err = json.Unmarshal([]byte(res.Stdout), &keyListRes)
+	require.NoError(s, err)
+
+	return keyListRes["address"].(string)
+}
+
+type anyMap struct {
+	paramType  string
+	paramValue any
+}
+
+func (s *suite) parseParamsTable(table gocuke.DataTable) map[string]anyMap {
+	paramsMap := make(map[string]anyMap)
 
 	// NB: skip the header row.
 	for rowIdx := 1; rowIdx < table.NumRows()-1; rowIdx++ {
@@ -157,114 +246,40 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 		}
 	}
 
-	tempFile, err := os.CreateTemp("", "exec.json")
-	require.NoError(s, err)
-	s.Cleanup(func() {
-		os.Remove(tempFile.Name())
-	})
+	return paramsMap
+}
 
-	var (
-		msg        proto.Message
-		paramsJSON []byte
-	)
-
+func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap map[string]anyMap) (msg proto.Message, paramsJSON []byte) {
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		msg = &tokenomicstypes.MsgUpdateParams{Params: tokenomicstypes.Params{}}
+		msgUpdateParams := &tokenomicstypes.MsgUpdateParams{Params: tokenomicstypes.Params{}}
 		for paramName, param := range paramsMap {
 			switch paramName {
-			case "compute_units_to_tokens_multipler":
-				msg.(*tokenomicstypes.MsgUpdateParams).Params.
-					ComputeUnitsToTokensMultiplier = uint64(param.paramValue.(int64))
+			case "compute_units_to_tokens_multiplier":
+				msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(param.paramValue.(int64))
 			default:
 				s.Fatalf("unexpected %q type param name %q", param.paramType, paramName)
 			}
 		}
-		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*tokenomicstypes.MsgUpdateParams).Params)
+		paramsJSON, err := s.cdc.MarshalJSON(&msgUpdateParams.Params)
 		require.NoError(s, err)
+		return proto.Message(msgUpdateParams), paramsJSON
+
 	case prooftypes.ModuleName:
-		msg = &prooftypes.MsgUpdateParams{Params: prooftypes.Params{}}
+		msgUpdateParams := &prooftypes.MsgUpdateParams{Params: prooftypes.Params{}}
 		for paramName, param := range paramsMap {
 			switch paramName {
 			case "min_relay_difficulty_bits":
-				msg.(*prooftypes.MsgUpdateParams).Params.
-					MinRelayDifficultyBits = uint64(param.paramValue.(int64))
+				msgUpdateParams.Params.MinRelayDifficultyBits = uint64(param.paramValue.(int64))
 			default:
 				s.Fatalf("unexpected %q type param name %q", param.paramType, paramName)
 			}
 		}
-		paramsJSON, err = s.cdc.MarshalJSON(&msg.(*prooftypes.MsgUpdateParams).Params)
+		paramsJSON, err := s.cdc.MarshalJSON(&msgUpdateParams.Params)
 		require.NoError(s, err)
+		return proto.Message(msgUpdateParams), paramsJSON
+
 	default:
 		s.Fatalf("unexpected module name %q", moduleName)
 	}
-
-	locals := struct{ Type, Authority, Params string }{
-		Type:      proto.MessageName(msg),
-		Authority: authtypes.NewModuleAddress(s.granterName).String(),
-		Params:    string(paramsJSON),
-	}
-	buf := new(bytes.Buffer)
-	err = updateParamsTxJSONTemplate.Execute(buf, locals)
-	require.NoError(s, err)
-
-	// TODO_IMPROVE: reset the module params to their default values using t.Cleanup()
-	// here so that the test can be run multiple times per localnet boot
-	// (i.e. doesn't require localnet restart).
-
-	// TODO_IN_THIS_COMMIT: find a better and/or more conventional way to programmatically generate tx JSON containing pb.Any messages.
-	// - 👍 s.cdc.MarshalJSON() converts the pb.Any message to a JSON object with a "@type" field.
-	// - 👎 s.cdc.MarshalJSON() the value of the "@type" field is missing a preceeding "/" that authz exec CLI is expecting.
-	// - 👎 EOF error currently when calling authz exec CLI with the generated JSON.
-	// - 👎 s.cdc.MarshalJSON() can only be applied to proto.Message implementations (i.e. protobuf types).
-	// - ? is there a tx-level object that can be used to serialize & which can be constructed in this scope?
-	// - 👎 otherwise, must use a template for the tx JSON structure (s.cdc.MarshalJSON() can't be used on a tx.Tx object).
-
-	replacedJSON := bytes.Replace(buf.Bytes(), []byte(`"@type": "`), []byte(`"@type": "/`), 1)
-	_, err = tempFile.Write(replacedJSON)
-	require.NoError(s, err)
-
-	s.Log("tempfile:")
-	fileOut, err := os.ReadFile(tempFile.Name())
-	require.NoError(s, err)
-
-	s.Log(string(fileOut))
-
-	cmd := strings.Split(
-		fmt.Sprintf(
-			"tx authz exec %s --from %s --keyring-backend test --output json",
-			tempFile.Name(), s.granteeName,
-		), " ",
-	)
-
-	res, err := s.pocketd.RunCommandOnHost("", cmd...)
-
-	require.NoError(s, err)
-
-	s.Log(res.Stdout)
-}
-
-func (s *suite) AllModuleParamsShouldBeUpdated(moduleName string, table gocuke.DataTable) {
-	panic("PENDING")
-}
-
-func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateModuleParam(moduleName, paramName string, table gocuke.DataTable) {
-	panic("PENDING")
-}
-
-func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string, table gocuke.DataTable) {
-	panic("PENDING")
-}
-
-func (s *suite) getKeyAddress(keyName string) string {
-	cmd := "keys show %s --keyring-backend test --output json"
-	args := strings.Split(fmt.Sprintf(cmd, keyName), " ")
-	res, err := s.pocketd.RunCommand(args...)
-	require.NoError(s, err)
-
-	keyListRes := make(map[string]any)
-	err = json.Unmarshal([]byte(res.Stdout), &keyListRes)
-	require.NoError(s, err)
-
-	return keyListRes["address"].(string)
 }
