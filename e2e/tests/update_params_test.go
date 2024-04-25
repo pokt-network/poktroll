@@ -50,14 +50,14 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
 		err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
 		require.NoError(s, err)
-
 		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
+
 	case prooftypes.ModuleName:
 		var proofParamsRes prooftypes.QueryParamsResponse
 		err = s.cdc.UnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
 		require.NoError(s, err)
-
 		require.Equal(s, prooftypes.DefaultParams(), proofParamsRes.GetParams())
+
 	default:
 		s.Fatal("unexpected module name")
 	}

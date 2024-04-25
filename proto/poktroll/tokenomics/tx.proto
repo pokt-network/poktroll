@@ -50,6 +50,7 @@ message MsgUpdateParam {
 
   // The (name, as_type) tuple must match the corresponding name and type as
   // specified in the `Params`` message in `proof/params.proto.`
+  string name = 2;
   oneof as_type {
     string as_string = 3 [(gogoproto.jsontag) = "as_string"];
     int64 as_int64 = 6 [(gogoproto.jsontag) = "as_int64"];

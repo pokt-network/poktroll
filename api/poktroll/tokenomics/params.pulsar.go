@@ -431,7 +431,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 // Params defines the parameters for the tokenomics module.
 type Params struct {
 	state         protoimpl.MessageState
