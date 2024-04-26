@@ -67,7 +67,7 @@ func NewBlockClient(
 		return nil, err
 	}
 
-	if err := depinject.Inject(deps, bClient.onStartQueryClient); err != nil {
+	if err := depinject.Inject(deps, &bClient.onStartQueryClient); err != nil {
 		return nil, err
 	}
 
