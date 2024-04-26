@@ -118,7 +118,11 @@ func (rel *relayMiner) ServePprof(addr string) error {
 		Addr:    addr,
 		Handler: pprofMux,
 	}
+	// If no error, start the server in a new goroutine
+	go func() {
+		rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+		server.ListenAndServe()
+	}()
 
-	rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-	return server.ListenAndServe()
+	return nil
 }

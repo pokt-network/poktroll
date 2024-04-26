@@ -287,8 +287,13 @@ func (app *appGateServer) ServePprof(addr string) error {
 		Handler: pprofMux,
 	}
 
-	app.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-	return server.ListenAndServe()
+	// If no error, start the server in a new goroutine
+	go func() {
+		app.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+		server.ListenAndServe()
+	}()
+
+	return nil
 }
 
 type appGateServerOption func(*appGateServer)
