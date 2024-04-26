@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"net/http/pprof"
 
 	"cosmossdk.io/depinject"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -102,4 +103,22 @@ func (rel *relayMiner) ServeMetrics(addr string) error {
 	}()
 
 	return nil
+}
+
+// Starts a pprof server on the given address.
+func (rel *relayMiner) ServePprof(addr string) error {
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: pprofMux,
+	}
+
+	rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+	return server.ListenAndServe()
 }
