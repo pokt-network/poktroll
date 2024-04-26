@@ -11,6 +11,12 @@ metrics:
   # The address (host:port or just port) for the metrics exporter to listen on.
   addr: :9090
 
+# Pprof endpoint configuration. More information:
+# https://pkg.go.dev/github.com/google/pprof#section-readme
+pprof:
+  enabled: false
+  addr: localhost:6060
+
 pocket_node:
   # Pocket node URL exposing the CometBFT JSON-RPC API.
   # Used by the Cosmos client SDK, event subscriptions, etc.
