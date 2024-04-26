@@ -127,7 +127,7 @@ func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	go func() {
 		<-ctx.Done()
 		rel.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
-		server.Close()
+		server.Shutdown(ctx)
 	}()
 
 	return nil
