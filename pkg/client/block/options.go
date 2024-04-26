@@ -8,6 +8,6 @@ import "github.com/pokt-network/poktroll/pkg/client"
 // If connRetryLimit is < 0, it will retry indefinitely.
 func WithConnRetryLimit(limit int) client.BlockClientOption {
 	return func(client client.BlockClient) {
-		client.(*blockClient).connRetryLimit = limit
+		client.(*blockReplayClient).connRetryLimit = limit
 	}
 }
