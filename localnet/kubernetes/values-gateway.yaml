@@ -5,3 +5,6 @@ config:
   metrics:
     enabled: true
     addr: :9090
+  pprof:
+    enabled: false
+    addr: localhost:6060
