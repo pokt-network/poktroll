@@ -81,7 +81,8 @@ func TestBlockClient(t *testing.T) {
 					Hash: expectedHash,
 				},
 			}, nil
-		})
+		}).
+		AnyTimes()
 
 	deps := depinject.Supply(eventsQueryClient, cometClientMock)
 
