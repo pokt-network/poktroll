@@ -1,8 +1,6 @@
 package session
 
 import (
-	"net/url"
-
 	"github.com/pokt-network/poktroll/pkg/relayer"
 )
 
@@ -11,12 +9,5 @@ import (
 func WithStoresDirectory(storesDirectory string) relayer.RelayerSessionsManagerOption {
 	return func(relSessionMgr relayer.RelayerSessionsManager) {
 		relSessionMgr.(*relayerSessionsManager).storesDirectory = storesDirectory
-	}
-}
-
-// TODO_IN_THIS_COMMIT: godoc comment.
-func WithQueryNodeGRPCUrl(queryNodeGRPCUrl *url.URL) relayer.RelayerSessionsManagerOption {
-	return func(relSessionMgr relayer.RelayerSessionsManager) {
-		relSessionMgr.(*relayerSessionsManager).queryNodeGRPCUrl = queryNodeGRPCUrl
 	}
 }
