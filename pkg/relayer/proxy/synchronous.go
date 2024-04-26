@@ -278,6 +278,8 @@ func (sync *synchronousRPCServer) serveHTTP(
 		relayHTTPRequest.Header.Add(key, value)
 	}
 
+	// Configure the HTTP client to use the appropriate transport based on the
+	// backend URL scheme.
 	var client *http.Client
 	switch serviceConfig.BackendUrl.Scheme {
 	case "https":
