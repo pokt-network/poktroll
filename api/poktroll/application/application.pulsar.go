@@ -2101,8 +2101,8 @@ func (x *ArchivedDelegations) GetGatewayAddresses() []string {
 // ApplicationsWithArchivedDelegations defines the type used to store the addresses
 // of applications that have delegations being archived at lastActiveBlockHeight.
 // It is used to retrieve the applications that need to have their archived
-// delegations removed from the application and avoid the need to iterate over
-// all applications to find the ones concerned.
+// delegations pruned from their corresponding application and avoid the need
+// to iterate over all applications to find the ones concerned.
 type ApplicationsWithArchivedDelegations struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

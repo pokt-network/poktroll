@@ -57,7 +57,7 @@ const (
 )
 
 func (s *suite) TheUserShouldWaitForTheModuleMessageToBeSubmitted(module, message string) {
-	s.waitForTxResultEvent(fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
+	s.waitForTxResultEvent("message", "action", fmt.Sprintf("/poktroll.%s.Msg%s", module, message))
 }
 
 func (s *suite) TheUserShouldWaitForTheModuleEventToBeBroadcast(module, message string) {
@@ -200,7 +200,7 @@ func (s *suite) sendRelaysForSession(
 }
 
 // waitForTxResultEvent waits for an event to be observed which has the given message action.
-func (s *suite) waitForTxResultEvent(targetAction string) {
+func (s *suite) waitForTxResultEvent(eventType, targetKey, targetValue string) {
 	ctx, done := context.WithCancel(context.Background())
 
 	txResultEventsReplayClientState, ok := s.scenarioState[txResultEventsReplayClientKey]
@@ -221,9 +221,12 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 			// Range over each event's attributes to find the "action" attribute
 			// and compare its value to that of the action provided.
 			for _, event := range txResult.Result.Events {
+				if event.Type != eventType {
+					continue
+				}
 				for _, attribute := range event.Attributes {
-					if attribute.Key == "action" {
-						if attribute.Value == targetAction {
+					if attribute.Key == targetKey {
+						if attribute.Value == targetValue {
 							done()
 							return
 						}
@@ -235,7 +238,7 @@ func (s *suite) waitForTxResultEvent(targetAction string) {
 
 	select {
 	case <-time.After(eventTimeout):
-		s.Fatalf("timed out waiting for message with action %q", targetAction)
+		s.Fatalf("timed out waiting for message with %q %q", targetKey, targetValue)
 	case <-ctx.Done():
 		s.Log("Success; message detected before timeout.")
 	}
