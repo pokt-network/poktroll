@@ -47,7 +47,7 @@ func NewBlockClient(
 	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
 	bClient := &blockReplayClient{
 		latestBlockReplayObs: latestBlockReplayObs,
-		close: cancel,
+		close:                cancel,
 	}
 
 	for _, opt := range opts {
