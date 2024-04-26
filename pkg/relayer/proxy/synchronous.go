@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -277,8 +278,19 @@ func (sync *synchronousRPCServer) serveHTTP(
 		relayHTTPRequest.Header.Add(key, value)
 	}
 
+	var client *http.Client
+	switch serviceConfig.BackendUrl.Scheme {
+	case "https":
+		transport := &http.Transport{
+			TLSClientConfig: &tls.Config{},
+		}
+		client = &http.Client{Transport: transport}
+	default:
+		client = http.DefaultClient
+	}
+
 	// Send the relay request to the native service.
-	httpResponse, err := http.DefaultClient.Do(relayHTTPRequest)
+	httpResponse, err := client.Do(relayHTTPRequest)
 	if err != nil {
 		return nil, err
 	}
