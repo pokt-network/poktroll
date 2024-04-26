@@ -81,15 +81,16 @@ relayers:
 
 _NOTE: You may need to up to 1 minute for the new actors to be registered and deployed locally._
 
-### Change configuration
+### Off-chain actors configuration
 
-We heavily use helm charts for our LocalNet. The goal is to maximize the tooling involved in deploying production
-workloads and local development. As a result, configuration of our services is defined in helm charts.
-Following helm chart design and best practices, we have default values defined in `values.yaml` of each service helm chart.
-For example, [here are the RelayMiner values.yaml](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
-Local infrastructure requires some changes to the default values to properly configure RelayMiner, so we override some of
-the values. You can find such overrides in [poktroll/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
-Should you need to change the configuration of the services on LocalNet - this is the place.
+We heavily use Helm charts for our LocalNet. The goal is to maximize the tooling involved in deploying production
+workloads and local development. As a result, the configuration of our services is defined in Helm charts.
+Following best practices in Helm chart design, we have default values defined in the `values.yaml` file of each service Helm chart.
+For example, [here are the RelayMiner `values.yaml`](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
+Local infrastructure requires some changes to the default values to properly configure RelayMiner or AppGate Server, so we override some of
+the values. You can find such overrides in the [poktroll/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
+Should you need to change the configuration of the services on LocalNet, this is the place.
+
 
 ### Modify Kubernetes workloads
 
