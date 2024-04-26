@@ -9,5 +9,5 @@ config:
     tx_node_rpc_url: tcp://validator-poktroll-validator:36657
   suppliers: []
   pprof:
-    enabled: true
+    enabled: false
     addr: localhost:6060
