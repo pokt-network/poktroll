@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	grpctypes "github.com/cosmos/gogoproto/grpc"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -28,11 +29,18 @@ func (sdk *poktrollSDK) buildDeps(
 ) (depinject.Config, error) {
 	pocketNodeWebsocketURL := RPCToWebsocketURL(config.QueryNodeUrl)
 
-	// Have a new depinject config
-	deps := depinject.Configs()
+	cometClient, err := sdkclient.NewClientFromNode(config.QueryNodeUrl.String())
+	if err != nil {
+		return nil, err
+	}
 
-	// Supply the logger
-	deps = depinject.Configs(deps, depinject.Supply(polylog.Ctx(ctx)))
+	// Supply the logger & cosmos RPC client.
+	deps := depinject.Configs(
+		depinject.Supply(
+			polylog.Ctx(ctx),
+			cometClient,
+		),
+	)
 
 	// Create and supply the events query client
 	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)

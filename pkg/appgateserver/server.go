@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"strings"
 	"sync"
@@ -270,6 +271,24 @@ func (app *appGateServer) ServeMetrics(addr string) error {
 	}()
 
 	return nil
+}
+
+// Starts a pprof server on the given address.
+func (app *appGateServer) ServePprof(addr string) error {
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: pprofMux,
+	}
+
+	app.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+	return server.ListenAndServe()
 }
 
 type appGateServerOption func(*appGateServer)

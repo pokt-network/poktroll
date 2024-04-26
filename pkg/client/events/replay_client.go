@@ -85,7 +85,11 @@ type replayClient[T any] struct {
 	// observable;
 	// For example when the connection is re-established after erroring.
 	replayObsCachePublishCh chan<- observable.ReplayObservable[T]
-
+	// eventTypeObs is the replay observable for the generic type T.
+	eventTypeObs observable.ReplayObservable[T]
+	// replayClientCancelCtx is the function to cancel the context of the replay client.
+	// It is called when the replay client is closed.
+	replayClientCancelCtx func()
 	// connRetryLimit is the number of times the replay client should retry
 	// in the event that it encounters an error or its connection is interrupted.
 	// If connRetryLimit is < 0, it will retry indefinitely.
@@ -109,12 +113,15 @@ func NewEventsReplayClient[T any](
 	replayObsBufferSize int,
 	opts ...client.EventsReplayClientOption[T],
 ) (client.EventsReplayClient[T], error) {
+	ctx, cancel := context.WithCancel(ctx)
+
 	// Initialize the replay client
 	rClient := &replayClient[T]{
-		queryString:         queryString,
-		eventDecoder:        newEventFn,
-		replayObsBufferSize: replayObsBufferSize,
-		connRetryLimit:      DefaultConnRetryLimit,
+		queryString:           queryString,
+		eventDecoder:          newEventFn,
+		replayObsBufferSize:   replayObsBufferSize,
+		replayClientCancelCtx: cancel,
+		connRetryLimit:        DefaultConnRetryLimit,
 	}
 
 	for _, opt := range opts {
@@ -140,13 +147,6 @@ func NewEventsReplayClient[T any](
 	// Concurrently publish events to the observable emitted by replayObsCache.
 	go rClient.goPublishEvents(ctx)
 
-	return rClient, nil
-}
-
-// EventsSequence returns a new ReplayObservable, with the buffer size provided
-// during the EventsReplayClient construction, which is notified when new
-// events are received by the encapsulated EventsQueryClient.
-func (rClient *replayClient[T]) EventsSequence(ctx context.Context) observable.ReplayObservable[T] {
 	// Create a new replay observable and publish channel for event type T with
 	// a buffer size matching that provided during the EventsReplayClient
 	// construction.
@@ -159,8 +159,17 @@ func (rClient *replayClient[T]) EventsSequence(ctx context.Context) observable.R
 	// notifications from the latest open replay observable.
 	go rClient.goRemapEventsSequence(ctx, replayEventTypeObsPublishCh)
 
-	// Return the event type observable.
-	return eventTypeObs
+	// Store the event type observable.
+	rClient.eventTypeObs = eventTypeObs
+
+	return rClient, nil
+}
+
+// EventsSequence returns a new ReplayObservable, with the buffer size provided
+// during the EventsReplayClient construction, which is notified when new
+// events are received by the encapsulated EventsQueryClient.
+func (rClient *replayClient[T]) EventsSequence(ctx context.Context) observable.ReplayObservable[T] {
+	return rClient.eventTypeObs
 }
 
 // goRemapEventsSequence publishes events observed by the most recent cached
@@ -193,7 +202,8 @@ func (rClient *replayClient[T]) LastNEvents(ctx context.Context, n int) []T {
 func (rClient *replayClient[T]) Close() {
 	// Closing eventsClient will cascade unsubscribe and close downstream observers.
 	rClient.eventsClient.Close()
-	close(rClient.replayObsCachePublishCh)
+	// Close all the downstream observers of the replay client.
+	rClient.replayClientCancelCtx()
 }
 
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,

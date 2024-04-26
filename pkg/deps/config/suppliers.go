@@ -5,10 +5,10 @@ import (
 	"net/url"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/pkg/client/block"
@@ -77,12 +77,22 @@ func NewSupplyEventsQueryClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 }
 
 // NewSupplyBlockClientFn supplies a depinject config with a blockClient.
-func NewSupplyBlockClientFn() SupplierFn {
+func NewSupplyBlockClientFn(queryNodeRPCURL *url.URL) SupplierFn {
 	return func(
 		ctx context.Context,
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
+
+		// Create a cosmos client from the queryNodeRPCURL used by the block client
+		// to initialize the block client by querying the latest block.
+		cometClient, err := sdkclient.NewClientFromNode(queryNodeRPCURL.String())
+		if err != nil {
+			return nil, err
+		}
+
+		deps = depinject.Configs(deps, depinject.Supply(cometClient))
+
 		// Requires a query client to be supplied to the deps
 		blockClient, err := block.NewBlockClient(ctx, deps)
 		if err != nil {
@@ -129,7 +139,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		}
 
 		// Set --grpc-addr flag to the pocketQueryNodeURL for the client context
-		// This flag is read by cosmosclient.GetClientQueryContext.
+		// This flag is read by sdkclient.GetClientQueryContext.
 		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
 		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
 		if err := cmd.Flags().Set(cosmosflags.FlagGRPC, queryNodeGRPCURL.Host); err != nil {
@@ -143,7 +153,7 @@ func NewSupplyQueryClientContextFn(queryNodeGRPCURL *url.URL) SupplierFn {
 		// transacting purposes.
 		// For example, txs could be dispatched to a validator while queries
 		// could be handled by a full-node.
-		queryClientCtx, err := cosmosclient.GetClientQueryContext(cmd)
+		queryClientCtx, err := sdkclient.GetClientQueryContext(cmd)
 		if err != nil {
 			return nil, err
 		}
@@ -192,13 +202,13 @@ func NewSupplyTxClientContextFn(
 		}
 
 		// Set --node flag to the txNodeRPCURL for the client context
-		// This flag is read by cosmosclient.GetClientTxContext.
+		// This flag is read by sdkclient.GetClientTxContext.
 		if err := cmd.Flags().Set(cosmosflags.FlagNode, txNodeRPCURL.String()); err != nil {
 			return nil, err
 		}
 
 		// Set --grpc-addr flag to the queryNodeGRPCURL for the client context
-		// This flag is read by cosmosclient.GetClientTxContext to query accounts
+		// This flag is read by sdkclient.GetClientTxContext to query accounts
 		// for transaction signing.
 		// Cosmos-SDK is expecting a GRPC address formatted as <hostname>[:<port>],
 		// so we only need to set the Host parameter of the URL to cosmosflags.FlagGRPC value.
@@ -222,7 +232,7 @@ func NewSupplyTxClientContextFn(
 		// transacting purposes.
 		// For example, txs could be dispatched to a validator while queries
 		// could be handled by a full-node
-		txClientCtx, err := cosmosclient.GetClientTxContext(cmd)
+		txClientCtx, err := sdkclient.GetClientTxContext(cmd)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +358,7 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 		deps depinject.Config,
 		_ *cobra.Command,
 	) (depinject.Config, error) {
-		var clientCtx cosmosclient.Context
+		var clientCtx sdkclient.Context
 
 		// On a Cosmos environment we get the private key from the keyring
 		// Inject the client context, get the keyring from it then get the private key

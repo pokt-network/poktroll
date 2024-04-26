@@ -6,3 +6,6 @@ listening_endpoint: http://0.0.0.0:42069
 metrics:
   enabled: true
   addr: :9090
+pprof:
+  enabled: true
+  addr: localhost:6060

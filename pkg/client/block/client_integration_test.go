@@ -18,17 +18,17 @@ import (
 
 const blockIntegrationSubTimeout = 5 * time.Second
 
-func TestBlockClient_LastNBlocks(t *testing.T) {
+func TestBlockClient_LastBlock(t *testing.T) {
 	t.Skip("TODO(@h5law): Figure out how to subscribe to events on the simulated localnet")
 	ctx := context.Background()
 
 	blockClient := testblock.NewLocalnetClient(ctx, t)
 	require.NotNil(t, blockClient)
 
-	block := blockClient.LastNBlocks(ctx, 1)
+	block := blockClient.LastBlock(ctx)
 	require.NotEmpty(t, block)
-	require.NotZero(t, block[0].Height())
-	require.NotZero(t, block[0].Hash())
+	require.NotZero(t, block.Height())
+	require.NotZero(t, block.Hash())
 }
 
 func TestBlockClient_BlocksObservable(t *testing.T) {

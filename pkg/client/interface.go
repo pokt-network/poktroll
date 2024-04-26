@@ -10,6 +10,7 @@
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_tx_builder_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client TxBuilder
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_keyring_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/crypto/keyring Keyring
 //go:generate mockgen -destination=../../testutil/mockclient/cosmos_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client AccountRetriever
+//go:generate mockgen -destination=../../testutil/mockclient/comet_rpc_client_mock.go -package=mockclient github.com/cosmos/cosmos-sdk/client CometRPC
 
 package client
 
@@ -145,9 +146,8 @@ type BlockClient interface {
 	// CommittedBlocksSequence returns a BlockObservable that emits the
 	// latest blocks that have been committed to the chain.
 	CommittedBlocksSequence(context.Context) BlockReplayObservable
-	// LastNBlocks returns the latest N blocks that have been committed to
-	// the chain.
-	LastNBlocks(context.Context, int) []Block
+	// LastBlock returns the latest block that has been committed on-chain.
+	LastBlock(context.Context) Block
 	// Close unsubscribes all observers of the committed block sequence
 	// observable and closes the events query client.
 	Close()

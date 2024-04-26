@@ -14,3 +14,6 @@ suppliers:
       backend_url: http://anvil:8547/
       publicly_exposed_endpoints:
         - relayminers
+pprof:
+  enabled: false
+  addr: localhost:6060

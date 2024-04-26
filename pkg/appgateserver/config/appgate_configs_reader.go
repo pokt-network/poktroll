@@ -15,6 +15,7 @@ type YAMLAppGateServerConfig struct {
 	QueryNodeRPCUrl   string                         `yaml:"query_node_rpc_url"`
 	SelfSigning       bool                           `yaml:"self_signing"`
 	SigningKey        string                         `yaml:"signing_key"`
+	Pprof             YAMLAppGateServerPprofConfig   `yaml:"pprof"`
 }
 
 // YAMLAppGateServerMetricsConfig is the structure used to unmarshal the metrics
@@ -22,6 +23,13 @@ type YAMLAppGateServerConfig struct {
 type YAMLAppGateServerMetricsConfig struct {
 	Enabled bool   `yaml:"enabled"`
 	Addr    string `yaml:"addr"`
+}
+
+// YAMLAppGateServerPprofConfig is the structure used to unmarshal the config
+// for `pprof`.
+type YAMLAppGateServerPprofConfig struct {
+	Enabled bool   `yaml:"enabled,omitempty"`
+	Addr    string `yaml:"addr,omitempty"`
 }
 
 // AppGateServerConfig is the structure describing the AppGateServer config
@@ -32,11 +40,19 @@ type AppGateServerConfig struct {
 	QueryNodeRPCUrl   *url.URL
 	SelfSigning       bool
 	SigningKey        string
+	Pprof             *AppGateServerPprofConfig
 }
 
 // AppGateServerMetricsConfig is the structure resulting from parsing the metrics
-// section of the AppGateServer config file
+// section of the AppGateServer config file.
 type AppGateServerMetricsConfig struct {
+	Enabled bool
+	Addr    string
+}
+
+// AppGateServerPprofConfig is the structure resulting from parsing the pprof
+// section of the AppGateServer config file.
+type AppGateServerPprofConfig struct {
 	Enabled bool
 	Addr    string
 }
@@ -100,6 +116,11 @@ func ParseAppGateServerConfigs(configContent []byte) (*AppGateServerConfig, erro
 	appGateServerConfig.Metrics = &AppGateServerMetricsConfig{
 		Enabled: yamlAppGateServerConfig.Metrics.Enabled,
 		Addr:    yamlAppGateServerConfig.Metrics.Addr,
+	}
+
+	appGateServerConfig.Pprof = &AppGateServerPprofConfig{
+		Enabled: yamlAppGateServerConfig.Pprof.Enabled,
+		Addr:    yamlAppGateServerConfig.Pprof.Addr,
 	}
 
 	return appGateServerConfig, nil

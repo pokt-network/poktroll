@@ -1,6 +1,8 @@
 package config
 
-import yaml "gopkg.in/yaml.v2"
+import (
+	yaml "gopkg.in/yaml.v2"
+)
 
 // ParseRelayMinerConfigs parses the relay miner config file into a RelayMinerConfig
 func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
@@ -37,6 +39,11 @@ func ParseRelayMinerConfigs(configContent []byte) (*RelayMinerConfig, error) {
 	relayMinerConfig.Metrics = &RelayMinerMetricsConfig{
 		Enabled: yamlRelayMinerConfig.Metrics.Enabled,
 		Addr:    yamlRelayMinerConfig.Metrics.Addr,
+	}
+
+	relayMinerConfig.Pprof = &RelayMinerPprofConfig{
+		Enabled: yamlRelayMinerConfig.Pprof.Enabled,
+		Addr:    yamlRelayMinerConfig.Pprof.Addr,
 	}
 
 	// Hydrate the pocket node urls

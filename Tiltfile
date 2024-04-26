@@ -254,6 +254,9 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069 + actor_number)
             + ":9090",  # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
+            str(6069 + actor_number)
+            + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
         ],
     )
 
@@ -295,6 +298,9 @@ for x in range(localnet_config["appgateservers"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
             str(9079 + actor_number)
             + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6080/debug/pprof/goroutine`
+            str(6079 + actor_number)
+            + ":6090",  # appgateserver metrics port. appgateserver1 - exposes 6080, appgateserver2 exposes 6081, etc.
         ],
     )
 
@@ -336,13 +342,22 @@ for x in range(localnet_config["gateways"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
             str(9089 + actor_number)
             + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
+            str(6089 + actor_number)
+            + ":6060",  # gateway metrics port. gateway1 - exposes 6090, gateway2 exposes 6091, etc.
         ],
     )
 
 k8s_resource(
     "validator",
     labels=["pocket_network"],
-    port_forwards=["36657", "36658", "40004"],
+    port_forwards=[
+        "36657",
+        "36658",
+        "40004",
+        # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine`
+        "6061:6060",
+    ],
     links=[
         link(
             "http://localhost:3003/d/cosmoscometbft/protocol-cometbft-dashboard?orgId=1&from=now-1h&to=now",
