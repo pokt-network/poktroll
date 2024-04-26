@@ -159,22 +159,22 @@ If you wish to change a dashboard, do the following:
 
 ![Example](./grafana_save_dashboard.png)
 
-## High level overview of LocalNet
+## High-level overview of LocalNet
 
-This section describes how LocalNet operates and how different components of LocalNet operate to provision a working network.
+This section describes how LocalNet operates and the interactions between different components to provision a working network.
 
 ### Flow
 
 After you execute `make localnet_up`, many things happen:
 
-1. `ignite` cli provisions a new `genesis.json` and validator keys.
+1. `ignite` CLI provisions a new `genesis.json` and validator keys.
 2. `tilt` starts and runs a [Tiltfile](https://github.com/pokt-network/poktroll/blob/main/Tiltfile) - a Python-like script.
-3. Subsequently, logic that is described in `Tiltfile` executes different `cli` commands, talks to `k8s` API, creates or reads localnet configuration file:
-   1. Creates a new `localnet_config.yaml` if it doesn't exist. Updates with default values if new default values are introduced.
-   2. Depending on configuration in `localnet_config.yaml`, uses helm charts from local [helm-charts](https://github.com/pokt-network/helm-charts) repo or downloads helm charts from our helm chart repo (`https://pokt-network.github.io/helm-charts/`).
-   3. Compiles `poktrolld` binary from the source code.
-   4. Using values from `localnet_config.yaml`, provisions observability stack (Grafana, prometheus, Loki), a validator, appgate servers, relayminers, etc.
-4. As `make localnet_up` continually running in a background, `tilt` watches for code changes and re-compiles the binary when code change is detected. After new binary is built, it is pushed to the containers and all processes restart.
+3. Subsequently, the logic described in the `Tiltfile` executes various CLI commands, communicates with the `k8s` API, and creates or reads the LocalNet configuration file:
+   1. Creates a new `localnet_config.yaml` if it doesn't exist. Updates it with default values if new ones are introduced.
+   2. Depending on the configuration in `localnet_config.yaml`, uses Helm charts from the local [helm-charts](https://github.com/pokt-network/helm-charts) repository or downloads Helm charts from our Helm chart repository (`https://pokt-network.github.io/helm-charts/`).
+   3. Compiles the `poktrolld` binary from the source code.
+   4. Using values from `localnet_config.yaml`, provisions an observability stack (Grafana, Prometheus, Loki), a validator, AppGate servers, RelayMiners, etc.
+4. With `make localnet_up` continually running in the background, `tilt` monitors for code changes and re-compiles the binary when a code change is detected. After the new binary is built, it is pushed to the containers and all processes restart.
 
 ## Troubleshooting
 
