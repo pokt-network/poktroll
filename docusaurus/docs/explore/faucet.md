@@ -1,6 +1,6 @@
 ---
-title: Application staking config
-sidebar_position: 4
+title: TestNet Faucet
+sidebar_position: 2
 ---
 
 # Application staking config <!-- omit in toc -->

@@ -127,7 +127,6 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, 
 	args = append(base, args...)
 	commandStr := "curl " + strings.Join(args, " ") // Create a string representation of the command
 	cmd := exec.Command("curl", args...)
-
 	var stdoutBuf, stderrBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
@@ -140,6 +139,7 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, 
 		Err:     err,
 	}
 	p.result = r
+	fmt.Println("OLSHIT", cmd, r)
 
 	if defaultDebugOutput == "true" {
 		fmt.Printf("%#v\n", r)
