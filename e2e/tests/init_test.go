@@ -24,6 +24,7 @@ import (
 
 	"github.com/pokt-network/poktroll/app"
 	"github.com/pokt-network/poktroll/testutil/testclient"
+	"github.com/pokt-network/poktroll/testutil/yaml"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -118,7 +119,6 @@ func (s *suite) TheUserRunsTheCommand(cmd string) {
 }
 
 func (s *suite) TheUserShouldBeAbleToSeeStandardOutputContaining(arg1 string) {
-	fmt.Println(s.pocketd.result.Stdout, "~~~", arg1)
 	require.Contains(s, s.pocketd.result.Stdout, arg1)
 }
 
@@ -224,23 +224,8 @@ func (s *suite) TheUserStakesAWithUpoktForServiceFromTheAccount(actorType string
 	configFile, err := os.CreateTemp("", configPathPattern)
 	require.NoError(s, err, "error creating config file in %q", path.Join(os.TempDir(), configPathPattern))
 
-	// Prepare the config content based on the actor type
-	var configContent string
-	switch actorType {
-	case "application":
-		configContent = fmt.Sprintf("stake_amount: %d upokt\nservice_ids:\n  - %s", amount, serviceId)
-	case "supplier":
-		configContent = fmt.Sprintf(`stake_amount: %dupokt
-services:
-  - service_id: %s
-    endpoints:
-      - publicly_exposed_url: http://relayminer:8545
-        rpc_type: json_rpc`, amount, serviceId)
-	default:
-		s.Fatalf("unknown actor type %s", actorType)
-	}
-
 	// Write the config content to the file
+	configContent := s.getConfigFileContent(amount, actorType, serviceId)
 	_, err = configFile.Write([]byte(configContent))
 	require.NoError(s, err, "error writing config file %q", configFile.Name())
 
@@ -264,6 +249,31 @@ services:
 	require.NoError(s, err, "error removing config file %q", configFile.Name())
 
 	s.pocketd.result = res
+}
+
+func (s *suite) getConfigFileContent(amount int64, actorType, serviceId string) string {
+	var configContent string
+	switch actorType {
+	case "application":
+		configContent = fmt.Sprintf(`
+		stake_amount: %dupokt
+		service_ids:
+		  - %s`,
+			amount, serviceId)
+	case "supplier":
+		configContent = fmt.Sprintf(`
+			stake_amount: %dupokt
+			services:
+			  - service_id: %s
+			    endpoints:
+			    - publicly_exposed_url: http://relayminer:8545
+			      rpc_type: json_rpc`,
+			amount, serviceId)
+	default:
+		s.Fatalf("unknown actor type %s", actorType)
+	}
+	fmt.Println(yaml.NormalizeYAMLIndentation(configContent))
+	return yaml.NormalizeYAMLIndentation(configContent)
 }
 
 func (s *suite) TheUserUnstakesAFromTheAccount(actorType string, accName string) {
