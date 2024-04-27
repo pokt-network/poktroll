@@ -2,6 +2,8 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
+load("ext://deployment", "deployment_create")
+load('ext://execute_in_pod', 'execute_in_pod')
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
@@ -39,6 +41,10 @@ localnet_config_defaults = {
     "appgateservers": {
         "count": 1,
         "delve": {"enabled": False},    
+    },
+    "ollama": {
+        "enabled": False,
+        "model": "qwen:0.5b",
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -364,3 +370,19 @@ k8s_resource(
 )
 
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
+
+if localnet_config["ollama"]["enabled"]:
+    print("Ollama enabled: " + str(localnet_config["ollama"]["enabled"]))
+
+    deployment_create(
+        "ollama",
+        image="ollama/ollama",
+        command=["ollama", "serve"],
+        ports="11434",
+    )
+
+    local_resource(
+        name='ollama-pull-model',
+        cmd=execute_in_pod("ollama", "ollama pull "+localnet_config["ollama"]["model"]),
+        resource_deps=['ollama'],
+    )
