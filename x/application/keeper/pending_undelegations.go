@@ -150,7 +150,7 @@ func (k Keeper) undelegateFromGateways(
 		)
 
 		// Remove the undelegation from the pending undelegations store
-		k.removePendingUndelegation(ctx, undelegation)
+		k.findAndRemovePendingUndelegation(ctx, undelegation.AppAddress, undelegation.GatewayAddress)
 
 		logger.Info(fmt.Sprintf(
 			"Application with address %q undelegated from gateway with address %q",
@@ -177,23 +177,32 @@ func (k Keeper) undelegateFromGateways(
 	return nil
 }
 
-// removePendingUndelegation removes the undelegation from the pending
-// undelegations store.
-func (k Keeper) removePendingUndelegation(
+// findAndRemovePendingUndelegation checks if there is a pending delegation
+// corresponding to the given application and gateway addresses then removes
+// it from the pending undelegations store.
+func (k Keeper) findAndRemovePendingUndelegation(
 	ctx context.Context,
-	pendingUndelegation *types.Undelegation,
-) {
+	appAddress, gatewayAddress string,
+) (undelegationFound bool) {
 	storeAdapter := runtime.KVStoreAdapter(k.storeService.OpenKVStore(ctx))
 	store := prefix.NewStore(
 		storeAdapter,
 		types.KeyPrefix(types.PendingUndelegationsKeyPrefix),
 	)
 
-	hasPendingUndelegation := store.Has(types.PendingUndelegationKey(pendingUndelegation))
-	if hasPendingUndelegation {
+	pendingUndelegation := &types.Undelegation{
+		AppAddress:     appAddress,
+		GatewayAddress: gatewayAddress,
+	}
+
+	if store.Has(types.PendingUndelegationKey(pendingUndelegation)) {
 		k.Logger().With("method", "removePendingUndelegation").
 			Info(fmt.Sprintf("Removing from pending undelegations %v", pendingUndelegation))
 
 		store.Delete(types.PendingUndelegationKey(pendingUndelegation))
+
+		return true
 	}
+
+	return false
 }

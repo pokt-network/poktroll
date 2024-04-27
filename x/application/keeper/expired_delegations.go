@@ -11,12 +11,12 @@ import (
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
-// archivedDelegationsRetentionBlocks is the time in terms of blocks number
+// ArchivedDelegationsRetentionBlocks is the time in terms of blocks number
 // for which archived delegations are retained.
 // Past this limit, they are pruned from their respective application's records.
 // TODO_DISCUSS: Currently, the retention period is in terms of SessionGracePeriod,
 // but it could be a governance parameter too.
-var archivedDelegationsRetentionBlocks = 3 * sessionkeeper.GetSessionGracePeriodBlockCount()
+var ArchivedDelegationsRetentionBlocks = 3 * sessionkeeper.GetSessionGracePeriodBlockCount()
 
 // EndBlockerPruneExpiredDelegations prunes expired delegations from applications
 // at the end of each session by removing the archived delegations that are older
@@ -36,11 +36,11 @@ func (k Keeper) EndBlockerPruneExpiredDelegations(ctx sdk.Context) error {
 	// Do not prune delegations if archivedDelegationsRetentionBlocks takes
 	// it past the first session.
 	nextSessionStartHeight := currentBlockHeight + 1
-	if nextSessionStartHeight < archivedDelegationsRetentionBlocks {
+	if nextSessionStartHeight < ArchivedDelegationsRetentionBlocks {
 		return nil
 	}
 
-	retentionHeight := nextSessionStartHeight - archivedDelegationsRetentionBlocks
+	retentionHeight := nextSessionStartHeight - ArchivedDelegationsRetentionBlocks
 
 	logger.Info("Pruning expired undelegations")
 

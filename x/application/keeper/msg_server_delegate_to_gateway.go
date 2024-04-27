@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -59,26 +60,29 @@ func (k msgServer) DelegateToGateway(ctx context.Context, msg *types.MsgDelegate
 		)
 	}
 
-	// Check if the application is already delegated to the gateway
-	for _, gatewayAddr := range app.DelegateeGatewayAddresses {
-		if gatewayAddr == msg.GatewayAddress {
-			logger.Info(fmt.Sprintf(
-				"Application already delegated to gateway with address %q",
-				msg.GatewayAddress,
-			))
-			return nil, types.ErrAppAlreadyDelegated.Wrapf(
-				"application already delegated to gateway with address: %q",
-				msg.GatewayAddress,
-			)
+	if slices.Contains(app.DelegateeGatewayAddresses, msg.GatewayAddress) {
+		// If there is a corresponding pending undelegation about to become effective
+		// in the next session, then discard it as the application is being redelegated
+		// to the same gateway.
+		if undelegationFound := k.findAndRemovePendingUndelegation(ctx,
+			msg.AppAddress,
+			msg.GatewayAddress,
+		); undelegationFound {
+			isSuccessful = true
+			return &types.MsgDelegateToGatewayResponse{}, nil
 		}
-	}
 
-	// If the application undelegates then re-delegates to the same gateway before
-	// the undelegation becomes effective, the pending undelegation should be discarded.
-	k.removePendingUndelegation(ctx, &types.Undelegation{
-		AppAddress:     msg.AppAddress,
-		GatewayAddress: msg.GatewayAddress,
-	})
+		// If the application is already delegated to the gateway an no undelegation
+		// is being scheduled, then return an error.
+		logger.Info(fmt.Sprintf(
+			"Application already delegated to gateway with address %q",
+			msg.GatewayAddress,
+		))
+		return nil, types.ErrAppAlreadyDelegated.Wrapf(
+			"application already delegated to gateway with address: %q",
+			msg.GatewayAddress,
+		)
+	}
 
 	// Update the application with the new delegatee public key
 	app.DelegateeGatewayAddresses = append(app.DelegateeGatewayAddresses, msg.GatewayAddress)

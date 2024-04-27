@@ -4,37 +4,26 @@ package e2e
 
 import (
 	"context"
-	"regexp"
+	"sync"
 
 	"cosmossdk.io/depinject"
-	abci "github.com/cometbft/cometbft/abci/types"
+	"github.com/cometbft/cometbft/libs/json"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/client/block"
 	"github.com/pokt-network/poktroll/pkg/client/events"
 	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/testutil/testclient"
+	appkeeper "github.com/pokt-network/poktroll/x/application/keeper"
+	"github.com/pokt-network/poktroll/x/application/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 const (
 	serviceId          = "anvil"
 	defaultStakeAmount = 1000000
-)
-
-var (
-	delegationRe = regexp.MustCompile(
-		`applications:\s+-\s+address:\s+([a-zA-Z0-9]+)[\S\s]*delegatee_gateway_addresses:\s+-\s+([a-zA-Z0-9]+)`,
-	)
-
-	noDelegationRe = regexp.MustCompile(
-		`applications:\s+-\s+address:\s+([a-zA-Z0-9]+)[\S\s]*delegatee_gateway_addresses:\s+\[\]`,
-	)
-
-	archivedDelegationRe = regexp.MustCompile(
-		`applications:\s+-\s+address:\s+([a-zA-Z0-9]+)[\S\s]*archived_delegations:[\S\s]*-\s+gateway_addresses:[\S\s]*-\s+([a-zA-Z0-9]+)[\S\s]*last_active_block_height`,
-	)
 )
 
 func (s *suite) TheApplicationIsStakedWithEnoughUpokt(accName string) {
@@ -125,20 +114,29 @@ func (s *suite) TheUserDelegatesApplicationToGateway(appName, gatewayName string
 	)
 }
 
-func (s *suite) TheUserShouldSeeThatApplicationIsDelegatedToGateway(appName, gatewayName string) {
-	args := []string{
-		"q",
-		"application",
-		"list-application",
-		chainIdFlag,
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err)
+func (s *suite) TheApplicationDoesNotHaveAnyDelegation(appName string) {
+	application := s.showApplication(appName)
+	undelegationWaitGroup := sync.WaitGroup{}
+	undelegationWaitGroup.Add(len(application.DelegateeGatewayAddresses))
 
-	match := delegationRe.FindStringSubmatch(res.Stdout)
-	require.Equal(s, len(match), 3, "app %q not delegated to gateway %q", appName, gatewayName)
-	require.Equal(s, accNameToAddrMap[appName], match[1])
-	require.Equal(s, accNameToAddrMap[gatewayName], match[2])
+	for _, gatewayAddress := range application.DelegateeGatewayAddresses {
+		go func(gatewayAddress string) {
+			s.TheUserUndelegatesApplicationFromGateway(appName, accAddrToNameMap[gatewayAddress])
+			s.TheUserWaitsUntilTheStartOfTheNextSession()
+			undelegationWaitGroup.Done()
+		}(gatewayAddress)
+	}
+	undelegationWaitGroup.Wait()
+}
+
+func (s *suite) ApplicationIsDelegatedToGateway(appName, gatewayName string) {
+	application := s.showApplication(appName)
+	require.Containsf(s,
+		application.DelegateeGatewayAddresses,
+		accNameToAddrMap[gatewayName],
+		"app %q is not delegated to gateway %q",
+		appName, gatewayName,
+	)
 }
 
 func (s *suite) ApplicationIsNotDelegatedToGateway(appName, gatewayName string) {
@@ -146,27 +144,21 @@ func (s *suite) ApplicationIsNotDelegatedToGateway(appName, gatewayName string) 
 	defer cancel()
 	s.initEventsQueryClients(ctx)
 
-	args := []string{
-		"q",
-		"application",
-		"list-application",
-		chainIdFlag,
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err)
-	match := delegationRe.FindStringSubmatch(res.Stdout)
+	application := s.showApplication(appName)
+	require.NotContainsf(s,
+		application.DelegateeGatewayAddresses,
+		accNameToAddrMap[gatewayName],
+		"app %q is delegated to gateway %q",
+		appName, gatewayName,
+	)
+}
+func (s *suite) TheUserUndelegatesApplicationFromGatewayBeforeTheSessionEndBlock(appName, gatewayName string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.initEventsQueryClients(ctx)
 
-	if len(match) == 3 {
-		s.TheUserUndelegatesApplicationFromGateway(appName, gatewayName)
-		s.TheUserHasWaitedForTheBeginningOfTheNextSession()
-	}
-
-	res, err = s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err)
-
-	match = noDelegationRe.FindStringSubmatch(res.Stdout)
-	require.Equal(s, len(match), 2, "app %q is delegated to a gateway", appName)
-	require.Equal(s, accNameToAddrMap[appName], match[1])
+	s.TheUserWaitsUntilTheStartOfTheNextSession()
+	s.TheUserUndelegatesApplicationFromGateway(appName, gatewayName)
 }
 
 func (s *suite) TheUserUndelegatesApplicationFromGateway(appName, gatewayName string) {
@@ -192,22 +184,9 @@ func (s *suite) TheUserUndelegatesApplicationFromGateway(appName, gatewayName st
 		"application",
 		"UndelegateFromGateway",
 	)
-
-	args = []string{
-		"q",
-		"application",
-		"list-application",
-		chainIdFlag,
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err)
-
-	match := noDelegationRe.FindStringSubmatch(res.Stdout)
-	require.Equal(s, len(match), 2, "app %q is delegated to a gateway", appName)
-	require.Equal(s, accNameToAddrMap[appName], match[1])
 }
 
-func (s *suite) TheUserHasWaitedForTheBeginningOfTheNextSession() {
+func (s *suite) TheUserWaitsUntilTheStartOfTheNextSession() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.initEventsQueryClients(ctx)
@@ -217,32 +196,75 @@ func (s *suite) TheUserHasWaitedForTheBeginningOfTheNextSession() {
 	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(block.Height()) + 1
 	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
 	for newBlock := range blockObs.Ch() {
-		if newBlock.Height() >= nextSessionStartHeight {
+		if newBlock.Height() > nextSessionStartHeight {
 			break
 		}
 	}
 }
 
-func (s *suite) TheUserShouldSeeThatApplicationHasGatewayAddressInTheArchivedDelegations(appName, gatewayName string) {
+func (s *suite) ApplicationHasGatewayAddressInTheArchivedDelegations(appName, gatewayName string) {
+	application := s.showApplication(appName)
+	require.Truef(s,
+		slices.ContainsFunc(application.ArchivedDelegations,
+			func(archivedDelegations types.ArchivedDelegations) bool {
+				return slices.Contains(archivedDelegations.GatewayAddresses, accNameToAddrMap[gatewayName])
+			}),
+		"app %q does not have gateway %q in its archived delegations",
+		appName, gatewayName,
+	)
+}
+
+func (s *suite) TheUserWaitsUntilArchivedDelegationsArePruned() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.initEventsQueryClients(ctx)
+
+	blockReplayClient := s.scenarioState[newBlockEventReplayClientKey].(client.EventsReplayClient[*block.CometNewBlockEvent])
+	block := blockReplayClient.LastNEvents(ctx, 1)[0]
+	delegationPruningBlockHeight := block.Height() + appkeeper.ArchivedDelegationsRetentionBlocks + 1
+	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
+	for newBlock := range blockObs.Ch() {
+		if newBlock.Height() >= delegationPruningBlockHeight {
+			break
+		}
+	}
+}
+
+func (s *suite) ApplicationDoesNotHaveGatewayAddressInTheArchivedDelegations(appName, gatewayName string) {
+	application := s.showApplication(appName)
+	require.Falsef(s,
+		slices.ContainsFunc(application.ArchivedDelegations,
+			func(archivedDelegations types.ArchivedDelegations) bool {
+				return slices.Contains(archivedDelegations.GatewayAddresses, accNameToAddrMap[gatewayName])
+			}),
+		"app %q has gateway %q in its archived delegations",
+		appName, gatewayName,
+	)
+}
+
+func (s *suite) showApplication(appName string) types.Application {
 	args := []string{
 		"q",
 		"application",
-		"list-application",
+		"show-application",
+		accNameToAddrMap[appName],
 		chainIdFlag,
+		"--output",
+		"json",
 	}
 	res, err := s.pocketd.RunCommandOnHost("", args...)
 	require.NoError(s, err)
+	var queryGetApplicationResponse types.QueryGetApplicationResponse
+	err = json.Unmarshal([]byte(res.Stdout), &queryGetApplicationResponse)
+	require.NoError(s, err)
 
-	match := archivedDelegationRe.FindStringSubmatch(res.Stdout)
-	require.Equal(s, len(match), 3, "app %q does not have gateway %q in its archived delegations", appName, gatewayName)
-	require.Equal(s, accNameToAddrMap[appName], match[1])
-	require.Equal(s, accNameToAddrMap[gatewayName], match[2])
+	return queryGetApplicationResponse.Application
 }
 
 func (s *suite) initEventsQueryClients(ctx context.Context) {
 	// Construct an events query client to listen for tx events from the supplier.
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
-	txEventsReplayClient, err := events.NewEventsReplayClient[*abci.TxResult](
+	txEventsReplayClient, err := events.NewEventsReplayClient(
 		ctx,
 		deps,
 		"tm.event='Tx'",
@@ -253,7 +275,7 @@ func (s *suite) initEventsQueryClients(ctx context.Context) {
 	s.scenarioState[txResultEventsReplayClientKey] = txEventsReplayClient
 
 	// Construct an events query client to listen for claim settlement or expiration events on-chain.
-	blockEventsReplayClient, err := events.NewEventsReplayClient[*block.CometNewBlockEvent](
+	blockEventsReplayClient, err := events.NewEventsReplayClient(
 		ctx,
 		deps,
 		newBlockEventSubscriptionQuery,
