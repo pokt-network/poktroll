@@ -5,5 +5,5 @@ config:
     enabled: true
     addr: :9090
   pprof:
-    enabled: false
+    enabled: true
     addr: localhost:6060

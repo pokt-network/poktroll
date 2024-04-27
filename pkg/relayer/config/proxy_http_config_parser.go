@@ -26,11 +26,11 @@ func (serverConfig *RelayMinerServerConfig) parseHTTPServerConfig(
 	return nil
 }
 
-// parseHTTPSupplierConfig populates the supplier fields of the target structure
-// that are relevant to "http" specific service configurations.
+// parseSupplierBackendUrl populates the supplier fields of the target structure
+// that are relevant to "http" and "https" backend url service configurations.
 // This function alters the target RelayMinerSupplierServiceConfig structure
 // as a side effect.
-func (supplierServiceConfig *RelayMinerSupplierServiceConfig) parseHTTPSupplierConfig(
+func (supplierServiceConfig *RelayMinerSupplierServiceConfig) parseSupplierBackendUrl(
 	yamlSupplierServiceConfig YAMLRelayMinerSupplierServiceConfig,
 ) error {
 	// Check if the supplier backend url is empty
