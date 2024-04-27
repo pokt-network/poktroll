@@ -1,41 +1,41 @@
 # When `devnet-test-e2e` is added, also assign `devnet` and `push-image` to the PR.
 devnet-test-e2e:
   prs:
-    comment: >
+    comment: |
       The CI will now also run the e2e tests on devnet, which increases the time it takes to complete all CI checks.
 
       You may need to run `make trigger_ci` to submit an empty commit that'll trigger the tests.
 
       Note: When `devnet-test-e2e` is added, `devnet` and `push-image` are automatically assigned to the PR.
 
-      TODO_IN_THIS_PR: Add link to GCP workload with filter
-      TODO_IN_THIS_PR: Add link to grafana logs with filter
+      GCP workloads (change the namespace): https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505
+      Network overview dashboard (change the network name): https://grafana.poktroll.com/d/b799a130-3789-416d-aa7f-de5f4599cf03/network-overview
     label:
-      - devnet
-      - push-image
+    - devnet
+    - push-image
 
 # When `devnet-test-e2e` is removed, also delete `devnet` from the PR.
 -devnet-test-e2e:
   prs:
     unlabel:
-      - devnet
+    - devnet
 
 # When `devnet` is added, also assign `push-image` to the PR.
 devnet:
   prs:
     label:
-      - push-image
+    - push-image
 
 # When `devnet` is removed, also delete `devnet-test-e2e` from the PR.
 -devnet:
   prs:
     unlabel:
-      - devnet-test-e2e
+    - devnet-test-e2e
 
 # Let the developer know that they need to push another commit after attaching the label to PR.
 push-image:
   prs:
-    comment: >
+    comment: |
       The image is going to be pushed after the next commit.
 
       You can use `make trigger_ci` to push an empty commit.
@@ -46,5 +46,5 @@ push-image:
 -push-image:
   prs:
     unlabel:
-      - devnet
-      - devnet-test-e2e
+    - devnet
+    - devnet-test-e2e
