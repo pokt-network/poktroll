@@ -269,6 +269,10 @@ func (s *suite) getConfigFileContent(amount int64, actorType, serviceId string) 
 			    - publicly_exposed_url: http://relayminer:8545
 			      rpc_type: json_rpc`,
 			amount, serviceId)
+	case "gateway":
+		configContent = fmt.Sprintf(`
+			stake_amount: %dupokt`,
+			amount)
 	default:
 		s.Fatalf("unknown actor type %s", actorType)
 	}

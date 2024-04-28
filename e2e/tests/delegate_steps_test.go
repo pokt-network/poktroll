@@ -4,6 +4,8 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -22,78 +24,43 @@ import (
 )
 
 const (
-	serviceId          = "anvil"
+	// serviceId to stake for by applications.
+	serviceId = "anvil"
+	// defaultStakeAmount is the default amount to stake for applications and gateways.
 	defaultStakeAmount = 1000000
 )
 
-func (s *suite) TheApplicationIsStakedWithEnoughUpokt(accName string) {
-	// TODO_TECHDEBT: This should be global to the whole feature
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
-	stakedAmount, ok := s.getStakedAmount("application", accName)
+func (s *suite) TheActorTypeWithAccountIsStakedWithEnoughUpokt(accType, accName string) {
+	// Get the staked amount for account, if it exists.
+	// This is used to determine how much to stake for the actor and whether
+	// it is already staked or not.
+	stakedAmount, ok := s.getStakedAmount(accType, accName)
 	if !ok {
 		stakedAmount = defaultStakeAmount
 	}
 
+	// Fund the actor with enough upokt to stake for the service.
 	s.TheUserSendsUpoktFromAccountToAccount(int64(stakedAmount+1), "pnf", accName)
-
 	s.waitForTxResultEvent(
 		"transfer",
 		"recipient",
 		accNameToAddrMap[accName],
 	)
 
+	// Stake for the service with the
 	s.TheUserStakesAWithUpoktForServiceFromTheAccount(
-		"application",
+		accType,
 		int64(stakedAmount+1),
 		serviceId,
 		accName,
 	)
-
 	s.TheUserShouldWaitForTheModuleMessageToBeSubmitted(
-		"application",
-		"StakeApplication",
-	)
-}
-
-func (s *suite) TheGatewayIsStakedWithEnoughUpokt(accName string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
-	stakedAmount, ok := s.getStakedAmount("gateway", accName)
-	if !ok {
-		stakedAmount = defaultStakeAmount
-	}
-
-	s.TheUserSendsUpoktFromAccountToAccount(int64(stakedAmount+1), "pnf", accName)
-
-	s.waitForTxResultEvent(
-		"transfer",
-		"recipient",
-		accNameToAddrMap[accName],
-	)
-
-	s.TheUserStakesAWithUpoktForServiceFromTheAccount(
-		"gateway",
-		int64(stakedAmount+1),
-		serviceId,
-		accName,
-	)
-
-	s.TheUserShouldWaitForTheModuleMessageToBeSubmitted(
-		"gateway",
-		"StakeGateway",
+		accType,
+		fmt.Sprintf("Stake%s", strings.Title(accType)),
 	)
 }
 
 func (s *suite) TheUserDelegatesApplicationToGateway(appName, gatewayName string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
 	args := []string{
 		"tx",
 		"application",
@@ -119,6 +86,8 @@ func (s *suite) TheApplicationDoesNotHaveAnyDelegation(appName string) {
 	undelegationWaitGroup := sync.WaitGroup{}
 	undelegationWaitGroup.Add(len(application.DelegateeGatewayAddresses))
 
+	// Concurrently undelegate the application from all gateways and wait for the
+	// transactions to be committed.
 	for _, gatewayAddress := range application.DelegateeGatewayAddresses {
 		go func(gatewayAddress string) {
 			s.TheUserUndelegatesApplicationFromGateway(appName, accAddrToNameMap[gatewayAddress])
@@ -140,10 +109,6 @@ func (s *suite) ApplicationIsDelegatedToGateway(appName, gatewayName string) {
 }
 
 func (s *suite) ApplicationIsNotDelegatedToGateway(appName, gatewayName string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
 	application := s.showApplication(appName)
 	require.NotContainsf(s,
 		application.DelegateeGatewayAddresses,
@@ -152,20 +117,13 @@ func (s *suite) ApplicationIsNotDelegatedToGateway(appName, gatewayName string) 
 		appName, gatewayName,
 	)
 }
-func (s *suite) TheUserUndelegatesApplicationFromGatewayBeforeTheSessionEndBlock(appName, gatewayName string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
 
+func (s *suite) TheUserUndelegatesApplicationFromGatewayBeforeTheSessionEndBlock(appName, gatewayName string) {
 	s.TheUserWaitsUntilTheStartOfTheNextSession()
 	s.TheUserUndelegatesApplicationFromGateway(appName, gatewayName)
 }
 
 func (s *suite) TheUserUndelegatesApplicationFromGateway(appName, gatewayName string) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
 	args := []string{
 		"tx",
 		"application",
@@ -186,22 +144,6 @@ func (s *suite) TheUserUndelegatesApplicationFromGateway(appName, gatewayName st
 	)
 }
 
-func (s *suite) TheUserWaitsUntilTheStartOfTheNextSession() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
-	blockReplayClient := s.scenarioState[newBlockEventReplayClientKey].(client.EventsReplayClient[*block.CometNewBlockEvent])
-	block := blockReplayClient.LastNEvents(ctx, 1)[0]
-	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(block.Height()) + 1
-	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
-	for newBlock := range blockObs.Ch() {
-		if newBlock.Height() > nextSessionStartHeight {
-			break
-		}
-	}
-}
-
 func (s *suite) ApplicationHasGatewayAddressInTheArchivedDelegations(appName, gatewayName string) {
 	application := s.showApplication(appName)
 	require.Truef(s,
@@ -212,22 +154,6 @@ func (s *suite) ApplicationHasGatewayAddressInTheArchivedDelegations(appName, ga
 		"app %q does not have gateway %q in its archived delegations",
 		appName, gatewayName,
 	)
-}
-
-func (s *suite) TheUserWaitsUntilArchivedDelegationsArePruned() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	s.initEventsQueryClients(ctx)
-
-	blockReplayClient := s.scenarioState[newBlockEventReplayClientKey].(client.EventsReplayClient[*block.CometNewBlockEvent])
-	block := blockReplayClient.LastNEvents(ctx, 1)[0]
-	delegationPruningBlockHeight := block.Height() + appkeeper.ArchivedDelegationsRetentionBlocks + 1
-	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
-	for newBlock := range blockObs.Ch() {
-		if newBlock.Height() >= delegationPruningBlockHeight {
-			break
-		}
-	}
 }
 
 func (s *suite) ApplicationDoesNotHaveGatewayAddressInTheArchivedDelegations(appName, gatewayName string) {
@@ -242,26 +168,9 @@ func (s *suite) ApplicationDoesNotHaveGatewayAddressInTheArchivedDelegations(app
 	)
 }
 
-func (s *suite) showApplication(appName string) types.Application {
-	args := []string{
-		"q",
-		"application",
-		"show-application",
-		accNameToAddrMap[appName],
-		chainIdFlag,
-		"--output",
-		"json",
-	}
-	res, err := s.pocketd.RunCommandOnHost("", args...)
-	require.NoError(s, err)
-	var queryGetApplicationResponse types.QueryGetApplicationResponse
-	err = json.Unmarshal([]byte(res.Stdout), &queryGetApplicationResponse)
-	require.NoError(s, err)
+func (s *suite) ThePoktrollChainIsReachable() {
+	ctx := context.Background()
 
-	return queryGetApplicationResponse.Application
-}
-
-func (s *suite) initEventsQueryClients(ctx context.Context) {
 	// Construct an events query client to listen for tx events from the supplier.
 	deps := depinject.Supply(events.NewEventsQueryClient(testclient.CometLocalWebsocketURL))
 	txEventsReplayClient, err := events.NewEventsReplayClient(
@@ -284,4 +193,55 @@ func (s *suite) initEventsQueryClients(ctx context.Context) {
 	)
 	require.NoError(s, err)
 	s.scenarioState[newBlockEventReplayClientKey] = blockEventsReplayClient
+}
+
+func (s *suite) TheUserWaitsUntilTheStartOfTheNextSession() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	blockReplayClient := s.scenarioState[newBlockEventReplayClientKey].(client.EventsReplayClient[*block.CometNewBlockEvent])
+	block := blockReplayClient.LastNEvents(ctx, 1)[0]
+	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(block.Height()) + 1
+
+	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
+	for newBlock := range blockObs.Ch() {
+		if newBlock.Height() >= nextSessionStartHeight {
+			break
+		}
+	}
+}
+
+func (s *suite) TheUserWaitsUntilArchivedDelegationsArePruned() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	blockReplayClient := s.scenarioState[newBlockEventReplayClientKey].(client.EventsReplayClient[*block.CometNewBlockEvent])
+	block := blockReplayClient.LastNEvents(ctx, 1)[0]
+	delegationPruningBlockHeight := block.Height() + appkeeper.ArchivedDelegationsRetentionBlocks
+
+	blockObs := blockReplayClient.EventsSequence(ctx).Subscribe(ctx)
+	for newBlock := range blockObs.Ch() {
+		if newBlock.Height() >= delegationPruningBlockHeight {
+			break
+		}
+	}
+}
+
+func (s *suite) showApplication(appName string) types.Application {
+	args := []string{
+		"q",
+		"application",
+		"show-application",
+		accNameToAddrMap[appName],
+		chainIdFlag,
+		"--output",
+		"json",
+	}
+	res, err := s.pocketd.RunCommandOnHost("", args...)
+	require.NoError(s, err)
+	var queryGetApplicationResponse types.QueryGetApplicationResponse
+	err = json.Unmarshal([]byte(res.Stdout), &queryGetApplicationResponse)
+	require.NoError(s, err)
+
+	return queryGetApplicationResponse.Application
 }
