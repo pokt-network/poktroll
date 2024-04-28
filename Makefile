@@ -322,6 +322,10 @@ test_e2e: test_e2e_env ## Run all E2E tests
 test_e2e_app:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
+.PHONY: test_e2e_supplier
+test_e2e_supplier:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
+
 .PHONY: test_e2e_gateway
 test_e2e_gateway:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
