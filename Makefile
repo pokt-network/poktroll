@@ -4,6 +4,7 @@ SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
+GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
 
