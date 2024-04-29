@@ -144,6 +144,13 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if appGateConfigs.Pprof.Enabled {
+		err = appGateServer.ServePprof(ctx, appGateConfigs.Pprof.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start pprof endpoint: %w", err)
+		}
+	}
+
 	// Start the AppGate server.
 	if err := appGateServer.Start(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to start app gate server: %w", err)
@@ -185,7 +192,7 @@ func setupAppGateServerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCURL),   // leaf
-		config.NewSupplyBlockClientFn(),                        // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCURL),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCURL), // leaf
 		config.NewSupplyDelegationClientFn(),                   // leaf
 		config.NewSupplyAccountQuerierFn(),                     // leaf
