@@ -6,8 +6,8 @@ services:
       # The RelayMiner acts as a proxy, forwarding requests to the actual Anvil data node behind it.
       # This setup allows for flexible and dynamic service provisioning within the network.
       - publicly_exposed_url: http://relayminer2:8545
-        rpc_type: json_rpc
+        rpc_type: JSON_RPC
   - service_id: ollama
     endpoints:
       - publicly_exposed_url: http://relayminer2:8545
-        rpc_type: rest
+        rpc_type: REST
