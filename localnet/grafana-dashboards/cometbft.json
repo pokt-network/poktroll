@@ -41,6 +41,34 @@
             "includeVars": false,
             "keepTime": false,
             "tags": [
+                "gateway_logs"
+            ],
+            "targetBlank": false,
+            "title": "Gateway Logs",
+            "tooltip": "",
+            "type": "dashboards",
+            "url": ""
+        },
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [
+                "supplier_logs"
+            ],
+            "targetBlank": false,
+            "title": "Supplier Logs",
+            "tooltip": "",
+            "type": "dashboards",
+            "url": ""
+        },
+        {
+            "asDropdown": false,
+            "icon": "external link",
+            "includeVars": false,
+            "keepTime": false,
+            "tags": [
                 "claim_proof_settlement_logs"
             ],
             "targetBlank": false,

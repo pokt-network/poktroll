@@ -322,6 +322,10 @@ test_e2e: test_e2e_env ## Run all E2E tests
 test_e2e_app:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
+.PHONY: test_e2e_supplier
+test_e2e_supplier:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
+
 .PHONY: test_e2e_gateway
 test_e2e_gateway:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
@@ -467,7 +471,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -507,7 +511,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
