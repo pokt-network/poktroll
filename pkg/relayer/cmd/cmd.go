@@ -130,7 +130,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 	}
 
 	if relayMinerConfig.Pprof.Enabled {
-		err = relayMiner.ServePprof(relayMinerConfig.Pprof.Addr)
+		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to start pprof endpoint: %w", err)
 		}

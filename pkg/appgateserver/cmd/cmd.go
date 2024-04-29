@@ -145,7 +145,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 	}
 
 	if appGateConfigs.Pprof.Enabled {
-		err = appGateServer.ServePprof(appGateConfigs.Pprof.Addr)
+		err = appGateServer.ServePprof(ctx, appGateConfigs.Pprof.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to start pprof endpoint: %w", err)
 		}
