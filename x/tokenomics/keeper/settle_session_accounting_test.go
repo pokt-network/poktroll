@@ -5,20 +5,62 @@ import (
 	"fmt"
 	"testing"
 
+	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
 	testkeeper "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
-	"github.com/pokt-network/poktroll/x/tokenomics/types"
+	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
 // TODO_TEST(@bryanchriswhite, @Olshansk): Improve tokenomics tests (i.e. checking balances)
 // once in-memory network integration tests are supported.
+
+func TestSettleSessionAccounting_HandleAppGoingIntoDebt(t *testing.T) {
+	keepers, ctx := testkeeper.NewTokenomicsModuleKeepers(t)
+
+	// Add a new application
+	appStake := types.NewCoin("upokt", math.NewInt(1000000))
+	app := apptypes.Application{
+		Address: sample.AccAddress(),
+		Stake:   &appStake,
+	}
+	keepers.SetApplication(ctx, app)
+
+	// Add a new supplier
+	supplierStake := types.NewCoin("upokt", math.NewInt(1000000))
+	supplier := sharedtypes.Supplier{
+		Address: sample.AccAddress(),
+		Stake:   &supplierStake,
+	}
+
+	// The base claim whose root will be customized for testing purposes
+	claim := prooftypes.Claim{
+		SupplierAddress: supplier.Address,
+		SessionHeader: &sessiontypes.SessionHeader{
+			ApplicationAddress: app.Address,
+			Service: &sharedtypes.Service{
+				Id:   "svc1",
+				Name: "svcName1",
+			},
+			SessionId:               "session_id",
+			SessionStartBlockHeight: 1,
+			SessionEndBlockHeight:   sessionkeeper.GetSessionEndBlockHeight(1),
+		},
+		RootHash: smstRootWithSum(appStake.Amount.Uint64() + 1), // More than the app stake
+	}
+
+	err := keepers.SettleSessionAccounting(ctx, &claim)
+	require.NoError(t, err)
+	// TODO_BLOCKER: Need to make sure the application is unstaked at this point in time.
+}
 
 func TestSettleSessionAccounting_ValidAccounting(t *testing.T) {
 	t.Skip("TODO_BLOCKER(@Olshansk): Add E2E and integration tests so we validate the actual state changes of the bank & account keepers.")
@@ -58,7 +100,7 @@ func TestSettleSessionAccounting_AppNotFound(t *testing.T) {
 
 	err := keeper.SettleSessionAccounting(ctx, &claim)
 	require.Error(t, err)
-	require.ErrorIs(t, err, types.ErrTokenomicsApplicationNotFound)
+	require.ErrorIs(t, err, tokenomicstypes.ErrTokenomicsApplicationNotFound)
 }
 
 func TestSettleSessionAccounting_InvalidRoot(t *testing.T) {
@@ -169,7 +211,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 			desc:        "Nil Claim",
 			claim:       nil,
 			errExpected: true,
-			expectErr:   types.ErrTokenomicsClaimNil,
+			expectErr:   tokenomicstypes.ErrTokenomicsClaimNil,
 		},
 		{
 			desc: "Claim with nil session header",
@@ -179,7 +221,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   types.ErrTokenomicsSessionHeaderNil,
+			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderNil,
 		},
 		{
 			desc: "Claim with invalid session id",
@@ -189,7 +231,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   types.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
 			desc: "Claim with invalid application address",
@@ -199,7 +241,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   types.ErrTokenomicsSessionHeaderInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsSessionHeaderInvalid,
 		},
 		{
 			desc: "Claim with invalid supplier address",
@@ -209,7 +251,7 @@ func TestSettleSessionAccounting_InvalidClaim(t *testing.T) {
 				return &claim
 			}(),
 			errExpected: true,
-			expectErr:   types.ErrTokenomicsSupplierAddressInvalid,
+			expectErr:   tokenomicstypes.ErrTokenomicsSupplierAddressInvalid,
 		},
 	}
 

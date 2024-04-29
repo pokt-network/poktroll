@@ -147,8 +147,8 @@ func (k Keeper) SettleSessionAccounting(
 
 	// Verify that the application has enough uPOKT to pay for the services it consumed
 	if application.Stake.IsLT(settlementAmt) {
-		logger.Error(fmt.Sprintf(
-			"THIS SHOULD NOT HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
+		logger.Warn(fmt.Sprintf(
+			"THIS SHOULD NEVER HAPPEN. Application with address %s needs to be charged more than it has staked: %v > %v",
 			applicationAddress,
 			settlementAmtuPOKT,
 			application.Stake,
@@ -157,7 +157,9 @@ func (k Keeper) SettleSessionAccounting(
 		// goes "into debt". Need to design a way to handle this when we implement
 		// probabilistic proofs and add all the parameter logic. Do we touch the application balance?
 		// Do we just let it go into debt? Do we penalize the application? Do we unstake it? Etc...
-		settlementAmtuPOKT = sdk.NewCoins(*application.Stake)
+		settlementAmt = sdk.NewCoin("upokt", math.Int(application.Stake.Amount))
+		settlementAmtuPOKT = sdk.NewCoins(settlementAmt)
+		// TODO_BLOCKER: The application should be immediately unstaked at this point in time
 	}
 
 	// Burn uPOKT from the application module account which was held in escrow
@@ -172,7 +174,7 @@ func (k Keeper) SettleSessionAccounting(
 	// Update the application's on-chain stake
 	newAppStake, err := (*application.Stake).SafeSub(settlementAmt)
 	if err != nil {
-		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduce to a negative amount %v", applicationAddress, newAppStake)
+		return types.ErrTokenomicsApplicationNewStakeInvalid.Wrapf("application %q stake cannot be reduced to a negative amount %v", applicationAddress, newAppStake)
 	}
 	application.Stake = &newAppStake
 	k.applicationKeeper.SetApplication(ctx, application)

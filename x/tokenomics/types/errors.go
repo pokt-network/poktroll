@@ -19,5 +19,5 @@ var (
 	ErrTokenomicsApplicationAddressInvalid  = sdkerrors.Register(ModuleName, 1112, "the application address in the claim is not a valid bech32 address")
 	ErrTokenomicsParamsInvalid              = sdkerrors.Register(ModuleName, 1113, "provided params are invalid")
 	ErrTokenomicsRootHashInvalid            = sdkerrors.Register(ModuleName, 1114, "the root hash in the claim is invalid")
-	ErrTokenomicsApplicationNewStakeInvalid = sdkerrors.Register(ModuleName, 1115, "application stake cannot be reduce to a -ve amount")
+	ErrTokenomicsApplicationNewStakeInvalid = sdkerrors.Register(ModuleName, 1115, "application stake cannot be reduced to a -ve amount")
 )
