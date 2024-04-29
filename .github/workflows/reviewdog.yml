@@ -24,7 +24,7 @@ jobs:
           fail_on_error: true
           pattern: TODO_IN_THIS_
 
-  # Prevent the use of `sed` in helper scripts. This ensures compatability across
+  # Prevent the use of `sed` in helper scripts. This ensures compatibility across
   # Darwin and Linux systems.
   check_sed:
     name: Check sed

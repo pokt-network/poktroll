@@ -80,10 +80,12 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 	case tokenomicstypes.ModuleName:
 		var tokenomicsParamsRes tokenomicstypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &tokenomicsParamsRes)
+		require.Equal(s, tokenomicstypes.DefaultParams(), tokenomicsParamsRes.GetParams())
 
 	case prooftypes.ModuleName:
 		var proofParamsRes prooftypes.QueryParamsResponse
 		s.cdc.MustUnmarshalJSON([]byte(res.Stdout), &proofParamsRes)
+		require.Equal(s, prooftypes.DefaultParams(), proofParamsRes.GetParams())
 
 	default:
 		s.Fatalf("unexpected module name: (%v)", moduleName)
