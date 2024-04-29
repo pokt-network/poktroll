@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,14 +18,10 @@ import (
 
 	"github.com/pokt-network/poktroll/cmd/signals"
 	"github.com/pokt-network/poktroll/pkg/client"
-	blocktypes "github.com/pokt-network/poktroll/pkg/client/block"
-	"github.com/pokt-network/poktroll/pkg/client/events"
-	"github.com/pokt-network/poktroll/pkg/client/tx"
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/sync2"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
-	"github.com/pokt-network/poktroll/testutil/testclient/testeventsquery"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
@@ -84,7 +79,7 @@ type relaysSuite struct {
 
 	// blockClient notifies the test suite of new blocks committed.
 	blockClient client.BlockClient
-	latestBlock *blocktypes.CometNewBlockEvent
+	latestBlock client.Block
 	// sessionInfoObs is the observable that maps committed blocks to session information.
 	// It is used to determine when to stake new actors and when they become active.
 	sessionInfoObs observable.Observable[*sessionInfoNotif]
@@ -236,16 +231,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 		s.ctx,
 		s.blockClient.CommittedBlocksSequence(s.ctx),
 		func(ctx context.Context, block client.Block) {
-			s.latestBlock = block.(*blocktypes.CometNewBlockEvent)
+			s.latestBlock = block
 		},
 	)
-
-	// TODO_DISCUSS_IN_THIS_COMMIT: is this still necessary?
-	// Wait for the block client to be notified of at least one block.
-	firstBlockCtx, cancelFirstBlockCtx := context.WithCancel(s.ctx)
-	<-s.blockClient.CommittedBlocksSequence(s.ctx).Subscribe(firstBlockCtx).Ch()
-	// Close the observable subscription after the first block is received.
-	cancelFirstBlockCtx()
 
 	// Setup the txContext that will be used to send transactions to the network.
 	s.txContext = testtx.NewLocalnetContext(s.TestingT.(*testing.T))
@@ -264,8 +252,8 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
-	supplierStakeAmount := s.getSuppliersCurrentStakedAmount()
-	stakeAmount = sdk.NewCoin("upokt", math.NewInt(supplierStakeAmount+1))
+	minStakeAmount := s.getProvisionedActorsCurrentStakedAmount()
+	stakeAmount = sdk.NewCoin("upokt", math.NewInt(minStakeAmount+1))
 }
 
 func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS string) {
@@ -384,7 +372,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 
 	// stakedAndDelegatingObs asynchronously maps over the staking info, notified
 	// when one or more actors have been newly staked. For each notification received,
-	// it waits for the new actors' staking/funding txs to be commited before sending
+	// it waits for the new actors' staking/funding txs to be committed before sending
 	// staking & delegation txs for new applications.
 	stakedAndDelegatingObs := channel.Map(s.ctx, stakingObs,
 		func(ctx context.Context, notif *stakingInfoNotif) (*stakingInfoNotif, bool) {
@@ -445,19 +433,7 @@ func (s *relaysSuite) PairsOfClaimAndProofMessagesShouldBeCommittedOnchain(a str
 	txEventsCtx, cancelTxEvents := context.WithCancel(s.ctx)
 	_ = cancelTxEvents
 
-	deps := depinject.Supply(testeventsquery.NewLocalnetClient(s))
-	replayClient, err := events.NewEventsReplayClient(
-		txEventsCtx,
-		deps,
-		"tm.event='Tx'",
-		tx.UnmarshalTxResult,
-		eventsReplayClientBufferSize,
-	)
-	require.NoError(s, err)
-
-	txEventsCh := replayClient.
-		EventsSequence(txEventsCtx).
-		Subscribe(txEventsCtx).Ch()
+	txEventsCh := s.newTxEventsObs.Subscribe(txEventsCtx).Ch()
 	for txEvent := range txEventsCh {
 		// TODO_IMPROVE: refactor this and other similar loops over events.
 		for _, event := range txEvent.Result.Events {

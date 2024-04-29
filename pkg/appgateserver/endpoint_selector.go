@@ -1,7 +1,8 @@
 package appgateserver
 
 import (
-	"context"
+	"net/http"
+	"strconv"
 
 	"github.com/pokt-network/poktroll/pkg/sdk"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -12,10 +13,10 @@ import (
 // TODO(@h5law): Look into different endpoint selection depending on their suitability.
 // getRelayerUrl gets the URL of the relayer for the given service.
 func (app *appGateServer) getRelayerUrl(
-	ctx context.Context,
 	serviceId string,
 	rpcType sharedtypes.RPCType,
 	supplierEndpoints []*sdk.SingleSupplierEndpoint,
+	request *http.Request,
 ) (supplierEndpoint *sdk.SingleSupplierEndpoint, err error) {
 	// Filter out the supplier endpoints that match the requested serviceId.
 	validSupplierEndpoints := make([]*sdk.SingleSupplierEndpoint, 0, len(supplierEndpoints))
@@ -49,7 +50,19 @@ func (app *appGateServer) getRelayerUrl(
 	// throughout the lifetime of the session. It is primarily used as a foundation
 	// for testing or development purposes but a more enhanced strategy is expected
 	// to be adopted by prod gateways.
-	app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
 
-	return validSupplierEndpoints[app.endpointSelectionIndex], nil
+	relayCount := request.URL.Query().Get("relayCount")
+	nextEndpointIdx := 0
+	if relayCount != "" {
+		relayCountNum, err := strconv.Atoi(relayCount)
+		if err != nil {
+			relayCountNum = 0
+		}
+		nextEndpointIdx = relayCountNum % len(validSupplierEndpoints)
+	} else {
+		app.endpointSelectionIndex = (app.endpointSelectionIndex + 1) % len(validSupplierEndpoints)
+		nextEndpointIdx = app.endpointSelectionIndex
+	}
+
+	return validSupplierEndpoints[nextEndpointIdx], nil
 }

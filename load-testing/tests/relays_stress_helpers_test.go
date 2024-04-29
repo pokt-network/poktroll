@@ -126,6 +126,10 @@ func (s *relaysSuite) mapSessionInfoFn(
 		block client.Block,
 	) (*sessionInfoNotif, bool) {
 		blockHeight := block.Height()
+		if blockHeight <= s.latestBlock.Height() {
+			return nil, true
+		}
+
 		sessionInfo := &sessionInfoNotif{
 			blockHeight:             blockHeight,
 			sessionNumber:           keeper.GetSessionNumber(blockHeight),
@@ -815,7 +819,7 @@ func (s *relaysSuite) waitForTxsToBeCommitted() []*types.TxResult {
 				return txResults
 			}
 			if s.latestBlock.Height() == txResult.Height {
-				numTxs = len(s.latestBlock.Data.Value.Block.Data.Txs)
+				numTxs = len(s.latestBlock.Txs())
 				break
 			}
 			// If the block height does not match the txResult height, wait for the next block.
@@ -843,6 +847,7 @@ func (s *relaysSuite) sendRelay(iteration uint64) (appKeyName, gwKeyName string)
 	// Include the application address in the query to the gateway.
 	query := gatewayUrl.Query()
 	query.Add("applicationAddr", application.accAddress.String())
+	query.Add("relayCount", fmt.Sprintf("%d", iteration))
 	gatewayUrl.RawQuery = query.Encode()
 
 	// Use the pre-defined service ID that all application and suppliers are staking for.
@@ -999,20 +1004,30 @@ func (s *relaysSuite) getRelayCost() int64 {
 	return int64(res.Params.ComputeUnitsToTokensMultiplier)
 }
 
-// getSuppliersCurrentStakedAmount fetches the current staked amount of the suppliers
-// that are already staked and returns the max staked amount.
-func (s *relaysSuite) getSuppliersCurrentStakedAmount() int64 {
+// getProvisionedActorsCurrentStakedAmount fetches the current stake amount of
+// the suppliers and gateways that are already staked and returns the max staked amount.
+func (s *relaysSuite) getProvisionedActorsCurrentStakedAmount() int64 {
 	flagSet := testclient.NewLocalnetFlagSet(s)
 	clientCtx := testclient.NewLocalnetClientCtx(s, flagSet)
 	supplierClient := suppliertypes.NewQueryClient(clientCtx)
+	gatewayClient := gatewaytypes.NewQueryClient(clientCtx)
 
-	res, err := supplierClient.AllSuppliers(s.ctx, &suppliertypes.QueryAllSuppliersRequest{})
+	suppRes, err := supplierClient.AllSuppliers(s.ctx, &suppliertypes.QueryAllSuppliersRequest{})
 	require.NoError(s, err)
 
 	var maxStakedAmount int64
-	for _, supplier := range res.Supplier {
+	for _, supplier := range suppRes.Supplier {
 		if supplier.Stake.Amount.Int64() > maxStakedAmount {
 			maxStakedAmount = supplier.Stake.Amount.Int64()
+		}
+	}
+
+	gwRes, err := gatewayClient.AllGateways(s.ctx, &gatewaytypes.QueryAllGatewaysRequest{})
+	require.NoError(s, err)
+
+	for _, gateway := range gwRes.Gateways {
+		if gateway.Stake.Amount.Int64() > maxStakedAmount {
+			maxStakedAmount = gateway.Stake.Amount.Int64()
 		}
 	}
 

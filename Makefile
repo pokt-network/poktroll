@@ -388,10 +388,6 @@ go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and m
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
-.PHONY: load_test_simple
-load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
-	k6 run load-testing/tests/appGateServerEtherium.js
-
 #############
 ### TODOS ###
 #############
