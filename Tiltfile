@@ -3,10 +3,11 @@ load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
 load("ext://deployment", "deployment_create")
-load('ext://execute_in_pod', 'execute_in_pod')
+load("ext://execute_in_pod", "execute_in_pod")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
+
 
 def merge_dicts(base, updates):
     for k, v in updates.items():
@@ -17,6 +18,7 @@ def merge_dicts(base, updates):
         else:
             # Replace or set the value
             base[k] = v
+
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
@@ -30,18 +32,16 @@ localnet_config_defaults = {
         "delve": {"enabled": False},
     },
     "observability": {"enabled": True},
-    "relayminers": {
-        "count": 1,
-        "delve": {"enabled": False}
-    },
+    "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
     },
     "appgateservers": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
     },
+    # TODO(#511): Add support for `REST` and enabled this.
     "ollama": {
         "enabled": False,
         "model": "qwen:0.5b",
@@ -60,7 +60,9 @@ merge_dicts(localnet_config, localnet_config_defaults)
 # Then merge file contents over defaults
 merge_dicts(localnet_config, localnet_config_file)
 # Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
+if (localnet_config_file != localnet_config) or (
+    not os.path.exists(localnet_config_path)
+):
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
@@ -204,10 +206,8 @@ helm_resource(
         "--values=./localnet/kubernetes/values-validator.yaml",
         "--set=persistence.cleanupBeforeEachStart="
         + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
-        "--set=logs.level="
-        + str(localnet_config["validator"]["logs"]["level"]),
-        "--set=logs.format="
-        + str(localnet_config["validator"]["logs"]["format"]),
+        "--set=logs.level=" + str(localnet_config["validator"]["logs"]["level"]),
+        "--set=logs.format=" + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled="
         + str(localnet_config["observability"]["enabled"]),
         "--set=development.delve.enabled="
@@ -382,7 +382,9 @@ if localnet_config["ollama"]["enabled"]:
     )
 
     local_resource(
-        name='ollama-pull-model',
-        cmd=execute_in_pod("ollama", "ollama pull "+localnet_config["ollama"]["model"]),
-        resource_deps=['ollama'],
+        name="ollama-pull-model",
+        cmd=execute_in_pod(
+            "ollama", "ollama pull " + localnet_config["ollama"]["model"]
+        ),
+        resource_deps=["ollama"],
     )
