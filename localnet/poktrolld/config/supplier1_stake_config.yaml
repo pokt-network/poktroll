@@ -13,3 +13,7 @@ services:
     endpoints:
       - publicly_exposed_url: http://relayminer1:8545
         rpc_type: json_rpc
+  - service_id: ollama
+    endpoints:
+      - publicly_exposed_url: http://relayminer1:8545
+        rpc_type: rest

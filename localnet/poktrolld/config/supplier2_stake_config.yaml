@@ -7,3 +7,7 @@ services:
       # This setup allows for flexible and dynamic service provisioning within the network.
       - publicly_exposed_url: http://relayminer2:8545
         rpc_type: json_rpc
+  - service_id: ollama
+    endpoints:
+      - publicly_exposed_url: http://relayminer2:8545
+        rpc_type: rest
