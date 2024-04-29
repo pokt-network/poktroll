@@ -227,6 +227,8 @@ func (s *suite) TheUserWaitsUntilArchivedDelegationsArePruned() {
 	}
 }
 
+// showApplication issues a application show-application query with json output
+// parses its content and return the application.
 func (s *suite) showApplication(appName string) types.Application {
 	args := []string{
 		"q",

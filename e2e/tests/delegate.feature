@@ -1,6 +1,7 @@
 Feature: Delegate Namespaces
 
     Background:
+        # Setup Tx and NewBlock event query clients for each scenario
         Given the poktroll chain is reachable
 
     Scenario: User can delegate Application to Gateway

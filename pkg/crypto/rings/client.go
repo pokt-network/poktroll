@@ -3,6 +3,7 @@ package rings
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -169,7 +170,7 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	if len(app.DelegateeGatewayAddresses) == 0 {
+	if len(app.DelegateeGatewayAddresses) == 0 && len(app.ArchivedDelegations) == 0 {
 		// add app address twice to make the ring size of minimum 2
 		// TODO_IMPROVE: The appAddress is added twice because a ring signature
 		// requires AT LEAST two pubKeys. If the Application has not delegated
@@ -242,8 +243,8 @@ func getDelegationsAtBlock(
 	// provided block height.
 	var neoProximateArchivedDelegations []string
 	// neoProximateArchivalHeight will hold the block height of the appropriate
-	// archived delegation or 0 if no suitable one is found.
-	neoProximateArchivalHeight := int64(0)
+	// archived delegation or math.MaxInt64 if no suitable one is found.
+	neoProximateArchivalHeight := int64(math.MaxInt64)
 
 	// The chronological order of the archived delegations may not be guaranteed
 	// and iterating through all of them is necessary to find the appropriate one.
