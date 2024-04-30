@@ -14,6 +14,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/client/keyring"
 	"github.com/pokt-network/poktroll/pkg/client/supplier"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testkeyring"
 	"github.com/pokt-network/poktroll/testutil/testclient/testtx"
@@ -111,8 +112,15 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		},
 	}
 
+	rootHashWithSessionBatch := []*relayer.SessionClaim{
+		{
+			RootHash:      rootHash,
+			SessionHeader: &sessionHeader,
+		},
+	}
+
 	go func() {
-		err = supplierClient.CreateClaim(ctx, sessionHeader, rootHash)
+		err = supplierClient.CreateClaims(ctx, rootHashWithSessionBatch)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -180,8 +188,18 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	proof, err := tree.ProveClosest(emptyPath)
 	require.NoError(t, err)
 
+	proofBz, err := proof.Marshal()
+	require.NoError(t, err)
+
+	proofWithSessionHeaderBatch := []*relayer.SessionProof{
+		{
+			ProofBz:       proofBz,
+			SessionHeader: &sessionHeader,
+		},
+	}
+
 	go func() {
-		err = supplierClient.SubmitProof(ctx, sessionHeader, proof)
+		err = supplierClient.SubmitProofs(ctx, proofWithSessionHeaderBatch)
 		require.NoError(t, err)
 		close(doneCh)
 	}()

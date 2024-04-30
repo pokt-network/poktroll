@@ -151,6 +151,14 @@ type relaysSuite struct {
 	// stakedSuppliers is the list of suppliers that are currently staked and
 	// ready to handle relay requests.
 	stakedSuppliers []*accountInfo
+
+	// Number of claims and proofs observed on-chain during the test.
+	currentProofCount int
+	currentClaimCount int
+
+	// expectedClaimsAndProofsCount is the expected number of claims and proofs
+	// to be committed on-chain during the test.
+	expectedClaimsAndProofsCount int
 }
 
 // accountInfo contains the account info needed to build and send transactions.
@@ -249,6 +257,9 @@ func (s *relaysSuite) LocalnetIsRunning() {
 
 	// Initialize the provisioned gateways and suppliers from the load test manifest.
 	s.initializeProvisionedActors()
+
+	// Initialize the on-chain claims and proofs counter.
+	s.countClaimAndProofs()
 
 	// Some suppliers may already be staked at genesis, ensure that staking during
 	// this test succeeds by increasing the sake amount.
@@ -429,27 +440,9 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	<-s.ctx.Done()
 }
 
-func (s *relaysSuite) PairsOfClaimAndProofMessagesShouldBeCommittedOnchain(a string) {
-	txEventsCtx, cancelTxEvents := context.WithCancel(s.ctx)
-	_ = cancelTxEvents
-
-	txEventsCh := s.newTxEventsObs.Subscribe(txEventsCtx).Ch()
-	for txEvent := range txEventsCh {
-		// TODO_IMPROVE: refactor this and other similar loops over events.
-		for _, event := range txEvent.Result.Events {
-			if event.Type != "message" {
-				continue
-			}
-
-			if hasEventAttr(event.Attributes, "action", MsgCreateClaim) {
-				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
-			}
-
-			if hasEventAttr(event.Attributes, "action", MsgSubmitProof) {
-				// TODO_TECHDEBT: match up claims & proofs and assert their quantity.
-			}
-		}
-	}
+func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
+	require.Equalf(s, s.currentClaimCount, s.currentProofCount, "claims and proofs count mismatch")
+	require.Equal(s, s.expectedClaimsAndProofsCount, s.currentProofCount, "unexpected claims and proofs count")
 }
 
 func (ai *accountInfo) addPendingMsg(msg sdk.Msg) {

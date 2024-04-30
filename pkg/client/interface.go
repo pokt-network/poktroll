@@ -23,10 +23,10 @@ import (
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pokt-network/smt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
+	"github.com/pokt-network/poktroll/pkg/relayer"
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
@@ -36,24 +36,21 @@ import (
 // able to construct blockchain transactions from pocket protocol-specific messages
 // related to its role.
 type SupplierClient interface {
-	// CreateClaim sends a claim message which creates an on-chain commitment by
+	// CreateClaims sends claim messages which creates an on-chain commitment by
 	// calling supplier to the given smt.SparseMerkleSumTree root hash of the given
 	// session's mined relays.
-	CreateClaim(
+	CreateClaims(
 		ctx context.Context,
-		sessionHeader sessiontypes.SessionHeader,
-		rootHash []byte,
+		claimWithSessionHeaderBatch []*relayer.SessionClaim,
 	) error
-	// SubmitProof sends a proof message which contains the
-	// smt.SparseMerkleClosestProof, corresponding to some previously created claim
-	// for the same session. The proof is validated on-chain as part of the pocket
-	// protocol.
+	// SubmitProof sends proof messages which contains the smt.SparseMerkleClosestProof,
+	// corresponding to some previously created claim for the same session.
+	// The proof is validated on-chain as part of the pocket protocol.
 	// TODO_IMPROVE(#427): Use SparseCompactClosestProof here to reduce
 	// the amount of data stored on-chain.
-	SubmitProof(
+	SubmitProofs(
 		ctx context.Context,
-		sessionHeader sessiontypes.SessionHeader,
-		proof *smt.SparseMerkleClosestProof,
+		proofWithSessionHeaderBatch []*relayer.SessionProof,
 	) error
 }
 

@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -16,110 +15,117 @@ import (
 )
 
 // submitProofs maps over the given claimedSessions observable.
-// For each session, it:
-// 1. Calculates the earliest block height at which to submit a proof
-// 2. Waits for said height and submits the proof on-chain
+// For each session batch, it:
+// 1. Calculates the earliest block height at which to submit proofs
+// 2. Waits for said height and submits the proofs on-chain
 // 3. Maps errors to a new observable and logs them
 // It DOES NOT BLOCKas map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
-	claimedSessionsObs observable.Observable[relayer.SessionTree],
+	claimedSessionsObs observable.Observable[*relayer.SessionTreeBatch],
 ) {
 	// Map claimedSessionsObs to a new observable of the same type which is notified
-	// when the session is eligible to be proven.
+	// when the sessions in the batch are eligible to be proven.
 	sessionsWithOpenProofWindowObs := channel.Map(
 		ctx, claimedSessionsObs,
-		rs.mapWaitForEarliestSubmitProofHeight,
+		rs.mapWaitForEarliestSubmitProofsHeight,
 	)
 
-	failedSubmitProofSessionsObs, failedSubmitProofSessionsPublishCh := channel.NewObservable[relayer.SessionTree]()
+	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
+		channel.NewObservable[*relayer.SessionTreeBatch]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
 	// proof has been submitted or an error has been encountered, respectively.
 	eitherProvenSessionsObs := channel.Map(
 		ctx, sessionsWithOpenProofWindowObs,
-		rs.newMapProveSessionFn(failedSubmitProofSessionsPublishCh),
+		rs.newMapProveSessionsFn(failedSubmitProofsSessionsPublishCh),
 	)
 
 	// TODO_TECHDEBT: pass failed submit proof sessions to some retry mechanism.
-	_ = failedSubmitProofSessionsObs
+	_ = failedSubmitProofsSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherProvenSessionsObs))
 }
 
-// mapWaitForEarliestSubmitProofHeight is intended to be used as a MapFn. It
+// mapWaitForEarliestSubmitProofsHeight is intended to be used as a MapFn. It
 // calculates and waits for the earliest block height, allowed by the protocol,
-// at which a proof can be submitted for the given session, then emits the session
+// at which proofs can be submitted for the given session number, then emits the session
 // **at that moment**.
-func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofHeight(
+func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 	ctx context.Context,
-	session relayer.SessionTree,
-) (_ relayer.SessionTree, skip bool) {
-	rs.waitForEarliestSubmitProofHeight(
-		ctx, session.GetSessionHeader().GetSessionEndBlockHeight(),
+	sessionTreeBatch *relayer.SessionTreeBatch,
+) (_ *relayer.SessionTreeBatch, skip bool) {
+	rs.waitForEarliestSubmitProofsHeight(
+		ctx, sessionTreeBatch.SessionsEndBlockHeight,
 	)
-	return session, false
+	return sessionTreeBatch, false
 }
 
-// waitForEarliestSubmitProofHeight calculates and waits for (blocking until) the
-// earliest block height, allowed by the protocol, at which a proof can be submitted
-// for a session which was claimed at createClaimHeight. It is calculated relative
+// waitForEarliestSubmitProofsHeight calculates and waits for (blocking until) the
+// earliest block height, allowed by the protocol, at which proofs can be submitted
+// for a session number which where claimed at createClaimHeight. It is calculated relative
 // to createClaimHeight using on-chain governance parameters and randomized input.
 // It IS A BLOCKING function.
-func (rs *relayerSessionsManager) waitForEarliestSubmitProofHeight(
+func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeight(
 	ctx context.Context,
 	createClaimHeight int64,
 ) {
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	submitProofsWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
-	// we wait for submitProofWindowStartHeight to be received before proceeding since we need its hash
+	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
 	rs.logger.Info().
-		Int64("submitProofWindowStartHeight", submitProofWindowStartHeight).
+		Int64("submitProofsWindowStartHeight", submitProofsWindowStartHeight).
 		Msg("waiting & blocking for global earliest proof submission height")
-	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
+	submitProofsWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
-	earliestSubmitProofHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
-	_ = rs.waitForBlock(ctx, earliestSubmitProofHeight)
+	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofsHeight(ctx, submitProofsWindowStartBlock)
+	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
 }
 
-// newMapProveSessionFn returns a new MapFn that submits a proof for the given
-// session. Any session which encouters errors while submitting a proof is sent
+// newMapProveSessionsFn returns a new MapFn that submits proofs on the given
+// session batch. Any session which encounters errors while submitting a proof is sent
 // on the failedSubmitProofSessions channel.
-func (rs *relayerSessionsManager) newMapProveSessionFn(
-	failedSubmitProofSessionsCh chan<- relayer.SessionTree,
-) channel.MapFn[relayer.SessionTree, either.SessionTree] {
+func (rs *relayerSessionsManager) newMapProveSessionsFn(
+	failedSubmitProofSessionsCh chan<- *relayer.SessionTreeBatch,
+) channel.MapFn[*relayer.SessionTreeBatch, either.SessionTreeBatch] {
 	return func(
 		ctx context.Context,
-		session relayer.SessionTree,
-	) (_ either.SessionTree, skip bool) {
-		rs.pendingTxMu.Lock()
-		defer rs.pendingTxMu.Unlock()
-
+		sessionTreeBatch *relayer.SessionTreeBatch,
+	) (_ either.SessionTreeBatch, skip bool) {
 		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
 		// branch(es) to prove should be deterministic and use on-chain governance params
 		// rather than latest.
-		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
+		pathBlockHeight := sessionTreeBatch.SessionsEndBlockHeight +
 			sessionkeeper.GetSessionGracePeriodBlockCount()
 		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
 		if err != nil {
-			return either.Error[relayer.SessionTree](err), false
+			return either.Error[*relayer.SessionTreeBatch](err), false
 		}
 
-		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
-		// from `BlockHash` to `Foo(BlockHash, SessionId)`
-		blockHash := pathBlock.BlockID.Hash
+		sessionProofs := []*relayer.SessionProof{}
+		for _, sessionTree := range sessionTreeBatch.SessionTrees {
+			path := proofkeeper.GetPathForProof(
+				pathBlock.BlockID.Hash,
+				sessionTree.GetSessionHeader().GetSessionId(),
+			)
+			proof, err := sessionTree.ProveClosest(path)
+			if err != nil {
+				return either.Error[*relayer.SessionTreeBatch](err), false
+			}
 
-		// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-		// error that may occur due to latestBlock height differing.
-		fmt.Println("E2E_DEBUG: height for block hash when generating the path", pathBlockHeight, session.GetSessionHeader().GetSessionId())
-		path := proofkeeper.GetPathForProof(blockHash, session.GetSessionHeader().GetSessionId())
-		proof, err := session.ProveClosest(path)
-		if err != nil {
-			return either.Error[relayer.SessionTree](err), false
+			proofBz, err := proof.Marshal()
+			if err != nil {
+				return either.Error[*relayer.SessionTreeBatch](err), false
+			}
+
+			sessionProofs = append(sessionProofs, &relayer.SessionProof{
+				ProofBz:       proofBz,
+				SessionHeader: sessionTree.GetSessionHeader(),
+			})
 		}
 
 		rs.logger.Info().
@@ -127,15 +133,14 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 			Msg("submitting proof")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-		if err := rs.supplierClient.SubmitProof(
+		if err := rs.supplierClient.SubmitProofs(
 			ctx,
-			*session.GetSessionHeader(),
-			proof,
+			sessionProofs,
 		); err != nil {
-			failedSubmitProofSessionsCh <- session
-			return either.Error[relayer.SessionTree](err), false
+			failedSubmitProofSessionsCh <- sessionTreeBatch
+			return either.Error[*relayer.SessionTreeBatch](err), false
 		}
 
-		return either.Success(session), false
+		return either.Success(sessionTreeBatch), false
 	}
 }

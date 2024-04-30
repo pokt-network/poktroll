@@ -29,8 +29,8 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
-	sessionsToClaimObs observable.Observable[relayer.SessionTree]
+	// sessionsToClaimsObs notifies about sessions that are ready to be claimed.
+	sessionsToClaimsObs observable.Observable[*relayer.SessionTreeBatch]
 
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
@@ -45,8 +45,6 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
-	// TODO_IN_THIS_COMMIT: godoc comment.
-	pendingTxMu sync.Mutex
 	// TODO_IN_THIS_COMMIT: godoc comment.
 	queryNodeGRPCUrl *url.URL
 	// TODO_IN_THIS_COMMIT: godoc comment.
@@ -96,7 +94,7 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	rs.sessionsToClaimObs = channel.MapExpand[client.Block, relayer.SessionTree](
+	rs.sessionsToClaimsObs = channel.Map(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
 		rs.mapBlockToSessionsToClaim,
@@ -175,7 +173,7 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	_ context.Context,
 	block client.Block,
-) (sessionTrees []relayer.SessionTree, skip bool) {
+) (sessionTreeBatch *relayer.SessionTreeBatch, skip bool) {
 	rs.sessionsTreesMu.Lock()
 	defer rs.sessionsTreesMu.Unlock()
 
@@ -184,6 +182,9 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 	// earlier.
 	// Iterate over the sessionsTrees map to get the ones that end at a block height
 	// lower than the current block height.
+	sessionTreeBatch = &relayer.SessionTreeBatch{
+		SessionTrees: make([]relayer.SessionTree, 0),
+	}
 	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
 		if IsWithinGracePeriod(endBlockHeight, block.Height()) {
 			// Iterate over the sessionsTrees that have grace period ending at this
@@ -196,12 +197,13 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 				// call that marks the session as claimed will be the only one to add the
 				// sessionTree to the list.
 				if err := sessionTree.StartClaiming(); err == nil {
-					sessionTrees = append(sessionTrees, sessionTree)
+					sessionTreeBatch.SessionTrees = append(sessionTreeBatch.SessionTrees, sessionTree)
 				}
 			}
+			sessionTreeBatch.SessionsEndBlockHeight = endBlockHeight
 		}
 	}
-	return sessionTrees, false
+	return sessionTreeBatch, len(sessionTreeBatch.SessionTrees) == 0
 }
 
 // removeFromRelayerSessions removes the SessionTree from the relayerSessions.
