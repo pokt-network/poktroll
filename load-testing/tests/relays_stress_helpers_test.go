@@ -230,13 +230,11 @@ func (s *relaysSuite) validateActorPlans(plans *actorPlans) {
 
 // TODO_IN_THIS_COMMIT: godoc comment.
 func (plans *actorPlans) maxDurationBlocks() int64 {
-	maxDuration := math.Max(
+	return math.Max(
 		plans.gateways.durationBlocks(),
 		plans.apps.durationBlocks(),
 		plans.suppliers.durationBlocks(),
 	)
-
-	return maxDuration
 }
 
 func (plans *actorPlans) validateAppSupplierPermutations(t gocuke.TestingT) {
