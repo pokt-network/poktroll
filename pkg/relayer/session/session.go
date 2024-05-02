@@ -96,10 +96,12 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	rs.sessionsToClaimsObs = channel.Map(
+	sessionsToClaimsObs, sessionsToClaimsPublishCh := channel.NewObservable[[]relayer.SessionTree]()
+	rs.sessionsToClaimsObs = sessionsToClaimsObs
+	channel.ForEach(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlockToSessionsToClaim,
+		rs.mapBlockToSessionsToClaim(sessionsToClaimsPublishCh),
 	)
 
 	return rs, nil
@@ -173,36 +175,47 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 // mapBlockToSessionsToClaim maps a block to a list of sessions which can be
 // claimed as of that block.
 func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
-	_ context.Context,
-	block client.Block,
-) (sessionTrees []relayer.SessionTree, skip bool) {
-	rs.sessionsTreesMu.Lock()
-	defer rs.sessionsTreesMu.Unlock()
+	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
+) channel.ForEachFn[client.Block] {
+	return func(_ context.Context, block client.Block) {
+		rs.sessionsTreesMu.Lock()
+		defer rs.sessionsTreesMu.Unlock()
 
-	// Check if there are sessions that need to enter the claim/proof phase
-	// as their end block height was the one before the last committed block or
-	// earlier.
-	// Iterate over the sessionsTrees map to get the ones that end at a block height
-	// lower than the current block height.
-	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-		if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
-			// Iterate over the sessionsTrees that have grace period ending at this
-			// block height and add them to the list of sessionTrees to be published.
-			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-				// Mark the session as claimed and add it to the list of sessionTrees to be published.
-				// If the session has already been claimed, it will be skipped.
-				// Appending the sessionTree to the list of sessionTrees is protected
-				// against concurrent access by the sessionsTreesMu such that the first
-				// call that marks the session as claimed will be the only one to add the
-				// sessionTree to the list.
-				if err := sessionTree.StartClaiming(); err == nil {
-					sessionTrees = append(sessionTrees, sessionTree)
+		var lateSessions, onTimeSessions []relayer.SessionTree
+
+		// Check if there are sessions that need to enter the claim/proof phase
+		// as their end block height was the one before the last committed block or
+		// earlier.
+		// Iterate over the sessionsTrees map to get the ones that end at a block height
+		// lower than the current block height.
+		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+			if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
+				// Iterate over the sessionsTrees that have grace period ending at this
+				// block height and add them to the list of sessionTrees to be published.
+				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+					// Mark the session as claimed and add it to the list of sessionTrees to be published.
+					// If the session has already been claimed, it will be skipped.
+					// Appending the sessionTree to the list of sessionTrees is protected
+					// against concurrent access by the sessionsTreesMu such that the first
+					// call that marks the session as claimed will be the only one to add the
+					// sessionTree to the list.
+					if err := sessionTree.StartClaiming(); err != nil {
+						continue
+					}
+
+					sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
+					if IsWithinGracePeriod(sessionkeeper.GetSessionEndBlockHeight(block.Height()), sessionEndHeight) {
+						lateSessions = append(lateSessions, sessionTree)
+					} else {
+						onTimeSessions = append(onTimeSessions, sessionTree)
+					}
 				}
 			}
 		}
-	}
 
-	return sessionTrees, len(sessionTrees) == 0
+		sessionsToClaimsPublishCh <- lateSessions
+		sessionsToClaimsPublishCh <- onTimeSessions
+	}
 }
 
 // removeFromRelayerSessions removes the SessionTree from the relayerSessions.
