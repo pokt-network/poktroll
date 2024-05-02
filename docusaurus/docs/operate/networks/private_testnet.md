@@ -14,13 +14,14 @@ This is a very volatile network. We need to wipe this network frequently to keep
 - [Visibility](#visibility)
 - [Deployment Example](#deployment-example)
 
-
 ## Visibility
 
 Community members provide explorers for this testnet:
-- https://poktroll-devnet.cryptonode.tools/
-- https://poktroll-testnet.qspider.com/
+
+- [poktroll-devnet.cryptonode.tools/](https://poktroll-devnet.cryptonode.tools)
+- [poktroll-testnet.qspider.com/](https://poktroll-testnet.qspider.com)
 
 ## Deployment Example
 
-We provide an example for the community on how to deploy the Full Node, Relay Miner, and AppGate Server in the [poktroll-docker-compose-example GitHub Repo](https://github.com/pokt-network/poktroll-docker-compose-example).
+We provide an example for the community on how to deploy the Full Node, Relay Miner,
+and AppGate Server in the [poktroll-docker-compose-example GitHub Repo](https://github.com/pokt-network/poktroll-docker-compose-example).
