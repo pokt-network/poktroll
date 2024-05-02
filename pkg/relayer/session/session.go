@@ -44,7 +44,7 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
-	// TODO_IN_THIS_COMMIT: godoc comment.
+	// blockQueryClient is the CometBFT RPC client used to query blocks
 	blockQueryClient cosmosclient.CometRPC
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
