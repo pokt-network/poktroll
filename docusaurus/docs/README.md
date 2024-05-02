@@ -29,18 +29,15 @@ slug: /
 
 # poktroll <!-- omit in toc -->
 
-**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and [CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli) for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
-
-This R&D effort is the result of a research spike conducted by the Core [Pocket Network](https://pokt.network/) Protocol Team at [GROVE Inc.](https://grove.city/). We have documented our research journey [here](https://www.pokt.network/blog/pokt-network-rolling-into-the-modular-future-of-the-protocol-a-technical-deep-dive) (deep dive) and [here](https://www.pokt.network/blog/a-sovereign-rollup-and-a-modular-future) (summary).
+**poktroll** is built using the [Cosmos SDK](https://docs.cosmos.network) and
+[CometBFT](https://cometbft.com/), created with [Ignite CLI](https://ignite.com/cli)
+for the Shannon upgrade of the [Pocket Network](https://pokt.network) blockchain.
 
 - [Learn about Pocket Network](#learn-about-pocket-network)
 - [Roadmap](#roadmap)
-- [Getting Started](#getting-started)
-  - [Quickstart](#quickstart)
-  - [Godoc](#godoc)
-- [Have questions? Ask An AI](#have-questions-ask-an-ai)
-  - [PNYX (Search Engine)](#pnyx-search-engine)
-  - [GPokT (Chatbot)](#gpokt-chatbot)
+- [Quickstart](#quickstart)
+- [Godoc](#godoc)
+- [Have questions? Ask An PNYC](#have-questions-ask-an-pnyc)
 - [License](#license)
 
 ## Learn about Pocket Network
@@ -50,42 +47,27 @@ a handful of (potentially outdated) resources you can reference in the meantime
 to build a better understanding of Pocket Network:
 
 - [Pocket Network official documentation](https://docs.pokt.network)
-- [Pocket Network Morse; aka v0 (current mainnet)](https://github.com/pokt-network/pocket-core)
-- [Pocket Network Protocol (outdated)](https://github.com/pokt-network/pocket-network-protocol)
-- [Pocket Network V1 (deprecated)](https://github.com/pokt-network/pocket)
+- [[Live] Pocket Network Morse; aka v0](https://github.com/pokt-network/pocket-core)
+- [[Outdated] Pocket Network Protocol](https://github.com/pokt-network/pocket-network-protocol)
+- [[Deprecated]Pocket Network V1](https://github.com/pokt-network/pocket)
 
 ## Roadmap
 
-You can details related to our roadmap [here](./planning/roadmap/roadmap.md) and the
-roadmap changelog [here](./planning/roadmap/roadmap_changelog.md).
+You can view the Shannon Roadmap on [Github](https://github.com/orgs/pokt-network/projects/144?query=is%3Aopen+sort%3Aupdated-desc)
 
-## Getting Started
+## Quickstart
 
-### Quickstart
+The best way to get involved is by following the [quickstart instructions](./develop/developer_guide/quickstart.md).
 
-The best way to get involved is by following the instructions [here](./develop/developer_guide/quickstart.md).
-
-### Godoc
+## Godoc
 
 The Godoc for the source code in this can be found at [pkg.go.dev/github.com/pokt-network/poktroll](https://pkg.go.dev/github.com/pokt-network/poktroll).
 
-## Have questions? Ask An AI
-
-The fastest and easiest way to get answers to your questions is by one of our
-several AI-powered tools.
-
-### PNYX (Search Engine)
+## Have questions? Ask An PNYC
 
 You can use [PNYX](https://pnyxai.com/), an AI-powered search engine that has been
 trained and indexed on the Pocket Network documentation, community calls, forums
 and much more!
-
-### GPokT (Chatbot)
-
-You can use our chatbot, [GPokT](https://gpoktn.streamlit.app), to ask questions
-about Pocket Network. Please note that it may require you to provide your own
-LLM API token. If the deployed version of GPokT is down, you can deploy your own
-version by following the instructions [here](https://github.com/pokt-network/gpokt).
 
 ---
 
