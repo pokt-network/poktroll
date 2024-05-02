@@ -4,8 +4,14 @@ SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
 APPGATE_SERVER ?= http://localhost:42069
+GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
+
+# The domain ending in ".town" is staging, ".city" is production
+GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+# The "protocol" field here instructs the Grove gateway which network to use
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -322,6 +328,10 @@ test_e2e: test_e2e_env ## Run all E2E tests
 test_e2e_app:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
+.PHONY: test_e2e_supplier
+test_e2e_supplier:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
+
 .PHONY: test_e2e_gateway
 test_e2e_gateway:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
@@ -467,7 +477,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -507,7 +517,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -819,3 +829,13 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+#############################
+### Grove Gateway Helpers ###
+#############################
+
+.PHONY: grove_staging_eth_block_height
+grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
+	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
+		-H 'Content-Type: application/json' \
+		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)
