@@ -34,11 +34,11 @@ localnet_config_defaults = {
     },
     "gateways": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
     },
     "appgateservers": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -75,6 +75,9 @@ if localnet_config["observability"]["enabled"]:
         "prometheus-community", "https://prometheus-community.github.io/helm-charts"
     )
     helm_repo("grafana-helm-repo", "https://grafana.github.io/helm-charts")
+
+    # Increase timeout for building the image
+    update_settings(k8s_upsert_timeout_secs=60)
 
     helm_resource(
         "observability",

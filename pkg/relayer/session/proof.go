@@ -22,7 +22,7 @@ import (
 // It DOES NOT BLOCKas map operations run in their own goroutines.
 func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
-	claimedSessionsObs observable.Observable[*relayer.SessionTreeBatch],
+	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
 	// Map claimedSessionsObs to a new observable of the same type which is notified
 	// when the sessions in the batch are eligible to be proven.
@@ -32,7 +32,7 @@ func (rs *relayerSessionsManager) submitProofs(
 	)
 
 	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
-		channel.NewObservable[*relayer.SessionTreeBatch]()
+		channel.NewObservable[[]relayer.SessionTree]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -53,12 +53,12 @@ func (rs *relayerSessionsManager) submitProofs(
 // **at that moment**.
 func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 	ctx context.Context,
-	sessionTreeBatch *relayer.SessionTreeBatch,
-) (_ *relayer.SessionTreeBatch, skip bool) {
+	sessionTrees []relayer.SessionTree,
+) (_ []relayer.SessionTree, skip bool) {
 	rs.waitForEarliestSubmitProofsHeight(
-		ctx, sessionTreeBatch.SessionsEndBlockHeight,
+		ctx, sessionTrees[0].GetSessionHeader().SessionEndBlockHeight,
 	)
-	return sessionTreeBatch, false
+	return sessionTrees, false
 }
 
 // waitForEarliestSubmitProofsHeight calculates and waits for (blocking until) the
@@ -90,36 +90,44 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeight(
 // session batch. Any session which encounters errors while submitting a proof is sent
 // on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
-	failedSubmitProofSessionsCh chan<- *relayer.SessionTreeBatch,
-) channel.MapFn[*relayer.SessionTreeBatch, either.SessionTreeBatch] {
+	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
+) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
 		ctx context.Context,
-		sessionTreeBatch *relayer.SessionTreeBatch,
-	) (_ either.SessionTreeBatch, skip bool) {
-		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
-		// branch(es) to prove should be deterministic and use on-chain governance params
-		// rather than latest.
-		pathBlockHeight := sessionTreeBatch.SessionsEndBlockHeight +
-			sessionkeeper.GetSessionGracePeriodBlockCount()
-		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
-		if err != nil {
-			return either.Error[*relayer.SessionTreeBatch](err), false
-		}
+		sessionTrees []relayer.SessionTree,
+	) (_ either.SessionTrees, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
 
 		sessionProofs := []*relayer.SessionProof{}
-		for _, sessionTree := range sessionTreeBatch.SessionTrees {
+
+		pathBlockHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight() +
+			sessionkeeper.GetSessionGracePeriodBlockCount()
+
+		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
+		if err != nil {
+			return either.Error[[]relayer.SessionTree](err), false
+		}
+
+		// TODO_TECHDEBT: If any of the proofs fail proving or marshaling, then the
+		// entire batch is not submitted. We should consider collecting failed proofs,
+		// submitting the rest and returning the failed proofs to a retry mechanism.
+		for _, sessionTree := range sessionTrees {
+			// TODO_BLOCKER: The block that'll be used as a source of entropy for which
+			// branch(es) to prove should be deterministic and use on-chain governance params
+			// rather than latest.
 			path := proofkeeper.GetPathForProof(
 				pathBlock.BlockID.Hash,
 				sessionTree.GetSessionHeader().GetSessionId(),
 			)
 			proof, err := sessionTree.ProveClosest(path)
 			if err != nil {
-				return either.Error[*relayer.SessionTreeBatch](err), false
+				return either.Error[[]relayer.SessionTree](err), false
 			}
 
 			proofBz, err := proof.Marshal()
 			if err != nil {
-				return either.Error[*relayer.SessionTreeBatch](err), false
+				return either.Error[[]relayer.SessionTree](err), false
 			}
 
 			sessionProofs = append(sessionProofs, &relayer.SessionProof{
@@ -133,14 +141,18 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			Msg("submitting proof")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
-		if err := rs.supplierClient.SubmitProofs(
-			ctx,
-			sessionProofs,
-		); err != nil {
-			failedSubmitProofSessionsCh <- sessionTreeBatch
-			return either.Error[*relayer.SessionTreeBatch](err), false
+		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
+			failedSubmitProofSessionsCh <- sessionTrees
+			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		return either.Success(sessionTreeBatch), false
+		for _, sessionTree := range sessionTrees {
+			// Prune the session tree after the proof has been submitted.
+			if err := sessionTree.Delete(); err != nil {
+				return either.Error[[]relayer.SessionTree](err), false
+			}
+		}
+
+		return either.Success(sessionTrees), false
 	}
 }

@@ -23,7 +23,7 @@ import (
 // It DOES NOT BLOCK as map operations run in their own goroutines.
 func (rs *relayerSessionsManager) createClaims(
 	ctx context.Context,
-) observable.Observable[*relayer.SessionTreeBatch] {
+) observable.Observable[[]relayer.SessionTree] {
 	// Map sessionsToClaimObs to a new observable of the same type which is notified
 	// when the session is eligible to be claimed.
 	sessionsWithOpenClaimWindowObs := channel.Map(
@@ -32,7 +32,7 @@ func (rs *relayerSessionsManager) createClaims(
 	)
 
 	failedCreateClaimSessionsObs, failedCreateClaimSessionsPublishCh :=
-		channel.NewObservable[*relayer.SessionTreeBatch]()
+		channel.NewObservable[[]relayer.SessionTree]()
 
 	// Map sessionsWithOpenClaimWindowObs to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -46,7 +46,7 @@ func (rs *relayerSessionsManager) createClaims(
 	_ = failedCreateClaimSessionsObs
 	logging.LogErrors(ctx, filter.EitherError(ctx, eitherClaimedSessionsObs))
 
-	// Map eitherClaimedSessions to a new observable of relayer.SessionTreeBatch
+	// Map eitherClaimedSessions to a new observable of []relayer.SessionTree
 	// which is notified when the corresponding claims creation succeeded.
 	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
@@ -57,12 +57,12 @@ func (rs *relayerSessionsManager) createClaims(
 // session **at that moment**.
 func (rs *relayerSessionsManager) mapWaitForEarliestCreateClaimsHeight(
 	ctx context.Context,
-	sessionTreeBatch *relayer.SessionTreeBatch,
-) (_ *relayer.SessionTreeBatch, skip bool) {
+	sessionTrees []relayer.SessionTree,
+) (_ []relayer.SessionTree, skip bool) {
 	rs.waitForEarliestCreateClaimsHeight(
-		ctx, sessionTreeBatch.SessionsEndBlockHeight,
+		ctx, sessionTrees[0].GetSessionHeader().SessionEndBlockHeight,
 	)
-	return sessionTreeBatch, false
+	return sessionTrees, false
 }
 
 // waitForEarliestCreateClaimsHeight calculates and waits for (blocking until) the
@@ -112,30 +112,33 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 // session number. Any session which encounters an error while creating a claim
 // is sent on the failedCreateClaimSessions channel.
 func (rs *relayerSessionsManager) newMapClaimSessionsFn(
-	failedCreateClaimsSessionsPublishCh chan<- *relayer.SessionTreeBatch,
-) channel.MapFn[*relayer.SessionTreeBatch, either.SessionTreeBatch] {
+	failedCreateClaimsSessionsPublishCh chan<- []relayer.SessionTree,
+) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
 	return func(
 		ctx context.Context,
-		sessionTreeBatch *relayer.SessionTreeBatch,
-	) (_ either.SessionTreeBatch, skip bool) {
+		sessionTrees []relayer.SessionTree,
+	) (_ either.SessionTrees, skip bool) {
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
+
 		sessionClaims := []*relayer.SessionClaim{}
 
-		pathBlockHeight := sessionTreeBatch.SessionsEndBlockHeight +
+		pathBlockHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight() +
 			sessionkeeper.GetSessionGracePeriodBlockCount()
+
 		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
 		if err != nil {
-			return either.Error[*relayer.SessionTreeBatch](err), false
+			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		polylog.Ctx(ctx).Info().
-			Int64("session_start_block", pathBlock.Block.Height).
-			Msg("submitting claims")
-
-		for _, session := range sessionTreeBatch.SessionTrees {
+		// TODO_TECHDEBT: If any of the claims fail flushing, then the entire batch
+		// is not submitted. We should consider collecting failed claims, submitting
+		// the rest and returning the failed claims to a retry mechanism.
+		for _, session := range sessionTrees {
 			// this session should no longer be updated
 			claimRoot, err := session.Flush()
 			if err != nil {
-				return either.Error[*relayer.SessionTreeBatch](err), false
+				return either.Error[[]relayer.SessionTree](err), false
 			}
 
 			sessionClaims = append(sessionClaims, &relayer.SessionClaim{
@@ -144,11 +147,15 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			})
 		}
 
+		polylog.Ctx(ctx).Info().
+			Int64("session_start_block", pathBlock.Block.Height).
+			Msg("submitting claims")
+
 		if err := rs.supplierClient.CreateClaims(ctx, sessionClaims); err != nil {
-			failedCreateClaimsSessionsPublishCh <- sessionTreeBatch
-			return either.Error[*relayer.SessionTreeBatch](err), false
+			failedCreateClaimsSessionsPublishCh <- sessionTrees
+			return either.Error[[]relayer.SessionTree](err), false
 		}
 
-		return either.Success(sessionTreeBatch), false
+		return either.Success(sessionTrees), false
 	}
 }

@@ -170,7 +170,7 @@ func (s *relaysSuite) mapSessionInfoFn(
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			if blockHeight > s.startBlockHeight+s.testDurationBlocks+keeper.NumBlocksPerSession {
+			if blockHeight > s.startBlockHeight+s.testDurationBlocks+keeper.NumBlocksPerSession+1 {
 				s.cancelCtx()
 			}
 
@@ -565,9 +565,10 @@ func (s *relaysSuite) shouldIncrementActor(
 	sessionInfo *sessionInfoNotif,
 	actorBlockIncRate, actorCount, maxActorNum int64,
 ) bool {
+	initialSession := keeper.GetSessionNumber(s.startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := actorBlockIncRate / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSession
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	maxActorNumReached := actorCount == maxActorNum
 
@@ -584,9 +585,10 @@ func (s *relaysSuite) shouldIncrementSupplier(
 	sessionInfo *sessionInfoNotif,
 	supplierBlockIncRate, supplierCount, maxSupplierNum int64,
 ) bool {
+	initialSession := keeper.GetSessionNumber(s.startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := supplierBlockIncRate / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSession
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	maxSupplierNumReached := supplierCount == maxSupplierNum
 

@@ -208,7 +208,7 @@ func (st *sessionTree) Delete() error {
 	}
 
 	// Delete the KVStore from disk
-	return os.RemoveAll(filepath.Dir(st.storePath))
+	return os.RemoveAll(st.storePath)
 }
 
 // StartClaiming marks the session tree as being picked up for claiming,

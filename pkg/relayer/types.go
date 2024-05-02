@@ -12,11 +12,6 @@ type MinedRelay struct {
 	Hash  []byte
 }
 
-type SessionTreeBatch struct {
-	SessionTrees           []SessionTree
-	SessionsEndBlockHeight int64
-}
-
 type SessionProof struct {
 	ProofBz       []byte
 	SessionHeader *sessiontypes.SessionHeader
