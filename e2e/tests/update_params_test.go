@@ -134,7 +134,6 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(granterName,
 	// Check if the expected grant is found in the response.
 	grantFound := false
 	for _, grant := range grantsRes.Grants {
-		s.Log(grant)
 		if grant.Authorization.Value.Msg == msgType {
 			grantFound = true
 			break
