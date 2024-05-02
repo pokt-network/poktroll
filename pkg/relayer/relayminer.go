@@ -106,7 +106,7 @@ func (rel *relayMiner) ServeMetrics(addr string) error {
 }
 
 // Starts a pprof server on the given address.
-func (rel *relayMiner) ServePprof(addr string) error {
+func (rel *relayMiner) ServePprof(ctx context.Context, addr string) error {
 	pprofMux := http.NewServeMux()
 	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
 	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
@@ -118,7 +118,17 @@ func (rel *relayMiner) ServePprof(addr string) error {
 		Addr:    addr,
 		Handler: pprofMux,
 	}
+	// If no error, start the server in a new goroutine
+	go func() {
+		rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+		server.ListenAndServe()
+	}()
 
-	rel.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
-	return server.ListenAndServe()
+	go func() {
+		<-ctx.Done()
+		rel.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
+		server.Shutdown(ctx)
+	}()
+
+	return nil
 }

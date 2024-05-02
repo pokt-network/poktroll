@@ -57,11 +57,11 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 
 		sessionId := claim.SessionHeader.SessionId
 
+		_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 		// Using the probabilistic proofs approach, determine if this expiring
 		// claim required an on-chain proof
 		isProofRequiredForClaim := k.isProofRequiredForClaim(ctx, &claim)
 		if isProofRequiredForClaim {
-			_, isProofFound := k.proofKeeper.GetProof(ctx, sessionId, claim.SupplierAddress)
 			// If a proof is not found, the claim will expire and never be settled.
 			if !isProofFound {
 				// Emit an event that a claim has expired and being removed without being settled.
@@ -101,9 +101,13 @@ func (k Keeper) SettlePendingClaims(ctx sdk.Context) (numClaimsSettled, numClaim
 		// The claim & proof are no longer necessary, so there's no need for them
 		// to take up on-chain space.
 		k.proofKeeper.RemoveClaim(ctx, sessionId, claim.SupplierAddress)
-		// NB: We are calling `RemoveProof` of whether or not the proof was required
-		// to delete it from the state. It is okay for it to fail here if it doesn't exist.
-		k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+		// Whether or not the proof is required, the supplier may have submitted one
+		// so we need to delete it either way. If we don't have the if structure,
+		// a safe error will be printed, but it can be confusing to the operator
+		// or developer.
+		if isProofFound {
+			k.proofKeeper.RemoveProof(ctx, sessionId, claim.SupplierAddress)
+		}
 
 		numClaimsSettled++
 		logger.Info(fmt.Sprintf("Successfully settled claim for session ID %q at block height %d", claim.SessionHeader.SessionId, blockHeight))
