@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/url"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gopkg.in/yaml.v2"
@@ -175,7 +176,7 @@ func parseEndpointConfigs(endpoint YAMLServiceEndpoint) ([]*sharedtypes.ConfigOp
 
 // parseEndpointRPCType parses the endpoint RPC type into a sharedtypes.RPCType
 func parseEndpointRPCType(endpoint YAMLServiceEndpoint) (sharedtypes.RPCType, error) {
-	switch endpoint.RPCType {
+	switch strings.ToLower(endpoint.RPCType) {
 	case "json_rpc":
 		return sharedtypes.RPCType_JSON_RPC, nil
 	default:
