@@ -78,6 +78,7 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
+		&rs.blockQueryClient,
 		&rs.supplierClient,
 	); err != nil {
 		return nil, err
@@ -88,11 +89,6 @@ func NewRelayerSessions(
 	}
 
 	if err := rs.validateConfig(); err != nil {
-		return nil, err
-	}
-
-	rs.blockQueryClient, err = cosmosclient.NewClientFromNode(rs.queryNodeGRPCUrl.String())
-	if err != nil {
 		return nil, err
 	}
 
@@ -247,8 +243,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
-func (rp *relayerSessionsManager) validateConfig() error {
-	if rp.storesDirectory == "" {
+func (rs *relayerSessionsManager) validateConfig() error {
+	if rs.storesDirectory == "" {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 

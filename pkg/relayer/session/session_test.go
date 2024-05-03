@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	cmttypes "github.com/cometbft/cometbft/types"
+	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -15,6 +18,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
@@ -40,7 +44,23 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
 
-	deps := depinject.Supply(blockClient, supplierClient)
+	ctrl := gomock.NewController(t)
+	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
+	blockQueryClientMock.EXPECT().
+		Block(gomock.Any(), gomock.AssignableToTypeOf((*int64)(nil))).
+		Return(&coretypes.ResultBlock{
+			BlockID: cmttypes.BlockID{
+				Hash: []byte("expected block hash"),
+			},
+			Block: &cmttypes.Block{
+				Header: cmttypes.Header{
+					Height: 1,
+				},
+			},
+		}, nil).
+		Times(2)
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.
