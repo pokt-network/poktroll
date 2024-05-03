@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"cosmossdk.io/depinject"
-	"cosmossdk.io/log"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/regen-network/gocuke"
 	"github.com/spf13/pflag"
@@ -25,32 +21,11 @@ var (
 
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
 	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
-
-	// TODO_IN_THIS_COMMIT: godoc comments...
-	TxConfig          client.TxConfig
-	Marshaler         codec.Codec
-	InterfaceRegistry codectypes.InterfaceRegistry
 )
 
 // init initializes the SDK configuration upon package import.
 func init() {
 	cmd.InitSDKConfig()
-
-	deps := depinject.Configs(
-		app.AppConfig(),
-		depinject.Supply(
-			app.AppConfig(),
-			log.NewLogger(os.Stderr),
-		),
-	)
-	if err := depinject.Inject(
-		deps,
-		&TxConfig,
-		&Marshaler,
-		&InterfaceRegistry,
-	); err != nil {
-		panic(err)
-	}
 
 	// If VALIDATOR_RPC_ENDPOINT environment variable is set, use it to override the default localnet endpoint.
 	if endpoint := os.Getenv("VALIDATOR_RPC_ENDPOINT"); endpoint != "" {
@@ -75,11 +50,8 @@ func NewLocalnetClientCtx(t gocuke.TestingT, flagSet *pflag.FlagSet) *client.Con
 
 	homedir := app.DefaultNodeHome
 	clientCtx := client.Context{}.
-		WithCodec(Marshaler).
-		WithTxConfig(TxConfig).
 		WithHomeDir(homedir).
-		WithAccountRetriever(authtypes.AccountRetriever{}).
-		WithInterfaceRegistry(InterfaceRegistry)
+		WithAccountRetriever(authtypes.AccountRetriever{})
 
 	clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, flagSet)
 	require.NoError(t, err)
