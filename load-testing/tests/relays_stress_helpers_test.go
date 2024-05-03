@@ -170,7 +170,11 @@ func (s *relaysSuite) mapSessionInfoFn(
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			if blockHeight > s.startBlockHeight+s.testDurationBlocks+keeper.NumBlocksPerSession+1 {
+			finalizeTestBlockHeight := s.startBlockHeight +
+				s.testDurationBlocks +
+				keeper.GetSessionGracePeriodBlockCount() +
+				keeper.NumBlocksPerSession
+			if blockHeight > finalizeTestBlockHeight {
 				s.cancelCtx()
 			}
 
@@ -423,7 +427,7 @@ func (s *relaysSuite) sendFundNewAppsTx(
 			appCount+appsToFund,
 		)
 
-	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight + 1)
+	appFundingAmount := s.getAppFundingAmount(sessionInfo.sessionEndBlockHeight)
 	for appIdx := int64(0); appIdx < appsToFund; appIdx++ {
 		app := s.createApplicationAccount(appCount+appIdx+1, appFundingAmount)
 		s.addPendingFundApplicationMsg(app)
@@ -776,10 +780,17 @@ func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
 
 	// All messages have to be signed by the keyName provided.
 	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
-	err = s.txContext.SignTx(actor.keyName, txBuilder, false, false)
-	if err != nil {
-		require.NoError(s, err)
+	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
+	// the error post failed: Post "http://localhost:36657": EOF.
+	// A retry mechanism is added to avoid this issue.
+	for i := 0; i < signTxMaxRetries; i++ {
+		err = s.txContext.SignTx(actor.keyName, txBuilder, false, false)
+		if err == nil {
+			break
+		}
 	}
+
+	require.NoError(s, err)
 
 	// Serialize transactions.
 	txBz, err := s.txContext.EncodeTx(txBuilder)
@@ -900,6 +911,11 @@ func (s *relaysSuite) ensureFundedActors(
 
 		// If no transfer event is found for the actor, the test is cancelled.
 		if !actorFunded {
+			for _, txResult := range txResults {
+				if txResult.Result.Log != "" {
+					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
+				}
+			}
 			s.cancelCtx()
 			s.Fatal("actor not funded")
 			return
@@ -946,8 +962,8 @@ func (s *relaysSuite) ensureStakedActors(
 					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
 				}
 			}
-			//s.cancelCtx()
-			//s.Fatalf("actor %s not staked", actor.keyName)
+			s.cancelCtx()
+			s.Fatalf("actor %s not staked", actor.keyName)
 			return
 		}
 	}
@@ -989,6 +1005,11 @@ func (s *relaysSuite) ensureDelegatedApps(
 		// If the number of delegatees is not equal to the number of gateways,
 		// the test is cancelled.
 		if numDelegatees != len(gateways) {
+			for _, txResult := range txResults {
+				if txResult.Result.Log != "" {
+					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
+				}
+			}
 			s.cancelCtx()
 			s.Fatal("applications not delegated to all gateways")
 			return

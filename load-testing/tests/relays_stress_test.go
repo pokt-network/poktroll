@@ -34,6 +34,8 @@ const (
 	MsgSubmitProof      = "/poktroll.proof.MsgSubmitProof"
 	AppMsgUpdateParams  = "/poktroll.application.MsgUpdateParams"
 	EventRedelegation   = "poktroll.application.EventRedelegation"
+
+	signTxMaxRetries = 3
 )
 
 var (

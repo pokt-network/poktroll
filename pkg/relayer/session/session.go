@@ -213,8 +213,13 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 			}
 		}
 
-		sessionsToClaimsPublishCh <- lateSessions
-		sessionsToClaimsPublishCh <- onTimeSessions
+		if len(lateSessions) > 0 {
+			sessionsToClaimsPublishCh <- lateSessions
+		}
+
+		if len(onTimeSessions) > 0 {
+			sessionsToClaimsPublishCh <- onTimeSessions
+		}
 	}
 }
 

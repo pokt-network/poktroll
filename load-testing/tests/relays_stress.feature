@@ -15,8 +15,4 @@ Feature: Loading gateway server with relays
       | application | 2                | 4              | 6          |
       | supplier    | 1                | 4              | 3          |
     When a load of concurrent relay requests are sent from the applications
-#    Then "12" pairs of claim and proof messages should be committed on-chain
-
-#    Examples:
-#      |  |  |
-#      |  |  |
+    Then the correct pairs count of claim and proof messages should be committed on-chain
