@@ -190,9 +190,9 @@ func setupRelayerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
-		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
-		newSupplyBlockQueryClientFn(queryNodeRPCUrl),           // leaf
+		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),    // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
 		config.NewSupplyDelegationClientFn(),                              // leaf
@@ -350,23 +350,5 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
-	}
-}
-
-// newSupplyBlockQueryClientFn returns a function which constructs a
-// BlockQueryClient instance and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockQueryClient.
-func newSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockQueryClient, err := cosmosclient.NewClientFromNode(queryNodeRPCUrl.String())
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
 	}
 }

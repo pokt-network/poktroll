@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cosmosclient "github.com/cosmos/cosmos-sdk/client"
+	cometclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -50,7 +50,7 @@ type relayerSessionsManager struct {
 	// TODO_IN_THIS_COMMIT: godoc comment.
 	queryNodeGRPCUrl *url.URL
 	// TODO_IN_THIS_COMMIT: godoc comment.
-	blockQueryClient cosmosclient.CometRPC
+	blockQueryClient cometclient.CometRPC
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string

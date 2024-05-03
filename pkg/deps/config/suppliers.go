@@ -377,3 +377,21 @@ func NewSupplyPOKTRollSDKFn(signingKeyName string) SupplierFn {
 		return depinject.Configs(deps, depinject.Supply(poktrollSDK)), nil
 	}
 }
+
+// newSupplyBlockQueryClientFn returns a function which constructs a
+// BlockQueryClient instance and returns a new depinject.Config which
+// is supplied with the given deps and the new BlockQueryClient.
+func NewSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) SupplierFn {
+	return func(
+		_ context.Context,
+		deps depinject.Config,
+		_ *cobra.Command,
+	) (depinject.Config, error) {
+		blockQueryClient, err := sdkclient.NewClientFromNode(queryNodeRPCUrl.String())
+		if err != nil {
+			return nil, err
+		}
+
+		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
+	}
+}
