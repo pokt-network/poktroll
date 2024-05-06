@@ -264,13 +264,12 @@ proto_fix_self_import: ## TODO_TECHDEBT(@bryanchriswhite): Add a proper explanat
 	@for dir in $(wildcard ./api/poktroll/*/); do \
 			module=$$(basename $$dir); \
 			echo "Further processing module $$module"; \
-			$(GREP) -lRP '\s+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' ./api/poktroll/$$module | while read -r file; do \
+			$(GREP) -lRE '[[:space:]]+'$$module' "github.com/pokt-network/poktroll/api/poktroll/'$$module'"' $$dir | while read -r file; do \
 					echo "Modifying file: $$file"; \
 					$(SED) -i -E 's,^[[:space:]]+'$$module'[[:space:]]+"github.com/pokt-network/poktroll/api/poktroll/'$$module'",,' "$$file"; \
 					$(SED) -i 's,'$$module'\.,,g' "$$file"; \
 			done; \
 	done
-
 
 .PHONY: proto_clean
 proto_clean: ## Delete existing .pb.go or .pb.gw.go files
