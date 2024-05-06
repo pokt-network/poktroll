@@ -15,4 +15,11 @@ message Application {
   cosmos.base.v1beta1.Coin stake = 2; // The total amount of uPOKT the application has staked
   repeated poktroll.shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
   repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+  map<uint64, UndelegationFromAppToGatewayEvent> undelegations = 5 [(gogoproto.nullable) = false]; // The map of session end heights to undelegations from Gateway, in a non-nullable map
+}
+
+// UndelegationFromAppToGatewayEvent defines the type used to store an undelegation
+// event from an application to a gateway that happened at a specific session end height.
+message UndelegationFromAppToGatewayEvent {
+  repeated string undelegated_gateways = 2 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false];
 }

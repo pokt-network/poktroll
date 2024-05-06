@@ -3,6 +3,7 @@ package rings
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
@@ -12,7 +13,9 @@ import (
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/crypto"
 	"github.com/pokt-network/poktroll/pkg/polylog"
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	"github.com/pokt-network/poktroll/x/service/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 )
 
 var _ crypto.RingClient = (*ringClient)(nil)
@@ -53,15 +56,16 @@ func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	return rc, nil
 }
 
-// GetRingForAddress returns the ring for the address provided.
+// GetRingForAddress returns the ring for the address and block height provided.
 // The ring is created by querying for the application's and its delegated
 // gateways public keys. These keys are converted to secp256k1 curve points
 // before forming the ring.
 func (rc *ringClient) GetRingForAddress(
 	ctx context.Context,
 	appAddress string,
+	blockHeight int64,
 ) (*ring.Ring, error) {
-	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress)
+	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress, blockHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -113,8 +117,9 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	}
 
 	// Get the ring for the application address of the relay request.
+	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress)
+	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
@@ -143,10 +148,11 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 }
 
 // getDelegatedPubKeysForAddress returns the gateway public keys an application
-// delegated the ability to sign relay requests on its behalf.
+// delegated the ability to sign relay requests on its behalf at the given block height.
 func (rc *ringClient) getDelegatedPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
+	blockHeight int64,
 ) ([]cryptotypes.PubKey, error) {
 	// Get the application's on chain state.
 	app, err := rc.applicationQuerier.GetApplication(ctx, appAddress)
@@ -157,18 +163,15 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
-	if len(app.DelegateeGatewayAddresses) == 0 {
-		// add app address twice to make the ring size of minimum 2
-		// TODO_IMPROVE: The appAddress is added twice because a ring signature
-		// requires AT LEAST two pubKeys. If the Application has not delegated
-		// to any gateways, the app's own address needs to be used twice to
-		// create a ring. This is not a huge issue but an improvement should
-		// be investigated in the future.
-		ringAddresses = append(ringAddresses, appAddress)
-	} else {
-		// add the delegatee gateway addresses
-		ringAddresses = append(ringAddresses, app.DelegateeGatewayAddresses...)
-	}
+
+	// Reconstruct the delegatee gateway addresses at the given block height and
+	// add them to the ring addresses.
+	delegateeGatewayAddresses := getDelegationsAtBlock(&app, blockHeight)
+	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
+
+	// Sort the ring addresses to ensure the ring is consistent between signing and
+	// verification by satisfying relayRequestRingSig.Ring().Equals(expectedAppRing)
+	slices.Sort(ringAddresses)
 
 	rc.logger.Debug().
 		// TODO_TECHDEBT: implement and use `polylog.Event#Strs([]string)`
@@ -193,4 +196,49 @@ func (rc *ringClient) addressesToPubKeys(
 		pubKeys[i] = acc
 	}
 	return pubKeys, nil
+}
+
+func getDelegationsAtBlock(app *apptypes.Application, blockHeight int64) []string {
+	// Get the target session end height at which we want to get the active delegations.
+	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
+	// Get the current active delegations for the application and use them as a base.
+	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
+
+	// Use a map to keep track of the delegations that have been added to the active
+	// delegations slice to avoid duplicates.
+	addedDelegations := make(map[string]bool)
+
+	// Iterate over the undelegations recorded at their respective block height
+	// and check whether to add them back as active delegations.
+	for undelegationHeight, undelegatedGateways := range app.Undelegations {
+		// If the undelegation happened BEFORE the target session end height, skip it,
+		// as it became effective before the target session end height.
+		if targetSessionEndHeight > undelegationHeight {
+			continue
+		}
+		// Add back any delegation that was undelegated after the target session end
+		// height, as we consider it not happening yet relative to the target height.
+		for _, gatewayAddress := range undelegatedGateways.UndelegatedGateways {
+			if _, ok := addedDelegations[gatewayAddress]; ok {
+				continue
+			}
+
+			activeDelegationsAtHeight = append(activeDelegationsAtHeight, gatewayAddress)
+			// Mark the gateway as added to avoid duplicates.
+			addedDelegations[gatewayAddress] = true
+		}
+
+	}
+
+	// add app address twice to make the ring size of minimum 2
+	// TODO_IMPROVE: The appAddress is added twice because a ring signature
+	// requires AT LEAST two pubKeys. If the Application has not delegated
+	// to any gateways, the app's own address needs to be used twice to
+	// create a ring. This is not a huge issue but an improvement should
+	// be investigated in the future.
+	if len(activeDelegationsAtHeight) == 0 {
+		activeDelegationsAtHeight = append(activeDelegationsAtHeight, app.Address)
+	}
+
+	return activeDelegationsAtHeight
 }

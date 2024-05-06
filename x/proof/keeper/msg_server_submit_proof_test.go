@@ -1192,8 +1192,11 @@ func signRelayRequest(
 ) {
 	t.Helper()
 
+	relayReqMeta := relay.GetReq().GetMeta()
+	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
+
 	// Retrieve the signing ring associated with the application address.
-	appRing, err := ringClient.GetRingForAddress(ctx, appAddr)
+	appRing, err := ringClient.GetRingForAddress(ctx, appAddr, sessionEndHeight)
 	require.NoError(t, err)
 
 	// Retrieve the signing key associated with the application address.

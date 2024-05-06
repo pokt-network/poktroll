@@ -295,6 +295,13 @@ send_relay:
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	http://localhost:42069/anvil
 
+.PHONY: send_relay_to_gateway
+send_relay_to_gateway:
+	@appAddr=$$(poktrolld keys show app1 -a) && \
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
+
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
 # cp ${HOME}/.poktroll/config/config.toml $(POKTROLLD_HOME)/config/config.toml
