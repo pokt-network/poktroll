@@ -846,9 +846,12 @@ install: ## Build and install the binary
 
 .PHONY: ignite_install
 ignite_install: ## Install ignite. Used by CI and heighliner.
+	# Check if sudo is available on the system
+	SUDO := $(shell command -v sudo || echo "")
 	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz
 	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz
-	sudo mv ignite /usr/local/bin/ignite
+	# Use sudo if available
+	$(SUDO) mv ignite /usr/local/bin/ignite
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz
 	ignite version
 
