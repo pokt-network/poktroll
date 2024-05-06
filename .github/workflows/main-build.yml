@@ -16,11 +16,7 @@ jobs:
     - name: install ignite
       # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
       run: |
-        # curl https://get.ignite.com/cli! | bash
-        wget https://github.com/ignite/cli/releases/download/v28.2.0/ignite_28.2.0_linux_amd64.tar.gz
-        tar -xzf ignite_28.2.0_linux_amd64.tar.gz
-        sudo mv ignite /usr/local/bin/ignite
-        ignite version
+        make ignite_install
 
     - uses: actions/checkout@v3
       with:

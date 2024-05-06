@@ -21,15 +21,45 @@ SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
 SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
 
-# Detect operating system
-OS := $(shell uname -s)
+# Detect operating system and arch
+OS := $(shell uname -s | tr A-Z a-z)
+ARCH := $(shell uname -m)
+ifeq ($(ARCH),x86_64)
+	ARCH := amd64
+endif
+ifeq ($(ARCH),aarch64)
+	ARCH := arm64
+endif
 
 # Set default commands, will potentially be overridden on macOS
 SED := sed
 GREP := grep
 
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT := $(shell git log -1 --format='%H')
+
+# don't override user values
+ifeq (,$(VERSION))
+  # Remove 'v' prefix from git tag and assign to VERSION
+  VERSION := $(shell git describe --tags | sed 's/^v//')
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
+
+ldflags =   -X github.com/cosmos/cosmos-sdk/version.Name=Poktroll \
+			-X github.com/cosmos/cosmos-sdk/version.AppName=poktrolld \
+			-X github.com/cosmos/cosmos-sdk/version.Version=$(VERSION) \
+			-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT) \
+			-X github.com/cosmos/cosmos-sdk/version.BuildTags= \
+			-X github.com/pokt-network/poktroll/cmd/poktrolld/cmd.ChainID=$(CHAIN_ID)
+ldflags += $(LDFLAGS)
+ldflags := $(strip $(ldflags))
+
 # macOS-specific adjustments
-ifeq ($(OS),Darwin)
+ifeq ($(OS),darwin)
     # Check for gsed and ggrep, suggest installation with Homebrew if not found
     FOUND_GSED := $(shell command -v gsed)
     FOUND_GGREP := $(shell command -v ggrep)
@@ -808,6 +838,19 @@ ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktr
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
+
+
+.PHONY: install
+install: ## Build and install the binary
+	go build -mod readonly -tags "" -ldflags "$(ldflags)" ./cmd/poktrolld
+
+.PHONY: ignite_install
+ignite_install: ## Install ignite. Used by CI and heighliner.
+	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz
+	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz
+	sudo mv ignite /usr/local/bin/ignite
+	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz
+	ignite version
 
 #####################
 ### Documentation ###
