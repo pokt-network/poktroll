@@ -50,7 +50,7 @@ jobs:
         images: |
           ghcr.io/pokt-network/poktrolld
         tags: |
-          type=ref,event=branch
+          type=ref,event=branch,suffix=-dev
           type=ref,event=pr
           type=sha
           type=sha,format=long
