@@ -841,7 +841,7 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 
 .PHONY: install
 install: ## Build and install the binary
-	go build -mod readonly -tags "" -ldflags "$(ldflags)" ./cmd/poktrolld
+	go install -mod readonly -tags "" -ldflags "$(ldflags)" ./cmd/poktrolld
 
 .PHONY: ignite_install
 ignite_install: ## Install ignite. Used by CI and heighliner.
