@@ -17,35 +17,35 @@ jobs:
   go-test:
     runs-on: ubuntu-latest
     steps:
-      - name: install ignite
-        # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
-        run: |
-          # curl https://get.ignite.com/cli! | bash
-          wget https://github.com/ignite/cli/releases/download/v28.2.0/ignite_28.2.0_linux_amd64.tar.gz
-          tar -xzf ignite_28.2.0_linux_amd64.tar.gz
-          sudo mv ignite /usr/local/bin/ignite
-          ignite version
+    - name: install ignite
+      # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
+      run: |
+        # curl https://get.ignite.com/cli! | bash
+        wget https://github.com/ignite/cli/releases/download/v28.2.0/ignite_28.2.0_linux_amd64.tar.gz
+        tar -xzf ignite_28.2.0_linux_amd64.tar.gz
+        sudo mv ignite /usr/local/bin/ignite
+        ignite version
 
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21.6"
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: "1.22.2"
 
-      - name: Install CI dependencies
-        run: make install_ci_deps
+    - name: Install CI dependencies
+      run: make install_ci_deps
 
-      - name: Generate protobufs
-        run: make proto_regen
+    - name: Generate protobufs
+      run: make proto_regen
 
-      - name: Generate mocks
-        run: make go_mockgen
+    - name: Generate mocks
+      run: make go_mockgen
 
-      - name: Run golangci-lint
-        run: make go_lint
+    - name: Run golangci-lint
+      run: make go_lint
 
-      - name: Test
-        run: make go_test
+    - name: Test
+      run: make go_test
