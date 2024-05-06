@@ -41,7 +41,7 @@ COMMIT := $(shell git log -1 --format='%H')
 # don't override user values
 ifeq (,$(VERSION))
   # Remove 'v' prefix from git tag and assign to VERSION
-  VERSION := $(shell git describe --tags | sed 's/^v//')
+  VERSION := $(shell git describe --tags 2>/dev/null | sed 's/^v//')
   # if VERSION is empty, then populate it with branch's name and raw commit hash
   ifeq (,$(VERSION))
     VERSION := $(BRANCH)-$(COMMIT)
@@ -846,13 +846,16 @@ install: ## Build and install the binary
 
 .PHONY: ignite_install
 ignite_install: ## Install ignite. Used by CI and heighliner.
-	# Check if sudo is available on the system
-	SUDO := $(shell command -v sudo || echo "")
-	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz
-	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz
-	# Use sudo if available
-	$(SUDO) mv ignite /usr/local/bin/ignite
-	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz
+	# Determine if sudo is available and use it if it is
+	if command -v sudo &>/dev/null; then \
+		SUDO="sudo"; \
+	else \
+		SUDO=""; \
+	fi; \
+	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	$$SUDO mv ignite /usr/local/bin/ignite; \
+	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	ignite version
 
 #####################
