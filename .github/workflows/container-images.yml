@@ -31,9 +31,9 @@ jobs:
         chain: pocket-network
         dockerfile: cosmos
         pre-build: |
-          make ignite_install
-          make proto_regen
+          make -d ignite_install
+          make -d proto_regen
         build-target: |
-          make install
+          make -d install
         binaries: |
           - /go/bin/poktrolld
