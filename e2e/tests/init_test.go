@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -69,6 +71,8 @@ func TestMain(m *testing.M) {
 
 type suite struct {
 	gocuke.TestingT
+	ctx  context.Context
+	once sync.Once
 	// TODO_TECHDEBT: rename to `poktrolld`.
 	pocketd          *pocketdBin
 	scenarioState    map[string]any // temporary state for each scenario
@@ -79,9 +83,13 @@ type suite struct {
 	// https://docs.cosmos.network/main/build/modules/authz
 	granterName string
 	granteeName string
+
+	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
+	expectedModuleParamsMap map[string]map[string]anyMap
 }
 
 func (s *suite) Before() {
+	s.ctx = context.Background()
 	s.pocketd = new(pocketdBin)
 	s.scenarioState = make(map[string]any)
 	deps := depinject.Configs(

@@ -781,7 +781,7 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 ##############
 
 # TODO_CONSIDERATION: additional factoring (e.g. POKTROLLD_FLAGS).
-PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
 .PHONY: update_tokenomics_params_all
 params_update_tokenomics_all: ## Update the tokenomics module params

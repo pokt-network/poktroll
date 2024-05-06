@@ -2,6 +2,10 @@ package types
 
 import sdk "github.com/cosmos/cosmos-sdk/types"
 
+// TODO_IN_THIS_COMMIT: move - module agnostic
+// TODO_IN_THIS_COMMIT: godoc comment...
+type IsMsgUpdateParams_AsType isMsgUpdateParam_AsType
+
 var _ sdk.Msg = (*MsgUpdateParams)(nil)
 
 func NewMsgUpdateParams(
