@@ -26,9 +26,11 @@ var (
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
 	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
 
-	// TxConfig provided by ... ?
-	TxConfig          client.TxConfig
-	Marshaler         codec.Codec
+	// TxConfig provided by app.AppConfig(), intended as a convenience for use in tests.
+	TxConfig client.TxConfig
+	// Marshaler provided by app.AppConfig(), intended as a convenience for use in tests.
+	Marshaler codec.Codec
+	// InterfaceRegistry provided by app.AppConfig(), intended as a convenience for use in tests.
 	InterfaceRegistry codectypes.InterfaceRegistry
 )
 
@@ -39,10 +41,11 @@ func init() {
 	deps := depinject.Configs(
 		app.AppConfig(),
 		depinject.Supply(
-			app.AppConfig(),
 			log.NewLogger(os.Stderr),
 		),
 	)
+
+	// Ensure that the global variables are initialized.
 	if err := depinject.Inject(
 		deps,
 		&TxConfig,
