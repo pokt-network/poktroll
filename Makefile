@@ -851,11 +851,24 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	else \
 		SUDO=""; \
 	fi; \
+	echo "Downloading Ignite CLI..."; \
 	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Extracting Ignite CLI..."; \
 	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Contents of the extracted directory:"; \
+	ls -lah; \
+	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
+	echo "Cleaning up..."; \
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Checking if Ignite CLI is in the expected directory..."; \
+	ls -lah /usr/local/bin/ | grep ignite; \
+	echo "Current PATH: $$PATH"; \
+	echo "Trying to run Ignite CLI version:"; \
+	/usr/local/bin/ignite version; \
+	echo "Trying to run Ignite CLI version without full path:"; \
 	ignite version
+
 
 #####################
 ### Documentation ###
