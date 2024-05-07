@@ -13,14 +13,13 @@ jobs:
   build-push-container:
     runs-on: ubuntu-latest
     steps:
-    - name: install ignite
-      # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
-      run: |
-        make ignite_install
-
     - uses: actions/checkout@v3
       with:
         fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+
+    - name: install ignite
+      run: |
+        make ignite_install
 
     - name: Set up Go
       uses: actions/setup-go@v4

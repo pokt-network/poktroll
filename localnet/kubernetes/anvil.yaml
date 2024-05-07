@@ -16,7 +16,8 @@ spec:
       # TODO: Add resource limits
       containers:
         - name: anvil
-          image: ghcr.io/foundry-rs/foundry:latest
+          # TODO: going with a static tag instead of `latest` or `nightly` as latest is currently broken for darwin/arm64.
+          image: ghcr.io/foundry-rs/foundry:nightly-3fa02706ca732c994715ba42d923605692062375
           ports:
             - containerPort: 8547
           command: ["anvil"]
