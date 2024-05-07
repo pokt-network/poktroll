@@ -128,11 +128,11 @@ func (rc *ringCache) GetCachedAddresses() []string {
 	return appAddresses
 }
 
-// GetRingForAddress returns the ring for the address and block height provided.
+// GetRingForAddressAtHeight returns the ring for the address and block height provided.
 // If it does not exist in the cache, it will be created by querying the application
 // module and converting the addresses into their corresponding public key points on
 // the secp256k1 curve. It will then be cached for future use.
-func (rc *ringCache) GetRingForAddress(
+func (rc *ringCache) GetRingForAddressAtHeight(
 	ctx context.Context,
 	appAddress string,
 	blockHeight int64,
@@ -157,7 +157,7 @@ func (rc *ringCache) GetRingForAddress(
 		Str("app_address", appAddress).
 		Msg("ring cache miss; fetching from application module")
 
-	ring, err = rc.ringClient.GetRingForAddress(ctx, appAddress, blockHeight)
+	ring, err = rc.ringClient.GetRingForAddressAtHeight(ctx, appAddress, blockHeight)
 	if err != nil {
 		return nil, err
 	}

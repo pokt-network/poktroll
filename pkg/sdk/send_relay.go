@@ -43,7 +43,7 @@ func (sdk *poktrollSDK) SendRelay(
 	// Get the application's signer.
 	appAddress := supplierEndpoint.Header.ApplicationAddress
 	sessionEndHeight := supplierEndpoint.Header.SessionEndBlockHeight
-	appRing, err := sdk.ringCache.GetRingForAddress(ctx, appAddress, sessionEndHeight)
+	appRing, err := sdk.ringCache.GetRingForAddressAtHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return nil, ErrSDKHandleRelay.Wrapf("getting app ring: %s", err)
 	}

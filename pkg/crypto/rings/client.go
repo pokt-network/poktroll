@@ -56,22 +56,29 @@ func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 	return rc, nil
 }
 
-// GetRingForAddress returns the ring for the address and block height provided.
+// GetRingForAddressAtHeight returns the ring for the address and block height provided.
+// The block height provided is used to determine the appropriate delegated gateways
+// to use at that height since signature verification may be performed for
+// delegations that are no longer active.
+// The height provided will be rounded up to the session end height to ensure
+// the ring is constructed with from the correct past delegations since they
+// become effective at the next session's start height.
+// TODO(@red-0ne): Link to the docs once they are available.
 // The ring is created by querying for the application's and its delegated
 // gateways public keys. These keys are converted to secp256k1 curve points
 // before forming the ring.
-func (rc *ringClient) GetRingForAddress(
+func (rc *ringClient) GetRingForAddressAtHeight(
 	ctx context.Context,
 	appAddress string,
 	blockHeight int64,
 ) (*ring.Ring, error) {
-	pubKeys, err := rc.getDelegatedPubKeysForAddress(ctx, appAddress, blockHeight)
+	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, blockHeight)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the points on the secp256k1 curve for the public keys in the ring.
-	points, err := pointsFromPublicKeys(pubKeys...)
+	points, err := pointsFromPublicKeys(ringPubKeys...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +126,7 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	// Get the ring for the application address of the relay request.
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRing, err := rc.GetRingForAddress(ctx, appAddress, sessionEndHeight)
+	expectedAppRing, err := rc.GetRingForAddressAtHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
@@ -147,9 +154,11 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	return nil
 }
 
-// getDelegatedPubKeysForAddress returns the gateway public keys an application
-// delegated the ability to sign relay requests on its behalf at the given block height.
-func (rc *ringClient) getDelegatedPubKeysForAddress(
+// getRingPubKeysForAddress returns the public keys corresponding to a ring
+// It is a slice consisting of the application's public key and the public keys
+// of the gateways an application delegated the ability to sign relay requests
+// on its behalf at the given block height.
+func (rc *ringClient) getRingPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
 	blockHeight int64,
@@ -166,7 +175,7 @@ func (rc *ringClient) getDelegatedPubKeysForAddress(
 
 	// Reconstruct the delegatee gateway addresses at the given block height and
 	// add them to the ring addresses.
-	delegateeGatewayAddresses := getDelegationsAtBlock(&app, blockHeight)
+	delegateeGatewayAddresses := getRingAddressesAtBlock(&app, blockHeight)
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
 
 	// Sort the ring addresses to ensure the ring is consistent between signing and
@@ -198,7 +207,11 @@ func (rc *ringClient) addressesToPubKeys(
 	return pubKeys, nil
 }
 
-func getDelegationsAtBlock(app *apptypes.Application, blockHeight int64) []string {
+// getRingAddressesAtBlock returns the active gateway delegations for the given
+// application and target block height while accounting for delegations/undelegations.
+// The ring addresses slice is reconstructed by adding back the delegated gateways
+// that have been undelegated after the target session end height.
+func getRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
 	// Get the target session end height at which we want to get the active delegations.
 	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
 	// Get the current active delegations for the application and use them as a base.
