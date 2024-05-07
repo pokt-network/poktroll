@@ -863,6 +863,7 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	echo "Checking if Ignite CLI is in the expected directory..."; \
 	ls -lah /usr/local/bin/ | grep ignite; \
+	file /usr/local/bin/ignite
 	echo "Current PATH: $$PATH"; \
 	echo "Trying to run Ignite CLI version:"; \
 	/usr/local/bin/ignite version; \
