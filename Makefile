@@ -859,6 +859,7 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	ls -lah; \
 	echo "Moving Ignite CLI to /usr/local/bin..."; \
 	$$SUDO mv ignite /usr/local/bin/ignite; \
+	$$SUDO chmod +x /usr/local/bin/ignite; \
 	echo "Cleaning up..."; \
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	echo "Checking if Ignite CLI is in the expected directory..."; \
