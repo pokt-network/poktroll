@@ -92,6 +92,9 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
 
+	sdkCtx.WithBlockHeight(4)
+	k.EndBlockerPruneUndelegations(sdkCtx)
+
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedGateways)+1, len(events))
 	require.Equal(t, "poktroll.application.EventRedelegation", events[7].Type)
@@ -257,6 +260,9 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	// Undelegate the application from the gateway
 	_, err = srv.UndelegateFromGateway(ctx, undelegateMsg)
 	require.NoError(t, err)
+
+	sdkCtx.WithBlockHeight(4)
+	k.EndBlockerPruneUndelegations(sdkCtx)
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 2, len(events))
