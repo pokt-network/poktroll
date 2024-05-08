@@ -88,6 +88,10 @@ genesis:
     staking:
       params:
         bond_denom: upokt
+        # TODO_BLOCKER(@Olshansk): Figure out what this should be on Shannon
+        # re-genesis. We're setting it to 1 for Alpha TestNet #1 so Grove
+        # maintains the only validator until Alpha TestNet #2.
+        max_validators: 1
     crisis:
       constant_fee:
         amount: "10000"

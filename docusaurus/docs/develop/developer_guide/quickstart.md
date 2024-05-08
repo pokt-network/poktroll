@@ -5,32 +5,34 @@ title: Quickstart
 
 # Quickstart <!-- omit in toc -->
 
-:::tip
-The goal of this document is to get you up and running with a LocalNet and
-end-to-end relay.
+:::info
+The goal of this document is to get you up and running with a LocalNet, some
+manually deployed local actors, and sending an end-to-end relay. It will not
+go in depth into any concepts.
 
-**If you encounter any problems**, the best way to get support
-from the team is by creating a new [GitHub Issue here](https://github.com/pokt-network/pocket/issues/new/choose).
+Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/new/choose)
+**if you encounter any problems.**
 :::
 
-- [Install Dependencies](#install-dependencies)
+- [0. Install Dependencies](#0-install-dependencies)
 - [1. Launch \& Inspect LocalNet](#1-launch--inspect-localnet)
-  - [1.1 Clone the repository](#11-clone-the-repository)
-  - [1.2 See all the available helper commands](#12-see-all-the-available-helper-commands)
-  - [1.3 Prepare your environment](#13-prepare-your-environment)
-  - [1.4 Create a k8s cluster](#14-create-a-k8s-cluster)
+  - [1.1 Clone the `poktroll` repository](#11-clone-the-poktroll-repository)
+  - [1.2 See all the available helper commands in `Makefile`](#12-see-all-the-available-helper-commands-in-makefile)
+  - [1.3 Prepare your development environment](#13-prepare-your-development-environment)
+  - [1.4 Create a `k8s` cluster](#14-create-a-k8s-cluster)
   - [1.5 Start up LocalNet](#15-start-up-localnet)
-  - [1.6 Grafana Logs](#16-grafana-logs)
+  - [1.6 View Grafana Logs](#16-view-grafana-logs)
   - [1.7 Check the status of the blockchain](#17-check-the-status-of-the-blockchain)
 - [2. Fund New Accounts](#2-fund-new-accounts)
-  - [2.1 Create a Shannon Supplier Account](#21-create-a-shannon-supplier-account)
-  - [2.2 Create a Shannon Application Account](#22-create-a-shannon-application-account)
-  - [2.3 Fund your Supplier Account](#23-fund-your-supplier-account)
+  - [2.1 Create a Shannon `Supplier` Account](#21-create-a-shannon-supplier-account)
+  - [2.2 Create a Shannon `Application` Account](#22-create-a-shannon-application-account)
+  - [2.3 Fund your `Supplier` Account](#23-fund-your-supplier-account)
   - [2.4 Fund your Application Account](#24-fund-your-application-account)
 - [3. Manually Stake a Supplier \& Deploy a RelayMiner](#3-manually-stake-a-supplier--deploy-a-relayminer)
   - [3.1 View existing suppliers](#31-view-existing-suppliers)
-  - [3.2 Create a Supplier configuration](#32-create-a-supplier-configuration)
-  - [3.3 Stake the new Supplier](#33-stake-the-new-supplier)
+  - [3.2 Preparing your backend data node](#32-preparing-your-backend-data-node)
+  - [3.3 Create a Supplier configuration](#33-create-a-supplier-configuration)
+  - [3.4 Stake the new Supplier](#34-stake-the-new-supplier)
   - [3.4 Prepare the RelayMiner configuration](#34-prepare-the-relayminer-configuration)
   - [3.5 Start the RelayMiner locally](#35-start-the-relayminer-locally)
 - [4. Manually Stake an Application \& Deploy an AppGate Server](#4-manually-stake-an-application--deploy-an-appgate-server)
@@ -40,9 +42,11 @@ from the team is by creating a new [GitHub Issue here](https://github.com/pokt-n
   - [4.4 Prepare the AppGate Server configuration](#44-prepare-the-appgate-server-configuration)
   - [4.5 Start the AppGate Server locally](#45-start-the-appgate-server-locally)
 - [5. Send A Relay](#5-send-a-relay)
-  - [5.1 Send a relay a shannon](#51-send-a-relay-a-shannon)
-  - [5.2 Stake a few more Suppliers](#52-stake-a-few-more-suppliers)
-  - [Checking logs](#checking-logs)
+  - [5.1 Send a relay on Shannon](#51-send-a-relay-on-shannon)
+  - [5.2 What just happened?](#52-what-just-happened)
+  - [5.3 What will happen later](#53-what-will-happen-later)
+  - [5.4 Staking a few more Suppliers without RelayMiners](#54-staking-a-few-more-suppliers-without-relayminers)
+  - [5.5. Inspect the logs](#55-inspect-the-logs)
 - [6. Dynamically Scaling LocalNet](#6-dynamically-scaling-localnet)
 - [7. Explore the tools](#7-explore-the-tools)
   - [E2E Tests](#e2e-tests)
@@ -50,11 +54,7 @@ from the team is by creating a new [GitHub Issue here](https://github.com/pokt-n
   - [Makefile](#makefile)
   - [Ignite](#ignite)
 
-## Install Dependencies
-
-:::note
-You might already have these installed if you've followed the [LocalNet instructions](../internal_infrastructure/localnet.md).
-:::
+## 0. Install Dependencies
 
 Install the following dependencies:
 
@@ -65,36 +65,48 @@ Install the following dependencies:
 5. [Helm](https://helm.sh/docs/intro/install/#through-package-managers) - k8s configuration and automation tool
 6. [Tilt](https://docs.tilt.dev/install.html) - k8s local development tool & environment manager
 
+:::note
+If you've followed the [LocalNet instructions](../internal_infrastructure/localnet.md),
+you may already have them installed.
+:::
+
 ## 1. Launch & Inspect LocalNet
 
-This section will help you deploy a Pocket LocalNet in a k8s cluster on your machine,
+This section will help you deploy a POKT LocalNet in a k8s cluster on your machine
 and inspect it so you have an idea of what's going on!
 
 We'll be manually configuring a few actors to run in your shell for the sake of
-the tutorial, but in practice, you should be using [localnet](./../internal_infrastructure/localnet.md)
+the tutorial so you have visibility into the types of on-chain and off-chain
+actors. In practice, you should be using [localnet](./../internal_infrastructure/localnet.md)
 to dynamically scale your actors.
 
-### 1.1 Clone the repository
+To learn more about the different actors type, see the docs [here](../../protocol/actors/actors.md).
+
+It should look something like this once you're past the first section:
+
+![Tilt LocalNet View](./img/quickstart_localnet.png)
+
+### 1.1 Clone the `poktroll` repository
 
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
 cd poktroll
 ```
 
-### 1.2 See all the available helper commands
+### 1.2 See all the available helper commands in `Makefile`
 
-```bash
-make help
-```
-
-:::tip Makefile
-
-We leverage the `Makefile` to wrap the complexity of some common commands, but you
-can [view it directly](https://github.com/pokt-network/poktroll/blob/main/Makefile)
+We leverage the `Makefile` to abstract the complexity of some common commands,
+but you can [view it directly](https://github.com/pokt-network/poktroll/blob/main/Makefile)
 to see what the underlying command being executed is.
+
+:::tip `make help`
+
+If you run `make help` from the root of the repo, you'll see a list of all the
+available commands. Looking inside the Makefile is a great way to learn how to use them!
+
 :::
 
-### 1.3 Prepare your environment
+### 1.3 Prepare your development environment
 
 Compile protobufs, generate mocks and verify that all tests are passing by running:
 
@@ -102,13 +114,30 @@ Compile protobufs, generate mocks and verify that all tests are passing by runni
 make go_develop_and_test
 ```
 
-### 1.4 Create a k8s cluster
+There are some flaky tests, so you can re-run with the following command without
+needing to regenerate the mocks and types:
+
+```bash
+make go_test
+```
+
+### 1.4 Create a `k8s` cluster
+
+Create a new `k8s` cluster for your LocalNet:
 
 ```bash
 kind create cluster
 ```
 
+If you use `k8s` for other things, you may need to switch your context as well:
+
+```bash
+kubectl config use-context kind-kind
+```
+
 ### 1.5 Start up LocalNet
+
+Bring up your LocalNet and wait a few minutes:
 
 ```bash
 make localnet_up
@@ -118,14 +147,12 @@ Visit [localhost:10350](<http://localhost:10350/r/(all)/overview>) and wait unti
 
 If everything worked as expected, your screen should look similar to the following:
 
-![Tilt LocalNet View](./img/quickstart_localnet.png)
-
-### 1.6 Grafana Logs
+### 1.6 View Grafana Logs
 
 Every actor has a local grafana dashboard associated with it.
 
 For example, if you visit the [RelayMiner Tilt UI](http://localhost:10350/r/relayminer1/overview),
-you can click in the top right corner to view its [grafana dashboard](http://localhost:3003/d/relayminer/protocol-relayminer?orgId=1&var-relayminer=relayminer1&refresh=5s).
+you can click in the top left corner to view its [grafana dashboard](http://localhost:3003/d/relayminer/protocol-relayminer?orgId=1&var-relayminer=relayminer1&refresh=5s).
 
 ![Tilt RelayMiner](./img/quickstart_relayminer.png)
 
@@ -139,7 +166,7 @@ You can query the status of the blockchain using `poktrolld` by running:
 poktrolld status --node=tcp://127.0.0.1:36657 | jq
 ```
 
-Alternatively, you use the CometBFT status directly at:
+Alternatively, you use the [CometBFT](https://github.com/cometbft/cometbft) status directly at:
 
 ```bash
 curl -s -X POST localhost:36657/status | jq
@@ -152,7 +179,7 @@ curl -s -X POST localhost:36657/block | jq
 ```
 
 For example, you can get the height of the blockchain by visiting the
-[Validator Grafana Dashboarrd](http://localhost:3003/d/cosmoscometbft/protocol-cometbft-dashboard?orgId=1&from=now-1h&to=now)
+[Validator Grafana Dashboard](http://localhost:3003/d/cosmoscometbft/protocol-cometbft-dashboard?orgId=1&from=now-1h&to=now)
 or from the CLI like so:
 
 ```bash
@@ -161,10 +188,11 @@ curl -s -X POST localhost:36657/block | jq '.result.block.last_commit.height'
 
 ## 2. Fund New Accounts
 
-This section will help you fund a few accounts that we'll use in the next
-sections.
+This section will help you fund a few accounts that we'll use below. We're going
+to create a `shannon_supplier` and `shannon_application`, but a dedicated gateway
+is outside the scope of this guide.
 
-### 2.1 Create a Shannon Supplier Account
+### 2.1 Create a Shannon `Supplier` Account
 
 List all the accounts we get out of the box by running:
 
@@ -186,12 +214,12 @@ Make sure to note its address under the `Address` column and export it as an
 environment variable for convenience. For example:
 
 ```bash
-export SHANNON_SUPPLIER=pokt1skun4qy6z0cvac4fc37kcqcjsyr3qe9thhlzkv
+export SHANNON_SUPPLIER=pokt1rgaqf6kz655qktrjenqy6zjx97zgr8ghx8q7xu
 ```
 
 ![Accounts](./img/quickstart_accounts.png)
 
-### 2.2 Create a Shannon Application Account
+### 2.2 Create a Shannon `Application` Account
 
 Let's do the same thing for a `shannon_application`:
 
@@ -205,7 +233,7 @@ ignite account create shannon_application \
 export SHANNON_APPLICATION=pokt1s6cupe8uj4lwdn6dt5azjv9vm4x3mtt8aek0g2
 ```
 
-### 2.3 Fund your Supplier Account
+### 2.3 Fund your `Supplier` Account
 
 Query your supplier's balance by running:
 
@@ -215,7 +243,7 @@ make acc_balance_query ACC=$SHANNON_SUPPLIER
 
 And you should see an empty balance:
 
-```yaml
+```bash
 ~ Balances ~
 balances: []
 pagination: {}
@@ -228,6 +256,8 @@ pagination: {}
 
 But if you look in our genesis file (`./localnet/poktrolld/config/genesis.json`)
 you'll find that you actually have direct access to the `faucet`!
+
+You can send some uPOKT to your `shannon_supplier` by running:
 
 ```bash
 poktrolld \
@@ -268,10 +298,11 @@ make acc_balance_query ACC=$SHANNON_APPLICATION
 
 ## 3. Manually Stake a Supplier & Deploy a RelayMiner
 
-If you want to understand the different on-chain actors and off-chain operators
-in POKT Network, look at the docs [here](../../protocol/actors/actors.md). This
-guide won't dive into a deep explanation of these concepts but will help you
-deploy them in a LocalNet.
+As we mentioned earlier, if you want to understand the different on-chain actors
+and off-chain operators in POKT Network, look at the docs [here](../../protocol/actors/actors.md).
+
+If you just want to follow instructions to make things work and get your hands
+dirty, keep reading.
 
 ### 3.1 View existing suppliers
 
@@ -281,19 +312,15 @@ You can run the following command to see all the suppliers available in the netw
 make supplier_list
 ```
 
-You should see that we have a default supplier, but `SHANNON_SUPPLIER` won't be there yet.
+You'll find that we have a default supplier, but `SHANNON_SUPPLIER` won't be there yet.
 
-### 3.2 Create a Supplier configuration
+### 3.2 Preparing your backend data node
 
-You can learn more about our [supplier configs here](../../operate/configs/supplier_staking_config.md)
-but the following will help you get started.
+We need a blockchain node (i.e. a backend data node) backend data node to
+configure a supplier. Since LocalNet is already has a running [`anvil`](http://localhost:10350/r/anvil/overview) service, we can re-use that as our backend.
 
-A few things to note in the config below:
-
-1. LocalNet already deployed an [anvil](https://book.getfoundry.sh/anvil/),
-   local Ethereum test node, so we're going to reuse that.
-2. We'll be deploying a `relayminer` in one of the next steps, which is the
-   publicly exposed URL we'll be using.
+[anvil](https://book.getfoundry.sh/anvil/) is a local Ethereum development node
+that's equivalent to "running your own ETH node". It's a great way to test.
 
 You can verify the `anvil` node is running with the following curl:
 
@@ -304,14 +331,22 @@ curl http://localhost:8547 \
   --data '{"method":"eth_blockNumber","params":[],"id":1,"jsonrpc":"2.0"}'
 ```
 
-Assuming it works, you should see a response similar to:
-
 ```json
 { "jsonrpc": "2.0", "id": 1, "result": "0x61" }
 ```
 
-This is equivalent to "running your own node", so we can move on to configuring
-a Supplier which will be backed by it.
+:::tip Grove's Prod Endpoints
+
+If you'd prefer to use a real blockchain node with production data for testing,
+you can provision one at [grove.city](https://www.grove.city) and use it below.
+
+:::
+
+### 3.3 Create a Supplier configuration
+
+You can learn more about our [supplier configs here](../../operate/configs/supplier_staking_config.md).
+
+The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_supplier_config.yaml
@@ -324,9 +359,9 @@ services:
 EOF
 ```
 
-### 3.3 Stake the new Supplier
+### 3.4 Stake the new Supplier
 
-Stake the supplier on-chain:
+Stake the `shannon_supplier` on-chain:
 
 ```bash
 poktrolld \
@@ -347,8 +382,11 @@ poktrolld query supplier show-supplier $SHANNON_SUPPLIER --node tcp://127.0.0.1:
 
 ### 3.4 Prepare the RelayMiner configuration
 
-You can learn more about our [relay miner configs here](../../operate/configs/relayminer_config.md)
-but the following will help you get started.
+Next, we need to prepare a RelayMiner to operate on behalf of the Supplier.
+
+You can learn more about our [relay miner configs here](../../operate/configs/relayminer_config.md).
+
+The following is an example config to get you started:
 
 ```bash
 cat <<EOF >> shannon_relayminer_config.yaml
@@ -385,10 +423,25 @@ poktrolld relayminer \
   --home=./localnet/poktrolld
 ```
 
-Leave the RelayMiner running in its own shell instance and open a new one. We'll
-be using it to serve relays in the next section.
+Leave it running in its own shell instance and open a new one. We'll be using it
+to serve relays in the next section.
+
+:::tip
+
+You may need to re-export `SHANNON_APPLICATION` and `SHANNON_SUPPLIER` in the
+new shell instance.
+
+:::
 
 ## 4. Manually Stake an Application & Deploy an AppGate Server
+
+:::note Independent Gateway
+
+This section will show how to deploy a Sovereign Application, which acts as its
+own Gateway. We are leaving delegated Gateways outside the scope of the
+Quickstart guide.
+
+:::
 
 ### 4.1 View Existing Application
 
@@ -400,8 +453,9 @@ make app_list
 
 ### 4.2 Create an Application configuration
 
-You can learn more about our [application configs here](../../operate/configs/app_staking_config.md)
-but the following will help you get started.
+You can learn more about our [application configs here](../../operate/configs/app_staking_config.md).
+
+The following example should get you started:
 
 ```bash
 cat <<EOF >> shannon_app_config.yaml
@@ -437,8 +491,9 @@ You can also you re-run, `make app_list` you should see that `SHANNON_APPLICATIO
 
 ### 4.4 Prepare the AppGate Server configuration
 
-You can learn more about our [appgate server configs here](../../operate/configs/appgate_server_config.md)
-but the following will help you get started.
+You can learn more about our [appgate server configs here](../../operate/configs/appgate_server_config.md).
+
+The following example should get you started:
 
 ```yaml
 cat <<EOF >> shannon_appgate_config.yaml
@@ -455,6 +510,12 @@ EOF
 
 ### 4.5 Start the AppGate Server locally
 
+:::warning
+You might need to add the following to your `/etc/hosts` file:
+127.0.0.1 anvil
+127.0.0.1 relayminers
+:::
+
 And the start the appgate server locally:
 
 ```bash
@@ -465,31 +526,12 @@ poktrolld appgate-server \
   --home=./localnet/poktrolld
 ```
 
-:::warning
-You might need to add the following to your `/etc/hosts` file:
-127.0.0.1 anvil
-127.0.0.1 relayminers
-:::
-
-:::note Independent Gateway
-
-This section showed how to deploy a sovereign Application which acts as its
-own Gateway, but we are leaving delegated Gateways outside the scope of the
-Quickstart guide.
-
-:::
-
 ## 5. Send A Relay
 
-### 5.1 Send a relay a shannon
+Now that we've staked an `Application`, are running an `AppGate Server`, staked
+a `Supplier`, and are running a `RelayMiner`, we can send a relay!
 
-```bash
-curl -X POST -H "Content-Type: application/json" \
-  --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://localhost:42042/anvil
-```
-
-:::warning Initialize Public Keys
+:::note Initialize Public Keys
 
 You must run `make acc_initialize_pubkeys` before sending a relay in order for
 the public keys to be initialized correctly.
@@ -499,11 +541,9 @@ information on how public keys are stored and accessible on-chain.
 
 :::
 
-If you look in `./localnet/poktrolld/config/appgate_server_config.yaml`, you'll find
-the configurations for an appgate server that is listening on port `42069`. 🌿
+### 5.1 Send a relay on Shannon
 
-You can send a relay to the `anvil` service (i.e. locally running
-ethereum node) like so:
+You can use `curl`
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
@@ -517,10 +557,53 @@ If everything worked as expected, you should see output similar to the following
 {"jsonrpc":"2.0","id":1,"result":"0x61"}%
 ```
 
-### 5.2 Stake a few more Suppliers
+![quickstart_full_relay](./img/quickstart_full_relay.png)
+
+### 5.2 What just happened?
+
+The Relay Request/Response from is captured in the sequence diagram below.
+
+```mermaid
+sequenceDiagram
+  actor U as User <br> (curl Client)
+
+  participant AG as AppGate Server <br> (off-chain Application Operator)
+  participant RM as RelayMiner <br> (off-chain Supplier Operator)
+  participant anvil as ETH Node <br> (Anvil)
+
+  U ->> +AG: eth_blockNumber <br> (JSON-RPC Request)
+  AG ->> +RM: POKT Relay Request
+  RM ->> +anvil: eth_blockNumber
+  anvil ->> -RM: eth_result
+  RM ->> -AG: POKT  Relay Response
+  AG ->> -U: eth_result  <br> (JSON-RPC Response)
+```
+
+### 5.3 What will happen later
+
+Please see our protocol docs [here](../../protocol/primitives/claim_and_proof_lifecycle)
+for information on how the protocol actually works, but the following will
+provide some intuition:
+
+```mermaid
+sequenceDiagram
+  participant RM as RelayMiner <br> (Supplier Operator)
+  participant P as Pocket Node
+  actor A as Application <br> (on-chain Record)
+  actor S as Supplier <br> (on-chain Record)
+
+  RM -->> P: CreateClaim <br> (Relays Served)
+  RM -->> P: SubmitProof <br> (Proof of Work)
+  P -->> A: Burn Delegated POKT
+  P -->> S: Mint New POKT
+```
+
+### 5.4 Staking a few more Suppliers without RelayMiners
 
 Even though we are running our own RelayMiner backed by our own Supplier, we
 can stake a few more suppliers to diversify where the requests are going to go.
+
+Try using the following helpers:
 
 ```bash
 make supplier2_stake
@@ -529,9 +612,22 @@ make supplier3_stake
 
 Running `make supplier_list` should now show that all three suppliers are staked.
 
-### Checking logs
+You can reuse the running AppGate Server to send requests, which should round-robin
+through all the available suppliers. However, since not all of them have a RelayMiner
+running, you'll see that some of requests will fail.
 
-You can view or inspect logs either through Tilt or Grafana.
+Give it a shot by running the following multiple times:
+
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+  http://localhost:42042/anvil
+```
+
+### 5.5. Inspect the logs
+
+As you're ready to dive in, develop or debug, you can view or inspect logs either
+through Tilt or Grafana.
 
 Given that we just staked a few suppliers, you customize the query to look for
 `Supplier` either on [Grafana](http://localhost:3003/explore?schemaVersion=1&panes=%7B%22d1l%22:%7B%22datasource%22:%22P8E80F9AEF21F6940%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcontainer%3D%5C%22poktrolld-validator%5C%22%7D%20%7C%3D%20%60Supplier%60%20%7C%20json%22,%22queryType%22:%22range%22,%22datasource%22:%7B%22type%22:%22loki%22,%22uid%22:%22P8E80F9AEF21F6940%22%7D,%22editorMode%22:%22builder%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D%7D&orgId=1) or [Tilt](http://localhost:10350/r/validator/overview?term=Supplier).
@@ -544,8 +640,7 @@ Given that we just staked a few suppliers, you customize the query to look for
 
 We went through a low of steps above just so you can get a feel for how things work.
 
-That said, did you know you can dynamically scale the number of any actors
-in LocalNet by ony changing one line?
+That said, you can dynamically scale the number of any actors in LocalNet by ony changing one line!
 
 Go to our [localnet tutorial](./../internal_infrastructure/localnet.md) to learn more.
 
@@ -553,7 +648,7 @@ Go to our [localnet tutorial](./../internal_infrastructure/localnet.md) to learn
 
 There are three primary tools you'll use to develop and interact with the network:
 
-1. `poktrolld` - the Pocket Node CLI
+1. `poktrolld` - the POKT Node CLI
 2. `make` - a collection of helpers to make your life easier
 3. `ignite` - a tool to manage the local k8s cluster
 
