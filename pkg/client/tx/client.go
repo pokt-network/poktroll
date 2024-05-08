@@ -100,6 +100,11 @@ type txClient struct {
 	// is used to ensure that transactions error channels receive and close in the event
 	// that they have not already by the given timeout height.
 	txTimeoutPool txTimeoutPool
+
+	// connRetryLimit is the number of times the underlying replay client
+	// should retry in the event that it encounters an error or its connection is interrupted.
+	// If connRetryLimit is < 0, it will retry indefinitely.
+	connRetryLimit int
 }
 
 type (
@@ -167,6 +172,7 @@ func NewTxClient(
 		eventQuery,
 		UnmarshalTxResult,
 		defaultTxReplayLimit,
+		events.WithConnRetryLimit[*abci.TxResult](txnClient.connRetryLimit),
 	)
 	if err != nil {
 		return nil, err
