@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -24,15 +25,15 @@ func (rs *relayerSessionsManager) submitProofs(
 	ctx context.Context,
 	claimedSessionsObs observable.Observable[[]relayer.SessionTree],
 ) {
+	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
+		channel.NewObservable[[]relayer.SessionTree]()
+
 	// Map claimedSessionsObs to a new observable of the same type which is notified
 	// when the sessions in the batch are eligible to be proven.
 	sessionsWithOpenProofWindowObs := channel.Map(
 		ctx, claimedSessionsObs,
-		rs.mapWaitForEarliestSubmitProofsHeight,
+		rs.mapWaitForEarliestSubmitProofsHeight(failedSubmitProofsSessionsPublishCh),
 	)
-
-	failedSubmitProofsSessionsObs, failedSubmitProofsSessionsPublishCh :=
-		channel.NewObservable[[]relayer.SessionTree]()
 
 	// Map sessionsWithOpenProofWindow to a new observable of an either type,
 	// populated with the session or an error, which is notified after the session
@@ -52,24 +53,40 @@ func (rs *relayerSessionsManager) submitProofs(
 // at which proofs can be submitted for the given session number, then emits the session
 // **at that moment**.
 func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
-	ctx context.Context,
-	sessionTrees []relayer.SessionTree,
-) (_ []relayer.SessionTree, skip bool) {
-	rs.waitForEarliestSubmitProofsHeight(
-		ctx, sessionTrees[0].GetSessionHeader().SessionEndBlockHeight,
-	)
-	return sessionTrees, false
+	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+) channel.MapFn[[]relayer.SessionTree, []relayer.SessionTree] {
+	return func(
+		ctx context.Context,
+		sessionTrees []relayer.SessionTree,
+	) (_ []relayer.SessionTree, skip bool) {
+		wg := &sync.WaitGroup{}
+		wg.Add(len(sessionTrees))
+		sessionTreesWithProofs := []relayer.SessionTree{}
+		for _, sessionTree := range sessionTrees {
+			go func(sessionTree relayer.SessionTree) {
+				defer wg.Done()
+				if err := rs.waitForEarliestSubmitProofsHeightAndGenerateProof(ctx, sessionTree); err == nil {
+					failSubmitProofsSessionsCh <- []relayer.SessionTree{sessionTree}
+					return
+				}
+				sessionTreesWithProofs = append(sessionTreesWithProofs, sessionTree)
+			}(sessionTree)
+		}
+		wg.Wait()
+		return sessionTreesWithProofs, false
+	}
 }
 
-// waitForEarliestSubmitProofsHeight calculates and waits for (blocking until) the
-// earliest block height, allowed by the protocol, at which proofs can be submitted
-// for a session number which where claimed at createClaimHeight. It is calculated relative
-// to createClaimHeight using on-chain governance parameters and randomized input.
-// It IS A BLOCKING function.
-func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeight(
+// waitForEarliestSubmitProofsHeightAndGenerateProof calculates and waits for
+// (blocking until) the earliest block height, allowed by the protocol, at which
+// proofs can be submitted for a session number which where claimed at createClaimHeight.
+// It is calculated relative to createClaimHeight using on-chain governance parameters
+// and randomized input.
+func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProof(
 	ctx context.Context,
-	createClaimHeight int64,
-) {
+	sessionTree relayer.SessionTree,
+) error {
+	createClaimHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
 	submitProofsWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
@@ -82,8 +99,19 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeight(
 		Msg("waiting & blocking for global earliest proof submission height")
 	submitProofsWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
+	path := proofkeeper.GetPathForProof(
+		submitProofsWindowStartBlock.Hash(),
+		sessionTree.GetSessionHeader().GetSessionId(),
+	)
+
+	if _, err := sessionTree.ProveClosest(path); err != nil {
+		return err
+	}
+
 	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofsHeight(ctx, submitProofsWindowStartBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
+
+	return nil
 }
 
 // newMapProveSessionsFn returns a new MapFn that submits proofs on the given
@@ -100,45 +128,17 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		defer rs.pendingTxMu.Unlock()
 
 		sessionProofs := []*relayer.SessionProof{}
-
-		pathBlockHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight() +
-			sessionkeeper.GetSessionGracePeriodBlockCount()
-
-		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
-		if err != nil {
-			return either.Error[[]relayer.SessionTree](err), false
-		}
-
-		// TODO_TECHDEBT: If any of the proofs fail proving or marshaling, then the
-		// entire batch is not submitted. We should consider collecting failed proofs,
-		// submitting the rest and returning the failed proofs to a retry mechanism.
 		for _, sessionTree := range sessionTrees {
-			// TODO_BLOCKER: The block that'll be used as a source of entropy for which
-			// branch(es) to prove should be deterministic and use on-chain governance params
-			// rather than latest.
-			path := proofkeeper.GetPathForProof(
-				pathBlock.BlockID.Hash,
-				sessionTree.GetSessionHeader().GetSessionId(),
-			)
-			proof, err := sessionTree.ProveClosest(path)
-			if err != nil {
-				return either.Error[[]relayer.SessionTree](err), false
-			}
-
-			proofBz, err := proof.Marshal()
-			if err != nil {
-				return either.Error[[]relayer.SessionTree](err), false
-			}
-
 			sessionProofs = append(sessionProofs, &relayer.SessionProof{
-				ProofBz:       proofBz,
+				ProofBz:       sessionTree.GetProofBz(),
 				SessionHeader: sessionTree.GetSessionHeader(),
 			})
 		}
 
+		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
 		rs.logger.Info().
-			Int64("session_start_height", pathBlock.Block.Height).
-			Msg("submitting proof")
+			Int64("session_start_height", sessionStartHeight).
+			Msg("submitting proofs")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {

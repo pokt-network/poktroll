@@ -123,14 +123,6 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 		sessionClaims := []*relayer.SessionClaim{}
 
-		pathBlockHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight() +
-			sessionkeeper.GetSessionGracePeriodBlockCount()
-
-		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
-		if err != nil {
-			return either.Error[[]relayer.SessionTree](err), false
-		}
-
 		// TODO_TECHDEBT: If any of the claims fail flushing, then the entire batch
 		// is not submitted. We should consider collecting failed claims, submitting
 		// the rest and returning the failed claims to a retry mechanism.
@@ -147,8 +139,9 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 			})
 		}
 
+		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
 		polylog.Ctx(ctx).Info().
-			Int64("session_start_block", pathBlock.Block.Height).
+			Int64("session_start_block", sessionStartHeight).
 			Msg("submitting claims")
 
 		if err := rs.supplierClient.CreateClaims(ctx, sessionClaims); err != nil {

@@ -38,7 +38,8 @@ type sessionTree struct {
 	proofPath []byte
 
 	// proof is the generated proof for the session given a proofPath.
-	proof *smt.SparseMerkleClosestProof
+	proof   *smt.SparseMerkleClosestProof
+	proofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
 	treeStore badger.BadgerKVStore
@@ -149,13 +150,29 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 		return nil, err
 	}
 
-	st.sessionSMT = smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
+	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	st.proof, err = st.sessionSMT.ProveClosest(path)
-	st.proofPath = path
+	proof, err = st.sessionSMT.ProveClosest(path)
+	if err != nil {
+		return nil, err
+	}
 
-	return st.proof, err
+	proofBz, err := proof.Marshal()
+	if err != nil {
+		return nil, err
+	}
+
+	st.sessionSMT = sessionSMT
+	st.proofPath = path
+	st.proof = proof
+	st.proofBz = proofBz
+
+	return st.proof, nil
+}
+
+func (st *sessionTree) GetProofBz() []byte {
+	return st.proofBz
 }
 
 // Flush gets the root hash of the SMST needed for submitting the claim;

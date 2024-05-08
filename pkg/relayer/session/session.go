@@ -2,11 +2,9 @@ package session
 
 import (
 	"context"
-	"net/url"
 	"sync"
 
 	"cosmossdk.io/depinject"
-	cometclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -47,10 +45,6 @@ type relayerSessionsManager struct {
 
 	// TODO_IN_THIS_COMMIT: godoc comment.
 	pendingTxMu sync.Mutex
-	// TODO_IN_THIS_COMMIT: godoc comment.
-	queryNodeGRPCUrl *url.URL
-	// TODO_IN_THIS_COMMIT: godoc comment.
-	blockQueryClient cometclient.CometRPC
 
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
@@ -78,7 +72,6 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
-		&rs.blockQueryClient,
 		&rs.supplierClient,
 	); err != nil {
 		return nil, err
