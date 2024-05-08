@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/session"
+	"github.com/pokt-network/poktroll/testutil/mockclient"
 	"github.com/pokt-network/poktroll/testutil/testclient/testblock"
 	"github.com/pokt-network/poktroll/testutil/testclient/testsupplier"
 	"github.com/pokt-network/poktroll/testutil/testpolylog"
@@ -40,7 +42,14 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockClient := testblock.NewAnyTimesCommittedBlocksSequenceBlockClient(t, emptyBlockHash, blocksObs)
 	supplierClient := testsupplier.NewOneTimeClaimProofSupplierClient(ctx, t)
 
-	deps := depinject.Supply(blockClient, supplierClient)
+	ctrl := gomock.NewController(t)
+	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
+	blockQueryClientMock.EXPECT().
+		Block(gomock.Any(), gomock.AssignableToTypeOf((*int64)(nil))).
+		Return(nil, nil).
+		AnyTimes()
+
+	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)
 
 	// Create a new relayer sessions manager.

@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -19,6 +18,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
+	_ "github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 	"github.com/pokt-network/poktroll/pkg/retry"
 )
 
@@ -33,7 +34,7 @@ func TestOnError(t *testing.T) {
 	// Setting up the test variables.
 	var (
 		// logOutput captures the log output for verification of logged messages.
-		logOutput bytes.Buffer
+		logOutput = new(bytes.Buffer)
 		// expectedRetryDelay is the duration we expect between retries.
 		expectedRetryDelay = time.Millisecond
 		// expectedRetryLimit is the maximum number of retries the test expects.
@@ -48,8 +49,10 @@ func TestOnError(t *testing.T) {
 		ctx              = context.Background()
 	)
 
-	// Redirect the standard logger's output to our custom buffer for later verification.
-	log.SetOutput(&logOutput)
+	// Redirect the log output for verification later
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define testFn, a function that simulates a failing operation and logs its invocation times.
 	testFn := func() chan error {
@@ -118,7 +121,7 @@ func TestOnError(t *testing.T) {
 	}
 
 	// Verify the error messages logged during the retries.
-	expectedErrLine := "ERROR: retrying TestOnError after error: test error"
+	expectedErrLine := `"error":"test error"`
 	trimmedLogOutput := strings.Trim(logOutput.String(), "\n")
 	logOutputLines := strings.Split(trimmedLogOutput, "\n")
 	require.Lenf(t, logOutputLines, expectedRetryLimit, "unexpected number of log lines")
@@ -137,7 +140,7 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 
 	// Setup test variables and log capture
 	var (
-		logOutput          bytes.Buffer
+		logOutput          = new(bytes.Buffer)
 		testFnCallCount    int32
 		expectedRetryDelay = time.Millisecond
 		expectedRetryLimit = 3
@@ -148,7 +151,9 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 	)
 
 	// Redirect the log output for verification later
-	log.SetOutput(&logOutput)
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define the test function that simulates an error and counts its invocations
 	testFn := func() chan error {
@@ -216,8 +221,8 @@ func TestOnError_ExitsWhenErrChCloses(t *testing.T) {
 		logOutputLines  = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
 		errorLines      = logOutputLines[:len(logOutputLines)-1]
 		warnLine        = logOutputLines[len(logOutputLines)-1]
-		expectedWarnMsg = "WARN: error channel for TestOnError_ExitsWhenErrChCloses closed, will no longer retry on error"
-		expectedErrMsg  = "ERROR: retrying TestOnError_ExitsWhenErrChCloses after error: test error"
+		expectedWarnMsg = "error channel closed, will no longer retry on error"
+		expectedErrMsg  = `"error":"test error"`
 	)
 
 	require.Lenf(
@@ -238,7 +243,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 
 	// Setup test variables and log capture
 	var (
-		logOutput          bytes.Buffer
+		logOutput          = new(bytes.Buffer)
 		testFnCallCount    int32
 		expectedRetryDelay = time.Millisecond
 		expectedRetryLimit = 9
@@ -249,7 +254,9 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	)
 
 	// Redirect the log output for verification later
-	log.SetOutput(&logOutput)
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
 
 	// Define the test function that simulates an error and counts its invocations
 	testFn := func() chan error {
@@ -315,7 +322,7 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 	// Verify the logged error messages
 	var (
 		logOutputLines = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
-		expectedPrefix = "ERROR: retrying TestOnError after error: test error"
+		expectedErrMsg = `"error":"test error"`
 	)
 
 	select {
@@ -332,6 +339,103 @@ func TestOnError_RetryCountResetTimeout(t *testing.T) {
 		expectedRetryLimit-1, len(logOutputLines),
 	)
 	for _, line := range logOutputLines {
-		require.Contains(t, line, expectedPrefix)
+		require.Contains(t, line, expectedErrMsg)
+	}
+}
+
+// assert that a negative retry limit continually calls workFn
+func TestOnError_NegativeRetryLimit(t *testing.T) {
+	t.Skip("TODO_TECHDEBT(@bryanchriswhite): this test should pass but contains a race condition around the logOutput buffer")
+
+	// Setup test variables and log capture
+	var (
+		logOutput          = new(bytes.Buffer)
+		testFnCallCount    int32
+		minimumCallCount   = 90
+		expectedRetryDelay = time.Millisecond
+		retryLimit         = -1
+		retryResetTimeout  = 3 * time.Millisecond
+		testFnCallTimeCh   = make(chan time.Time, minimumCallCount)
+		ctx                = context.Background()
+	)
+
+	// Redirect the log output for verification later
+	logOpt := polyzero.WithOutput(logOutput)
+	// Construct a new polylog logger & attach it to the context.
+	ctx = polyzero.NewLogger(logOpt).WithContext(ctx)
+
+	// Define the test function that simulates an error and counts its invocations
+	testFn := func() chan error {
+		// Track the invocation time
+		testFnCallTimeCh <- time.Now()
+
+		errCh := make(chan error, 1)
+
+		// Increment the invocation count atomically
+		count := atomic.AddInt32(&testFnCallCount, 1) - 1
+		if count == int32(retryLimit) {
+			go func() {
+				time.Sleep(retryResetTimeout)
+				errCh <- testErr
+			}()
+		} else {
+			errCh <- testErr
+		}
+		return errCh
+	}
+
+	retryOnErrorErrCh := make(chan error, 1)
+	// Spawn a goroutine to test the OnError function
+	go func() {
+		retryOnErrorErrCh <- retry.OnError(
+			ctx,
+			retryLimit,
+			expectedRetryDelay,
+			retryResetTimeout,
+			"TestOnError",
+			testFn,
+		)
+	}()
+
+	// Wait for the OnError function to execute and retry the expected number of times
+	totalExpectedDelay := expectedRetryDelay * time.Duration(minimumCallCount)
+	time.Sleep(totalExpectedDelay + 100*time.Millisecond)
+
+	// Assert that the test function was called the expected number of times
+	require.GreaterOrEqual(t, minimumCallCount, int(testFnCallCount))
+
+	// Assert that the retry delay between function calls matches the expected delay
+	var prevCallTime = new(time.Time)
+	for i := 0; i < minimumCallCount; i++ {
+		select {
+		case nextCallTime := <-testFnCallTimeCh:
+			if i != 0 {
+				actualRetryDelay := nextCallTime.Sub(*prevCallTime)
+				require.GreaterOrEqual(t, actualRetryDelay, expectedRetryDelay)
+			}
+
+			*prevCallTime = nextCallTime
+		default:
+			t.Fatalf(
+				"expected %d calls to testFn, but only received %d",
+				minimumCallCount, i+1,
+			)
+		}
+	}
+
+	// Verify the logged error messages
+	var (
+		logOutputLines = strings.Split(strings.Trim(logOutput.String(), "\n"), "\n")
+		expectedErrMsg = `"error":"test error"`
+	)
+
+	require.Lenf(
+		t, logOutputLines,
+		minimumCallCount-1,
+		"expected %d log lines, got %d",
+		minimumCallCount-1, len(logOutputLines),
+	)
+	for _, line := range logOutputLines {
+		require.Contains(t, line, expectedErrMsg)
 	}
 }
