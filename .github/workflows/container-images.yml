@@ -32,6 +32,7 @@ jobs:
         dockerfile: cosmos
         platform: linux/arm64,linux/amd64
         pre-build: |
+          apk add gcompat
           make -d ignite_install
           make -d proto_regen
         build-target: |
