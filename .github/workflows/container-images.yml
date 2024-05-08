@@ -3,9 +3,9 @@ name: Create and Push Container Image (heighliner)
 on:
   push:
     tags:
-    - '**'
+      - "**"
     branches:
-    - '**'
+      - "**"
 
 jobs:
   build-and-push-image:
@@ -15,25 +15,25 @@ jobs:
       packages: write
 
     steps:
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
-    - name: Log in to the Container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build and push Docker image
-      uses: strangelove-ventures/heighliner-build-action@v1.0.1
-      with:
-        chain: pocket-network
-        dockerfile: cosmos
-        platform: linux/arm64,linux/amd64
-        pre-build: |
-          make -d heighliner_pre_build
-        build-target: |
-          make -d install
-        binaries: |
-          - /go/bin/poktrolld
+      - name: Build and push Docker image
+        uses: strangelove-ventures/heighliner-build-action@v1.0.1
+        with:
+          chain: pocket-network
+          dockerfile: cosmos
+          platform: linux/arm64,linux/amd64
+          pre-build: |
+            make -d heighliner_pre_build
+          build-target: |
+            make -d heighliner_build
+          binaries: |
+            - /go/bin/poktrolld
