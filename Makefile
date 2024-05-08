@@ -868,6 +868,27 @@ heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. H
 	make ignite_install
 	make proto_regen
 
+# .PHONY: heighliner_use_prebuilt_binaries
+# heighliner_use_prebuilt_binaries: # Uses binaries prebuilt by ignite
+# 	apk add gcompat
+# 	go install github.com/bufbuild/buf/cmd/buf@v1.31.0
+# 	make ignite_install
+# 	make proto_regen
+
+.PHONY: ignite_release
+ignite_release: ## Builds production binaries
+	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
+
+.PHONY: ignite_release_extract_binaries
+ignite_release_extract_binaries: ## Extracts binaries from the release archives
+	mkdir -p release_binaries
+	
+	for archive in release/*.tar.gz; do \
+		binary_name=$$(basename "$$archive" .tar.gz); \
+		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
+		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
+	done
+
 #####################
 ### Documentation ###
 #####################
