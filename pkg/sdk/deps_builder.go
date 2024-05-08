@@ -46,8 +46,10 @@ func (sdk *poktrollSDK) buildDeps(
 	eventsQueryClient := eventsquery.NewEventsQueryClient(pocketNodeWebsocketURL)
 	deps = depinject.Configs(deps, depinject.Supply(eventsQueryClient))
 
+	blockClientConnRetryLimitOpt := block.WithConnRetryLimit(sdk.config.ConnRetryLimit)
+
 	// Create and supply the block client that depends on the events query client
-	blockClient, err := block.NewBlockClient(ctx, deps)
+	blockClient, err := block.NewBlockClient(ctx, deps, blockClientConnRetryLimitOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +93,10 @@ func (sdk *poktrollSDK) buildDeps(
 	}
 	deps = depinject.Configs(deps, depinject.Supply(sessionQuerier))
 
+	delegationClientConnRetryLimitOpt := delegation.WithConnRetryLimit(sdk.config.ConnRetryLimit)
+
 	// Create and supply the delegation client
-	delegationClient, err := delegation.NewDelegationClient(ctx, deps)
+	delegationClient, err := delegation.NewDelegationClient(ctx, deps, delegationClientConnRetryLimitOpt)
 	if err != nil {
 		return nil, err
 	}
