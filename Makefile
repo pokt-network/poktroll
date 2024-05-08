@@ -838,7 +838,6 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 	git commit --allow-empty -m "Empty commit"
 	git push
 
-
 .PHONY: install
 install: ## Build and install the binary
 	go install -mod readonly -tags "" -ldflags "$(ldflags)" ./cmd/poktrolld
@@ -867,6 +866,10 @@ heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. H
 	go install github.com/bufbuild/buf/cmd/buf@v1.31.0
 	make ignite_install
 	make proto_regen
+
+.PHONY: heighliner_build
+heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. Having this step here makes it so we don't need to submit a PR on their side if we want to change something.
+	make install
 
 # .PHONY: heighliner_use_prebuilt_binaries
 # heighliner_use_prebuilt_binaries: # Uses binaries prebuilt by ignite
