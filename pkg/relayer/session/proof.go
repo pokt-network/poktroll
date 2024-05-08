@@ -65,7 +65,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 		for _, sessionTree := range sessionTrees {
 			go func(sessionTree relayer.SessionTree) {
 				defer wg.Done()
-				if err := rs.waitForEarliestSubmitProofsHeightAndGenerateProof(ctx, sessionTree); err == nil {
+				if err := rs.waitForEarliestSubmitProofsHeightAndGenerateProof(ctx, sessionTree); err != nil {
 					failSubmitProofsSessionsCh <- []relayer.SessionTree{sessionTree}
 					return
 				}
@@ -126,6 +126,10 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 	) (_ either.SessionTrees, skip bool) {
 		rs.pendingTxMu.Lock()
 		defer rs.pendingTxMu.Unlock()
+
+		if len(sessionTrees) == 0 {
+			return either.Success(sessionTrees), false
+		}
 
 		sessionProofs := []*relayer.SessionProof{}
 		for _, sessionTree := range sessionTrees {

@@ -173,7 +173,7 @@ func (s *relaysSuite) mapSessionInfoFn(
 			finalizeTestBlockHeight := s.startBlockHeight +
 				s.testDurationBlocks +
 				keeper.GetSessionGracePeriodBlockCount() +
-				keeper.NumBlocksPerSession
+				(3 * keeper.NumBlocksPerSession)
 			if blockHeight > finalizeTestBlockHeight {
 				s.cancelCtx()
 			}
@@ -387,7 +387,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 	// Send all the funding account's pending messages in a single transaction.
 	// This is done to avoid sending multiple transactions to fund the initial actors.
 	// pendingMsgs is reset after the transaction is sent.
-	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 
 	return suppliers, gateways, applications
 }
@@ -433,7 +433,7 @@ func (s *relaysSuite) sendFundNewAppsTx(
 		s.addPendingFundApplicationMsg(app)
 		newApps = append(newApps, app)
 	}
-	s.sendPendingMsgsTx(sessionInfo.blockHeight, s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 
 	// Then new applications are returned so the caller can construct delegation messages
 	// given the existing gateways.
@@ -531,7 +531,7 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 		for _, gateway := range newGateways {
 			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(app)
 	}
 
 	for _, app := range newApps {
@@ -544,7 +544,7 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 		for _, gateway := range newGateways {
 			s.addPendingDelegateToGatewayMsg(app, gateway)
 		}
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, app)
+		s.sendPendingMsgsTx(app)
 	}
 }
 
@@ -557,7 +557,7 @@ func (s *relaysSuite) sendDelegateInitialAppsTxs(applications, gateways []*accou
 			s.addPendingDelegateToGatewayMsg(application, gateway)
 		}
 		// Send the application's delegate messages in a single transaction.
-		s.sendPendingMsgsTx(s.latestBlock.Height(), application)
+		s.sendPendingMsgsTx(application)
 	}
 }
 
@@ -670,7 +670,7 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
 		supplier := s.addSupplier(keyName)
 		s.addPendingStakeSupplierMsg(supplier)
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, supplier)
+		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)
 	}
 
@@ -709,17 +709,17 @@ func (s *relaysSuite) sendInitialActorsStakeMsgs(
 ) {
 	for _, supplier := range suppliers {
 		s.addPendingStakeSupplierMsg(supplier)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), supplier)
+		s.sendPendingMsgsTx(supplier)
 	}
 
 	for _, gateway := range gateways {
 		s.addPendingStakeGatewayMsg(gateway)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), gateway)
+		s.sendPendingMsgsTx(gateway)
 	}
 
 	for _, application := range applications {
 		s.addPendingStakeApplicationMsg(application)
-		s.sendPendingMsgsTx(s.latestBlock.Height(), application)
+		s.sendPendingMsgsTx(application)
 	}
 }
 
@@ -755,7 +755,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
 		gateway := s.addGateway(keyName)
 		s.addPendingStakeGatewayMsg(gateway)
-		s.sendPendingMsgsTx(sessionInfo.blockHeight, gateway)
+		s.sendPendingMsgsTx(gateway)
 		newGateways = append(newGateways, gateway)
 	}
 
@@ -765,7 +765,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 }
 
 // sendPendingMsgsTx sends a transaction with the provided messages using the keyName provided.
-func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
+func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	// Do not send empty message transactions as trying to do so will make SignTx to fail.
 	if len(actor.pendingMsgs) == 0 {
 		return
@@ -775,7 +775,7 @@ func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
 	err := txBuilder.SetMsgs(actor.pendingMsgs...)
 	require.NoError(s, err)
 
-	txBuilder.SetTimeoutHeight(uint64(height + 2))
+	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
 	txBuilder.SetGasLimit(690000042)
 
 	// All messages have to be signed by the keyName provided.
@@ -829,10 +829,9 @@ func (s *relaysSuite) waitForTxsToBeCommitted() []*types.TxResult {
 		// it is necessary to wait until the block matches the txResult height is received
 		// in order to get the number of transactions.
 		for {
-			// LstNBlocks returns a client.Block interface, so it needs to be casted
-			// to the CometNewBlockEvent type to access the block's transactions.
 			if s.latestBlock.Height() > txResult.Height {
-				return txResults
+				s.cancelCtx()
+				s.Fatal("Block height is greater than the txResult height")
 			}
 			if s.latestBlock.Height() == txResult.Height {
 				numTxs = len(s.latestBlock.Txs())
@@ -1107,7 +1106,7 @@ func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
 		},
 	)
 
-	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
+	s.sendPendingMsgsTx(s.fundingAccountInfo)
 }
 
 // ensureUpdatedMaxDelegations checks if the max_delegated_gateways parameter is updated
@@ -1123,7 +1122,7 @@ func (s *relaysSuite) ensureUpdatedMaxDelegations(maxGateways int64) {
 
 	if res.Params.MaxDelegatedGateways != uint64(maxGateways) {
 		s.cancelCtx()
-		s.Fatal("gateways not delegated to all applications")
+		s.Fatal("Failed to update max delegated gateways parameter")
 	}
 }
 

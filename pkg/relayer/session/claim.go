@@ -121,6 +121,10 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 		rs.pendingTxMu.Lock()
 		defer rs.pendingTxMu.Unlock()
 
+		if len(sessionTrees) == 0 {
+			return either.Success(sessionTrees), false
+		}
+
 		sessionClaims := []*relayer.SessionClaim{}
 
 		// TODO_TECHDEBT: If any of the claims fail flushing, then the entire batch

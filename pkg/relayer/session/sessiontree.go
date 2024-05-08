@@ -153,7 +153,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	sessionSMT := smt.ImportSparseMerkleSumTrie(st.treeStore, sha256.New(), st.claimedRoot, smt.WithValueHasher(nil))
 
 	// Generate the proof and cache it along with the path for which it was generated.
-	proof, err = st.sessionSMT.ProveClosest(path)
+	proof, err = sessionSMT.ProveClosest(path)
 	if err != nil {
 		return nil, err
 	}
