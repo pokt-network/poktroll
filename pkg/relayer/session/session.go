@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"net/url"
 	"sync"
 
 	"cosmossdk.io/depinject"
@@ -45,11 +44,9 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
-	// TODO_IN_THIS_COMMIT: godoc comment.
+	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
-	// TODO_IN_THIS_COMMIT: godoc comment.
-	queryNodeGRPCUrl *url.URL
-	// TODO_IN_THIS_COMMIT: godoc comment.
+	// blockQueryClient is used to query for blocks.
 	blockQueryClient cosmosclient.CometRPC
 
 	// storesDirectory points to a path on disk where KVStore data files are created.

@@ -1,4 +1,6 @@
 # List of pre-provisioned suppliers used for load testing
+# The number of pre-provisioned **LocalNet** actors are managed in
+# localnet_config.yaml by the respective actors `count` property.
 suppliers:
   # keyName that is available in the load test's environment keyring, used to
   # identify the supplier and sign relays and transactions with.

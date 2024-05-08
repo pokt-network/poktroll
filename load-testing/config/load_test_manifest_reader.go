@@ -6,16 +6,25 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// ProvisionedActorConfig is used to represent the signing key used & URL exposed
+// by the pre-provisioned gateway & supplier actors that the load test expects.
 type ProvisionedActorConfig struct {
-	KeyName    string `yaml:"key_name"`
+	// KeyName is the **name** of the key in the keyring to be used by the given actor.
+	KeyName string `yaml:"key_name"`
+	// ExposedUrl is the URL where the actor is expected to be reachable.
 	ExposedUrl string `yaml:"exposed_url"`
 }
 
+// LoadTestManifestYAML is the struct which the laod test manifest is deserialized into.
+// It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
 	Suppliers []ProvisionedActorConfig `yaml:"suppliers"`
 	Gateways  []ProvisionedActorConfig `yaml:"gateways"`
 }
 
+// ParseLoadTestManifest reads the load test manifest from the given byte slice
+// and returns the parsed LoadTestManifestYAML struct.
+// It returns an error if the manifest is empty, or if it fails to unmarshal.
 func ParseLoadTestManifest(manifestContent []byte) (*LoadTestManifestYAML, error) {
 	var parsedManifest LoadTestManifestYAML
 

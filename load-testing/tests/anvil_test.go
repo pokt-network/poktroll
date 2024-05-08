@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -15,13 +16,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const localnetAnvilURL = "http://localhost:8547"
+const (
+	localnetAnvilURL    = "http://localhost:8547"
+	anvilNodeInfoMethod = "anvil_nodeInfo"
+)
 
 var blockResultRegex = regexp.MustCompile(`"result":"0x\w+"}$`)
 
 type anvilSuite struct {
 	gocuke.TestingT
-	numUsers      int64
+	numRequests   int64
 	startTime     time.Time
 	requestsCount atomic.Uint64
 }
@@ -30,34 +34,43 @@ func TestLoadAnvil(t *testing.T) {
 	gocuke.NewRunner(t, &anvilSuite{}).Path(filepath.Join(".", "anvil.feature")).Run()
 }
 
+// AnvilIsRunning ensures that the Anvil server is running.
 func (s *anvilSuite) AnvilIsRunning() {
-	// TODO_TECHDEBT: add support for non-localnet environments.
+	// TODO_TECHDEBT(@okdas): add support for non-LocalNet environments.
+
+	// Send a JSON-RPC request to the Anvil server to check if it's running.
+	payloadJSON := fmt.Sprintf(relayPayloadFmt, anvilNodeInfoMethod, 0)
+	_ = s.sendJSONRPCRequest(0, payloadJSON)
 }
 
-func (s *anvilSuite) LoadOfConcurrentUsers(numUsers int64) {
+// LoadOfConcurrentRequests sets the number of users to simulate in the load
+// test as well as tracking the start time.
+// EachUserRequestsTheJSONRPCMethod sends a JSON-RPC request with the given method
+// to the Anvil server.
+func (s *anvilSuite) LoadOfConcurrentRequestsForTheJsonrpcMethod(numRequests int64, method string) {
 	// Set the number of users on the suite.
-	s.numUsers = numUsers
+	s.numRequests = numRequests
 
 	// Set the start time
 	s.startTime = time.Now()
-}
 
-func (s *anvilSuite) EachUserRequestsTheEthereumBlockHeight() {
-	// Request block height for each user.
+	// Send block height requests.
 	waitGroup := sync.WaitGroup{}
-	for userIdx := int64(0); userIdx < s.numUsers; userIdx++ {
+	for requestIdx := int64(0); requestIdx < s.numRequests; requestIdx++ {
 		waitGroup.Add(1)
 		go func(userIdx int64) {
-			s.requestAnvilBlockHeight(userIdx)
+			s.requestAnvilMethod(userIdx, method)
 			s.requestsCount.Add(1)
 			waitGroup.Done()
-		}(userIdx)
+		}(requestIdx)
 	}
 
-	// Wait for logging to complete.
+	// Wait for all requests to complete.
 	waitGroup.Wait()
 }
 
+// LoadIsHandledWithinSeconds asserts that the load test has completed within the
+// given number of seconds & logs the number of requests & test duration.
 func (s *anvilSuite) LoadIsHandledWithinSeconds(numSeconds int64) {
 	// Calculate the duration.
 	duration := time.Now().Sub(s.startTime)
@@ -70,50 +83,49 @@ func (s *anvilSuite) LoadIsHandledWithinSeconds(numSeconds int64) {
 		Msgf("duration: %s", duration)
 }
 
-func (s *anvilSuite) requestAnvilBlockHeight(userIdx int64) {
+// requestAnvilMethod synchronously sends a JSON-RPC request to the Anvil server,
+// blocking until the response is received. It asserts that the response has a 200
+// status code and that the body matches the expected regex (block height in hex).
+func (s *anvilSuite) requestAnvilMethod(requestId int64, method string) {
 	// URL and data for the POST request
-	jsonData := bytes.NewBuffer([]byte(`{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}`))
+	payloadJSON := fmt.Sprintf(relayPayloadFmt, method, requestId)
+
+	// Send the JSON-RPC request and get the response body.
+	resBody := s.sendJSONRPCRequest(requestId, payloadJSON)
+
+	// Assert the response has a valid JSON-RPC result.
+	require.Regexp(s, blockResultRegex, resBody)
+
+	logger.Debug().
+		Int64("id", requestId).
+		Str("response", resBody).
+		Send()
+}
+
+// sendJSONRPCRequest sends a JSON-RPC request to the Anvil server and returns the response body.
+func (s *anvilSuite) sendJSONRPCRequest(id int64, payloadJSON string) string {
+	payloadBuf := bytes.NewBuffer([]byte(payloadJSON))
 
 	// Create a new POST request with JSON data
-	req, err := http.NewRequest("POST", localnetAnvilURL, jsonData)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Int64("user", userIdx).
-			Msg("creating request")
-		return
-	}
+	req, err := http.NewRequest("POST", localnetAnvilURL, payloadBuf)
+	require.NoError(s, err, "creating request %d", id)
 
 	// Set content type to application/json
 	req.Header.Set("Content-Type", "application/json")
 
 	// Create an HTTP client and send the request
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Int64("user", userIdx).
-			Msg("sending request")
-		return
-	}
-	defer resp.Body.Close()
+	require.NoError(s, err, "sending request %d", id)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	// Read and print the response body
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		logger.Error().
-			Err(err).
-			Int64("user", userIdx).
-			Msg("reading response")
-		return
-	}
+	require.NoError(s, err, "reading request %d", id)
 
 	// Assert the response has the correct status code & a valid JSON-RPC result.
 	require.Equal(s, resp.StatusCode, http.StatusOK)
-	require.Regexp(s, blockResultRegex, string(body))
 
-	logger.Debug().
-		Int64("user", userIdx).
-		Str("response", string(body)).
-		Send()
+	return string(body)
 }

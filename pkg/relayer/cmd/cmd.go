@@ -12,7 +12,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -99,7 +98,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithLevel(polyzero.DebugLevel),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -191,7 +190,6 @@ func setupRelayerDependencies(
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
-		newSupplyBlockQueryClientFn(queryNodeRPCUrl),           // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		supplyMiner, // leaf
 		config.NewSupplyTxClientContextFn(queryNodeGRPCUrl, txNodeRPCUrl), // leaf
@@ -350,23 +348,5 @@ func newSupplyRelayerSessionsManagerFn(smtStorePath string) config.SupplierFn {
 		}
 
 		return depinject.Configs(deps, depinject.Supply(relayerSessionsManager)), nil
-	}
-}
-
-// newSupplyBlockQueryClientFn returns a function which constructs a
-// BlockQueryClient instance and returns a new depinject.Config which
-// is supplied with the given deps and the new BlockQueryClient.
-func newSupplyBlockQueryClientFn(queryNodeRPCUrl *url.URL) config.SupplierFn {
-	return func(
-		_ context.Context,
-		deps depinject.Config,
-		_ *cobra.Command,
-	) (depinject.Config, error) {
-		blockQueryClient, err := cosmosclient.NewClientFromNode(queryNodeRPCUrl.String())
-		if err != nil {
-			return nil, err
-		}
-
-		return depinject.Configs(deps, depinject.Supply(blockQueryClient)), nil
 	}
 }

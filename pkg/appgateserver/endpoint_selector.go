@@ -51,6 +51,8 @@ func (app *appGateServer) getRelayerUrl(
 	// for testing or development purposes but a more enhanced strategy is expected
 	// to be adopted by prod gateways.
 
+	// If a `relayCount` query parameter is provided, use it to determine the next endpoint;
+	// otherwise, continue the rotation based off the last selected endpoint index.
 	relayCount := request.URL.Query().Get("relayCount")
 	nextEndpointIdx := 0
 	if relayCount != "" {

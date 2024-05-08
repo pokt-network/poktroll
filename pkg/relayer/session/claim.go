@@ -123,6 +123,8 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 			return either.Error[relayer.SessionTree](err), false
 		}
 
+		// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
+		// which branch(es) to prove should be deterministic and use on-chain governance params.
 		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
 			sessionkeeper.GetSessionGracePeriodBlockCount()
 		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)

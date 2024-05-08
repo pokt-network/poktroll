@@ -1,6 +1,5 @@
 Feature: Loading gateway server with relays
 
-  #Scenario Outline:
   Scenario: Incrementing the number of relays and actors
     Given localnet is running
     And a rate of "1" relay requests per second is sent per application
@@ -16,7 +15,3 @@ Feature: Loading gateway server with relays
       | supplier    | 1                | 4              | 3          |
     When a load of concurrent relay requests are sent from the applications
 #    Then "12" pairs of claim and proof messages should be committed on-chain
-
-#    Examples:
-#      |  |  |
-#      |  |  |
