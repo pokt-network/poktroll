@@ -15,12 +15,21 @@ import (
 )
 
 const (
+	// DefaultConnRetryLimit is used to indicate how many times the
+	// underlying replay client should attempt to retry if it encounters an error
+	// or its connection is interrupted.
+	//
+	// TODO_IMPROVE: this should be configurable but can be overridden at compile-time:
+	// go build -ldflags "-X github.com/pokt-network/poktroll/DefaultConnRetryLimit=value".
+	DefaultConnRetryLimit = 10
+
 	// eventsBytesRetryDelay is the delay between retry attempts when the events
 	// bytes observable returns an error.
 	eventsBytesRetryDelay = time.Second
 	// eventsBytesRetryLimit is the maximum number of times to attempt to
 	// re-establish the events query bytes subscription when the events bytes
 	// observable returns an error or closes.
+	// TODO_TECHDEBT: to make this a customizable parameter in the appgateserver and relayminer config files.
 	eventsBytesRetryLimit        = 10
 	eventsBytesRetryResetTimeout = 10 * time.Second
 	// replayObsCacheBufferSize is the replay buffer size of the
@@ -81,6 +90,10 @@ type replayClient[T any] struct {
 	// replayClientCancelCtx is the function to cancel the context of the replay client.
 	// It is called when the replay client is closed.
 	replayClientCancelCtx func()
+	// connRetryLimit is the number of times the replay client should retry
+	// in the event that it encounters an error or its connection is interrupted.
+	// If connRetryLimit is < 0, it will retry indefinitely.
+	connRetryLimit int
 }
 
 // NewEventsReplayClient creates a new EventsReplayClient from the given
@@ -98,6 +111,7 @@ func NewEventsReplayClient[T any](
 	queryString string,
 	newEventFn NewEventsFn[T],
 	replayObsBufferSize int,
+	opts ...client.EventsReplayClientOption[T],
 ) (client.EventsReplayClient[T], error) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -107,7 +121,13 @@ func NewEventsReplayClient[T any](
 		eventDecoder:          newEventFn,
 		replayObsBufferSize:   replayObsBufferSize,
 		replayClientCancelCtx: cancel,
+		connRetryLimit:        DefaultConnRetryLimit,
 	}
+
+	for _, opt := range opts {
+		opt(rClient)
+	}
+
 	// TODO_REFACTOR(@h5law): Look into making this a regular observable as
 	// we may no longer depend on it being replayable.
 	replayObsCache, replayObsCachePublishCh := channel.NewReplayObservable[observable.ReplayObservable[T]](
@@ -189,26 +209,26 @@ func (rClient *replayClient[T]) Close() {
 // goPublishEvents runs the work function returned by retryPublishEventsFactory,
 // re-invoking it according to the arguments to retry.OnError when the events bytes
 // observable returns an asynchronous error.
-// This function is intended to be called in a goroutine.
 func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 	// React to errors by getting a new events bytes observable, re-mapping it,
 	// and send it to replayObsCachePublishCh such that
 	// replayObsCache.Last(ctx, 1) will return it.
-	publishError := retry.OnError(
+	publishErr := retry.OnError(
 		ctx,
-		eventsBytesRetryLimit,
+		rClient.connRetryLimit,
 		eventsBytesRetryDelay,
 		eventsBytesRetryResetTimeout,
 		"goPublishEvents",
 		rClient.retryPublishEventsFactory(ctx),
 	)
 
-	// If we get here, the retry limit was reached and the retry loop exited.
 	// Since this function runs in a goroutine, we can't return the error to the
 	// caller. Instead, we panic.
-	if publishError != nil {
-		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishError))
+	if publishErr != nil {
+		panic(fmt.Errorf("EventsReplayClient[%T].goPublishEvents should never reach this spot: %w", *new(T), publishErr))
 	}
+
+	return
 }
 
 // retryPublishEventsFactory returns a function which is intended to be passed
@@ -217,20 +237,24 @@ func (rClient *replayClient[T]) goPublishEvents(ctx context.Context) {
 // replayObsCache replay observable.
 func (rClient *replayClient[T]) retryPublishEventsFactory(ctx context.Context) func() chan error {
 	return func() chan error {
+		eventsBzCtx, cancelEventsBzObs := context.WithCancel(ctx)
 		errCh := make(chan error, 1)
-		eventsBytesObs, err := rClient.eventsClient.EventsBytes(ctx, rClient.queryString)
+
+		eventsBytesObs, err := rClient.eventsClient.EventsBytes(eventsBzCtx, rClient.queryString)
 		if err != nil {
+			// No need to cancel eventsBytesObs in the case of a synchronous error.
 			errCh <- err
 			return errCh
 		}
 
 		// NB: must cast back to generic observable type to use with Map.
 		eventsBzObs := observable.Observable[either.Either[[]byte]](eventsBytesObs)
+
 		typedObs := channel.MapReplay(
-			ctx,
+			eventsBzCtx,
 			replayObsCacheBufferSize,
 			eventsBzObs,
-			rClient.newMapEventsBytesToTFn(errCh),
+			rClient.newMapEventsBytesToTFn(errCh, cancelEventsBzObs),
 		)
 
 		// Subscribe to the eventBzObs and block until the channel closes.
@@ -269,12 +293,12 @@ func (rClient *replayClient[T]) retryPublishEventsFactory(ctx context.Context) f
 // If deserialisation failed because the event bytes were for a different event
 // type, this value is also skipped. If deserialisation failed for some other
 // reason, this function panics.
-func (rClient *replayClient[T]) newMapEventsBytesToTFn(errCh chan<- error) func(
-	context.Context,
-	either.Bytes,
-) (T, bool) {
+func (rClient *replayClient[T]) newMapEventsBytesToTFn(
+	errCh chan<- error,
+	cancelEventsBzObs context.CancelFunc,
+) func(context.Context, either.Bytes) (T, bool) {
 	return func(
-		_ context.Context,
+		ctx context.Context,
 		eitherEventBz either.Bytes,
 	) (_ T, skip bool) {
 		eventBz, err := eitherEventBz.ValueOrError()
@@ -296,10 +320,15 @@ func (rClient *replayClient[T]) newMapEventsBytesToTFn(errCh chan<- error) func(
 				return *new(T), true
 			}
 
-			panic(fmt.Sprintf(
-				"unexpected error deserialising event: %v; eventBz: %s",
-				err, string(eventBz),
-			))
+			// Don't publish (skip) if there was some other kind of error,
+			// and send that error on the errCh.
+			errCh <- err
+
+			// The source observable may not necessarily close automatically in this case,
+			// cancel its context to ensure its closure and prevent a memory/goroutine leak.
+			cancelEventsBzObs()
+
+			return *new(T), true
 		}
 		return event, false
 	}
