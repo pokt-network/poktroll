@@ -314,8 +314,9 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 // proof corresponding to the session in which the maxAmount for the given actor
 // has been committed.
 func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
-	//
-	blocksToLastSessionEnd := plan.blocksToMaxAmount()
+	// The last block of the last session SHOULD align with the last block of the
+	// last increment duration (i.e. **after** maxAmount actors are activated).
+	blocksToLastSessionEnd := plan.blocksToMaxAmountIncrementEnd()
 
 	sessionGracePeriodBlocks := keeper.GetSessionGracePeriodBlockCount()
 	blocksToLastProofWindowEnd := blocksToLastSessionEnd + sessionGracePeriodBlocks
@@ -325,9 +326,17 @@ func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
 	return blocksToLastProofWindowEnd + keeper.NumBlocksPerSession
 }
 
-// blocksToMaxAmount returns
-func (plan *actorLoadTestIncrementPlan) blocksToMaxAmount() int64 {
+// blocksToMaxAmountIncrementStart returns the number of blocks that will have
+// elapsed when the maxAmount for the given actor has been committed.
+func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementStart() int64 {
 	return plan.maxAmount / plan.actorIncrementAmount * plan.blocksPerIncrement
+}
+
+// blocksToMaxAmountIncrementEnd returns the number of blocks that will have
+// elapsed when one increment duration **after** the maxAmount for the given
+// actor has been committed.
+func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementEnd() int64 {
+	return plan.blocksToMaxAmountIncrementStart() + plan.blocksPerIncrement
 }
 
 // mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn returns a mapFn which asynchronously maps
