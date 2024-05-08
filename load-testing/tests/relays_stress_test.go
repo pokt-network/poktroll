@@ -62,6 +62,7 @@ var (
 	// By default, it is set to the number of logical CPUs available to the process.
 	maxConcurrentRequestLimit = runtime.GOMAXPROCS(0)
 	// fundingAccountKeyName is the key name of the account used to fund other accounts.
+	// TODO_TECHDEBT(#512): Replace with `faucet`
 	fundingAccountKeyName = "pnf"
 	// supplierStakeAmount is the amount of tokens to stake by suppliers.
 	supplierStakeAmount sdk.Coin

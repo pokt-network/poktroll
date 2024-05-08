@@ -356,8 +356,9 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 	gatewaysPlan := plans.gateways
 	suppliersPlan := plans.suppliers
 
+	// Check if any new actors need to be staked **for use in the next session**
+	// and send the appropriate stake transactions if so.
 	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
-		// Check if any new actors need to be staked **for use in the next session**.
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
 		if suppliersPlan.shouldIncrementActorCount(notif, activeSuppliers) {
@@ -558,7 +559,10 @@ func (s *relaysSuite) createApplicationAccount(
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
 	currentTestDuration := s.startBlockHeight + s.testDurationBlocks - currentBlockHeight
-	// Multiply by 2 to make sure the application does not run out of funds.
+	// Multiply by 2 to make sure the application does not run out of funds
+	// based on the number of relays it needs to send. Theoretically, `+1` should
+	// be enough, but probabilistic and time based mechanisms make it hard
+	// to predict exactly.
 	appFundingAmount := s.relayRatePerApp * s.relayCoinAmountCost * currentTestDuration * blockDuration * 2
 	return sdk.NewCoin("upokt", math.NewInt(appFundingAmount))
 }
@@ -856,7 +860,7 @@ func (s *relaysSuite) sendPendingMsgsTx(height int64, actor *accountInfo) {
 	}()
 }
 
-// waitForTxsToBeCommitted waits for transactions to observed on-chain.
+// waitForTxsToBeCommitted waits for transactions to be observed on-chain.
 // It is used to ensure that the transactions are committed before taking
 // dependent actions.
 func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
