@@ -30,11 +30,9 @@ jobs:
       with:
         chain: pocket-network
         dockerfile: cosmos
-        # platform: linux/arm64,linux/amd64
+        platform: linux/arm64,linux/amd64
         pre-build: |
-          apk add gcompat buf
-          make -d ignite_install
-          make -d proto_regen
+          make -d heighliner_pre_build
         build-target: |
           make -d install
         binaries: |
