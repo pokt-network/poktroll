@@ -862,9 +862,11 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	ignite version
 
 .PHONY: heighliner_pre_build
-heighliner_pre_build: ignite_install proto_regen # Steps to execute during pre-build phase in heighliner. Having this step here makes it so we don't need to submit a PR on their side if we want to change something.
+heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. Having this step here makes it so we don't need to submit a PR on their side if we want to change something.
 	apk add gcompat
 	go install github.com/bufbuild/buf/cmd/buf@v1.31.0
+	make ignite_install
+	make proto_regen
 
 #####################
 ### Documentation ###
