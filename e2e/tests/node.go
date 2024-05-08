@@ -139,7 +139,6 @@ func (p *pocketdBin) runCurlPostCmd(rpcUrl string, service string, data string, 
 		Err:     err,
 	}
 	p.result = r
-	fmt.Println("OLSHIT", cmd, r)
 
 	if defaultDebugOutput == "true" {
 		fmt.Printf("%#v\n", r)
