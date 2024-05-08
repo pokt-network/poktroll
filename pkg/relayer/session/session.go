@@ -46,7 +46,7 @@ type relayerSessionsManager struct {
 
 	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
-	// blockQueryClient is used to query for blocks.
+	// blockQueryClient is the CometBFT RPC client used to query blocks
 	blockQueryClient cosmosclient.CometRPC
 
 	// storesDirectory points to a path on disk where KVStore data files are created.

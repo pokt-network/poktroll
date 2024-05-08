@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
-	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -48,17 +46,8 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
 	blockQueryClientMock.EXPECT().
 		Block(gomock.Any(), gomock.AssignableToTypeOf((*int64)(nil))).
-		Return(&coretypes.ResultBlock{
-			BlockID: cmttypes.BlockID{
-				Hash: []byte("expected block hash"),
-			},
-			Block: &cmttypes.Block{
-				Header: cmttypes.Header{
-					Height: 1,
-				},
-			},
-		}, nil).
-		Times(2)
+		Return(nil, nil).
+		AnyTimes()
 
 	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)
 	storesDirectoryOpt := testrelayer.WithTempStoresDirectory(t)

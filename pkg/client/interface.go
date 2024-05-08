@@ -231,6 +231,15 @@ type TxClientOption func(TxClient)
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
 
+// DelegationClientOption defines a function type that modifies the DelegationClient.
+type DelegationClientOption func(DelegationClient)
+
+// BlockClientOption defines a function type that modifies the BlockClient.
+type BlockClientOption func(BlockClient)
+
+// EventsReplayClientOption defines a function type that modifies the ReplayClient.
+type EventsReplayClientOption[T any] func(EventsReplayClient[T])
+
 // AccountQueryClient defines an interface that enables the querying of the
 // on-chain account information
 type AccountQueryClient interface {
