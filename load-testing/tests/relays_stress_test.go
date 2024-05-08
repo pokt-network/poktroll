@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -49,7 +48,7 @@ const (
 )
 
 // NB: +1 to skip the "actor" column.
-const initialActorAmountColIdx = iota + 1
+const initialactorCountColIdx = iota + 1
 
 // NB: +1 to skip the "actor" column.
 const (
@@ -298,9 +297,9 @@ func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS s
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
 	// Store the initial counts of the actors to be staked to be used later in the test,
 	// when information about max actors to be staked is available.
-	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialActorAmountColIdx).Int64()
-	s.appInitialCount = table.Cell(applicationRowIdx, initialActorAmountColIdx).Int64()
-	s.supplierInitialCount = table.Cell(supplierRowIdx, initialActorAmountColIdx).Int64()
+	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialactorCountColIdx).Int64()
+	s.appInitialCount = table.Cell(applicationRowIdx, initialactorCountColIdx).Int64()
+	s.supplierInitialCount = table.Cell(supplierRowIdx, initialactorCountColIdx).Int64()
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
@@ -317,9 +316,9 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// applications to delegate to all gateways.
 	// This is to ensure that requests are distributed evenly across all gateways
 	// at any given time.
-	s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxAmount)
+	s.sendAdjustMaxDelegationsParamTx(plans.gateways.maxActorCount)
 	s.waitForTxsToBeCommitted()
-	s.ensureUpdatedMaxDelegations(plans.gateways.maxAmount)
+	s.ensureUpdatedMaxDelegations(plans.gateways.maxActorCount)
 
 	// Fund all the provisioned suppliers and gateways since their addresses are
 	// known and they are not created on the fly, while funding only the initially
@@ -353,9 +352,7 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	// Delegate the initial applications to the initial gateways
 	s.sendDelegateInitialAppsTxs(applications, gateways)
 	txResults = s.waitForTxsToBeCommitted()
-	fmt.Println(">>> ensuring delegated apps")
 	s.ensureDelegatedApps(txResults, applications, gateways)
-	fmt.Println(">>> post ensuring delegated apps")
 
 	logger.Info().Msg("Apps delegated")
 
