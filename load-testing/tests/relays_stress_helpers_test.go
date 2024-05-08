@@ -186,6 +186,8 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			s.startBlockHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
+
+			s.Log("Test starting at block height: %d", s.startBlockHeight)
 		}
 
 		// Log the test progress.

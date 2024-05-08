@@ -399,7 +399,10 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	)
 }
 
-// TODO_IN_THIS_COMMIT: godoc comment...
+// ALoadOfConcurrentRelayRequestsAreSentFromTheApplications sends batches of relay
+// requests for each active application to one active gateway (round-robin; per relay).
+// Relays within a batch are distributed over time to match the configured rate
+// (relays per second).
 func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications() {
 	// Asynchronously send relay request batches for each batch info notification.
 	channel.ForEach(s.ctx, s.batchInfoObs, s.forEachRelayBatchSendBatch)
@@ -408,6 +411,7 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 	<-s.ctx.Done()
 }
 
+// TODO_UPNEXT: Complete & comment.
 func (s *relaysSuite) PairsOfClaimAndProofMessagesShouldBeCommittedOnchain(a string) {
 	txEventsCtx, cancelTxEvents := context.WithCancel(s.ctx)
 	_ = cancelTxEvents
