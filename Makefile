@@ -868,7 +868,7 @@ heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. H
 	make proto_regen
 
 .PHONY: heighliner_build
-heighliner_pre_build: # Steps to execute during pre-build phase in heighliner. Having this step here makes it so we don't need to submit a PR on their side if we want to change something.
+heighliner_build: # Steps to execute during pre-build phase in heighliner. Having this step here makes it so we don't need to submit a PR on their side if we want to change something.
 	make install
 
 # .PHONY: heighliner_use_prebuilt_binaries
