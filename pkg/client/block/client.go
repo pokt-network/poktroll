@@ -38,41 +38,46 @@ const (
 func NewBlockClient(
 	ctx context.Context,
 	deps depinject.Config,
-) (client.BlockClient, error) {
-	ctx, close := context.WithCancel(ctx)
+	opts ...client.BlockClientOption,
+) (_ client.BlockClient, err error) {
+	ctx, cancel := context.WithCancel(ctx)
 
-	eventsReplayClient, err := events.NewEventsReplayClient[client.Block](
+	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
+	// new block, whether it comes from a direct query or an event subscription query.
+	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
+	bClient := &blockReplayClient{
+		latestBlockReplayObs: latestBlockReplayObs,
+		close:                cancel,
+	}
+
+	for _, opt := range opts {
+		opt(bClient)
+	}
+
+	bClient.eventsReplayClient, err = events.NewEventsReplayClient[client.Block](
 		ctx,
 		deps,
 		committedBlocksQuery,
 		UnmarshalNewBlock,
 		defaultBlocksReplayLimit,
+		events.WithConnRetryLimit[client.Block](bClient.connRetryLimit),
 	)
 	if err != nil {
-		close()
+		cancel()
 		return nil, err
 	}
 
-	// latestBlockPublishCh is the channel that notifies the latestBlockReplayObs of a
-	// new block, whether it comes from a direct query or an event subscription query.
-	latestBlockReplayObs, latestBlockPublishCh := channel.NewReplayObservable[client.Block](ctx, 10)
-	blockReplayClient := &blockReplayClient{
-		eventsReplayClient:   eventsReplayClient,
-		latestBlockReplayObs: latestBlockReplayObs,
-		close:                close,
-	}
-
-	if err := depinject.Inject(deps, &blockReplayClient.onStartQueryClient); err != nil {
+	if err := depinject.Inject(deps, &bClient.onStartQueryClient); err != nil {
 		return nil, err
 	}
 
-	blockReplayClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
+	bClient.asyncForwardBlockEvent(ctx, latestBlockPublishCh)
 
-	if err := blockReplayClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
+	if err := bClient.getInitialBlock(ctx, latestBlockPublishCh); err != nil {
 		return nil, err
 	}
 
-	return blockReplayClient, nil
+	return bClient, nil
 }
 
 // blockReplayClient is BlockClient implementation that combines a CometRPC client
@@ -99,6 +104,11 @@ type blockReplayClient struct {
 
 	// close is a function that cancels the context of the blockReplayClient.
 	close context.CancelFunc
+
+	// connRetryLimit is the number of times the underlying replay client
+	// should retry in the event that it encounters an error or its connection is interrupted.
+	// If connRetryLimit is < 0, it will retry indefinitely.
+	connRetryLimit int
 }
 
 // CommittedBlocksSequence returns a replay observable of new block events.
