@@ -809,6 +809,37 @@ trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https:
 	git commit --allow-empty -m "Empty commit"
 	git push
 
+.PHONY: ignite_install
+ignite_install: ## Install ignite. Used by CI and heighliner.
+	# Determine if sudo is available and use it if it is
+	if command -v sudo &>/dev/null; then \
+		SUDO="sudo"; \
+	else \
+		SUDO=""; \
+	fi; \
+	echo "Downloading Ignite CLI..."; \
+	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Extracting Ignite CLI..."; \
+	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Moving Ignite CLI to /usr/local/bin..."; \
+	$$SUDO mv ignite /usr/local/bin/ignite; \
+	echo "Cleaning up..."; \
+	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	ignite version
+
+.PHONY: ignite_release
+ignite_release: ## Builds production binaries
+	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
+
+.PHONY: ignite_release_extract_binaries
+ignite_release_extract_binaries: ## Extracts binaries from the release archives
+	mkdir -p release_binaries
+
+	for archive in release/*.tar.gz; do \
+		binary_name=$$(basename "$$archive" .tar.gz); \
+		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
+		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
+
 #####################
 ### Documentation ###
 #####################
