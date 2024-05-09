@@ -1,0 +1,94 @@
+name: Release artifacts
+
+# Currently disabled, but ready to implement a CI job to add binaries to GitHub releases.
+on:
+  push:
+    branches: ["dk-heighliner"]
+  # pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  release-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+      - name: install ignite
+        run: |
+          make ignite_install
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22.2"
+
+      - name: Install CI dependencies
+        run: make install_ci_deps
+
+      - name: Generate protobufs
+        run: make proto_regen
+
+      - name: Generate mocks
+        run: make go_mockgen
+
+      - name: Build binaries
+        run: make ignite_release
+
+      - name: Unarchive linux binaries for Docker to consume
+        run: make ignite_release_extract_binaries
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Metadata action
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: "true"
+        with:
+          images: |
+            ghcr.io/pokt-network/poktrolld
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=tag,suffix=prod
+            type=sha,suffix=prod
+            type=sha,format=long,suffix=prod
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          file: Dockerfile.release
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: .
+
+      # TODO(@okdas): when we have proper releases, we can remove this and use binaries built by releases instead.
+      # But for now, attach them to commits so we/community can access them
+      - name: Add binaries to commit
+        uses: actions/upload-artifact@v4
+        with:
+          name: poktrolld
+          path: release/
+
+      # TODO(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
+      # - name: Add release and publish binaries
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: |
+      #       release/*
