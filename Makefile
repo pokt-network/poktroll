@@ -864,6 +864,7 @@ ignite_release_extract_binaries: ## Extracts binaries from the release archives
 		binary_name=$$(basename "$$archive" .tar.gz); \
 		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
 		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
+	done
 
 #####################
 ### Documentation ###
