@@ -1,10 +1,9 @@
 name: Release artifacts
 
-# Currently disabled, but ready to implement a CI job to add binaries to GitHub releases.
 on:
   push:
-    branches: ["dk-release-artifacts"]
-  # pull_request:
+    tags:
+      - "v*.*.*"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -80,17 +79,9 @@ jobs:
           cache-to: type=gha,mode=max
           context: .
 
-      # TODO(@okdas): when we have proper releases, we can remove this and use binaries built by releases instead.
-      # But for now, attach them to commits so we/community can access them
-      - name: Add binaries to commit
-        uses: actions/upload-artifact@v4
-        with:
-          name: poktrolld
-          path: release/
-
       # TODO(@okdas): use for releases (also change the "on" part at the top so it only tgirrered for tags/releases)
-      # - name: Add release and publish binaries
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: |
-      #       release/*
+      - name: Add release and publish binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*
