@@ -1,19 +1,19 @@
-signing_key_name: supplier1
+signing_key_name: shannon_supplier
 smt_store_path: smt_stores
 metrics:
   enabled: true
   addr: :9090
 pocket_node:
-  query_node_rpc_url: tcp://poktroll-validator:36657
-  query_node_grpc_url: tcp://poktroll-validator:36658
-  tx_node_rpc_url: tcp://poktroll-validator:36657
+  query_node_rpc_url: tcp://127.0.0.1:36657
+  query_node_grpc_url: tcp://127.0.0.1:36658
+  tx_node_rpc_url: tcp://127.0.0.1:36657
 suppliers:
   - service_id: anvil
-    listen_url: http://0.0.0.0:8545
+    listen_url: http://localhost:6942
     service_config:
-      backend_url: http://anvil:8547/
+      backend_url: http://localhost:8081
       publicly_exposed_endpoints:
-        - relayminers
+        - localhost
 pprof:
   enabled: false
   addr: localhost:6060

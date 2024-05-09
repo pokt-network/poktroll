@@ -9,11 +9,15 @@ This document describes the configuration file used by the `Application` actor
 to submit a `stake` transaction, **which is a prerequisite** for it to use the
 Pocket Network's RPC services.
 
+- [Reference Example](#reference-example)
 - [Usage](#usage)
 - [Configuration](#configuration)
   - [`stake_amount`](#stake_amount)
   - [`service_ids`](#service_ids)
-- [Example](#example)
+
+## Reference Example
+
+A full example of the configuration file could be found at [application_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/application1_stake_config.yaml)
 
 ## Usage
 
@@ -71,7 +75,3 @@ that is available on Pocket network.
 
 It MUST be a string of 8 or fewer alphanumeric characters, underscores, and
 dashes (i.e. matching the regex `^[a-zA-Z0-9_-]{1,8}$`).
-
-## Example
-
-A full example of the configuration file could be found at [application_staking_config.yaml](https://github.com/pokt-network/poktroll/tree/main/localnet/poktrolld/config/application1_stake_config.yaml)
