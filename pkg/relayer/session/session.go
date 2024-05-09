@@ -43,7 +43,7 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
-	// TODO_IN_THIS_COMMIT: godoc comment.
+	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
 	pendingTxMu sync.Mutex
 
 	// storesDirectory points to a path on disk where KVStore data files are created.

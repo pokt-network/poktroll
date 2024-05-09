@@ -12,7 +12,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -99,7 +98,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithLevel(polyzero.DebugLevel),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -190,7 +189,7 @@ func setupRelayerDependencies(
 	supplierFuncs := []config.SupplierFn{
 		config.NewSupplyLoggerFromCtx(ctx),
 		config.NewSupplyEventsQueryClientFn(queryNodeRPCUrl),   // leaf
-		config.NewSupplyBlockQueryClientFn(queryNodeRPCUrl),    // leaf
+		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
 		config.NewSupplyQueryClientContextFn(queryNodeGRPCUrl), // leaf
 		config.NewSupplyBlockClientFn(queryNodeRPCUrl),         // leaf
 		supplyMiner, // leaf

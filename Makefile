@@ -3,9 +3,16 @@
 SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
+TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 APPGATE_SERVER ?= http://localhost:42069
+GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
+
+# The domain ending in ".town" is staging, ".city" is production
+GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+# The "protocol" field here instructs the Grove gateway which network to use
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -439,7 +446,7 @@ todo_count: ## Print a count of all the TODOs in the project
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep --exclude-dir={.git,vendor,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_"
+	grep -n --exclude-dir={.git,vendor,.vscode,.idea} --exclude={Makefile,reviewdog.yml} -r -e "TODO_IN_THIS_"
 
 ####################
 ###   Gateways   ###
@@ -467,7 +474,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -507,7 +514,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -621,6 +628,38 @@ get_session_app2_anvil: ## Retrieve the session for (app2, anvil, latest_height)
 get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 	APP3=$$(make poktrolld_addr ACC_NAME=app3) && \
 	APP=$$APP3 SVC=anvil HEIGHT=0 make get_session
+
+###############
+### TestNet ###
+###############
+
+.PHONY: testnet_supplier_list
+testnet_supplier_list: ## List all the staked supplier on TestNet
+	poktrolld q supplier list-supplier --node=$(TESTNET_RPC)
+
+.PHONY: testnet_gateway_list
+testnet_gateway_list: ## List all the staked gateways on TestNet
+	poktrolld q gateway list-gateway --node=$(TESTNET_RPC)
+
+.PHONY: testnet_app_list
+testnet_app_list: ## List all the staked applications on TestNet
+	poktrolld q application list-application --node=$(TESTNET_RPC)
+
+.PHONY: testnet_consensus_params
+testnet_consensus_params: ## Output consensus parameters
+	poktrolld q consensus params --node=$(TESTNET_RPC)
+
+.PHONY: testnet_gov_params
+testnet_gov_params: ## Output gov parameters
+	poktrolld q gov params --node=$(TESTNET_RPC)
+
+.PHONY: testnet_status
+testnet_status: ## Output status of the RPC node (most likely a validator)
+	poktrolld status --node=$(TESTNET_RPC) | jq
+
+.PHONY: testnet_height
+testnet_height: ## Height of the network from the RPC node point of view
+	poktrolld status --node=$(TESTNET_RPC) | jq ".sync_info.latest_block_height"
 
 ################
 ### Accounts ###
@@ -819,3 +858,13 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+#############################
+### Grove Gateway Helpers ###
+#############################
+
+.PHONY: grove_staging_eth_block_height
+grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
+	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
+		-H 'Content-Type: application/json' \
+		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)

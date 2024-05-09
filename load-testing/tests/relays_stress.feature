@@ -1,6 +1,5 @@
 Feature: Loading gateway server with relays
 
-  #Scenario Outline:
   Scenario: Incrementing the number of relays and actors
     Given localnet is running
     And a rate of "1" relay requests per second is sent per application

@@ -85,6 +85,9 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	rs.logger.Info().
 		Int64("submitProofsWindowStartHeight", submitProofsWindowStartHeight).
 		Msg("waiting & blocking for global earliest proof submission height")
+
+	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
+	// which branch(es) to prove should be deterministic and use on-chain governance params.
 	submitProofsWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
 	proveDone := make(chan []relayer.SessionTree)

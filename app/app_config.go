@@ -358,8 +358,8 @@ var (
 			{
 				Name: applicationmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&applicationmodulev1.Module{
-					// TODO_HACK: hardcoded authority address used to update max delegated
-					// gateways for load testing purposes.
+					// TODO_BLOCKER(#486): hardcoded authority address used to update max
+					// delegated gateways for load testing purposes.
 					// To remove when we have proper governance in place.
 					// NB: pnf key address; see `poktrolld keys list --keyring-backend test`.
 					Authority: "pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw",

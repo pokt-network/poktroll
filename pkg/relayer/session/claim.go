@@ -92,6 +92,9 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	rs.logger.Info().
 		Int64("create_claim_window_start_height", createClaimsWindowStartHeight).
 		Msg("waiting & blocking for global earliest claim submission height")
+
+	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
+	// which branch(es) to prove should be deterministic and use on-chain governance params.
 	createClaimsWindowStartBlock := rs.waitForBlock(ctx, createClaimsWindowStartHeight)
 
 	claimDone := make(chan []relayer.SessionTree)
