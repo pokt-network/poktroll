@@ -117,7 +117,7 @@ func (x *_Application_4_list) IsValid() bool {
 var _ protoreflect.Map = (*_Application_5_map)(nil)
 
 type _Application_5_map struct {
-	m *map[uint64]*UndelegationFromAppToGatewayEvent
+	m *map[uint64]*UndelegatingGatewayList
 }
 
 func (x *_Application_5_map) Len() int {
@@ -179,7 +179,7 @@ func (x *_Application_5_map) Set(key protoreflect.MapKey, value protoreflect.Val
 	keyUnwrapped := key.Uint()
 	concreteKey := keyUnwrapped
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*UndelegationFromAppToGatewayEvent)
+	concreteValue := valueUnwrapped.Interface().(*UndelegatingGatewayList)
 	(*x.m)[concreteKey] = concreteValue
 }
 
@@ -190,13 +190,13 @@ func (x *_Application_5_map) Mutable(key protoreflect.MapKey) protoreflect.Value
 	if ok {
 		return protoreflect.ValueOfMessage(v.ProtoReflect())
 	}
-	newValue := new(UndelegationFromAppToGatewayEvent)
+	newValue := new(UndelegatingGatewayList)
 	(*x.m)[concreteKey] = newValue
 	return protoreflect.ValueOfMessage(newValue.ProtoReflect())
 }
 
 func (x *_Application_5_map) NewValue() protoreflect.Value {
-	v := new(UndelegationFromAppToGatewayEvent)
+	v := new(UndelegatingGatewayList)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
@@ -210,7 +210,7 @@ var (
 	fd_Application_stake                       protoreflect.FieldDescriptor
 	fd_Application_service_configs             protoreflect.FieldDescriptor
 	fd_Application_delegatee_gateway_addresses protoreflect.FieldDescriptor
-	fd_Application_undelegations               protoreflect.FieldDescriptor
+	fd_Application_pending_undelegations       protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -220,7 +220,7 @@ func init() {
 	fd_Application_stake = md_Application.Fields().ByName("stake")
 	fd_Application_service_configs = md_Application.Fields().ByName("service_configs")
 	fd_Application_delegatee_gateway_addresses = md_Application.Fields().ByName("delegatee_gateway_addresses")
-	fd_Application_undelegations = md_Application.Fields().ByName("undelegations")
+	fd_Application_pending_undelegations = md_Application.Fields().ByName("pending_undelegations")
 }
 
 var _ protoreflect.Message = (*fastReflection_Application)(nil)
@@ -312,9 +312,9 @@ func (x *fastReflection_Application) Range(f func(protoreflect.FieldDescriptor, 
 			return
 		}
 	}
-	if len(x.Undelegations) != 0 {
-		value := protoreflect.ValueOfMap(&_Application_5_map{m: &x.Undelegations})
-		if !f(fd_Application_undelegations, value) {
+	if len(x.PendingUndelegations) != 0 {
+		value := protoreflect.ValueOfMap(&_Application_5_map{m: &x.PendingUndelegations})
+		if !f(fd_Application_pending_undelegations, value) {
 			return
 		}
 	}
@@ -341,8 +341,8 @@ func (x *fastReflection_Application) Has(fd protoreflect.FieldDescriptor) bool {
 		return len(x.ServiceConfigs) != 0
 	case "poktroll.application.Application.delegatee_gateway_addresses":
 		return len(x.DelegateeGatewayAddresses) != 0
-	case "poktroll.application.Application.undelegations":
-		return len(x.Undelegations) != 0
+	case "poktroll.application.Application.pending_undelegations":
+		return len(x.PendingUndelegations) != 0
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.Application"))
@@ -367,8 +367,8 @@ func (x *fastReflection_Application) Clear(fd protoreflect.FieldDescriptor) {
 		x.ServiceConfigs = nil
 	case "poktroll.application.Application.delegatee_gateway_addresses":
 		x.DelegateeGatewayAddresses = nil
-	case "poktroll.application.Application.undelegations":
-		x.Undelegations = nil
+	case "poktroll.application.Application.pending_undelegations":
+		x.PendingUndelegations = nil
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.Application"))
@@ -403,11 +403,11 @@ func (x *fastReflection_Application) Get(descriptor protoreflect.FieldDescriptor
 		}
 		listValue := &_Application_4_list{list: &x.DelegateeGatewayAddresses}
 		return protoreflect.ValueOfList(listValue)
-	case "poktroll.application.Application.undelegations":
-		if len(x.Undelegations) == 0 {
+	case "poktroll.application.Application.pending_undelegations":
+		if len(x.PendingUndelegations) == 0 {
 			return protoreflect.ValueOfMap(&_Application_5_map{})
 		}
-		mapValue := &_Application_5_map{m: &x.Undelegations}
+		mapValue := &_Application_5_map{m: &x.PendingUndelegations}
 		return protoreflect.ValueOfMap(mapValue)
 	default:
 		if descriptor.IsExtension() {
@@ -441,10 +441,10 @@ func (x *fastReflection_Application) Set(fd protoreflect.FieldDescriptor, value 
 		lv := value.List()
 		clv := lv.(*_Application_4_list)
 		x.DelegateeGatewayAddresses = *clv.list
-	case "poktroll.application.Application.undelegations":
+	case "poktroll.application.Application.pending_undelegations":
 		mv := value.Map()
 		cmv := mv.(*_Application_5_map)
-		x.Undelegations = *cmv.m
+		x.PendingUndelegations = *cmv.m
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.Application"))
@@ -482,11 +482,11 @@ func (x *fastReflection_Application) Mutable(fd protoreflect.FieldDescriptor) pr
 		}
 		value := &_Application_4_list{list: &x.DelegateeGatewayAddresses}
 		return protoreflect.ValueOfList(value)
-	case "poktroll.application.Application.undelegations":
-		if x.Undelegations == nil {
-			x.Undelegations = make(map[uint64]*UndelegationFromAppToGatewayEvent)
+	case "poktroll.application.Application.pending_undelegations":
+		if x.PendingUndelegations == nil {
+			x.PendingUndelegations = make(map[uint64]*UndelegatingGatewayList)
 		}
-		value := &_Application_5_map{m: &x.Undelegations}
+		value := &_Application_5_map{m: &x.PendingUndelegations}
 		return protoreflect.ValueOfMap(value)
 	case "poktroll.application.Application.address":
 		panic(fmt.Errorf("field address of message poktroll.application.Application is not mutable"))
@@ -514,8 +514,8 @@ func (x *fastReflection_Application) NewField(fd protoreflect.FieldDescriptor) p
 	case "poktroll.application.Application.delegatee_gateway_addresses":
 		list := []string{}
 		return protoreflect.ValueOfList(&_Application_4_list{list: &list})
-	case "poktroll.application.Application.undelegations":
-		m := make(map[uint64]*UndelegationFromAppToGatewayEvent)
+	case "poktroll.application.Application.pending_undelegations":
+		m := make(map[uint64]*UndelegatingGatewayList)
 		return protoreflect.ValueOfMap(&_Application_5_map{m: &m})
 	default:
 		if fd.IsExtension() {
@@ -606,8 +606,8 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
 		}
-		if len(x.Undelegations) > 0 {
-			SiZeMaP := func(k uint64, v *UndelegationFromAppToGatewayEvent) {
+		if len(x.PendingUndelegations) > 0 {
+			SiZeMaP := func(k uint64, v *UndelegatingGatewayList) {
 				l := 0
 				if v != nil {
 					l = options.Size(v)
@@ -617,19 +617,19 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				n += mapEntrySize + 1 + runtime.Sov(uint64(mapEntrySize))
 			}
 			if options.Deterministic {
-				sortme := make([]uint64, 0, len(x.Undelegations))
-				for k := range x.Undelegations {
+				sortme := make([]uint64, 0, len(x.PendingUndelegations))
+				for k := range x.PendingUndelegations {
 					sortme = append(sortme, k)
 				}
 				sort.Slice(sortme, func(i, j int) bool {
 					return sortme[i] < sortme[j]
 				})
 				for _, k := range sortme {
-					v := x.Undelegations[k]
+					v := x.PendingUndelegations[k]
 					SiZeMaP(k, v)
 				}
 			} else {
-				for k, v := range x.Undelegations {
+				for k, v := range x.PendingUndelegations {
 					SiZeMaP(k, v)
 				}
 			}
@@ -663,8 +663,8 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.Undelegations) > 0 {
-			MaRsHaLmAp := func(k uint64, v *UndelegationFromAppToGatewayEvent) (protoiface.MarshalOutput, error) {
+		if len(x.PendingUndelegations) > 0 {
+			MaRsHaLmAp := func(k uint64, v *UndelegatingGatewayList) (protoiface.MarshalOutput, error) {
 				baseI := i
 				encoded, err := options.Marshal(v)
 				if err != nil {
@@ -687,23 +687,23 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				return protoiface.MarshalOutput{}, nil
 			}
 			if options.Deterministic {
-				keysForUndelegations := make([]uint64, 0, len(x.Undelegations))
-				for k := range x.Undelegations {
-					keysForUndelegations = append(keysForUndelegations, uint64(k))
+				keysForPendingUndelegations := make([]uint64, 0, len(x.PendingUndelegations))
+				for k := range x.PendingUndelegations {
+					keysForPendingUndelegations = append(keysForPendingUndelegations, uint64(k))
 				}
-				sort.Slice(keysForUndelegations, func(i, j int) bool {
-					return keysForUndelegations[i] < keysForUndelegations[j]
+				sort.Slice(keysForPendingUndelegations, func(i, j int) bool {
+					return keysForPendingUndelegations[i] < keysForPendingUndelegations[j]
 				})
-				for iNdEx := len(keysForUndelegations) - 1; iNdEx >= 0; iNdEx-- {
-					v := x.Undelegations[uint64(keysForUndelegations[iNdEx])]
-					out, err := MaRsHaLmAp(keysForUndelegations[iNdEx], v)
+				for iNdEx := len(keysForPendingUndelegations) - 1; iNdEx >= 0; iNdEx-- {
+					v := x.PendingUndelegations[uint64(keysForPendingUndelegations[iNdEx])]
+					out, err := MaRsHaLmAp(keysForPendingUndelegations[iNdEx], v)
 					if err != nil {
 						return out, err
 					}
 				}
 			} else {
-				for k := range x.Undelegations {
-					v := x.Undelegations[k]
+				for k := range x.PendingUndelegations {
+					v := x.PendingUndelegations[k]
 					out, err := MaRsHaLmAp(k, v)
 					if err != nil {
 						return out, err
@@ -942,7 +942,7 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				iNdEx = postIndex
 			case 5:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Undelegations", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field PendingUndelegations", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -969,11 +969,11 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.Undelegations == nil {
-					x.Undelegations = make(map[uint64]*UndelegationFromAppToGatewayEvent)
+				if x.PendingUndelegations == nil {
+					x.PendingUndelegations = make(map[uint64]*UndelegatingGatewayList)
 				}
 				var mapkey uint64
-				var mapvalue *UndelegationFromAppToGatewayEvent
+				var mapvalue *UndelegatingGatewayList
 				for iNdEx < postIndex {
 					entryPreIndex := iNdEx
 					var wire uint64
@@ -1033,7 +1033,7 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 						if postmsgIndex > l {
 							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 						}
-						mapvalue = &UndelegationFromAppToGatewayEvent{}
+						mapvalue = &UndelegatingGatewayList{}
 						if err := options.Unmarshal(dAtA[iNdEx:postmsgIndex], mapvalue); err != nil {
 							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 						}
@@ -1053,7 +1053,7 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 						iNdEx += skippy
 					}
 				}
-				x.Undelegations[mapkey] = mapvalue
+				x.PendingUndelegations[mapkey] = mapvalue
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1090,72 +1090,72 @@ func (x *fastReflection_Application) ProtoMethods() *protoiface.Methods {
 	}
 }
 
-var _ protoreflect.List = (*_UndelegationFromAppToGatewayEvent_2_list)(nil)
+var _ protoreflect.List = (*_UndelegatingGatewayList_2_list)(nil)
 
-type _UndelegationFromAppToGatewayEvent_2_list struct {
+type _UndelegatingGatewayList_2_list struct {
 	list *[]string
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) Len() int {
+func (x *_UndelegatingGatewayList_2_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) Get(i int) protoreflect.Value {
+func (x *_UndelegatingGatewayList_2_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfString((*x.list)[i])
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) Set(i int, value protoreflect.Value) {
+func (x *_UndelegatingGatewayList_2_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) Append(value protoreflect.Value) {
+func (x *_UndelegatingGatewayList_2_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message UndelegationFromAppToGatewayEvent at list field UndelegatedGateways as it is not of Message kind"))
+func (x *_UndelegatingGatewayList_2_list) AppendMutable() protoreflect.Value {
+	panic(fmt.Errorf("AppendMutable can not be called on message UndelegatingGatewayList at list field GatewayAddresses as it is not of Message kind"))
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) Truncate(n int) {
+func (x *_UndelegatingGatewayList_2_list) Truncate(n int) {
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) NewElement() protoreflect.Value {
+func (x *_UndelegatingGatewayList_2_list) NewElement() protoreflect.Value {
 	v := ""
 	return protoreflect.ValueOfString(v)
 }
 
-func (x *_UndelegationFromAppToGatewayEvent_2_list) IsValid() bool {
+func (x *_UndelegatingGatewayList_2_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_UndelegationFromAppToGatewayEvent                      protoreflect.MessageDescriptor
-	fd_UndelegationFromAppToGatewayEvent_undelegated_gateways protoreflect.FieldDescriptor
+	md_UndelegatingGatewayList                   protoreflect.MessageDescriptor
+	fd_UndelegatingGatewayList_gateway_addresses protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_poktroll_application_application_proto_init()
-	md_UndelegationFromAppToGatewayEvent = File_poktroll_application_application_proto.Messages().ByName("UndelegationFromAppToGatewayEvent")
-	fd_UndelegationFromAppToGatewayEvent_undelegated_gateways = md_UndelegationFromAppToGatewayEvent.Fields().ByName("undelegated_gateways")
+	md_UndelegatingGatewayList = File_poktroll_application_application_proto.Messages().ByName("UndelegatingGatewayList")
+	fd_UndelegatingGatewayList_gateway_addresses = md_UndelegatingGatewayList.Fields().ByName("gateway_addresses")
 }
 
-var _ protoreflect.Message = (*fastReflection_UndelegationFromAppToGatewayEvent)(nil)
+var _ protoreflect.Message = (*fastReflection_UndelegatingGatewayList)(nil)
 
-type fastReflection_UndelegationFromAppToGatewayEvent UndelegationFromAppToGatewayEvent
+type fastReflection_UndelegatingGatewayList UndelegatingGatewayList
 
-func (x *UndelegationFromAppToGatewayEvent) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_UndelegationFromAppToGatewayEvent)(x)
+func (x *UndelegatingGatewayList) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_UndelegatingGatewayList)(x)
 }
 
-func (x *UndelegationFromAppToGatewayEvent) slowProtoReflect() protoreflect.Message {
+func (x *UndelegatingGatewayList) slowProtoReflect() protoreflect.Message {
 	mi := &file_poktroll_application_application_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1167,43 +1167,43 @@ func (x *UndelegationFromAppToGatewayEvent) slowProtoReflect() protoreflect.Mess
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_UndelegationFromAppToGatewayEvent_messageType fastReflection_UndelegationFromAppToGatewayEvent_messageType
-var _ protoreflect.MessageType = fastReflection_UndelegationFromAppToGatewayEvent_messageType{}
+var _fastReflection_UndelegatingGatewayList_messageType fastReflection_UndelegatingGatewayList_messageType
+var _ protoreflect.MessageType = fastReflection_UndelegatingGatewayList_messageType{}
 
-type fastReflection_UndelegationFromAppToGatewayEvent_messageType struct{}
+type fastReflection_UndelegatingGatewayList_messageType struct{}
 
-func (x fastReflection_UndelegationFromAppToGatewayEvent_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_UndelegationFromAppToGatewayEvent)(nil)
+func (x fastReflection_UndelegatingGatewayList_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_UndelegatingGatewayList)(nil)
 }
-func (x fastReflection_UndelegationFromAppToGatewayEvent_messageType) New() protoreflect.Message {
-	return new(fastReflection_UndelegationFromAppToGatewayEvent)
+func (x fastReflection_UndelegatingGatewayList_messageType) New() protoreflect.Message {
+	return new(fastReflection_UndelegatingGatewayList)
 }
-func (x fastReflection_UndelegationFromAppToGatewayEvent_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_UndelegationFromAppToGatewayEvent
+func (x fastReflection_UndelegatingGatewayList_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_UndelegatingGatewayList
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Descriptor() protoreflect.MessageDescriptor {
-	return md_UndelegationFromAppToGatewayEvent
+func (x *fastReflection_UndelegatingGatewayList) Descriptor() protoreflect.MessageDescriptor {
+	return md_UndelegatingGatewayList
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Type() protoreflect.MessageType {
-	return _fastReflection_UndelegationFromAppToGatewayEvent_messageType
+func (x *fastReflection_UndelegatingGatewayList) Type() protoreflect.MessageType {
+	return _fastReflection_UndelegatingGatewayList_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) New() protoreflect.Message {
-	return new(fastReflection_UndelegationFromAppToGatewayEvent)
+func (x *fastReflection_UndelegatingGatewayList) New() protoreflect.Message {
+	return new(fastReflection_UndelegatingGatewayList)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Interface() protoreflect.ProtoMessage {
-	return (*UndelegationFromAppToGatewayEvent)(x)
+func (x *fastReflection_UndelegatingGatewayList) Interface() protoreflect.ProtoMessage {
+	return (*UndelegatingGatewayList)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1211,10 +1211,10 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Interface() protorefl
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.UndelegatedGateways) != 0 {
-		value := protoreflect.ValueOfList(&_UndelegationFromAppToGatewayEvent_2_list{list: &x.UndelegatedGateways})
-		if !f(fd_UndelegationFromAppToGatewayEvent_undelegated_gateways, value) {
+func (x *fastReflection_UndelegatingGatewayList) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.GatewayAddresses) != 0 {
+		value := protoreflect.ValueOfList(&_UndelegatingGatewayList_2_list{list: &x.GatewayAddresses})
+		if !f(fd_UndelegatingGatewayList_gateway_addresses, value) {
 			return
 		}
 	}
@@ -1231,15 +1231,15 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Range(f func(protoref
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_UndelegatingGatewayList) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
-		return len(x.UndelegatedGateways) != 0
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
+		return len(x.GatewayAddresses) != 0
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1249,15 +1249,15 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Has(fd protoreflect.F
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_UndelegatingGatewayList) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
-		x.UndelegatedGateways = nil
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
+		x.GatewayAddresses = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1267,19 +1267,19 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Clear(fd protoreflect
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_UndelegatingGatewayList) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
-		if len(x.UndelegatedGateways) == 0 {
-			return protoreflect.ValueOfList(&_UndelegationFromAppToGatewayEvent_2_list{})
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
+		if len(x.GatewayAddresses) == 0 {
+			return protoreflect.ValueOfList(&_UndelegatingGatewayList_2_list{})
 		}
-		listValue := &_UndelegationFromAppToGatewayEvent_2_list{list: &x.UndelegatedGateways}
+		listValue := &_UndelegatingGatewayList_2_list{list: &x.GatewayAddresses}
 		return protoreflect.ValueOfList(listValue)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1293,17 +1293,17 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Get(descriptor protor
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_UndelegatingGatewayList) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
 		lv := value.List()
-		clv := lv.(*_UndelegationFromAppToGatewayEvent_2_list)
-		x.UndelegatedGateways = *clv.list
+		clv := lv.(*_UndelegatingGatewayList_2_list)
+		x.GatewayAddresses = *clv.list
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1317,45 +1317,45 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) Set(fd protoreflect.F
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_UndelegatingGatewayList) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
-		if x.UndelegatedGateways == nil {
-			x.UndelegatedGateways = []string{}
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
+		if x.GatewayAddresses == nil {
+			x.GatewayAddresses = []string{}
 		}
-		value := &_UndelegationFromAppToGatewayEvent_2_list{list: &x.UndelegatedGateways}
+		value := &_UndelegatingGatewayList_2_list{list: &x.GatewayAddresses}
 		return protoreflect.ValueOfList(value)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_UndelegatingGatewayList) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "poktroll.application.UndelegationFromAppToGatewayEvent.undelegated_gateways":
+	case "poktroll.application.UndelegatingGatewayList.gateway_addresses":
 		list := []string{}
-		return protoreflect.ValueOfList(&_UndelegationFromAppToGatewayEvent_2_list{list: &list})
+		return protoreflect.ValueOfList(&_UndelegatingGatewayList_2_list{list: &list})
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegationFromAppToGatewayEvent"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.application.UndelegatingGatewayList"))
 		}
-		panic(fmt.Errorf("message poktroll.application.UndelegationFromAppToGatewayEvent does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message poktroll.application.UndelegatingGatewayList does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_UndelegatingGatewayList) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.UndelegationFromAppToGatewayEvent", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.application.UndelegatingGatewayList", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1363,7 +1363,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) WhichOneof(d protoref
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_UndelegatingGatewayList) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1374,7 +1374,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) GetUnknown() protoref
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_UndelegatingGatewayList) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1386,7 +1386,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) SetUnknown(fields pro
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) IsValid() bool {
+func (x *fastReflection_UndelegatingGatewayList) IsValid() bool {
 	return x != nil
 }
 
@@ -1396,9 +1396,9 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_UndelegatingGatewayList) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*UndelegationFromAppToGatewayEvent)
+		x := input.Message.Interface().(*UndelegatingGatewayList)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1410,8 +1410,8 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 		var n int
 		var l int
 		_ = l
-		if len(x.UndelegatedGateways) > 0 {
-			for _, s := range x.UndelegatedGateways {
+		if len(x.GatewayAddresses) > 0 {
+			for _, s := range x.GatewayAddresses {
 				l = len(s)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -1426,7 +1426,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*UndelegationFromAppToGatewayEvent)
+		x := input.Message.Interface().(*UndelegatingGatewayList)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1445,11 +1445,11 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if len(x.UndelegatedGateways) > 0 {
-			for iNdEx := len(x.UndelegatedGateways) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.UndelegatedGateways[iNdEx])
-				copy(dAtA[i:], x.UndelegatedGateways[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.UndelegatedGateways[iNdEx])))
+		if len(x.GatewayAddresses) > 0 {
+			for iNdEx := len(x.GatewayAddresses) - 1; iNdEx >= 0; iNdEx-- {
+				i -= len(x.GatewayAddresses[iNdEx])
+				copy(dAtA[i:], x.GatewayAddresses[iNdEx])
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.GatewayAddresses[iNdEx])))
 				i--
 				dAtA[i] = 0x12
 			}
@@ -1465,7 +1465,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*UndelegationFromAppToGatewayEvent)
+		x := input.Message.Interface().(*UndelegatingGatewayList)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1497,15 +1497,15 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: UndelegationFromAppToGatewayEvent: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: UndelegatingGatewayList: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: UndelegationFromAppToGatewayEvent: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: UndelegatingGatewayList: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 2:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field UndelegatedGateways", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GatewayAddresses", wireType)
 				}
 				var stringLen uint64
 				for shift := uint(0); ; shift += 7 {
@@ -1533,7 +1533,7 @@ func (x *fastReflection_UndelegationFromAppToGatewayEvent) ProtoMethods() *proto
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.UndelegatedGateways = append(x.UndelegatedGateways, string(dAtA[iNdEx:postIndex]))
+				x.GatewayAddresses = append(x.GatewayAddresses, string(dAtA[iNdEx:postIndex]))
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1589,11 +1589,16 @@ type Application struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address                   string                                        `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                                                                      // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
-	Stake                     *v1beta1.Coin                                 `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                                                                                          // The total amount of uPOKT the application has staked
-	ServiceConfigs            []*shared.ApplicationServiceConfig            `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`                                                                  // The list of services this appliccation is configured to request service for
-	DelegateeGatewayAddresses []string                                      `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"`                               // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
-	Undelegations             map[uint64]*UndelegationFromAppToGatewayEvent `protobuf:"bytes,5,rep,name=undelegations,proto3" json:"undelegations,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // The map of session end heights to undelegations from Gateway, in a non-nullable map
+	Address                   string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                                        // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Stake                     *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                                                            // The total amount of uPOKT the application has staked
+	ServiceConfigs            []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`                                    // The list of services this appliccation is configured to request service for
+	DelegateeGatewayAddresses []string                           `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"` // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+	// A map from sessionEndHeights to a list of Gateways.
+	// The key is height is the last block of the sessions during which the undelegation was triggered.
+	// The value is a list of gateways being undelegated from.
+	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
+	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
+	PendingUndelegations map[uint64]*UndelegatingGatewayList `protobuf:"bytes,5,rep,name=pending_undelegations,json=pendingUndelegations,proto3" json:"pending_undelegations,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *Application) Reset() {
@@ -1644,25 +1649,25 @@ func (x *Application) GetDelegateeGatewayAddresses() []string {
 	return nil
 }
 
-func (x *Application) GetUndelegations() map[uint64]*UndelegationFromAppToGatewayEvent {
+func (x *Application) GetPendingUndelegations() map[uint64]*UndelegatingGatewayList {
 	if x != nil {
-		return x.Undelegations
+		return x.PendingUndelegations
 	}
 	return nil
 }
 
-// UndelegationFromAppToGatewayEvent defines the type used to store an undelegation
-// event from an application to a gateway that happened at a specific session end height.
-type UndelegationFromAppToGatewayEvent struct {
+// UndelegatingGatewayList is used as the Value of `pending_undelegations`.
+// It is required to store a repeated list of strings as a map value.
+type UndelegatingGatewayList struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	UndelegatedGateways []string `protobuf:"bytes,2,rep,name=undelegated_gateways,json=undelegatedGateways,proto3" json:"undelegated_gateways,omitempty"`
+	GatewayAddresses []string `protobuf:"bytes,2,rep,name=gateway_addresses,json=gatewayAddresses,proto3" json:"gateway_addresses,omitempty"`
 }
 
-func (x *UndelegationFromAppToGatewayEvent) Reset() {
-	*x = UndelegationFromAppToGatewayEvent{}
+func (x *UndelegatingGatewayList) Reset() {
+	*x = UndelegatingGatewayList{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_poktroll_application_application_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1670,20 +1675,20 @@ func (x *UndelegationFromAppToGatewayEvent) Reset() {
 	}
 }
 
-func (x *UndelegationFromAppToGatewayEvent) String() string {
+func (x *UndelegatingGatewayList) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UndelegationFromAppToGatewayEvent) ProtoMessage() {}
+func (*UndelegatingGatewayList) ProtoMessage() {}
 
-// Deprecated: Use UndelegationFromAppToGatewayEvent.ProtoReflect.Descriptor instead.
-func (*UndelegationFromAppToGatewayEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use UndelegatingGatewayList.ProtoReflect.Descriptor instead.
+func (*UndelegatingGatewayList) Descriptor() ([]byte, []int) {
 	return file_poktroll_application_application_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *UndelegationFromAppToGatewayEvent) GetUndelegatedGateways() []string {
+func (x *UndelegatingGatewayList) GetGatewayAddresses() []string {
 	if x != nil {
-		return x.UndelegatedGateways
+		return x.GatewayAddresses
 	}
 	return nil
 }
@@ -1701,7 +1706,7 @@ var file_poktroll_application_application_proto_rawDesc = []byte{
 	0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x19, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5f, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1d, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x73, 0x68, 0x61, 0x72, 0x65, 0x64,
-	0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x81,
+	0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x94,
 	0x04, 0x0a, 0x0b, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x32,
 	0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
 	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
@@ -1720,41 +1725,41 @@ var file_poktroll_application_application_proto_rawDesc = []byte{
 	0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64,
 	0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x19, 0x64, 0x65, 0x6c, 0x65,
 	0x67, 0x61, 0x74, 0x65, 0x65, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x41, 0x64, 0x64, 0x72,
-	0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x60, 0x0a, 0x0d, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x34, 0x2e, 0x70,
-	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e,
-	0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74,
-	0x72, 0x79, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x0d, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65,
-	0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x79, 0x0a, 0x12, 0x55, 0x6e, 0x64, 0x65, 0x6c,
-	0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a,
-	0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12,
-	0x4d, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x37,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x46, 0x72, 0x6f, 0x6d, 0x41, 0x70, 0x70, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77,
-	0x61, 0x79, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02,
-	0x38, 0x01, 0x22, 0x74, 0x0a, 0x21, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x46, 0x72, 0x6f, 0x6d, 0x41, 0x70, 0x70, 0x54, 0x6f, 0x47, 0x61, 0x74, 0x65, 0x77,
-	0x61, 0x79, 0x45, 0x76, 0x65, 0x6e, 0x74, 0x12, 0x4f, 0x0a, 0x14, 0x75, 0x6e, 0x64, 0x65, 0x6c,
-	0x65, 0x67, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x18,
-	0x02, 0x20, 0x03, 0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f, 0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72,
-	0x69, 0x6e, 0x67, 0x52, 0x13, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x65, 0x64,
-	0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x73, 0x42, 0xc4, 0x01, 0x0a, 0x18, 0x63, 0x6f, 0x6d,
-	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x10, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xca, 0x02, 0x14,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c,
-	0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47, 0x50, 0x42, 0x4d,
-	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x76, 0x0a, 0x15, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x5f, 0x75, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x18, 0x05,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x3b, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e,
+	0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x55,
+	0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74, 0x72,
+	0x79, 0x42, 0x04, 0xc8, 0xde, 0x1f, 0x00, 0x52, 0x14, 0x70, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67,
+	0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x1a, 0x76, 0x0a,
+	0x19, 0x50, 0x65, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
+	0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x43, 0x0a, 0x05,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x70, 0x6f,
+	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x2e, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67, 0x61, 0x74, 0x69, 0x6e, 0x67, 0x47,
+	0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75,
+	0x65, 0x3a, 0x02, 0x38, 0x01, 0x22, 0x64, 0x0a, 0x17, 0x55, 0x6e, 0x64, 0x65, 0x6c, 0x65, 0x67,
+	0x61, 0x74, 0x69, 0x6e, 0x67, 0x47, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x4c, 0x69, 0x73, 0x74,
+	0x12, 0x49, 0x0a, 0x11, 0x67, 0x61, 0x74, 0x65, 0x77, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x42, 0x1c, 0xc8, 0xde, 0x1f,
+	0x00, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x10, 0x67, 0x61, 0x74, 0x65, 0x77,
+	0x61, 0x79, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x42, 0xc4, 0x01, 0x0a, 0x18,
+	0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x61, 0x70, 0x70,
+	0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x10, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x25, 0x63, 0x6f,
+	0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x61, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74,
+	0x69, 0x6f, 0x6e, 0xa2, 0x02, 0x03, 0x50, 0x41, 0x58, 0xaa, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74,
+	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0xca, 0x02, 0x14, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c,
+	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0xe2, 0x02, 0x20, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x5c, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5c, 0x47,
+	0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x15, 0x50, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x41, 0x70, 0x70, 0x6c, 0x69, 0x63, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1771,17 +1776,17 @@ func file_poktroll_application_application_proto_rawDescGZIP() []byte {
 
 var file_poktroll_application_application_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_poktroll_application_application_proto_goTypes = []interface{}{
-	(*Application)(nil),                       // 0: poktroll.application.Application
-	(*UndelegationFromAppToGatewayEvent)(nil), // 1: poktroll.application.UndelegationFromAppToGatewayEvent
-	nil,                                     // 2: poktroll.application.Application.UndelegationsEntry
+	(*Application)(nil),                     // 0: poktroll.application.Application
+	(*UndelegatingGatewayList)(nil),         // 1: poktroll.application.UndelegatingGatewayList
+	nil,                                     // 2: poktroll.application.Application.PendingUndelegationsEntry
 	(*v1beta1.Coin)(nil),                    // 3: cosmos.base.v1beta1.Coin
 	(*shared.ApplicationServiceConfig)(nil), // 4: poktroll.shared.ApplicationServiceConfig
 }
 var file_poktroll_application_application_proto_depIdxs = []int32{
 	3, // 0: poktroll.application.Application.stake:type_name -> cosmos.base.v1beta1.Coin
 	4, // 1: poktroll.application.Application.service_configs:type_name -> poktroll.shared.ApplicationServiceConfig
-	2, // 2: poktroll.application.Application.undelegations:type_name -> poktroll.application.Application.UndelegationsEntry
-	1, // 3: poktroll.application.Application.UndelegationsEntry.value:type_name -> poktroll.application.UndelegationFromAppToGatewayEvent
+	2, // 2: poktroll.application.Application.pending_undelegations:type_name -> poktroll.application.Application.PendingUndelegationsEntry
+	1, // 3: poktroll.application.Application.PendingUndelegationsEntry.value:type_name -> poktroll.application.UndelegatingGatewayList
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -1808,7 +1813,7 @@ func file_poktroll_application_application_proto_init() {
 			}
 		}
 		file_poktroll_application_application_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UndelegationFromAppToGatewayEvent); i {
+			switch v := v.(*UndelegatingGatewayList); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -223,7 +223,7 @@ func getRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 
 	// Iterate over the undelegations recorded at their respective block height
 	// and check whether to add them back as active delegations.
-	for undelegationHeight, undelegatedGateways := range app.Undelegations {
+	for undelegationHeight, undelegatedGateways := range app.PendingUndelegations {
 		// If the undelegation happened BEFORE the target session end height, skip it,
 		// as it became effective before the target session end height.
 		if targetSessionEndHeight > undelegationHeight {
@@ -231,7 +231,7 @@ func getRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 		}
 		// Add back any delegation that was undelegated after the target session end
 		// height, as we consider it not happening yet relative to the target height.
-		for _, gatewayAddress := range undelegatedGateways.UndelegatedGateways {
+		for _, gatewayAddress := range undelegatedGateways.GatewayAddresses {
 			if _, ok := addedDelegations[gatewayAddress]; ok {
 				continue
 			}

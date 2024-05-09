@@ -23,6 +23,7 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	logger := k.Logger().With("method", "UndelegateFromGateway")
 	logger.Info(fmt.Sprintf("About to undelegate application from gateway with msg: %v", msg))
 
+	// Basic validation of the message
 	if err := msg.ValidateBasic(); err != nil {
 		logger.Error(fmt.Sprintf("Undelegation Message failed basic validation: %v", err))
 		return nil, err
@@ -55,28 +56,30 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 	currentBlock := sdkCtx.BlockHeight()
 	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlock))
 
-	// TODO_INVESTIGATE: When there is no undelegation, the undelegations map is nil
+	// TODO_INVESTIGATE: When there are no undelegatiosn, the undelegations map is nil
 	// even though it was declared with nullable=false in the application proto.
-	if foundApp.Undelegations == nil {
-		foundApp.Undelegations = make(map[uint64]types.UndelegationFromAppToGatewayEvent)
+	if foundApp.PendingUndelegations == nil {
+		foundApp.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 	}
 
-	// Create a session undelegation entry for the given session end height if it doesn't exist.
-	undelegationsAtBlock, ok := foundApp.Undelegations[sessionEndHeight]
+	// Create a session undelegation list entry for the given session end height if it doesn't already exist.
+	undelegatingGatewayListAtBlock, ok := foundApp.PendingUndelegations[sessionEndHeight]
 	if !ok {
-		undelegationsAtBlock = types.UndelegationFromAppToGatewayEvent{
-			UndelegatedGateways: []string{},
+		undelegatingGatewayListAtBlock = types.UndelegatingGatewayList{
+			GatewayAddresses: []string{},
 		}
 	}
 
-	// Add the gateway to the undelegated gateways list if it's not already there.
-	if !slices.Contains(undelegationsAtBlock.UndelegatedGateways, msg.GatewayAddress) {
-		undelegationsAtBlock.UndelegatedGateways = append(
-			undelegationsAtBlock.UndelegatedGateways,
+	// Add the gateway address to the list undelegated gateways list if it's not already there.
+	if !slices.Contains(undelegatingGatewayListAtBlock.GatewayAddresses, msg.GatewayAddress) {
+		undelegatingGatewayListAtBlock.GatewayAddresses = append(
+			undelegatingGatewayListAtBlock.GatewayAddresses,
 			msg.GatewayAddress,
 		)
+		foundApp.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
+	} else {
+		logger.Warn(fmt.Sprintf("Application undelegating (again) from gateway it's already undelegating from with address [%s]", msg.GatewayAddress))
 
-		foundApp.Undelegations[sessionEndHeight] = undelegationsAtBlock
 	}
 
 	// Update the application store with the new delegation
@@ -85,12 +88,11 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 
 	// Emit the application redelegation event
 	event := msg.NewRedelegationEvent()
-	logger.Info(fmt.Sprintf("Emitting application redelegation event %v", event))
-
 	if err := sdkCtx.EventManager().EmitTypedEvent(event); err != nil {
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
 		return nil, err
 	}
+	logger.Info(fmt.Sprintf("Emmited application redelegation event %v", event))
 
 	isSuccessful = true
 	return &types.MsgUndelegateFromGatewayResponse{}, nil

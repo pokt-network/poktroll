@@ -93,7 +93,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegate(t *testing.T) {
 	require.NoError(t, err)
 
 	sdkCtx.WithBlockHeight(4)
-	k.EndBlockerPruneUndelegations(sdkCtx)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, int(maxDelegatedGateways)+1, len(events))
@@ -262,7 +262,7 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.NoError(t, err)
 
 	sdkCtx.WithBlockHeight(4)
-	k.EndBlockerPruneUndelegations(sdkCtx)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
 
 	events = sdkCtx.EventManager().Events()
 	require.Equal(t, 2, len(events))

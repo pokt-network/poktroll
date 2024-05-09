@@ -8,7 +8,7 @@ import (
 
 // EndBlocker is called every block and handles application related updates.
 func EndBlocker(ctx sdk.Context, k keeper.Keeper) error {
-	if err := k.EndBlockerPruneUndelegations(ctx); err != nil {
+	if err := k.EndBlockerPruneAppToGatewayPendingUndelegation(ctx); err != nil {
 		return err
 	}
 
