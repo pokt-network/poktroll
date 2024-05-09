@@ -22,6 +22,8 @@ func createNApplications(keeper keeper.Keeper, ctx context.Context, n int) []typ
 	apps := make([]types.Application, n)
 	for i := range apps {
 		apps[i].Address = strconv.Itoa(i)
+		// Setting pending undelegations since nullify.Fill does not seem to do it.
+		apps[i].PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
 
 		keeper.SetApplication(ctx, apps[i])
 	}

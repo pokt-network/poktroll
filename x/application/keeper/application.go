@@ -60,6 +60,13 @@ func (k Keeper) GetAllApplications(ctx context.Context) (apps []types.Applicatio
 	for ; iterator.Valid(); iterator.Next() {
 		var app types.Application
 		k.cdc.MustUnmarshal(iterator.Value(), &app)
+
+		// Ensure that the PendingUndelegations is an empty map and not nil when
+		// unmarshalling an app that has no pending undelegations.
+		if app.PendingUndelegations == nil {
+			app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		}
+
 		apps = append(apps, app)
 	}
 
