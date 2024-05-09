@@ -3,6 +3,8 @@ sidebar_position: 1
 title: Quickstart
 ---
 
+import ReactPlayer from "react-player";
+
 # Quickstart <!-- omit in toc -->
 
 :::info
@@ -14,6 +16,7 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
 **if you encounter any problems.**
 :::
 
+- [Video Walkthrough](#video-walkthrough)
 - [0. Install Dependencies](#0-install-dependencies)
 - [1. Launch \& Inspect LocalNet](#1-launch--inspect-localnet)
   - [1.1 Clone the `poktroll` repository](#11-clone-the-poktroll-repository)
@@ -53,6 +56,16 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
   - [poktrolld](#poktrolld)
   - [Makefile](#makefile)
   - [Ignite](#ignite)
+
+## Video Walkthrough
+
+You can access the video [here](https://drive.google.com/file/d/1Tfrd32ubDCmWz2ztje-NJ2qGH9tsPfj8/view?usp=sharing).
+
+<ReactPlayer
+  playing
+  controls
+  url="https://drive.google.com/file/d/1Tfrd32ubDCmWz2ztje-NJ2qGH9tsPfj8/preview"
+/>
 
 ## 0. Install Dependencies
 
@@ -403,7 +416,7 @@ suppliers:
   - service_id: anvil
     listen_url: http://localhost:6942
     service_config:
-      backend_url: http://localhost:8081
+      backend_url: http://localhost:8547
       publicly_exposed_endpoints:
         - localhost
 pprof:
