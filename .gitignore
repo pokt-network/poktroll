@@ -92,5 +92,7 @@ summary.html
 # Quickstart helpers
 shannon_appgate_config.yaml
 shannon_app_config.yaml
+shannon_relayminer_config.yaml
+shannon_supplier_config.yaml
 
 gentx-*.json

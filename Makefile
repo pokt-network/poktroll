@@ -48,7 +48,6 @@ endif
 SED := sed
 GREP := grep
 
-
 # macOS-specific adjustments
 ifeq ($(OS),darwin)
     # Check for gsed and ggrep, suggest installation with Homebrew if not found

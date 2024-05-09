@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
+
       - name: install ignite
         run: |
           make ignite_install
@@ -34,13 +35,11 @@ jobs:
       - name: Generate mocks
         run: make go_mockgen
 
-      - name: Build binaries
+      - name: Build and extract binaries for container build
         run: |
           make ignite_update_ldflags
           make ignite_release
-
-      - name: Unarchive linux binaries for Docker to consume
-        run: make ignite_release_extract_binaries
+          make ignite_release_extract_binaries
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
