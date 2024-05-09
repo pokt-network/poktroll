@@ -21,15 +21,36 @@ SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
 SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
 
-# Detect operating system
-OS := $(shell uname -s)
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT := $(shell git log -1 --format='%H')
+
+# don't override user values
+ifeq (,$(VERSION))
+  # Remove 'v' prefix from git tag and assign to VERSION
+  VERSION := $(shell git describe --tags 2>/dev/null | sed 's/^v//')
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
+# Detect operating system and arch
+OS := $(shell uname -s | tr A-Z a-z)
+ARCH := $(shell uname -m)
+ifeq ($(ARCH),x86_64)
+	ARCH := amd64
+endif
+ifeq ($(ARCH),aarch64)
+	ARCH := arm64
+endif
 
 # Set default commands, will potentially be overridden on macOS
 SED := sed
 GREP := grep
 
+
 # macOS-specific adjustments
-ifeq ($(OS),Darwin)
+ifeq ($(OS),darwin)
     # Check for gsed and ggrep, suggest installation with Homebrew if not found
     FOUND_GSED := $(shell command -v gsed)
     FOUND_GGREP := $(shell command -v ggrep)
@@ -826,6 +847,10 @@ ignite_install: ## Install ignite. Used by CI and heighliner.
 	echo "Cleaning up..."; \
 	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
 	ignite version
+
+.PHONY: ignite_update_ldflags
+ignite_update_ldflags:
+	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
 
 .PHONY: ignite_release
 ignite_release: ## Builds production binaries

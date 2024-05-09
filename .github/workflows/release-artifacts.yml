@@ -36,7 +36,9 @@ jobs:
         run: make go_mockgen
 
       - name: Build binaries
-        run: make ignite_release
+        run: |
+          make ignite_update_ldflags
+          make ignite_release
 
       - name: Unarchive linux binaries for Docker to consume
         run: make ignite_release_extract_binaries
