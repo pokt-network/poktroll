@@ -32,6 +32,13 @@ func (k Keeper) GetApplication(
 	}
 
 	k.cdc.MustUnmarshal(appBz, &app)
+
+	// Ensure that the PendingUndelegations is an empty map and not nil when
+	// unmarshalling an app that has no pending undelegations.
+	if app.PendingUndelegations == nil {
+		app.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+	}
+
 	return app, true
 }
 

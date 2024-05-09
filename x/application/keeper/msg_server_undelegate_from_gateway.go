@@ -54,33 +54,8 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	currentBlock := sdkCtx.BlockHeight()
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlock))
 
-	// TODO_INVESTIGATE: When there are no undelegatiosn, the undelegations map is nil
-	// even though it was declared with nullable=false in the application proto.
-	if foundApp.PendingUndelegations == nil {
-		foundApp.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
-	}
-
-	// Create a session undelegation list entry for the given session end height if it doesn't already exist.
-	undelegatingGatewayListAtBlock, ok := foundApp.PendingUndelegations[sessionEndHeight]
-	if !ok {
-		undelegatingGatewayListAtBlock = types.UndelegatingGatewayList{
-			GatewayAddresses: []string{},
-		}
-	}
-
-	// Add the gateway address to the list undelegated gateways list if it's not already there.
-	if !slices.Contains(undelegatingGatewayListAtBlock.GatewayAddresses, msg.GatewayAddress) {
-		undelegatingGatewayListAtBlock.GatewayAddresses = append(
-			undelegatingGatewayListAtBlock.GatewayAddresses,
-			msg.GatewayAddress,
-		)
-		foundApp.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
-	} else {
-		logger.Warn(fmt.Sprintf("Application undelegating (again) from gateway it's already undelegating from with address [%s]", msg.GatewayAddress))
-
-	}
+	k.recordPendingUndelegation(&foundApp, msg.GatewayAddress, currentBlock)
 
 	// Update the application store with the new delegation
 	k.SetApplication(ctx, foundApp)
@@ -92,8 +67,42 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 		logger.Error(fmt.Sprintf("Failed to emit application redelegation event: %v", err))
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("Emmited application redelegation event %v", event))
+	logger.Info(fmt.Sprintf("Emitted application redelegation event %v", event))
 
 	isSuccessful = true
 	return &types.MsgUndelegateFromGatewayResponse{}, nil
+}
+
+// recordPendingUndelegation adds the given gateway address to the application's
+// pending undelegations list.
+func (k Keeper) recordPendingUndelegation(
+	app *types.Application,
+	gatewayAddress string,
+	currentBlock int64,
+) {
+	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlock))
+
+	// Create the session pending undelegations list entry for the given session
+	// end height if it doesn't already exist.
+	undelegatingGatewayListAtBlock, ok := app.PendingUndelegations[sessionEndHeight]
+	if !ok {
+		undelegatingGatewayListAtBlock = types.UndelegatingGatewayList{
+			GatewayAddresses: []string{},
+		}
+	}
+
+	// Add the gateway address to the undelegated gateways list if it's not already there.
+	if !slices.Contains(undelegatingGatewayListAtBlock.GatewayAddresses, gatewayAddress) {
+		undelegatingGatewayListAtBlock.GatewayAddresses = append(
+			undelegatingGatewayListAtBlock.GatewayAddresses,
+			gatewayAddress,
+		)
+		app.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
+	} else {
+		k.logger.Warn(fmt.Sprintf(
+			"Application undelegating (again) from gateway it's already undelegating from with address [%s]",
+			gatewayAddress,
+		))
+	}
+
 }

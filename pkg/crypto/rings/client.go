@@ -57,12 +57,12 @@ func NewRingClient(deps depinject.Config) (_ crypto.RingClient, err error) {
 }
 
 // GetRingForAddressAtHeight returns the ring for the address and block height provided.
-// The block height provided is used to determine the appropriate delegated gateways
+// The height provided is used to determine the appropriate delegated gateways
 // to use at that height since signature verification may be performed for
 // delegations that are no longer active.
 // The height provided will be rounded up to the session end height to ensure
-// the ring is constructed with from the correct past delegations since they
-// become effective at the next session's start height.
+// the ring is constructed from the correct past delegations since they become
+// effective at the next session's start height.
 // TODO(@red-0ne): Link to the docs once they are available.
 // The ring is created by querying for the application's and its delegated
 // gateways public keys. These keys are converted to secp256k1 curve points
@@ -175,7 +175,7 @@ func (rc *ringClient) getRingPubKeysForAddress(
 
 	// Reconstruct the delegatee gateway addresses at the given block height and
 	// add them to the ring addresses.
-	delegateeGatewayAddresses := getRingAddressesAtBlock(&app, blockHeight)
+	delegateeGatewayAddresses := GetRingAddressesAtBlock(&app, blockHeight)
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
 
 	// Sort the ring addresses to ensure the ring is consistent between signing and
@@ -207,37 +207,37 @@ func (rc *ringClient) addressesToPubKeys(
 	return pubKeys, nil
 }
 
-// getRingAddressesAtBlock returns the active gateway delegations for the given
-// application and target block height while accounting for delegations/undelegations.
-// The ring addresses slice is reconstructed by adding back the delegated gateways
+// GetRingAddressesAtBlock returns the active gateway delegations for the given
+// application and target block height while accounting for the pending undelegations.
+// The ring addresses slice is reconstructed by adding back the past delegated gateways
 // that have been undelegated after the target session end height.
-func getRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
+func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
 	// Get the target session end height at which we want to get the active delegations.
 	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
 	// Get the current active delegations for the application and use them as a base.
 	activeDelegationsAtHeight := app.DelegateeGatewayAddresses
 
-	// Use a map to keep track of the delegations that have been added to the active
-	// delegations slice to avoid duplicates.
+	// Use a map to keep track of the gateways addresses that have been added to
+	// the active delegations slice to avoid duplicates.
 	addedDelegations := make(map[string]bool)
 
-	// Iterate over the undelegations recorded at their respective block height
-	// and check whether to add them back as active delegations.
-	for undelegationHeight, undelegatedGateways := range app.PendingUndelegations {
-		// If the undelegation happened BEFORE the target session end height, skip it,
-		// as it became effective before the target session end height.
-		if targetSessionEndHeight > undelegationHeight {
+	// Iterate over the pending undelegations recorded at their respective block
+	// height and check whether to add them back as active delegations.
+	for pendingUndelegationHeight, undelegatedGateways := range app.PendingUndelegations {
+		// If the pending undelegation happened BEFORE the target session end height,
+		// skip it, as it became effective before the target session end height.
+		if targetSessionEndHeight > pendingUndelegationHeight {
 			continue
 		}
-		// Add back any delegation that was undelegated after the target session end
-		// height, as we consider it not happening yet relative to the target height.
+		// Add back any gateway address  that was undelegated after the target session
+		// end height, as we consider it not happening yet relative to the target height.
 		for _, gatewayAddress := range undelegatedGateways.GatewayAddresses {
 			if _, ok := addedDelegations[gatewayAddress]; ok {
 				continue
 			}
 
 			activeDelegationsAtHeight = append(activeDelegationsAtHeight, gatewayAddress)
-			// Mark the gateway as added to avoid duplicates.
+			// Mark the gateway address as added to avoid duplicates.
 			addedDelegations[gatewayAddress] = true
 		}
 
