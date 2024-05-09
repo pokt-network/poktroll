@@ -206,6 +206,10 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	return st.claimedRoot, nil
 }
 
+func (st *sessionTree) GetClaimRoot() []byte {
+	return st.claimedRoot
+}
+
 // Delete deletes the SMST from the KVStore and removes the sessionTree from the RelayerSessionsManager.
 // WARNING: This function deletes the KVStore associated to the session and should be
 // called only after the proof has been successfully submitted on-chain and the servicer

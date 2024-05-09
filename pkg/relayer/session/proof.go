@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"sync"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -59,21 +58,9 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 		ctx context.Context,
 		sessionTrees []relayer.SessionTree,
 	) (_ []relayer.SessionTree, skip bool) {
-		wg := &sync.WaitGroup{}
-		wg.Add(len(sessionTrees))
-		sessionTreesWithProofs := []relayer.SessionTree{}
-		for _, sessionTree := range sessionTrees {
-			go func(sessionTree relayer.SessionTree) {
-				defer wg.Done()
-				if err := rs.waitForEarliestSubmitProofsHeightAndGenerateProof(ctx, sessionTree); err != nil {
-					failSubmitProofsSessionsCh <- []relayer.SessionTree{sessionTree}
-					return
-				}
-				sessionTreesWithProofs = append(sessionTreesWithProofs, sessionTree)
-			}(sessionTree)
-		}
-		wg.Wait()
-		return sessionTreesWithProofs, false
+		return rs.waitForEarliestSubmitProofsHeightAndGenerateProof(
+			ctx, sessionTrees, failSubmitProofsSessionsCh,
+		), false
 	}
 }
 
@@ -84,9 +71,10 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 // and randomized input.
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProof(
 	ctx context.Context,
-	sessionTree relayer.SessionTree,
-) error {
-	createClaimHeight := sessionTree.GetSessionHeader().GetSessionEndBlockHeight()
+	sessionTrees []relayer.SessionTree,
+	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
+) []relayer.SessionTree {
+	createClaimHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
 	submitProofsWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
@@ -99,19 +87,32 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		Msg("waiting & blocking for global earliest proof submission height")
 	submitProofsWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
-	path := proofkeeper.GetPathForProof(
-		submitProofsWindowStartBlock.Hash(),
-		sessionTree.GetSessionHeader().GetSessionId(),
-	)
+	proveDone := make(chan []relayer.SessionTree)
+	defer close(proveDone)
+	go func() {
+		failedProofs := []relayer.SessionTree{}
+		successProofs := []relayer.SessionTree{}
+		for _, sessionTree := range sessionTrees {
+			path := proofkeeper.GetPathForProof(
+				submitProofsWindowStartBlock.Hash(),
+				sessionTree.GetSessionHeader().GetSessionId(),
+			)
 
-	if _, err := sessionTree.ProveClosest(path); err != nil {
-		return err
-	}
+			if _, err := sessionTree.ProveClosest(path); err != nil {
+				failedProofs = append(failedProofs, sessionTree)
+				continue
+			}
+
+			successProofs = append(successProofs, sessionTree)
+		}
+		failSubmitProofsSessionsCh <- failedProofs
+		proveDone <- successProofs
+	}()
 
 	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofsHeight(ctx, submitProofsWindowStartBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
 
-	return nil
+	return <-proveDone
 }
 
 // newMapProveSessionsFn returns a new MapFn that submits proofs on the given

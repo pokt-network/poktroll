@@ -131,6 +131,7 @@ type SessionTree interface {
 	ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error)
 
 	GetProofBz() []byte
+	GetClaimRoot() []byte
 
 	// Flush gets the root hash of the SMST needed for submitting the claim;
 	// then commits the entire tree to disk and stops the KVStore.

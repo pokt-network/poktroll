@@ -175,6 +175,7 @@ func (app *appGateServer) ServeHTTP(writer http.ResponseWriter, request *http.Re
 
 	// Read the request body bytes.
 	requestPayloadBz, err := io.ReadAll(request.Body)
+	request.Body.Close()
 	if err != nil {
 		app.replyWithError(
 			ctx,
