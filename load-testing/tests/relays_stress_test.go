@@ -57,6 +57,9 @@ const (
 	maxAmountColIdx
 )
 
+// Signing a transaction with online mode queries the node for the account sequence
+// number and the account number.
+// The load test sometimes fail to fetch the information and retries are needed.
 const signTxMaxRetries = 3
 
 var (
@@ -140,9 +143,9 @@ type relaysSuite struct {
 	// appInitialCount is the number of active applications at the start of the test.
 	appInitialCount int64
 
-	// startBlockHeight is the block height at which the test started.
+	// testStartBlockHeight is the block height at which the test started.
 	// It is used to calculate the progress of the test.
-	startBlockHeight int64
+	testStartBlockHeight int64
 	// testDurationBlocks is the duration of the test in blocks.
 	// It is used to determine when the test is done.
 	// It is calculated as the longest duration of the three actor increments.

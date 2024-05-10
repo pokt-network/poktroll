@@ -183,19 +183,19 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// It is updated only once at the start of the test.
 		if waitingForFirstSession {
 			// Record the block height at the start of the first session under load.
-			s.startBlockHeight = blockHeight
+			s.testStartBlockHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
 
-			s.Log("Test starting at block height: %d", s.startBlockHeight)
+			logger.Info().Msgf("Test starting at block height: %d", s.testStartBlockHeight)
 		}
 
 		// If the test duration is reached, stop sending requests
-		if blockHeight >= s.startBlockHeight+s.testDurationBlocks {
+		if blockHeight >= s.testStartBlockHeight+s.testDurationBlocks {
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			finalizeTestBlockHeight := s.startBlockHeight +
+			finalizeTestBlockHeight := s.testStartBlockHeight +
 				s.testDurationBlocks +
 				keeper.GetSessionGracePeriodBlockCount() +
 				(3 * keeper.NumBlocksPerSession)
@@ -209,7 +209,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// Log the test progress.
 		infoLogger.Msgf(
 			"test progress blocks: %d/%d",
-			blockHeight-s.startBlockHeight+1, s.testDurationBlocks,
+			blockHeight-s.testStartBlockHeight+1, s.testDurationBlocks,
 		)
 
 		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
@@ -376,19 +376,19 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
-		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.startBlockHeight) {
+		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartBlockHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
 
 		var newGateways []*accountInfo
 		activeGateways := int64(len(s.activeGateways))
-		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.startBlockHeight) {
+		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.testStartBlockHeight) {
 			newGateways = s.sendStakeGatewaysTxs(notif, &gatewaysPlan)
 		}
 
 		var newApps []*accountInfo
 		activeApps := int64(len(s.activeApplications))
-		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.startBlockHeight) {
+		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.testStartBlockHeight) {
 			newApps = s.sendFundNewAppsTx(notif, &appsPlan)
 		}
 
@@ -477,7 +477,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// Determine the application funding amount based on the remaining test duration.
 		// for the initial applications, the funding is done at the start of the test,
 		// so the current block height is used.
-		appFundingAmount := s.getAppFundingAmount(s.startBlockHeight)
+		appFundingAmount := s.getAppFundingAmount(s.testStartBlockHeight)
 		// The application is created with the keyName formatted as "app-%d",
 		// starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
@@ -573,7 +573,7 @@ func (s *relaysSuite) createApplicationAccount(
 // remaining test duration in blocks, the relay rate per application, the relay
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
-	currentTestDuration := s.startBlockHeight + s.testDurationBlocks - currentBlockHeight
+	currentTestDuration := s.testStartBlockHeight + s.testDurationBlocks - currentBlockHeight
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
@@ -692,12 +692,13 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
 	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSession
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
+	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
 	maxSupplierNumReached := actorCount == plan.maxActorCount
 
 	// Only increment the supplier if the session is at its last block,
 	// the next session number is a multiple of the actorSessionIncRate
 	// and the maxActorNum has not been reached.
-	return isSessionEndHeight && !maxSupplierNumReached && nextSessionNumber%actorSessionIncRate == 0
+	return isSessionEndHeight && !maxSupplierNumReached && isActorIncrementHeight
 }
 
 // addSupplier populates the supplier's accAddress using the keyName provided
