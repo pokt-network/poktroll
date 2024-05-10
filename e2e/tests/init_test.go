@@ -85,7 +85,7 @@ type suite struct {
 	granteeName string
 
 	// moduleParamsMap is a map of module names to a map of parameter names to parameter values & types.
-	expectedModuleParamsMap map[string]map[string]anyMap
+	expectedModuleParams moduleParamsMap
 }
 
 func (s *suite) Before() {

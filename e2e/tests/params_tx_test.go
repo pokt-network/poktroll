@@ -1,0 +1,123 @@
+package e2e
+
+import (
+	"fmt"
+	"os"
+	"text/template"
+	"time"
+
+	"github.com/cometbft/cometbft/libs/cli"
+	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/stretchr/testify/require"
+)
+
+// updateParamsTxJSONTemplate is a text template for a tx JSON file which is
+// intended to be used with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
+var updateParamsTxJSONTemplate = template.Must(
+	template.New("txJSON").Parse(`{ "body": {{.}} }`),
+)
+
+// sendAuthzExecTx sends an authz exec tx using the `authz exec` CLI subcommand:
+// `poktrolld tx authz exec <tx_json_file>`.
+// It returns before the tx has been committed but after it has been broadcast.
+// It ensures that all module params are reset to their default values after the
+// test completes.
+func (s *suite) sendAuthzExecTx(txJSONFilePath string) {
+	argsAndFlags := []string{
+		"tx", "authz", "exec",
+		txJSONFilePath,
+		"--from", s.granteeName,
+		keyRingFlag,
+		fmt.Sprintf("--%s=json", cli.OutputFlag),
+		"--yes",
+	}
+	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	require.NoError(s, err)
+
+	// TODO_IMPROVE: wait for the tx to be committed using an events query client
+	// instead of sleeping for a specific amount of time.
+	s.Logf("waiting %d seconds for the tx to be committed...", txDelaySeconds)
+	time.Sleep(txDelaySeconds * time.Second)
+
+	// Reset all module params to their default values after the test completes.
+	s.once.Do(func() {
+		s.Cleanup(func() { s.resetAllModuleParamsToDefaults() })
+	})
+}
+
+// newTempTxJSONFile creates a new temp file with the JSON representation of a tx
+// which contains a MsgUpdateParams for each module and paramsMap in the given moduleParamsMap.
+// It is intended for use with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
+// It returns the file path.
+func (s *suite) newTempUpdateParamsTxJSONFile(moduleParamsMap moduleParamsMap) *os.File {
+	var anyMsgs []*types.Any
+
+	for moduleName, paramsMap := range moduleParamsMap {
+		// Convert the params map to a MsgUpdateParams message.
+		msg := s.paramsMapToMsgUpdateParams(moduleName, paramsMap)
+
+		// Convert the MsgUpdateParams message to a pb.Any message.
+		anyMsg, err := types.NewAnyWithValue(msg)
+		require.NoError(s, err)
+
+		anyMsgs = append(anyMsgs, anyMsg)
+	}
+
+	return s.newTempTxJSONFile(anyMsgs)
+}
+
+// newTempUpdateParamTxJSONFile creates a new temp file with the JSON representation of a tx,
+// intended for use with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
+// It returns the file path.
+func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.File {
+	var anyMsgs []*types.Any
+
+	for moduleName, paramsMap := range moduleParams {
+		for _, param := range paramsMap {
+			// Convert the params map to a MsgUpdateParams message.
+			msg := s.newMsgUpdateParam(moduleName, param)
+
+			// Convert the MsgUpdateParams message to a pb.Any message.
+			anyMsg, err := types.NewAnyWithValue(msg)
+			require.NoError(s, err)
+
+			anyMsgs = append(anyMsgs, anyMsg)
+		}
+	}
+
+	return s.newTempTxJSONFile(anyMsgs)
+}
+
+// newTempTxJSONFile creates & returns a new temp file with the JSON representation
+// of a tx which contains the given pb.Any messages. The temp file is removed when
+// the test completes.
+func (s *suite) newTempTxJSONFile(anyMsgs []*types.Any) *os.File {
+	// Construct a TxBody with the pb.Any message for serialization.
+	txBody := &tx.TxBody{
+		Messages: anyMsgs,
+	}
+
+	// Serialize txBody to JSON for interpolation into the tx JSON template.
+	txBodyJSON, err := s.cdc.MarshalJSON(txBody)
+	require.NoError(s, err)
+
+	// Create a temporary file to write the interpolated tx JSON.
+	tempFile, err := os.CreateTemp("", "exec.json")
+	require.NoError(s, err)
+
+	defer func(f *os.File) {
+		_ = f.Close()
+	}(tempFile)
+
+	// Remove tempFile when the test completes.
+	s.Cleanup(func() {
+		_ = os.Remove(tempFile.Name())
+	})
+
+	// Interpolate txBodyJSON into the tx JSON template.
+	err = updateParamsTxJSONTemplate.Execute(tempFile, string(txBodyJSON))
+	require.NoError(s, err)
+
+	return tempFile
+}

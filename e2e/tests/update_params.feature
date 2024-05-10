@@ -4,6 +4,8 @@ Feature: Params Namespace
   # TODO_TEST_IN_THIS_PR:
   # Scenario: An unauthorized user cannot update an module params
 
+  # NB: If you are reading this and the tokenomics module has parameters
+  # that are not being updated in this test, please update the test.
   Scenario: An authorized user updates all "tokenomics" module params
     Given the user has the pocketd binary installed
     And all "tokenomics" module params are set to their default values
@@ -13,6 +15,8 @@ Feature: Params Namespace
       | compute_units_to_tokens_multiplier | 420   | int64 |
     Then all "tokenomics" module params should be updated
 
+  # NB: If you are reading this and the proof module has parameters
+  # that are not being updated in this test, please update the test.
   Scenario: An authorized user updates all "proof" module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
@@ -22,6 +26,8 @@ Feature: Params Namespace
       | min_relay_difficulty_bits | 8     | int64 |
     Then all "proof" module params should be updated
 
+  # NB: If you are reading this and any module has parameters that
+  # are not being updated in this test, please update the test.
   Scenario Outline: An authorized user updates individual <module> module params
     Given the user has the pocketd binary installed
     And all "<module>" module params are set to their default values
