@@ -116,6 +116,20 @@ The name of the key that will be used to sign transactions, derive the public ke
 and the corresponding address. This key name MUST be present in the keyring that is used
 to start the `RelayMiner` instance.
 
+:::note
+
+Multiple `RelayMiner`s can be configured with the same `signing_key_name` to
+sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocket
+network. (e.g. This is useful for a `Supplier` that is willing to provide redundant
+or geographically distributed services.)
+
+But it is not possible to have a single `RelayMiner` instance running with multiple
+`signing_key_name`s as this would involve more complex logic and/or configuration
+to determine which key to use, especially in the case of `Supplier`s that have
+overlapping services provided.
+
+:::
+
 ### `smt_store_path`
 
 _`Required`_

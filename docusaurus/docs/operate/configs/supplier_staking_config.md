@@ -65,6 +65,13 @@ a new `service`, then `stake_amount: 1001upokt` should be specified in the
 configuration file. This will increase the stake by `1upokt` and deduct `1upokt`
 from the `Supplier`'s account balance.
 
+The upstaking requirement is to ensure that a `Supplier` incurs a cost for
+changing the services they provide too frequently, which could lead to a poor user
+experience for `Gateways` and `Applications`.
+
+The upstake amount may be adjusted in the future based on network conditions
+and feedback from the community.
+
 :::
 
 ### `services`
@@ -122,4 +129,30 @@ the `Supplier`'s `RelayMiner` which in turn forwards these requests to the servi
 _`Required`_
 
 `rpc_type` is a string that defines the type of RPC service that the `Supplier`
-is providing. The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
+is providing.
+
+Since services may support multiple types of RPCs (e.g., Ethereum has both
+JSON-RPC and WebSocket), a `Supplier` needs to specify which one it provides.
+
+This allows `Gateways` and `Applications` to know which ones are supported by
+a given `Supplier` and select the appropriate one to send `RelayRequest`s to.
+
+:::note
+
+The same url can be used for different `rpc_type`s and it is up to the `Gateway`
+or `Application` to build the `RelayRequest` with the desired `rpc_type`.
+
+For example, a `Supplier` can provide `JSON_RPC` and `GRPC` `rpc_type`s to be
+served from the same endpoint:
+
+```yaml
+endpoints:
+  - publicly_exposed_url: http://service-host
+    rpc_type: JSON_RPC
+  - publicly_exposed_url: http://service-host
+    rpc_type: GRPC
+```
+
+:::
+
+The `rpc_type` MUST be one of the [supported types found here](https://github.com/pokt-network/poktroll/tree/main/pkg/relayer/config/types.go#L8).
