@@ -27,8 +27,8 @@ type relayerSessionsManager struct {
 
 	relayObs relayer.MinedRelaysObservable
 
-	// sessionsToClaimsObs notifies about sessions that are ready to be claimed.
-	sessionsToClaimsObs observable.Observable[[]relayer.SessionTree]
+	// sessionsToClaimObs notifies about sessions that are ready to be claimed.
+	sessionsToClaimObs observable.Observable[[]relayer.SessionTree]
 
 	// sessionTrees is a map of block heights pointing to a map of SessionTrees
 	// indexed by their sessionId.
@@ -85,12 +85,12 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	sessionsToClaimsObs, sessionsToClaimsPublishCh := channel.NewObservable[[]relayer.SessionTree]()
-	rs.sessionsToClaimsObs = sessionsToClaimsObs
+	sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
+	rs.sessionsToClaimObs = sessionsToClaimObs
 	channel.ForEach(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlockToSessionsToClaim(sessionsToClaimsPublishCh),
+		rs.mapBlockToSessionsToClaim(sessionsToClaimPublishCh),
 	)
 
 	return rs, nil
@@ -172,9 +172,8 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 
 		var lateSessions, onTimeSessions []relayer.SessionTree
 
-		// Check if there are sessions that need to enter the claim/proof phase
-		// as their end block height was the one before the last committed block or
-		// earlier.
+		// Check if there are sessions that need to enter the claim/proof phase as their
+		// end block height was the one before the last committed block or earlier.
 		// Iterate over the sessionsTrees map to get the ones that end at a block height
 		// lower than the current block height.
 		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
@@ -193,7 +192,11 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 					}
 
 					sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
-					if IsWithinGracePeriod(sessionkeeper.GetSessionEndBlockHeight(block.Height()), sessionEndHeight) {
+					currentEndBlockHeight := sessionkeeper.GetSessionEndBlockHeight(block.Height())
+					// TODO_IN_THIS_PR: Add a comment to explain how this check is splitting
+					// the sessions into a list of late session to be claimed ASAP and another
+					// one for the session that also need to be claimed but are on time.
+					if IsWithinGracePeriod(currentEndBlockHeight, sessionEndHeight) {
 						lateSessions = append(lateSessions, sessionTree)
 					} else {
 						onTimeSessions = append(onTimeSessions, sessionTree)
@@ -202,6 +205,9 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 			}
 		}
 
+		// If there are any late sessions to be claimd, emmit them first.
+		// The wait for claim submission window pipeline step will return without
+		// waiting for block to be committed.
 		if len(lateSessions) > 0 {
 			sessionsToClaimsPublishCh <- lateSessions
 		}

@@ -376,6 +376,11 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 	return func(ctx context.Context, notif *sessionInfoNotif) (*stakingInfoNotif, bool) {
 		var newSuppliers []*accountInfo
 		activeSuppliers := int64(len(s.activeSuppliers))
+		// Suppliers increment is different from the other actors and have a dedicated
+		// method since they are activated at the end of the session so they are
+		// available for the beginning of the next one.
+		// This is because the suppliers involvement is out of control of the test
+		// suite and is driven by the AppGateServer's supplier endpoint selection.
 		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartBlockHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
@@ -665,16 +670,16 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
-	initialSession := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionHeight := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSession
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionHeight
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
 	maxActorNumReached := actorCount == plan.maxActorCount
 
 	// Only increment the actor if the session has started, the session number is a multiple
-	// of the actorSessionIncRate, and the maxActors has not been reached.
+	// of the actorSessionIncRate, and the maxActorNumReached has not been reached.
 	return isSessionStartHeight && !maxActorNumReached && isActorIncrementHeight
 }
 
@@ -687,17 +692,17 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
-	initialSession := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionHeight := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
-	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSession
+	supplierSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionHeight
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
-	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
+	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
 	maxSupplierNumReached := actorCount == plan.maxActorCount
 
-	// Only increment the supplier if the session is at its last block,
-	// the next session number is a multiple of the actorSessionIncRate
-	// and the maxActorNum has not been reached.
+	// Only increment the supplier if the session is at its last block, the next
+	// session number is a multiple of the supplierSessionIncRate and the
+	// maxSupplierNumReached has not been reached.
 	return isSessionEndHeight && !maxSupplierNumReached && isActorIncrementHeight
 }
 
@@ -925,10 +930,15 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 		// The number of transactions to be observed is not available in the TxResult
 		// event, so this number is taken from the last block event.
 		var numTxs int
-		// Sometimes the block received from s.latestBlock is the previous one,
-		// it is necessary to wait until the block matches the txResult height is received
-		// in order to get the number of transactions.
+		// The block received from s.latestBlock may be the previous one, it is
+		// necessary to wait until the block matching the txResult height is received
+		// in order to get the right number of transaction events to collect.
 		for {
+			// If the latest block height is greater than the txResult height,
+			// then there is no way to know how many transactions to collect and the
+			// should be test is canceled.
+			// TODO_IMPROVEMENT: Cache the transactions count of each observed block
+			// to avoid this issue.
 			if s.latestBlock.Height() > txResult.Height {
 				s.cancelCtx()
 				s.Fatal("Block height is greater than the txResult height")
@@ -937,7 +947,8 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 				numTxs = len(s.latestBlock.Txs())
 				break
 			}
-			// If the block height does not match the txResult height, wait for the next block.
+			// If the block height does lesser than the txResult's height, then wait
+			// for the next block.
 			time.Sleep(10 * time.Millisecond)
 		}
 
@@ -1025,13 +1036,7 @@ func (s *relaysSuite) ensureFundedActors(
 
 		// If no transfer event is found for the actor, the test is canceled.
 		if !actorFunded {
-			for _, txResult := range txResults {
-				if txResult.Result.Log != "" {
-					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-				}
-			}
-			s.cancelCtx()
-			s.Fatal("actor not funded")
+			s.logAndAbortTest(txResults, "actor not funded")
 			return
 		}
 	}
@@ -1071,13 +1076,7 @@ func (s *relaysSuite) ensureStakedActors(
 		// If no message event is found for the actor, log the transaction results
 		// and cancel the test.
 		if !actorStaked {
-			for _, txResult := range txResults {
-				if txResult.Result.Log != "" {
-					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-				}
-			}
-			s.cancelCtx()
-			s.Fatalf("actor %s not staked", actor.keyName)
+			s.logAndAbortTest(txResults, fmt.Sprintf("actor not staked: %s", actor.keyName))
 			return
 		}
 	}
@@ -1119,13 +1118,7 @@ func (s *relaysSuite) ensureDelegatedApps(
 		// If the number of delegatees is not equal to the number of gateways,
 		// the test is canceled.
 		if numDelegatees != len(gateways) {
-			for _, txResult := range txResults {
-				if txResult.Result.Log != "" {
-					logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
-				}
-			}
-			s.cancelCtx()
-			s.Fatal("applications not delegated to all gateways")
+			s.logAndAbortTest(txResults, "applications not delegated to all gateways")
 			return
 		}
 	}
@@ -1359,4 +1352,14 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 
 	// Wait until all relay requests in the batch are sent.
 	batchWaitGroup.Wait()
+}
+
+func (s *relaysSuite) logAndAbortTest(txResults []*types.TxResult, errorMsg string) {
+	for _, txResult := range txResults {
+		if txResult.Result.Log != "" {
+			logger.Error().Msgf("tx result log: %s", txResult.Result.Log)
+		}
+	}
+	s.cancelCtx()
+	s.Fatal(errorMsg)
 }

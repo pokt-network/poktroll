@@ -38,7 +38,9 @@ type sessionTree struct {
 	proofPath []byte
 
 	// proof is the generated proof for the session given a proofPath.
-	proof   *smt.SparseMerkleClosestProof
+	proof *smt.SparseMerkleClosestProof
+
+	// proofBz is the marshaled proof for the session.
 	proofBz []byte
 
 	// treeStore is the KVStore used to store the SMST.
@@ -163,6 +165,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 		return nil, err
 	}
 
+	// If no error occurred, cache the proof and the path for which it was generated.
 	st.sessionSMT = sessionSMT
 	st.proofPath = path
 	st.proof = proof
@@ -171,6 +174,7 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	return st.proof, nil
 }
 
+// GetProofBz returns the marshaled proof for the session.
 func (st *sessionTree) GetProofBz() []byte {
 	return st.proofBz
 }
@@ -206,6 +210,7 @@ func (st *sessionTree) Flush() (SMSTRoot []byte, err error) {
 	return st.claimedRoot, nil
 }
 
+// GetClaimRoot returns the root hash of the SMST needed for creating the claim.
 func (st *sessionTree) GetClaimRoot() []byte {
 	return st.claimedRoot
 }

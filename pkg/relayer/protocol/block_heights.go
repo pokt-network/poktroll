@@ -10,11 +10,11 @@ import (
 	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
-// GetEarliestCreateClaimsHeight returns the earliest block height at which a claim
+// GetEarliestCreateClaimHeight returns the earliest block height at which a claim
 // for a session with the given createClaimWindowStartHeight can be created.
 //
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
-func GetEarliestCreateClaimsHeight(ctx context.Context, createClaimWindowStartBlock client.Block) int64 {
+func GetEarliestCreateClaimHeight(ctx context.Context, createClaimWindowStartBlock client.Block) int64 {
 	logger := polylog.Ctx(ctx)
 
 	createClaimWindowStartBlockHash := createClaimWindowStartBlock.Hash()
@@ -39,11 +39,11 @@ func GetEarliestCreateClaimsHeight(ctx context.Context, createClaimWindowStartBl
 	return createClaimWindowStartBlock.Height() + randCreateClaimHeightOffset
 }
 
-// GetEarliestSubmitProofsHeight returns the earliest block height at which a proof
+// GetEarliestSubmitProofHeight returns the earliest block height at which a proof
 // for a session with the given submitProofWindowStartHeight can be submitted.
 //
 // TODO_TEST(@bryanchriswhite): Add test coverage and more logs
-func GetEarliestSubmitProofsHeight(ctx context.Context, submitProofWindowStartBlock client.Block) int64 {
+func GetEarliestSubmitProofHeight(ctx context.Context, submitProofWindowStartBlock client.Block) int64 {
 	logger := polylog.Ctx(ctx)
 
 	earliestSubmitProofBlockHash := submitProofWindowStartBlock.Hash()

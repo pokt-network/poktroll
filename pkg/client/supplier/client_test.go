@@ -112,7 +112,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 		},
 	}
 
-	rootHashWithSessionBatch := []*relayer.SessionClaim{
+	sessionClaims := []*relayer.SessionClaim{
 		{
 			RootHash:      rootHash,
 			SessionHeader: &sessionHeader,
@@ -120,7 +120,7 @@ func TestSupplierClient_CreateClaim(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.CreateClaims(ctx, rootHashWithSessionBatch)
+		err = supplierClient.CreateClaims(ctx, sessionClaims)
 		require.NoError(t, err)
 		close(doneCh)
 	}()
@@ -191,7 +191,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	proofBz, err := proof.Marshal()
 	require.NoError(t, err)
 
-	proofWithSessionHeaderBatch := []*relayer.SessionProof{
+	sessionProofs := []*relayer.SessionProof{
 		{
 			ProofBz:       proofBz,
 			SessionHeader: &sessionHeader,
@@ -199,7 +199,7 @@ func TestSupplierClient_SubmitProof(t *testing.T) {
 	}
 
 	go func() {
-		err = supplierClient.SubmitProofs(ctx, proofWithSessionHeaderBatch)
+		err = supplierClient.SubmitProofs(ctx, sessionProofs)
 		require.NoError(t, err)
 		close(doneCh)
 	}()

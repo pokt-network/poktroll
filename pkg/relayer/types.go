@@ -12,11 +12,15 @@ type MinedRelay struct {
 	Hash  []byte
 }
 
+// SessionProof is a struct that contains a proof and its corresponding session header.
+// It is used to submit a proof batches to the chain.
 type SessionProof struct {
 	ProofBz       []byte
 	SessionHeader *sessiontypes.SessionHeader
 }
 
+// SessionClaim is a struct that contains a root hash and its corresponding session header.
+// It is used to submit a claim batches to the chain.
 type SessionClaim struct {
 	RootHash      []byte
 	SessionHeader *sessiontypes.SessionHeader

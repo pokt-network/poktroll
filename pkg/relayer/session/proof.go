@@ -66,7 +66,7 @@ func (rs *relayerSessionsManager) mapWaitForEarliestSubmitProofsHeight(
 
 // waitForEarliestSubmitProofsHeightAndGenerateProof calculates and waits for
 // (blocking until) the earliest block height, allowed by the protocol, at which
-// proofs can be submitted for a session number which where claimed at createClaimHeight.
+// proofs can be submitted for a session number which were claimed at createClaimHeight.
 // It is calculated relative to createClaimHeight using on-chain governance parameters
 // and randomized input.
 func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGenerateProof(
@@ -77,27 +77,27 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	createClaimHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	submitProofsWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
 	rs.logger.Info().
-		Int64("submitProofsWindowStartHeight", submitProofsWindowStartHeight).
+		Int64("submitProofsWindowStartHeight", submitProofWindowStartHeight).
 		Msg("waiting & blocking for global earliest proof submission height")
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
 	// which branch(es) to prove should be deterministic and use on-chain governance params.
-	submitProofsWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
+	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
 
-	proveDone := make(chan []relayer.SessionTree)
-	defer close(proveDone)
+	proofsGeneratedCh := make(chan []relayer.SessionTree)
+	defer close(proofsGeneratedCh)
 	go func() {
 		failedProofs := []relayer.SessionTree{}
 		successProofs := []relayer.SessionTree{}
 		for _, sessionTree := range sessionTrees {
 			path := proofkeeper.GetPathForProof(
-				submitProofsWindowStartBlock.Hash(),
+				submitProofWindowStartBlock.Hash(),
 				sessionTree.GetSessionHeader().GetSessionId(),
 			)
 
@@ -108,19 +108,20 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 			successProofs = append(successProofs, sessionTree)
 		}
+
 		failSubmitProofsSessionsCh <- failedProofs
-		proveDone <- successProofs
+		proofsGeneratedCh <- successProofs
 	}()
 
-	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofsHeight(ctx, submitProofsWindowStartBlock)
+	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
 
-	return <-proveDone
+	return <-proofsGeneratedCh
 }
 
 // newMapProveSessionsFn returns a new MapFn that submits proofs on the given
-// session batch. Any session which encounters errors while submitting a proof is sent
-// on the failedSubmitProofSessions channel.
+// session number. Any session which encounters errors while submitting a proof
+// is sent on the failedSubmitProofSessions channel.
 func (rs *relayerSessionsManager) newMapProveSessionsFn(
 	failedSubmitProofSessionsCh chan<- []relayer.SessionTree,
 ) channel.MapFn[[]relayer.SessionTree, either.SessionTrees] {
@@ -143,6 +144,9 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			})
 		}
 
+		// Since all sessionTrees in the batch have the same start height and the
+		// slice is guaranteed to be non-empty, the first sessionTree's start height
+		// is used to log the proofs submission.
 		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
 		rs.logger.Info().
 			Int64("session_start_height", sessionStartHeight).

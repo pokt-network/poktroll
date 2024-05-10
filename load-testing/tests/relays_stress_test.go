@@ -428,6 +428,14 @@ func (s *relaysSuite) ALoadOfConcurrentRelayRequestsAreSentFromTheApplications()
 }
 
 func (s *relaysSuite) TheCorrectPairsCountOfClaimAndProofMessagesShouldBeCommittedOnchain() {
-	require.Equal(s, s.currentClaimCount, s.currentProofCount, "claims and proofs count mismatch")
-	//require.Equal(s, s.expectedClaimsAndProofsCount, s.currentProofCount, "unexpected claims and proofs count")
+	require.Equal(s,
+		s.currentClaimCount,
+		s.currentProofCount,
+		"claims and proofs count mismatch",
+	)
+	require.Equal(s,
+		s.expectedClaimsAndProofsCount,
+		s.currentProofCount,
+		"unexpected claims and proofs count",
+	)
 }
