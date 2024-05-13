@@ -90,7 +90,7 @@ func NewRelayerSessions(
 	channel.ForEach(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlockToSessionsToClaim(sessionsToClaimPublishCh),
+		rs.mapBlockToSessionsToClaimFn(sessionsToClaimPublishCh),
 	)
 
 	return rs, nil
@@ -161,22 +161,31 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	return sessionTree, nil
 }
 
-// mapBlockToSessionsToClaim maps a block to a list of sessions which can be
-// claimed as of that block.
-func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
+// mapBlockToSessionsToClaimFn returns a new MapFn which maps committed blocks to
+// a list of sessions which can be claimed as of that block.
+func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
 	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
 ) channel.ForEachFn[client.Block] {
 	return func(_ context.Context, block client.Block) {
 		rs.sessionsTreesMu.Lock()
 		defer rs.sessionsTreesMu.Unlock()
 
-		var lateSessions, onTimeSessions []relayer.SessionTree
+		// onTimeSessions are the sessions that are still within their grace period.
+		// They are on time and will wait for their create claim window to open.
+		// They will be emitted once the late ones, that should no longer wait are emitted.
+		var onTimeSessions []relayer.SessionTree
 
 		// Check if there are sessions that need to enter the claim/proof phase as their
 		// end block height was the one before the last committed block or earlier.
 		// Iterate over the sessionsTrees map to get the ones that end at a block height
 		// lower than the current block height.
 		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+			// Late sessions are the ones that have their session grace period elapsed
+			// and should already have been claimed.
+			// Group them by their end block height and emit each group separately
+			// before emitting the on-time sessions.
+			var lateSessions []relayer.SessionTree
+
 			if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
 				// Iterate over the sessionsTrees that have grace period ending at this
 				// block height and add them to the list of sessionTrees to be published.
@@ -191,27 +200,26 @@ func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
 						continue
 					}
 
-					sessionEndHeight := sessionTree.GetSessionHeader().SessionEndBlockHeight
-					currentEndBlockHeight := sessionkeeper.GetSessionEndBlockHeight(block.Height())
-					// TODO_IN_THIS_PR: Add a comment to explain how this check is splitting
-					// the sessions into a list of late session to be claimed ASAP and another
-					// one for the session that also need to be claimed but are on time.
-					if IsWithinGracePeriod(currentEndBlockHeight, sessionEndHeight) {
+					// Separate the sessions that are on-time from the ones that are late.
+					// If the session is past its grace period, it is considered late,
+					// otherwise it is on time and will be emitted last.
+					if IsPastGracePeriod(endBlockHeight, block.Height()) {
 						lateSessions = append(lateSessions, sessionTree)
 					} else {
 						onTimeSessions = append(onTimeSessions, sessionTree)
 					}
 				}
+
+				// If there are any late sessions to be claimed, emit them first.
+				// The wait for claim submission window pipeline step will return immediately
+				// without blocking them.
+				if len(lateSessions) > 0 {
+					sessionsToClaimsPublishCh <- lateSessions
+				}
 			}
 		}
 
-		// If there are any late sessions to be claimd, emmit them first.
-		// The wait for claim submission window pipeline step will return without
-		// waiting for block to be committed.
-		if len(lateSessions) > 0 {
-			sessionsToClaimsPublishCh <- lateSessions
-		}
-
+		// Emit the on-time sessions last, after all the late sessions have been emitted.
 		if len(onTimeSessions) > 0 {
 			sessionsToClaimsPublishCh <- onTimeSessions
 		}
@@ -306,4 +314,10 @@ func (rs *relayerSessionsManager) mapAddMinedRelayToSessionTree(
 // and signals whether it is time to create a claim for it.
 func IsWithinGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
 	return currentBlockHeight <= sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
+}
+
+// IsPastGracePeriod checks if the grace period for the session, given its end
+// block height, has ended.
+func IsPastGracePeriod(sessionEndBlockHeight, currentBlockHeight int64) bool {
+	return currentBlockHeight > sessionEndBlockHeight+sessionkeeper.GetSessionGracePeriodBlockCount()
 }

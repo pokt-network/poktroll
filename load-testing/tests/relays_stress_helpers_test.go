@@ -14,6 +14,7 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
+	sdkclient "github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -35,6 +36,10 @@ import (
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 	suppliertypes "github.com/pokt-network/poktroll/x/supplier/types"
 )
+
+// skipNotifyDownstreamSteps is a flag that indicates whether the downstream steps
+// should receive and process the current notification.
+const skipNotifyDownstreamSteps = true
 
 // actorLoadTestIncrementPlans is a struct that holds the parameters for incrementing
 // all actors over the course of the load test.
@@ -128,13 +133,12 @@ func (s *relaysSuite) initializeProvisionedActors() {
 
 // mapSessionInfoForLoadTestDurationFn returns a MapFn that maps over the session info
 // notification (each block) to determine when to start the test, when to send relay
-// batches & when to stop the test. If the current block is not the beginning of a session,
-// it waits for the next session to start before notifying (skipping meanwhile). Each
-// time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
+// batches & when to stop sending relays and when to stop the test (after waiting
+// for the claims and proofs to be submitted).
+// If the current block is not the beginning of a session, it waits for the next
+// session to start before notifying (skipping meanwhile).
+// Each time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
-//
-// TODO_UPNEXT(@bryanchriswhite): Update this comment to reflect downstream changes;
-// i.e., relay batch notifications are not sent for the last session grace period + 1 session length.
 func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	relayBatchInfoPublishCh chan<- *relayBatchInfoNotif,
 ) channel.MapFn[client.Block, *sessionInfoNotif] {
@@ -150,7 +154,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 	) (_ *sessionInfoNotif, skip bool) {
 		blockHeight := block.Height()
 		if blockHeight <= s.latestBlock.Height() {
-			return nil, true
+			return nil, skipNotifyDownstreamSteps
 		}
 
 		sessionInfo := &sessionInfoNotif{
@@ -175,7 +179,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 			// The test is not to be started yet, skip the notification to the downstream
 			// observables until the first block of the next session is reached.
-			return nil, true
+			return nil, skipNotifyDownstreamSteps
 		}
 
 		// If the test has not started, set the start block height to the current block height.
@@ -200,13 +204,14 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 				s.cancelCtx()
 			}
 
-			return nil, true
+			return nil, skipNotifyDownstreamSteps
 		}
 
+		testProgressBlocksRelativeToTestStartHeight := blockHeight - s.testStartHeight + 1
 		// Log the test progress.
 		infoLogger.Msgf(
 			"test progress blocks: %d/%d",
-			blockHeight-s.testStartHeight+1, s.relayLoadDurationBlocks,
+			testProgressBlocksRelativeToTestStartHeight, s.relayLoadDurationBlocks,
 		)
 
 		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
@@ -234,7 +239,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		prevBatchTime = now
 
 		// Forward the session info notification to the downstream observables.
-		return sessionInfo, false
+		return sessionInfo, !skipNotifyDownstreamSteps
 	}
 }
 
@@ -254,8 +259,9 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 	)
 }
 
-// maxActorBlocksToFinalIncrementEnd returns the longest duration until the proof corresponding to
-// the session in which the maxActorCount for each actor type has been committed.
+// maxActorBlocksToFinalIncrementEnd returns the longest duration it takes to
+// increment the number of all actors to their maxActorCount plus one increment
+// duration accounting for the last increment to execute.
 func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
 	return math.Max(
 		plans.gateways.blocksToFinalIncrementEnd(),
@@ -396,7 +402,7 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 
 		// If no need to be processed in this block, skip the rest of the process.
 		if len(newApps) == 0 && len(newGateways) == 0 && len(newSuppliers) == 0 {
-			return nil, true
+			return nil, skipNotifyDownstreamSteps
 		}
 
 		return &stakingInfoNotif{
@@ -404,15 +410,15 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 			newApps:          newApps,
 			newGateways:      newGateways,
 			newSuppliers:     newSuppliers,
-		}, false
+		}, !skipNotifyDownstreamSteps
 	}
 }
 
-// mapStakingInfoWhenStakingAndDelegatingNewApps returns a MapFn which asynchronously maps over the
-// staking info notification. It is notified when one or more actors have been
-// newly staked. For each notification received, it waits for the new actors'
-// staking/funding txs to be committed before sending staking & delegation txs
-// for new applications.
+// mapStakingInfoWhenStakingAndDelegatingNewApps is a MapFn which asynchronously
+// maps over the staking info notification.
+// It is notified when one or more actors have been newly staked.
+// For each notification received, it waits for the new actors' staking/funding
+// txs to be committed before sending staking & delegation txs for new applications.
 func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 	_ context.Context,
 	notif *stakingInfoNotif,
@@ -434,12 +440,12 @@ func (s *relaysSuite) mapStakingInfoWhenStakingAndDelegatingNewApps(
 
 	// If no apps or gateways are to be staked, skip the rest of the process.
 	if len(notif.newApps) == 0 && len(notif.newGateways) == 0 {
-		return nil, true
+		return nil, skipNotifyDownstreamSteps
 	}
 
 	s.sendStakeAndDelegateAppsTxs(&notif.sessionInfoNotif, notif.newApps, notif.newGateways)
 
-	return notif, false
+	return notif, !skipNotifyDownstreamSteps
 }
 
 // sendFundAvailableActorsTx uses the funding account to generate bank.SendMsg
@@ -452,7 +458,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// It is assumed that the suppliers keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "supplier%d".
 		keyName := fmt.Sprintf("supplier%d", i+1)
-		supplier := s.addSupplier(keyName)
+		supplier := s.addActor(keyName, supplierStakeAmount)
 
 		// Add a bank.MsgSend message to fund the supplier.
 		s.addPendingFundMsg(supplier.accAddress, sdk.NewCoins(supplierStakeAmount))
@@ -465,7 +471,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// It is assumed that the gateways keyNames are sequential, starting from 1
 		// and that the keyName is formatted as "gateway%d".
 		keyName := fmt.Sprintf("gateway%d", i+1)
-		gateway := s.addGateway(keyName)
+		gateway := s.addActor(keyName, gatewayStakeAmount)
 
 		// Add a bank.MsgSend message to fund the gateway.
 		s.addPendingFundMsg(gateway.accAddress, sdk.NewCoins(gatewayStakeAmount))
@@ -646,7 +652,7 @@ func (s *relaysSuite) sendStakeAndDelegateAppsTxs(
 }
 
 // sendDelegateInitialAppsTxs pairs all applications with all gateways by generating
-// and sending DelegateMsgs in a single transaction for each aplication.
+// and sending DelegateMsgs in a single transaction for each application.
 func (s *relaysSuite) sendDelegateInitialAppsTxs(apps, gateways []*accountInfo) {
 	for _, app := range apps {
 		// Accumulate the delegate messages for all gateways given the application.
@@ -667,10 +673,10 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementActorCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
-	initialSessionHeight := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	actorSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionHeight
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionStartHeight := sessionInfo.blockHeight == sessionInfo.sessionStartBlockHeight
 	isActorIncrementHeight := nextSessionNumber%actorSessionIncRate == 0
 	maxActorNumReached := actorCount == plan.maxActorCount
@@ -689,10 +695,10 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	actorCount int64,
 	startBlockHeight int64,
 ) bool {
-	initialSessionHeight := keeper.GetSessionNumber(startBlockHeight)
+	initialSessionNumber := keeper.GetSessionNumber(startBlockHeight)
 	// TODO_TECHDEBT(#21): replace with gov param query when available.
 	supplierSessionIncRate := plan.blocksPerIncrement / keeper.NumBlocksPerSession
-	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionHeight
+	nextSessionNumber := sessionInfo.sessionNumber + 1 - initialSessionNumber
 	isSessionEndHeight := sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight
 	isActorIncrementHeight := nextSessionNumber%supplierSessionIncRate == 0
 	maxSupplierNumReached := actorCount == plan.maxActorCount
@@ -703,9 +709,9 @@ func (plan *actorLoadTestIncrementPlan) shouldIncrementSupplierCount(
 	return isSessionEndHeight && !maxSupplierNumReached && isActorIncrementHeight
 }
 
-// addSupplier populates the supplier's accAddress using the keyName provided
-// in the provisioned suppliers slice.
-func (s *relaysSuite) addSupplier(keyName string) *accountInfo {
+// addActor populates the actors's amount to stake and accAddress using the
+// keyName provided in the corresponding provisioned actors slice.
+func (s *relaysSuite) addActor(keyName string, actorStakeAmount sdk.Coin) *accountInfo {
 	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
 	require.NoError(s, err)
 
@@ -716,7 +722,7 @@ func (s *relaysSuite) addSupplier(keyName string) *accountInfo {
 		accAddress:    accAddress,
 		keyName:       keyName,
 		pendingMsgs:   []sdk.Msg{},
-		amountToStake: supplierStakeAmount,
+		amountToStake: actorStakeAmount,
 	}
 }
 
@@ -770,30 +776,13 @@ func (s *relaysSuite) sendStakeSuppliersTxs(
 
 	for supplierIdx := int64(0); supplierIdx < suppliersToStake; supplierIdx++ {
 		keyName := fmt.Sprintf("supplier%d", supplierCount+supplierIdx+1)
-		supplier := s.addSupplier(keyName)
+		supplier := s.addActor(keyName, supplierStakeAmount)
 		s.addPendingStakeSupplierMsg(supplier)
 		s.sendPendingMsgsTx(supplier)
 		newSuppliers = append(newSuppliers, supplier)
 	}
 
 	return newSuppliers
-}
-
-// addGateway returns a populated gateway's accAddress using the keyName provided
-// in the provisioned gateways slice.
-func (s *relaysSuite) addGateway(keyName string) *accountInfo {
-	keyRecord, err := s.txContext.GetKeyring().Key(keyName)
-	require.NoError(s, err)
-
-	accAddress, err := keyRecord.GetAddress()
-	require.NoError(s, err)
-
-	return &accountInfo{
-		accAddress:    accAddress,
-		keyName:       keyName,
-		pendingMsgs:   []sdk.Msg{},
-		amountToStake: gatewayStakeAmount,
-	}
 }
 
 // addPendingStakeGatewayMsg generates a MsgStakeGateway message to stake a given
@@ -854,7 +843,7 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 
 	for gwIdx := int64(0); gwIdx < gatewaysToStake; gwIdx++ {
 		keyName := fmt.Sprintf("gateway%d", gatewayCount+gwIdx+1)
-		gateway := s.addGateway(keyName)
+		gateway := s.addActor(keyName, gatewayStakeAmount)
 		s.addPendingStakeGatewayMsg(gateway)
 		s.sendPendingMsgsTx(gateway)
 		newGateways = append(newGateways, gateway)
@@ -863,6 +852,24 @@ func (s *relaysSuite) sendStakeGatewaysTxs(
 	// The new gateways are returned so the caller can construct delegation messages
 	// given the existing applications.
 	return newGateways
+}
+
+// signWithRetries signs the transaction with the keyName provided, retrying
+// up to signTxMaxRetries times if the signing fails.
+func (s *relaysSuite) signWithRetries(
+	actor *accountInfo,
+	txBuilder sdkclient.TxBuilder,
+) (err error) {
+	// All messages have to be signed by the keyName provided.
+	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
+	for i := 0; i < signTxMaxRetries; i++ {
+		err := s.txContext.SignTx(actor.keyName, txBuilder, false, false)
+		if err == nil {
+			return nil
+		}
+	}
+
+	return err
 }
 
 // sendPendingMsgsTx sends a transaction with the provided messages using the keyName provided.
@@ -879,18 +886,10 @@ func (s *relaysSuite) sendPendingMsgsTx(actor *accountInfo) {
 	txBuilder.SetTimeoutHeight(uint64(s.latestBlock.Height() + 1))
 	txBuilder.SetGasLimit(690000042)
 
-	// All messages have to be signed by the keyName provided.
-	// TODO_TECHDEBT: Extend the txContext to support multiple signers.
 	// TODO_HACK: Sometimes SignTx fails at retrieving the account info with
 	// the error post failed: Post "http://localhost:36657": EOF.
 	// A retry mechanism is added to avoid this issue.
-	for i := 0; i < signTxMaxRetries; i++ {
-		err = s.txContext.SignTx(actor.keyName, txBuilder, false, false)
-		if err == nil {
-			break
-		}
-	}
-
+	err = s.signWithRetries(actor, txBuilder)
 	require.NoError(s, err)
 
 	// Serialize transactions.
@@ -960,6 +959,11 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
 // NB: s.latestBlock is updated asynchronously via a subscription to the block client observable.
 func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) {
+	logger.Info().
+		Int64("currentHeight", s.latestBlock.Height()).
+		Int64("targetHeight", targetHeight).
+		Msg("Waiting for target block to be committed")
+
 	for {
 		if s.latestBlock.Height() > targetHeight {
 			s.Fatal("latest block height is greater than the txResult height; tx event not observed")
@@ -1175,7 +1179,7 @@ func (s *relaysSuite) activatePreparedActors(notif *sessionInfoNotif) {
 			Int64("prepared_gws", int64(len(s.preparedGateways))).
 			Msg("activating prepared actors")
 
-		// Activate teh prepared actors and prune the prepared lists.
+		// Activate the prepared actors and prune the prepared lists.
 
 		s.activeApplications = append(s.activeApplications, s.preparedApplications...)
 		s.preparedApplications = []*accountInfo{}
@@ -1256,8 +1260,8 @@ func (s *relaysSuite) parseActorLoadTestIncrementPlans(table gocuke.DataTable) *
 	}
 }
 
-// countClaimAndProofs counts the number of claim and proof messages in the
-// transaction events.
+// countClaimAndProofs asynchronously counts the number of claim and proof messages
+// in the observed transaction events.
 func (s *relaysSuite) countClaimAndProofs() {
 	channel.ForEach(
 		s.ctx,
@@ -1282,7 +1286,7 @@ func (s *relaysSuite) countClaimAndProofs() {
 }
 
 // forEachStakedAndDelegatedAppPrepareApp is a ForEachFn that waits for txs which
-// were broadcast in previous pipeline stages have been commited. It ensures that
+// were broadcast in previous pipeline stages have been committed. It ensures that
 // new applications were successfully staked and all application actors are delegated
 // to all gateways. Then it adds the new application actors to the prepared set, to
 // be activated & used in the next session.

@@ -74,6 +74,8 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	sessionTrees []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
+	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
+	// first one from the group to calculate the earliest height for proof submission.
 	createClaimHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
@@ -88,24 +90,37 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
 	// which branch(es) to prove should be deterministic and use on-chain governance params.
+	// submitProofWindowStartBlock is the block that will have its hash used as the
+	// source of entropy for all the session trees in that batch, waiting for it to
+	// be received before proceeding.
 	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
 
+	// Generate proofs for all sessionTrees concurrently while waiting for the
+	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.
+	// Use a channel to block until all proofs for the sessionTrees have been generated.
 	proofsGeneratedCh := make(chan []relayer.SessionTree)
 	defer close(proofsGeneratedCh)
 	go func() {
+		// Separate the sessionTrees into those that failed to generate a proof
+		// and those that succeeded, then send them on their respective channels.
 		failedProofs := []relayer.SessionTree{}
 		successProofs := []relayer.SessionTree{}
 		for _, sessionTree := range sessionTrees {
+			// Generate the proof path for the sessionTree using the previously committed
+			// submitProofWindowStartBlock hash.
 			path := proofkeeper.GetPathForProof(
 				submitProofWindowStartBlock.Hash(),
 				sessionTree.GetSessionHeader().GetSessionId(),
 			)
 
+			// If the proof cannot be generated, add the sessionTree to the failedProofs.
 			if _, err := sessionTree.ProveClosest(path); err != nil {
 				failedProofs = append(failedProofs, sessionTree)
 				continue
 			}
 
+			// If the proof was generated successfully, add the sessionTree to the
+			// successProofs slice that will be sent to the proof submission step.
 			successProofs = append(successProofs, sessionTree)
 		}
 
@@ -113,9 +128,13 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 		proofsGeneratedCh <- successProofs
 	}()
 
+	// Wait for the earliest submitProofsHeight to be reached before proceeding.
 	earliestSubmitProofsHeight := protocol.GetEarliestSubmitProofHeight(ctx, submitProofWindowStartBlock)
 	_ = rs.waitForBlock(ctx, earliestSubmitProofsHeight)
 
+	// Once the earliest submitProofsHeight has been reached, and all proofs have
+	// been generated, return the sessionTrees that have been successfully proven
+	// to be submitted on-chain.
 	return <-proofsGeneratedCh
 }
 
@@ -144,14 +163,6 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 			})
 		}
 
-		// Since all sessionTrees in the batch have the same start height and the
-		// slice is guaranteed to be non-empty, the first sessionTree's start height
-		// is used to log the proofs submission.
-		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
-		rs.logger.Info().
-			Int64("session_end_height_with_grace_period", sessionStartHeight).
-			Msg("submitting proofs")
-
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
 		if err := rs.supplierClient.SubmitProofs(ctx, sessionProofs); err != nil {
 			failedSubmitProofSessionsCh <- sessionTrees
@@ -159,7 +170,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		}
 
 		for _, sessionTree := range sessionTrees {
-			// Prune the session tree after the proof has been submitted.
+			// Prune the session tree since the proofs have already been submitted.
 			if err := sessionTree.Delete(); err != nil {
 				return either.Error[[]relayer.SessionTree](err), false
 			}

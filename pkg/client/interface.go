@@ -41,7 +41,7 @@ type SupplierClient interface {
 	// session's mined relays.
 	CreateClaims(
 		ctx context.Context,
-		claimWithSessionHeaderBatch []*relayer.SessionClaim,
+		sessionClaims []*relayer.SessionClaim,
 	) error
 	// SubmitProof sends proof messages which contain the smt.SparseMerkleClosestProof,
 	// corresponding to some previously created claim for the same session.
@@ -50,7 +50,7 @@ type SupplierClient interface {
 	// the amount of data stored on-chain.
 	SubmitProofs(
 		ctx context.Context,
-		proofWithSessionHeaderBatch []*relayer.SessionProof,
+		sessionProofs []*relayer.SessionProof,
 	) error
 }
 

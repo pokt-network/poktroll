@@ -57,9 +57,16 @@ const (
 	maxAmountColIdx
 )
 
-// Signing a transaction with online mode queries the node for the account sequence
-// number and the account number.
-// The load test sometimes fail to fetch the information and retries are needed.
+// The current txClient implementation only supports online mode signing, which
+// is simpler to implement since it is querying the signer account info from the
+// blockchain node and abstracting the need to manually manage the sequence number.
+// The sequence number is needed to ensure that the transactions are signed in the
+// correct order and that the transactions are not replayed. See:
+// * https://github.com/cosmos/cosmos-sdk/blob/main/proto/cosmos/tx/v1beta1/tx.proto#L164
+// * https://github.com/cosmos/cosmos-sdk/blob/main/x/auth/client/tx.go#L59
+// The load test sometimes fail to fetch the account information and retries are needed.
+// By observing the number of retries needed in the test environment, signing always
+// succeeded after the second retry a safe number of retries was chosen to be 3.
 const signTxMaxRetries = 3
 
 var (
@@ -147,13 +154,17 @@ type relaysSuite struct {
 	// It is used to calculate the progress of the test.
 	testStartHeight int64
 
-	// relayLoadDurationBlocks is the duration of the test in blocks.
-	// It is used to determine when the test is done.
+	// relayLoadDurationBlocks is the duration in blocks it takes to send all relay requests.
+	// After this duration, the test suite will stop sending relay requests, but will continue
+	// to submit claims and proofs.
 	// It is calculated as the longest duration of the three actor increments.
-	testDurationBlocks int64
-
-	// TODO_IN_THIS_PR: comment this variable
 	relayLoadDurationBlocks int64
+
+	// testDurationBlocks is the duration of the test in blocks and is used to determine
+	// when the test is done.
+	// It is calculated as the time it takes to send all relay requests plus the time
+	// it takes so submit all claims and proofs.
+	testDurationBlocks int64
 
 	// gatewayUrls is a map of gatewayKeyName->URL representing the provisioned gateways.
 	// These gateways are not staked yet but have their off-chain instance running
@@ -328,13 +339,14 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	plans := s.parseActorLoadTestIncrementPlans(table)
 	s.validateActorLoadTestIncrementPlans(plans)
 
-	// TODO_IN_THIS_PR: Update the description below
-	// The test duration is the longest duration of the three actor increments.
+	// The relay load duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
 	s.relayLoadDurationBlocks = plans.maxActorBlocksToFinalIncrementEnd()
 
-	// TODO_IN_THIS_PR: Add comment
+	// The test duration indicates when the test is complete.
+	// It is calculated as the relay load duration plus the time it takes to
+	// submit all claims and proofs.
 	s.testDurationBlocks = plans.totalDurationBlocks()
 
 	// Adjust the max delegations parameter to the max gateways to permit all

@@ -72,13 +72,11 @@ func (sClient *supplierClient) SubmitProofs(
 	for i, sessionProof := range sessionProofs {
 		// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 		//  with off-chain pkgs/nomenclature.
-		msg := &prooftypes.MsgSubmitProof{
+		msgs[i] = &prooftypes.MsgSubmitProof{
 			SupplierAddress: sClient.signingKeyAddr.String(),
 			SessionHeader:   sessionProof.SessionHeader,
 			Proof:           sessionProof.ProofBz,
 		}
-
-		msgs[i] = msg
 	}
 
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
@@ -97,7 +95,7 @@ func (sClient *supplierClient) SubmitProofs(
 				"session_id":    sessionHeader.SessionId,
 				"service":       sessionHeader.Service.Id,
 			}).
-			Msg("submitted new proofs")
+			Msg("submitted new proof")
 	}
 
 	return <-errCh
@@ -117,13 +115,11 @@ func (sClient *supplierClient) CreateClaims(
 	// TODO(@bryanchriswhite): reconcile splitting of supplier & proof modules
 	//  with off-chain pkgs/nomenclature.
 	for i, sessionClaim := range sessionClaims {
-		msg := &prooftypes.MsgCreateClaim{
+		msgs[i] = &prooftypes.MsgCreateClaim{
 			SupplierAddress: sClient.signingKeyAddr.String(),
 			SessionHeader:   sessionClaim.SessionHeader,
 			RootHash:        sessionClaim.RootHash,
 		}
-
-		msgs[i] = msg
 	}
 	eitherErr := sClient.txClient.SignAndBroadcast(ctx, msgs...)
 	err, errCh := eitherErr.SyncOrAsyncError()

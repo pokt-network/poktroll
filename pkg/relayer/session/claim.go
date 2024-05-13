@@ -50,7 +50,8 @@ func (rs *relayerSessionsManager) createClaims(
 	return filter.EitherSuccess(ctx, eitherClaimedSessionsObs)
 }
 
-// mapWaitForEarliestCreateClaimsHeight is intended to be used as a MapFn.
+// mapWaitForEarliestCreateClaimsHeight returns a new MapFn that adds a delay
+// between being notified and notifying.
 // It calculates and waits for the earliest block height, allowed by the protocol,
 // at which claims can be created for the given session number, then emits the
 // session **at that moment**.
@@ -77,6 +78,8 @@ func (rs *relayerSessionsManager) waitForEarliestCreateClaimsHeight(
 	sessionTrees []relayer.SessionTree,
 	failSubmitProofsSessionsCh chan<- []relayer.SessionTree,
 ) []relayer.SessionTree {
+	// Given the sessionTrees are grouped by their sessionEndHeight, we can use the
+	// first one from the group to calculate the earliest height for claim creation.
 	sessionEndHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
