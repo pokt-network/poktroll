@@ -22,6 +22,8 @@ const (
 
 // parseParamsTable parses a gocuke.DataTable into a paramsMap.
 func (s *suite) parseParamsTable(table gocuke.DataTable) paramsMap {
+	s.Helper()
+
 	paramsMap := make(paramsMap)
 
 	// NB: skip the header row.
@@ -35,6 +37,8 @@ func (s *suite) parseParamsTable(table gocuke.DataTable) paramsMap {
 
 // parseParam parses a row of a gocuke.DataTable into a paramName and a paramAny.
 func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
+	s.Helper()
+
 	var paramValue any
 	paramName := table.Cell(rowIdx, paramNameColIdx).String()
 	paramType := table.Cell(rowIdx, paramTypeColIdx).String()
@@ -60,6 +64,8 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 // paramsMapToMsgUpdateParams converts a paramsMap into a MsgUpdateParams, which
 // it returns as a proto.Message/cosmostypes.Msg interface type.
 func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMap) (msgUpdateParams cosmostypes.Msg) {
+	s.Helper()
+
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
 		msgUpdateParams = s.newTokenomicsMsgUpdateParams(paramsMap)
@@ -119,6 +125,8 @@ func (s *suite) newMsgUpdateParam(
 	moduleName string,
 	param paramAny,
 ) (msg cosmostypes.Msg) {
+	s.Helper()
+
 	authority := authtypes.NewModuleAddress(s.granterName).String()
 
 	// TODO_IMPROVE: can this be simplified?

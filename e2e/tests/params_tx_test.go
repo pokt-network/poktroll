@@ -25,11 +25,13 @@ var updateParamsTxJSONTemplate = template.Must(
 // It returns before the tx has been committed but after it has been broadcast.
 // It ensures that all module params are reset to their default values after the
 // test completes.
-func (s *suite) sendAuthzExecTx(txJSONFilePath string) {
+func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
+	s.Helper()
+
 	argsAndFlags := []string{
 		"tx", "authz", "exec",
 		txJSONFilePath,
-		"--from", s.granteeName,
+		"--from", signingKeyName,
 		keyRingFlag,
 		fmt.Sprintf("--%s=json", cli.OutputFlag),
 		"--yes",
@@ -39,7 +41,7 @@ func (s *suite) sendAuthzExecTx(txJSONFilePath string) {
 
 	// TODO_IMPROVE: wait for the tx to be committed using an events query client
 	// instead of sleeping for a specific amount of time.
-	s.Logf("waiting %d seconds for the tx to be committed...", txDelaySeconds)
+	s.Logf("waiting %d seconds for the authz exec tx to be committed...", txDelaySeconds)
 	time.Sleep(txDelaySeconds * time.Second)
 
 	// Reset all module params to their default values after the test completes.
@@ -53,6 +55,8 @@ func (s *suite) sendAuthzExecTx(txJSONFilePath string) {
 // in the given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI
 // subcommand: `poktrolld tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.File {
+	s.Helper()
+
 	var anyMsgs []*types.Any
 
 	// Collect msgs to update all params (per msg) for each module.
@@ -76,6 +80,8 @@ func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.
 // given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI subcommand:
 // `poktrolld tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.File {
+	s.Helper()
+
 	var anyMsgs []*types.Any
 
 	// Collect msgs to update given params, one param per msg, for each module.
@@ -100,6 +106,8 @@ func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.F
 // of a tx which contains the given pb.Any messages. The temp file is removed when
 // the test completes.
 func (s *suite) newTempTxJSONFile(anyMsgs []*types.Any) *os.File {
+	s.Helper()
+
 	// Construct a TxBody with the pb.Any message for serialization.
 	txBody := &tx.TxBody{
 		Messages: anyMsgs,

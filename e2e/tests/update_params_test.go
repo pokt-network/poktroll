@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	cometcli "github.com/cometbft/cometbft/libs/cli"
 	cosmostypes "github.com/cosmos/cosmos-sdk/types"
@@ -19,7 +20,10 @@ import (
 )
 
 // txDelaySeconds is the number of seconds to wait for a tx to be committed before making assertions.
-const txDelaySeconds = 3
+const (
+	txDelaySeconds    = 3
+	minimalFundTokens = "1000000upokt"
+)
 
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
 func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
@@ -113,9 +117,24 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(
 	s.granteeName = granteeName
 }
 
-// TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams sends an authz exec
+// AKeyAndAccountExistForTheUser checks if a key with the given name exists in the keyring,
+// and if not, adds a new key with the given name to the keyring. It then checks if an account
+func (s *suite) AKeyAndAccountExistForTheUser(keyName string) {
+	if !s.keyExistsInKeyring(keyName) {
+		s.addKeyToKeyring(keyName)
+	}
+
+	s.ensureAccountForKeyName(keyName)
+}
+
+// AllModuleParamsShouldBeSetToTheirDefaultValues asserts that all module params are set to their default values.
+func (s *suite) AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName string) {
+	s.AllModuleParamsAreSetToTheirDefaultValues(moduleName)
+}
+
+// TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams sends an authz exec
 // message to update all module params for the given module.
-func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName string, table gocuke.DataTable) {
+func (s *suite) TheAccountSendsAnAuthzExecMessageToUpdateAllModuleParams(accountName, moduleName string, table gocuke.DataTable) {
 	// NB: set s#moduleParamsMap for later assertion.
 	s.expectedModuleParams = moduleParamsMap{
 		moduleName: s.parseParamsTable(table),
@@ -125,7 +144,7 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateAllModuleParams(moduleName
 	txJSONFile := s.newTempUpdateParamsTxJSONFile(s.expectedModuleParams)
 
 	// Send the authz exec tx to update all module params.
-	s.sendAuthzExecTx(txJSONFile.Name())
+	s.sendAuthzExecTx(accountName, txJSONFile.Name())
 }
 
 // AllModuleParamsShouldBeUpdated asserts that all module params have been updated as expected.
@@ -136,8 +155,8 @@ func (s *suite) AllModuleParamsShouldBeUpdated(moduleName string) {
 	s.assertExpectedModuleParamsUpdated(moduleName)
 }
 
-// TheUserSendAnAuthzExecMessageToUpdateTheModuleParam sends an authz exec message to update a single module param.
-func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateTheModuleParam(moduleName string, table gocuke.DataTable) {
+// TheAccountSendsAnAuthzExecMessageToUpdateTheModuleParam sends an authz exec message to update a single module param.
+func (s *suite) TheAccountSendsAnAuthzExecMessageToUpdateTheModuleParam(accountName, moduleName string, table gocuke.DataTable) {
 	// NB: skip the header row & only expect a single row.
 	param := s.parseParam(table, 1)
 
@@ -152,7 +171,7 @@ func (s *suite) TheUserSendsAnAuthzExecMessageToUpdateTheModuleParam(moduleName 
 	txJSONFile := s.newTempUpdateParamTxJSONFile(s.expectedModuleParams)
 
 	// Send the authz exec tx to update the module param.
-	s.sendAuthzExecTx(txJSONFile.Name())
+	s.sendAuthzExecTx(accountName, txJSONFile.Name())
 }
 
 // TheModuleParamShouldBeUpdated asserts that the module param has been updated as expected.
@@ -172,8 +191,56 @@ func (s *suite) TheModuleParamShouldBeUpdated(moduleName, paramName string) {
 	s.assertExpectedModuleParamsUpdated(moduleName)
 }
 
+// TheModuleParamShouldBeSetToItsDefaultValue asserts that the given param for the
+// given module has been set to its default value.
+func (s *suite) TheModuleParamShouldBeSetToItsDefaultValue(moduleName string, paramName string) {
+	// TODO_HACK: So long as no other modules are expected to have been changed by this scenario,
+	// it is more than sufficient (and less code) to re-use the existing step which asserts that
+	// all modules have their params set to their respective defaults.
+	_ = paramName
+	s.AllModuleParamsShouldBeSetToTheirDefaultValues(moduleName)
+}
+
+// ensureAccountForKeyName ensures that an account exists for the given key name in the keychain.
+func (s *suite) ensureAccountForKeyName(keyName string) {
+	s.Helper()
+
+	// Get the address of the key.
+	addr := s.getKeyAddress(keyName)
+
+	// Fund the account with minimal tokens to ensure it is on-chain.
+	s.ensureOnChainAccount(addr)
+}
+
+// ensureOnChainAccount sends a minimal amount of upokt tokens to the given address
+// to ensure it has an on-chain account.
+func (s *suite) ensureOnChainAccount(addr string) {
+	s.Helper()
+
+	// poktrolld tx bank send <from> <to> <amount> --keyring-backend test --chain-id <chain_id> --yes
+	argsAndFlags := []string{
+		"tx",
+		"bank",
+		"send",
+		"pnf",
+		addr,
+		minimalFundTokens,
+		"--yes",
+	}
+
+	_, err := s.pocketd.RunCommandOnHost("", argsAndFlags...)
+	require.NoError(s, err)
+
+	// TODO_IMPROVE: wait for the tx to be committed using an events query client
+	// instead of sleeping for a specific amount of time.
+	s.Logf("waiting %d seconds for the funding tx to be committed...", txDelaySeconds)
+	time.Sleep(txDelaySeconds * time.Second)
+}
+
 // getKeyAddress uses the `keys show` CLI subcommand to get the address of a key.
 func (s *suite) getKeyAddress(keyName string) string {
+	s.Helper()
+
 	argsAndFlags := []string{
 		"keys",
 		"show",
@@ -192,6 +259,8 @@ func (s *suite) getKeyAddress(keyName string) string {
 }
 
 func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
+	s.Helper()
+
 	argsAndFlags := []string{
 		"query",
 		moduleName,
@@ -234,6 +303,8 @@ func assertUpdatedParams[P cosmostypes.Msg](
 	queryParamsResJSON []byte,
 	expectedParamsRes P,
 ) {
+	s.Helper()
+
 	queryParamsMsgValue := reflect.New(reflect.TypeOf(expectedParamsRes).Elem())
 	queryParamsMsg := queryParamsMsgValue.Interface().(P)
 	err := s.cdc.UnmarshalJSON(queryParamsResJSON, queryParamsMsg)

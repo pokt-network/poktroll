@@ -17,16 +17,20 @@ import (
 // resetAllModuleParamsToDefaults resets all module params to their default values using
 // a single authz exec message. It blocks until the resulting tx has been committed.
 func (s *suite) resetAllModuleParamsToDefaults() {
+	s.Helper()
+
 	s.Log("resetting all module params to their default values")
 
 	msgUpdateParamsAnys := s.allModulesMsgUpdateParamsToDefaultsAny()
 	resetTxJSONFile := s.newTempTxJSONFile(msgUpdateParamsAnys)
-	s.sendAuthzExecTx(resetTxJSONFile.Name())
+	s.sendAuthzExecTx(s.granteeName, resetTxJSONFile.Name())
 }
 
 // allMoudlesMsgUpdateParamsToDefaultsAny returns a slice of Any messages, each corresponding
 // to a MsgUpdateParams for a module, populated with the respective default values.
 func (s *suite) allModulesMsgUpdateParamsToDefaultsAny() []*codectypes.Any {
+	s.Helper()
+
 	return []*codectypes.Any{
 		s.msgUpdateParamsToDefaultsAny(gatewaytypes.ModuleName),
 		s.msgUpdateParamsToDefaultsAny(apptypes.ModuleName),
@@ -39,6 +43,8 @@ func (s *suite) allModulesMsgUpdateParamsToDefaultsAny() []*codectypes.Any {
 // msgUpdateParamsToDefaultsAny returns an Any corresponding to a MsgUpdateParams
 // for the given module name, populated with the respective default values.
 func (s *suite) msgUpdateParamsToDefaultsAny(moduleName string) *codectypes.Any {
+	s.Helper()
+
 	var (
 		anyMsg *codectypes.Any
 		err    error
