@@ -59,12 +59,12 @@ Create a new [GitHub issue here](https://github.com/pokt-network/pocket/issues/n
 
 ## Video Walkthrough
 
-You can access the video [here](https://drive.google.com/file/d/1Tfrd32ubDCmWz2ztje-NJ2qGH9tsPfj8/view?usp=sharing).
+You can access the video [here](https://www.youtube.com/watch?v=H-R5FqrCYQs).
 
 <ReactPlayer
   playing
   controls
-  url="https://drive.google.com/file/d/1Tfrd32ubDCmWz2ztje-NJ2qGH9tsPfj8/preview"
+  url="https://www.youtube.com/watch?v=H-R5FqrCYQs"
 />
 
 ## 0. Install Dependencies
