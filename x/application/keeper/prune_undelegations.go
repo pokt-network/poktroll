@@ -20,13 +20,10 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 	currentHeight := ctx.BlockHeight()
 
 	// Calculate the block height at which undelegations should be pruned
-	numBlocksUndelegationRetention := sessionkeeper.GetSessionGracePeriodBlockCount() +
-		(sessionkeeper.NumBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
-
+	numBlocksUndelegationRetention := GetNumBlocksUndelegationRetention()
 	if currentHeight <= numBlocksUndelegationRetention {
 		return nil
 	}
-
 	pruningBlockHeight := uint64(currentHeight - numBlocksUndelegationRetention)
 
 	// Iterate over all applications and prune undelegations that are older than
@@ -43,4 +40,11 @@ func (k Keeper) EndBlockerPruneAppToGatewayPendingUndelegation(ctx sdk.Context) 
 	}
 
 	return nil
+}
+
+// GetNumBlocksUndelegationRetention returns the number of blocks undelegations
+// should be kept before being pruned.
+func GetNumBlocksUndelegationRetention() int64 {
+	return sessionkeeper.GetSessionGracePeriodBlockCount() +
+		(sessionkeeper.NumBlocksPerSession * NumSessionsAppToGatewayUndelegationRetention)
 }

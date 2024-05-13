@@ -289,14 +289,14 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
 	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
 
-.PHONY: send_relay
-send_relay:
+.PHONY: send_relay_self_signing_app
+send_relay_self_signing_app: # Send a relay through the AppGateServer as an application that's self-signing
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	http://localhost:42069/anvil
 
-.PHONY: send_relay_to_gateway
-send_relay_to_gateway:
+.PHONY: send_relay_delegating_app
+send_relay_delegating_app: # Send a relay through the gateway as an application that's delegating to this gateway
 	@appAddr=$$(poktrolld keys show app1 -a) && \
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \

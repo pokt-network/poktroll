@@ -169,13 +169,25 @@ func (rc *ringClient) getRingPubKeysForAddress(
 		return nil, err
 	}
 
+	// Reconstruct the delegatee gateway addresses at the given block height and
+	// add them to the ring addresses.
+	delegateeGatewayAddresses := GetRingAddressesAtBlock(&app, blockHeight)
+
 	// Create a slice of addresses for the ring.
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
-	// Reconstruct the delegatee gateway addresses at the given block height and
-	// add them to the ring addresses.
-	delegateeGatewayAddresses := GetRingAddressesAtBlock(&app, blockHeight)
+	// If there is no delegateeGatewayAddresses, add app address a second time to
+	// make the ring size of minimum 2.
+	// TODO_IMPROVE: The appAddress is added twice because a ring signature
+	// requires AT LEAST two pubKeys. If the Application has not delegated
+	// to any gateways, the app's own address needs to be used twice to
+	// create a ring. This is not a huge issue but an improvement should
+	// be investigated in the future.
+	if len(delegateeGatewayAddresses) == 0 {
+		delegateeGatewayAddresses = append(delegateeGatewayAddresses, app.Address)
+	}
+
 	ringAddresses = append(ringAddresses, delegateeGatewayAddresses...)
 
 	// Sort the ring addresses to ensure the ring is consistent between signing and
@@ -207,10 +219,12 @@ func (rc *ringClient) addressesToPubKeys(
 	return pubKeys, nil
 }
 
-// GetRingAddressesAtBlock returns the active gateway delegations for the given
-// application and target block height while accounting for the pending undelegations.
-// The ring addresses slice is reconstructed by adding back the past delegated gateways
-// that have been undelegated after the target session end height.
+// GetRingAddressesAtBlock returns the active gateway addresses that need to be
+// used to construct the ring to validate the app should pay for. It takes into
+// account both active delegations and pending undelegations that should still
+// be part of the ring.
+// The ring addresses slice is reconstructed by adding back the past delegated
+// gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
 	// Get the target session end height at which we want to get the active delegations.
 	targetSessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(blockHeight))
@@ -241,16 +255,6 @@ func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 			addedDelegations[gatewayAddress] = true
 		}
 
-	}
-
-	// add app address twice to make the ring size of minimum 2
-	// TODO_IMPROVE: The appAddress is added twice because a ring signature
-	// requires AT LEAST two pubKeys. If the Application has not delegated
-	// to any gateways, the app's own address needs to be used twice to
-	// create a ring. This is not a huge issue but an improvement should
-	// be investigated in the future.
-	if len(activeDelegationsAtHeight) == 0 {
-		activeDelegationsAtHeight = append(activeDelegationsAtHeight, app.Address)
 	}
 
 	return activeDelegationsAtHeight

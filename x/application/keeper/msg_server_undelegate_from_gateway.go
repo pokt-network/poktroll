@@ -78,9 +78,9 @@ func (k msgServer) UndelegateFromGateway(ctx context.Context, msg *types.MsgUnde
 func (k Keeper) recordPendingUndelegation(
 	app *types.Application,
 	gatewayAddress string,
-	currentBlock int64,
+	currentBlockHeight int64,
 ) {
-	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlock))
+	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlockHeight))
 
 	// Create the session pending undelegations list entry for the given session
 	// end height if it doesn't already exist.
