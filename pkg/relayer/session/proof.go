@@ -117,7 +117,7 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		}
 
 		rs.logger.Info().
-			Int64("session_start_height", pathBlock.Block.Height).
+			Int64("session_end_height_with_grace_period", pathBlock.Block.Height).
 			Msg("submitting proof")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.

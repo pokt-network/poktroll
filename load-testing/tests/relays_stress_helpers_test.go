@@ -128,7 +128,7 @@ func (s *relaysSuite) initializeProvisionedActors() {
 
 // mapSessionInfoForLoadTestDurationFn returns a MapFn that maps over the session info
 // notification (each block) to determine when to start the test, when to send relay
-// batches & when to stop the test. If the current block is not the begining of a session,
+// batches & when to stop the test. If the current block is not the beginning of a session,
 // it waits for the next session to start before notifying (skipping meanwhile). Each
 // time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
@@ -183,6 +183,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// It is updated only once at the start of the test.
 		if waitingForFirstSession {
 			// Record the block height at the start of the first session under load.
+			// Given the checks above, we are guaranteed this is the start of a new session.
 			s.startBlockHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
@@ -197,8 +198,9 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		)
 
 		// If the test duration is reached, cancel the context to stop the test.
-		if blockHeight >= s.startBlockHeight+s.testDurationBlocks {
-			logger.Info().Msg("Test done, cancelling scenario context")
+		testEndBlockHeight := s.startBlockHeight+s.testDurationBlocks
+		if blockHeight >= testEndBlockHeight {
+			logger.Info().Msg("Test done, canceling scenario context")
 			s.cancelCtx()
 
 			return nil, true

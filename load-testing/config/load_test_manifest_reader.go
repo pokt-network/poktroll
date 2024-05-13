@@ -15,7 +15,7 @@ type ProvisionedActorConfig struct {
 	ExposedUrl string `yaml:"exposed_url"`
 }
 
-// LoadTestManifestYAML is the struct which the laod test manifest is deserialized into.
+// LoadTestManifestYAML is the struct which the load test manifest is deserialized into.
 // It contains the list of suppliers and gateways that the load test expects to be pre-provisioned.
 type LoadTestManifestYAML struct {
 	Suppliers []ProvisionedActorConfig `yaml:"suppliers"`

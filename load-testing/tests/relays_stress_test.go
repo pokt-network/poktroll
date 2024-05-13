@@ -116,7 +116,7 @@ type relaysSuite struct {
 	// batchInfoObs is the observable mapping session information to batch information.
 	// It is used to determine when to send a batch of relay requests to the network.
 	batchInfoObs observable.Observable[*relayBatchInfoNotif]
-	// newBlocksEventsClient is the observable that notifies the test suite of new
+	// newTxEventsObs is the observable that notifies the test suite of new
 	// transactions committed on-chain.
 	// It is used to check the results of the transactions sent by the test suite.
 	newTxEventsObs observable.Observable[*types.TxResult]
