@@ -311,11 +311,11 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@echo "Initializing chain..."
 	@set -e
 	@ignite chain init --skip-proto
+	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
+	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.poktroll/config/genesis.json;
+
 	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
-
-	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
-	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' $(POKTROLLD_HOME)/config/genesis.json;
 
 .PHONY: send_relay
 send_relay:
