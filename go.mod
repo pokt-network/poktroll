@@ -1,8 +1,6 @@
 module github.com/pokt-network/poktroll
 
-go 1.21.1
-
-toolchain go1.21.6
+go 1.22.2
 
 replace (
 	// fix upstream GHSA-h395-qcrw-5vmq vulnerability.

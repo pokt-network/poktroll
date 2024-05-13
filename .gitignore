@@ -67,6 +67,7 @@ api/poktroll/**/*.go-E
 
 # Relase artifacts produced by `ignite chain build --release`
 release
+release_binaries
 
 # Only keep one go module in our codebase
 go.work.sum
