@@ -5,6 +5,7 @@ import (
 
 	"github.com/pokt-network/poktroll/pkg/observable"
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
+	"github.com/pokt-network/poktroll/pkg/polylog"
 )
 
 // LogErrors operates on an observable of errors. It logs all errors received
@@ -15,7 +16,7 @@ func LogErrors(ctx context.Context, errs observable.Observable[error]) {
 
 // forEachErrorLogError is a ForEachFn that logs the given error.
 func forEachErrorLogError(ctx context.Context, err error) {
-	//logger := polylog.Ctx(ctx)
-	//// Logging the error and flushing (i.e. sending) the log message to stdout
-	//logger.Error().Err(err).Send()
+	logger := polylog.Ctx(ctx)
+	// Logging the error and flushing (i.e. sending) the log message to stdout
+	logger.Error().Err(err).Send()
 }

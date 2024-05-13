@@ -48,7 +48,7 @@ const (
 )
 
 // NB: +1 to skip the "actor" column.
-const initialactorCountColIdx = iota + 1
+const initialActorCountColIdx = iota + 1
 
 // NB: +1 to skip the "actor" column.
 const (
@@ -143,13 +143,17 @@ type relaysSuite struct {
 	// appInitialCount is the number of active applications at the start of the test.
 	appInitialCount int64
 
-	// testStartBlockHeight is the block height at which the test started.
+	// testStartHeight is the block height at which the test started.
 	// It is used to calculate the progress of the test.
-	testStartBlockHeight int64
-	// testDurationBlocks is the duration of the test in blocks.
+	testStartHeight int64
+
+	// relayLoadDurationBlocks is the duration of the test in blocks.
 	// It is used to determine when the test is done.
 	// It is calculated as the longest duration of the three actor increments.
 	testDurationBlocks int64
+
+	// TODO_IN_THIS_PR: comment this variable
+	relayLoadDurationBlocks int64
 
 	// gatewayUrls is a map of gatewayKeyName->URL representing the provisioned gateways.
 	// These gateways are not staked yet but have their off-chain instance running
@@ -314,9 +318,9 @@ func (s *relaysSuite) ARateOfRelayRequestsPerSecondIsSentPerApplication(appRPS s
 func (s *relaysSuite) TheFollowingInitialActorsAreStaked(table gocuke.DataTable) {
 	// Store the initial counts of the actors to be staked to be used later in the test,
 	// when information about max actors to be staked is available.
-	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialactorCountColIdx).Int64()
-	s.appInitialCount = table.Cell(applicationRowIdx, initialactorCountColIdx).Int64()
-	s.supplierInitialCount = table.Cell(supplierRowIdx, initialactorCountColIdx).Int64()
+	s.gatewayInitialCount = table.Cell(gatewayRowIdx, initialActorCountColIdx).Int64()
+	s.appInitialCount = table.Cell(applicationRowIdx, initialActorCountColIdx).Int64()
+	s.supplierInitialCount = table.Cell(supplierRowIdx, initialActorCountColIdx).Int64()
 }
 
 func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
@@ -324,10 +328,14 @@ func (s *relaysSuite) MoreActorsAreStakedAsFollows(table gocuke.DataTable) {
 	plans := s.parseActorLoadTestIncrementPlans(table)
 	s.validateActorLoadTestIncrementPlans(plans)
 
+	// TODO_IN_THIS_PR: Update the description below
 	// The test duration is the longest duration of the three actor increments.
 	// The duration of each actor is calculated as how many blocks it takes to
 	// increment the actor count to the maximum.
-	s.testDurationBlocks = plans.maxDurationBlocks()
+	s.relayLoadDurationBlocks = plans.maxActorBlocksToFinalIncrementEnd()
+
+	// TODO_IN_THIS_PR: Add comment
+	s.testDurationBlocks = plans.totalDurationBlocks()
 
 	// Adjust the max delegations parameter to the max gateways to permit all
 	// applications to delegate to all gateways.

@@ -183,23 +183,19 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// It is updated only once at the start of the test.
 		if waitingForFirstSession {
 			// Record the block height at the start of the first session under load.
-			s.testStartBlockHeight = blockHeight
+			s.testStartHeight = blockHeight
 			// Mark the test as started.
 			waitingForFirstSession = false
 
-			logger.Info().Msgf("Test starting at block height: %d", s.testStartBlockHeight)
+			logger.Info().Msgf("Test starting at block height: %d", s.testStartHeight)
 		}
 
 		// If the test duration is reached, stop sending requests
-		if blockHeight >= s.testStartBlockHeight+s.testDurationBlocks {
+		if blockHeight >= s.testStartHeight+s.relayLoadDurationBlocks {
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			finalizeTestBlockHeight := s.testStartBlockHeight +
-				s.testDurationBlocks +
-				keeper.GetSessionGracePeriodBlockCount() +
-				(3 * keeper.NumBlocksPerSession)
-			if blockHeight > finalizeTestBlockHeight {
+			if blockHeight > s.testStartHeight+s.testDurationBlocks {
 				s.cancelCtx()
 			}
 
@@ -209,7 +205,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		// Log the test progress.
 		infoLogger.Msgf(
 			"test progress blocks: %d/%d",
-			blockHeight-s.testStartBlockHeight+1, s.testDurationBlocks,
+			blockHeight-s.testStartHeight+1, s.relayLoadDurationBlocks,
 		)
 
 		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
@@ -257,13 +253,13 @@ func (s *relaysSuite) validateActorLoadTestIncrementPlans(plans *actorLoadTestIn
 	)
 }
 
-// maxDurationBlocks returns the longest duration until the proof corresponding to
+// maxActorBlocksToFinalIncrementEnd returns the longest duration until the proof corresponding to
 // the session in which the maxActorCount for each actor type has been committed.
-func (plans *actorLoadTestIncrementPlans) maxDurationBlocks() int64 {
+func (plans *actorLoadTestIncrementPlans) maxActorBlocksToFinalIncrementEnd() int64 {
 	return math.Max(
-		plans.gateways.durationBlocks(),
-		plans.apps.durationBlocks(),
-		plans.suppliers.durationBlocks(),
+		plans.gateways.blocksToFinalIncrementEnd(),
+		plans.apps.blocksToFinalIncrementEnd(),
+		plans.suppliers.blocksToFinalIncrementEnd(),
 	)
 }
 
@@ -329,13 +325,13 @@ func (plans *actorLoadTestIncrementPlans) validateMaxAmounts(t gocuke.TestingT) 
 	)
 }
 
-// durationBlocks returns the number of blocks which will have elapsed when the
+// totalDurationBlocks returns the number of blocks which will have elapsed when the
 // proof corresponding to the session in which the maxActorCount for the given actor
 // has been committed.
-func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
+func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 	// The last block of the last session SHOULD align with the last block of the
 	// last increment duration (i.e. **after** maxActorCount actors are activated).
-	blocksToLastSessionEnd := plan.blocksToMaxAmountIncrementEnd()
+	blocksToLastSessionEnd := plans.maxActorBlocksToFinalIncrementEnd()
 
 	sessionGracePeriodBlocks := keeper.GetSessionGracePeriodBlockCount()
 	blocksToLastProofWindowEnd := blocksToLastSessionEnd + sessionGracePeriodBlocks
@@ -345,17 +341,17 @@ func (plan *actorLoadTestIncrementPlan) durationBlocks() int64 {
 	return blocksToLastProofWindowEnd + keeper.NumBlocksPerSession
 }
 
-// blocksToMaxAmountIncrementStart returns the number of blocks that will have
+// blocksToFinalIncrementStart returns the number of blocks that will have
 // elapsed when the maxActorCount for the given actor has been committed.
-func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementStart() int64 {
+func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementStart() int64 {
 	return plan.maxActorCount / plan.actorIncrementCount * plan.blocksPerIncrement
 }
 
-// blocksToMaxAmountIncrementEnd returns the number of blocks that will have
+// blocksToFinalIncrementEnd returns the number of blocks that will have
 // elapsed when one increment duration **after** the maxActorCount for the given
 // actor has been committed.
-func (plan *actorLoadTestIncrementPlan) blocksToMaxAmountIncrementEnd() int64 {
-	return plan.blocksToMaxAmountIncrementStart() + plan.blocksPerIncrement
+func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementEnd() int64 {
+	return plan.blocksToFinalIncrementStart() + plan.blocksPerIncrement
 }
 
 // mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn returns a mapFn which asynchronously maps
@@ -381,19 +377,19 @@ func (s *relaysSuite) mapSessionInfoWhenStakingNewSuppliersAndGatewaysFn(
 		// available for the beginning of the next one.
 		// This is because the suppliers involvement is out of control of the test
 		// suite and is driven by the AppGateServer's supplier endpoint selection.
-		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartBlockHeight) {
+		if suppliersPlan.shouldIncrementSupplierCount(notif, activeSuppliers, s.testStartHeight) {
 			newSuppliers = s.sendStakeSuppliersTxs(notif, &suppliersPlan)
 		}
 
 		var newGateways []*accountInfo
 		activeGateways := int64(len(s.activeGateways))
-		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.testStartBlockHeight) {
+		if gatewaysPlan.shouldIncrementActorCount(notif, activeGateways, s.testStartHeight) {
 			newGateways = s.sendStakeGatewaysTxs(notif, &gatewaysPlan)
 		}
 
 		var newApps []*accountInfo
 		activeApps := int64(len(s.activeApplications))
-		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.testStartBlockHeight) {
+		if appsPlan.shouldIncrementActorCount(notif, activeApps, s.testStartHeight) {
 			newApps = s.sendFundNewAppsTx(notif, &appsPlan)
 		}
 
@@ -482,7 +478,7 @@ func (s *relaysSuite) sendFundAvailableActorsTx(
 		// Determine the application funding amount based on the remaining test duration.
 		// for the initial applications, the funding is done at the start of the test,
 		// so the current block height is used.
-		appFundingAmount := s.getAppFundingAmount(s.testStartBlockHeight)
+		appFundingAmount := s.getAppFundingAmount(s.testStartHeight)
 		// The application is created with the keyName formatted as "app-%d",
 		// starting from 1.
 		application := s.createApplicationAccount(i+1, appFundingAmount)
@@ -578,7 +574,7 @@ func (s *relaysSuite) createApplicationAccount(
 // remaining test duration in blocks, the relay rate per application, the relay
 // cost, and the block duration.
 func (s *relaysSuite) getAppFundingAmount(currentBlockHeight int64) sdk.Coin {
-	currentTestDuration := s.testStartBlockHeight + s.testDurationBlocks - currentBlockHeight
+	currentTestDuration := s.testStartHeight + s.relayLoadDurationBlocks - currentBlockHeight
 	// Multiply by 2 to make sure the application does not run out of funds
 	// based on the number of relays it needs to send. Theoretically, `+1` should
 	// be enough, but probabilistic and time based mechanisms make it hard
@@ -1323,6 +1319,7 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 	batchWaitGroup.Add(relaysPerSec * int(blockDuration))
 
 	for i := 0; i < relaysPerSec*int(blockDuration); i++ {
+		iterationTime := relayBatchInfo.nextBatchTime.Add(time.Duration(i+1) * relayInterval)
 		batchLimiter.Go(s.ctx, func() {
 
 			relaysSent := s.numRelaysSent.Add(1) - 1
@@ -1341,13 +1338,16 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 			//	Int("total_apps", len(relayBatchInfo.appAccounts)).
 			//	Int("total_gws", len(relayBatchInfo.gateways)).
 			//	Str("time", time.Now().Format(time.RFC3339Nano)).
-			//	Msgf("sending relay #%d", numRelaysSent)
+			//	Msgf("sending relay #%d", relaysSent)
 
 			batchWaitGroup.Done()
 		})
 
 		// Sleep for the interval between each relay request.
-		time.Sleep(relayInterval)
+		sleepDuration := time.Until(iterationTime)
+		if sleepDuration > 0 {
+			time.Sleep(sleepDuration)
+		}
 	}
 
 	// Wait until all relay requests in the batch are sent.
