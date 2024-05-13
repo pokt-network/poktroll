@@ -23,6 +23,10 @@ const (
 
 var blockResultRegex = regexp.MustCompile(`"result":"0x\w+"}$`)
 
+// anvilSuite is a load/stress test suite for the Anvil server in isolation.
+// This suite is intended to be used to test baseline performance expectations of
+// the Anvil server such that we're can be certain that it won't be a bottleneck
+// in other load tests (e.g. pokt relay stress).
 type anvilSuite struct {
 	gocuke.TestingT
 	numRequests   int64
