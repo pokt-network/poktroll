@@ -123,10 +123,44 @@ sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocke
 network. (e.g. This is useful for a `Supplier` that is willing to provide redundant
 or geographically distributed services.)
 
+```mermaid
+flowchart
+
+    subgraph USW[US West]
+        RM1["Relay Miner 1 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph USE[US East]
+        RM2["Relay Miner 2 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph EUC[EU Central]
+        RM3["Relay Miner 3 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph CAC[CA Central]
+        RM4["Relay Miner 4 <br> (signing_key_name=Supplier2)"]
+    end
+
+    subgraph PB[POKT Blockchain]
+        direction TB
+        S1[Supplier1]
+        S2[Supplier2]
+    end
+
+    S1 -.- RM1
+    S1 -.- RM2
+    S1 -.- RM3
+    S2 -.- RM4
+```
+
 But it is not possible to have a single `RelayMiner` instance running with multiple
 `signing_key_name`s as this would involve more complex logic and/or configuration
 to determine which key to use, especially in the case of `Supplier`s that have
 overlapping services provided.
+
+TL;DR A 1:N Supplier:RelayMiner is okay, but a N:1 RelayMiner:Supplier relationship
+is not.
 
 :::
 

@@ -67,10 +67,8 @@ from the `Supplier`'s account balance.
 
 The upstaking requirement is to ensure that a `Supplier` incurs a cost for
 changing the services they provide too frequently, which could lead to a poor user
-experience for `Gateways` and `Applications`.
-
-The upstake amount may be adjusted in the future based on network conditions
-and feedback from the community.
+experience for `Gateways` and `Applications`. It is also necessary to dissuade
+sybil or flooding attacks on the network.
 
 :::
 
