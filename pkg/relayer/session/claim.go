@@ -115,25 +115,11 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		rs.pendingTxMu.Lock()
 		defer rs.pendingTxMu.Unlock()
 
-		logger := polylog.Ctx(ctx)
-
 		// this session should no longer be updated
 		claimRoot, err := session.Flush()
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false
 		}
-
-		// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
-		// which branch(es) to prove should be deterministic and use on-chain governance params.
-		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
-			sessionkeeper.GetSessionGracePeriodBlockCount()
-		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
-		if err != nil {
-			return either.Error[relayer.SessionTree](err), false
-		}
-		logger.Info().
-			Int64("session_start_block", pathBlock.Block.Height).
-			Msg("submitting claim")
 
 		sessionHeader := session.GetSessionHeader()
 		if err := rs.supplierClient.CreateClaim(ctx, *sessionHeader, claimRoot); err != nil {

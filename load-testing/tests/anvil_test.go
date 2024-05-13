@@ -93,7 +93,7 @@ func (s *anvilSuite) requestAnvilMethod(requestId int64, method string) {
 	// Send the JSON-RPC request and get the response body.
 	resBody := s.sendJSONRPCRequest(requestId, payloadJSON)
 
-	// Assert the response has a valid JSON-RPC result.
+	// Assert the response contains a block height in the expected format.
 	require.Regexp(s, blockResultRegex, resBody)
 
 	logger.Debug().
@@ -103,6 +103,7 @@ func (s *anvilSuite) requestAnvilMethod(requestId int64, method string) {
 }
 
 // sendJSONRPCRequest sends a JSON-RPC request to the Anvil server and returns the response body.
+// It asserts that the response has a 200 status code.
 func (s *anvilSuite) sendJSONRPCRequest(id int64, payloadJSON string) string {
 	payloadBuf := bytes.NewBuffer([]byte(payloadJSON))
 
