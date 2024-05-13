@@ -5,9 +5,9 @@ import paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyMinRelayDifficultyBits                = []byte("MinRelayDifficultyBits")
-	NameDefaultMinRelayDifficultyBits        = "min_relay_difficulty_bits"
-	DefaultMinRelayDifficultyBits     uint64 = 0 // TODO_BLOCKER(#142, #401): Determine the default value.
+	KeyMinRelayDifficultyBits            = []byte("MinRelayDifficultyBits")
+	NameMinRelayDifficultyBits           = "min_relay_difficulty_bits"
+	DefaultMinRelayDifficultyBits uint64 = 0 // TODO_BLOCKER(#142, #401): Determine the default value.
 )
 
 // ParamKeyTable the param key table for launch module

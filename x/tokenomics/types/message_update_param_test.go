@@ -20,6 +20,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 
 			expectedErr: ErrTokenomicsAddressInvalid,
@@ -28,15 +29,23 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "invalid",
-				// AsType is not validated by ValidateBasic
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 			expectedErr: ErrTokenomicsParamNameInvalid,
+		}, {
+			name: "invalid: incorrect param type",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      NameComputeUnitsToTokensMultiplier,
+				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
+			},
+			expectedErr: ErrTokenomicsParamInvalid,
 		}, {
 			name: "valid: correct authority and param name",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      NameComputeUnitsToTokensMultiplier,
-				// AsType is not validated by ValidateBasic
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 			expectedErr: nil,
 		},

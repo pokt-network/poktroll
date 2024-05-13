@@ -20,6 +20,7 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: "invalid_address",
 				Name:      "", // Doesn't matter for this test
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 
 			expectedErr: ErrProofInvalidAddress,
@@ -28,16 +29,24 @@ func TestMsgUpdateParam_ValidateBasic(t *testing.T) {
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
 				Name:      "WRONG_min_relay_difficulty_bits",
-				// AsType is not validated by ValidateBasic
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 
 			expectedErr: ErrProofParamNameInvalid,
 		}, {
+			name: "invalid: incorrect param type",
+			msg: MsgUpdateParam{
+				Authority: sample.AccAddress(),
+				Name:      NameMinRelayDifficultyBits,
+				AsType:    &MsgUpdateParam_AsString{AsString: "invalid"},
+			},
+			expectedErr: ErrProofParamInvalid,
+		}, {
 			name: "valid: correct authority and param name",
 			msg: MsgUpdateParam{
 				Authority: sample.AccAddress(),
-				Name:      NameDefaultMinRelayDifficultyBits,
-				// AsType is not validated by ValidateBasic
+				Name:      NameMinRelayDifficultyBits,
+				AsType:    &MsgUpdateParam_AsInt64{AsInt64: 1},
 			},
 
 			expectedErr: nil,

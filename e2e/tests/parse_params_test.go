@@ -59,50 +59,58 @@ func (s *suite) parseParam(table gocuke.DataTable, rowIdx int) paramAny {
 
 // paramsMapToMsgUpdateParams converts a paramsMap into a MsgUpdateParams, which
 // it returns as a proto.Message/cosmostypes.Msg interface type.
-func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMap) (msg cosmostypes.Msg) {
-	authority := authtypes.NewModuleAddress(s.granterName).String()
-
+func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMap) (msgUpdateParams cosmostypes.Msg) {
 	switch moduleName {
 	case tokenomicstypes.ModuleName:
-		msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
-			Authority: authority,
-			Params:    tokenomicstypes.Params{},
-		}
-
-		for paramName, paramValue := range paramsMap {
-			switch paramName {
-			case "compute_units_to_tokens_multiplier":
-				msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
-			default:
-				s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
-			}
-		}
-		msg = proto.Message(msgUpdateParams)
-
+		msgUpdateParams = s.newTokenomicsMsgUpdateParams(paramsMap)
 	case prooftypes.ModuleName:
-		msgUpdateParams := &prooftypes.MsgUpdateParams{
-			Authority: authority,
-			Params:    prooftypes.Params{},
-		}
-
-		for paramName, paramValue := range paramsMap {
-			s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
-			switch paramName {
-			case "min_relay_difficulty_bits":
-				msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
-			default:
-				s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
-			}
-		}
-		msg = proto.Message(msgUpdateParams)
-
+		msgUpdateParams = s.newProofMsgUpdateParams(paramsMap)
 	default:
 		err := fmt.Errorf("unexpected module name %q", moduleName)
 		s.Fatal(err)
 		panic(err)
 	}
 
-	return msg
+	return msgUpdateParams
+}
+
+func (s *suite) newTokenomicsMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &tokenomicstypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    tokenomicstypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		switch paramName {
+		case tokenomicstypes.NameComputeUnitsToTokensMultiplier:
+			msgUpdateParams.Params.ComputeUnitsToTokensMultiplier = uint64(paramValue.value.(int64))
+		default:
+			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &prooftypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    prooftypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
+		switch paramName {
+		case prooftypes.NameMinRelayDifficultyBits:
+			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
+		default:
+			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
 }
 
 // newMsgUpdateParam returns a MsgUpdateParam for the given module name, param name,

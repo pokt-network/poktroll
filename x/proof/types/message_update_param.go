@@ -31,17 +31,23 @@ func NewMsgUpdateParam(authority string, name string, value any) (*MsgUpdatePara
 	}, nil
 }
 
-// ValidateBasic performs a basic validation of the MsgUpdateParam fields.
+// ValidateBasic performs a basic validation of the MsgUpdateParam fields. It ensures
+// the parameter name is supported and the parameter type matches the expected type for
+// a given parameter name.
 func (msg *MsgUpdateParam) ValidateBasic() error {
 	// Validate the address
 	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
 		return ErrProofInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
-	// ValidateBasic only checks that the name of the parameter being update is valid
-	// but does not check its type or value.
+	// Parameter value cannot be nil.
+	if msg.AsType == nil {
+		return ErrProofParamInvalid.Wrap("missing param AsType")
+	}
+
+	// Parameter name must be supported by this module.
 	switch msg.Name {
-	case NameDefaultMinRelayDifficultyBits:
+	case NameMinRelayDifficultyBits:
 		return msg.paramTypeIsInt64()
 	default:
 		return ErrProofParamNameInvalid.Wrapf("unsupported name param %q", msg.Name)
