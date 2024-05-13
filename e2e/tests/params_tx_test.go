@@ -48,19 +48,21 @@ func (s *suite) sendAuthzExecTx(txJSONFilePath string) {
 	})
 }
 
-// newTempTxJSONFile creates a new temp file with the JSON representation of a tx
-// which contains a MsgUpdateParams for each module and paramsMap in the given moduleParamsMap.
-// It is intended for use with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
-// It returns the file path.
-func (s *suite) newTempUpdateParamsTxJSONFile(moduleParamsMap moduleParamsMap) *os.File {
+// newTempTxJSONFile creates & returns a new temp file with the JSON representation of a tx
+// which contains a MsgUpdateParams to update **all module params** for each module & paramsMap
+// in the given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI
+// subcommand: `poktrolld tx authz exec <tx_json_file>`.
+func (s *suite) newTempUpdateParamsTxJSONFile(moduleParams moduleParamsMap) *os.File {
 	var anyMsgs []*types.Any
 
-	for moduleName, paramsMap := range moduleParamsMap {
+	// Collect msgs to update all params (per msg) for each module.
+	// E.g., 3 modules with 2 params each will result in 3 MsgUpdateParams messages in one tx.
+	for moduleName, paramsMap := range moduleParams {
 		// Convert the params map to a MsgUpdateParams message.
-		msg := s.paramsMapToMsgUpdateParams(moduleName, paramsMap)
+		msgUpdateParams := s.paramsMapToMsgUpdateParams(moduleName, paramsMap)
 
 		// Convert the MsgUpdateParams message to a pb.Any message.
-		anyMsg, err := types.NewAnyWithValue(msg)
+		anyMsg, err := types.NewAnyWithValue(msgUpdateParams)
 		require.NoError(s, err)
 
 		anyMsgs = append(anyMsgs, anyMsg)
@@ -69,19 +71,22 @@ func (s *suite) newTempUpdateParamsTxJSONFile(moduleParamsMap moduleParamsMap) *
 	return s.newTempTxJSONFile(anyMsgs)
 }
 
-// newTempUpdateParamTxJSONFile creates a new temp file with the JSON representation of a tx,
-// intended for use with the `authz exec` CLI subcommand: `poktrolld tx authz exec <tx_json_file>`.
-// It returns the file path.
+// newTempUpdateParamTxJSONFile creates & returns a new temp file with the JSON representation of a tx
+// which contains a MsgUpdateParam to update params **individually** for each module & paramsMap in the
+// given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI subcommand:
+// `poktrolld tx authz exec <tx_json_file>`.
 func (s *suite) newTempUpdateParamTxJSONFile(moduleParams moduleParamsMap) *os.File {
 	var anyMsgs []*types.Any
 
+	// Collect msgs to update given params, one param per msg, for each module.
+	// E.g., 3 modules with 2 given params each will result in 6 MsgUpdateParam messages in one tx.
 	for moduleName, paramsMap := range moduleParams {
 		for _, param := range paramsMap {
-			// Convert the params map to a MsgUpdateParams message.
-			msg := s.newMsgUpdateParam(moduleName, param)
+			// Convert the params map to a MsgUpdateParam message.
+			msgUpdateParam := s.newMsgUpdateParam(moduleName, param)
 
 			// Convert the MsgUpdateParams message to a pb.Any message.
-			anyMsg, err := types.NewAnyWithValue(msg)
+			anyMsg, err := types.NewAnyWithValue(msgUpdateParam)
 			require.NoError(s, err)
 
 			anyMsgs = append(anyMsgs, anyMsg)
