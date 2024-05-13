@@ -69,5 +69,4 @@ jobs:
           reporter: github-check
           level: warning
           locale: "US"
-
 # TODO_IMPROVE: Enforce using k.Logger() when logging in the `x/` directory code.
