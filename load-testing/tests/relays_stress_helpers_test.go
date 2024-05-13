@@ -128,7 +128,7 @@ func (s *relaysSuite) initializeProvisionedActors() {
 
 // mapSessionInfoForLoadTestDurationFn returns a MapFn that maps over the session info
 // notification (each block) to determine when to start the test, when to send relay
-// batches & when to stop the test. If the current block is not the begining of a session,
+// batches & when to stop the test. If the current block is not the beginning of a session,
 // it waits for the next session to start before notifying (skipping meanwhile). Each
 // time it notifies, it also sends a relayBatchInfo to the given relayBatchInfoPublishCh
 // such that the corresponding pipeline branch will send a relay batch.
@@ -195,7 +195,8 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 
 			logger.Info().Msg("Stop sending relays, waiting for last claims and proofs to be submitted")
 			// Wait for one more session to let the last claims and proofs be submitted.
-			if blockHeight > s.testStartHeight+s.testDurationBlocks {
+			testEndBlockHeight := s.testStartHeight + s.testDurationBlocks
+			if blockHeight > testEndBlockHeight {
 				s.cancelCtx()
 			}
 

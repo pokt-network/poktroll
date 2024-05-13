@@ -23,6 +23,10 @@ const (
 
 var blockResultRegex = regexp.MustCompile(`"result":"0x\w+"}$`)
 
+// anvilSuite is a load/stress test suite for the Anvil server in isolation.
+// This suite is intended to be used to test baseline performance expectations of
+// the Anvil server such that we're can be certain that it won't be a bottleneck
+// in other load tests (e.g. pokt relay stress).
 type anvilSuite struct {
 	gocuke.TestingT
 	numRequests   int64
@@ -93,7 +97,7 @@ func (s *anvilSuite) requestAnvilMethod(requestId int64, method string) {
 	// Send the JSON-RPC request and get the response body.
 	resBody := s.sendJSONRPCRequest(requestId, payloadJSON)
 
-	// Assert the response has a valid JSON-RPC result.
+	// Assert the response contains a block height in the expected format.
 	require.Regexp(s, blockResultRegex, resBody)
 
 	logger.Debug().
@@ -103,6 +107,7 @@ func (s *anvilSuite) requestAnvilMethod(requestId int64, method string) {
 }
 
 // sendJSONRPCRequest sends a JSON-RPC request to the Anvil server and returns the response body.
+// It asserts that the response has a 200 status code.
 func (s *anvilSuite) sendJSONRPCRequest(id int64, payloadJSON string) string {
 	payloadBuf := bytes.NewBuffer([]byte(payloadJSON))
 

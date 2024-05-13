@@ -13,23 +13,17 @@ jobs:
   build-push-container:
     runs-on: ubuntu-latest
     steps:
-      - name: install ignite
-        # TODO_TECHDEBT: upgrade to the latest Ignite (the latest at the moment of creating a note is 0.28). Need to downgrade to fix CI pipelines. Might be done in scope of #240.
-        run: |
-          # curl https://get.ignite.com/cli! | bash
-          wget https://github.com/ignite/cli/releases/download/v28.2.0/ignite_28.2.0_linux_amd64.tar.gz
-          tar -xzf ignite_28.2.0_linux_amd64.tar.gz
-          sudo mv ignite /usr/local/bin/ignite
-          ignite version
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: "0" # Per https://github.com/ignite/cli/issues/1674#issuecomment-1144619147
 
+      - name: install ignite
+        run: make ignite_install
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21.6"
+          go-version: "1.22.2"
 
       - name: Install CI dependencies
         run: make install_ci_deps
@@ -54,7 +48,7 @@ jobs:
           images: |
             ghcr.io/pokt-network/poktrolld
           tags: |
-            type=ref,event=branch
+            type=ref,event=branch,suffix=-dev
             type=ref,event=pr
             type=sha
             type=sha,format=long

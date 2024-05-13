@@ -9,7 +9,6 @@ import (
 	"github.com/pokt-network/poktroll/pkg/observable/channel"
 	"github.com/pokt-network/poktroll/pkg/observable/filter"
 	"github.com/pokt-network/poktroll/pkg/observable/logging"
-	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/relayer"
 	"github.com/pokt-network/poktroll/pkg/relayer/protocol"
 	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
@@ -162,14 +161,6 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 				SessionHeader: session.GetSessionHeader(),
 			})
 		}
-
-		// Since all sessionTrees in the batch have the same start height and the
-		// slice is guaranteed to be non-empty, the first sessionTree's start height
-		// is used to log the claims submission.
-		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
-		polylog.Ctx(ctx).Info().
-			Int64("session_start_block", sessionStartHeight).
-			Msg("submitting claims")
 
 		if err := rs.supplierClient.CreateClaims(ctx, sessionClaims); err != nil {
 			failedCreateClaimsSessionsPublishCh <- sessionTrees

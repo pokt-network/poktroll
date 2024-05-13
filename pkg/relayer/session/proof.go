@@ -149,7 +149,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 		// is used to log the proofs submission.
 		sessionStartHeight := sessionTrees[0].GetSessionHeader().GetSessionStartBlockHeight()
 		rs.logger.Info().
-			Int64("session_start_height", sessionStartHeight).
+			Int64("session_end_height_with_grace_period", sessionStartHeight).
 			Msg("submitting proofs")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
