@@ -154,13 +154,13 @@ flowchart
     S2 -.- RM4
 ```
 
-But it is not possible to have a single `RelayMiner` instance running with multiple
-`signing_key_name`s as this would involve more complex logic and/or configuration
-to determine which key to use, especially in the case of `Supplier`s that have
-overlapping services provided.
+TODO(#528): It is not currently possible to have a single `RelayMiner` instance
+running with multiple `signing_key_name`s as this would involve more complex logic
+and/or configuration to determine which key to use, especially in the case of
+`Supplier`s that have overlapping services provided.
 
-TL;DR A 1:N Supplier:RelayMiner is okay, but a N:1 RelayMiner:Supplier relationship
-is not.
+TL;DR A 1:N Supplier:RelayMiner is possible, but a 1:N RelayMiner:Supplier relationship
+is not until #528 is complete.
 
 :::
 
