@@ -198,7 +198,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		)
 
 		// If the test duration is reached, cancel the context to stop the test.
-		testEndBlockHeight := s.startBlockHeight+s.testDurationBlocks
+		testEndBlockHeight := s.startBlockHeight + s.testDurationBlocks
 		if blockHeight >= testEndBlockHeight {
 			logger.Info().Msg("Test done, canceling scenario context")
 			s.cancelCtx()
