@@ -446,7 +446,8 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # TODO_COMMUNITY              - A TODO that may be a candidate for outsourcing to the community.
 # TODO_DECIDE                 - A TODO indicating we need to make a decision and document it using an ADR in the future; https://github.com/pokt-network/pocket-network-protocol/tree/main/ADRs
 # TODO_TECHDEBT               - Not a great implementation, but we need to fix it later.
-# TODO_BLOCKER                - Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
+# TODO_BLOCKER                - BEFORE MAINNET. Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
+# TODO_QOL                    - AFTER MAINNET. Similar to TECHDEBT, but of lower priority. Doesn't deserve a GitHub Issue but will improve everyone's life.
 # TODO_IMPROVE                - A nice to have, but not a priority. It's okay if we never get to this.
 # TODO_OPTIMIZE               - An opportunity for performance improvement if/when it's necessary
 # TODO_DISCUSS                - Probably requires a lengthy offline discussion to understand next steps.
