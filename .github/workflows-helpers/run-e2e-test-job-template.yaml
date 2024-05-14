@@ -22,7 +22,7 @@ spec:
               echo "Listing /root/.poktroll/keyring-test/ before copying:"
               ls -l /root/.poktroll/keyring-test/ && \
               # Copy files from the secret to the writable directory
-              cp -r /tmp/keys/* /root/.poktroll/keyring-test/ && \
+              cp -Lr /tmp/keys/* /root/.poktroll/keyring-test/ && \
               echo "Listing /root/.poktroll/keyring-test/ after copying:"
               ls -l /root/.poktroll/keyring-test/ && \
               poktrolld q gateway list-gateway --node=$POCKET_NODE && \
