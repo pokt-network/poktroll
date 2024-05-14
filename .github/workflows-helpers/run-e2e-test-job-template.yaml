@@ -17,10 +17,6 @@ spec:
           args:
             - "-c"
             - |
-              echo "Listing /tmp/keys before copying:"
-              ls -l /tmp/keys && \
-              echo "Listing /root/.poktroll/keyring-test/ before copying:"
-              ls -l /root/.poktroll/keyring-test/ && \
               # Copy files from the secret to the writable directory
               cp -Lr /tmp/keys/* /root/.poktroll/keyring-test/ && \
               echo "Listing /root/.poktroll/keyring-test/ after copying:"
