@@ -351,7 +351,8 @@ func (plans *actorLoadTestIncrementPlans) totalDurationBlocks() int64 {
 // blocksToFinalIncrementStart returns the number of blocks that will have
 // elapsed when the maxActorCount for the given actor has been committed.
 func (plan *actorLoadTestIncrementPlan) blocksToFinalIncrementStart() int64 {
-	return plan.maxActorCount / plan.actorIncrementCount * plan.blocksPerIncrement
+	actorIncrementNum := plan.maxActorCount - plan.initialActorCount
+	return actorIncrementNum / plan.actorIncrementCount * plan.blocksPerIncrement
 }
 
 // blocksToFinalIncrementEnd returns the number of blocks that will have
