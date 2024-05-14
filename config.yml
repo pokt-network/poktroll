@@ -179,3 +179,6 @@ genesis:
     service:
       params:
         add_service_fee: "1000000000"
+    session:
+      params:
+        num_blocks_per_session: 4

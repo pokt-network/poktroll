@@ -53,11 +53,11 @@ func (params *Params) ValidateBasic() error {
 func ValidateMinRelayDifficultyBits(v interface{}) error {
 	difficulty, ok := v.(uint64)
 	if !ok {
-		return ErrProofParamNameInvalid.Wrapf("invalid parameter type: %T", v)
+		return ErrProofParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	if difficulty < 0 {
-		return ErrProofParamNameInvalid.Wrapf("invalid ValidateMinRelayDifficultyBits: (%v)", difficulty)
+		return ErrProofParamInvalid.Wrapf("invalid MinRelayDifficultyBits: (%v)", difficulty)
 	}
 
 	return nil

@@ -10,7 +10,10 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	"github.com/regen-network/gocuke"
 
+	apptypes "github.com/pokt-network/poktroll/x/application/types"
 	prooftypes "github.com/pokt-network/poktroll/x/proof/types"
+	servicetypes "github.com/pokt-network/poktroll/x/service/types"
+	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
@@ -71,6 +74,13 @@ func (s *suite) paramsMapToMsgUpdateParams(moduleName string, paramsMap paramsMa
 		msgUpdateParams = s.newTokenomicsMsgUpdateParams(paramsMap)
 	case prooftypes.ModuleName:
 		msgUpdateParams = s.newProofMsgUpdateParams(paramsMap)
+	case sessiontypes.ModuleName:
+		msgUpdateParams = s.newSessionMsgUpdateParams(paramsMap)
+	case apptypes.ModuleName:
+		msgUpdateParams = s.newAppMsgUpdateParams(paramsMap)
+	case servicetypes.ModuleName:
+		msgUpdateParams = s.newServiceMsgUpdateParams(paramsMap)
+	// NB: gateway & supplier modules currently have no parameters
 	default:
 		err := fmt.Errorf("unexpected module name %q", moduleName)
 		s.Fatal(err)
@@ -112,6 +122,66 @@ func (s *suite) newProofMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		switch paramName {
 		case prooftypes.NameMinRelayDifficultyBits:
 			msgUpdateParams.Params.MinRelayDifficultyBits = uint64(paramValue.value.(int64))
+		default:
+			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newSessionMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &sessiontypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    sessiontypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
+		switch paramName {
+		case sessiontypes.NameNumBlocksPerSession:
+			msgUpdateParams.Params.NumBlocksPerSession = paramValue.value.(int64)
+		default:
+			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newAppMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &apptypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    apptypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
+		switch paramName {
+		case apptypes.NameMaxDelegatedGateways:
+			msgUpdateParams.Params.MaxDelegatedGateways = uint64(paramValue.value.(int64))
+		default:
+			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
+		}
+	}
+	return proto.Message(msgUpdateParams)
+}
+
+func (s *suite) newServiceMsgUpdateParams(params paramsMap) cosmostypes.Msg {
+	authority := authtypes.NewModuleAddress(s.granterName).String()
+
+	msgUpdateParams := &servicetypes.MsgUpdateParams{
+		Authority: authority,
+		Params:    servicetypes.Params{},
+	}
+
+	for paramName, paramValue := range params {
+		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
+		switch paramName {
+		case servicetypes.NameAddServiceFee:
+			msgUpdateParams.Params.AddServiceFee = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
