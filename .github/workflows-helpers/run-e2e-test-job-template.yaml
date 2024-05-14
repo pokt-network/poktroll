@@ -17,6 +17,9 @@ spec:
         args:
         - "-c"
         - |
+          # Copy files from the secret to the writable directory
+          cp -r /tmp/keys/* /root/.poktroll/keyring-test/ && \
+          # Continue with the rest of your commands
           poktrolld q gateway list-gateway --node=$POCKET_NODE && \
           poktrolld q application list-application --node=$POCKET_NODE && \
           poktrolld q supplier list-supplier --node=$POCKET_NODE && \
@@ -37,15 +40,19 @@ spec:
           value: http://${NAMESPACE}-gateway:80
         volumeMounts:
         - mountPath: /root/.poktroll/keyring-test/
-          name: keys-volume
+          name: writable-keys-volume
         - mountPath: /root/.poktroll/config/
           name: configs-volume
+        - mountPath: /tmp/keys
+          name: non-writable-keys-volume
+          readOnly: true
       restartPolicy: Never
       volumes:
-      - secret:
-          defaultMode: 420
+      - name: writable-keys-volume
+        emptyDir: {}
+      - name: non-writable-keys-volume
+        secret:
           secretName: keys-${IMAGE_TAG}
-        name: keys-volume
       - configMap:
           defaultMode: 420
           name: configs-${IMAGE_TAG}
