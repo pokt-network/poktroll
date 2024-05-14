@@ -309,8 +309,9 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
 	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
 
-.PHONY: send_relay_self_signing_app
-send_relay_self_signing_app: # Send a relay through the AppGateServer as an application that's self-signing
+## TODO_TECHDEBT: Rename self_signing parameter to `sovereign` in code, configs and documentation
+.PHONY: send_relay_sovereign_app
+send_relay_sovereign_app: # Send a relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	http://localhost:42069/anvil

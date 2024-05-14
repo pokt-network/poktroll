@@ -154,10 +154,10 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	return nil
 }
 
-// getRingPubKeysForAddress returns the public keys corresponding to a ring
-// It is a slice consisting of the application's public key and the public keys
-// of the gateways an application delegated the ability to sign relay requests
-// on its behalf at the given block height.
+// getRingPubKeysForAddress returns the public keys corresponding to a ring.
+// It returns a slice consisting of the application's public key and the public
+// keys of the gateways to which the application delegated the authority to sign
+// relay requests on its behalf at the given block height.
 func (rc *ringClient) getRingPubKeysForAddress(
 	ctx context.Context,
 	appAddress string,
@@ -177,8 +177,6 @@ func (rc *ringClient) getRingPubKeysForAddress(
 	ringAddresses := make([]string, 0)
 	ringAddresses = append(ringAddresses, appAddress) // app address is index 0
 
-	// If there is no delegateeGatewayAddresses, add app address a second time to
-	// make the ring size of minimum 2.
 	// TODO_IMPROVE: The appAddress is added twice because a ring signature
 	// requires AT LEAST two pubKeys. If the Application has not delegated
 	// to any gateways, the app's own address needs to be used twice to
@@ -220,9 +218,9 @@ func (rc *ringClient) addressesToPubKeys(
 }
 
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be
-// used to construct the ring to validate the app should pay for. It takes into
-// account both active delegations and pending undelegations that should still
-// be part of the ring.
+// used to construct the ring in order to validate that the given app should pay for.
+// It takes into account both active delegations and pending undelegations that
+// should still be part of the ring at the given block height.
 // The ring addresses slice is reconstructed by adding back the past delegated
 // gateways that have been undelegated after the target session end height.
 func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []string {
@@ -233,14 +231,15 @@ func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 
 	// Use a map to keep track of the gateways addresses that have been added to
 	// the active delegations slice to avoid duplicates.
-	addedDelegations := make(map[string]bool)
+	addedDelegations := make(map[string]struct{})
 
 	// Iterate over the pending undelegations recorded at their respective block
 	// height and check whether to add them back as active delegations.
 	for pendingUndelegationHeight, undelegatedGateways := range app.PendingUndelegations {
-		// If the pending undelegation happened BEFORE the target session end height,
-		// skip it, as it became effective before the target session end height.
-		if targetSessionEndHeight > pendingUndelegationHeight {
+		// If the pending undelegation happened BEFORE the target session end height, skip it.
+		// The gateway is pending undelegation and simply has not been pruned yet.
+		// It will be pruned in the near future.
+		if pendingUndelegationHeight < targetSessionEndHeight {
 			continue
 		}
 		// Add back any gateway address  that was undelegated after the target session
@@ -252,7 +251,7 @@ func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 
 			activeDelegationsAtHeight = append(activeDelegationsAtHeight, gatewayAddress)
 			// Mark the gateway address as added to avoid duplicates.
-			addedDelegations[gatewayAddress] = true
+			addedDelegations[gatewayAddress] = struct{}{}
 		}
 
 	}

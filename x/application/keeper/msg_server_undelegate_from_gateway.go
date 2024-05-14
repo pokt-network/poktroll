@@ -81,15 +81,7 @@ func (k Keeper) recordPendingUndelegation(
 	currentBlockHeight int64,
 ) {
 	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(currentBlockHeight))
-
-	// Create the session pending undelegations list entry for the given session
-	// end height if it doesn't already exist.
-	undelegatingGatewayListAtBlock, ok := app.PendingUndelegations[sessionEndHeight]
-	if !ok {
-		undelegatingGatewayListAtBlock = types.UndelegatingGatewayList{
-			GatewayAddresses: []string{},
-		}
-	}
+	undelegatingGatewayListAtBlock := app.PendingUndelegations[sessionEndHeight]
 
 	// Add the gateway address to the undelegated gateways list if it's not already there.
 	if !slices.Contains(undelegatingGatewayListAtBlock.GatewayAddresses, gatewayAddress) {
@@ -99,8 +91,9 @@ func (k Keeper) recordPendingUndelegation(
 		)
 		app.PendingUndelegations[sessionEndHeight] = undelegatingGatewayListAtBlock
 	} else {
-		k.logger.Warn(fmt.Sprintf(
-			"Application undelegating (again) from gateway it's already undelegating from with address [%s]",
+		k.logger.Info(fmt.Sprintf(
+			"Application with address [%s] undelegating (again) from a gateway it's already undelegating from with address [%s]",
+			app.Address,
 			gatewayAddress,
 		))
 	}

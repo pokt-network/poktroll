@@ -16,7 +16,8 @@ message Application {
   repeated poktroll.shared.ApplicationServiceConfig service_configs = 3; // The list of services this appliccation is configured to request service for
   repeated string delegatee_gateway_addresses = 4 [(cosmos_proto.scalar) = "cosmos.AddressString", (gogoproto.nullable) = false]; // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
    // A map from sessionEndHeights to a list of Gateways.
-   // The key is height is the last block of the sessions during which the undelegation was triggered.
+   // The key is the height of the last block of the session during which the
+   // respective undelegation was committed.
    // The value is a list of gateways being undelegated from.
    // TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
   // so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.

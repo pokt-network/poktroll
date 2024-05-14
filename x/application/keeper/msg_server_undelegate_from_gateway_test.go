@@ -276,12 +276,29 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
 }
 
+// Test an undelegation at different stages of the undelegation lifecycle:
+//
+//   - Create an application, stake it, delegate then undelegate it from a gateway.
+//
+//   - Increment the block height without moving to the next session and check that
+//     the undelegated gateway is still part of the application's delegate gateways.
+//
+//   - Increment the block height to the next session and check that the undelegated
+//     gateway is no longer part of the application's delegate gateways.
+//
+//   - Increment the block height past the tested session's grace period and check:
+//
+//   - The undelegated gateway is still not part of the application's delegate gateways
+//
+//   - If queried for a past block height, corresponding to the session at which the
+//     undelegation occurred, the reconstructed delegate gateway list does include
+//     the undelegated gateway.
 func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *testing.T) {
 	k, ctx := keepertest.ApplicationKeeper(t)
 	srv := keeper.NewMsgServerImpl(k)
 
 	undelegationHeight := int64(1)
-	sdkCtx, app, delegatedToAddr, pendingUndelegateToAddr :=
+	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
 		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
 
 	// Increment the block height without moving to the next session, then run the
@@ -295,22 +312,22 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 	require.NotNil(t, app)
 
 	// Verify that the gateway was removed from the application's delegatee gateway addresses.
-	require.NotContains(t, app.DelegateeGatewayAddresses, pendingUndelegateToAddr)
+	require.NotContains(t, app.DelegateeGatewayAddresses, pendingUndelegateFromAddr)
 
 	// Verify that the gateway is added to the pending undelegation list with the
 	// right sessionEndHeight as the map key.
 	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
 	require.Contains(t,
 		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
-		pendingUndelegateToAddr,
+		pendingUndelegateFromAddr,
 	)
 
-	// Verify that the other gateways are still delegated to the application.
-	require.Contains(t, app.DelegateeGatewayAddresses, delegatedToAddr)
+	// Verify that the application is still delegating to other gateways.
+	require.Contains(t, app.DelegateeGatewayAddresses, delegateAddr)
 
-	// Verify that the reconstructed delegatee gateway list include the undelegated gateway.
+	// Verify that the reconstructed delegatee gateway list includes the undelegated gateway.
 	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
-	require.Contains(t, gatewayAddresses, pendingUndelegateToAddr)
+	require.Contains(t, gatewayAddresses, pendingUndelegateFromAddr)
 
 	// Increment the block height to the next session and run the pruning
 	// undelegations logic again.
@@ -326,7 +343,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 	// Verify that when queried for the next session the reconstructed delegatee
 	// gateway list does not include the undelegated gateway.
 	nextSessionGatewayAddresses := rings.GetRingAddressesAtBlock(&app, nextSessionStartHeight)
-	require.NotContains(t, nextSessionGatewayAddresses, pendingUndelegateToAddr)
+	require.NotContains(t, nextSessionGatewayAddresses, pendingUndelegateFromAddr)
 
 	// Increment the block height past the tested session's grace period and run
 	// the pruning undelegations logic again.
@@ -338,13 +355,13 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *t
 	// Verify that when queried for a block height past the tested session's grace period,
 	// the reconstructed delegatee gateway list does not include the undelegated gateway.
 	pastGracePeriodGatewayAddresses := rings.GetRingAddressesAtBlock(&app, afterSessionGracePeriodHeight)
-	require.NotContains(t, pastGracePeriodGatewayAddresses, pendingUndelegateToAddr)
+	require.NotContains(t, pastGracePeriodGatewayAddresses, pendingUndelegateFromAddr)
 
-	// Verify that when queried for a block height corresponding to the past session
-	// that has its grace period elapsed, the reconstructed delegatee gateway list
-	// does include the undelegated gateway.
-	pastGracePeriodGatewayAddresses = rings.GetRingAddressesAtBlock(&app, int64(sessionEndHeight))
-	require.Contains(t, pastGracePeriodGatewayAddresses, pendingUndelegateToAddr)
+	// Ensure that when queried for the block height corresponding to the session
+	// at which the undelegation occurred, the reconstructed delegatee gateway list
+	// includes the undelegated gateway.
+	gatewayAddressesBeforeUndelegation := rings.GetRingAddressesAtBlock(&app, int64(sessionEndHeight))
+	require.Contains(t, gatewayAddressesBeforeUndelegation, pendingUndelegateFromAddr)
 }
 
 func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(t *testing.T) {
@@ -352,7 +369,7 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 	srv := keeper.NewMsgServerImpl(k)
 
 	undelegationHeight := int64(1)
-	sdkCtx, app, delegatedToAddr, pendingUndelegateToAddr :=
+	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
 		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
 
 	// Increment the block height past the undelegation retention period then run
@@ -374,8 +391,8 @@ func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(
 	// Verify that the reconstructed delegatee gateway list can no longer include
 	// the undelegated gateway since it has been pruned.
 	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, undelegationHeight)
-	require.NotContains(t, gatewayAddressesAfterPruning, pendingUndelegateToAddr)
-	require.Contains(t, gatewayAddressesAfterPruning, delegatedToAddr)
+	require.NotContains(t, gatewayAddressesAfterPruning, pendingUndelegateFromAddr)
+	require.Contains(t, gatewayAddressesAfterPruning, delegateAddr)
 }
 
 func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameSessionNumber(t *testing.T) {
@@ -413,7 +430,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 		gatewayAddrToRedelegate,
 	)
 
-	// Verify that the reconstructed delegatee gateway list include the redelegated gateway.
+	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway.
 	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddresses, gatewayAddrToRedelegate)
 
@@ -435,7 +452,7 @@ func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameS
 	// sessionEndHeight key.
 	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
 
-	// Verify that the reconstructed delegatee gateway list includes the reundelegated gateway
+	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway
 	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
 	require.Contains(t, gatewayAddressesAfterPruning, gatewayAddrToRedelegate)
 }
@@ -455,8 +472,8 @@ func createAppStakeDelegateAndUndelegate(
 ) (
 	sdkCtx sdk.Context,
 	app types.Application,
-	delegatedToAddr,
-	pendingUndelegateToAddr string,
+	delegateAddr,
+	pendingUndelegateFromAddr string,
 ) {
 	// Generate an application address and stake the application.
 	appAddr := sample.AccAddress()
@@ -474,22 +491,22 @@ func createAppStakeDelegateAndUndelegate(
 
 	// Generate gateway addresses, mock the gateways being staked then delegate the
 	// application to the gateways.
-	delegatedToAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, delegatedToAddr)
+	delegateAddr = sample.AccAddress()
+	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr)
 
 	delegateMsg := &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,
-		GatewayAddress: delegatedToAddr,
+		GatewayAddress: delegateAddr,
 	}
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
 
-	pendingUndelegateToAddr = sample.AccAddress()
-	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateToAddr)
+	pendingUndelegateFromAddr = sample.AccAddress()
+	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr)
 
 	delegateMsg = &types.MsgDelegateToGateway{
 		AppAddress:     appAddr,
-		GatewayAddress: pendingUndelegateToAddr,
+		GatewayAddress: pendingUndelegateFromAddr,
 	}
 	_, err = srv.DelegateToGateway(ctx, delegateMsg)
 	require.NoError(t, err)
@@ -500,7 +517,7 @@ func createAppStakeDelegateAndUndelegate(
 	// Undelegate from the first gateway.
 	undelegateMsg := &types.MsgUndelegateFromGateway{
 		AppAddress:     appAddr,
-		GatewayAddress: pendingUndelegateToAddr,
+		GatewayAddress: pendingUndelegateFromAddr,
 	}
 	_, err = srv.UndelegateFromGateway(sdkCtx, undelegateMsg)
 	require.NoError(t, err)
@@ -511,7 +528,7 @@ func createAppStakeDelegateAndUndelegate(
 	require.True(t, isAppFound)
 	require.NotNil(t, foundApp)
 
-	return sdkCtx, foundApp, delegatedToAddr, pendingUndelegateToAddr
+	return sdkCtx, foundApp, delegateAddr, pendingUndelegateFromAddr
 }
 
 // getUndelegationPruningBlockHeight returns the block height at which undelegations
