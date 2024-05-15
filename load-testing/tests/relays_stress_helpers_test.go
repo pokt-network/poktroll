@@ -215,7 +215,6 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		)
 
 		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
-			fmt.Printf("activeApplications: %d, activeSuppliers: %d==============\n", len(s.activeApplications), len(s.activeSuppliers))
 			newSessionsCount := len(s.activeApplications) * len(s.activeSuppliers)
 			s.expectedClaimsAndProofsCount = s.expectedClaimsAndProofsCount + newSessionsCount
 		}
