@@ -50,7 +50,7 @@ func (s *suite) sendAuthzExecTx(signingKeyName, txJSONFilePath string) {
 	})
 }
 
-// newTempTxJSONFile creates & returns a new temp file with the JSON representation of a tx
+// newTempUpdateParamsTxJSONFile creates & returns a new temp file with the JSON representation of a tx
 // which contains a MsgUpdateParams to update **all module params** for each module & paramsMap
 // in the given moduleParamsMap. The returned file is intended for use with the `authz exec` CLI
 // subcommand: `poktrolld tx authz exec <tx_json_file>`.
