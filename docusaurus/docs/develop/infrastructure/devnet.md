@@ -25,11 +25,16 @@ https://grafana.poktroll.com/explore?schemaVersion=1&panes=%7B%22TtK%22:%7B%22da
 
 ![Grafana logs explorer](./grafana_explore_logs.png)
 
-## Infrastructure provisioning
+## Infrastructure Provisioning
 
-- K8s cluster is provisioned by Grove internal tooling;
+- The Kubernetes cluster is provisioned using Grove's internal tooling.
 - We set up ArgoCD on the cluster and configure it to sync the [main/root application on the cluster](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1-app.yaml).
-- ArgoCD, using this ArgoCD Application, provisions all the resources and other ArgoCD Applications that are included with that ArgoCD Application. This approach follows [ArgoCD App of Apps pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/).
-- One of the manifests provisioned is [an ArgoCD ApplicationSet](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-github-label.yaml) that monitors our GitHub labels and provisions a network for each github issue with `devnet` label.
-- As a part of our CI run, when `devnet-test-e2e` label is present on a GitHub issue, we run a [script](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test.sh#L1) that creates a [Kubernetes Job](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test-job-template.yaml) for that DevNet.
-- When the PR is closed or a label is removed, the infrastructure is cleaned up.
+- ArgoCD, through this ArgoCD Application, provisions all the necessary resources and other ArgoCD Applications included in that Application, following the [ArgoCD App of Apps pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/).
+- One of the manifests provisioned is an [ArgoCD ApplicationSet](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-github-label.yaml) that monitors our GitHub labels and provisions a network for each GitHub issue tagged with the `devnet` label.
+- As part of our CI process, when a GitHub issue is labeled `devnet-test-e2e`, we execute a [script](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test.sh#L1) that creates a [Kubernetes Job](https://github.com/pokt-network/poktroll/blob/main/.github/workflows-helpers/run-e2e-test-job-template.yaml) for that DevNet.
+- When the PR is closed or the label is removed, the infrastructure is cleaned up.
+- We have an option to provision presistent devnets by creating a devnet yaml file in [this directory](https://github.com/pokt-network/protocol-infra/tree/main/devnets-configs) ([ArgoCD Application that monitors this directory](https://github.com/pokt-network/protocol-infra/blob/main/clusters/protocol-us-central1/devnets-persistent.yaml) for reference). 
+
+## Configuration
+
+Each DevNet ArgoCD App (following the App of Apps pattern) provisions a Helm chart called [full-network](https://github.com/pokt-network/protocol-infra/tree/main/charts/full-network), which includes other ArgoCD applications that deploy validators and off-chain actors. As part of the Helm chart values, we can pass configuration file changes. For example, see the [relayminer configuration](https://github.com/pokt-network/protocol-infra/blob/main/charts/full-network/templates/Application-Relayminer.yaml#L37). All possible values can be found in the `values.yaml` of the Helm chart, such as the [relayminer Helm chart](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
