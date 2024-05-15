@@ -21,8 +21,10 @@ import (
 
 // txDelaySeconds is the number of seconds to wait for a tx to be committed before making assertions.
 const (
-	txDelaySeconds    = 3
-	minimalFundTokens = "1000000upokt"
+	txDelaySeconds = 3
+	// txFeesCoinStr is the string representation of the amount & denom of tokens
+	// which are sufficient to pay for tx fees in the test.
+	txFeesCoinStr = "1000000upokt"
 )
 
 // AllModuleParamsAreSetToTheirDefaultValues asserts that all module params are set to their default values.
@@ -208,13 +210,14 @@ func (s *suite) ensureAccountForKeyName(keyName string) {
 	// Get the address of the key.
 	addr := s.getKeyAddress(keyName)
 
-	// Fund the account with minimal tokens to ensure it is on-chain.
-	s.ensureOnChainAccount(addr)
+	// Fund the account with minimal tokens to ensure it can afford tx fees.
+	coin, err := cosmostypes.ParseCoinNormalized(txFeesCoinStr)
+	require.NoError(s, err)
+	s.fundAddress(addr, coin)
 }
 
-// ensureOnChainAccount sends a minimal amount of upokt tokens to the given address
-// to ensure it has an on-chain account.
-func (s *suite) ensureOnChainAccount(addr string) {
+// fundAddress sends the given amount & demon of tokens to the given address.
+func (s *suite) fundAddress(addr string, coin cosmostypes.Coin) {
 	s.Helper()
 
 	// poktrolld tx bank send <from> <to> <amount> --keyring-backend test --chain-id <chain_id> --yes
@@ -224,7 +227,7 @@ func (s *suite) ensureOnChainAccount(addr string) {
 		"send",
 		"pnf",
 		addr,
-		minimalFundTokens,
+		coin.String(),
 		"--yes",
 	}
 
