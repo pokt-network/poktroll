@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pokt-network/poktroll/x/tokenomics/types"
 )
@@ -25,7 +26,7 @@ func (k msgServer) UpdateParams(ctx context.Context, msg *types.MsgUpdateParams)
 		)
 	}
 
-	logger.Info("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params)
+	logger.Info(fmt.Sprintf("About to update params from [%v] to [%v]", k.GetParams(ctx), msg.Params))
 
 	if err := k.SetParams(ctx, msg.Params); err != nil {
 		return nil, err

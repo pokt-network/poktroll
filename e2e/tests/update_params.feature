@@ -49,7 +49,7 @@ Feature: Params Namespace
       | tokenomics | /poktroll.tokenomics.MsgUpdateParam | compute_units_to_tokens_multiplier | 68          | int64      |
       | proof      | /poktroll.proof.MsgUpdateParam      | min_relay_difficulty_bits          | 12          | int64      |
 
-  Scenario: An authorized user updates individual module params
+  Scenario: An unauthorized cannot update individual module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
     And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message
