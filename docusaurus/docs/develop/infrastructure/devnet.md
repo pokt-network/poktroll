@@ -11,8 +11,6 @@ This page is only relevant to you if you are part of the core protocol team at G
 
 :::
 
-- [](#)
-
 ## GCP Console
 
 https://console.cloud.google.com/kubernetes/workload/overview?project=protocol-us-central1-d505&pageState=(%22savedViews%22:(%22i%22:%22a39690ef57a74a59b7550d42ac7655bc%22,%22c%22:%5B%5D,%22n%22:%5B%22devnet-issue-152%22%5D))

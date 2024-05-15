@@ -5,6 +5,12 @@ title: TestNet
 
 # TestNet <!-- omit in toc -->
 
+:::note
+
+This page is only relevant to you if you are part of the core protocol team at Grove.
+
+:::
+
 ## Infrastructure provisioning
 
 - K8s cluster is provisioned by Grove internal tooling;
