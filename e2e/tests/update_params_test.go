@@ -326,7 +326,7 @@ func (s *suite) assertExpectedModuleParamsUpdated(moduleName string) {
 			},
 		)
 	case sessiontypes.ModuleName:
-		numBlocksPerSession := s.expectedModuleParams[moduleName][sessiontypes.NameNumBlocksPerSession].value.(int64)
+		numBlocksPerSession := uint64(s.expectedModuleParams[moduleName][sessiontypes.NameNumBlocksPerSession].value.(int64))
 		assertUpdatedParams(s,
 			[]byte(res.Stdout),
 			&sessiontypes.QueryParamsResponse{

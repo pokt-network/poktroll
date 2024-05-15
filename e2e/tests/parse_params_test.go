@@ -141,7 +141,7 @@ func (s *suite) newSessionMsgUpdateParams(params paramsMap) cosmostypes.Msg {
 		s.Logf("paramName: %s, value: %v", paramName, paramValue.value)
 		switch paramName {
 		case sessiontypes.NameNumBlocksPerSession:
-			msgUpdateParams.Params.NumBlocksPerSession = paramValue.value.(int64)
+			msgUpdateParams.Params.NumBlocksPerSession = uint64(paramValue.value.(int64))
 		default:
 			s.Fatalf("unexpected %q type param name %q", paramValue.typeStr, paramName)
 		}
