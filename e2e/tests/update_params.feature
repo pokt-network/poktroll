@@ -16,7 +16,7 @@ Feature: Params Namespace
   Scenario: An authorized user updates all "tokenomics" module params
     Given the user has the pocketd binary installed
     And all "tokenomics" module params are set to their default values
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.tokenomics.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "tokenomics" module params
       | name                               | value | type  |
       | compute_units_to_tokens_multiplier | 420   | int64 |
@@ -27,7 +27,7 @@ Feature: Params Namespace
   Scenario: An authorized user updates all "proof" module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     When the "pnf" account sends an authz exec message to update all "proof" module params
       | name                      | value | type  |
       | min_relay_difficulty_bits | 8     | int64 |
@@ -38,7 +38,7 @@ Feature: Params Namespace
   Scenario Outline: An authorized user updates individual <module> module params
     Given the user has the pocketd binary installed
     And all "<module>" module params are set to their default values
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "<message_type>" message
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "<message_type>" message exists
     When the "pnf" account sends an authz exec message to update "<module>" the module param
       | name           | value           | type           |
       | <param_name> | <param_value> | <param_type> |
@@ -52,7 +52,7 @@ Feature: Params Namespace
   Scenario: An unauthorized cannot update individual module params
     Given the user has the pocketd binary installed
     And all "proof" module params are set to their default values
-    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message
+    And an authz grant from the "gov" "module" account to the "pnf" "user" account for the "/poktroll.proof.MsgUpdateParams" message exists
     And a key and account exist for the "unauthorized" user
     When the "unauthorized" account sends an authz exec message to update "proof" the module param
       | name                       | value | type  |
