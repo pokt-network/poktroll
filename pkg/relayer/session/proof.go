@@ -79,13 +79,13 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	createClaimHeight := sessionTrees[0].GetSessionHeader().GetSessionEndBlockHeight()
 	// TODO_TECHDEBT(@red-0ne): Centralize the business logic that involves taking
 	// into account the heights, windows and grace periods into helper functions.
-	submitProofWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
+	submitProofsWindowStartHeight := createClaimHeight + sessionkeeper.GetSessionGracePeriodBlockCount()
 	// TODO_BLOCKER: query the on-chain governance parameter once available.
 	// + claimproofparams.GovSubmitProofWindowStartHeightOffset
 
 	// we wait for submitProofsWindowStartHeight to be received before proceeding since we need its hash
 	rs.logger.Info().
-		Int64("submitProofsWindowStartHeight", submitProofWindowStartHeight).
+		Int64("submitProofsWindowStartHeight", submitProofsWindowStartHeight).
 		Msg("waiting & blocking for global earliest proof submission height")
 
 	// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
@@ -93,7 +93,7 @@ func (rs *relayerSessionsManager) waitForEarliestSubmitProofsHeightAndGeneratePr
 	// submitProofWindowStartBlock is the block that will have its hash used as the
 	// source of entropy for all the session trees in that batch, waiting for it to
 	// be received before proceeding.
-	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofWindowStartHeight)
+	submitProofWindowStartBlock := rs.waitForBlock(ctx, submitProofsWindowStartHeight)
 
 	// Generate proofs for all sessionTrees concurrently while waiting for the
 	// earliest submitProofsHeight (pseudorandom submission distribution) to be reached.

@@ -1,17 +1,15 @@
 package types
 
 import (
-	"fmt"
-
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 )
 
 var (
 	_ paramtypes.ParamSet = (*Params)(nil)
 
-	KeyComputeUnitsToTokensMultiplier = []byte("ComputeUnitsToTokensMultiplier")
-	// TODO: Determine the default value
-	DefaultComputeUnitsToTokensMultiplier uint64 = 42
+	KeyComputeUnitsToTokensMultiplier            = []byte("ComputeUnitsToTokensMultiplier")
+	NameComputeUnitsToTokensMultiplier           = "compute_units_to_tokens_multiplier"
+	DefaultComputeUnitsToTokensMultiplier uint64 = 42 // TODO_BLOCKER: Determine the default value.
 )
 
 // ParamKeyTable the param key table for launch module
@@ -39,30 +37,31 @@ func (p *Params) ParamSetPairs() paramtypes.ParamSetPairs {
 		paramtypes.NewParamSetPair(
 			KeyComputeUnitsToTokensMultiplier,
 			&p.ComputeUnitsToTokensMultiplier,
-			validateComputeUnitsToTokensMultiplier,
+			ValidateComputeUnitsToTokensMultiplier,
 		),
 	}
 }
 
-// Validate validates the set of params
-func (p Params) Validate() error {
-	if err := validateComputeUnitsToTokensMultiplier(p.ComputeUnitsToTokensMultiplier); err != nil {
+// ValidateBasic does a sanity check on the provided params.
+func (params *Params) ValidateBasic() error {
+	// Validate the ComputeUnitsToTokensMultiplier
+	if err := ValidateComputeUnitsToTokensMultiplier(params.ComputeUnitsToTokensMultiplier); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// validateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier param
+// ValidateComputeUnitsToTokensMultiplier validates the ComputeUnitsToTokensMultiplier governance parameter.
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
-func validateComputeUnitsToTokensMultiplier(v interface{}) error {
+func ValidateComputeUnitsToTokensMultiplier(v interface{}) error {
 	computeUnitsToTokensMultiplier, ok := v.(uint64)
 	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", v)
+		return ErrTokenomicsParamsInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
 	if computeUnitsToTokensMultiplier <= 0 {
-		return fmt.Errorf("invalid compute to tokens multiplier: %d", computeUnitsToTokensMultiplier)
+		return ErrTokenomicsParamsInvalid.Wrapf("invalid ComputeUnitsToTokensMultiplier: (%v)", computeUnitsToTokensMultiplier)
 	}
 
 	return nil

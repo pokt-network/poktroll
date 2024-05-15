@@ -87,6 +87,7 @@ func (k msgServer) createApplication(
 		Stake:                     msg.Stake,
 		ServiceConfigs:            msg.Services,
 		DelegateeGatewayAddresses: make([]string, 0),
+		PendingUndelegations:      make(map[uint64]types.UndelegatingGatewayList),
 	}
 }
 

@@ -874,6 +874,1162 @@ func (x *fastReflection_MsgUpdateParamsResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
+	md_MsgUpdateParam           protoreflect.MessageDescriptor
+	fd_MsgUpdateParam_authority protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_name      protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_as_string protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_as_int64  protoreflect.FieldDescriptor
+	fd_MsgUpdateParam_as_bytes  protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_proof_tx_proto_init()
+	md_MsgUpdateParam = File_poktroll_proof_tx_proto.Messages().ByName("MsgUpdateParam")
+	fd_MsgUpdateParam_authority = md_MsgUpdateParam.Fields().ByName("authority")
+	fd_MsgUpdateParam_name = md_MsgUpdateParam.Fields().ByName("name")
+	fd_MsgUpdateParam_as_string = md_MsgUpdateParam.Fields().ByName("as_string")
+	fd_MsgUpdateParam_as_int64 = md_MsgUpdateParam.Fields().ByName("as_int64")
+	fd_MsgUpdateParam_as_bytes = md_MsgUpdateParam.Fields().ByName("as_bytes")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgUpdateParam)(nil)
+
+type fastReflection_MsgUpdateParam MsgUpdateParam
+
+func (x *MsgUpdateParam) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParam)(x)
+}
+
+func (x *MsgUpdateParam) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_proof_tx_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgUpdateParam_messageType fastReflection_MsgUpdateParam_messageType
+var _ protoreflect.MessageType = fastReflection_MsgUpdateParam_messageType{}
+
+type fastReflection_MsgUpdateParam_messageType struct{}
+
+func (x fastReflection_MsgUpdateParam_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParam)(nil)
+}
+func (x fastReflection_MsgUpdateParam_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParam)
+}
+func (x fastReflection_MsgUpdateParam_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParam
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgUpdateParam) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParam
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgUpdateParam) Type() protoreflect.MessageType {
+	return _fastReflection_MsgUpdateParam_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgUpdateParam) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParam)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgUpdateParam) Interface() protoreflect.ProtoMessage {
+	return (*MsgUpdateParam)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgUpdateParam) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Authority != "" {
+		value := protoreflect.ValueOfString(x.Authority)
+		if !f(fd_MsgUpdateParam_authority, value) {
+			return
+		}
+	}
+	if x.Name != "" {
+		value := protoreflect.ValueOfString(x.Name)
+		if !f(fd_MsgUpdateParam_name, value) {
+			return
+		}
+	}
+	if x.AsType != nil {
+		switch o := x.AsType.(type) {
+		case *MsgUpdateParam_AsString:
+			v := o.AsString
+			value := protoreflect.ValueOfString(v)
+			if !f(fd_MsgUpdateParam_as_string, value) {
+				return
+			}
+		case *MsgUpdateParam_AsInt64:
+			v := o.AsInt64
+			value := protoreflect.ValueOfInt64(v)
+			if !f(fd_MsgUpdateParam_as_int64, value) {
+				return
+			}
+		case *MsgUpdateParam_AsBytes:
+			v := o.AsBytes
+			value := protoreflect.ValueOfBytes(v)
+			if !f(fd_MsgUpdateParam_as_bytes, value) {
+				return
+			}
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgUpdateParam) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		return x.Authority != ""
+	case "poktroll.proof.MsgUpdateParam.name":
+		return x.Name != ""
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		if x.AsType == nil {
+			return false
+		} else if _, ok := x.AsType.(*MsgUpdateParam_AsString); ok {
+			return true
+		} else {
+			return false
+		}
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		if x.AsType == nil {
+			return false
+		} else if _, ok := x.AsType.(*MsgUpdateParam_AsInt64); ok {
+			return true
+		} else {
+			return false
+		}
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		if x.AsType == nil {
+			return false
+		} else if _, ok := x.AsType.(*MsgUpdateParam_AsBytes); ok {
+			return true
+		} else {
+			return false
+		}
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParam) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		x.Authority = ""
+	case "poktroll.proof.MsgUpdateParam.name":
+		x.Name = ""
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		x.AsType = nil
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		x.AsType = nil
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		x.AsType = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgUpdateParam) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		value := x.Authority
+		return protoreflect.ValueOfString(value)
+	case "poktroll.proof.MsgUpdateParam.name":
+		value := x.Name
+		return protoreflect.ValueOfString(value)
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		if x.AsType == nil {
+			return protoreflect.ValueOfString("")
+		} else if v, ok := x.AsType.(*MsgUpdateParam_AsString); ok {
+			return protoreflect.ValueOfString(v.AsString)
+		} else {
+			return protoreflect.ValueOfString("")
+		}
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		if x.AsType == nil {
+			return protoreflect.ValueOfInt64(int64(0))
+		} else if v, ok := x.AsType.(*MsgUpdateParam_AsInt64); ok {
+			return protoreflect.ValueOfInt64(v.AsInt64)
+		} else {
+			return protoreflect.ValueOfInt64(int64(0))
+		}
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		if x.AsType == nil {
+			return protoreflect.ValueOfBytes(nil)
+		} else if v, ok := x.AsType.(*MsgUpdateParam_AsBytes); ok {
+			return protoreflect.ValueOfBytes(v.AsBytes)
+		} else {
+			return protoreflect.ValueOfBytes(nil)
+		}
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParam) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		x.Authority = value.Interface().(string)
+	case "poktroll.proof.MsgUpdateParam.name":
+		x.Name = value.Interface().(string)
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		cv := value.Interface().(string)
+		x.AsType = &MsgUpdateParam_AsString{AsString: cv}
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		cv := value.Int()
+		x.AsType = &MsgUpdateParam_AsInt64{AsInt64: cv}
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		cv := value.Bytes()
+		x.AsType = &MsgUpdateParam_AsBytes{AsBytes: cv}
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParam) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		panic(fmt.Errorf("field authority of message poktroll.proof.MsgUpdateParam is not mutable"))
+	case "poktroll.proof.MsgUpdateParam.name":
+		panic(fmt.Errorf("field name of message poktroll.proof.MsgUpdateParam is not mutable"))
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		panic(fmt.Errorf("field as_string of message poktroll.proof.MsgUpdateParam is not mutable"))
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		panic(fmt.Errorf("field as_int64 of message poktroll.proof.MsgUpdateParam is not mutable"))
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		panic(fmt.Errorf("field as_bytes of message poktroll.proof.MsgUpdateParam is not mutable"))
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgUpdateParam) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParam.authority":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.MsgUpdateParam.name":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.MsgUpdateParam.as_string":
+		return protoreflect.ValueOfString("")
+	case "poktroll.proof.MsgUpdateParam.as_int64":
+		return protoreflect.ValueOfInt64(int64(0))
+	case "poktroll.proof.MsgUpdateParam.as_bytes":
+		return protoreflect.ValueOfBytes(nil)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParam"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParam does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgUpdateParam) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	case "poktroll.proof.MsgUpdateParam.as_type":
+		if x.AsType == nil {
+			return nil
+		}
+		switch x.AsType.(type) {
+		case *MsgUpdateParam_AsString:
+			return x.Descriptor().Fields().ByName("as_string")
+		case *MsgUpdateParam_AsInt64:
+			return x.Descriptor().Fields().ByName("as_int64")
+		case *MsgUpdateParam_AsBytes:
+			return x.Descriptor().Fields().ByName("as_bytes")
+		}
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.MsgUpdateParam", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgUpdateParam) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParam) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgUpdateParam) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgUpdateParam) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgUpdateParam)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		l = len(x.Authority)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		l = len(x.Name)
+		if l > 0 {
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		switch x := x.AsType.(type) {
+		case *MsgUpdateParam_AsString:
+			if x == nil {
+				break
+			}
+			l = len(x.AsString)
+			n += 1 + l + runtime.Sov(uint64(l))
+		case *MsgUpdateParam_AsInt64:
+			if x == nil {
+				break
+			}
+			n += 1 + runtime.Sov(uint64(x.AsInt64))
+		case *MsgUpdateParam_AsBytes:
+			if x == nil {
+				break
+			}
+			l = len(x.AsBytes)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParam)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		switch x := x.AsType.(type) {
+		case *MsgUpdateParam_AsString:
+			i -= len(x.AsString)
+			copy(dAtA[i:], x.AsString)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AsString)))
+			i--
+			dAtA[i] = 0x1a
+		case *MsgUpdateParam_AsInt64:
+			i = runtime.EncodeVarint(dAtA, i, uint64(x.AsInt64))
+			i--
+			dAtA[i] = 0x30
+		case *MsgUpdateParam_AsBytes:
+			i -= len(x.AsBytes)
+			copy(dAtA[i:], x.AsBytes)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.AsBytes)))
+			i--
+			dAtA[i] = 0x3a
+		}
+		if len(x.Name) > 0 {
+			i -= len(x.Name)
+			copy(dAtA[i:], x.Name)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Name)))
+			i--
+			dAtA[i] = 0x12
+		}
+		if len(x.Authority) > 0 {
+			i -= len(x.Authority)
+			copy(dAtA[i:], x.Authority)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.Authority)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParam)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParam: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParam: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Authority", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Authority = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 2:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.Name = string(dAtA[iNdEx:postIndex])
+				iNdEx = postIndex
+			case 3:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsString", wireType)
+				}
+				var stringLen uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					stringLen |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				intStringLen := int(stringLen)
+				if intStringLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + intStringLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				x.AsType = &MsgUpdateParam_AsString{string(dAtA[iNdEx:postIndex])}
+				iNdEx = postIndex
+			case 6:
+				if wireType != 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsInt64", wireType)
+				}
+				var v int64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= int64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				x.AsType = &MsgUpdateParam_AsInt64{v}
+			case 7:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field AsBytes", wireType)
+				}
+				var byteLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					byteLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if byteLen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + byteLen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				v := make([]byte, postIndex-iNdEx)
+				copy(v, dAtA[iNdEx:postIndex])
+				x.AsType = &MsgUpdateParam_AsBytes{v}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
+	md_MsgUpdateParamResponse        protoreflect.MessageDescriptor
+	fd_MsgUpdateParamResponse_params protoreflect.FieldDescriptor
+)
+
+func init() {
+	file_poktroll_proof_tx_proto_init()
+	md_MsgUpdateParamResponse = File_poktroll_proof_tx_proto.Messages().ByName("MsgUpdateParamResponse")
+	fd_MsgUpdateParamResponse_params = md_MsgUpdateParamResponse.Fields().ByName("params")
+}
+
+var _ protoreflect.Message = (*fastReflection_MsgUpdateParamResponse)(nil)
+
+type fastReflection_MsgUpdateParamResponse MsgUpdateParamResponse
+
+func (x *MsgUpdateParamResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParamResponse)(x)
+}
+
+func (x *MsgUpdateParamResponse) slowProtoReflect() protoreflect.Message {
+	mi := &file_poktroll_proof_tx_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+var _fastReflection_MsgUpdateParamResponse_messageType fastReflection_MsgUpdateParamResponse_messageType
+var _ protoreflect.MessageType = fastReflection_MsgUpdateParamResponse_messageType{}
+
+type fastReflection_MsgUpdateParamResponse_messageType struct{}
+
+func (x fastReflection_MsgUpdateParamResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_MsgUpdateParamResponse)(nil)
+}
+func (x fastReflection_MsgUpdateParamResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParamResponse)
+}
+func (x fastReflection_MsgUpdateParamResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParamResponse
+}
+
+// Descriptor returns message descriptor, which contains only the protobuf
+// type information for the message.
+func (x *fastReflection_MsgUpdateParamResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_MsgUpdateParamResponse
+}
+
+// Type returns the message type, which encapsulates both Go and protobuf
+// type information. If the Go type information is not needed,
+// it is recommended that the message descriptor be used instead.
+func (x *fastReflection_MsgUpdateParamResponse) Type() protoreflect.MessageType {
+	return _fastReflection_MsgUpdateParamResponse_messageType
+}
+
+// New returns a newly allocated and mutable empty message.
+func (x *fastReflection_MsgUpdateParamResponse) New() protoreflect.Message {
+	return new(fastReflection_MsgUpdateParamResponse)
+}
+
+// Interface unwraps the message reflection interface and
+// returns the underlying ProtoMessage interface.
+func (x *fastReflection_MsgUpdateParamResponse) Interface() protoreflect.ProtoMessage {
+	return (*MsgUpdateParamResponse)(x)
+}
+
+// Range iterates over every populated field in an undefined order,
+// calling f for each field descriptor and value encountered.
+// Range returns immediately if f returns false.
+// While iterating, mutating operations may only be performed
+// on the current field descriptor.
+func (x *fastReflection_MsgUpdateParamResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.Params != nil {
+		value := protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+		if !f(fd_MsgUpdateParamResponse_params, value) {
+			return
+		}
+	}
+}
+
+// Has reports whether a field is populated.
+//
+// Some fields have the property of nullability where it is possible to
+// distinguish between the default value of a field and whether the field
+// was explicitly populated with the default value. Singular message fields,
+// member fields of a oneof, and proto2 scalar fields are nullable. Such
+// fields are populated only if explicitly set.
+//
+// In other cases (aside from the nullable cases above),
+// a proto3 scalar field is populated if it contains a non-zero value, and
+// a repeated field is populated if it is non-empty.
+func (x *fastReflection_MsgUpdateParamResponse) Has(fd protoreflect.FieldDescriptor) bool {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		return x.Params != nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Clear clears the field such that a subsequent Has call reports false.
+//
+// Clearing an extension field clears both the extension type and value
+// associated with the given field number.
+//
+// Clear is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamResponse) Clear(fd protoreflect.FieldDescriptor) {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		x.Params = nil
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Get retrieves the value for a field.
+//
+// For unpopulated scalars, it returns the default value, where
+// the default value of a bytes scalar is guaranteed to be a copy.
+// For unpopulated composite types, it returns an empty, read-only view
+// of the value; to obtain a mutable reference, use Mutable.
+func (x *fastReflection_MsgUpdateParamResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+	switch descriptor.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		value := x.Params
+		return protoreflect.ValueOfMessage(value.ProtoReflect())
+	default:
+		if descriptor.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", descriptor.FullName()))
+	}
+}
+
+// Set stores the value for a field.
+//
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType.
+// When setting a composite type, it is unspecified whether the stored value
+// aliases the source's memory in any way. If the composite value is an
+// empty, read-only value, then it panics.
+//
+// Set is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		x.Params = value.Message().Interface().(*Params)
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// Mutable returns a mutable reference to a composite type.
+//
+// If the field is unpopulated, it may allocate a composite value.
+// For a field belonging to a oneof, it implicitly clears any other field
+// that may be currently set within the same oneof.
+// For extension fields, it implicitly stores the provided ExtensionType
+// if not already stored.
+// It panics if the field does not contain a composite type.
+//
+// Mutable is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		if x.Params == nil {
+			x.Params = new(Params)
+		}
+		return protoreflect.ValueOfMessage(x.Params.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// NewField returns a new value that is assignable to the field
+// for the given descriptor. For scalars, this returns the default value.
+// For lists, maps, and messages, this returns a new, empty, mutable value.
+func (x *fastReflection_MsgUpdateParamResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+	switch fd.FullName() {
+	case "poktroll.proof.MsgUpdateParamResponse.params":
+		m := new(Params)
+		return protoreflect.ValueOfMessage(m.ProtoReflect())
+	default:
+		if fd.IsExtension() {
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: poktroll.proof.MsgUpdateParamResponse"))
+		}
+		panic(fmt.Errorf("message poktroll.proof.MsgUpdateParamResponse does not contain field %s", fd.FullName()))
+	}
+}
+
+// WhichOneof reports which field within the oneof is populated,
+// returning nil if none are populated.
+// It panics if the oneof descriptor does not belong to this message.
+func (x *fastReflection_MsgUpdateParamResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+	switch d.FullName() {
+	default:
+		panic(fmt.Errorf("%s is not a oneof field in poktroll.proof.MsgUpdateParamResponse", d.FullName()))
+	}
+	panic("unreachable")
+}
+
+// GetUnknown retrieves the entire list of unknown fields.
+// The caller may only mutate the contents of the RawFields
+// if the mutated bytes are stored back into the message with SetUnknown.
+func (x *fastReflection_MsgUpdateParamResponse) GetUnknown() protoreflect.RawFields {
+	return x.unknownFields
+}
+
+// SetUnknown stores an entire list of unknown fields.
+// The raw fields must be syntactically valid according to the wire format.
+// An implementation may panic if this is not the case.
+// Once stored, the caller must not mutate the content of the RawFields.
+// An empty RawFields may be passed to clear the fields.
+//
+// SetUnknown is a mutating operation and unsafe for concurrent use.
+func (x *fastReflection_MsgUpdateParamResponse) SetUnknown(fields protoreflect.RawFields) {
+	x.unknownFields = fields
+}
+
+// IsValid reports whether the message is valid.
+//
+// An invalid message is an empty, read-only value.
+//
+// An invalid message often corresponds to a nil pointer of the concrete
+// message type, but the details are implementation dependent.
+// Validity is not part of the protobuf data model, and may not
+// be preserved in marshaling or other operations.
+func (x *fastReflection_MsgUpdateParamResponse) IsValid() bool {
+	return x != nil
+}
+
+// ProtoMethods returns optional fastReflectionFeature-path implementations of various operations.
+// This method may return nil.
+//
+// The returned methods type is identical to
+// "google.golang.org/protobuf/runtime/protoiface".Methods.
+// Consult the protoiface package documentation for details.
+func (x *fastReflection_MsgUpdateParamResponse) ProtoMethods() *protoiface.Methods {
+	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
+		x := input.Message.Interface().(*MsgUpdateParamResponse)
+		if x == nil {
+			return protoiface.SizeOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Size:              0,
+			}
+		}
+		options := runtime.SizeInputToOptions(input)
+		_ = options
+		var n int
+		var l int
+		_ = l
+		if x.Params != nil {
+			l = options.Size(x.Params)
+			n += 1 + l + runtime.Sov(uint64(l))
+		}
+		if x.unknownFields != nil {
+			n += len(x.unknownFields)
+		}
+		return protoiface.SizeOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Size:              n,
+		}
+	}
+
+	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParamResponse)
+		if x == nil {
+			return protoiface.MarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Buf:               input.Buf,
+			}, nil
+		}
+		options := runtime.MarshalInputToOptions(input)
+		_ = options
+		size := options.Size(x)
+		dAtA := make([]byte, size)
+		i := len(dAtA)
+		_ = i
+		var l int
+		_ = l
+		if x.unknownFields != nil {
+			i -= len(x.unknownFields)
+			copy(dAtA[i:], x.unknownFields)
+		}
+		if x.Params != nil {
+			encoded, err := options.Marshal(x.Params)
+			if err != nil {
+				return protoiface.MarshalOutput{
+					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+					Buf:               input.Buf,
+				}, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = runtime.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			i--
+			dAtA[i] = 0xa
+		}
+		if input.Buf != nil {
+			input.Buf = append(input.Buf, dAtA...)
+		} else {
+			input.Buf = dAtA
+		}
+		return protoiface.MarshalOutput{
+			NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+			Buf:               input.Buf,
+		}, nil
+	}
+	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
+		x := input.Message.Interface().(*MsgUpdateParamResponse)
+		if x == nil {
+			return protoiface.UnmarshalOutput{
+				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
+				Flags:             input.Flags,
+			}, nil
+		}
+		options := runtime.UnmarshalInputToOptions(input)
+		_ = options
+		dAtA := input.Buf
+		l := len(dAtA)
+		iNdEx := 0
+		for iNdEx < l {
+			preIndex := iNdEx
+			var wire uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				wire |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			fieldNum := int32(wire >> 3)
+			wireType := int(wire & 0x7)
+			if wireType == 4 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParamResponse: wiretype end group for non-group")
+			}
+			if fieldNum <= 0 {
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: MsgUpdateParamResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			}
+			switch fieldNum {
+			case 1:
+				if wireType != 2 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field Params", wireType)
+				}
+				var msglen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					msglen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if msglen < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				postIndex := iNdEx + msglen
+				if postIndex < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if postIndex > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if x.Params == nil {
+					x.Params = &Params{}
+				}
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.Params); err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				iNdEx = postIndex
+			default:
+				iNdEx = preIndex
+				skippy, err := runtime.Skip(dAtA[iNdEx:])
+				if err != nil {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+				}
+				if (skippy < 0) || (iNdEx+skippy) < 0 {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+				}
+				if (iNdEx + skippy) > l {
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+				}
+				if !options.DiscardUnknown {
+					x.unknownFields = append(x.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+				}
+				iNdEx += skippy
+			}
+		}
+
+		if iNdEx > l {
+			return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+		}
+		return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, nil
+	}
+	return &protoiface.Methods{
+		NoUnkeyedLiterals: struct{}{},
+		Flags:             protoiface.SupportMarshalDeterministic | protoiface.SupportUnmarshalDiscardUnknown,
+		Size:              size,
+		Marshal:           marshal,
+		Unmarshal:         unmarshal,
+		Merge:             nil,
+		CheckInitialized:  nil,
+	}
+}
+
+var (
 	md_MsgCreateClaim                  protoreflect.MessageDescriptor
 	fd_MsgCreateClaim_supplier_address protoreflect.FieldDescriptor
 	fd_MsgCreateClaim_session_header   protoreflect.FieldDescriptor
@@ -897,7 +2053,7 @@ func (x *MsgCreateClaim) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCreateClaim) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_proof_tx_proto_msgTypes[2]
+	mi := &file_poktroll_proof_tx_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1456,7 +2612,7 @@ func (x *MsgCreateClaimResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgCreateClaimResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_proof_tx_proto_msgTypes[3]
+	mi := &file_poktroll_proof_tx_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1818,7 +2974,7 @@ func (x *MsgSubmitProof) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSubmitProof) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_proof_tx_proto_msgTypes[4]
+	mi := &file_poktroll_proof_tx_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2377,7 +3533,7 @@ func (x *MsgSubmitProofResponse) ProtoReflect() protoreflect.Message {
 }
 
 func (x *MsgSubmitProofResponse) slowProtoReflect() protoreflect.Message {
-	mi := &file_poktroll_proof_tx_proto_msgTypes[5]
+	mi := &file_poktroll_proof_tx_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2728,7 +3884,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// MsgUpdateParams is the Msg/UpdateParams request type.
+// MsgUpdateParams is the Msg/UpdateParams request type to update all params at once.
 type MsgUpdateParams struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2803,6 +3959,146 @@ func (*MsgUpdateParamsResponse) Descriptor() ([]byte, []int) {
 	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{1}
 }
 
+// MsgUpdateParam is the Msg/UpdateParam request type to update a single param.
+type MsgUpdateParam struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// authority is the address that controls the module (defaults to x/gov unless overwritten).
+	Authority string `protobuf:"bytes,1,opt,name=authority,proto3" json:"authority,omitempty"`
+	// The (name, as_type) tuple must match the corresponding name and type as
+	// specified in the `Params“ message in `proof/params.proto.`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Types that are assignable to AsType:
+	//
+	//	*MsgUpdateParam_AsString
+	//	*MsgUpdateParam_AsInt64
+	//	*MsgUpdateParam_AsBytes
+	AsType isMsgUpdateParam_AsType `protobuf_oneof:"as_type"`
+}
+
+func (x *MsgUpdateParam) Reset() {
+	*x = MsgUpdateParam{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_proof_tx_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgUpdateParam) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgUpdateParam) ProtoMessage() {}
+
+// Deprecated: Use MsgUpdateParam.ProtoReflect.Descriptor instead.
+func (*MsgUpdateParam) Descriptor() ([]byte, []int) {
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *MsgUpdateParam) GetAuthority() string {
+	if x != nil {
+		return x.Authority
+	}
+	return ""
+}
+
+func (x *MsgUpdateParam) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *MsgUpdateParam) GetAsType() isMsgUpdateParam_AsType {
+	if x != nil {
+		return x.AsType
+	}
+	return nil
+}
+
+func (x *MsgUpdateParam) GetAsString() string {
+	if x, ok := x.GetAsType().(*MsgUpdateParam_AsString); ok {
+		return x.AsString
+	}
+	return ""
+}
+
+func (x *MsgUpdateParam) GetAsInt64() int64 {
+	if x, ok := x.GetAsType().(*MsgUpdateParam_AsInt64); ok {
+		return x.AsInt64
+	}
+	return 0
+}
+
+func (x *MsgUpdateParam) GetAsBytes() []byte {
+	if x, ok := x.GetAsType().(*MsgUpdateParam_AsBytes); ok {
+		return x.AsBytes
+	}
+	return nil
+}
+
+type isMsgUpdateParam_AsType interface {
+	isMsgUpdateParam_AsType()
+}
+
+type MsgUpdateParam_AsString struct {
+	AsString string `protobuf:"bytes,3,opt,name=as_string,json=asString,proto3,oneof"`
+}
+
+type MsgUpdateParam_AsInt64 struct {
+	AsInt64 int64 `protobuf:"varint,6,opt,name=as_int64,json=asInt64,proto3,oneof"`
+}
+
+type MsgUpdateParam_AsBytes struct {
+	AsBytes []byte `protobuf:"bytes,7,opt,name=as_bytes,json=asBytes,proto3,oneof"`
+}
+
+func (*MsgUpdateParam_AsString) isMsgUpdateParam_AsType() {}
+
+func (*MsgUpdateParam_AsInt64) isMsgUpdateParam_AsType() {}
+
+func (*MsgUpdateParam_AsBytes) isMsgUpdateParam_AsType() {}
+
+// MsgUpdateParamResponse defines the response structure for executing a
+// MsgUpdateParam message after a single param update.
+type MsgUpdateParamResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Params *Params `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
+}
+
+func (x *MsgUpdateParamResponse) Reset() {
+	*x = MsgUpdateParamResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_poktroll_proof_tx_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MsgUpdateParamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MsgUpdateParamResponse) ProtoMessage() {}
+
+// Deprecated: Use MsgUpdateParamResponse.ProtoReflect.Descriptor instead.
+func (*MsgUpdateParamResponse) Descriptor() ([]byte, []int) {
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *MsgUpdateParamResponse) GetParams() *Params {
+	if x != nil {
+		return x.Params
+	}
+	return nil
+}
+
 type MsgCreateClaim struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2817,7 +4113,7 @@ type MsgCreateClaim struct {
 func (x *MsgCreateClaim) Reset() {
 	*x = MsgCreateClaim{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_proof_tx_proto_msgTypes[2]
+		mi := &file_poktroll_proof_tx_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2831,7 +4127,7 @@ func (*MsgCreateClaim) ProtoMessage() {}
 
 // Deprecated: Use MsgCreateClaim.ProtoReflect.Descriptor instead.
 func (*MsgCreateClaim) Descriptor() ([]byte, []int) {
-	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{2}
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MsgCreateClaim) GetSupplierAddress() string {
@@ -2864,7 +4160,7 @@ type MsgCreateClaimResponse struct {
 func (x *MsgCreateClaimResponse) Reset() {
 	*x = MsgCreateClaimResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_proof_tx_proto_msgTypes[3]
+		mi := &file_poktroll_proof_tx_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2878,7 +4174,7 @@ func (*MsgCreateClaimResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgCreateClaimResponse.ProtoReflect.Descriptor instead.
 func (*MsgCreateClaimResponse) Descriptor() ([]byte, []int) {
-	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{3}
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{5}
 }
 
 type MsgSubmitProof struct {
@@ -2895,7 +4191,7 @@ type MsgSubmitProof struct {
 func (x *MsgSubmitProof) Reset() {
 	*x = MsgSubmitProof{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_proof_tx_proto_msgTypes[4]
+		mi := &file_poktroll_proof_tx_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2909,7 +4205,7 @@ func (*MsgSubmitProof) ProtoMessage() {}
 
 // Deprecated: Use MsgSubmitProof.ProtoReflect.Descriptor instead.
 func (*MsgSubmitProof) Descriptor() ([]byte, []int) {
-	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{4}
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MsgSubmitProof) GetSupplierAddress() string {
@@ -2942,7 +4238,7 @@ type MsgSubmitProofResponse struct {
 func (x *MsgSubmitProofResponse) Reset() {
 	*x = MsgSubmitProofResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_poktroll_proof_tx_proto_msgTypes[5]
+		mi := &file_poktroll_proof_tx_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2956,7 +4252,7 @@ func (*MsgSubmitProofResponse) ProtoMessage() {}
 
 // Deprecated: Use MsgSubmitProofResponse.ProtoReflect.Descriptor instead.
 func (*MsgSubmitProofResponse) Descriptor() ([]byte, []int) {
-	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{5}
+	return file_poktroll_proof_tx_proto_rawDescGZIP(), []int{7}
 }
 
 var File_poktroll_proof_tx_proto protoreflect.FileDescriptor
@@ -2989,64 +4285,90 @@ var file_poktroll_proof_tx_proto_rawDesc = []byte{
 	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2f, 0x78, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2f, 0x4d,
 	0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x22, 0x19,
 	0x0a, 0x17, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d,
-	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xd1, 0x01, 0x0a, 0x0e, 0x4d, 0x73,
-	0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x43, 0x0a, 0x10,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d,
-	0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67,
-	0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
-	0x73, 0x12, 0x46, 0x0a, 0x0e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x61,
-	0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x70, 0x6f, 0x6b, 0x74,
-	0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x73,
-	0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x0d, 0x73, 0x65, 0x73, 0x73,
-	0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x1b, 0x0a, 0x09, 0x72, 0x6f, 0x6f,
-	0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x6f,
-	0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x3a, 0x15, 0x82, 0xe7, 0xb0, 0x2a, 0x10, 0x73, 0x75, 0x70,
-	0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x18, 0x0a,
-	0x16, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xca, 0x01, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x53,
-	0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x43, 0x0a, 0x10, 0x73, 0x75,
-	0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73,
-	0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f,
-	0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12,
-	0x46, 0x0a, 0x0e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65,
-	0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69,
-	0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x52, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f,
-	0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x3a, 0x15, 0x82,
-	0xe7, 0xb0, 0x2a, 0x10, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64,
-	0x72, 0x65, 0x73, 0x73, 0x22, 0x18, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69,
-	0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0x94,
-	0x02, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x58, 0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
-	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1f, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a, 0x27, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61,
-	0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x55, 0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12,
-	0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x1a,
-	0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x55, 0x0a, 0x0b, 0x53, 0x75, 0x62, 0x6d, 0x69,
-	0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69,
-	0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
-	0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69,
-	0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05,
-	0x80, 0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x97, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f,
-	0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x07, 0x54, 0x78,
-	0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73,
-	0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
-	0x6c, 0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02,
-	0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca,
-	0x02, 0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66,
-	0xe2, 0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f,
-	0x66, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f,
-	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xfb, 0x01, 0x0a, 0x0e, 0x4d, 0x73,
+	0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x12, 0x36, 0x0a, 0x09,
+	0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42,
+	0x18, 0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f,
+	0x72, 0x69, 0x74, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x2c, 0x0a, 0x09, 0x61, 0x73, 0x5f, 0x73,
+	0x74, 0x72, 0x69, 0x6e, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x42, 0x0d, 0xea, 0xde, 0x1f,
+	0x09, 0x61, 0x73, 0x5f, 0x73, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x48, 0x00, 0x52, 0x08, 0x61, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x12, 0x29, 0x0a, 0x08, 0x61, 0x73, 0x5f, 0x69, 0x6e, 0x74,
+	0x36, 0x34, 0x18, 0x06, 0x20, 0x01, 0x28, 0x03, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x73,
+	0x5f, 0x69, 0x6e, 0x74, 0x36, 0x34, 0x48, 0x00, 0x52, 0x07, 0x61, 0x73, 0x49, 0x6e, 0x74, 0x36,
+	0x34, 0x12, 0x29, 0x0a, 0x08, 0x61, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65, 0x73, 0x18, 0x07, 0x20,
+	0x01, 0x28, 0x0c, 0x42, 0x0c, 0xea, 0xde, 0x1f, 0x08, 0x61, 0x73, 0x5f, 0x62, 0x79, 0x74, 0x65,
+	0x73, 0x48, 0x00, 0x52, 0x07, 0x61, 0x73, 0x42, 0x79, 0x74, 0x65, 0x73, 0x3a, 0x0e, 0x82, 0xe7,
+	0xb0, 0x2a, 0x09, 0x61, 0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x74, 0x79, 0x42, 0x09, 0x0a, 0x07,
+	0x61, 0x73, 0x5f, 0x74, 0x79, 0x70, 0x65, 0x22, 0x48, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x2e, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x16, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d,
+	0x73, 0x22, 0xd1, 0x01, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x43,
+	0x6c, 0x61, 0x69, 0x6d, 0x12, 0x43, 0x0a, 0x10, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18,
+	0xd2, 0xb4, 0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65,
+	0x73, 0x73, 0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x46, 0x0a, 0x0e, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1f, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64,
+	0x65, 0x72, 0x52, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65,
+	0x72, 0x12, 0x1b, 0x0a, 0x09, 0x72, 0x6f, 0x6f, 0x74, 0x5f, 0x68, 0x61, 0x73, 0x68, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x08, 0x72, 0x6f, 0x6f, 0x74, 0x48, 0x61, 0x73, 0x68, 0x3a, 0x15,
+	0x82, 0xe7, 0xb0, 0x2a, 0x10, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x18, 0x0a, 0x16, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0xca, 0x01, 0x0a, 0x0e, 0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f,
+	0x6f, 0x66, 0x12, 0x43, 0x0a, 0x10, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x18, 0xd2, 0xb4,
+	0x2d, 0x14, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x53, 0x74, 0x72, 0x69, 0x6e, 0x67, 0x52, 0x0f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x41, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x46, 0x0a, 0x0e, 0x73, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x5f, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1f, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x73, 0x65, 0x73, 0x73, 0x69,
+	0x6f, 0x6e, 0x2e, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72,
+	0x52, 0x0d, 0x73, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x48, 0x65, 0x61, 0x64, 0x65, 0x72, 0x12,
+	0x14, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05,
+	0x70, 0x72, 0x6f, 0x6f, 0x66, 0x3a, 0x15, 0x82, 0xe7, 0xb0, 0x2a, 0x10, 0x73, 0x75, 0x70, 0x70,
+	0x6c, 0x69, 0x65, 0x72, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22, 0x18, 0x0a, 0x16,
+	0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xeb, 0x02, 0x0a, 0x03, 0x4d, 0x73, 0x67, 0x12, 0x58,
+	0x0a, 0x0c, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x1f,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e,
+	0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x1a,
+	0x27, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66,
+	0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x55, 0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x12, 0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x1a, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f,
+	0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x43, 0x72, 0x65, 0x61,
+	0x74, 0x65, 0x43, 0x6c, 0x61, 0x69, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
+	0x55, 0x0a, 0x0b, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x1e,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e,
+	0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x1a, 0x26,
+	0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e,
+	0x4d, 0x73, 0x67, 0x53, 0x75, 0x62, 0x6d, 0x69, 0x74, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x55, 0x0a, 0x0b, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x12, 0x1e, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x1a, 0x26, 0x2e, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c,
+	0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x4d, 0x73, 0x67, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x1a, 0x05, 0x80,
+	0xe7, 0xb0, 0x2a, 0x01, 0x42, 0x97, 0x01, 0x0a, 0x12, 0x63, 0x6f, 0x6d, 0x2e, 0x70, 0x6f, 0x6b,
+	0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x07, 0x54, 0x78, 0x50,
+	0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x1f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64,
+	0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c,
+	0x6c, 0x2f, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0xa2, 0x02, 0x03, 0x50, 0x50, 0x58, 0xaa, 0x02, 0x0e,
+	0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x2e, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xca, 0x02,
+	0x0e, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0xe2,
+	0x02, 0x1a, 0x50, 0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x5c, 0x50, 0x72, 0x6f, 0x6f, 0x66,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0f, 0x50,
+	0x6f, 0x6b, 0x74, 0x72, 0x6f, 0x6c, 0x6c, 0x3a, 0x3a, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3061,32 +4383,37 @@ func file_poktroll_proof_tx_proto_rawDescGZIP() []byte {
 	return file_poktroll_proof_tx_proto_rawDescData
 }
 
-var file_poktroll_proof_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_poktroll_proof_tx_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_poktroll_proof_tx_proto_goTypes = []interface{}{
 	(*MsgUpdateParams)(nil),         // 0: poktroll.proof.MsgUpdateParams
 	(*MsgUpdateParamsResponse)(nil), // 1: poktroll.proof.MsgUpdateParamsResponse
-	(*MsgCreateClaim)(nil),          // 2: poktroll.proof.MsgCreateClaim
-	(*MsgCreateClaimResponse)(nil),  // 3: poktroll.proof.MsgCreateClaimResponse
-	(*MsgSubmitProof)(nil),          // 4: poktroll.proof.MsgSubmitProof
-	(*MsgSubmitProofResponse)(nil),  // 5: poktroll.proof.MsgSubmitProofResponse
-	(*Params)(nil),                  // 6: poktroll.proof.Params
-	(*session.SessionHeader)(nil),   // 7: poktroll.session.SessionHeader
+	(*MsgUpdateParam)(nil),          // 2: poktroll.proof.MsgUpdateParam
+	(*MsgUpdateParamResponse)(nil),  // 3: poktroll.proof.MsgUpdateParamResponse
+	(*MsgCreateClaim)(nil),          // 4: poktroll.proof.MsgCreateClaim
+	(*MsgCreateClaimResponse)(nil),  // 5: poktroll.proof.MsgCreateClaimResponse
+	(*MsgSubmitProof)(nil),          // 6: poktroll.proof.MsgSubmitProof
+	(*MsgSubmitProofResponse)(nil),  // 7: poktroll.proof.MsgSubmitProofResponse
+	(*Params)(nil),                  // 8: poktroll.proof.Params
+	(*session.SessionHeader)(nil),   // 9: poktroll.session.SessionHeader
 }
 var file_poktroll_proof_tx_proto_depIdxs = []int32{
-	6, // 0: poktroll.proof.MsgUpdateParams.params:type_name -> poktroll.proof.Params
-	7, // 1: poktroll.proof.MsgCreateClaim.session_header:type_name -> poktroll.session.SessionHeader
-	7, // 2: poktroll.proof.MsgSubmitProof.session_header:type_name -> poktroll.session.SessionHeader
-	0, // 3: poktroll.proof.Msg.UpdateParams:input_type -> poktroll.proof.MsgUpdateParams
-	2, // 4: poktroll.proof.Msg.CreateClaim:input_type -> poktroll.proof.MsgCreateClaim
-	4, // 5: poktroll.proof.Msg.SubmitProof:input_type -> poktroll.proof.MsgSubmitProof
-	1, // 6: poktroll.proof.Msg.UpdateParams:output_type -> poktroll.proof.MsgUpdateParamsResponse
-	3, // 7: poktroll.proof.Msg.CreateClaim:output_type -> poktroll.proof.MsgCreateClaimResponse
-	5, // 8: poktroll.proof.Msg.SubmitProof:output_type -> poktroll.proof.MsgSubmitProofResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	8, // 0: poktroll.proof.MsgUpdateParams.params:type_name -> poktroll.proof.Params
+	8, // 1: poktroll.proof.MsgUpdateParamResponse.params:type_name -> poktroll.proof.Params
+	9, // 2: poktroll.proof.MsgCreateClaim.session_header:type_name -> poktroll.session.SessionHeader
+	9, // 3: poktroll.proof.MsgSubmitProof.session_header:type_name -> poktroll.session.SessionHeader
+	0, // 4: poktroll.proof.Msg.UpdateParams:input_type -> poktroll.proof.MsgUpdateParams
+	4, // 5: poktroll.proof.Msg.CreateClaim:input_type -> poktroll.proof.MsgCreateClaim
+	6, // 6: poktroll.proof.Msg.SubmitProof:input_type -> poktroll.proof.MsgSubmitProof
+	2, // 7: poktroll.proof.Msg.UpdateParam:input_type -> poktroll.proof.MsgUpdateParam
+	1, // 8: poktroll.proof.Msg.UpdateParams:output_type -> poktroll.proof.MsgUpdateParamsResponse
+	5, // 9: poktroll.proof.Msg.CreateClaim:output_type -> poktroll.proof.MsgCreateClaimResponse
+	7, // 10: poktroll.proof.Msg.SubmitProof:output_type -> poktroll.proof.MsgSubmitProofResponse
+	3, // 11: poktroll.proof.Msg.UpdateParam:output_type -> poktroll.proof.MsgUpdateParamResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_poktroll_proof_tx_proto_init() }
@@ -3121,7 +4448,7 @@ func file_poktroll_proof_tx_proto_init() {
 			}
 		}
 		file_poktroll_proof_tx_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCreateClaim); i {
+			switch v := v.(*MsgUpdateParam); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3133,7 +4460,7 @@ func file_poktroll_proof_tx_proto_init() {
 			}
 		}
 		file_poktroll_proof_tx_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgCreateClaimResponse); i {
+			switch v := v.(*MsgUpdateParamResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3145,7 +4472,7 @@ func file_poktroll_proof_tx_proto_init() {
 			}
 		}
 		file_poktroll_proof_tx_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MsgSubmitProof); i {
+			switch v := v.(*MsgCreateClaim); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3157,6 +4484,30 @@ func file_poktroll_proof_tx_proto_init() {
 			}
 		}
 		file_poktroll_proof_tx_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgCreateClaimResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_proof_tx_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MsgSubmitProof); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_poktroll_proof_tx_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*MsgSubmitProofResponse); i {
 			case 0:
 				return &v.state
@@ -3169,13 +4520,18 @@ func file_poktroll_proof_tx_proto_init() {
 			}
 		}
 	}
+	file_poktroll_proof_tx_proto_msgTypes[2].OneofWrappers = []interface{}{
+		(*MsgUpdateParam_AsString)(nil),
+		(*MsgUpdateParam_AsInt64)(nil),
+		(*MsgUpdateParam_AsBytes)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_poktroll_proof_tx_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

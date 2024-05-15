@@ -75,7 +75,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgStakeApplication,
-		applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
+		applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
 	var weightMsgUnstakeApplication int
@@ -86,7 +86,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgUnstakeApplication,
-		applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper),
+		applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
 	var weightMsgDelegateToGateway int
@@ -97,7 +97,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgDelegateToGateway,
-		applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+		applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
 	var weightMsgUndelegateFromGateway int
@@ -108,7 +108,7 @@ func (am AppModule) WeightedOperations(simState module.SimulationState) []simtyp
 	)
 	operations = append(operations, simulation.NewWeightedOperation(
 		weightMsgUndelegateFromGateway,
-		applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.keeper),
+		applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper),
 	))
 
 	// this line is used by starport scaffolding # simapp/module/operation
@@ -123,7 +123,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgStakeApplication,
 			defaultWeightMsgStakeApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
+				applicationsimulation.SimulateMsgStakeApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),
@@ -131,7 +131,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgUnstakeApplication,
 			defaultWeightMsgUnstakeApplication,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.keeper)
+				applicationsimulation.SimulateMsgUnstakeApplication(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),
@@ -139,7 +139,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgDelegateToGateway,
 			defaultWeightMsgDelegateToGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				applicationsimulation.SimulateMsgDelegateToGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),
@@ -147,7 +147,7 @@ func (am AppModule) ProposalMsgs(simState module.SimulationState) []simtypes.Wei
 			opWeightMsgUndelegateFromGateway,
 			defaultWeightMsgUndelegateFromGateway,
 			func(r *rand.Rand, ctx sdk.Context, accs []simtypes.Account) sdk.Msg {
-				applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.keeper)
+				applicationsimulation.SimulateMsgUndelegateFromGateway(am.accountKeeper, am.bankKeeper, am.applicationKeeper)
 				return nil
 			},
 		),

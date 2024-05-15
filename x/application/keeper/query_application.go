@@ -27,6 +27,12 @@ func (k Keeper) AllApplications(ctx context.Context, req *types.QueryAllApplicat
 			return err
 		}
 
+		// Ensure that the PendingUndelegations is an empty map and not nil when
+		// unmarshalling an app that has no pending undelegations.
+		if application.PendingUndelegations == nil {
+			application.PendingUndelegations = make(map[uint64]types.UndelegatingGatewayList)
+		}
+
 		apps = append(apps, application)
 		return nil
 	})
