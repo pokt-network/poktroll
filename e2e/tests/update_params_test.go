@@ -19,8 +19,8 @@ import (
 	tokenomicstypes "github.com/pokt-network/poktroll/x/tokenomics/types"
 )
 
-// txDelaySeconds is the number of seconds to wait for a tx to be committed before making assertions.
 const (
+	// txDelaySeconds is the number of seconds to wait for a tx to be committed before making assertions.
 	txDelaySeconds = 3
 	// txFeesCoinStr is the string representation of the amount & denom of tokens
 	// which are sufficient to pay for tx fees in the test.
@@ -121,6 +121,7 @@ func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(
 
 // AKeyAndAccountExistForTheUser checks if a key with the given name exists in the keyring,
 // and if not, adds a new key with the given name to the keyring. It then checks if an account
+// corresponding the the new key exists.
 func (s *suite) AKeyAndAccountExistForTheUser(keyName string) {
 	if !s.keyExistsInKeyring(keyName) {
 		s.addKeyToKeyring(keyName)
