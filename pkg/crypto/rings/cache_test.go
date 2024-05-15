@@ -20,7 +20,10 @@ import (
 	apptypes "github.com/pokt-network/poktroll/x/application/types"
 )
 
-const noDelegateesRingSize = 2
+const (
+	noDelegateesRingSize = 2
+	defaultHeight        = 1
+)
 
 // account is an internal struct used to define an (address, public_key) pairing
 type account struct {
@@ -113,7 +116,7 @@ func TestRingCache_BuildRing_Uncached(t *testing.T) {
 				testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, accMap)
 			}
 			// Attempt to retrieve the ring for the address
-			ring, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			ring, err := rc.GetRingForAddressAtHeight(ctx, test.appAccount.address, defaultHeight)
 			if test.expectedErr != nil {
 				require.ErrorAs(t, err, &test.expectedErr)
 				return
@@ -164,7 +167,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			testqueryclients.AddAddressToApplicationMap(t, test.appAccount.address, test.appAccount.pubKey, nil)
 
 			// Attempt to retrieve the ring for the address and cache it
-			ring1, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			ring1, err := rc.GetRingForAddressAtHeight(ctx, test.appAccount.address, defaultHeight)
 			require.NoError(t, err)
 			require.Equal(t, noDelegateesRingSize, ring1.Size())
 			require.Equal(t, 1, len(rc.GetCachedAddresses()))
@@ -195,7 +198,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 
 			// Attempt to retrieve the ring for the address and cache it if
 			// the ring was updated
-			ring2, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			ring2, err := rc.GetRingForAddressAtHeight(ctx, test.appAccount.address, defaultHeight)
 			require.NoError(t, err)
 			// If the ring was updated then the rings should not be equal
 			if test.expectedRingSize != noDelegateesRingSize {
@@ -207,7 +210,7 @@ func TestRingCache_BuildRing_Cached(t *testing.T) {
 			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 			// Attempt to retrieve the ring for the address after its been cached
-			ring3, err := rc.GetRingForAddress(ctx, test.appAccount.address)
+			ring3, err := rc.GetRingForAddressAtHeight(ctx, test.appAccount.address, defaultHeight)
 			require.NoError(t, err)
 			require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
@@ -237,13 +240,13 @@ func TestRingCache_Stop(t *testing.T) {
 		})
 
 	// Attempt to retrieve the ring for the address and cache it
-	ring1, err := rc.GetRingForAddress(ctx, appAccount.address)
+	ring1, err := rc.GetRingForAddressAtHeight(ctx, appAccount.address, defaultHeight)
 	require.NoError(t, err)
 	require.Equal(t, 2, ring1.Size())
 	require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 	// Retrieve the cached ring
-	ring2, err := rc.GetRingForAddress(ctx, appAccount.address)
+	ring2, err := rc.GetRingForAddressAtHeight(ctx, appAccount.address, defaultHeight)
 	require.NoError(t, err)
 	require.True(t, ring1.Equals(ring2))
 	require.Equal(t, 1, len(rc.GetCachedAddresses()))
@@ -272,13 +275,13 @@ func TestRingCache_CancelContext(t *testing.T) {
 		})
 
 	// Attempt to retrieve the ring for the address and cache it
-	ring1, err := rc.GetRingForAddress(ctx, appAccount.address)
+	ring1, err := rc.GetRingForAddressAtHeight(ctx, appAccount.address, defaultHeight)
 	require.NoError(t, err)
 	require.Equal(t, 2, ring1.Size())
 	require.Equal(t, 1, len(rc.GetCachedAddresses()))
 
 	// Retrieve the cached ring
-	ring2, err := rc.GetRingForAddress(ctx, appAccount.address)
+	ring2, err := rc.GetRingForAddressAtHeight(ctx, appAccount.address, defaultHeight)
 	require.NoError(t, err)
 	require.True(t, ring1.Equals(ring2))
 	require.Equal(t, 1, len(rc.GetCachedAddresses()))

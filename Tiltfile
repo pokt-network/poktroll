@@ -2,9 +2,12 @@ load("ext://restart_process", "docker_build_with_restart")
 load("ext://helm_resource", "helm_resource", "helm_repo")
 load("ext://configmap", "configmap_create")
 load("ext://secret", "secret_create_generic")
+load("ext://deployment", "deployment_create")
+load("ext://execute_in_pod", "execute_in_pod")
 
 # A list of directories where changes trigger a hot-reload of the validator
 hot_reload_dirs = ["app", "cmd", "tools", "x", "pkg"]
+
 
 def merge_dicts(base, updates):
     for k, v in updates.items():
@@ -15,6 +18,7 @@ def merge_dicts(base, updates):
         else:
             # Replace or set the value
             base[k] = v
+
 
 # Create a localnet config file from defaults, and if a default configuration doesn't exist, populate it with default values
 localnet_config_path = "localnet_config.yaml"
@@ -28,17 +32,19 @@ localnet_config_defaults = {
         "delve": {"enabled": False},
     },
     "observability": {"enabled": True},
-    "relayminers": {
-        "count": 1,
-        "delve": {"enabled": False}
-    },
+    "relayminers": {"count": 1, "delve": {"enabled": False}},
     "gateways": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
     },
     "appgateservers": {
         "count": 1,
-        "delve": {"enabled": False},    
+        "delve": {"enabled": False},
+    },
+    # TODO(#511): Add support for `REST` and enabled this.
+    "ollama": {
+        "enabled": False,
+        "model": "qwen:0.5b",
     },
     # By default, we use the `helm_repo` function below to point to the remote repository
     # but can update it to the locally cloned repo for testing & development
@@ -54,7 +60,9 @@ merge_dicts(localnet_config, localnet_config_defaults)
 # Then merge file contents over defaults
 merge_dicts(localnet_config, localnet_config_file)
 # Check if there are differences or if the file doesn't exist
-if (localnet_config_file != localnet_config) or (not os.path.exists(localnet_config_path)):
+if (localnet_config_file != localnet_config) or (
+    not os.path.exists(localnet_config_path)
+):
     print("Updating " + localnet_config_path + " with defaults")
     local("cat - > " + localnet_config_path, stdin=encode_yaml(localnet_config))
 
@@ -171,7 +179,7 @@ local_resource(
 docker_build_with_restart(
     "poktrolld",
     ".",
-    dockerfile_contents="""FROM golang:1.21.6
+    dockerfile_contents="""FROM golang:1.22.2
 RUN apt-get -q update && apt-get install -qyy curl jq less
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY bin/poktrolld /usr/local/bin/poktrolld
@@ -179,9 +187,6 @@ WORKDIR /
 """,
     only=["./bin/poktrolld"],
     entrypoint=[
-        "/tilt-restart-wrapper",
-        "--watch_file=/tmp/.restart-proc",
-        "--entr_flags=-r",
         "poktrolld",
     ],
     live_update=[sync("bin/poktrolld", "/usr/local/bin/poktrolld")],
@@ -201,10 +206,8 @@ helm_resource(
         "--values=./localnet/kubernetes/values-validator.yaml",
         "--set=persistence.cleanupBeforeEachStart="
         + str(localnet_config["validator"]["cleanupBeforeEachStart"]),
-        "--set=logs.level="
-        + str(localnet_config["validator"]["logs"]["level"]),
-        "--set=logs.format="
-        + str(localnet_config["validator"]["logs"]["format"]),
+        "--set=logs.level=" + str(localnet_config["validator"]["logs"]["level"]),
+        "--set=logs.format=" + str(localnet_config["validator"]["logs"]["format"]),
         "--set=serviceMonitor.enabled="
         + str(localnet_config["observability"]["enabled"]),
         "--set=development.delve.enabled="
@@ -254,6 +257,9 @@ for x in range(localnet_config["relayminers"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of relayminer metrics.
             str(9069 + actor_number)
             + ":9090",  # Relayminer metrics port. relayminer1 - exposes 9070, relayminer2 exposes 9071, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6070/debug/pprof/goroutine`
+            str(6069 + actor_number)
+            + ":6060",  # Relayminer pprof port. relayminer1 - exposes 6070, relayminer2 exposes 6071, etc.
         ],
     )
 
@@ -295,6 +301,9 @@ for x in range(localnet_config["appgateservers"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of appgateserver metrics.
             str(9079 + actor_number)
             + ":9090",  # appgateserver metrics port. appgateserver1 - exposes 9080, appgateserver2 exposes 9081, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6080/debug/pprof/goroutine`
+            str(6079 + actor_number)
+            + ":6090",  # appgateserver metrics port. appgateserver1 - exposes 6080, appgateserver2 exposes 6081, etc.
         ],
     )
 
@@ -336,13 +345,22 @@ for x in range(localnet_config["gateways"]["count"]):
             # Run `curl localhost:PORT` to see the current snapshot of gateway metrics.
             str(9089 + actor_number)
             + ":9090",  # gateway metrics port. gateway1 - exposes 9090, gateway2 exposes 9091, etc.
+            # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6090/debug/pprof/goroutine`
+            str(6089 + actor_number)
+            + ":6060",  # gateway metrics port. gateway1 - exposes 6090, gateway2 exposes 6091, etc.
         ],
     )
 
 k8s_resource(
     "validator",
     labels=["pocket_network"],
-    port_forwards=["36657", "36658", "40004"],
+    port_forwards=[
+        "36657",
+        "36658",
+        "40004",
+        # Use with pprof like this: `go tool pprof -http=:3333 http://localhost:6061/debug/pprof/goroutine`
+        "6061:6060",
+    ],
     links=[
         link(
             "http://localhost:3003/d/cosmoscometbft/protocol-cometbft-dashboard?orgId=1&from=now-1h&to=now",
@@ -352,3 +370,21 @@ k8s_resource(
 )
 
 k8s_resource("anvil", labels=["data_nodes"], port_forwards=["8547"])
+
+if localnet_config["ollama"]["enabled"]:
+    print("Ollama enabled: " + str(localnet_config["ollama"]["enabled"]))
+
+    deployment_create(
+        "ollama",
+        image="ollama/ollama",
+        command=["ollama", "serve"],
+        ports="11434",
+    )
+
+    local_resource(
+        name="ollama-pull-model",
+        cmd=execute_in_pod(
+            "ollama", "ollama pull " + localnet_config["ollama"]["model"]
+        ),
+        resource_deps=["ollama"],
+    )

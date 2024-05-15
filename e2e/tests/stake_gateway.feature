@@ -1,4 +1,4 @@
-Feature: Stake Namespaces
+Feature: Stake Gateway Namespaces
 
     Scenario: User can stake a Gateway
         Given the user has the pocketd binary installed

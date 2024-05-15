@@ -26,9 +26,11 @@ var (
 	// CometLocalWebsocketURL provides a default URL pointing to the localnet websocket endpoint.
 	CometLocalWebsocketURL = "ws://localhost:36657/websocket"
 
-	// TODO_IN_THIS_COMMIT: godoc comments...
-	TxConfig          client.TxConfig
-	Marshaler         codec.Codec
+	// TxConfig provided by app.AppConfig(), intended as a convenience for use in tests.
+	TxConfig client.TxConfig
+	// Marshaler provided by app.AppConfig(), intended as a convenience for use in tests.
+	Marshaler codec.Codec
+	// InterfaceRegistry provided by app.AppConfig(), intended as a convenience for use in tests.
 	InterfaceRegistry codectypes.InterfaceRegistry
 )
 
@@ -39,10 +41,11 @@ func init() {
 	deps := depinject.Configs(
 		app.AppConfig(),
 		depinject.Supply(
-			app.AppConfig(),
 			log.NewLogger(os.Stderr),
 		),
 	)
+
+	// Ensure that the global variables are initialized.
 	if err := depinject.Inject(
 		deps,
 		&TxConfig,
@@ -103,6 +106,7 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
+	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")
 	err := mockFlagSet.Parse([]string{})
 	require.NoError(t, err)
 

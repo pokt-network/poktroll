@@ -30,14 +30,3 @@ func (msg *MsgUpdateParams) ValidateBasic() error {
 
 	return nil
 }
-
-func (params *Params) ValidateBasic() error {
-	// Validate the ComputeUnitsToTokensMultiplier
-	if params.ComputeUnitsToTokensMultiplier == 0 {
-		return ErrTokenomicsParamsInvalid.Wrapf(
-			"invalid ComputeUnitsToTokensMultiplier; (%v)",
-			params.ComputeUnitsToTokensMultiplier,
-		)
-	}
-	return nil
-}

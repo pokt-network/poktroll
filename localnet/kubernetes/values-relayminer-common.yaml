@@ -8,3 +8,6 @@ config:
     query_node_grpc_url: tcp://validator-poktroll-validator:36658
     tx_node_rpc_url: tcp://validator-poktroll-validator:36657
   suppliers: []
+  pprof:
+    enabled: true
+    addr: localhost:6060

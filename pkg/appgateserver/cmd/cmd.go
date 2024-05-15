@@ -10,7 +10,6 @@ import (
 
 	"cosmossdk.io/depinject"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -100,7 +99,7 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithLevel(polyzero.DebugLevel),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -141,6 +140,13 @@ func runAppGateServer(cmd *cobra.Command, _ []string) error {
 		err = appGateServer.ServeMetrics(appGateConfigs.Metrics.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+		}
+	}
+
+	if appGateConfigs.Pprof.Enabled {
+		err = appGateServer.ServePprof(ctx, appGateConfigs.Pprof.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start pprof endpoint: %w", err)
 		}
 	}
 

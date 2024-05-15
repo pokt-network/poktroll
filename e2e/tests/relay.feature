@@ -10,10 +10,11 @@ Feature: Relay Namespace
         Then the application "app1" receives a successful relay response signed by "supplier1"
 
     # TODO_TEST(@Olshansk):
-    # - Successful relay if using a gateway to proxy the relay
+    # - Successful relay through applicat's sovereign appgate server
+    # - Successful relay through gateway app is delegation to
+    # - Successful relay through gateway when app is delegating to multiple gateways
+    # - Failed relay through gateway app is not delegation to
     # - Succeedful relays when using multiple suppliers for app in some session
-    # - Successful deduction of app's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
-    # - Successful inflatino of supplier's balance after claim & proof lifecycle (requires querying claims, proofs, session start/end)
     # - Error if app1 is not staked for svc1 but relay is sent
     # - Error if supplier is not staked for svc1 but relay is sent
     # - Error if claiming the session too early

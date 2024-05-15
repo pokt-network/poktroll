@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"cosmossdk.io/depinject"
+	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -43,6 +44,11 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
+	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
+	pendingTxMu sync.Mutex
+	// blockQueryClient is the CometBFT RPC client used to query blocks
+	blockQueryClient cosmosclient.CometRPC
+
 	// storesDirectory points to a path on disk where KVStore data files are created.
 	storesDirectory string
 }
@@ -59,7 +65,7 @@ func NewRelayerSessions(
 	ctx context.Context,
 	deps depinject.Config,
 	opts ...relayer.RelayerSessionsManagerOption,
-) (relayer.RelayerSessionsManager, error) {
+) (_ relayer.RelayerSessionsManager, err error) {
 	rs := &relayerSessionsManager{
 		logger:          polylog.Ctx(ctx),
 		sessionsTrees:   make(sessionsTreesMap),
@@ -69,6 +75,7 @@ func NewRelayerSessions(
 	if err := depinject.Inject(
 		deps,
 		&rs.blockClient,
+		&rs.blockQueryClient,
 		&rs.supplierClient,
 	); err != nil {
 		return nil, err
@@ -214,8 +221,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
-func (rp *relayerSessionsManager) validateConfig() error {
-	if rp.storesDirectory == "" {
+func (rs *relayerSessionsManager) validateConfig() error {
+	if rs.storesDirectory == "" {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 

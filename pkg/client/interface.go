@@ -17,7 +17,8 @@ package client
 import (
 	"context"
 
-	comettypes "github.com/cometbft/cometbft/rpc/core/types"
+	cometrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	comettypes "github.com/cometbft/cometbft/types"
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmoskeyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -102,7 +103,7 @@ type TxContext interface {
 		ctx context.Context,
 		txHash []byte,
 		prove bool,
-	) (*comettypes.ResultTx, error)
+	) (*cometrpctypes.ResultTx, error)
 }
 
 // Block is an interface which abstracts the details of a block to its minimal
@@ -110,6 +111,7 @@ type TxContext interface {
 type Block interface {
 	Height() int64
 	Hash() []byte
+	Txs() []comettypes.Tx
 }
 
 // Redelegation is an interface which wraps the EventRedelegation event
@@ -228,6 +230,15 @@ type TxClientOption func(TxClient)
 
 // SupplierClientOption defines a function type that modifies the SupplierClient.
 type SupplierClientOption func(SupplierClient)
+
+// DelegationClientOption defines a function type that modifies the DelegationClient.
+type DelegationClientOption func(DelegationClient)
+
+// BlockClientOption defines a function type that modifies the BlockClient.
+type BlockClientOption func(BlockClient)
+
+// EventsReplayClientOption defines a function type that modifies the ReplayClient.
+type EventsReplayClientOption[T any] func(EventsReplayClient[T])
 
 // AccountQueryClient defines an interface that enables the querying of the
 // on-chain account information

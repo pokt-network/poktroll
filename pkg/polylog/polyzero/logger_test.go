@@ -357,7 +357,7 @@ func newTestLogger(
 		opts,
 		polyzero.WithOutput(logOutput),
 		// NB: typically consumers would pass zerolog.<some>Level directly instead.
-		polyzero.WithLevel(zerolog.Level(level.Int())),
+		polyzero.WithLevel(level),
 	)
 
 	logger := polyzero.NewLogger(opts...)

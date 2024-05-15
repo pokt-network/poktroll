@@ -1,19 +1,19 @@
 package types
 
 import (
-	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var _ sdk.Msg = (*MsgUpdateParams)(nil)
 
 // ValidateBasic does a sanity check on the provided data.
-func (m *MsgUpdateParams) ValidateBasic() error {
-	if _, err := sdk.AccAddressFromBech32(m.Authority); err != nil {
-		return errorsmod.Wrap(err, "invalid authority address")
+func (msg *MsgUpdateParams) ValidateBasic() error {
+	// Validate the address
+	if _, err := sdk.AccAddressFromBech32(msg.Authority); err != nil {
+		return ErrProofInvalidAddress.Wrapf("invalid authority address %s; (%v)", msg.Authority, err)
 	}
 
-	if err := m.Params.Validate(); err != nil {
+	if err := msg.Params.ValidateBasic(); err != nil {
 		return err
 	}
 

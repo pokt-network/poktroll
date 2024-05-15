@@ -3,9 +3,16 @@
 SHELL = /bin/sh
 POKTROLLD_HOME ?= ./localnet/poktrolld
 POCKET_NODE ?= tcp://127.0.0.1:36657 # The pocket node (validator in the localnet context)
+TESTNET_RPC ?= https://testnet-validated-validator-rpc.poktroll.com/ # TestNet RPC endpoint for validator maintained by Grove. Needs to be update if there's another "primary" testnet.
 APPGATE_SERVER ?= http://localhost:42069
+GATEWAY_URL ?= http://localhost:42079
 POCKET_ADDR_PREFIX = pokt
 CHAIN_ID = poktroll
+
+# The domain ending in ".town" is staging, ".city" is production
+GROVE_GATEWAY_STAGING_ETH_MAINNET = https://eth-mainnet.rpc.grove.town
+# The "protocol" field here instructs the Grove gateway which network to use
+JSON_RPC_DATA_ETH_BLOCK_HEIGHT = '{"protocol": "shannon-testnet","jsonrpc":"2.0","id":"0","method":"eth_blockNumber", "params": []}'
 
 # On-chain module account addresses. Search for `func TestModuleAddress` in the
 # codebase to get an understanding of how we got these values.
@@ -13,16 +20,41 @@ APPLICATION_MODULE_ADDRESS = pokt1rl3gjgzexmplmds3tq3r3yk84zlwdl6djzgsvm
 SUPPLIER_MODULE_ADDRESS = pokt1j40dzzmn6cn9kxku7a5tjnud6hv37vesr5ccaa
 GATEWAY_MODULE_ADDRESS = pokt1f6j7u6875p2cvyrgjr0d2uecyzah0kget9vlpl
 SERVICE_MODULE_ADDRESS = pokt1nhmtqf4gcmpxu0p6e53hpgtwj0llmsqpxtumcf
+GOV_ADDRESS = pokt10d07y265gmmuvt4z0w9aw880jnsr700j8yv32t
+# PNF acts on behalf of the DAO and who AUTHZ must delegate to
+PNF_ADDRESS = pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw
 
-# Detect operating system
-OS := $(shell uname -s)
+MODULES := application gateway pocket service session supplier proof tokenomics
+
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+COMMIT := $(shell git log -1 --format='%H')
+
+# don't override user values
+ifeq (,$(VERSION))
+  # Remove 'v' prefix from git tag and assign to VERSION
+  VERSION := $(shell git describe --tags 2>/dev/null | sed 's/^v//')
+  # if VERSION is empty, then populate it with branch's name and raw commit hash
+  ifeq (,$(VERSION))
+    VERSION := $(BRANCH)-$(COMMIT)
+  endif
+endif
+
+# Detect operating system and arch
+OS := $(shell uname -s | tr A-Z a-z)
+ARCH := $(shell uname -m)
+ifeq ($(ARCH),x86_64)
+	ARCH := amd64
+endif
+ifeq ($(ARCH),aarch64)
+	ARCH := arm64
+endif
 
 # Set default commands, will potentially be overridden on macOS
 SED := sed
 GREP := grep
 
 # macOS-specific adjustments
-ifeq ($(OS),Darwin)
+ifeq ($(OS),darwin)
     # Check for gsed and ggrep, suggest installation with Homebrew if not found
     FOUND_GSED := $(shell command -v gsed)
     FOUND_GGREP := $(shell command -v ggrep)
@@ -277,16 +309,26 @@ localnet_down: ## Delete resources created by localnet
 localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate the localnet genesis file
 # NOTE: intentionally not using --home <dir> flag to avoid overwriting the test keyring
 	@echo "Initializing chain..."
-	@set -e ;\
-	ignite chain init --skip-proto ;\
-	cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME) ;\
-	cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/ ;\
+	@set -e
+	@ignite chain init --skip-proto
+	AUTH_CONTENT=$$(cat ./tools/scripts/authz/dao_genesis_authorizations.json | jq -r tostring); \
+	$(SED) -i -E 's!^(\s*)"authorization": (\[\]|null)!\1"authorization": '$$AUTH_CONTENT'!' ${HOME}/.poktroll/config/genesis.json;
 
-.PHONY: send_relay
-send_relay:
+	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
+	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
+
+.PHONY: send_relay_sovereign_app
+send_relay_sovereign_app: # Send a relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	http://localhost:42069/anvil
+
+.PHONY: send_relay_delegating_app
+send_relay_delegating_app: # Send a relay through the gateway as an application that's delegating to this gateway
+	@appAddr=$$(poktrolld keys show app1 -a) && \
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
@@ -322,6 +364,10 @@ test_e2e: test_e2e_env ## Run all E2E tests
 test_e2e_app:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_app.feature
 
+.PHONY: test_e2e_supplier
+test_e2e_supplier:
+	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_supplier.feature
+
 .PHONY: test_e2e_gateway
 test_e2e_gateway:
 	go test -v ./e2e/tests/... -tags=e2e,test --features-path=stake_gateway.feature
@@ -336,7 +382,7 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 
 .PHONY: test_load_relays_stress
 test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
-	go test -v ./load-testing/tests/... -tags=e2e,test --features-path=relays_stress.feature
+	go test -v -count=1 ./load-testing/tests/... -tags=load,test -run LoadRelays
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
@@ -384,10 +430,6 @@ go_develop: check_ignite_version proto_regen go_mockgen ## Generate protos and m
 .PHONY: go_develop_and_test
 go_develop_and_test: go_develop go_test ## Generate protos, mocks and run all tests
 
-.PHONY: load_test_simple
-load_test_simple: ## Runs the simplest load test through the whole stack (appgate -> relayminer -> anvil)
-	k6 run load-testing/tests/appGateServerEtherium.js
-
 #############
 ### TODOS ###
 #############
@@ -408,7 +450,8 @@ load_test_simple: ## Runs the simplest load test through the whole stack (appgat
 # TODO_COMMUNITY              - A TODO that may be a candidate for outsourcing to the community.
 # TODO_DECIDE                 - A TODO indicating we need to make a decision and document it using an ADR in the future; https://github.com/pokt-network/pocket-network-protocol/tree/main/ADRs
 # TODO_TECHDEBT               - Not a great implementation, but we need to fix it later.
-# TODO_BLOCKER                - Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
+# TODO_BLOCKER                - BEFORE MAINNET. Similar to TECHDEBT, but of higher priority, urgency & risk prior to the next release
+# TODO_QOL                    - AFTER MAINNET. Similar to TECHDEBT, but of lower priority. Doesn't deserve a GitHub Issue but will improve everyone's life.
 # TODO_IMPROVE                - A nice to have, but not a priority. It's okay if we never get to this.
 # TODO_OPTIMIZE               - An opportunity for performance improvement if/when it's necessary
 # TODO_DISCUSS                - Probably requires a lengthy offline discussion to understand next steps.
@@ -439,7 +482,7 @@ todo_count: ## Print a count of all the TODOs in the project
 
 .PHONY: todo_this_commit
 todo_this_commit: ## List all the TODOs needed to be done in this commit
-	grep --exclude-dir={.git,vendor,.vscode} --exclude=Makefile -r -e "TODO_IN_THIS_"
+	grep -n --exclude-dir={.git,vendor,.vscode,.idea} --exclude={Makefile,reviewdog.yml} -r -e "TODO_IN_THIS_"
 
 ####################
 ###   Gateways   ###
@@ -467,7 +510,7 @@ gateway3_stake: ## Stake gateway3
 
 .PHONY: gateway_unstake
 gateway_unstake: ## Unstake an gateway (must specify the GATEWAY env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx gateway unstake-gateway -y --keyring-backend test --from $(GATEWAY) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: gateway1_unstake
 gateway1_unstake: ## Unstake gateway1
@@ -507,7 +550,7 @@ app3_stake: ## Stake app3
 
 .PHONY: app_unstake
 app_unstake: ## Unstake an application (must specify the APP env var)
-	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+	poktrolld --home=$(POKTROLLD_HOME) tx application unstake-application -y --keyring-backend test --from $(APP) --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
 
 .PHONY: app1_unstake
 app1_unstake: ## Unstake app1
@@ -622,6 +665,38 @@ get_session_app3_anvil: ## Retrieve the session for (app3, anvil, latest_height)
 	APP3=$$(make poktrolld_addr ACC_NAME=app3) && \
 	APP=$$APP3 SVC=anvil HEIGHT=0 make get_session
 
+###############
+### TestNet ###
+###############
+
+.PHONY: testnet_supplier_list
+testnet_supplier_list: ## List all the staked supplier on TestNet
+	poktrolld q supplier list-supplier --node=$(TESTNET_RPC)
+
+.PHONY: testnet_gateway_list
+testnet_gateway_list: ## List all the staked gateways on TestNet
+	poktrolld q gateway list-gateway --node=$(TESTNET_RPC)
+
+.PHONY: testnet_app_list
+testnet_app_list: ## List all the staked applications on TestNet
+	poktrolld q application list-application --node=$(TESTNET_RPC)
+
+.PHONY: testnet_consensus_params
+testnet_consensus_params: ## Output consensus parameters
+	poktrolld q consensus params --node=$(TESTNET_RPC)
+
+.PHONY: testnet_gov_params
+testnet_gov_params: ## Output gov parameters
+	poktrolld q gov params --node=$(TESTNET_RPC)
+
+.PHONY: testnet_status
+testnet_status: ## Output status of the RPC node (most likely a validator)
+	poktrolld status --node=$(TESTNET_RPC) | jq
+
+.PHONY: testnet_height
+testnet_height: ## Height of the network from the RPC node point of view
+	poktrolld status --node=$(TESTNET_RPC) | jq ".sync_info.latest_block_height"
+
 ################
 ### Accounts ###
 ################
@@ -666,11 +741,10 @@ acc_balance_total_supply: ## Query the total supply of the network
 .PHONY: acc_initialize_pubkeys
 acc_initialize_pubkeys: ## Make sure the account keeper has public keys for all available accounts
 	$(eval ADDRESSES=$(shell make -s ignite_acc_list | grep pokt | awk '{printf "%s ", $$2}' | sed 's/.$$//'))
-	$(eval PNF_ADDR=pokt1eeeksh2tvkh7wzmfrljnhw4wrhs55lcuvmekkw)
 	$(foreach addr, $(ADDRESSES),\
 		echo $(addr);\
 		poktrolld tx bank send \
-			$(addr) $(PNF_ADDR) 1000upokt \
+			$(addr) $(PNF_ADDRESS) 1000upokt \
 			--yes \
 			--home=$(POKTROLLD_HOME) \
 			--node $(POCKET_NODE) \
@@ -730,15 +804,27 @@ claim_list_session: ## List all the claims ending at a specific session (specifi
 ### Params ###
 ##############
 
-MODULES := application gateway pocket service session supplier tokenomics
+# TODO_CONSIDERATION: additional factoring (e.g. POKTROLLD_FLAGS).
+PARAM_FLAGS = --home=$(POKTROLLD_HOME) --keyring-backend test --from $(PNF_ADDRESS) --node $(POCKET_NODE)
 
-# TODO_IMPROVE(#322): Improve once we decide how to handle parameter updates
-.PHONY: update_tokenomics_params
-update_tokenomics_params: ## Update the tokenomics module params
-	poktrolld --home=$(POKTROLLD_HOME) tx tokenomics update-params 43 --keyring-backend test --from pnf --node $(POCKET_NODE) --chain-id $(CHAIN_ID)
+.PHONY: update_tokenomics_params_all
+params_update_tokenomics_all: ## Update the tokenomics module params
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_all.json $(PARAM_FLAGS)
 
-.PHONY: query_all_params
-query_all_params: check_jq ## Query the params from all available modules
+.PHONY: params_update_tokenomics_compute_units_to_tokens_multiplier
+params_update_tokenomics_compute_units_to_tokens_multiplier: ## Update the tokenomics module params
+	poktrolld tx authz exec ./tools/scripts/params/tokenomics_compute_units_to_tokens_multiplier.json $(PARAM_FLAGS)
+
+.PHONY: params_update_proof_all
+params_update_proof_all: ## Update the proof module params
+	poktrolld tx authz exec ./tools/scripts/params/proof_all.json $(PARAM_FLAGS)
+
+.PHONY: params_update_proof_min_relay_difficulty_bits
+params_update_proof_min_relay_difficulty_bits: ## Update the proof module params
+	poktrolld tx authz exec ./tools/scripts/params/proof_min_relay_difficulty_bits.json $(PARAM_FLAGS)
+
+.PHONY: params_query_all
+params_query_all: check_jq ## Query the params from all available modules
 	@for module in $(MODULES); do \
 	    echo "~~~ Querying $$module module params ~~~"; \
 	    poktrolld query $$module params --node $(POCKET_NODE) --output json | jq; \
@@ -753,6 +839,10 @@ query_all_params: check_jq ## Query the params from all available modules
 ignite_acc_list: ## List all the accounts in LocalNet
 	ignite account list --keyring-dir=$(POKTROLLD_HOME) --keyring-backend test --address-prefix $(POCKET_ADDR_PREFIX)
 
+.PHONY: ignite_poktrolld_build
+ignite_poktrolld_build: check_go_version check_ignite_version ## Build the poktrolld binary using Ignite
+	ignite chain build --skip-proto --debug -v -o $(shell go env GOPATH)/bin
+
 ##################
 ### CI Helpers ###
 ##################
@@ -761,6 +851,42 @@ ignite_acc_list: ## List all the accounts in LocalNet
 trigger_ci: ## Trigger the CI pipeline by submitting an empty commit; See https://github.com/pokt-network/pocket/issues/900 for details
 	git commit --allow-empty -m "Empty commit"
 	git push
+
+.PHONY: ignite_install
+ignite_install: ## Install ignite. Used by CI and heighliner.
+	# Determine if sudo is available and use it if it is
+	if command -v sudo &>/dev/null; then \
+		SUDO="sudo"; \
+	else \
+		SUDO=""; \
+	fi; \
+	echo "Downloading Ignite CLI..."; \
+	wget https://github.com/ignite/cli/releases/download/v28.3.0/ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Extracting Ignite CLI..."; \
+	tar -xzf ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	echo "Moving Ignite CLI to /usr/local/bin..."; \
+	$$SUDO mv ignite /usr/local/bin/ignite; \
+	echo "Cleaning up..."; \
+	rm ignite_28.3.0_$(OS)_$(ARCH).tar.gz; \
+	ignite version
+
+.PHONY: ignite_update_ldflags
+ignite_update_ldflags:
+	yq eval '.build.ldflags = ["-X main.Version=$(VERSION)", "-X main.Date=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)"]' -i config.yml
+
+.PHONY: ignite_release
+ignite_release: ## Builds production binaries
+	ignite chain build --release -t linux:amd64 -t linux:arm64 -t darwin:amd64 -t darwin:arm64
+
+.PHONY: ignite_release_extract_binaries
+ignite_release_extract_binaries: ## Extracts binaries from the release archives
+	mkdir -p release_binaries
+
+	for archive in release/*.tar.gz; do \
+		binary_name=$$(basename "$$archive" .tar.gz); \
+		tar -zxvf "$$archive" -C release_binaries "poktrolld"; \
+		mv release_binaries/poktrolld "release_binaries/$$binary_name"; \
+	done
 
 #####################
 ### Documentation ###
@@ -815,3 +941,13 @@ act_reviewdog: check_act check_gh ## Run the reviewdog workflow locally like so:
 	$(eval CONTAINER_ARCH := $(shell make -s detect_arch))
 	@echo "Detected architecture: $(CONTAINER_ARCH)"
 	act -v -s GITHUB_TOKEN=$(GITHUB_TOKEN) -W .github/workflows/reviewdog.yml --container-architecture $(CONTAINER_ARCH)
+
+#############################
+### Grove Gateway Helpers ###
+#############################
+
+.PHONY: grove_staging_eth_block_height
+grove_staging_eth_block_height: ## Sends a relay through the staging grove gateway to the eth-mainnet chain. Must have GROVE_STAGING_PORTAL_APP_ID environment variable set.
+	curl $(GROVE_GATEWAY_STAGING_ETH_MAINNET)/v1/$(GROVE_STAGING_PORTAL_APP_ID) \
+		-H 'Content-Type: application/json' \
+		--data $(SHANNON_JSON_RPC_DATA_ETH_BLOCK_HEIGHT)

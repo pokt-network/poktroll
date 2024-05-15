@@ -76,6 +76,7 @@ validators:
         timeout_propose: "2s"
       instrumentation:
         prometheus: true
+      log_level: "info"
     client:
       chain-id: poktroll
 
@@ -88,6 +89,10 @@ genesis:
     staking:
       params:
         bond_denom: upokt
+        # TODO_BLOCKER(@Olshansk): Figure out what this should be on Shannon
+        # re-genesis. We're setting it to 1 for Alpha TestNet #1 so Grove
+        # maintains the only validator until Alpha TestNet #2.
+        max_validators: 1
     crisis:
       constant_fee:
         amount: "10000"
@@ -132,6 +137,9 @@ genesis:
             - service:
                 id: anvil
                 name: ""
+            - service:
+                id: ollama
+                name: ""
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in
             # `supplier1_stake_config.yaml` so that the stake command causes a state change.
@@ -147,6 +155,13 @@ genesis:
                   url: http://relayminer1:8545
               service:
                 id: anvil
+                name: ""
+            - endpoints:
+                - configs: []
+                  rpc_type: REST
+                  url: http://relayminer1:8545
+              service:
+                id: ollama
                 name: ""
           stake:
             # NB: This value should be exactly 1upokt smaller than the value in

@@ -130,6 +130,9 @@ type SessionTree interface {
 	// This function should be called several blocks after a session has been claimed and needs to be proven.
 	ProveClosest(path []byte) (proof *smt.SparseMerkleClosestProof, err error)
 
+	// GetProof returns the proof for the SMST if it has been generated or nil otherwise.
+	GetProof() *smt.SparseMerkleClosestProof
+
 	// Flush gets the root hash of the SMST needed for submitting the claim;
 	// then commits the entire tree to disk and stops the KVStore.
 	// It should be called before submitting the claim on-chain. This function frees up

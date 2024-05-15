@@ -56,6 +56,7 @@ func init() {
 }
 
 func TestMsgServer_SubmitProof_Success(t *testing.T) {
+
 	opts := []keepertest.ProofKeepersOpt{
 		// Set block hash so we can have a deterministic expected on-chain proof requested by the protocol.
 		keepertest.WithBlockHash(blockHeaderHash),
@@ -111,7 +112,7 @@ func TestMsgServer_SubmitProof_Success(t *testing.T) {
 
 	// Create a valid claim.
 	createClaimAndStoreBlockHash(
-		ctx, t,
+		ctx, t, 1,
 		supplierAddr,
 		appAddr,
 		service,
@@ -158,6 +159,9 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 	// Construct a keyring to hold the keypairs for the accounts used in the test.
 	keyRing := keyring.NewInMemory(keepers.Codec)
+
+	// The base session start height used for testing
+	sessionStartHeight := int64(1)
 
 	// Create accounts in the account keeper with corresponding keys in the keyring
 	// for the applications and suppliers used in the tests.
@@ -226,7 +230,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 	// Create a valid claim for the expected session and update the block hash
 	// store for the corresponding session.
 	createClaimAndStoreBlockHash(
-		ctx, t,
+		ctx, t, 1,
 		supplierAddr,
 		appAddr,
 		service,
@@ -406,6 +410,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an unserializable relay.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -455,6 +460,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a relay
 				// request containing the wrong session ID.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -505,6 +511,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a relay
 				// response containing the wrong session ID.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -560,6 +567,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay request signature.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -621,6 +629,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 				// Create a claim with a merkle root derived from a session tree
 				// with an invalid relay response signature.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -671,6 +680,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a valid claim with the expected merkle root.
 				claimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -840,6 +850,7 @@ func TestMsgServer_SubmitProof_Error(t *testing.T) {
 
 				// Create a claim with the incorrect Merkle root.
 				wrongMerkleRootClaimMsg := newTestClaimMsg(t,
+					sessionStartHeight,
 					validSessionHeader.GetSessionId(),
 					supplierAddr,
 					appAddr,
@@ -1028,6 +1039,7 @@ func newTestProofMsg(
 func createClaimAndStoreBlockHash(
 	ctx context.Context,
 	t *testing.T,
+	sessionStartHeight int64,
 	supplierAddr, appAddr string,
 	service *sharedtypes.Service,
 	sessionTree relayer.SessionTree,
@@ -1040,6 +1052,7 @@ func createClaimAndStoreBlockHash(
 
 	// Create a create claim message.
 	claimMsg := newTestClaimMsg(t,
+		sessionStartHeight,
 		sessionHeader.GetSessionId(),
 		supplierAddr,
 		appAddr,
@@ -1192,8 +1205,11 @@ func signRelayRequest(
 ) {
 	t.Helper()
 
-	// Retrieve the signing ring associated with the application address.
-	appRing, err := ringClient.GetRingForAddress(ctx, appAddr)
+	relayReqMeta := relay.GetReq().GetMeta()
+	sessionEndHeight := relayReqMeta.GetSessionHeader().GetSessionEndBlockHeight()
+
+	// Retrieve the signing ring associated with the application address at the session end height.
+	appRing, err := ringClient.GetRingForAddressAtHeight(ctx, appAddr, sessionEndHeight)
 	require.NoError(t, err)
 
 	// Retrieve the signing key associated with the application address.

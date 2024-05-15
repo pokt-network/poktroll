@@ -6,7 +6,6 @@ option go_package = "github.com/pokt-network/poktroll/x/tokenomics/types";
 import "amino/amino.proto";
 import "gogoproto/gogo.proto";
 
-// TODO_DOCUMENT(@Olshansk): Document all of the on-chain governance parameters.
 // Params defines the parameters for the tokenomics module.
 message Params {
   option (amino.name) = "poktroll/x/tokenomics/Params";
@@ -14,9 +13,13 @@ message Params {
 
   // The amount of upokt that a compute unit should translate to when settling a session.
   // TODO_DOCUMENT(@Olshansk): Make sure to document the units of this parameter (or the map) once finalized.
-  uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
+  uint64 compute_units_to_tokens_multiplier = 1 [(gogoproto.jsontag) = "compute_units_to_tokens_multiplier", (gogoproto.moretags) = "yaml:\"compute_units_to_tokens_multiplier\""];
 
-  // TODO: Some parameters we should consider adding next:
+  // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
+  // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
+  // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
+
+  // TODO_ADD: Some parameters we should consider adding next:
   //   - Service.computeUnitsToTokensMultiplierMap
   //   - Application.MaxuPOKTPerRelay
   //   - Application.MinuPOKTPerRelay

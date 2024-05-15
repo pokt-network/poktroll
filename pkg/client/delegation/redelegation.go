@@ -14,7 +14,7 @@ import (
 
 // redelegationEventType is the type of the EventRedelegation event emitted by
 // both the MsgDelegateToGateway and MsgUndelegateFromGateway messages.
-const redelegationEventType = "pocket.application.EventRedelegation"
+const redelegationEventType = "poktroll.application.EventRedelegation"
 
 var _ client.Redelegation = (*redelegation)(nil)
 
@@ -69,8 +69,6 @@ func newRedelegationEventFactoryFn() events.NewEventsFn[client.Redelegation] {
 						return nil, events.ErrEventsUnmarshalEvent.Wrapf("cannot retrieve gateway address: %v", err)
 					}
 					redelegationEvent.GatewayAddress = gatewayAddr
-				default:
-					return nil, events.ErrEventsUnmarshalEvent.Wrapf("unknown attribute key: %s", attr.Key)
 				}
 			}
 			// Handle the redelegation event

@@ -21,12 +21,15 @@ needed to send an end-to-end relay.
   - [Report issues](#report-issues)
   - [TL;DR](#tldr)
 - [Developing with LocalNet](#developing-with-localnet)
-  - [localnet_config.yaml](#localnet_configyaml)
+  - [localnet\_config.yaml](#localnet_configyaml)
   - [Scaling network actors](#scaling-network-actors)
+  - [Off-chain actors configuration](#off-chain-actors-configuration)
   - [Modify Kubernetes workloads](#modify-kubernetes-workloads)
 - [Observability](#observability)
   - [Access dashboards with graphs and logs](#access-dashboards-with-graphs-and-logs)
   - [How to update and save an existing dashboard?](#how-to-update-and-save-an-existing-dashboard)
+- [High-level overview of LocalNet](#high-level-overview-of-localnet)
+  - [LocalNet Deployment Flow](#localnet-deployment-flow)
 - [Troubleshooting](#troubleshooting)
   - [Clean Slate (Nuclear Option)](#clean-slate-nuclear-option)
 
@@ -77,6 +80,19 @@ relayers:
 ```
 
 _NOTE: You may need to up to 1 minute for the new actors to be registered and deployed locally._
+
+### Off-chain actors configuration
+
+We heavily use Helm charts for configuring LocalNet. The goal is to maximize the tooling involved in deploying production
+workloads and local development.
+
+Following best practices in Helm chart design, we have default values defined in the `values.yaml` file of each service
+Helm chart. For example, [here are the RelayMiner `values.yaml`](https://github.com/pokt-network/helm-charts/blob/main/charts/relayminer/values.yaml).
+
+Local infrastructure requires some changes to the default values to properly configure RelayMiner or AppGate Server, so
+we override some of the values. You can find such overrides in the [poktroll/localnet/kubernetes directory](https://github.com/pokt-network/poktroll/tree/main/localnet/kubernetes).
+
+**IF YOU NEED TO CHANGE LocalNet configs, 👆 is the place.**
 
 ### Modify Kubernetes workloads
 
@@ -144,6 +160,24 @@ If you wish to change a dashboard, do the following:
 3. Copy-paste the output to the corresponding file in `localnet/grafana-dashboards`
 
 ![Example](./grafana_save_dashboard.png)
+
+## High-level overview of LocalNet
+
+This section describes how LocalNet operates and the interactions between different
+components to provision a working network.
+
+### LocalNet Deployment Flow
+
+After you execute `make localnet_up`, many things happen:
+
+1. `ignite` CLI provisions a new `genesis.json` and validator keys.
+2. `tilt` starts and runs a [Tiltfile](https://github.com/pokt-network/poktroll/blob/main/Tiltfile) - a Python-like script.
+3. Subsequently, the logic described in the `Tiltfile` executes various CLI commands, communicates with the `k8s` API, and creates or reads the LocalNet configuration file:
+   1. Creates a new `localnet_config.yaml` if it doesn't exist. Updates it with default values if new ones are introduced.
+   2. Depending on the configuration in `localnet_config.yaml`, uses Helm charts from the local [helm-charts](https://github.com/pokt-network/helm-charts)repository or downloads Helm charts from our Helm chart repository (`https://pokt-network.github.io/helm-charts/`).
+   3. Compiles the `poktrolld` binary from the source code.
+   4. Using values from `localnet_config.yaml`, provisions an observability stack (Grafana, Prometheus, Loki), a validator, AppGate servers, RelayMiners, etc.
+4. With `make localnet_up` continually running in the background, `tilt` monitors for code changes and re-compiles the binary when a code change is detected. After the new binary is built, it is pushed to the containers and all processes restart.
 
 ## Troubleshooting
 

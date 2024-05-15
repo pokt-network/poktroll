@@ -21,7 +21,7 @@ func TestMsgUpdateParams(t *testing.T) {
 		expectedErrMsg string
 	}{
 		{
-			desc: "invalid authority",
+			desc: "invalid: authority address invalid",
 			input: &types.MsgUpdateParams{
 				Authority: "invalid",
 				Params:    params,
@@ -30,15 +30,16 @@ func TestMsgUpdateParams(t *testing.T) {
 			expectedErrMsg: "invalid authority",
 		},
 		{
-			desc: "send enabled param",
+			desc: "send empty params",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    types.Params{},
 			},
-			shouldError: false,
+			shouldError:    true,
+			expectedErrMsg: "invalid ServiceFee",
 		},
 		{
-			desc: "all good",
+			desc: "valid: send default params",
 			input: &types.MsgUpdateParams{
 				Authority: k.GetAuthority(),
 				Params:    params,

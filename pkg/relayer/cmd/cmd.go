@@ -12,7 +12,6 @@ import (
 	cosmosclient "github.com/cosmos/cosmos-sdk/client"
 	cosmosflags "github.com/cosmos/cosmos-sdk/client/flags"
 	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 
 	"github.com/pokt-network/poktroll/cmd/signals"
@@ -99,7 +98,7 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 
 	// TODO_TECHDEBT: populate logger from the config (ideally, from viper).
 	loggerOpts := []polylog.LoggerOption{
-		polyzero.WithLevel(zerolog.DebugLevel),
+		polyzero.WithLevel(polyzero.DebugLevel),
 		polyzero.WithOutput(os.Stderr),
 	}
 
@@ -126,6 +125,13 @@ func runRelayer(cmd *cobra.Command, _ []string) error {
 		err = relayMiner.ServeMetrics(relayMinerConfig.Metrics.Addr)
 		if err != nil {
 			return fmt.Errorf("failed to start metrics endpoint: %w", err)
+		}
+	}
+
+	if relayMinerConfig.Pprof.Enabled {
+		err = relayMiner.ServePprof(ctx, relayMinerConfig.Pprof.Addr)
+		if err != nil {
+			return fmt.Errorf("failed to start pprof endpoint: %w", err)
 		}
 	}
 

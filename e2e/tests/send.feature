@@ -1,4 +1,4 @@
-Feature: Tx Namespace
+Feature: Send Namespace
 
     Scenario: User can send uPOKT
         Given the user has the pocketd binary installed

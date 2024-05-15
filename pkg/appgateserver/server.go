@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"strings"
 	"sync"
@@ -72,7 +73,7 @@ type appGateServer struct {
 	endpointSelectionIndexMu sync.Mutex
 
 	// endpointSelectionIndex is the index of the last selected endpoint.
-	// It is used to cycle through the available endpoints in a round-robin fashion.
+	// It is used to cycle through the available endpoints using a round-robin strategy.
 	endpointSelectionIndex int
 }
 
@@ -267,6 +268,35 @@ func (app *appGateServer) ServeMetrics(addr string) error {
 			app.logger.Error().Err(err).Msg("metrics server failed")
 			return
 		}
+	}()
+
+	return nil
+}
+
+// Starts a pprof server on the given address.
+func (app *appGateServer) ServePprof(ctx context.Context, addr string) error {
+	pprofMux := http.NewServeMux()
+	pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+	pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: pprofMux,
+	}
+
+	// If no error, start the server in a new goroutine
+	go func() {
+		app.logger.Info().Str("endpoint", addr).Msg("starting a pprof endpoint")
+		server.ListenAndServe()
+	}()
+
+	go func() {
+		<-ctx.Done()
+		app.logger.Info().Str("endpoint", addr).Msg("stopping a pprof endpoint")
+		server.Shutdown(ctx)
 	}()
 
 	return nil
