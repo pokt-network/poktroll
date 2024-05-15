@@ -4,15 +4,13 @@ import (
 	"context"
 	"os"
 
-	"github.com/rs/zerolog"
-
 	"github.com/pokt-network/poktroll/pkg/polylog"
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 func ExampleCtx() {
 	// Use whichever zerolog level you need.
-	level := zerolog.InfoLevel
+	level := polyzero.InfoLevel
 
 	// Specify the lowest level to log. I.e.: calls to level methods "lower"
 	// than this will be ignored.

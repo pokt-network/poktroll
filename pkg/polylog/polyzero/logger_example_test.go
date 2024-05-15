@@ -3,14 +3,12 @@ package polyzero_test
 import (
 	"os"
 
-	"github.com/rs/zerolog"
-
 	"github.com/pokt-network/poktroll/pkg/polylog/polyzero"
 )
 
 func ExampleNewLogger() {
-	// Use whichever zerolog level you need.
-	level := zerolog.InfoLevel
+	// Use whichever level you need.
+	level := polyzero.InfoLevel
 	// Specify the lowest level to log. I.e.: calls to level methods "lower"
 	// than this will be ignored.
 	levelOpt := polyzero.WithLevel(level)

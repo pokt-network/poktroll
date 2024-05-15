@@ -11,44 +11,52 @@ spec:
         pokt.network/purpose: e2e-tests
     spec:
       containers:
-      - name: e2e-tests
-        image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
-        command: ["/bin/sh"]
-        args:
-        - "-c"
-        - |
-          poktrolld q gateway list-gateway --node=$POCKET_NODE && \
-          poktrolld q application list-application --node=$POCKET_NODE && \
-          poktrolld q supplier list-supplier --node=$POCKET_NODE && \
-          make acc_initialize_pubkeys && \
-          go test -v ./e2e/tests/... -tags=e2e
-        env:
-        - name: POCKET_NODE
-          value: tcp://${NAMESPACE}-validator-poktrolld:36657
-        - name: VALIDATOR_RPC_ENDPOINT
-          value: ${NAMESPACE}-validator-poktrolld:36657
-        - name: E2E_DEBUG_OUTPUT
-          value: "false" # Flip to true to see the command and result of the execution
-        - name: POKTROLLD_HOME
-          value: /root/.poktroll
-        - name: APPGATE_SERVER_URL
-          value: http://${NAMESPACE}-appgate-server:80
-        - name: GATEWAY_URL
-          value: http://${NAMESPACE}-gateway:80
-        volumeMounts:
-        - mountPath: /root/.poktroll/keyring-test/
-          name: keys-volume
-        - mountPath: /root/.poktroll/config/
-          name: configs-volume
+        - name: e2e-tests
+          image: ghcr.io/pokt-network/poktrolld:${IMAGE_TAG}
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              # Copy files from the secret to the writable directory
+              cp -Lr /tmp/keys/* /root/.poktroll/keyring-test/ && \
+              echo "Listing /root/.poktroll/keyring-test/ after copying:"
+              ls -l /root/.poktroll/keyring-test/ && \
+              poktrolld q gateway list-gateway --node=$POCKET_NODE && \
+              poktrolld q application list-application --node=$POCKET_NODE && \
+              poktrolld q supplier list-supplier --node=$POCKET_NODE && \
+              make acc_initialize_pubkeys && \
+              go test -v ./e2e/tests/... -tags=e2e
+          env:
+            - name: POCKET_NODE
+              value: tcp://${NAMESPACE}-validator-poktrolld:36657
+            - name: VALIDATOR_RPC_ENDPOINT
+              value: ${NAMESPACE}-validator-poktrolld:36657
+            - name: E2E_DEBUG_OUTPUT
+              value: "false" # Flip to true to see the command and result of the execution
+            - name: POKTROLLD_HOME
+              value: /root/.poktroll
+            - name: APPGATE_SERVER_URL
+              value: http://${NAMESPACE}-appgate-server:80
+            - name: GATEWAY_URL
+              value: http://${NAMESPACE}-gateway:80
+          volumeMounts:
+            - mountPath: /root/.poktroll/keyring-test/
+              name: writable-keys-volume
+            - mountPath: /root/.poktroll/config/
+              name: configs-volume
+            - mountPath: /tmp/keys
+              name: non-writable-keys-volume
+              readOnly: true
       restartPolicy: Never
       volumes:
-      - secret:
-          defaultMode: 420
-          secretName: keys-${IMAGE_TAG}
-        name: keys-volume
-      - configMap:
-          defaultMode: 420
-          name: configs-${IMAGE_TAG}
-        name: configs-volume
+        - name: writable-keys-volume
+          emptyDir: {}
+        - name: non-writable-keys-volume
+          secret:
+            secretName: keys-${IMAGE_TAG}
+        - configMap:
+            defaultMode: 420
+            name: configs-${IMAGE_TAG}
+          name: configs-volume
       serviceAccountName: default
   backoffLimit: 0

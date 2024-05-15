@@ -112,18 +112,14 @@ func (rs *relayerSessionsManager) newMapClaimSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
-		logger := polylog.Ctx(ctx)
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
 
 		// this session should no longer be updated
 		claimRoot, err := session.Flush()
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false
 		}
-
-		latestBlock := rs.blockClient.LastBlock(ctx)
-		logger.Info().
-			Int64("current_block", latestBlock.Height()+1).
-			Msg("submitting claim")
 
 		sessionHeader := session.GetSessionHeader()
 		if err := rs.supplierClient.CreateClaim(ctx, *sessionHeader, claimRoot); err != nil {
