@@ -1589,12 +1589,14 @@ type Application struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Address                   string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                                                        // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
-	Stake                     *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                                                            // The total amount of uPOKT the application has staked
-	ServiceConfigs            []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"`                                    // The list of services this appliccation is configured to request service for
-	DelegateeGatewayAddresses []string                           `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"` // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
+	Address        string                             `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`                                     // The Bech32 address of the application using cosmos' ScalarDescriptor to ensure deterministic encoding
+	Stake          *v1beta1.Coin                      `protobuf:"bytes,2,opt,name=stake,proto3" json:"stake,omitempty"`                                         // The total amount of uPOKT the application has staked
+	ServiceConfigs []*shared.ApplicationServiceConfig `protobuf:"bytes,3,rep,name=service_configs,json=serviceConfigs,proto3" json:"service_configs,omitempty"` // The list of services this appliccation is configured to request service for
+	// TODO_TECHDEBT: Rename `delegatee_gateway_addresses` to `gateway_addresses_delegated_to`.
+	DelegateeGatewayAddresses []string `protobuf:"bytes,4,rep,name=delegatee_gateway_addresses,json=delegateeGatewayAddresses,proto3" json:"delegatee_gateway_addresses,omitempty"` // The Bech32 encoded addresses for all delegatee Gateways, in a non-nullable slice
 	// A map from sessionEndHeights to a list of Gateways.
-	// The key is height is the last block of the sessions during which the undelegation was triggered.
+	// The key is the height of the last block of the session during which the
+	// respective undelegation was committed.
 	// The value is a list of gateways being undelegated from.
 	// TODO_DOCUMENT(@red-0ne): Need to document the flow from this comment
 	// so its clear to everyone why this is necessary; https://github.com/pokt-network/poktroll/issues/476#issuecomment-2052639906.
