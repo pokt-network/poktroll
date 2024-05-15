@@ -36,7 +36,7 @@ func NewLocalnetContext(t *testing.T) client.TxContext {
 	require.NotEmpty(t, txFactory)
 
 	deps := depinject.Supply(
-		*clientCtx,
+		txtypes.Context(*clientCtx),
 		txFactory,
 	)
 

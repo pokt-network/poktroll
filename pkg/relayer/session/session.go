@@ -44,6 +44,8 @@ type relayerSessionsManager struct {
 	// supplierClient is used to create claims and submit proofs for sessions.
 	supplierClient client.SupplierClient
 
+	// pendingTxMu is used to prevent concurrent txs with the same sequence number.
+	pendingTxMu sync.Mutex
 	// blockQueryClient is the CometBFT RPC client used to query blocks
 	blockQueryClient cosmosclient.CometRPC
 
@@ -219,8 +221,8 @@ func (rs *relayerSessionsManager) removeFromRelayerSessions(sessionHeader *sessi
 
 // validateConfig validates the relayerSessionsManager's configuration.
 // TODO_TEST: Add unit tests to validate these configurations.
-func (rp *relayerSessionsManager) validateConfig() error {
-	if rp.storesDirectory == "" {
+func (rs *relayerSessionsManager) validateConfig() error {
+	if rs.storesDirectory == "" {
 		return ErrSessionTreeUndefinedStoresDirectory
 	}
 

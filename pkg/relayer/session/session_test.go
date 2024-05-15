@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"cosmossdk.io/depinject"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	cmttypes "github.com/cometbft/cometbft/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pokt-network/smt"
 	"github.com/stretchr/testify/require"
@@ -46,7 +48,27 @@ func TestRelayerSessionsManager_Start(t *testing.T) {
 	blockQueryClientMock := mockclient.NewMockCometRPC(ctrl)
 	blockQueryClientMock.EXPECT().
 		Block(gomock.Any(), gomock.AssignableToTypeOf((*int64)(nil))).
-		Return(nil, nil).
+		DoAndReturn(
+			func(_ context.Context, height *int64) (*coretypes.ResultBlock, error) {
+				// Default to height 1 if none given.
+				// See: https://pkg.go.dev/github.com/cometbft/cometbft@v0.38.7/rpc/client#SignClient
+				if height == nil {
+					height = new(int64)
+					*height = 1
+				}
+
+				return &coretypes.ResultBlock{
+					BlockID: cmttypes.BlockID{
+						Hash: []byte("expected block hash"),
+					},
+					Block: &cmttypes.Block{
+						Header: cmttypes.Header{
+							Height: *height,
+						},
+					},
+				}, nil
+			},
+		).
 		AnyTimes()
 
 	deps := depinject.Supply(blockClient, blockQueryClientMock, supplierClient)

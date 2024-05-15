@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pokt-network/poktroll/pkg/either"
 	"github.com/pokt-network/poktroll/pkg/observable"
@@ -96,24 +95,29 @@ func (rs *relayerSessionsManager) newMapProveSessionFn(
 		ctx context.Context,
 		session relayer.SessionTree,
 	) (_ either.SessionTree, skip bool) {
-		// TODO_BLOCKER: The block that'll be used as a source of entropy for which
-		// branch(es) to prove should be deterministic and use on-chain governance params
-		// rather than latest.
-		latestBlock := rs.blockClient.LastBlock(ctx)
-		// TODO_BLOCKER(@red-0ne, @Olshansk): Update the path given to `ProveClosest`
-		// from `BlockHash` to `Foo(BlockHash, SessionId)`
+		rs.pendingTxMu.Lock()
+		defer rs.pendingTxMu.Unlock()
 
-		// TODO: Investigate "proof for the path provided does not match one expected by the on-chain protocol"
-		// error that may occur due to latestBlock height differing.
-		fmt.Println("E2E_DEBUG: height for block hash when generating the path", latestBlock.Height(), session.GetSessionHeader().GetSessionId())
-		path := proofkeeper.GetPathForProof(latestBlock.Hash(), session.GetSessionHeader().GetSessionId())
+		// TODO_BLOCKER(@bryanchriswhite): The block that'll be used as a source of entropy for
+		// which branch(es) to prove should be deterministic and use on-chain governance params.
+		pathBlockHeight := session.GetSessionHeader().GetSessionEndBlockHeight() +
+			sessionkeeper.GetSessionGracePeriodBlockCount()
+		pathBlock, err := rs.blockQueryClient.Block(ctx, &pathBlockHeight)
+		if err != nil {
+			return either.Error[relayer.SessionTree](err), false
+		}
+
+		path := proofkeeper.GetPathForProof(
+			pathBlock.BlockID.Hash,
+			session.GetSessionHeader().GetSessionId(),
+		)
 		proof, err := session.ProveClosest(path)
 		if err != nil {
 			return either.Error[relayer.SessionTree](err), false
 		}
 
 		rs.logger.Info().
-			Int64("currentBlockHeight", latestBlock.Height()+1).
+			Int64("session_end_height_with_grace_period", pathBlock.Block.Height).
 			Msg("submitting proof")
 
 		// SubmitProof ensures on-chain proof inclusion so we can safely prune the tree.
