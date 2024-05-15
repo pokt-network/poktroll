@@ -57,7 +57,7 @@ func (s *suite) AllModuleParamsAreSetToTheirDefaultValues(moduleName string) {
 // AnAuthzGrantFromTheAccountToTheAccountForTheMessage queries the authz module for grants
 // with the expected granter & grantee (authz.QueryGrantsRequest) & asserts that the expected
 // grant is found in the response.
-func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessage(
+func (s *suite) AnAuthzGrantFromTheAccountToTheAccountForTheMessageExists(
 	granterName string,
 	granterAddrType string,
 	granteeName string,
