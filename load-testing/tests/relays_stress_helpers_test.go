@@ -215,6 +215,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 		)
 
 		if sessionInfo.blockHeight == sessionInfo.sessionEndBlockHeight {
+			fmt.Printf("activeApplications: %d, activeSuppliers: %d==============\n", len(s.activeApplications), len(s.activeSuppliers))
 			newSessionsCount := len(s.activeApplications) * len(s.activeSuppliers)
 			s.expectedClaimsAndProofsCount = s.expectedClaimsAndProofsCount + newSessionsCount
 		}
@@ -960,10 +961,12 @@ func (s *relaysSuite) waitForTxsToBeCommitted() (txResults []*types.TxResult) {
 // waitUntilLatestBlockHeightEquals blocks until s.latestBlock.Height() equals the targetHeight.
 // NB: s.latestBlock is updated asynchronously via a subscription to the block client observable.
 func (s *relaysSuite) waitUntilLatestBlockHeightEquals(targetHeight int64) {
-	logger.Info().
-		Int64("currentHeight", s.latestBlock.Height()).
-		Int64("targetHeight", targetHeight).
-		Msg("Waiting for target block to be committed")
+	if s.latestBlock.Height() > targetHeight {
+		logger.Info().
+			Int64("currentHeight", s.latestBlock.Height()).
+			Int64("targetHeight", targetHeight).
+			Msg("Waiting for target block to be committed")
+	}
 
 	for {
 		if s.latestBlock.Height() > targetHeight {
