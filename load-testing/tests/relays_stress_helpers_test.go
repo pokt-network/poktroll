@@ -16,9 +16,13 @@ import (
 	"cosmossdk.io/depinject"
 	"cosmossdk.io/math"
 	"github.com/cometbft/cometbft/abci/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/regen-network/gocuke"
 	"github.com/stretchr/testify/require"
 
@@ -190,7 +194,7 @@ func (s *relaysSuite) mapSessionInfoForLoadTestDurationFn(
 			// Mark the test as started.
 			waitingForFirstSession = false
 
-			s.Log("Test starting at block height: %d", s.startBlockHeight)
+			s.Logf("Test starting at block height: %d", s.startBlockHeight)
 		}
 
 		// Log the test progress.
@@ -1143,17 +1147,25 @@ func hasEventAttr(attributes []types.EventAttribute, key, value string) bool {
 // sendAdjustMaxDelegationsParamTx sends a transaction to adjust the max_delegated_gateways
 // parameter to the number of gateways that are currently used in the test.
 func (s *relaysSuite) sendAdjustMaxDelegationsParamTx(maxGateways int64) {
-	// Set the max_delegated_gateways parameter to the number of gateways
-	// that are currently used in the test.
+	authority := authtypes.NewModuleAddress(govtypes.ModuleName).String()
 
-	s.fundingAccountInfo.addPendingMsg(
-		&apptypes.MsgUpdateParams{
-			Authority: s.fundingAccountInfo.accAddress.String(),
-			Params: apptypes.Params{
-				MaxDelegatedGateways: uint64(maxGateways),
-			},
+	appMsgUpdateParams := &apptypes.MsgUpdateParams{
+		Authority: authority,
+		Params: apptypes.Params{
+			// Set the max_delegated_gateways parameter to the number of gateways
+			// that are currently used in the test.
+			MaxDelegatedGateways: uint64(maxGateways),
 		},
-	)
+	}
+	appMsgUpdateParamsAny, err := codectypes.NewAnyWithValue(appMsgUpdateParams)
+	require.NoError(s, err)
+
+	authzExecMsg := &authz.MsgExec{
+		Grantee: s.fundingAccountInfo.accAddress.String(),
+		Msgs:    []*codectypes.Any{appMsgUpdateParamsAny},
+	}
+
+	s.fundingAccountInfo.addPendingMsg(authzExecMsg)
 
 	s.sendPendingMsgsTx(s.latestBlock.Height(), s.fundingAccountInfo)
 }

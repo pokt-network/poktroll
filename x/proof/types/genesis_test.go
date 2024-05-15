@@ -27,6 +27,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "valid genesis state",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
 						SupplierAddress: sample.AccAddress(),
@@ -55,6 +56,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "duplicated claim",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
 						SupplierAddress: randSupplierAddr,
@@ -79,6 +81,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "empty root hash",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
 						SupplierAddress: sample.AccAddress(),
@@ -95,6 +98,7 @@ func TestGenesisState_Validate(t *testing.T) {
 		{
 			desc: "nil root hash",
 			genState: &types.GenesisState{
+				Params: types.DefaultParams(),
 				ClaimList: []types.Claim{
 					{
 						SupplierAddress: sample.AccAddress(),
