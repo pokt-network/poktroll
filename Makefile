@@ -317,11 +317,18 @@ localnet_regenesis: check_yq acc_initialize_pubkeys_warn_message ## Regenerate t
 	@cp -r ${HOME}/.poktroll/keyring-test $(POKTROLLD_HOME)
 	@cp -r ${HOME}/.poktroll/config $(POKTROLLD_HOME)/
 
-.PHONY: send_relay
-send_relay:
+.PHONY: send_relay_sovereign_app
+send_relay_sovereign_app: # Send a relay through the AppGateServer as a sovereign application
 	curl -X POST -H "Content-Type: application/json" \
 	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
 	http://localhost:42069/anvil
+
+.PHONY: send_relay_delegating_app
+send_relay_delegating_app: # Send a relay through the gateway as an application that's delegating to this gateway
+	@appAddr=$$(poktrolld keys show app1 -a) && \
+	curl -X POST -H "Content-Type: application/json" \
+	--data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+	$(GATEWAY_URL)/anvil?applicationAddr=$$appAddr
 
 # TODO_BLOCKER(@okdas): Figure out how to copy these over w/ a functional state.
 # cp ${HOME}/.poktroll/config/app.toml $(POKTROLLD_HOME)/config/app.toml
