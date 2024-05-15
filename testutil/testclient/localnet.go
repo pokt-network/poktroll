@@ -106,6 +106,7 @@ func NewLocalnetFlagSet(t gocuke.TestingT) *pflag.FlagSet {
 	mockFlagSet.String(flags.FlagNode, CometLocalTCPURL, "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagHome, "", "use localnet poktrolld node")
 	mockFlagSet.String(flags.FlagKeyringBackend, "test", "use test keyring")
+	mockFlagSet.String(flags.FlagChainID, app.Name, "use poktroll chain-id")
 	err := mockFlagSet.Parse([]string{})
 	require.NoError(t, err)
 

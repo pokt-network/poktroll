@@ -73,7 +73,7 @@ type appGateServer struct {
 	endpointSelectionIndexMu sync.Mutex
 
 	// endpointSelectionIndex is the index of the last selected endpoint.
-	// It is used to cycle through the available endpoints in a round-robin fashion.
+	// It is used to cycle through the available endpoints using a round-robin strategy.
 	endpointSelectionIndex int
 }
 

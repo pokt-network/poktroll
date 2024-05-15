@@ -1,6 +1,8 @@
 package session
 
-import "github.com/pokt-network/poktroll/pkg/relayer"
+import (
+	"github.com/pokt-network/poktroll/pkg/relayer"
+)
 
 // WithStoresDirectory sets the path on disk where KVStore data files used to store
 // SMST of work sessions are created.
