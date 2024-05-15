@@ -367,7 +367,7 @@ test_e2e_settlement: test_e2e_env ## Run only the E2E suite that exercises the s
 
 .PHONY: test_load_relays_stress
 test_load_relays_stress: test_e2e_env ## Run the stress test for E2E relays.
-	go test -v -count=1 ./load-testing/tests/... -tags=e2e,test -run LoadRelays
+	go test -v -count=1 ./load-testing/tests/... -tags=load,test -run LoadRelays
 
 .PHONY: go_test_verbose
 go_test_verbose: check_go_version ## Run all go tests verbosely
