@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"cosmossdk.io/depinject"
-	grpc "github.com/cosmos/gogoproto/grpc"
+	"github.com/cosmos/gogoproto/grpc"
 
 	"github.com/pokt-network/poktroll/pkg/client"
 	sessiontypes "github.com/pokt-network/poktroll/x/session/types"
@@ -63,4 +63,13 @@ func (sessq *sessionQuerier) GetSession(
 		)
 	}
 	return res.Session, nil
+}
+
+func (sessq *sessionQuerier) GetParams(ctx context.Context) (*sessiontypes.Params, error) {
+	req := &sessiontypes.QueryParamsRequest{}
+	res, err := sessq.sessionQuerier.Params(ctx, req)
+	if err != nil {
+		return nil, ErrQuerySessionParams.Wrapf("[%v]", err)
+	}
+	return &res.Params, nil
 }
