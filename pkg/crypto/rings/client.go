@@ -7,6 +7,7 @@ import (
 
 	"cosmossdk.io/depinject"
 	ring_secp256k1 "github.com/athanorlabs/go-dleq/secp256k1"
+	ringtypes "github.com/athanorlabs/go-dleq/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	ring "github.com/noot/ring-go"
 
@@ -126,15 +127,16 @@ func (rc *ringClient) VerifyRelayRequestSignature(
 	// Get the ring for the application address of the relay request.
 	sessionEndHeight := sessionHeader.GetSessionEndBlockHeight()
 	appAddress := sessionHeader.GetApplicationAddress()
-	expectedAppRing, err := rc.GetRingForAddressAtHeight(ctx, appAddress, sessionEndHeight)
+	expectedAppRingPoints, err := rc.getRingPointsForAddressAtHeight(ctx, appAddress, sessionEndHeight)
 	if err != nil {
 		return ErrRingClientInvalidRelayRequest.Wrapf(
 			"error getting ring for application address %s: %v", appAddress, err,
 		)
 	}
 
-	// Compare the expected ring signature against the one provided in the relay request.
-	if !relayRequestRingSig.Ring().Equals(expectedAppRing) {
+	// Check that the expected ring signature points map contains the public keys
+	// in the relay request's ring signature.
+	if !ringPointsContain(expectedAppRingPoints, relayRequestRingSig) {
 		return ErrRingClientInvalidRelayRequestSignature.Wrapf(
 			"ring signature in the relay request does not match the expected one for the app %s", appAddress,
 		)
@@ -217,6 +219,33 @@ func (rc *ringClient) addressesToPubKeys(
 	return pubKeys, nil
 }
 
+// getRingPointsForAddressAtHeight returns a map of the ring points for the given
+// application
+func (rc *ringClient) getRingPointsForAddressAtHeight(
+	ctx context.Context,
+	appAddress string,
+	blockHeight int64,
+) (map[string]ringtypes.Point, error) {
+	ringPubKeys, err := rc.getRingPubKeysForAddress(ctx, appAddress, blockHeight)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the points on the secp256k1 curve for the public keys in the ring.
+	points, err := pointsFromPublicKeys(ringPubKeys...)
+	if err != nil {
+		return nil, err
+	}
+
+	ringPoints := make(map[string]ringtypes.Point, len(points))
+	for _, point := range points {
+		ringPoints[string(point.Encode())] = point
+	}
+
+	// Return the ring the constructed from the points retrieved above.
+	return ringPoints, nil
+}
+
 // GetRingAddressesAtBlock returns the active gateway addresses that need to be
 // used to construct the ring in order to validate that the given app should pay for.
 // It takes into account both active delegations and pending undelegations that
@@ -257,4 +286,19 @@ func GetRingAddressesAtBlock(app *apptypes.Application, blockHeight int64) []str
 	}
 
 	return activeDelegationsAtHeight
+}
+
+// ringPointsContain checks if the given ring points map contains the public keys
+// in the given ring signature.
+func ringPointsContain(
+	ringPoints map[string]ringtypes.Point,
+	signature *ring.RingSig,
+) bool {
+	for _, point := range signature.PublicKeys() {
+		if _, ok := ringPoints[string(point.Encode())]; !ok {
+			return false
+		}
+	}
+
+	return true
 }
