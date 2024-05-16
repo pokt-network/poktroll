@@ -85,12 +85,10 @@ func NewRelayerSessions(
 		return nil, err
 	}
 
-	sessionsToClaimObs, sessionsToClaimPublishCh := channel.NewObservable[[]relayer.SessionTree]()
-	rs.sessionsToClaimObs = sessionsToClaimObs
-	channel.ForEach(
+	rs.sessionsToClaimObs = channel.Map(
 		ctx,
 		rs.blockClient.CommittedBlocksSequence(ctx),
-		rs.mapBlockToSessionsToClaimFn(sessionsToClaimPublishCh),
+		rs.mapBlockToSessionsToClaim,
 	)
 
 	return rs, nil
@@ -161,78 +159,80 @@ func (rs *relayerSessionsManager) ensureSessionTree(sessionHeader *sessiontypes.
 	return sessionTree, nil
 }
 
-// mapBlockToSessionsToClaimFn returns a new MapFn which maps committed blocks to
-// a list of sessions which can be claimed as of that block.
+// mapBlockToSessionsToClaim is a MapFn which maps committed blocks to a list of
+// sessions which can be claimed as of that block.
 // TODO_IMPROVE: Add the ability for the process to resume where it left off in
 // case the process is restarted or the connection is dropped and reconnected.
-func (rs *relayerSessionsManager) mapBlockToSessionsToClaimFn(
-	sessionsToClaimsPublishCh chan<- []relayer.SessionTree,
-) channel.ForEachFn[client.Block] {
-	return func(_ context.Context, block client.Block) {
-		rs.sessionsTreesMu.Lock()
-		defer rs.sessionsTreesMu.Unlock()
+func (rs *relayerSessionsManager) mapBlockToSessionsToClaim(
+	_ context.Context, block client.Block,
+) ([]relayer.SessionTree, bool) {
+	rs.sessionsTreesMu.Lock()
+	defer rs.sessionsTreesMu.Unlock()
 
-		// onTimeSessions are the sessions that are still within their grace period.
-		// They are on time and will wait for their create claim window to open.
-		// They will be emitted last, after all the late sessions have been emitted.
-		var onTimeSessions []relayer.SessionTree
+	// onTimeSessions are the sessions that are still within their grace period.
+	// They are on time and will wait for their create claim window to open.
+	// They will be emitted last, after all the late sessions have been emitted.
+	var onTimeSessions []relayer.SessionTree
 
-		// Check if there are sessions that need to enter the claim/proof phase as their
-		// end block height was the one before the last committed block or earlier.
-		// Iterate over the sessionsTrees map to get the ones that end at a block height
-		// lower than the current block height.
-		for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
-			// Late sessions are the ones that have their session grace period elapsed
-			// and should already have been claimed.
-			// Group them by their end block height and emit each group separately
-			// before emitting the on-time sessions.
-			var lateSessions []relayer.SessionTree
+	// Check if there are sessions that need to enter the claim/proof phase as their
+	// end block height was the one before the last committed block or earlier.
+	// Iterate over the sessionsTrees map to get the ones that end at a block height
+	// lower than the current block height.
+	for endBlockHeight, sessionsTreesEndingAtBlockHeight := range rs.sessionsTrees {
+		// Late sessions are the ones that have their session grace period elapsed
+		// and should already have been claimed.
+		// Group them by their end block height and emit each group separately
+		// before emitting the on-time sessions.
+		var lateSessions []relayer.SessionTree
 
-			// !IsWithinGracePeriod is checking for sessions to claim with <= operator,
-			// which means that it would include sessions that were supposed to be
-			// claimed in previous block heights too.
-			// These late sessions might have their create claim window closed and are
-			// no longer eligible to be claimed, but that's not always the case.
-			// Once claim window closing is implemented, they will be filtered out
-			// downstream at the waitForEarliestCreateClaimsHeight step.
-			if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
-				// Iterate over the sessionsTrees that have grace period ending at this
-				// block height and add them to the list of sessionTrees to be published.
-				for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
-					// Mark the session as claimed and add it to the list of sessionTrees to be published.
-					// If the session has already been claimed, it will be skipped.
-					// Appending the sessionTree to the list of sessionTrees is protected
-					// against concurrent access by the sessionsTreesMu such that the first
-					// call that marks the session as claimed will be the only one to add the
-					// sessionTree to the list.
-					if err := sessionTree.StartClaiming(); err != nil {
-						continue
-					}
-
-					// Separate the sessions that are on-time from the ones that are late.
-					// If the session is past its grace period, it is considered late,
-					// otherwise it is on time and will be emitted last.
-					if IsPastGracePeriod(endBlockHeight, block.Height()) {
-						lateSessions = append(lateSessions, sessionTree)
-					} else {
-						onTimeSessions = append(onTimeSessions, sessionTree)
-					}
+		// !IsWithinGracePeriod is checking for sessions to claim with <= operator,
+		// which means that it would include sessions that were supposed to be
+		// claimed in previous block heights too.
+		// These late sessions might have their create claim window closed and are
+		// no longer eligible to be claimed, but that's not always the case.
+		// Once claim window closing is implemented, they will be filtered out
+		// downstream at the waitForEarliestCreateClaimsHeight step.
+		// TODO_BLOCKER: Introduce governance claim and proof window durations,
+		// implement off-chain window closing and on-chain window checks.
+		if !IsWithinGracePeriod(endBlockHeight, block.Height()) {
+			// Iterate over the sessionsTrees that have grace period ending at this
+			// block height and add them to the list of sessionTrees to be published.
+			for _, sessionTree := range sessionsTreesEndingAtBlockHeight {
+				// Mark the session as claimed and add it to the list of sessionTrees to be published.
+				// If the session has already been claimed, it will be skipped.
+				// Appending the sessionTree to the list of sessionTrees is protected
+				// against concurrent access by the sessionsTreesMu such that the first
+				// call that marks the session as claimed will be the only one to add the
+				// sessionTree to the list.
+				if err := sessionTree.StartClaiming(); err != nil {
+					continue
 				}
 
-				// If there are any late sessions to be claimed, emit them first.
-				// The wait for claim submission window pipeline step will return immediately
-				// without blocking them.
-				if len(lateSessions) > 0 {
-					sessionsToClaimsPublishCh <- lateSessions
+				// Separate the sessions that are on-time from the ones that are late.
+				// If the session is past its grace period, it is considered late,
+				// otherwise it is on time and will be emitted last.
+				if IsPastGracePeriod(endBlockHeight, block.Height()) {
+					lateSessions = append(lateSessions, sessionTree)
+				} else {
+					onTimeSessions = append(onTimeSessions, sessionTree)
 				}
 			}
-		}
 
-		// Emit the on-time sessions last, after all the late sessions have been emitted.
-		if len(onTimeSessions) > 0 {
-			sessionsToClaimsPublishCh <- onTimeSessions
+			// If there are any late sessions to be claimed, emit them first.
+			// The wait for claim submission window pipeline step will return immediately
+			// without blocking them.
+			if len(lateSessions) > 0 {
+				return lateSessions, false
+			}
 		}
 	}
+
+	// Emit the on-time sessions last, after all the late sessions have been emitted.
+	if len(onTimeSessions) > 0 {
+		return onTimeSessions, false
+	}
+
+	return nil, true
 }
 
 // removeFromRelayerSessions removes the SessionTree from the relayerSessions.

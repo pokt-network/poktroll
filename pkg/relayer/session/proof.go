@@ -163,6 +163,7 @@ func (rs *relayerSessionsManager) newMapProveSessionsFn(
 
 // goProveClaims generates the proofs corresponding to the given sessionTrees,
 // then sends the successful and failed proofs to their respective channels.
+// This function MUST to be run as a goroutine.
 func (rs *relayerSessionsManager) goProveClaims(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,

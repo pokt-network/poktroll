@@ -166,6 +166,7 @@ func (rs *relayerSessionsManager) newMapClaimSessionsFn(
 
 // goCreateClaimRoots creates the claim roots corresponding to the given sessionTrees,
 // then sends the successful and failed claims to their respective channels.
+// This function MUST to be run as a goroutine.
 func (rs *relayerSessionsManager) goCreateClaimRoots(
 	ctx context.Context,
 	sessionTrees []relayer.SessionTree,
