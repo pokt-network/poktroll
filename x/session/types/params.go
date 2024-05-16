@@ -49,7 +49,7 @@ func (params *Params) ValidateBasic() error {
 	return nil
 }
 
-// ValidateNumBlocksPerSession validates the MinRelayDifficultyBits param
+// ValidateNumBlocksPerSession validates the NumBlocksPerSession param
 // NB: The argument is an interface type to satisfy the ParamSetPair function signature.
 func ValidateNumBlocksPerSession(v interface{}) error {
 	numBlocksPerSession, ok := v.(uint64)
