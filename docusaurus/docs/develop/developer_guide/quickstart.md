@@ -561,7 +561,7 @@ You can use `curl`
 ```bash
 curl -X POST -H "Content-Type: application/json" \
   --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
-  http://localhost:42069/anvil
+  http://localhost:42042/anvil
 ```
 
 If everything worked as expected, you should see output similar to the following:
