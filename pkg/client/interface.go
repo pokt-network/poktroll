@@ -274,4 +274,6 @@ type SessionQueryClient interface {
 		serviceId string,
 		blockHeight int64,
 	) (*sessiontypes.Session, error)
+	// GetParams queries the chain for the current session module parameters.
+	GetParams(ctx context.Context) (*sessiontypes.Params, error)
 }
