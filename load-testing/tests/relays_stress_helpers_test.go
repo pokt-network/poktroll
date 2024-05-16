@@ -1332,7 +1332,7 @@ func (s *relaysSuite) forEachRelayBatchSendBatch(_ context.Context, relayBatchIn
 			relaysSent := s.numRelaysSent.Add(1) - 1
 
 			// Generate the relay payload with unique request IDs.
-			relayPayload := fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent)
+			relayPayload := fmt.Sprintf(relayPayloadFmt, relayRequestMethod, relaysSent+1)
 
 			// Send the relay request.
 			s.sendRelay(relaysSent, relayPayload)
