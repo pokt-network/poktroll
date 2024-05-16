@@ -10,6 +10,9 @@ func (k msgServer) UpdateParams(
 	ctx context.Context,
 	req *types.MsgUpdateParams,
 ) (*types.MsgUpdateParamsResponse, error) {
+	if err := req.ValidateBasic(); err != nil {
+		return nil, err
+	}
 	if k.GetAuthority() != req.Authority {
 		return nil, types.ErrSupplierInvalidSigner.Wrapf("invalid authority; expected %s, got %s", k.GetAuthority(), req.Authority)
 	}

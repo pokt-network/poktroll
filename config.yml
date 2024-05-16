@@ -76,6 +76,7 @@ validators:
         timeout_propose: "2s"
       instrumentation:
         prometheus: true
+      log_level: "info"
     client:
       chain-id: poktroll
 

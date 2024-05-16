@@ -1,4 +1,4 @@
-Feature: Stake Namespaces
+Feature: Stake App Namespaces
 
     Scenario: User can stake an Application
         Given the user has the pocketd binary installed

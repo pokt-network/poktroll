@@ -116,6 +116,54 @@ The name of the key that will be used to sign transactions, derive the public ke
 and the corresponding address. This key name MUST be present in the keyring that is used
 to start the `RelayMiner` instance.
 
+:::note
+
+Multiple `RelayMiner`s can be configured with the same `signing_key_name` to
+sign `RelayResponse`s and submit `Claim`s and `Proof`s transactions to the Pocket
+network. (e.g. This is useful for a `Supplier` that is willing to provide redundant
+or geographically distributed services.)
+
+```mermaid
+flowchart
+
+    subgraph USW[US West]
+        RM1["Relay Miner 1 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph USE[US East]
+        RM2["Relay Miner 2 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph EUC[EU Central]
+        RM3["Relay Miner 3 <br> (signing_key_name=Supplier1)"]
+    end
+
+    subgraph CAC[CA Central]
+        RM4["Relay Miner 4 <br> (signing_key_name=Supplier2)"]
+    end
+
+    subgraph PB[POKT Blockchain]
+        direction TB
+        S1[Supplier1]
+        S2[Supplier2]
+    end
+
+    S1 -.- RM1
+    S1 -.- RM2
+    S1 -.- RM3
+    S2 -.- RM4
+```
+
+TODO(#528): It is not currently possible to have a single `RelayMiner` instance
+running with multiple `signing_key_name`s as this would involve more complex logic
+and/or configuration to determine which key to use, especially in the case of
+`Supplier`s that have overlapping services provided.
+
+TL;DR A 1:N Supplier:RelayMiner is possible, but a 1:N RelayMiner:Supplier relationship
+is not until #528 is complete.
+
+:::
+
 ### `smt_store_path`
 
 _`Required`_

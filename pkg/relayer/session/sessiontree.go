@@ -158,6 +158,11 @@ func (st *sessionTree) ProveClosest(path []byte) (proof *smt.SparseMerkleClosest
 	return st.proof, err
 }
 
+// GetProof returns the proof for the SMST if it has been generated or nil otherwise.
+func (st *sessionTree) GetProof() *smt.SparseMerkleClosestProof {
+	return st.proof
+}
+
 // Flush gets the root hash of the SMST needed for submitting the claim;
 // then commits the entire tree to disk and stops the KVStore.
 // It should be called before submitting the claim on-chain. This function frees up the KVStore resources.

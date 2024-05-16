@@ -12,5 +12,9 @@ message Params {
   option (gogoproto.equal) = true;
 
   // The minimum difficulty in bits for a relay to be included in a Merkle proof.
-  uint64 min_relay_difficulty_bits = 1;
+  uint64 min_relay_difficulty_bits = 1 [(gogoproto.jsontag) = "min_relay_difficulty_bits"];
+
+  // IMPORTANT: Make sure to update all related files if you're modifying or adding a new parameter.
+  // Try the following grep to find all related places: `grep -r compute_units_to_tokens_multiplier`
+  // TODO_IMPROVE: Look into an opportunity to use an enum to avoid using strings throughout the codebase.
 }

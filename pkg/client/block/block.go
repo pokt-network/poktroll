@@ -42,6 +42,10 @@ func (blockEvent *CometNewBlockEvent) Hash() []byte {
 	return blockEvent.Data.Value.BlockID.Hash
 }
 
+func (blockEvent *CometNewBlockEvent) Txs() []types.Tx {
+	return blockEvent.Data.Value.Block.Txs
+}
+
 // UnmarshalNewBlockEvent is a function that attempts to deserialize the given bytes
 // into a comet new block event . If the resulting block has a height of zero,
 // assume the event was not a block event and return an ErrUnmarshalBlockEvent error.
