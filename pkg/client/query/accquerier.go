@@ -67,6 +67,15 @@ func (aq *accQuerier) GetAccount(
 	if err = queryCodec.UnpackAny(res.Account, &fetchedAccount); err != nil {
 		return nil, ErrQueryUnableToDeserializeAccount.Wrapf("address: %s [%v]", address, err)
 	}
+
+	// Fetched accounts must have their public key set. Do not cache accounts
+	// that do not have a public key set, such as the ones resulting from genesis
+	// as they may continue failing due to the caching mechanism, even after they
+	// got their public key recorded on-chain.
+	if fetchedAccount.GetPubKey() == nil {
+		return nil, ErrQueryPubKeyNotFound
+	}
+
 	aq.accountCache[address] = fetchedAccount
 
 	return fetchedAccount, nil

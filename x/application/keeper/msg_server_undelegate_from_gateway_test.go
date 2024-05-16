@@ -1,6 +1,7 @@
 package keeper_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,10 +9,12 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/pokt-network/poktroll/pkg/crypto/rings"
 	keepertest "github.com/pokt-network/poktroll/testutil/keeper"
 	"github.com/pokt-network/poktroll/testutil/sample"
 	"github.com/pokt-network/poktroll/x/application/keeper"
 	"github.com/pokt-network/poktroll/x/application/types"
+	sessionkeeper "github.com/pokt-network/poktroll/x/session/keeper"
 	sharedtypes "github.com/pokt-network/poktroll/x/shared/types"
 )
 
@@ -271,4 +274,267 @@ func TestMsgServer_UndelegateFromGateway_SuccessfullyUndelegateFromUnstakedGatew
 	require.True(t, isAppFound)
 	require.Equal(t, appAddr, foundApp.Address)
 	require.Equal(t, 0, len(foundApp.DelegateeGatewayAddresses))
+}
+
+// Test an undelegation at different stages of the undelegation lifecycle:
+//
+//   - Create an application, stake it, delegate then undelegate it from a gateway.
+//
+//   - Increment the block height without moving to the next session and check that
+//     the undelegated gateway is still part of the application's delegate gateways.
+//
+//   - Increment the block height to the next session and check that the undelegated
+//     gateway is no longer part of the application's delegate gateways.
+//
+//   - Increment the block height past the tested session's grace period and check:
+//
+//   - The undelegated gateway is still not part of the application's delegate gateways
+//
+//   - If queried for a past block height, corresponding to the session at which the
+//     undelegation occurred, the reconstructed delegate gateway list does include
+//     the undelegated gateway.
+func TestMsgServer_UndelegateFromGateway_DelegationIsActiveUntilNextSession(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	undelegationHeight := int64(1)
+	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
+		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
+
+	// Increment the block height without moving to the next session, then run the
+	// pruning undelegations logic.
+	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
+
+	// Get the updated application state after pruning logic is run.
+	app, isAppFound := k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
+	require.NotNil(t, app)
+
+	// Verify that the gateway was removed from the application's delegatee gateway addresses.
+	require.NotContains(t, app.DelegateeGatewayAddresses, pendingUndelegateFromAddr)
+
+	// Verify that the gateway is added to the pending undelegation list with the
+	// right sessionEndHeight as the map key.
+	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	require.Contains(t,
+		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
+		pendingUndelegateFromAddr,
+	)
+
+	// Verify that the application is still delegating to other gateways.
+	require.Contains(t, app.DelegateeGatewayAddresses, delegateAddr)
+
+	// Verify that the reconstructed delegatee gateway list includes the undelegated gateway.
+	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	require.Contains(t, gatewayAddresses, pendingUndelegateFromAddr)
+
+	// Increment the block height to the next session and run the pruning
+	// undelegations logic again.
+	nextSessionStartHeight := int64(sessionEndHeight + 1)
+	sdkCtx = sdkCtx.WithBlockHeight(nextSessionStartHeight)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
+
+	// Get the updated application state.
+	app, isAppFound = k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
+	require.NotNil(t, app)
+
+	// Verify that when queried for the next session the reconstructed delegatee
+	// gateway list does not include the undelegated gateway.
+	nextSessionGatewayAddresses := rings.GetRingAddressesAtBlock(&app, nextSessionStartHeight)
+	require.NotContains(t, nextSessionGatewayAddresses, pendingUndelegateFromAddr)
+
+	// Increment the block height past the tested session's grace period and run
+	// the pruning undelegations logic again.
+	sessionGracePeriodBlockCount := uint64(sessionkeeper.GetSessionGracePeriodBlockCount())
+	afterSessionGracePeriodHeight := int64(sessionEndHeight + sessionGracePeriodBlockCount + 1)
+	sdkCtx = sdkCtx.WithBlockHeight(afterSessionGracePeriodHeight)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
+
+	// Verify that when queried for a block height past the tested session's grace period,
+	// the reconstructed delegatee gateway list does not include the undelegated gateway.
+	pastGracePeriodGatewayAddresses := rings.GetRingAddressesAtBlock(&app, afterSessionGracePeriodHeight)
+	require.NotContains(t, pastGracePeriodGatewayAddresses, pendingUndelegateFromAddr)
+
+	// Ensure that when queried for the block height corresponding to the session
+	// at which the undelegation occurred, the reconstructed delegatee gateway list
+	// includes the undelegated gateway.
+	gatewayAddressesBeforeUndelegation := rings.GetRingAddressesAtBlock(&app, int64(sessionEndHeight))
+	require.Contains(t, gatewayAddressesBeforeUndelegation, pendingUndelegateFromAddr)
+}
+
+func TestMsgServer_UndelegateFromGateway_DelegationIsPrunedAfterRetentionPeriod(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	undelegationHeight := int64(1)
+	sdkCtx, app, delegateAddr, pendingUndelegateFromAddr :=
+		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
+
+	// Increment the block height past the undelegation retention period then run
+	// the pruning undelegations logic.
+	pruningBlockHeight := getUndelegationPruningBlockHeight(undelegationHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(pruningBlockHeight)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
+
+	// Get the updated application state.
+	app, isAppFound := k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
+	require.NotNil(t, app)
+
+	// Verify that the the pending undelegation map no longer contains the
+	// sessionEndHeight key.
+	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
+
+	// Verify that the reconstructed delegatee gateway list can no longer include
+	// the undelegated gateway since it has been pruned.
+	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, undelegationHeight)
+	require.NotContains(t, gatewayAddressesAfterPruning, pendingUndelegateFromAddr)
+	require.Contains(t, gatewayAddressesAfterPruning, delegateAddr)
+}
+
+func TestMsgServer_UndelegateFromGateway_RedelegationAfterUndelegationAtTheSameSessionNumber(t *testing.T) {
+	k, ctx := keepertest.ApplicationKeeper(t)
+	srv := keeper.NewMsgServerImpl(k)
+
+	undelegationHeight := int64(1)
+	sdkCtx, app, _, gatewayAddrToRedelegate :=
+		createAppStakeDelegateAndUndelegate(ctx, t, srv, k, undelegationHeight)
+
+	// Increment the block height without moving to the next session.
+	sdkCtx = sdkCtx.WithBlockHeight(undelegationHeight + 1)
+
+	// Delegate back the application to the gateway that was undelegated from.
+	delegateMsg := &types.MsgDelegateToGateway{
+		AppAddress:     app.Address,
+		GatewayAddress: gatewayAddrToRedelegate,
+	}
+	_, err := srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
+
+	// Get the updated application state.
+	app, isAppFound := k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
+	require.NotNil(t, app)
+
+	// Verify that the gateway is still in the application's delegatee gateway addresses.
+	require.Contains(t, app.DelegateeGatewayAddresses, gatewayAddrToRedelegate)
+
+	// Verify that the gateway is also present in the pending undelegation list with the
+	// right sessionEndHeight as the map key.
+	sessionEndHeight := uint64(sessionkeeper.GetSessionEndBlockHeight(undelegationHeight))
+	require.Contains(t,
+		app.PendingUndelegations[sessionEndHeight].GatewayAddresses,
+		gatewayAddrToRedelegate,
+	)
+
+	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway.
+	gatewayAddresses := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	require.Contains(t, gatewayAddresses, gatewayAddrToRedelegate)
+
+	// Increment the block height past the undelegation retention period then run
+	// the pruning undelegations logic.
+	pruningBlockHeight := getUndelegationPruningBlockHeight(undelegationHeight)
+	sdkCtx = sdkCtx.WithBlockHeight(pruningBlockHeight)
+	k.EndBlockerPruneAppToGatewayPendingUndelegation(sdkCtx)
+
+	// Get the updated application state after pruning logic is run.
+	app, isAppFound = k.GetApplication(sdkCtx, app.Address)
+	require.True(t, isAppFound)
+	require.NotNil(t, app)
+
+	// Verify that the application is still delegated to the gateway
+	require.Contains(t, app.DelegateeGatewayAddresses, gatewayAddrToRedelegate)
+
+	// Verify that the the pending undelegation map no longer contains the
+	// sessionEndHeight key.
+	require.Empty(t, app.PendingUndelegations[sessionEndHeight])
+
+	// Verify that the reconstructed delegatee gateway list includes the redelegated gateway
+	gatewayAddressesAfterPruning := rings.GetRingAddressesAtBlock(&app, sdkCtx.BlockHeight())
+	require.Contains(t, gatewayAddressesAfterPruning, gatewayAddrToRedelegate)
+}
+
+// createAppStakeDelegateAndUndelegate is a helper function that is used in the tests
+// that exercise the pruning undelegations and ring addresses reconstruction logic.
+// * It creates an account address and stakes it as an application.
+// * Creates two gateway addresses and mocks them being staked.
+// * Delegates the application to the gateways.
+// * Undelegates the application from one of the gateways.
+func createAppStakeDelegateAndUndelegate(
+	ctx context.Context,
+	t *testing.T,
+	srv types.MsgServer,
+	k keeper.Keeper,
+	undelegationHeight int64,
+) (
+	sdkCtx sdk.Context,
+	app types.Application,
+	delegateAddr,
+	pendingUndelegateFromAddr string,
+) {
+	// Generate an application address and stake the application.
+	appAddr := sample.AccAddress()
+	stakeMsg := &types.MsgStakeApplication{
+		Address: appAddr,
+		Stake:   &sdk.Coin{Denom: "upokt", Amount: math.NewInt(100)},
+		Services: []*sharedtypes.ApplicationServiceConfig{
+			{
+				Service: &sharedtypes.Service{Id: "svc1"},
+			},
+		},
+	}
+	_, err := srv.StakeApplication(ctx, stakeMsg)
+	require.NoError(t, err)
+
+	// Generate gateway addresses, mock the gateways being staked then delegate the
+	// application to the gateways.
+	delegateAddr = sample.AccAddress()
+	keepertest.AddGatewayToStakedGatewayMap(t, delegateAddr)
+
+	delegateMsg := &types.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: delegateAddr,
+	}
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
+
+	pendingUndelegateFromAddr = sample.AccAddress()
+	keepertest.AddGatewayToStakedGatewayMap(t, pendingUndelegateFromAddr)
+
+	delegateMsg = &types.MsgDelegateToGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: pendingUndelegateFromAddr,
+	}
+	_, err = srv.DelegateToGateway(ctx, delegateMsg)
+	require.NoError(t, err)
+
+	// Create a context with a block height of 2.
+	sdkCtx = sdk.UnwrapSDKContext(ctx).WithBlockHeight(undelegationHeight)
+
+	// Undelegate from the first gateway.
+	undelegateMsg := &types.MsgUndelegateFromGateway{
+		AppAddress:     appAddr,
+		GatewayAddress: pendingUndelegateFromAddr,
+	}
+	_, err = srv.UndelegateFromGateway(sdkCtx, undelegateMsg)
+	require.NoError(t, err)
+
+	foundApp, isAppFound := k.GetApplication(sdkCtx, appAddr)
+
+	// Verify that the application exists.
+	require.True(t, isAppFound)
+	require.NotNil(t, foundApp)
+
+	return sdkCtx, foundApp, delegateAddr, pendingUndelegateFromAddr
+}
+
+// getUndelegationPruningBlockHeight returns the block height at which undelegations
+// should be pruned for a given undlegation block height.
+func getUndelegationPruningBlockHeight(blockHeight int64) (pruningHeihgt int64) {
+	nextSessionStartHeight := sessionkeeper.GetSessionEndBlockHeight(blockHeight) + 1
+
+	return nextSessionStartHeight + keeper.GetNumBlocksUndelegationRetention()
 }
