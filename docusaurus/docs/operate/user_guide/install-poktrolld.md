@@ -1,18 +1,33 @@
 ---
-title: Installing poktrolld
+title: Installation
 sidebar_position: 0
 ---
 
-- [Full environment setup](#full-environment-setup)
-- [`poktrolld` Installation from src](#poktrolld-installation-from-src)
-- [\[TODO\] Package manager](#todo-package-manager)
+- [Release binaries](#release-binaries)
+- [Installing from source](#installing-from-source)
+- [Homebrew](#homebrew)
 
-## Full environment setup
+## Release binaries
 
-We recommend following the instructions provided in our [Developer Quickstart Guide](../../develop/developer_guide/quickstart.md) to make your environment and tools are fully ready for development.
-It will build `poktrolld` from source as a bi-product.
+Pre-built binaries are available on our [releases page](https://github.com/pokt-network/poktroll/releases).
 
-## `poktrolld` Installation from src
+This snippet downloads/upgrades the binary to the latest released version (Linux and macOS only):
+
+```bash
+# Download the correct binary based on the OS and architecture
+curl -LO "https://github.com/pokt-network/poktroll/releases/latest/download/poktroll_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz"
+
+# Extract the downloaded tarball to /usr/local/bin
+sudo tar -zxf "poktroll_$(uname | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" -C /usr/local/bin
+
+# Make the binary executable
+sudo chmod +x /usr/local/bin/poktrolld
+
+# Check version
+poktrolld version
+```
+
+## Installing from source
 
 ```bash
 git clone https://github.com/pokt-network/poktroll.git
@@ -27,7 +42,8 @@ Verify it worked by running:
 poktrolld --help
 ```
 
-## [TODO] Package manager
+## Homebrew
 
-_TODO(@okdas): Add ready-to-use binaries (available via homebrew, tea or other package
-managers)._
+:::tip
+We have an [open GitHub issue](https://github.com/pokt-network/poktroll/issues/535) to introduce `poktrolld` to brew. Please reach out to us in the ticket if you want to pick this ticket!
+:::
