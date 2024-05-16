@@ -57,7 +57,7 @@ func ValidateNumBlocksPerSession(v interface{}) error {
 		return ErrSessionParamInvalid.Wrapf("invalid parameter type: %T", v)
 	}
 
-	if numBlocksPerSession < 0 {
+	if numBlocksPerSession < 1 {
 		return ErrSessionParamInvalid.Wrapf("invalid NumBlocksPerSession: (%v)", numBlocksPerSession)
 	}
 
